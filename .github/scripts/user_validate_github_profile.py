@@ -12,6 +12,7 @@ Fully automatic - no red flags, no manual review.
 
 import json
 import os
+import random
 import time
 import urllib.request
 from datetime import datetime, timezone
@@ -89,12 +90,16 @@ def validate_users(usernames: list[str]) -> list[dict]:
     if not usernames:
         return []
 
+    random.shuffle(usernames)
     results = []
-    batches = range(0, len(usernames), BATCH_SIZE)
+    approved = 0
+    pbar = tqdm(range(0, len(usernames), BATCH_SIZE), desc="Validating", unit="batch", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{remaining}]")
     
-    for i in tqdm(batches, desc="Validating", unit="batch"):
-        batch = usernames[i:i + BATCH_SIZE]
-        results.extend(fetch_batch(batch))
-        time.sleep(2)  # Avoid GitHub secondary rate limit (2000 pts/min)
+    for i in pbar:
+        batch_results = fetch_batch(usernames[i:i + BATCH_SIZE])
+        results.extend(batch_results)
+        approved += sum(1 for r in batch_results if r["approved"])
+        pbar.set_postfix(seed=f"{100*approved/len(results):.0f}%")
+        time.sleep(2)
         
     return results

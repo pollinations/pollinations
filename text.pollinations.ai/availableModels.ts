@@ -42,55 +42,66 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-fast",
+        aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "openai-large",
+        aliases: ["gpt-5.2", "openai-reasoning", "gpt-5.2-reasoning"],
         config: portkeyConfig["gpt-5.2-2025-12-11"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "qwen-coder",
+        aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
         config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
         name: "mistral",
+        aliases: ["mistral-small", "mistral-small-3.2", "mistral-small-3.2-24b-instruct-2506"],
         config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "deepseek",
+        aliases: ["deepseek-v3", "deepseek-reasoning"],
         config: portkeyConfig["deepseek-v3.2-maas"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "grok",
+        aliases: ["grok-fast", "grok-4", "grok-4-fast"],
         config: portkeyConfig["myceli-grok-4-fast"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "openai-audio",
+        aliases: ["gpt-4o-mini-audio-preview", "gpt-4o-mini-audio-preview-2024-12-17"],
         config: portkeyConfig["gpt-4o-mini-audio-preview-2024-12-17"],
     },
     {
         name: "claude-fast",
+        aliases: ["claude-haiku-4.5", "claude-haiku"],
         config: portkeyConfig["us.anthropic.claude-haiku-4-5-20251001-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "claude",
+        aliases: ["claude-sonnet-4.5", "claude-sonnet"],
         config: portkeyConfig["claude-sonnet-4-5-vertex"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "claude-large",
+        aliases: ["claude-opus-4.5", "claude-opus"],
         config: portkeyConfig["claude-opus-4-5-vertex"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "gemini",
+        aliases: ["gemini-3-flash", "gemini-3-flash-preview"],
         config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
@@ -102,6 +113,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-fast",
+        aliases: ["gemini-2.5-flash-lite"],
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
@@ -111,6 +123,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-search",
+        aliases: ["gemini-3-flash-search"],
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas(),
@@ -130,21 +143,25 @@ const models: ModelDefinition[] = [
     },
     {
         name: "perplexity-fast",
+        aliases: ["sonar"],
         config: portkeyConfig["sonar"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "perplexity-reasoning",
+        aliases: ["sonar-reasoning", "sonar-reasoning-pro"],
         config: portkeyConfig["sonar-reasoning-pro"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "kimi-k2-thinking",
+        aliases: ["kimi-k2", "kimi-thinking"],
         config: portkeyConfig["kimi-k2-thinking-maas"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "gemini-large",
+        aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
         config: portkeyConfig["gemini-3-pro-preview"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
@@ -156,16 +173,19 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nova-fast",
+        aliases: ["amazon-nova-micro", "nova", "nova-micro"],
         config: portkeyConfig["amazon.nova-micro-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "glm",
+        aliases: ["glm-4.7", "glm-4p7"],
         config: portkeyConfig["accounts/fireworks/models/glm-4p7"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "minimax",
+        aliases: ["minimax-m2.1", "minimax-m2p1"],
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p1"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },

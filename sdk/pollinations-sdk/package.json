@@ -1,6 +1,6 @@
 {
   "name": "@pollinations/sdk",
-  "version": "1.0.0",
+  "version": "4.0.1",
   "description": "Official Node.js SDK for Pollinations AI - Generate images, videos, audio, and text with ease",
   "type": "module",
   "main": "./dist/index.js",

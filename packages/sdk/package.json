@@ -42,7 +42,8 @@
     "text-to-image",
     "text-to-video"
   ],
-  "authors": [{
+  "author": "Pollinations.AI Team <team@pollinations.ai>",
+  "contributors": [{
       "name": "Itachi-1824",
       "email": "itachi@myceli.ai"
     },

@@ -1,6 +1,5 @@
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { TEXT_SERVICES, DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import { z } from "zod";
-
 
 const VALID_TEXT_MODELS = [
     ...Object.keys(TEXT_SERVICES),
@@ -9,9 +8,9 @@ const VALID_TEXT_MODELS = [
 
 export const GenerateTextRequestQueryParamsSchema = z.object({
     model: z
-        .enum(VALID_TEXT_MODELS)
+        .enum(VALID_TEXT_MODELS as unknown as [string, ...string[]])
         .optional()
-        .default("openai")
+        .default(DEFAULT_TEXT_MODEL)
         .meta({
             description: "Text model to use for generation",
         }),

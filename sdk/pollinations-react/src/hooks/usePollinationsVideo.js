@@ -18,14 +18,12 @@ const usePollinationsVideo = (prompt, options = {}) => {
     const abortControllerRef = useRef(null);
     const blobUrlRef = useRef(null);
 
-    // Validate model, duration, and aspect ratio
     const validateParams = useCallback(() => {
         const validModels = ["veo", "seedance", "seedance-pro"];
         if (!validModels.includes(model)) {
             return `Invalid model. Supported models: ${validModels.join(", ")}`;
         }
 
-        // Validate duration
         if (typeof duration !== "number" || duration < 1 || duration > 10) {
             return "Duration must be an integer between 1 and 10 seconds";
         }
@@ -40,7 +38,6 @@ const usePollinationsVideo = (prompt, options = {}) => {
             }
         }
 
-        // Validate aspect ratio
         const validAspectRatios = ["16:9", "9:16"];
         if (!validAspectRatios.includes(aspectRatio)) {
             return `Invalid aspect ratio. Supported: ${validAspectRatios.join(", ")}`;

@@ -57,14 +57,16 @@ Classify this GitHub issue/PR. Return JSON only.
 
 No labels needed.
 
-## Priority (support only)
+## Priority (dev and support)
 
-- `Urgent`: Service outage, security issue, data loss, many users affected
-- `High`: Broken functionality blocking users, billing problems
-- `Medium`: Bug with workaround, feature requests, integration help
-- `Low`: Minor issues, cosmetic bugs, general questions
+- `Urgent`: Service outage, security issue, data loss, critical blocker
+- `High`: Bugs breaking functionality, blocking issues, billing problems
+- `Medium`: Features, enhancements, bugs with workarounds, integration help
+- `Low`: Minor issues, cosmetic bugs, general questions, documentation
 
-For `dev` and `news`: set priority to `null`
+For `news`: set priority to `null`
+
+**Note for dev:** DEV-TRACKING, DEV-QUEST, DEV-VOTING issues can have priority `null` as they are meta/tracking items.
 
 ## Rules
 

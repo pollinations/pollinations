@@ -36,15 +36,15 @@
 
 1. **🌐 Publishable Key** (starts with `pk_`)
    - Always visible in dashboard
-   - Safe for client-side code (React, Vue, etc.)
-   - Pollen-based rate limiting: 1 pollen/hour refill per IP+key
-   - Access to all models
+   - For client-side apps (React, Vue, etc.)
+   - IP rate-limited: 1 req/hour per IP+key combo
+   - **Consumes Pollen from your balance** - exposing in public code will drain your wallet if your app gets traffic
 2. **🔒 Secret Key** (starts with `sk_`)
    - Only shown once - copy immediately!
    - For server-side apps only
    - Never expose publicly
    - No rate limits
-   - Can spend Pollen for paid models
+   - **Consumes Pollen from your balance**
 
 **For testing, use Secret Keys** for better rate limits and pollen spending.
 

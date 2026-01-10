@@ -14,14 +14,7 @@ export const modelStatsRoutes = new Hono<Env>();
 modelStatsRoutes.get("/", async (c) => {
     const log = getLogger(["enter", "model-stats"]);
 
-    // Reuse the same cached stats that track.ts uses (1h TTL)
+    // Returns raw Tinybird format: { data: [{ model, avg_cost_usd, request_count }] }
     const stats = await getModelStats(c.env.KV, log);
-
-    // Transform to the format the client expects: { data: [{ model, avg_cost_usd }] }
-    const data = Object.entries(stats).map(([model, { avg_price }]) => ({
-        model,
-        avg_cost_usd: avg_price,
-    }));
-
-    return c.json({ data });
+    return c.json(stats);
 });

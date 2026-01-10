@@ -497,7 +497,7 @@ export const proxyRoutes = new Hono<Env>()
                 docCount: documents.length,
             });
 
-            // Cohere Rerank API - thin proxy, forward request directly
+            // Direct proxy to Cohere API (like Whisper does with OVHcloud)
             const response = await fetch("https://api.cohere.com/v1/rerank", {
                 method: "POST",
                 headers: {
@@ -530,10 +530,7 @@ export const proxyRoutes = new Hono<Env>()
             }
 
             return new Response(response.body, {
-                headers: {
-                    ...Object.fromEntries(response.headers),
-                    "x-model-used": model || "rerank-v3.5",
-                },
+                headers: Object.fromEntries(response.headers),
             });
         },
     );

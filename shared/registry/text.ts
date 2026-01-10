@@ -471,7 +471,7 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                // Bedrock Cohere Rerank: $1.00 per 1,000 search units
+                // Cohere Rerank: $1.00 per 1,000 search units
                 // A search unit = 1 query + up to 100 documents
                 promptTextTokens: perMillion(1000), // ~$0.001 per search unit
             },

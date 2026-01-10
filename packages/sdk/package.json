@@ -15,11 +15,6 @@
       "browser": "./dist/index.browser.min.js",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    },
-    "./react": {
-      "types": "./dist/react.d.ts",
-      "import": "./dist/react.js",
-      "require": "./dist/react.cjs"
     }
   },
   "files": [

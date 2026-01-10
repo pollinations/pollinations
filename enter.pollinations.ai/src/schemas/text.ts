@@ -1,9 +1,15 @@
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { z } from "zod";
 
+
+const VALID_TEXT_MODELS = [
+    ...Object.keys(TEXT_SERVICES),
+    ...Object.values(TEXT_SERVICES).flatMap((service) => service.aliases),
+] as const;
+
 export const GenerateTextRequestQueryParamsSchema = z.object({
     model: z
-        .enum(Object.keys(TEXT_SERVICES) as [string, ...string[]])
+        .enum(VALID_TEXT_MODELS)
         .optional()
         .default("openai")
         .meta({

@@ -469,7 +469,7 @@ export const proxyRoutes = new Hono<Env>()
             return response;
         },
     )
-    // Cohere Rerank endpoint - semantic document ranking via Cohere API directly
+    // Cohere Rerank endpoint - semantic document ranking via Portkey -> Cohere
     .post(
         "/v1/rerank",
         auth({ allowApiKey: true, allowSessionCookie: false }),
@@ -497,12 +497,16 @@ export const proxyRoutes = new Hono<Env>()
                 docCount: documents.length,
             });
 
-            // Direct proxy to Cohere API (like Whisper does with OVHcloud)
-            const response = await fetch("https://api.cohere.com/v1/rerank", {
+            // Proxy to Cohere via Portkey gateway
+            const portkeyUrl =
+                c.env.PORTKEY_GATEWAY_URL ||
+                "https://rubeus.thomash-efd.workers.dev";
+            const response = await fetch(`${portkeyUrl}/rerank`, {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${c.env.COHERE_API_KEY}`,
                     "Content-Type": "application/json",
+                    Authorization: `Bearer ${c.env.COHERE_API_KEY}`,
+                    "x-portkey-provider": "cohere",
                 },
                 body: JSON.stringify({
                     model: model || "rerank-v3.5",

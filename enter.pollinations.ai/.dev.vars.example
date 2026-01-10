@@ -20,4 +20,7 @@ PLN_ENTER_TOKEN=optional_pln_enter_token
 # Cohere (for rerank API)
 COHERE_API_KEY=your_cohere_api_key
 
+# Portkey Gateway (for routing to providers)
+PORTKEY_GATEWAY_URL=https://rubeus.thomash-efd.workers.dev
+
 # Tip: Run `sops decrypt secrets/dev.vars.json > .dev.vars` to get all secrets

@@ -19,4 +19,4 @@ social/
 
 ## Workflows
 
-See `.github/docs/NEWS-SOCIAL.md` for workflow documentation.
+Checkout [Workflow Documentation](.github/docs/NEWS-SOCIAL.md) for more details on the same.

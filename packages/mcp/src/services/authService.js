@@ -18,7 +18,7 @@ async function setApiKey(params) {
 
     if (!key.startsWith("pk_") && !key.startsWith("sk_")) {
         throw new Error(
-            "Invalid API key format. Keys should start with 'pk_' (publishable) or 'sk_' (secret)"
+            "Invalid API key format. Keys should start with 'pk_' (publishable) or 'sk_' (secret)",
         );
     }
 
@@ -28,26 +28,33 @@ async function setApiKey(params) {
     const maskedKey = getMaskedKey();
 
     return createMCPResponse([
-        createTextContent({
-            success: true,
-            keyType,
-            maskedKey,
-            message: `API key set successfully. Type: ${keyType}`,
-            info: keyType === "publishable"
-                ? "Publishable keys are rate-limited (1 pollen/hour per IP+key)"
-                : "Secret keys have no rate limits and can spend Pollen",
-        }, true),
+        createTextContent(
+            {
+                success: true,
+                keyType,
+                maskedKey,
+                message: `API key set successfully. Type: ${keyType}`,
+                info:
+                    keyType === "publishable"
+                        ? "Publishable keys are rate-limited (1 pollen/hour per IP+key)"
+                        : "Secret keys have no rate limits and can spend Pollen",
+            },
+            true,
+        ),
     ]);
 }
 
 async function getKeyInfo(params) {
     if (!hasApiKey()) {
         return createMCPResponse([
-            createTextContent({
-                authenticated: false,
-                message: "No API key set. Use setApiKey to authenticate.",
-                info: "Get your API key at https://pollinations.ai",
-            }, true),
+            createTextContent(
+                {
+                    authenticated: false,
+                    message: "No API key set. Use setApiKey to authenticate.",
+                    info: "Get your API key at https://enter.pollinations.ai",
+                },
+                true,
+            ),
         ]);
     }
 
@@ -55,14 +62,18 @@ async function getKeyInfo(params) {
     const maskedKey = getMaskedKey();
 
     return createMCPResponse([
-        createTextContent({
-            authenticated: true,
-            keyType,
-            maskedKey,
-            info: keyType === "publishable"
-                ? "Publishable keys are rate-limited (1 pollen/hour per IP+key)"
-                : "Secret keys have no rate limits and can spend Pollen",
-        }, true),
+        createTextContent(
+            {
+                authenticated: true,
+                keyType,
+                maskedKey,
+                info:
+                    keyType === "publishable"
+                        ? "Publishable keys are rate-limited (1 pollen/hour per IP+key)"
+                        : "Secret keys have no rate limits and can spend Pollen",
+            },
+            true,
+        ),
     ]);
 }
 
@@ -71,23 +82,26 @@ async function clearApiKey(params) {
     clearStoredKey();
 
     return createMCPResponse([
-        createTextContent({
-            success: true,
-            message: wasSet
-                ? "API key cleared successfully"
-                : "No API key was set",
-        }, true),
+        createTextContent(
+            {
+                success: true,
+                message: wasSet
+                    ? "API key cleared successfully"
+                    : "No API key was set",
+            },
+            true,
+        ),
     ]);
 }
 
 export const authTools = [
     [
         "setApiKey",
-        "Set your Pollinations API key for authenticated requests. Get your key at https://pollinations.ai",
+        "Set your pollinations.ai API key for authenticated requests. Get your key at https://enter.pollinations.ai",
         {
-            key: z.string().describe(
-                "Your API key (pk_ for publishable, sk_ for secret)"
-            ),
+            key: z
+                .string()
+                .describe("Your API key (pk_ for publishable, sk_ for secret)"),
         },
         setApiKey,
     ],
@@ -99,10 +113,5 @@ export const authTools = [
         getKeyInfo,
     ],
 
-    [
-        "clearApiKey",
-        "Clear the stored API key",
-        {},
-        clearApiKey,
-    ],
+    ["clearApiKey", "Clear the stored API key", {}, clearApiKey],
 ];

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 MODEL = "gemini-large"
-NEWS_FOLDER = "NEWS"
+NEWS_FOLDER = "social/news"
 
 
 def get_env(key: str, required: bool = True) -> str:
@@ -21,7 +21,7 @@ def get_env(key: str, required: bool = True) -> str:
 
 
 def get_latest_news_file() -> tuple[str, str]:
-    """Find and read the latest news file from NEWS/ folder based on today's date and regex.
+    """Find and read the latest news file from social/news/ folder based on today's date and regex.
 
     Returns: (date, content) tuple
     """
@@ -294,7 +294,7 @@ def main():
     pollinations_token = get_env('POLLINATIONS_TOKEN')
     discord_webhook = os.getenv('DISCORD_WEBHOOK_DIGEST') or get_env('DISCORD_WEBHOOK_URL')
 
-    # Get the latest news file from NEWS/ folder
+    # Get the latest news file from social/news/ folder
     entry_date, latest_entry = get_latest_news_file()
 
     if not latest_entry:

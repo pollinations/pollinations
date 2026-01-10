@@ -3,7 +3,7 @@ import { defineConfig } from 'tsup';
 export default defineConfig([
   // Node.js builds (ESM + CJS)
   {
-    entry: ['src/index.ts'],
+    entry: ['src/index.ts', 'src/react.ts'],
     format: ['esm', 'cjs'],
     dts: true,
     splitting: false,
@@ -22,7 +22,7 @@ export default defineConfig([
     minify: true,
     outExtension: () => ({ js: '.browser.min.js' }),
     platform: 'browser',
-    external: ['fs'],
+    external: ['fs', 'react', 'react-dom'],
     noExternal: [],
   },
 ]);

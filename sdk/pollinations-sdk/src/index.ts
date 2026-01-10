@@ -138,3 +138,6 @@ export {
 
 // Feed types
 export type { ImageFeedEvent, TextFeedEvent, FeedOptions } from "./types.js";
+
+// React hooks available separately at '@pollinations/sdk/react'
+// Usage: import { usePollinationsImage } from '@pollinations/sdk/react';

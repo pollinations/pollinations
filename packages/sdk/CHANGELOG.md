@@ -2,16 +2,23 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [4.0.1] - 2026-01-10
+
+### Changed
+- Removed React hooks (will be re-added in future release)
+- Reorganized package to `packages/sdk` directory structure
+- Simplified build configuration
+
 ## [3.0.3] - 2026-01-10
 
-## Fixed 
+### Fixed 
 - Created a single sdk package with react + frontend + backend support.
 - Updated README.md to reflect new usage instructions for react hooks from '@pollinations/sdk'.
 
-## Renamed 
+### Renamed 
 - Renamed package from `pollinations-react` to `@pollinations/sdk`.
 
-## Improved
+### Improved
 - Updated package.json with new name, version, description, and keywords and authors.
 - Updated tsup.config.ts to build a single package instead of separate react and node builds.
 - Updated src/index.ts to export react hooks and types from a single entry point.

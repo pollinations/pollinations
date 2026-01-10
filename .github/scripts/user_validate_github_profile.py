@@ -93,7 +93,7 @@ def validate_users(usernames: list[str]) -> list[dict]:
     random.shuffle(usernames)
     results = []
     approved = 0
-    pbar = tqdm(range(0, len(usernames), BATCH_SIZE), desc="Validating", unit="batch", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{remaining}]")
+    pbar = tqdm(range(0, len(usernames), BATCH_SIZE), desc="Validating", unit="batch", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{remaining}] {postfix}")
     
     for i in pbar:
         batch_results = fetch_batch(usernames[i:i + BATCH_SIZE])

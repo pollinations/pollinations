@@ -29,6 +29,7 @@ type ValidServiceName = keyof typeof TEXT_SERVICES;
 
 interface ModelDefinition {
     name: ValidServiceName;
+    aliases?: string[];
     config: (typeof portkeyConfig)[ModelId];
     transform?: any;
 }

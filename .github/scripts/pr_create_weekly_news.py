@@ -14,7 +14,7 @@ GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 MODEL = "gemini-large"
 CHUNK_SIZE = 50
-NEWS_FOLDER = "NEWS"
+NEWS_FOLDER = "social/news"
 
 
 def get_env(key: str, required: bool = True) -> str:

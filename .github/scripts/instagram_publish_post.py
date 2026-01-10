@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Instagram Post Publisher - Publishes posts to Instagram when PR is merged
-Reads JSON from NEWS/transformed/instagram/posts/ and posts via Graph API
+Reads JSON from social/news/transformed/instagram/posts/ and posts via Graph API
 """
 
 import os

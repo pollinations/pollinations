@@ -4,11 +4,11 @@ on:
   pull_request:
     types: [closed]
     paths:
-      - 'NEWS/transformed/instagram/posts/*.json'
+      - 'social/news/transformed/instagram/posts/*.json'
   workflow_dispatch:
     inputs:
       post_file:
-        description: 'Path to the post JSON file (e.g., NEWS/transformed/instagram/posts/2025-12-13.json)'
+        description: 'Path to the post JSON file (e.g., social/news/transformed/instagram/posts/2025-12-13.json)'
         required: true
         type: string
 
@@ -53,7 +53,7 @@ jobs:
             # Fetch files changed in this specific PR
             POST_FILE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/${REPO}/pulls/${PR_NUMBER}/files" | \
-              jq -r '.[] | select(.filename | startswith("NEWS/transformed/instagram/posts/") and endswith(".json")) | .filename' | head -1)
+              jq -r '.[] | select(.filename | startswith("social/news/transformed/instagram/posts/") and endswith(".json")) | .filename' | head -1)
 
             if [ -z "$POST_FILE" ]; then
               echo "No instagram post file found in PR #${PR_NUMBER}"

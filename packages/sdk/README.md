@@ -1,6 +1,6 @@
 # @pollinations/sdk
 
-Official SDK for [Pollinations.AI](https://pollinations.ai) - Generate images, text, audio, and video with one simple package.
+Official SDK for [pollinations.ai](https://pollinations.ai) - Generate images, text, audio, and video with one simple package.
 
 [![npm version](https://img.shields.io/npm/v/@pollinations/sdk.svg)](https://www.npmjs.com/package/@pollinations/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

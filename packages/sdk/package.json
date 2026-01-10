@@ -1,7 +1,7 @@
 {
   "name": "@pollinations/sdk",
   "version": "4.0.1",
-  "description": "Official Node Package for Pollinations AI - Generate images, videos, audio, and text with ease",
+  "description": "Official SDK for pollinations.ai - Generate images, videos, audio, and text with ease",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -42,7 +42,7 @@
     "text-to-image",
     "text-to-video"
   ],
-  "author": "Pollinations.AI Team <team@pollinations.ai>",
+  "author": "pollinations.ai <team@pollinations.ai>",
   "contributors": [{
       "name": "Itachi-1824",
       "email": "itachi@myceli.ai"

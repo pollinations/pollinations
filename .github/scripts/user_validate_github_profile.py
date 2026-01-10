@@ -17,18 +17,15 @@ from datetime import datetime, timezone
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
-
-# Points formula
-POINTS_PER_MONTH = 1.0
-MAX_AGE_POINTS = 6.0
-POINTS_PER_COMMIT = 0.1
-MAX_COMMIT_POINTS = 1.0
-POINTS_PER_REPO = 0.5
-MAX_REPO_POINTS = 1.0
-APPROVE_THRESHOLD = 7.0
-
-# Batch size (50 users per GraphQL query = ~2 points, very efficient)
 BATCH_SIZE = 50
+
+# Scoring config: each metric has a multiplier and max points
+SCORING = [
+    {"field": "age_days", "multiplier": 1/30, "max": 6.0},  # 1pt/month, max 6
+    {"field": "commits",  "multiplier": 0.1,  "max": 1.0},  # 0.1pt each, max 1
+    {"field": "repos",    "multiplier": 0.5,  "max": 1.0},  # 0.5pt each, max 1
+]
+THRESHOLD = 7.0
 
 
 def build_query(usernames: list[str]) -> str:
@@ -52,19 +49,15 @@ def score_user(data: dict | None, username: str) -> dict:
         return {"username": username, "approved": False, "reason": "User not found"}
 
     created = datetime.fromisoformat(data["createdAt"].replace("Z", "+00:00"))
-    age_days = (datetime.now(timezone.utc) - created).days
-    repos = data["repositories"]["totalCount"]
-    commits = data["contributionsCollection"]["totalCommitContributions"]
+    metrics = {
+        "age_days": (datetime.now(timezone.utc) - created).days,
+        "repos": data["repositories"]["totalCount"],
+        "commits": data["contributionsCollection"]["totalCommitContributions"],
+    }
 
-    # Calculate points
-    age_pts = min(age_days / 30.0 * POINTS_PER_MONTH, MAX_AGE_POINTS)
-    commit_pts = min(commits * POINTS_PER_COMMIT, MAX_COMMIT_POINTS)
-    repo_pts = min(repos * POINTS_PER_REPO, MAX_REPO_POINTS)
-    score = age_pts + commit_pts + repo_pts
-
-    approved = score >= APPROVE_THRESHOLD
-    reason = f"{'APPROVED' if approved else 'DENY'}: {score:.1f} pts"
-    return {"username": username, "approved": approved, "reason": reason}
+    score = sum(min(metrics[s["field"]] * s["multiplier"], s["max"]) for s in SCORING)
+    approved = score >= THRESHOLD
+    return {"username": username, "approved": approved, "reason": f"{score:.1f} pts"}
 
 
 def fetch_batch(usernames: list[str]) -> list[dict]:

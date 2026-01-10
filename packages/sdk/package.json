@@ -33,6 +33,8 @@
     "text-generation",
     "video-generation",
     "audio-generation",
+    "text-to-speech",
+    "tts",
     "generative-ai",
     "flux",
     "openai",

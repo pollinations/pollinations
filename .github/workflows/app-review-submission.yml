@@ -55,29 +55,28 @@ jobs:
         id: issue
         run: echo "number=${{ github.event.inputs.issue_number || github.event.issue.number }}" >> "$GITHUB_OUTPUT"
 
-      - name: Add eyes reaction
-        run: |
-          if [ "${{ github.event_name }}" = "issue_comment" ]; then
-            gh api repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions -f content=eyes || true
-          elif [ "${{ github.event_name }}" = "issues" ]; then
-            gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=eyes || true
-          fi
-        env:
-          GH_TOKEN: ${{ steps.token.outputs.token }}
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
-      - name: Setup Router
+      - name: Setup
         id: setup
         run: |
+          # Add eyes reaction
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            gh api repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions -f content=eyes || true
+          elif [ "${{ github.event_name }}" = "issues" ]; then
+            gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=eyes || true
+          fi
+
+          # Get bot user ID and setup router config
           BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
           mkdir -p $HOME/.claude-code-router
           echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"${CLAUDE_CODE_TOKEN}","models":["glm","gemini-search"]}],"Router":{"default":"pollinations,glm","webSearch":"pollinations,gemini-search"}}' > $HOME/.claude-code-router/config.json
 
+          # Start router with Bun
           bunx @musistudio/claude-code-router start &
           until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
         env:

@@ -101,6 +101,7 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         env:
           ANTHROPIC_BASE_URL: http://localhost:3456
+          USE_AGENT_SDK: "false"
           GIT_AUTHOR_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
           GIT_AUTHOR_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
           GIT_COMMITTER_NAME: "${{ steps.token.outputs.app-slug }}[bot]"

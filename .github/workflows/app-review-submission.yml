@@ -74,7 +74,7 @@ jobs:
           BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
           mkdir -p $HOME/.claude-code-router
-          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"${CLAUDE_CODE_TOKEN}","models":["openai-large","gemini-search"]}],"Router":{"default":"pollinations,openai-large","webSearch":"pollinations,gemini-search"}}' > $HOME/.claude-code-router/config.json
+          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"${CLAUDE_CODE_TOKEN}","models":["deepseek","gemini-search"]}],"Router":{"default":"pollinations,deepseek","webSearch":"pollinations,gemini-search"}}' > $HOME/.claude-code-router/config.json
 
           # Start router with Bun
           bunx @musistudio/claude-code-router start &
@@ -98,7 +98,47 @@ jobs:
       - name: Install enter dependencies
         run: cd enter.pollinations.ai && npm install
 
+      - name: Check comment author permissions
+        id: auth
+        if: github.event_name == 'issue_comment'
+        run: |
+          ASSOCIATION="${{ github.event.comment.author_association }}"
+          COMMENT_AUTHOR="${{ github.event.comment.user.login }}"
+          ISSUE_AUTHOR="${{ github.event.issue.user.login }}"
+
+          if [[ "$ASSOCIATION" == "MEMBER" || "$ASSOCIATION" == "OWNER" || "$ASSOCIATION" == "COLLABORATOR" || "$COMMENT_AUTHOR" == "$ISSUE_AUTHOR" ]]; then
+            echo "authorized=true" >> $GITHUB_OUTPUT
+          else
+            echo "authorized=false" >> $GITHUB_OUTPUT
+            echo "Skipping: $COMMENT_AUTHOR is not authorized (association: $ASSOCIATION, issue author: $ISSUE_AUTHOR)"
+          fi
+
+      - name: Skip if unauthorized
+        if: github.event_name == 'issue_comment' && steps.auth.outputs.authorized == 'false'
+        run: echo "Skipping - commenter not authorized"
+
+      - name: Validate submission
+        id: validate
+        if: github.event_name != 'issue_comment' || steps.auth.outputs.authorized == 'true'
+        continue-on-error: true
+        run: |
+          node .github/scripts/app-validate-submission.js > /tmp/validation.json 2>&1
+          cat /tmp/validation.json
+          echo "result<<EOF" >> $GITHUB_OUTPUT
+          cat /tmp/validation.json >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login || '' }}
+          COMMENT_AUTHOR: ${{ github.event.comment.user.login || '' }}
+          COMMENT_AUTHOR_ASSOCIATION: ${{ github.event.comment.author_association || '' }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - uses: anthropics/claude-code-action@v1
+        if: (github.event_name != 'issue_comment' || steps.auth.outputs.authorized == 'true')
         env:
           ANTHROPIC_BASE_URL: http://localhost:3456
           USE_AGENT_SDK: "false"
@@ -106,24 +146,35 @@ jobs:
           GIT_AUTHOR_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
           GIT_COMMITTER_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
           GIT_COMMITTER_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         with:
           anthropic_api_key: "ccr-pollinations"
           github_token: ${{ steps.token.outputs.token }}
           prompt: |
-            Process app submission issue #${{ steps.issue.outputs.number }}.
+            FAST MODE - Minimum steps, no todo lists.
 
-            Read the skill instructions at .claude/skills/app-review/SKILL.md and follow them to:
-            1. Fetch and parse the issue
-            2. Validate required fields
-            3. Check for duplicates
-            4. Check Enter registration
-            5. Create or update the PR
+            Issue #${{ steps.issue.outputs.number }} - Validation: ${{ steps.validate.outputs.result }}
 
-            Do NOT use the Skill tool - directly follow the instructions in the SKILL.md file.
+            RULES:
+            - ONLY edit apps/APPS.md and README.md - nothing else
+            - PR body format: "- Adds [AppName](url) to category\n- Brief app description\n\nFixes #ISSUE" (no test plans, no todos, no headers)
+
+            IF VALIDATION FAILED (check errors in result):
+            - Not registered → comment asking to register at enter.pollinations.ai, add TIER-APP-INCOMPLETE label
+            - Duplicate → comment explaining, add TIER-APP-REJECTED label, close issue
+            - Other errors → comment helpfully, add TIER-APP-INCOMPLETE label
+
+            IF VALIDATION PASSED:
+            1. Fetch issue: `gh issue view ${{ steps.issue.outputs.number }} --json body,author,title`
+            2. Parse: name, url, description, category, repo, discord, language (pick best category if unclear)
+            3. Pick emoji
+            4. If existing_pr in validation result: checkout that branch and reset to origin/main
+               Else: `git fetch origin main && git checkout -b auto/app-${{ steps.issue.outputs.number }}-SLUG origin/main`
+            5. Add row: `NEW_ROW="| EMOJI | [NAME](URL) | DESC | LANG | CAT | @AUTHOR | REPO | STARS | DISCORD | | DATE |" node .github/scripts/app-prepend-row.js`
+            6. Update: `node .github/scripts/app-update-readme.js`
+            7. Commit, push. If new PR: `gh pr create --title "Add NAME" --body "Fixes #${{ steps.issue.outputs.number }}" --label TIER-APP-REVIEW-PR`. Update issue label to TIER-APP-REVIEW
+
+            Be fast and concise.
           claude_args: "--dangerously-skip-permissions"
-          show_full_output: true
 
   app-handle-outcome:
     if: |

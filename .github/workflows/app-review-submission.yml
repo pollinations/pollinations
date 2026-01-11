@@ -113,7 +113,15 @@ jobs:
           github_token: ${{ steps.token.outputs.token }}
           prompt: |
             Process app submission issue #${{ steps.issue.outputs.number }}.
-            Use the /app-review skill to handle this submission.
+
+            Read the skill instructions at .claude/skills/app-review/SKILL.md and follow them to:
+            1. Fetch and parse the issue
+            2. Validate required fields
+            3. Check for duplicates
+            4. Check Enter registration
+            5. Create or update the PR
+
+            Do NOT use the Skill tool - directly follow the instructions in the SKILL.md file.
           show_full_output: true
 
   app-handle-outcome:

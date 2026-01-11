@@ -1,0 +1,20 @@
+[
+  {
+    "title": "Decentralized Social Media Platform",
+    "description": "A social media platform where users have control over their data.",
+    "technologies": ["React", "IPFS", "Ethereum"],
+    "longDescription": "This project aims to build a decentralized social media platform that leverages technologies like IPFS and Ethereum to give users full control over their data. The platform will be censorship-resistant and will provide a more transparent and equitable alternative to traditional social media platforms."
+  },
+  {
+    "title": "AI-Powered Code Review Assistant",
+    "description": "An intelligent assistant that helps developers review code more effectively.",
+    "technologies": ["Python", "Machine Learning", "GitHub API"],
+    "longDescription": "The AI-Powered Code Review Assistant is a tool that uses machine learning to analyze code and provide feedback to developers. It can identify potential bugs, suggest improvements, and help developers save time and effort during the code review process."
+  },
+  {
+    "title": "Real-time Collaborative Whiteboard",
+    "description": "A web-based whiteboard that allows multiple users to collaborate in real-time.",
+    "technologies": ["React", "WebSockets", "Canvas API"],
+    "longDescription": "The Real-time Collaborative Whiteboard is a tool that enables remote teams to collaborate visually. It provides a shared canvas where users can draw, write, and share ideas in real-time. The application is built using modern web technologies and provides a seamless and intuitive user experience."
+  }
+]

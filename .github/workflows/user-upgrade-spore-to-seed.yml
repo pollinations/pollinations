@@ -23,7 +23,9 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: cd enter.pollinations.ai && npm install
+        run: |
+          cd enter.pollinations.ai && npm install
+          pip install tqdm
 
       - name: Run upgrade script
         env:

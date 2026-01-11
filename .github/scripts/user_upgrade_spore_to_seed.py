@@ -21,8 +21,12 @@ import json
 import os
 import subprocess
 import sys
+import time
 
 from user_validate_github_profile import validate_users
+
+# Polar rate limit: 100 requests/minute, so ~0.6s delay minimum
+POLAR_DELAY_SECONDS = 1.0
 
 
 def fetch_spore_users(env: str = "production") -> list[str]:
@@ -91,9 +95,20 @@ def upgrade_user(username: str, env: str = "production") -> bool:
             
         if result.returncode == 0:
             print(f"   ✅ {username}: upgraded to seed")
+            # Show Polar output if any
+            if result.stdout.strip():
+                for line in result.stdout.strip().split('\n'):
+                    print(f"      {line}")
             return True
         else:
-            print(f"   ❌ {username}: {result.stderr.strip()}", file=sys.stderr)
+            print(f"   ❌ {username}: failed")
+            # Show both stdout and stderr for debugging
+            if result.stdout.strip():
+                for line in result.stdout.strip().split('\n'):
+                    print(f"      {line}")
+            if result.stderr.strip():
+                for line in result.stderr.strip().split('\n'):
+                    print(f"      {line}", file=sys.stderr)
             return False
             
     except subprocess.TimeoutExpired:
@@ -155,11 +170,14 @@ def main():
     success = 0
     failed = 0
     
-    for username in approved:
+    for i, username in enumerate(approved):
         if upgrade_user(username, args.env):
             success += 1
         else:
             failed += 1
+        # Rate limit for Polar API (100 req/min)
+        if i < len(approved) - 1:
+            time.sleep(POLAR_DELAY_SECONDS)
     
     print(f"\n📊 Results:")
     print(f"   ✅ Upgraded: {success}")

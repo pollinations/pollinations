@@ -23,15 +23,17 @@ from tqdm import tqdm
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 BATCH_SIZE = 50
+MAX_BATCHES = None  # Set to a number to limit batches for testing
 
 # Scoring config: each metric has a multiplier and max points
+# NOTE: If you update these values, also update enter.pollinations.ai/src/client/components/tier-explanation.tsx
 SCORING = [
     {"field": "age_days", "multiplier": 0.5/30, "max": 6.0},  # 0.5pt/month, max 6 (12 months)
     {"field": "commits",  "multiplier": 0.1,  "max": 2.0},  # 0.1pt each, max 2
     {"field": "repos",    "multiplier": 0.5,  "max": 1.0},  # 0.5pt each, max 1
     {"field": "stars",    "multiplier": 0.1,  "max": 5.0},  # 0.1pt each, max 5
 ]
-THRESHOLD = 10.0
+THRESHOLD = 8.0
 
 
 def build_query(usernames: list[str]) -> str:
@@ -98,7 +100,9 @@ def validate_users(usernames: list[str]) -> list[dict]:
     approved = 0
     pbar = tqdm(range(0, len(usernames), BATCH_SIZE), desc="Validating", unit="batch", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{remaining}] {postfix}")
     
-    for i in pbar:
+    for batch_num, i in enumerate(pbar):
+        if MAX_BATCHES and batch_num >= MAX_BATCHES:
+            break
         batch_results = fetch_batch(usernames[i:i + BATCH_SIZE])
         results.extend(batch_results)
         approved += sum(1 for r in batch_results if r["approved"])

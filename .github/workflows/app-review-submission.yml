@@ -2,7 +2,7 @@ name: App Review Submission
 
 on:
   issues:
-    types: [opened]
+    types: [opened, edited]
   issue_comment:
     types: [created]
   pull_request_target:
@@ -19,15 +19,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  
-  app-parse-issue:
+  app-review:
     if: |
       github.event_name != 'pull_request_target' &&
       (contains(github.event.issue.labels.*.name, 'TIER-APP') ||
        contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE')) &&
       (github.event_name == 'workflow_dispatch' ||
        github.event_name == 'issues' ||
-       (github.event_name == 'issue_comment' && 
+       (github.event_name == 'issue_comment' &&
         contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE') &&
         github.event.comment.user.type != 'Bot')) &&
       !contains(github.event.issue.labels.*.name, 'TIER-APP-REVIEW') &&
@@ -36,579 +35,110 @@ jobs:
       github.event.issue.state == 'open'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      issues: write
-    outputs:
-      valid: ${{ steps.validate.outputs.valid }}
-      project_json: ${{ steps.parse.outputs.project_json }}
-      name: ${{ steps.parse.outputs.name }}
-      category: ${{ steps.parse.outputs.category }}
-      issue_number: ${{ steps.issue.outputs.number }}
-      issue_author: ${{ steps.issue.outputs.author }}
-      issue_author_id: ${{ steps.issue.outputs.author_id }}
-      similarity_score: ${{ steps.duplicate-check.outputs.similarity_score }}
-      similarity_reason: ${{ steps.duplicate-check.outputs.similarity_reason }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Ensure tier labels exist
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const labels = [
-              { name: 'TIER-APP', color: '1d76db', description: 'App submission - new' },
-              { name: 'TIER-APP-INCOMPLETE', color: 'fbca04', description: 'App submission - needs user action' },
-              { name: 'TIER-APP-REVIEW', color: '0052cc', description: 'App submission - issue awaiting review' },
-              { name: 'TIER-APP-REVIEW-PR', color: '5319e7', description: 'App submission - PR awaiting review' },
-              { name: 'TIER-APP-COMPLETE', color: '0e8a16', description: 'App submission - approved' },
-              { name: 'TIER-APP-REJECTED', color: 'd73a49', description: 'App submission - rejected' }
-            ];
-            for (const label of labels) {
-              try {
-                await github.rest.issues.getLabel({ owner: context.repo.owner, repo: context.repo.repo, name: label.name });
-              } catch (e) {
-                if (e.status === 404) {
-                  await github.rest.issues.createLabel({ owner: context.repo.owner, repo: context.repo.repo, ...label });
-                }
-              }
-            }
-
-      - name: Get issue data
-        id: issue
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const issueNumber = context.payload.inputs?.issue_number || context.payload.issue?.number;
-            const { data: issue } = await github.rest.issues.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber
-            });
-            core.setOutput('number', issue.number);
-            core.setOutput('author', issue.user.login);
-            core.setOutput('author_id', issue.user.id);
-            
-            // If triggered by comment (from a user, not a bot), append comment body
-            let body = issue.body || '';
-            if (context.eventName === 'issue_comment' && context.payload.comment) {
-              if (context.payload.comment.user?.type !== 'Bot') {
-                const commentBody = context.payload.comment.body || '';
-                body += '\n\n--- User correction ---\n' + commentBody;
-              }
-            }
-            core.setOutput('body', body);
-
-      - name: Parse submission with AI
-        id: parse
-        env:
-          ISSUE_BODY: ${{ steps.issue.outputs.body }}
-        run: |
-          PAYLOAD=$(jq -n --arg body "$ISSUE_BODY" '{
-            model: "openai",
-            messages: [
-              { role: "system", content: "Parse app submissions. Return JSON: name (required), url (required, must start with http:// or https://), description (required), category (required: chat/creative/games/hackAndBuild/learn/socialBots/vibeCoding), repo (optional GitHub URL), discord (optional Discord username), other (optional other contact info), language (optional language code like zh-CN, es, pt-BR). Return {\"error\": \"reason\"} if invalid." },
-              { role: "user", content: $body }
-            ],
-            response_format: { type: "json_object" }
-          }')
-          
-          HTTP_CODE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST "https://gen.pollinations.ai/v1/chat/completions" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.POLLINATIONS_TOKEN }}" \
-            -d "$PAYLOAD")
-          
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "error=API call failed" >> $GITHUB_OUTPUT
-            echo "needs_info=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          
-          PROJECT_JSON=$(cat /tmp/response.json | jq -r '.choices[0].message.content // empty')
-          [ -z "$PROJECT_JSON" ] && PROJECT_JSON=$(cat /tmp/response.json)
-          
-          if ! echo "$PROJECT_JSON" | jq . > /dev/null 2>&1; then
-            echo "error=Invalid JSON response" >> $GITHUB_OUTPUT
-            echo "needs_info=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          
-          ERROR=$(echo "$PROJECT_JSON" | jq -r '.error // empty')
-          if [ -n "$ERROR" ]; then
-            echo "error=$ERROR" >> $GITHUB_OUTPUT
-            echo "needs_info=true" >> $GITHUB_OUTPUT
-          else
-            echo "project_json<<EOF" >> $GITHUB_OUTPUT
-            echo "$PROJECT_JSON" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            echo "name=$(echo "$PROJECT_JSON" | jq -r '.name')" >> $GITHUB_OUTPUT
-            echo "category=$(echo "$PROJECT_JSON" | jq -r '.category')" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Check for exact duplicates (Node.js - handles special chars safely)
-        if: steps.parse.outputs.needs_info != 'true'
-        id: duplicate-check-exact
-        env:
-          PROJECT_JSON: ${{ steps.parse.outputs.project_json }}
-          GITHUB_USERNAME: ${{ steps.issue.outputs.author }}
-        run: node .github/scripts/app-check-duplicate.js
-
-      - name: Check semantic similarity (if user has previous apps)
-        if: steps.parse.outputs.needs_info != 'true' && steps.duplicate-check-exact.outputs.duplicate_found == '' && steps.duplicate-check-exact.outputs.user_previous_apps != ''
-        id: semantic-check
-        env:
-          PROJECT_JSON: ${{ steps.parse.outputs.project_json }}
-          USER_PREVIOUS_APPS: ${{ steps.duplicate-check-exact.outputs.user_previous_apps }}
-        run: |
-          # Use jq for safe escaping of special characters
-          APP_NAME=$(echo "$PROJECT_JSON" | jq -r '.name')
-          APP_DESC=$(echo "$PROJECT_JSON" | jq -r '.description')
-          
-          # Build comparison message using jq to safely handle special chars
-          PAYLOAD=$(jq -n \
-            --arg name "$APP_NAME" \
-            --arg desc "$APP_DESC" \
-            --arg prev "$USER_PREVIOUS_APPS" '{
-              model: "openai",
-              messages: [
-                { role: "system", content: "Compare app submissions semantically. Return JSON: similarity (0-100 integer), reason (brief explanation). Consider: purpose, target audience, core functionality, category." },
-                { role: "user", content: ("Current submission:\nName: " + $name + "\nDescription: " + $desc + "\n\nUser previous submissions:\n" + $prev + "\n\nScore similarity 0-100 based on purpose, category, target use case, and core functionality.") }
-              ],
-              response_format: { type: "json_object" }
-            }')
-          
-          HTTP_CODE=$(curl -s -w "%{http_code}" -o /tmp/similarity.json -X POST "https://gen.pollinations.ai/v1/chat/completions" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.POLLINATIONS_TOKEN }}" \
-            -d "$PAYLOAD")
-          
-          if [ "$HTTP_CODE" = "200" ]; then
-            SIMILARITY=$(cat /tmp/similarity.json | jq -r '.choices[0].message.content | fromjson | .similarity // 0')
-            SIMILARITY_REASON=$(cat /tmp/similarity.json | jq -r '.choices[0].message.content | fromjson | .reason // ""')
-          else
-            SIMILARITY=0
-            SIMILARITY_REASON="API call failed (HTTP $HTTP_CODE)"
-          fi
-          
-          echo "similarity_score=$SIMILARITY" >> $GITHUB_OUTPUT
-          if [ -n "$SIMILARITY_REASON" ]; then
-            echo "similarity_reason=$SIMILARITY_REASON" >> $GITHUB_OUTPUT
-          fi
-          
-          # Validate SIMILARITY is numeric before comparison
-          if ! [[ "$SIMILARITY" =~ ^[0-9]+$ ]]; then
-            SIMILARITY=0
-          fi
-          
-          if [ "$SIMILARITY" -gt 80 ]; then
-            echo "match_type=semantic_hard" >> $GITHUB_OUTPUT
-          else
-            echo "match_type=" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Consolidate duplicate check results
-        if: steps.parse.outputs.needs_info != 'true'
-        id: duplicate-check
-        run: |
-          # Use exact match results first, then semantic
-          DUPLICATE_FOUND="${{ steps.duplicate-check-exact.outputs.duplicate_found }}"
-          MATCH_TYPE="${{ steps.duplicate-check-exact.outputs.match_type }}"
-          
-          # If no exact match, use semantic results
-          if [ -z "$MATCH_TYPE" ]; then
-            MATCH_TYPE="${{ steps.semantic-check.outputs.match_type }}"
-          fi
-          
-          echo "duplicate_found=$DUPLICATE_FOUND" >> $GITHUB_OUTPUT
-          echo "match_type=$MATCH_TYPE" >> $GITHUB_OUTPUT
-          echo "similarity_score=${{ steps.semantic-check.outputs.similarity_score || '0' }}" >> $GITHUB_OUTPUT
-          echo "similarity_reason=${{ steps.semantic-check.outputs.similarity_reason || '' }}" >> $GITHUB_OUTPUT
-
-      - name: Check Enter registration
-        if: steps.parse.outputs.needs_info != 'true'
-        id: check-enter
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          GITHUB_USERNAME: ${{ steps.issue.outputs.author }}
-        run: |
-          npm install -g wrangler
-          cd enter.pollinations.ai
-          npm install
-          
-          echo "Checking registration for $GITHUB_USERNAME..."
-          
-          if npx tsx scripts/tier-update-user.ts check-user \
-            --githubUsername "$GITHUB_USERNAME" \
-            --env production 2>&1 | grep -q "EXISTS"; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "✅ User $GITHUB_USERNAME is registered"
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "❌ User $GITHUB_USERNAME is not registered"
-          fi
-
-      - name: Check for pollinations.ai credit
-        if: steps.parse.outputs.needs_info != 'true'
-        id: credit-check
-        env:
-          PROJECT_JSON: ${{ steps.parse.outputs.project_json }}
-        run: |
-          APP_URL=$(echo "$PROJECT_JSON" | jq -r '.url // empty')
-          if [ -z "$APP_URL" ]; then
-            echo "has_credit=unknown" >> $GITHUB_OUTPUT
-            echo "⚠️ No URL to check"
-            exit 0
-          fi
-          
-          # Basic SSRF protection - only allow http/https, no localhost
-          if ! echo "$APP_URL" | grep -qE '^https?://' || echo "$APP_URL" | grep -qiE '(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)'; then
-            echo "has_credit=unknown" >> $GITHUB_OUTPUT
-            echo "⚠️ Invalid or internal URL: $APP_URL"
-            exit 0
-          fi
-          
-          # Fetch the page and check for pollinations mention (case-insensitive)
-          CONTENT=$(curl -sL --connect-timeout 5 --max-time 10 "$APP_URL" 2>/dev/null || echo "")
-          if [ -z "$CONTENT" ]; then
-            echo "has_credit=unknown" >> $GITHUB_OUTPUT
-            echo "⚠️ Could not fetch $APP_URL"
-            exit 0
-          fi
-          
-          if echo "$CONTENT" | grep -qi "pollinations"; then
-            echo "has_credit=true" >> $GITHUB_OUTPUT
-            echo "✅ Found pollinations.ai credit on $APP_URL"
-          else
-            echo "has_credit=false" >> $GITHUB_OUTPUT
-            echo "⚠️ No pollinations.ai credit found on $APP_URL"
-          fi
-
-      - name: Suggest adding credit
-        if: steps.credit-check.outputs.has_credit == 'false'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.issues.createComment({
-              owner: context.repo.owner, repo: context.repo.repo,
-              issue_number: ${{ steps.issue.outputs.number }},
-              body: `💡 @${{ steps.issue.outputs.author }}, it would be awesome if you could add a credit to **pollinations.ai** in your app! A small link in the footer or about page helps us grow the community. 🌸\n\nOfficial logos if you'd like to use them:\n- [logo.svg](https://raw.githubusercontent.com/pollinations/pollinations/main/shared/assets/logo.svg)\n- [logo-text.svg](https://raw.githubusercontent.com/pollinations/pollinations/main/shared/assets/logo-text.svg)`
-            });
-
-      - name: Reject hard duplicate
-        if: steps.duplicate-check.outputs.match_type == 'url_exact' || steps.duplicate-check.outputs.match_type == 'repo_exact' || steps.duplicate-check.outputs.match_type == 'name_user_exact' || steps.duplicate-check.outputs.match_type == 'semantic_hard'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const matchType = '${{ steps.duplicate-check.outputs.match_type }}';
-            let reason = '';
-            if (matchType === 'url_exact') reason = 'Same URL already exists in our showcase';
-            else if (matchType === 'repo_exact') reason = 'Same repository already registered by you';
-            else if (matchType === 'name_user_exact') reason = 'You have already submitted this app with the same name';
-            else if (matchType === 'semantic_hard') reason = 'This is >80% semantically similar to your previous submission';
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner, repo: context.repo.repo,
-              issue_number: ${{ steps.issue.outputs.number }},
-              body: `❌ **Duplicate Rejected**\n\n@${{ steps.issue.outputs.author }}, this submission was rejected:\n\n**Reason:** ${reason}\n\nThis is **tier abuse prevention**. Please review our [existing apps](https://pollinations.ai) or submit a genuinely different project.`
-            });
-            
-            // Remove TIER-APP or TIER-APP-INCOMPLETE, add TIER-APP-REJECTED
-            const issue = await github.rest.issues.get({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }} });
-            const oldLabels = issue.data.labels.map(l => l.name).filter(n => n.startsWith('TIER-APP'));
-            for (const label of oldLabels) {
-              try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, name: label }); } catch (e) {}
-            }
-            await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, labels: ['TIER-APP-REJECTED'] });
-            await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, state: 'closed' });
-
-      - name: Handle missing info
-        if: steps.parse.outputs.needs_info == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.issues.createComment({
-              owner: context.repo.owner, repo: context.repo.repo,
-              issue_number: ${{ steps.issue.outputs.number }},
-              body: `👋 @${{ steps.issue.outputs.author }}, I couldn't parse your submission: **${{ steps.parse.outputs.error }}**\n\nPlease update your issue with the missing info.`
-            });
-            // Remove TIER-APP, add TIER-APP-INCOMPLETE
-            try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, name: 'TIER-APP' }); } catch (e) {}
-            await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, labels: ['TIER-APP-INCOMPLETE'] });
-
-      - name: Handle missing registration
-        if: steps.parse.outputs.needs_info != 'true' && steps.check-enter.outputs.exists == 'false'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.issues.createComment({
-              owner: context.repo.owner, repo: context.repo.repo,
-              issue_number: ${{ steps.issue.outputs.number }},
-              body: `👋 @${{ steps.issue.outputs.author }}, thanks for submitting!\n\nPlease **create an account** at [enter.pollinations.ai](https://enter.pollinations.ai) using GitHub login, then comment here. 🌸`
-            });
-            // Remove TIER-APP, add TIER-APP-INCOMPLETE
-            try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, name: 'TIER-APP' }); } catch (e) {}
-            await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, labels: ['TIER-APP-INCOMPLETE'] });
-
-      - name: Correct issue title
-        if: steps.parse.outputs.name != ''
-        uses: actions/github-script@v7
-        env:
-          APP_NAME: ${{ steps.parse.outputs.name }}
-        with:
-          script: |
-            const appName = process.env.APP_NAME;
-            const expectedTitle = `[App Submission] ${appName}`;
-            const issue = await github.rest.issues.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: ${{ steps.issue.outputs.number }}
-            });
-            if (issue.data.title !== expectedTitle) {
-              await github.rest.issues.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: ${{ steps.issue.outputs.number }},
-                title: expectedTitle
-              });
-              console.log(`Updated title to: ${expectedTitle}`);
-            }
-
-      - name: Set validation result
-        id: validate
-        run: |
-          if [ "${{ steps.duplicate-check.outputs.match_type }}" == "url_exact" ] || \
-             [ "${{ steps.duplicate-check.outputs.match_type }}" == "repo_exact" ] || \
-             [ "${{ steps.duplicate-check.outputs.match_type }}" == "name_user_exact" ] || \
-             [ "${{ steps.duplicate-check.outputs.match_type }}" == "semantic_hard" ]; then
-            echo "valid=false" >> $GITHUB_OUTPUT
-          elif [ "${{ steps.parse.outputs.needs_info }}" != "true" ] && [ "${{ steps.check-enter.outputs.exists }}" == "true" ]; then
-            echo "valid=true" >> $GITHUB_OUTPUT
-          else
-            echo "valid=false" >> $GITHUB_OUTPUT
-          fi
-
-  
-  app-create-pr:
-    needs: app-parse-issue
-    if: needs.app-parse-issue.outputs.valid == 'true'
-    runs-on: ubuntu-latest
-    permissions:
       contents: write
       issues: write
       pull-requests: write
+      id-token: write
+      actions: read
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Generate App Token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Get issue number
+        id: issue
+        run: echo "number=${{ github.event.inputs.issue_number || github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Add eyes reaction
+        run: |
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            gh api repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions -f content=eyes || true
+          elif [ "${{ github.event_name }}" = "issues" ]; then
+            gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=eyes || true
+          fi
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Router
+        id: setup
+        run: |
+          BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
+          echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
+
+          mkdir -p $HOME/.claude-code-router
+          cat > $HOME/.claude-code-router/config.json << 'EOF'
+          {
+            "LOG": false,
+            "NON_INTERACTIVE_MODE": true,
+            "API_TIMEOUT_MS": 600000,
+            "Providers": [
+              {
+                "name": "pollinations",
+                "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
+                "api_key": "${CLAUDE_CODE_TOKEN}",
+                "models": ["glm", "claude-large", "claude", "openai-large", "openai"]
+              }
+            ],
+            "Router": {
+              "default": "pollinations,glm",
+              "background": "pollinations,glm",
+              "think": "pollinations,glm",
+              "longContext": "pollinations,claude-large",
+              "longContextThreshold": 60000,
+              "webSearch": "pollinations,openai"
+            }
+          }
+          EOF
+
+          bunx @musistudio/claude-code-router start &
+          until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          CLAUDE_CODE_TOKEN: ${{ secrets.CLAUDE_CODE_TOKEN }}
+
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.token.outputs.token }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Fetch GitHub stars
-        id: stars
+      - name: Install wrangler
+        run: npm install -g wrangler
+
+      - name: Install enter dependencies
+        run: cd enter.pollinations.ai && npm install
+
+      - uses: anthropics/claude-code-action@v1
         env:
-          PROJECT_JSON: ${{ needs.app-parse-issue.outputs.project_json }}
-        run: |
-          REPO_URL=$(echo "$PROJECT_JSON" | jq -r '.repo // empty')
-          if [ -n "$REPO_URL" ]; then
-            OWNER_REPO=$(echo "$REPO_URL" | sed -n 's|.*github.com/\([^/]*/[^/]*\).*|\1|p' | sed 's/\.git$//')
-            if [ -n "$OWNER_REPO" ]; then
-              STARS=$(curl -s -H "User-Agent: Pollinations-Bot" "https://api.github.com/repos/$OWNER_REPO" | jq -r '.stargazers_count // 0')
-              echo "stars=$STARS" >> $GITHUB_OUTPUT
-            fi
-          fi
-
-      - name: Format with AI
-        id: format
-        env:
-          PROJECT_JSON: ${{ needs.app-parse-issue.outputs.project_json }}
-        run: |
-          NAME=$(echo "$PROJECT_JSON" | jq -r '.name')
-          DESC=$(echo "$PROJECT_JSON" | jq -r '.description')
-          
-          PAYLOAD=$(jq -n --arg name "$NAME" --arg desc "$DESC" '{
-            model: "openai-large",
-            messages: [
-              { role: "system", content: "Format app entries. Return JSON: emoji (single creative emoji), description (concise, max 80 chars). Be creative with emoji based on app purpose." },
-              { role: "user", content: ("Name: " + $name + "\nDescription: " + $desc) }
-            ],
-            response_format: { type: "json_object" }
-          }')
-          
-          RESPONSE=$(curl -s -X POST "https://gen.pollinations.ai/v1/chat/completions" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.POLLINATIONS_TOKEN }}" \
-            -d "$PAYLOAD")
-          
-          CONTENT=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty')
-          EMOJI="🚀"; SHORT_DESC=$(echo "$DESC" | head -c 80)
-          if [ -n "$CONTENT" ]; then
-            EMOJI=$(echo "$CONTENT" | jq -r '.emoji // "🚀"')
-            SHORT_DESC=$(echo "$CONTENT" | jq -r '.description // empty')
-            [ -z "$SHORT_DESC" ] && SHORT_DESC=$(echo "$DESC" | head -c 80)
-          fi
-          
-          echo "emoji=$EMOJI" >> $GITHUB_OUTPUT
-          echo "description<<EOF" >> $GITHUB_OUTPUT
-          echo "$SHORT_DESC" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Create PR
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PROJECT_JSON: ${{ needs.app-parse-issue.outputs.project_json }}
-          PROJECT_NAME: ${{ needs.app-parse-issue.outputs.name }}
-          CATEGORY: ${{ needs.app-parse-issue.outputs.category }}
-          ISSUE_NUMBER: ${{ needs.app-parse-issue.outputs.issue_number }}
-          ISSUE_AUTHOR: ${{ needs.app-parse-issue.outputs.issue_author }}
-          ISSUE_AUTHOR_ID: ${{ needs.app-parse-issue.outputs.issue_author_id }}
-          EMOJI: ${{ steps.format.outputs.emoji }}
-          SHORT_DESC: ${{ steps.format.outputs.description }}
-          STARS: ${{ steps.stars.outputs.stars }}
-        run: |
-          SLUG=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
-          BRANCH="auto/app-${ISSUE_NUMBER}-${SLUG}"
-          git checkout -b "$BRANCH"
-
-          URL=$(echo "$PROJECT_JSON" | jq -r '.url // "-"')
-          REPO=$(echo "$PROJECT_JSON" | jq -r '.repo // empty')
-          DISCORD=$(echo "$PROJECT_JSON" | jq -r '.discord // empty')
-          OTHER=$(echo "$PROJECT_JSON" | jq -r '.other // empty')
-          LANGUAGE=$(echo "$PROJECT_JSON" | jq -r '.language // empty')
-          TODAY=$(date +%Y-%m-%d)
-
-          STARS_DISPLAY=""
-          if [ -n "$STARS" ] && [ "$STARS" != "0" ] && [ "$STARS" != "null" ]; then
-            if [ "$STARS" -ge 1000 ]; then
-              STARS_DISPLAY="⭐$((STARS / 1000))k"
-            else
-              STARS_DISPLAY="⭐$STARS"
-            fi
-          fi
-
-          if [ "$URL" != "-" ]; then
-            NAME_DISPLAY="[$PROJECT_NAME]($URL)"
-          else
-            NAME_DISPLAY="$PROJECT_NAME"
-          fi
-
-          # Format: Emoji | Name | Description | Language | Category | GitHub | Repo | Stars | Discord | Other | Submitted
-          export NEW_ROW="| $EMOJI | $NAME_DISPLAY | $SHORT_DESC | $LANGUAGE | $CATEGORY | @$ISSUE_AUTHOR | $REPO | $STARS_DISPLAY | $DISCORD | $OTHER | $TODAY |"
-          node .github/scripts/app-prepend-row.js
-          node .github/scripts/app-update-readme.js
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Add $PROJECT_NAME to $CATEGORY
-
-          Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
-          Fixes #$ISSUE_NUMBER"
-          git push origin "$BRANCH" --force-with-lease
-
-          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number -q '.[0].number')
-          if [ -z "$EXISTING_PR" ]; then
-            PR_BODY="## 🆕 New App: $PROJECT_NAME
-
-          - **Category:** \`$CATEGORY\`
-          - **URL:** $URL
-          - **Description:** $SHORT_DESC"
-
-            [ -n "$REPO" ] && PR_BODY="$PR_BODY
-          - **Repo:** $REPO"
-            [ -n "$DISCORD" ] && PR_BODY="$PR_BODY
-          - **Discord:** $DISCORD"
-            [ -n "$LANGUAGE" ] && PR_BODY="$PR_BODY
-          - **Language:** \`$LANGUAGE\`"
-            [ -n "$OTHER" ] && PR_BODY="$PR_BODY
-          - **Other Contact:** $OTHER"
-
-            SIMILARITY="${{ needs.app-parse-issue.outputs.similarity_score }}"
-            SIMILARITY_REASON="${{ needs.app-parse-issue.outputs.similarity_reason }}"
-            if [ -n "$SIMILARITY" ] && [ "$SIMILARITY" != "null" ] && [ "$SIMILARITY" != "0" ]; then
-              PR_BODY="$PR_BODY
-
-          ---
-
-          ⚠️ **Similarity Report:** ${SIMILARITY}% similar to previous submission(s) from @$ISSUE_AUTHOR"
-              if [ -n "$SIMILARITY_REASON" ] && [ "$SIMILARITY_REASON" != "null" ]; then
-                PR_BODY="$PR_BODY
-          > $SIMILARITY_REASON"
-              fi
-              PR_BODY="$PR_BODY
-
-          *Maintainer: Review if this is legitimate iteration or rebranding.*"
-            fi
-
-            PR_BODY="$PR_BODY
-
-          ---
-
-          Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
-          Fixes #$ISSUE_NUMBER"
-
-            gh pr create \
-              --title "Add $PROJECT_NAME to $CATEGORY" \
-              --body "$PR_BODY" \
-              --label "TIER-APP-REVIEW-PR" \
-              --base main \
-              --head "$BRANCH"
-          fi
-
-      - name: Update issue label to REVIEW
-        uses: actions/github-script@v7
+          ANTHROPIC_BASE_URL: http://localhost:3456
+          GIT_AUTHOR_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
+          GIT_AUTHOR_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
+          GIT_COMMITTER_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
+          GIT_COMMITTER_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         with:
-          script: |
-            const issue = await github.rest.issues.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: ${{ needs.app-parse-issue.outputs.issue_number }}
-            });
-
-            const oldLabels = issue.data.labels
-              .map(l => l.name)
-              .filter(n => n.startsWith('TIER-APP'));
-
-            for (const label of oldLabels) {
-              try {
-                await github.rest.issues.removeLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: ${{ needs.app-parse-issue.outputs.issue_number }},
-                  name: label
-                });
-              } catch (e) {}
-            }
-
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: ${{ needs.app-parse-issue.outputs.issue_number }},
-              labels: ['TIER-APP-REVIEW']
-            });
-
-
-      - name: Comment on issue
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.issues.createComment({
-              owner: context.repo.owner, repo: context.repo.repo,
-              issue_number: ${{ needs.app-parse-issue.outputs.issue_number }},
-              body: `🎉 Thanks @${{ needs.app-parse-issue.outputs.issue_author }}! PR created to add **${{ needs.app-parse-issue.outputs.name }}** to **${{ needs.app-parse-issue.outputs.category }}**.\n\nA maintainer will review shortly. Issue closes automatically when PR merges.`
-            });
+          anthropic_api_key: "ccr-pollinations"
+          github_token: ${{ steps.token.outputs.token }}
+          label_trigger: "TIER-APP"
+          prompt: "/app-review #${{ steps.issue.outputs.number }}"
+          allowed_non_write_users: ${{ github.event.issue.user.login }}
+          claude_args: |
+            --allowedTools Bash,Read,Edit,Write,Glob,Grep,WebFetch
+            --max-turns 30
 
   app-handle-outcome:
     if: |
@@ -622,29 +152,30 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: Generate App Token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
       - name: Handle PR outcome
         uses: actions/github-script@v7
         with:
+          github-token: ${{ steps.token.outputs.token }}
           script: |
             const pr = context.payload.pull_request;
-            
-            // Check if this is a tier app PR (has TIER-APP-REVIEW-PR label)
-            const prLabels = pr.labels.map(l => l.name);
-            if (!prLabels.includes('TIER-APP-REVIEW-PR')) {
-              console.log('Not a tier app PR, skipping');
-              return;
-            }
-            
+
             // Extract issue number from PR body (Fixes #123)
             const issueMatch = pr.body?.match(/Fixes #(\d+)/i);
             if (!issueMatch) {
-              console.log('No linked issue found in PR body');
+              console.log('No linked issue found');
               return;
             }
-            
+
             const issueNumber = parseInt(issueMatch[1]);
             const appName = pr.title.replace(/^Add\s+/, '').replace(/\s+to\s+\w+$/, '');
-            
+
             // Helper to swap labels
             const swapLabel = async (newLabel) => {
               const issue = await github.rest.issues.get({ owner: context.repo.owner, repo: context.repo.repo, issue_number: issueNumber });
@@ -654,18 +185,15 @@ jobs:
               }
               await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: issueNumber, labels: [newLabel] });
             };
-            
+
             if (pr.merged) {
-              // PR merged → TIER-APP-COMPLETE + success comment
               await swapLabel('TIER-APP-COMPLETE');
-              
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,
-                body: `✅ **Congratulations!** Your app **${appName}** is now live on [pollinations.ai](https://pollinations.ai)!\n\nThank you for contributing to the pollinations.ai ecosystem. 🌸`
+                body: `✅ **Congratulations!** Your app **${appName}** is now live on [pollinations.ai](https://pollinations.ai)! 🌸`
               });
-              
               await github.rest.issues.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -673,16 +201,13 @@ jobs:
                 state: 'closed'
               });
             } else {
-              // PR closed without merge → TIER-APP-REJECTED + comment
               await swapLabel('TIER-APP-REJECTED');
-              
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,
-                body: `❌ **Submission Declined**\n\nYour app submission was not approved. Please check the PR comments for feedback from maintainers.\n\nYou're welcome to submit a new app that addresses any concerns raised.`
+                body: `❌ **Submission Declined**\n\nCheck the PR comments for feedback. You're welcome to submit again.`
               });
-              
               await github.rest.issues.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,

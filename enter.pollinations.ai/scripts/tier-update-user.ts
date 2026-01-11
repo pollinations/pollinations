@@ -1,8 +1,8 @@
 /**
  * User Tier Update Script
  *
- * Updates a user's tier in both the D1 database AND Polar subscription.
- * Used by GitHub Actions when app submissions are approved.
+ * Updates a user's Polar subscription tier. D1 tier is updated by Polar webhook.
+ * Used by GitHub Actions when app submissions are approved or spore→seed upgrades.
  *
  * Usage:
  *   npx tsx scripts/tier-update-user.ts update-tier --github-username "john" --tier flower --env production
@@ -91,21 +91,6 @@ function getD1User(env: Environment, githubUsername: string): D1User | null {
     }
 }
 
-function updateD1Tier(
-    env: Environment,
-    githubUsername: string,
-    tier: TierName,
-): boolean {
-    const safeUsername = sanitizeGitHubUsername(githubUsername);
-    const sql = `UPDATE user SET tier = '${tier}' WHERE LOWER(github_username) = LOWER('${safeUsername}');`;
-    try {
-        queryD1(env, sql);
-        return true;
-    } catch {
-        return false;
-    }
-}
-
 // Production tier product IDs (must match manage-polar.ts)
 const TIER_PRODUCT_IDS = {
     production: {
@@ -134,8 +119,7 @@ async function updatePolarSubscription(
     tier: TierName,
 ): Promise<{ success: boolean; error?: string; polarTier?: string }> {
     if (!process.env.POLAR_ACCESS_TOKEN) {
-        console.warn("⚠️  POLAR_ACCESS_TOKEN not set - skipping Polar update");
-        return { success: true }; // Not an error, just skipped
+        return { success: false, error: "POLAR_ACCESS_TOKEN not set" };
     }
 
     const polar = new Polar({
@@ -263,21 +247,8 @@ const updateTierCommand = command({
             console.log(`\n⬆️  Upgrading: ${currentTier} → ${targetTier}`);
         }
 
-        // Step 2: Update D1 tier
+        // Update Polar subscription only (D1 tier is updated by Polar webhook)
         if (!opts.dryRun) {
-            console.log(`\n📝 Updating D1 tier to '${targetTier}'...`);
-            const dbUpdated = updateD1Tier(
-                env,
-                opts.githubUsername,
-                targetTier,
-            );
-            if (!dbUpdated) {
-                console.error(`❌ Failed to update D1 database`);
-                process.exit(1);
-            }
-            console.log(`✅ D1 tier updated`);
-
-            // Step 3: Update Polar subscription (if token available)
             console.log(`\n🌸 Updating Polar subscription...`);
             const polarResult = await updatePolarSubscription(
                 env,
@@ -285,13 +256,12 @@ const updateTierCommand = command({
                 targetTier,
             );
             if (!polarResult.success) {
-                // Not fatal - user may not have a Polar subscription yet
-                console.warn(
-                    `⚠️  Polar update failed: ${polarResult.error || "unknown error"}`,
+                console.error(
+                    `❌ Polar update failed: ${polarResult.error || "unknown error"}`,
                 );
+                process.exit(1);
             }
         } else {
-            console.log(`\n📝 Would update D1 tier to '${targetTier}'`);
             console.log(
                 `📝 Would update Polar subscription to '${targetTier}'`,
             );

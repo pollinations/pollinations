@@ -14,7 +14,7 @@ from spandrel import ImageModelDescriptor, ModelLoader
 import time
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 import threading
 import warnings
 from contextlib import asynccontextmanager
@@ -84,18 +84,46 @@ MODEL_CACHE = "model_cache"
 SPAN_MODEL_PATH = "model_cache/span/2x-NomosUni_span_multijpg.pth"
 SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
 UPSCALE_FACTOR = 2
-MAX_GEN_PIXELS = 768 * 768  # Generate natively up to this size (limited for IO.net deployment)
-MAX_FINAL_PIXELS = 768 * 768 * 4  # Max output size with 2x upscaling
-ENABLE_SPAN_UPSCALER = True  # Feature flag for SPAN upscaling
+MAX_GEN_PIXELS = 768 * 768 
+MAX_FINAL_PIXELS = 768 * 768 * 4 
+ENABLE_SPAN_UPSCALER = True  
 
 generate_lock = threading.Lock()
 
 
 class ImageRequest(BaseModel):
     prompts: list[str] = Field(default=["a photo of an astronaut riding a horse on mars"], min_length=1)
-    width: int = Field(default=1024, le=4096)
-    height: int = Field(default=1024, le=4096)
+    width: int = Field(default=1024, ge=256, le=4096)
+    height: int = Field(default=1024, ge=256, le=4096)
     seed: int | None = None
+    
+    @field_validator('width', 'height')
+    @classmethod
+    def validate_dimensions_range(cls, v: int, info: ValidationInfo) -> int:
+        """Validate dimension is in valid range"""
+        if v < 256:
+            raise ValueError(f"Dimension {v}px is below minimum 256px")
+        if v > 4096:
+            raise ValueError(f"Dimension {v}px exceeds maximum 4096px")
+        return v
+    
+    @field_validator('height')
+    @classmethod
+    def validate_total_pixels(cls, height: int, info: ValidationInfo) -> int:
+        """Validate total pixel count doesn't exceed MAX_FINAL_PIXELS"""
+        if 'width' in info.data:
+            width = info.data['width']
+            total_pixels = width * height
+            if total_pixels > MAX_FINAL_PIXELS:
+                max_h = MAX_FINAL_PIXELS // width
+                max_pixels_millions = MAX_FINAL_PIXELS / 1_000_000
+                raise ValueError(
+                    f"Requested {width}x{height} = {total_pixels:,} pixels exceeds limit of {MAX_FINAL_PIXELS:,} pixels ({max_pixels_millions:.2f}M). "
+                    f"For width={width}px, maximum height is {max_h}px. "
+                    f"Example valid sizes: {min(4096, width)}x{min(4096, height)}, 2048x2048, 1024x1024. "
+                    f"Keep aspect ratio < 8:1 for best results."
+                )
+        return height
 
 
 def calc_time(start, end, msg):
@@ -104,43 +132,60 @@ def calc_time(start, end, msg):
 
 
 def calculate_generation_dimensions(requested_width: int, requested_height: int) -> tuple[int, int, int, int, bool]:
-    """Calculate generation dimensions with SPAN 2x upscaling support.
+    logger.debug(f"[DIM] Requested: {requested_width}x{requested_height} ({requested_width * requested_height:,} pixels)")
     
-    Returns: (gen_w, gen_h, final_w, final_h, should_upscale)
-    - Cap final size to MAX_FINAL_PIXELS (preserving aspect ratio)
-    - If request > MAX_GEN_PIXELS: generate at half resolution, then upscale 2x
-    """
-    # Cap final pixels to MAX_FINAL_PIXELS, preserving aspect ratio
+    # STEP 1: Cap final size to MAX_FINAL_PIXELS, preserving aspect ratio exactly
     final_w, final_h = requested_width, requested_height
     total_pixels = final_w * final_h
+    
     if total_pixels > MAX_FINAL_PIXELS:
         scale = math.sqrt(MAX_FINAL_PIXELS / total_pixels)
-        final_w = int(final_w * scale)
-        final_h = int(final_h * scale)
+        final_w = round(final_w * scale)
+        final_h = round(final_h * scale)
+        logger.debug(f"[DIM] Capped to MAX_FINAL_PIXELS: {final_w}x{final_h} ({final_w * final_h:,} pixels)")
     
+    # STEP 2: Determine if upscaling needed
     final_pixels = final_w * final_h
+    should_upscale = final_pixels > MAX_GEN_PIXELS
+    logger.debug(f"[DIM] final_pixels={final_pixels:,}, MAX_GEN_PIXELS={MAX_GEN_PIXELS:,}, should_upscale={should_upscale}")
     
-    if final_pixels > MAX_GEN_PIXELS:
-        # Large request: generate at half resolution, then upscale 2x
+    # STEP 3: Calculate generation dimensions
+    if should_upscale:
+        # Generate at half resolution for upscaling
         gen_w = final_w // UPSCALE_FACTOR
         gen_h = final_h // UPSCALE_FACTOR
-        should_upscale = True
+        logger.debug(f"[DIM] Halved for upscaling: {gen_w}x{gen_h}")
     else:
-        # Small request: generate at full resolution, no upscaling
         gen_w, gen_h = final_w, final_h
-        should_upscale = False
     
-    # Align to 16px multiples (required by model)
-    if gen_w % 16 != 0:
-        gen_w = math.ceil(gen_w / 16) * 16
-    if gen_h % 16 != 0:
-        gen_h = math.ceil(gen_h / 16) * 16
+    # STEP 4: Align to 16px multiples (model requirement), using round to minimize distortion
+    gen_w_aligned = round(gen_w / 16) * 16
+    gen_h_aligned = round(gen_h / 16) * 16
+    if gen_w_aligned != gen_w or gen_h_aligned != gen_h:
+        logger.debug(f"[DIM] Aligned to 16px: {gen_w}x{gen_h} -> {gen_w_aligned}x{gen_h_aligned}")
+    gen_w, gen_h = gen_w_aligned, gen_h_aligned
     
-    # Minimum generation size
-    gen_w = max(gen_w, 256)
-    gen_h = max(gen_h, 256)
+    # STEP 5: Enforce minimum generation size (ensures model doesn't break)
+    min_size = 256
+    if gen_w < min_size or gen_h < min_size:
+        logger.warning(f"[DIM] Generation size {gen_w}x{gen_h} below minimum {min_size}x{min_size}, clamping")
+        gen_w = max(gen_w, min_size)
+        gen_h = max(gen_h, min_size)
     
-    return gen_w, gen_h, final_w, final_h, should_upscale
+    # STEP 6: Recalculate final dimensions from generation dimensions (what user actually gets)
+    # If upscaled: final = generation * 2, then cropped to requested aspect ratio
+    # If not upscaled: final = generation
+    if should_upscale:
+        final_w_actual = gen_w * UPSCALE_FACTOR
+        final_h_actual = gen_h * UPSCALE_FACTOR
+    else:
+        final_w_actual = gen_w
+        final_h_actual = gen_h
+    
+    logger.debug(f"[DIM] Final calculation: gen={gen_w}x{gen_h}, upscale={should_upscale} -> final_actual={final_w_actual}x{final_h_actual}")
+    logger.info(f"[DIM] Dimensions: requested={requested_width}x{requested_height} -> gen={gen_w}x{gen_h} -> final={final_w_actual}x{final_h_actual} (upscale={should_upscale})")
+    
+    return gen_w, gen_h, final_w_actual, final_h_actual, should_upscale
 
 
 # Global model instances (initialized in lifespan)
@@ -302,6 +347,30 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     gen_w, gen_h, final_w, final_h, should_upscale = calculate_generation_dimensions(request.width, request.height)
     logger.info(f"Requested: {request.width}x{request.height} -> Generation: {gen_w}x{gen_h} -> Final: {final_w}x{final_h} (upscale: {should_upscale})")
     
+    # Validate calculated dimensions - fail fast with informative errors
+    if gen_w < 256 or gen_h < 256:
+        logger.error(f"[VALIDATE] Extreme aspect ratio detected. Requested {request.width}x{request.height} calculated to generation size {gen_w}x{gen_h} (below 256px minimum)")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Request dimensions {request.width}x{request.height} result in generation size {gen_w}x{gen_h}, which is below the minimum 256x256. "
+                   f"Aspect ratio may be too extreme. Try a more balanced aspect ratio or larger dimensions. "
+                   f"Max: 2048x2048 or similar aspect-balanced sizes up to 2359296 total pixels."
+        )
+    
+    if gen_w % 16 != 0 or gen_h % 16 != 0:
+        logger.error(f"[VALIDATE] Generation dimensions not 16px aligned (internal error): {gen_w}x{gen_h}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Internal error: generation dimensions {gen_w}x{gen_h} not properly aligned"
+        )
+    
+    if final_w <= 0 or final_h <= 0:
+        logger.error(f"[VALIDATE] Invalid final dimensions calculated: {final_w}x{final_h}")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Request resulted in invalid dimensions {final_w}x{final_h}. Please try different dimensions."
+        )
+    
     try:
         # Lock entire pipeline: generation + upscaling (to prevent concurrent GPU ops)
         with generate_lock:
@@ -316,6 +385,7 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
                 )
             image = output.images[0]
             image_np = np.array(image)
+            logger.debug(f"[GEN] Generated image shape: {image_np.shape}")
             
             # Check for NSFW content
             has_nsfw, concepts = check_nsfw(image_np, safety_checker_adj=0.0)
@@ -327,15 +397,36 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
             if should_upscale and ENABLE_SPAN_UPSCALER:
                 logger.info(f"Upscaling {gen_w}x{gen_h} -> {gen_w*UPSCALE_FACTOR}x{gen_h*UPSCALE_FACTOR} with SPAN")
                 result = upscale_with_span(image_np)
+                logger.debug(f"[UPSCALE] After upscaling shape: {result.shape}")
             else:
                 result = image_np
             
-            # Crop to final dimensions
+            # Validate result dimensions before cropping
             h_current, w_current = result.shape[:2]
-            if h_current > final_h or w_current > final_w:
-                y_start = (h_current - final_h) // 2
-                x_start = (w_current - final_w) // 2
-                result = result[y_start:y_start + final_h, x_start:x_start + final_w]
+            logger.debug(f"[CROP] Current result: {w_current}x{h_current}, target: {final_w}x{final_h}")
+            
+            if w_current <= 0 or h_current <= 0:
+                logger.error(f"[CROP] Invalid result dimensions after upscaling: {w_current}x{h_current}")
+                raise HTTPException(status_code=500, detail="Invalid result dimensions")
+            
+            # Crop to final dimensions (center-crop to preserve content)
+            if w_current > final_w or h_current > final_h:
+                y_start = max(0, (h_current - final_h) // 2)
+                x_start = max(0, (w_current - final_w) // 2)
+                y_end = min(h_current, y_start + final_h)
+                x_end = min(w_current, x_start + final_w)
+                result = result[y_start:y_end, x_start:x_end]
+                logger.debug(f"[CROP] Cropped: [{y_start}:{y_end}, {x_start}:{x_end}] -> shape {result.shape}")
+            
+            # Verify output dimensions match final dimensions exactly
+            h_final, w_final = result.shape[:2]
+            if w_final != final_w or h_final != final_h:
+                logger.error(f"[VALIDATE] Output dimension mismatch: got {w_final}x{h_final}, expected {final_w}x{final_h}. This indicates a processing error.")
+                raise HTTPException(
+                    status_code=500, 
+                    detail=f"Generated image has unexpected dimensions {w_final}x{h_final}, expected {final_w}x{final_h}. "
+                           f"This may indicate a GPU memory or model issue. Please try smaller dimensions or retry."
+                )
             
             upscaled_image = Image.fromarray(result)
         
@@ -343,6 +434,8 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
         img_byte_arr = io.BytesIO()
         upscaled_image.save(img_byte_arr, format='JPEG', quality=95)
         img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
+        
+        logger.info(f"[SUCCESS] Generated {upscaled_image.width}x{upscaled_image.height} image")
         response_content = [{
             "image": img_base64,
             "has_nsfw_concept": False,

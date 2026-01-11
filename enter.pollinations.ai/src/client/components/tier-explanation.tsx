@@ -134,9 +134,7 @@ export const TierExplanation: FC = () => {
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <p className={requirementLabelStyle}>To unlock</p>
-                        <p className="text-xs text-gray-500">
-                            Pollinating the ecosystem
-                        </p>
+                        <p className="text-xs text-gray-500">Coming soon</p>
                     </div>
                 </div>
             </div>

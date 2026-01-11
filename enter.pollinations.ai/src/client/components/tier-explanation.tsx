@@ -11,7 +11,7 @@ const SeedTooltipContent = () => (
                 <tr className="border-b border-gray-100">
                     <td className="py-1 text-gray-600">Account age</td>
                     <td className="py-1 text-right text-gray-800">
-                        0.5pt/month (max 5)
+                        0.5pt/month (max 6)
                     </td>
                 </tr>
                 <tr className="border-b border-gray-100">
@@ -29,7 +29,7 @@ const SeedTooltipContent = () => (
                 <tr>
                     <td className="py-1 text-gray-600">GitHub stars</td>
                     <td className="py-1 text-right text-gray-800">
-                        0.1pt each (max 3)
+                        0.1pt each (max 5)
                     </td>
                 </tr>
             </tbody>

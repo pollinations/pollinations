@@ -21,18 +21,18 @@ concurrency:
 jobs:
   app-review:
     if: |
-      github.event_name != 'pull_request_target' &&
-      (contains(github.event.issue.labels.*.name, 'TIER-APP') ||
-       contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE')) &&
-      (github.event_name == 'workflow_dispatch' ||
-       github.event_name == 'issues' ||
-       (github.event_name == 'issue_comment' &&
-        contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE') &&
-        github.event.comment.user.type != 'Bot')) &&
-      !contains(github.event.issue.labels.*.name, 'TIER-APP-REVIEW') &&
-      !contains(github.event.issue.labels.*.name, 'TIER-APP-COMPLETE') &&
-      !contains(github.event.issue.labels.*.name, 'TIER-APP-REJECTED') &&
-      github.event.issue.state == 'open'
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name != 'pull_request_target' &&
+       (contains(github.event.issue.labels.*.name, 'TIER-APP') ||
+        contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE')) &&
+       (github.event_name == 'issues' ||
+        (github.event_name == 'issue_comment' &&
+         contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE') &&
+         github.event.comment.user.type != 'Bot')) &&
+       !contains(github.event.issue.labels.*.name, 'TIER-APP-REVIEW') &&
+       !contains(github.event.issue.labels.*.name, 'TIER-APP-COMPLETE') &&
+       !contains(github.event.issue.labels.*.name, 'TIER-APP-REJECTED') &&
+       github.event.issue.state == 'open')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -40,6 +40,8 @@ jobs:
       pull-requests: write
       id-token: write
       actions: read
+    env:
+      CLAUDE_CODE_TOKEN: ${{ secrets.CLAUDE_CODE_TOKEN }}
 
     steps:
       - name: Generate App Token
@@ -73,37 +75,13 @@ jobs:
         run: |
           BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
-
           mkdir -p $HOME/.claude-code-router
-          cat > $HOME/.claude-code-router/config.json << 'EOF'
-          {
-            "LOG": false,
-            "NON_INTERACTIVE_MODE": true,
-            "API_TIMEOUT_MS": 600000,
-            "Providers": [
-              {
-                "name": "pollinations",
-                "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
-                "api_key": "${CLAUDE_CODE_TOKEN}",
-                "models": ["glm", "claude-large", "claude", "openai-large", "openai"]
-              }
-            ],
-            "Router": {
-              "default": "pollinations,glm",
-              "background": "pollinations,glm",
-              "think": "pollinations,glm",
-              "longContext": "pollinations,claude-large",
-              "longContextThreshold": 60000,
-              "webSearch": "pollinations,openai"
-            }
-          }
-          EOF
+          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"${CLAUDE_CODE_TOKEN}","models":["glm","gemini-search"]}],"Router":{"default":"pollinations,glm","webSearch":"pollinations,gemini-search"}}' > $HOME/.claude-code-router/config.json
 
           bunx @musistudio/claude-code-router start &
           until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
-          CLAUDE_CODE_TOKEN: ${{ secrets.CLAUDE_CODE_TOKEN }}
 
       - uses: actions/checkout@v4
         with:

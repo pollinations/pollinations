@@ -122,6 +122,7 @@ jobs:
             5. Create or update the PR
 
             Do NOT use the Skill tool - directly follow the instructions in the SKILL.md file.
+          claude_args: "--dangerously-skip-permissions"
           show_full_output: true
 
   app-handle-outcome:

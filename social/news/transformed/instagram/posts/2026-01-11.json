@@ -1,0 +1,48 @@
+{
+  "date": "2026-01-11",
+  "generated_at": "2026-01-11T16:09:06.338173+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art",
+  "linked_images": false,
+  "strategy_reasoning": "This post leverages the 'Spore to Seed' feature to create a strong visual narrative about growth, fitting our nature-based branding perfectly. Using the 'Cozy Pixel Art' aesthetic makes technical updates (refactoring, workflows) feel approachable and warm, gamifying the development progress like a retro RPG.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20scene%20showing%20a%20plant%20growth%20cycle.%20Left%3A%20a%20tiny%20pixelated%20spore%20dot.%20Middle%3A%20an%20arrow.%20Right%3A%20a%20healthy%20green%20seedling%20with%20two%20leaves.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20gradient%20background.%20Chunky%208-bit%20style%2C%20warm%20lighting%2C%20lo-fi%20aesthetic.%20Text%20in%20pixel%20font%20at%20top%3A%20%27LEVEL%20UP%3A%20SPORE%20TO%20SEED%27.%20Wholesome%2C%20nostalgic%20gaming%20vibe.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1998984386",
+      "prompt": "Cozy pixel art scene showing a plant growth cycle. Left: a tiny pixelated spore dot. Middle: an arrow. Right: a healthy green seedling with two leaves. Soft lime green (#ecf874) and lavender gradient background. Chunky 8-bit style, warm lighting, lo-fi aesthetic. Text in pixel font at top: 'LEVEL UP: SPORE TO SEED'. Wholesome, nostalgic gaming vibe.",
+      "description": "Visualizing the new auto-upgrade workflow as a game level-up mechanic."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20cute%20tiny%208-bit%20robot%20character%20%28representing%20Claude%20AI%29%20holding%20a%20pixelated%20broom%2C%20sweeping%20away%20messy%20dust%20piles%20labeled%20%27old%20code%27.%20Set%20in%20a%20cozy%20pixel%20art%20garden%20shed%20with%20warm%20yellow%20lighting.%20Soft%20pastel%20colors%2C%20lime%20green%20%28%23ecf874%29%20accents.%20Isometric%20view%2C%20chunky%20pixels%20like%20the%20game%20Unpacking.%20Text%20in%20pixel%20font%3A%20%27TIDYING%20THE%20WORKFLOW%27.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1481630273",
+      "prompt": "A cute tiny 8-bit robot character (representing Claude AI) holding a pixelated broom, sweeping away messy dust piles labeled 'old code'. Set in a cozy pixel art garden shed with warm yellow lighting. Soft pastel colors, lime green (#ecf874) accents. Isometric view, chunky pixels like the game Unpacking. Text in pixel font: 'TIDYING THE WORKFLOW'.",
+      "description": "Illustrating the refactoring and cleanup work done with Claude Code."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%20game%20UI%20%27Quest%20Log%27%20screen.%20Beige%20pixel-art%20parchment%20background.%20List%20of%20completed%20quests%20with%20green%20checkmarks%3A%20%27Auto-Upgrade%20Users%27%2C%20%27Smarter%20App%20Reviews%27%2C%20%27Fix%20Bug%20Triggers%27.%20Surrounded%20by%20decorative%20pixel%20vines%20and%20flowers.%20Lime%20green%20%28%23ecf874%29%20highlight%20color.%208-bit%20font.%20Nostalgic%20RPG%20menu%20style.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=786727691",
+      "prompt": "Retro game UI 'Quest Log' screen. Beige pixel-art parchment background. List of completed quests with green checkmarks: 'Auto-Upgrade Users', 'Smarter App Reviews', 'Fix Bug Triggers'. Surrounded by decorative pixel vines and flowers. Lime green (#ecf874) highlight color. 8-bit font. Nostalgic RPG menu style.",
+      "description": "A summary of the technical fixes presented as completed quests."
+    }
+  ],
+  "caption": "Level up! 🌱✨ We've been tending the digital garden and things are blooming.\n\nBig news for our creators: We added a new auto-upgrade workflow! Legit Spore users now get automatically promoted to Seed tier (that means daily credits! 🍯).\n\nPlus, we did some spring cleaning with our code helper (thanks Claude! 🤖) to make app reviews smoother and faster. Less bugs, more flowers.\n\nBuild something beautiful today. Link in bio to start generating! 🌸\n\n#pollinations #opensource #pixelart #indiedev #cozyvibes #aiart #genztech #buildinpublic",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#indiedev",
+    "#cozyvibes",
+    "#aiart",
+    "#genztech",
+    "#buildinpublic"
+  ],
+  "alt_text": "A series of cozy 8-bit pixel art images. 1) A growth chart showing a spore turning into a seedling with lime green accents. 2) A cute pixel robot sweeping a garden shed. 3) A retro RPG quest log showing completed updates.",
+  "pr_references": [
+    "#7047",
+    "#6878",
+    "#7040",
+    "#7039",
+    "#7036",
+    "#7020",
+    "#7002",
+    "#7010"
+  ]
+}

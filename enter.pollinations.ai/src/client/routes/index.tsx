@@ -14,6 +14,7 @@ import { TierPanel } from "../components/tier-panel.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
 import { Pricing } from "../components/pricing/index.ts";
+import { UsageGraph } from "../components/usage-graph.tsx";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 
@@ -226,6 +227,7 @@ function RouteComponent() {
                         packBalance={packBalance}
                     />
                 </div>
+                <UsageGraph apiKeys={apiKeys} />
                 {tierData && (
                     <div className="flex flex-col gap-2">
                         <div className="flex flex-col sm:flex-row justify-between gap-3">

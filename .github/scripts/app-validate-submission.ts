@@ -117,11 +117,15 @@ async function main(): Promise<void> {
           repo: result.repo_url || ''
         });
 
-        const dupCmd = `PROJECT_JSON='${projectJson.replace(/'/g, "\\'")}' GITHUB_USERNAME="${ISSUE_AUTHOR}" node .github/scripts/app-check-duplicate.js`;
-        const dupOutput = execSync(dupCmd, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
+        const dupCmd = `GITHUB_USERNAME="${ISSUE_AUTHOR}" PROJECT_JSON='${projectJson.replace(/'/g, "\\'")}' npx ts-node .github/scripts/app-check-duplicate.ts`;
+        const dupOutput = execSync(dupCmd, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
         const dupResult = JSON.parse(dupOutput);
 
-        result.checks.duplicate = dupResult;
+        result.checks.duplicate = {
+          isDuplicate: dupResult.isDuplicate,
+          matchType: dupResult.matchType || undefined,
+          reason: dupResult.reason || undefined
+        };
 
         if (dupResult.isDuplicate && ['url_exact', 'repo_exact', 'name_user_exact'].includes(dupResult.matchType)) {
           result.valid = false;

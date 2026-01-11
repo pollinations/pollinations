@@ -8,20 +8,18 @@ body:
       value: |
         # Submit Your App to pollinations.ai
         
-        Thanks for submitting your app! Fill out the form below and we'll review it for the [Official Showcase](https://pollinations.ai/apps).
-
+        > Thanks for submitting your app! Fill out the form below and we'll review it for the [Official Showcase](https://pollinations.ai/apps).
         ---
-
-        **✅ Requirements**
+        ## Requirements
         - Have an account at [enter.pollinations.ai](https://enter.pollinations.ai) (sign up with GitHub)
         - Your app must use the pollinations.ai API
 
-        **💡 Credit pollinations.ai** *(optional but appreciated)*
+        ## Credit pollinations.ai *(optional but appreciated)*
         - Link to [pollinations.ai](https://pollinations.ai) in your frontend/README
         - Official logos: [`Pollinations Logo White`](https://raw.githubusercontent.com/pollinations/pollinations/main/assets/logo.svg) / [`Pollinations Logo Text White`](https://raw.githubusercontent.com/pollinations/pollinations/main/assets/logo-text.svg)
         - Official Badge: [`Built With Pollinations`](https://img.shields.io/badge/Built%20with-Pollinations-8a2be2?style=for-the-badge&logo=data:image/svg+xml,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%20124%20124%22%3E%3Ccircle%20cx%3D%2262%22%20cy%3D%2262%22%20r%3D%2262%22%20fill%3D%22%23ffffff%22/%3E%3C/svg%3E&logoColor=white&labelColor=6a0dad)
         ---
-        *Your GitHub username will be credited as the app author.*
+        **Your GitHub username will be credited as the `App Author`.**
 
   - type: input
     id: app-name
@@ -90,6 +88,6 @@ body:
   - type: input
     id: other-contact
     attributes:
-      label: Other Contact (optional)
-      description: Any other way to reach you (Twitter/X, Instagram, website, etc.)
+      label: Email / Other Contact (optional)
+      description: Any other way to reach you (Email, Twitter/X, Instagram, website, etc.)
       placeholder: "e.g., https://twitter.com/yourhandle"

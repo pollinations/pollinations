@@ -1,25 +1,3 @@
-#!/usr/bin/env node
-
-/**
- * Check for duplicate app submissions in APPS.md
- *
- * This script replaces fragile bash string parsing that breaks on special characters
- * (single quotes, double quotes, backticks, dollar signs, etc.)
- *
- * Usage: node app-check-duplicate.js
- *
- * Environment variables:
- *   PROJECT_JSON - JSON string with app submission data (name, url, repo, description)
- *   GITHUB_USERNAME - GitHub username of the submitter
- *
- * Output (to GITHUB_OUTPUT):
- *   duplicate_found - file where duplicate was found (empty if none)
- *   match_type - type of match: url_exact, repo_exact, name_user_exact
- *   similarity_score - semantic similarity score (0-100)
- *   similarity_reason - explanation of similarity
- *   user_previous_apps - JSON array of user's previous app submissions
- */
-
 const fs = require("fs");
 
 // Parse environment variables
@@ -170,7 +148,7 @@ function checkNameUserMatch(apps, targetName, username) {
             .trim();
         return (
             normalizedApp === normalizedTarget &&
-            app.github.toLowerCase() === username.toLowerCase()
+            app.github.toLowerCase().trim().replace(/^@/, "") === username.toLowerCase().trim().replace(/^@/, "")
         );
     });
 }

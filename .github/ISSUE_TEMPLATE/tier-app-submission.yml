@@ -19,6 +19,7 @@ body:
         **💡 Credit pollinations.ai** *(optional but appreciated)*
         - Link to [pollinations.ai](https://pollinations.ai) in your frontend/README
         - Official logos: [`Pollinations Logo White`](https://raw.githubusercontent.com/pollinations/pollinations/main/assets/logo.svg) / [`Pollinations Logo Text White`](https://raw.githubusercontent.com/pollinations/pollinations/main/assets/logo-text.svg)
+        - Official Badge: [`Built With Pollinations`](https://img.shields.io/badge/Built%20with-Pollinations-8a2be2?style=for-the-badge&logo=data:image/svg+xml,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%20124%20124%22%3E%3Ccircle%20cx%3D%2262%22%20cy%3D%2262%22%20r%3D%2262%22%20fill%3D%22%23ffffff%22/%3E%3C/svg%3E&logoColor=white&labelColor=6a0dad)
         ---
         *Your GitHub username will be credited as the app author.*
 
@@ -38,7 +39,7 @@ body:
       description: Please provide a brief description of your app and how it uses pollinations.ai
       placeholder: "Describe what your app does and how it integrates with pollinations.ai..."
     validations:
-      required: true
+      required: false
 
   - type: input
     id: app-url

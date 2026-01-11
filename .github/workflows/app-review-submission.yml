@@ -133,16 +133,11 @@ jobs:
         with:
           anthropic_api_key: "ccr-pollinations"
           github_token: ${{ steps.token.outputs.token }}
-          direct_prompt: "/app-review #${{ steps.issue.outputs.number }}"
-          allowed_tools: |
-            Bash
-            Read
-            Edit
-            Write
-            Glob
-            Grep
-            WebFetch
-          timeout_minutes: 10
+          prompt: "/app-review #${{ steps.issue.outputs.number }}"
+          allowed_non_write_users: ${{ github.event.issue.user.login }}
+          claude_args: |
+            --allowedTools Bash,Read,Edit,Write,Glob,Grep,WebFetch
+            --max-turns 30
 
   app-handle-outcome:
     if: |

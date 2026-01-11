@@ -2,10 +2,10 @@
 Phase 1: Simple points-based validation.
 
 Formula:
-  - GitHub account age: 0.5 pt/month (max 8, so 16 months to max)
-  - Commits (any repo): 0.1 pt each (max 1)
+  - GitHub account age: 0.5 pt/month (max 5, so 10 months to max)
+  - Commits (any repo): 0.1 pt each (max 2)
   - Public repos: 0.5 pt each (max 1)
-  - Stars (total across repos): 0.1 pt each (max 2)
+  - Stars (total across repos): 0.1 pt each (max 3)
   - Threshold: >= 10 pts
 
 Fully automatic - no red flags, no manual review.
@@ -26,10 +26,10 @@ BATCH_SIZE = 50
 
 # Scoring config: each metric has a multiplier and max points
 SCORING = [
-    {"field": "age_days", "multiplier": 0.5/30, "max": 8.0},  # 0.5pt/month, max 8 (16 months)
-    {"field": "commits",  "multiplier": 0.1,  "max": 1.0},  # 0.1pt each, max 1
+    {"field": "age_days", "multiplier": 0.5/30, "max": 5.0},  # 0.5pt/month, max 5 (10 months)
+    {"field": "commits",  "multiplier": 0.1,  "max": 2.0},  # 0.1pt each, max 2
     {"field": "repos",    "multiplier": 0.5,  "max": 1.0},  # 0.5pt each, max 1
-    {"field": "stars",    "multiplier": 0.1,  "max": 2.0},  # 0.1pt each, max 2
+    {"field": "stars",    "multiplier": 0.1,  "max": 3.0},  # 0.1pt each, max 3
 ]
 THRESHOLD = 10.0
 

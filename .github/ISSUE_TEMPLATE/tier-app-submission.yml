@@ -53,7 +53,7 @@ body:
   - type: input
     id: github-repo
     attributes:
-      label: GitHub Repository URL
+      label: GitHub Open Source Repository URL
       description: Provide a link to your app's GitHub repository (if available)
       placeholder: "https://github.com/your-repo"
 
@@ -70,13 +70,13 @@ body:
       label: App Category
       description: Select the category under which your app should be listed
       options:
-        - chat
-        - creative
-        - games
-        - hackAndBuild
-        - learn
-        - socialBots
-        - vibeCoding
+        - Creative
+        - Chat
+        - Games
+        - Dev Tools
+        - Vibes
+        - Social Bots
+        - Learn
     validations:
       required: true
 

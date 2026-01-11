@@ -15,6 +15,7 @@ import json
 import os
 import random
 import time
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 
@@ -69,8 +70,8 @@ def score_user(data: dict | None, username: str) -> dict:
     return {"username": username, "approved": approved, "reason": f"{score:.1f} pts"}
 
 
-def fetch_batch(usernames: list[str]) -> list[dict]:
-    """Fetch and score a batch of users. Simple synchronous request."""
+def fetch_batch(usernames: list[str], retries: int = 3) -> list[dict]:
+    """Fetch and score a batch of users. Simple synchronous request with retry."""
     query = build_query(usernames)
     req = urllib.request.Request(
         GITHUB_GRAPHQL,
@@ -80,8 +81,17 @@ def fetch_batch(usernames: list[str]) -> list[dict]:
             "Content-Type": "application/json",
         },
     )
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        data = json.loads(resp.read())
+    
+    for attempt in range(retries):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read())
+            break
+        except urllib.error.HTTPError as e:
+            if attempt < retries - 1 and e.code in (502, 503, 504):
+                time.sleep(5 * (attempt + 1))  # 5s, 10s, 15s backoff
+                continue
+            raise
 
     results = []
     for i, username in enumerate(usernames):

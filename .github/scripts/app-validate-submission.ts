@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env npx ts-node
 /**
  * Validates app submission before Claude processes it.
  *
@@ -10,16 +10,49 @@
  * Outputs JSON with validation results.
  *
  * Usage:
- *   ISSUE_NUMBER=123 ISSUE_AUTHOR=username node app-validate-submission.js
+ *   ISSUE_NUMBER=123 ISSUE_AUTHOR=username npx ts-node app-validate-submission.ts
  */
 
-const { execSync } = require('child_process');
+import { execSync } from 'child_process';
+
+interface RegistrationCheck {
+  registered: boolean;
+  username?: string;
+  error?: string;
+}
+
+interface DuplicateCheck {
+  isDuplicate?: boolean;
+  matchType?: string;
+  reason?: string;
+  error?: string;
+}
+
+interface ExistingPR {
+  number: number;
+  headRefName: string;
+  url: string;
+}
+
+interface ValidationResult {
+  valid: boolean;
+  issue_number: string | undefined;
+  issue_author: string | undefined;
+  checks: {
+    registration?: RegistrationCheck;
+    duplicate?: DuplicateCheck;
+  };
+  errors: string[];
+  stars: number | null;
+  repo_url: string | null;
+  existing_pr?: ExistingPR | null;
+}
 
 const ISSUE_NUMBER = process.env.ISSUE_NUMBER;
 const ISSUE_AUTHOR = process.env.ISSUE_AUTHOR;
 
-async function main() {
-  const result = {
+async function main(): Promise<void> {
+  const result: ValidationResult = {
     valid: true,
     issue_number: ISSUE_NUMBER,
     issue_author: ISSUE_AUTHOR,
@@ -46,19 +79,20 @@ async function main() {
       result.errors.push(`User @${ISSUE_AUTHOR} is not registered at enter.pollinations.ai`);
     }
   } catch (err) {
+    const error = err as Error;
     result.checks.registration = {
-      error: err.message,
+      error: error.message,
       registered: false
     };
     result.valid = false;
-    result.errors.push(`Failed to check registration: ${err.message}`);
+    result.errors.push(`Failed to check registration: ${error.message}`);
   }
 
-  // 3. Fetch issue to get body for duplicate check and repo URL
+  // 2. Fetch issue to get body for duplicate check and repo URL
   try {
     const issueCmd = `gh issue view ${ISSUE_NUMBER} --repo pollinations/pollinations --json body`;
     const issueData = JSON.parse(execSync(issueCmd, { encoding: 'utf-8' }));
-    const body = issueData.body || '';
+    const body: string = issueData.body || '';
 
     // Extract repo URL if present
     const repoMatch = body.match(/https?:\/\/github\.com\/[^\s\)]+/i);
@@ -74,7 +108,7 @@ async function main() {
     const nameMatch = body.match(/(?:name|app\s*name)\s*[:\-]?\s*(.+)/i) || body.match(/^(.+)$/m);
     const appName = nameMatch ? nameMatch[1].trim().substring(0, 50) : '';
 
-    // 4. Check duplicates
+    // 3. Check duplicates
     if (appUrl || result.repo_url || appName) {
       try {
         const projectJson = JSON.stringify({
@@ -94,11 +128,12 @@ async function main() {
           result.errors.push(`Duplicate detected: ${dupResult.matchType} - ${dupResult.reason}`);
         }
       } catch (err) {
-        result.checks.duplicate = { error: err.message };
+        const error = err as Error;
+        result.checks.duplicate = { error: error.message };
       }
     }
 
-    // 5. Fetch GitHub stars if repo URL found
+    // 4. Fetch GitHub stars if repo URL found
     if (result.repo_url) {
       try {
         const repoPath = result.repo_url.replace(/https?:\/\/github\.com\//i, '');
@@ -110,7 +145,7 @@ async function main() {
       }
     }
 
-    // 6. Check for existing PR for this issue
+    // 5. Check for existing PR for this issue
     try {
       const prCmd = `gh pr list --repo pollinations/pollinations --search "Fixes #${ISSUE_NUMBER}" --json number,headRefName,url --jq '.[0]'`;
       const prOutput = execSync(prCmd, { encoding: 'utf-8' }).trim();
@@ -122,7 +157,8 @@ async function main() {
     }
 
   } catch (err) {
-    result.errors.push(`Failed to fetch issue: ${err.message}`);
+    const error = err as Error;
+    result.errors.push(`Failed to fetch issue: ${error.message}`);
   }
 
   console.log(JSON.stringify(result, null, 2));

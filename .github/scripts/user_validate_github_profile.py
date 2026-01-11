@@ -6,7 +6,7 @@ Formula:
   - Commits (any repo): 0.1 pt each (max 2)
   - Public repos: 0.5 pt each (max 1)
   - Stars (total across repos): 0.1 pt each (max 5)
-  - Threshold: >= 10 pts
+  - Threshold: >= 8 pts
 
 Fully automatic - no red flags, no manual review.
 """

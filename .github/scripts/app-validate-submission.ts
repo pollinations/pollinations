@@ -13,7 +13,7 @@
  *   ISSUE_NUMBER=123 ISSUE_AUTHOR=username npx ts-node app-validate-submission.ts
  */
 
-import { execSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
 
 interface RegistrationCheck {
   registered: boolean;
@@ -51,7 +51,7 @@ interface ValidationResult {
 const ISSUE_NUMBER = process.env.ISSUE_NUMBER;
 const ISSUE_AUTHOR = process.env.ISSUE_AUTHOR;
 
-async function main(): Promise<void> {
+async async function main(): Promise<void> {
   const result: ValidationResult = {
     valid: true,
     issue_number: ISSUE_NUMBER,
@@ -117,9 +117,42 @@ async function main(): Promise<void> {
           repo: result.repo_url || ''
         });
 
-        const dupCmd = `GITHUB_USERNAME="${ISSUE_AUTHOR}" PROJECT_JSON='${projectJson.replace(/'/g, "\\'")}' npx ts-node .github/scripts/app-check-duplicate.ts`;
-        const dupOutput = execSync(dupCmd, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
-        const dupResult = JSON.parse(dupOutput);
+        const dupResult = await new Promise<any>((resolve, reject) => {
+          const env = { ...process.env };
+          env.GITHUB_USERNAME = ISSUE_AUTHOR;
+          env.PROJECT_JSON = projectJson;
+
+          const proc = spawn('npx', ['ts-node', '.github/scripts/app-check-duplicate.ts'], {
+            env,
+            stdio: ['pipe', 'pipe', 'pipe'],
+            cwd: process.cwd()
+          });
+
+          let stdout = '';
+          let stderr = '';
+
+          proc.stdout.on('data', (data) => {
+            stdout += data.toString();
+          });
+
+          proc.stderr.on('data', (data) => {
+            stderr += data.toString();
+          });
+
+          proc.on('close', (code) => {
+            if (code !== 0) {
+              reject(new Error(`Command failed with code ${code}: ${stderr}`));
+            } else {
+              try {
+                resolve(JSON.parse(stdout.trim()));
+              } catch (err) {
+                reject(new Error(`Failed to parse output: ${stdout}`));
+              }
+            }
+          });
+
+          proc.on('error', reject);
+        });
 
         result.checks.duplicate = {
           isDuplicate: dupResult.isDuplicate,

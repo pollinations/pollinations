@@ -4,14 +4,14 @@ import { Tooltip } from "./pricing/Tooltip";
 const SeedTooltipContent = () => (
     <div className="w-56">
         <p className="font-semibold text-gray-900 mb-2">
-            Dev Points (need 7+)
+            Dev Points (need 10+)
         </p>
         <table className="w-full text-left text-[11px]">
             <tbody>
                 <tr className="border-b border-gray-100">
                     <td className="py-1 text-gray-600">Account age</td>
                     <td className="py-1 text-right text-gray-800">
-                        1pt/month (max 6)
+                        0.5pt/month (max 8)
                     </td>
                 </tr>
                 <tr className="border-b border-gray-100">
@@ -20,10 +20,16 @@ const SeedTooltipContent = () => (
                         0.1pt each (max 1)
                     </td>
                 </tr>
-                <tr>
+                <tr className="border-b border-gray-100">
                     <td className="py-1 text-gray-600">Public repos</td>
                     <td className="py-1 text-right text-gray-800">
                         0.5pt each (max 1)
+                    </td>
+                </tr>
+                <tr>
+                    <td className="py-1 text-gray-600">GitHub stars</td>
+                    <td className="py-1 text-right text-gray-800">
+                        0.1pt each (max 2)
                     </td>
                 </tr>
             </tbody>
@@ -75,7 +81,7 @@ export const TierExplanation: FC = () => {
                         <p className="text-xs text-gray-500">
                             <Tooltip content={<SeedTooltipContent />}>
                                 <span className="underline decoration-dotted cursor-help">
-                                    7+ dev points
+                                    10+ dev points
                                 </span>
                             </Tooltip>
                         </p>

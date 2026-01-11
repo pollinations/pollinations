@@ -2,10 +2,11 @@
 Phase 1: Simple points-based validation.
 
 Formula:
-  - GitHub account age: 1 pt/month (max 6)
+  - GitHub account age: 0.5 pt/month (max 8, so 16 months to max)
   - Commits (any repo): 0.1 pt each (max 1)
   - Public repos: 0.5 pt each (max 1)
-  - Threshold: >= 7 pts
+  - Stars (total across repos): 0.1 pt each (max 2)
+  - Threshold: >= 10 pts
 
 Fully automatic - no red flags, no manual review.
 """
@@ -25,11 +26,12 @@ BATCH_SIZE = 50
 
 # Scoring config: each metric has a multiplier and max points
 SCORING = [
-    {"field": "age_days", "multiplier": 1/30, "max": 6.0},  # 1pt/month, max 6
+    {"field": "age_days", "multiplier": 0.5/30, "max": 8.0},  # 0.5pt/month, max 8 (16 months)
     {"field": "commits",  "multiplier": 0.1,  "max": 1.0},  # 0.1pt each, max 1
     {"field": "repos",    "multiplier": 0.5,  "max": 1.0},  # 0.5pt each, max 1
+    {"field": "stars",    "multiplier": 0.1,  "max": 2.0},  # 0.1pt each, max 2
 ]
-THRESHOLD = 7.0
+THRESHOLD = 10.0
 
 
 def build_query(usernames: list[str]) -> str:
@@ -41,7 +43,7 @@ def build_query(usernames: list[str]) -> str:
     u{i}: user(login: "{safe}") {{
         login
         createdAt
-        repositories(privacy: PUBLIC, isFork: false) {{ totalCount }}
+        repositories(privacy: PUBLIC, isFork: false, first: 100) {{ totalCount nodes {{ stargazerCount }} }}
         contributionsCollection {{ totalCommitContributions }}
     }}''')
     return f"query {{ {''.join(fragments)} }}"
@@ -57,6 +59,7 @@ def score_user(data: dict | None, username: str) -> dict:
         "age_days": (datetime.now(timezone.utc) - created).days,
         "repos": data["repositories"]["totalCount"],
         "commits": data["contributionsCollection"]["totalCommitContributions"],
+        "stars": sum(r["stargazerCount"] for r in (data["repositories"].get("nodes") or []) if r),
     }
 
     score = sum(min(metrics[s["field"]] * s["multiplier"], s["max"]) for s in SCORING)

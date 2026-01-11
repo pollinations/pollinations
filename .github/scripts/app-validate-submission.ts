@@ -51,7 +51,7 @@ interface ValidationResult {
 const ISSUE_NUMBER = process.env.ISSUE_NUMBER;
 const ISSUE_AUTHOR = process.env.ISSUE_AUTHOR;
 
-async async function main(): Promise<void> {
+async function main(): Promise<void> {
   const result: ValidationResult = {
     valid: true,
     issue_number: ISSUE_NUMBER,

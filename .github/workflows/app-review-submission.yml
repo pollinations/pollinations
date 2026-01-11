@@ -111,8 +111,10 @@ jobs:
         with:
           anthropic_api_key: "ccr-pollinations"
           github_token: ${{ steps.token.outputs.token }}
-          label_trigger: "TIER-APP"
-          prompt: "/app-review #${{ steps.issue.outputs.number }}"
+          prompt: |
+            Process app submission issue #${{ steps.issue.outputs.number }}.
+            Use the /app-review skill to handle this submission.
+          show_full_output: true
 
   app-handle-outcome:
     if: |

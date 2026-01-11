@@ -84,7 +84,7 @@ body:
     id: app-language
     attributes:
       label: App Language
-      description: If your app is not in English, specify the language code (e.g., zh-CN, es, pt-BR, ja)
+      description: If your app is NOT in English, specify the language code (e.g., zh-CN, es, pt-BR, ja)
       placeholder: "e.g., zh-CN for Chinese, es for Spanish, ja for Japanese"
 
   - type: input

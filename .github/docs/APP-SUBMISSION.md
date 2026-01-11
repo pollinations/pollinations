@@ -5,7 +5,7 @@ Community apps built with Pollinations.AI can be submitted for inclusion on [pol
 ## Quick Start
 
 1. **Submit** → Open issue using [App Submission template](https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml)
-2. **Review** → Bot checks registration + duplicates, creates PR if valid
+2. **Review** → Bot validates and creates PR if valid
 3. **Approve** → Maintainer merges PR
 4. **Reward** → Contributor upgraded to Flower tier
 
@@ -25,43 +25,57 @@ Community apps built with Pollinations.AI can be submitted for inclusion on [pol
 
 ## Workflow: app-review-submission.yml
 
-### Job 1: Parse & Validate
+Uses Claude Code via router (deepseek model) with pre-validation.
 
-**Triggers:** issue opened, edited, or commented
+### Triggers
 
-1. Parse submission with AI
-2. Check for duplicates (see below)
-3. Check [Enter](https://enter.pollinations.ai) registration
-4. Route based on result:
-   - **Duplicate** → `TIER-APP-REJECTED` + close
-   - **Not registered** → `TIER-APP-INCOMPLETE` + request signup
-   - **Valid** → proceed to Job 2
+- Issue opened/edited with `TIER-APP` label
+- Comment on issue with `TIER-APP-INCOMPLETE` label (by issue author or org members only)
+- Manual dispatch with issue number
 
-### Duplicate Detection
+### Step 1: Pre-Validation (Script)
 
-| Check         | What                               | Action |
-| ------------- | ---------------------------------- | ------ |
-| URL exact     | App URL already in APPS.md         | Reject |
-| Repo exact    | GitHub repo already listed         | Reject |
-| Name+User     | Same user + same app name          | Reject |
-| AI similarity | >80% match to user's previous apps | Reject |
+`app-validate-submission.ts` runs before Claude:
 
-### Job 2: Create PR
+| Check        | What                             | Result if failed         |
+| ------------ | -------------------------------- | ------------------------ |
+| Registration | User registered at Enter         | `TIER-APP-INCOMPLETE`    |
+| Duplicates   | URL/repo/name already in APPS.md | `TIER-APP-REJECTED`      |
+| Stars        | Fetch GitHub stars if repo found | Pass (0 if unavailable)  |
+| Existing PR  | Detect PR for this issue         | Update existing branch   |
 
-**Runs if:** valid submission (no duplicate, registered)
+### Step 2: Claude Processing
 
-1. Fetch GitHub stars
-2. AI-generate emoji + description
-3. Prepend to `apps/APPS.md`
-4. Create PR with `TIER-APP-REVIEW` label
-5. Update issue to `TIER-APP-REVIEW`
+Claude handles the "fuzzy" parts:
 
-### Job 3: Handle PR Outcome
+- Parse issue body (name, url, description, category, discord, language)
+- Pick appropriate category if unclear
+- Pick creative emoji
+- Create branch from `origin/main`
+- Add row to `apps/APPS.md` using `app-prepend-row.js`
+- Update README using `app-update-readme.js`
+- Create PR with `TIER-APP-REVIEW-PR` label
 
-**Triggers:** PR closed
+**Rules for Claude:**
+- Only edit `apps/APPS.md` and `README.md`
+- Concise PR body (no test plans, no todos)
+
+### Step 3: Handle PR Outcome
+
+**Triggers:** PR with `TIER-APP-REVIEW-PR` closed
 
 - **Merged** → `TIER-APP-COMPLETE` + success comment + close issue
 - **Closed without merge** → `TIER-APP-REJECTED` + decline comment
+
+---
+
+## Duplicate Detection
+
+| Check      | What                       | Action |
+| ---------- | -------------------------- | ------ |
+| URL exact  | App URL already in APPS.md | Reject |
+| Repo exact | GitHub repo already listed | Reject |
+| Name+User  | Same user + same app name  | Reject |
 
 ---
 
@@ -76,22 +90,14 @@ Community apps built with Pollinations.AI can be submitted for inclusion on [pol
 
 ---
 
-## Workflow: app-check-registration.yml
-
-**Triggers:** Comment on PR with `TIER-APP-INCOMPLETE`
-
-Re-checks Enter registration when user comments after signing up.
-
----
-
 ## Scripts
 
-| Script                   | Purpose                |
-| ------------------------ | ---------------------- |
-| `app-prepend-row.js`     | Add app row to APPS.md |
-| `app-update-readme.js`   | Update README showcase |
-| `app-check-duplicate.js` | Duplicate detection    |
-| `app-check-links.js`     | Check for broken links |
+| Script                       | Purpose                           |
+| ---------------------------- | --------------------------------- |
+| `app-validate-submission.ts` | Pre-validation (registration, duplicates, stars) |
+| `app-prepend-row.js`         | Add app row to APPS.md            |
+| `app-update-readme.js`       | Update README showcase            |
+| `app-check-duplicate.js`     | Duplicate detection logic         |
 
 ---
 
@@ -101,13 +107,12 @@ Re-checks Enter registration when user comments after signing up.
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
     A[User submits issue] --> B[TIER-APP]
-    B --> C{Duplicate?}
-    C -->|Yes| X[TIER-APP-REJECTED]
-    C -->|No| D{Registered?}
-    D -->|No| E[TIER-APP-INCOMPLETE]
+    B --> V{Validation Script}
+    V -->|Duplicate| X[TIER-APP-REJECTED]
+    V -->|Not registered| E[TIER-APP-INCOMPLETE]
     E --> F[User signs up + comments]
-    F --> C
-    D -->|Yes| G[Create PR]
+    F --> V
+    V -->|Valid| G[Claude creates PR]
     G --> H[TIER-APP-REVIEW]
     H --> I{Maintainer review}
     I -->|Reject| X
@@ -129,6 +134,14 @@ flowchart TD
 
 ---
 
-## Code Contributions _(future)_
+## Categories
 
-Labels for code contributions (`TIER-CODE-*`) are planned but not yet implemented.
+| Category     | Code           | Description                                    |
+| ------------ | -------------- | ---------------------------------------------- |
+| Vibe Coding  | `vibeCoding`   | No-code / describe-to-code playgrounds         |
+| Creative     | `creative`     | Images, video, music, design, slides           |
+| Games        | `games`        | AI-powered play, interactive fiction           |
+| Hack & Build | `hackAndBuild` | SDKs, extensions, dashboards, MCP servers      |
+| Chat         | `chat`         | Chat UIs / multi-model playgrounds             |
+| Social Bots  | `socialBots`   | Discord / Telegram / WhatsApp bots             |
+| Learn        | `learn`        | Tutorials, guides, educational demos           |

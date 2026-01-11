@@ -5,108 +5,61 @@ description: Review and process app submissions for the Pollinations showcase. P
 
 # App Review
 
-**Invocation:** `/app-review #123`
+Process app submissions from GitHub issues. Validation (registration, duplicates, stars) is pre-done by workflow.
 
 ---
 
-## Required Fields
+## Categories
 
-- `name` - App name
-- `url` - Must start with http:// or https://
-- `description` - What the app does (~80 chars)
-- `category` - One of: `vibeCoding`, `creative`, `games`, `hackAndBuild`, `chat`, `socialBots`, `learn`
-
-**Optional:** `repo`, `discord`, `other`, `language` (ISO code like zh-CN)
+Pick the best fit: `vibeCoding`, `creative`, `games`, `hackAndBuild`, `chat`, `socialBots`, `learn`
 
 ---
 
-## Workflow
+## APPS.md Row Format
 
-### 1. Fetch Issue
-
-```bash
-gh issue view $ISSUE_NUMBER --repo pollinations/pollinations --json number,title,body,author,comments,labels
+```
+| EMOJI | [Name](url) | Description (~80 chars) | LANG | category | @author | repo_url | ⭐stars | discord | other | YYYY-MM-DD |
 ```
 
-Parse body + ALL user comments. Understand corrections like "I fixed it" or "discord is @newname".
+---
 
-### 2. Validate
+## If Validation Failed
 
-Missing required fields → Comment what's missing → Add `TIER-APP-INCOMPLETE` → STOP
+Comment helpfully based on error:
+- Not registered → Ask to register at enter.pollinations.ai
+- Duplicate → Explain and close issue
+- Add appropriate label (TIER-APP-INCOMPLETE or TIER-APP-REJECTED)
 
-### 3. Check Duplicates
+---
 
-```bash
-PROJECT_JSON='{"name":"...","url":"...","repo":"..."}' \
-GITHUB_USERNAME="author" \
-node .github/scripts/app-check-duplicate.js
-```
-
-`url_exact`, `repo_exact`, `name_user_exact` → Reject + close issue
-
-### 4. Check Registration
+## If Validation Passed
 
 ```bash
-cd enter.pollinations.ai
-npx wrangler d1 execute DB --remote --env production \
-  --command "SELECT id FROM user WHERE LOWER(github_username) = LOWER('author');"
-```
+# 1. Fetch issue
+gh issue view $ISSUE_NUMBER --json body,author,title
 
-Not registered → Comment asking to register → Add `TIER-APP-INCOMPLETE` → STOP
+# 2. Parse fields: name, url, description, category, repo, discord, language
 
-### 5. Create or Update PR
+# 3. Pick creative emoji
 
-```bash
-# Check if PR already exists for this issue
-EXISTING_PR=$(gh pr list --search "Fixes #$ISSUE_NUMBER" --json number,headRefName --jq '.[0]')
+# 4. Create/update branch
+git fetch origin main
+# If existing_pr: checkout and reset
+# Else: git checkout -b auto/app-${ISSUE_NUMBER}-slug origin/main
 
-if [ -n "$EXISTING_PR" ]; then
-  # Update existing PR branch
-  BRANCH=$(echo "$EXISTING_PR" | jq -r '.headRefName')
-  git fetch origin "$BRANCH"
-  git checkout "$BRANCH"
-  git reset --hard origin/main
-else
-  # Create new branch
-  SLUG=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
-  BRANCH="auto/app-${ISSUE_NUMBER}-${SLUG}"
-  git checkout -b "$BRANCH"
-fi
-
-export NEW_ROW="| $EMOJI | [$APP_NAME]($URL) | $DESC | $LANG | $CATEGORY | @$AUTHOR | $REPO | $STARS | $DISCORD | $OTHER | $(date +%Y-%m-%d) |"
+# 5. Add row
+export NEW_ROW="| EMOJI | [NAME](URL) | DESC | LANG | CAT | @AUTHOR | REPO | STARS | DISCORD | | $(date +%Y-%m-%d) |"
 node .github/scripts/app-prepend-row.js
 node .github/scripts/app-update-readme.js
 
-AUTHOR_ID=$(gh api "users/$AUTHOR" --jq '.id')
-git add -A && git commit -m "Add $APP_NAME to $CATEGORY
+# 6. Commit and push
+git add -A && git commit -m "Add NAME to CATEGORY" && git push origin HEAD --force-with-lease
 
-Co-authored-by: $AUTHOR <${AUTHOR_ID}+${AUTHOR}@users.noreply.github.com>
-Fixes #$ISSUE_NUMBER"
+# 7. Create PR if new (label: TIER-APP-REVIEW-PR)
+gh pr create --title "Add NAME to CATEGORY" --body "Fixes #$ISSUE_NUMBER" --label "TIER-APP-REVIEW-PR"
 
-git push origin "$BRANCH" --force-with-lease
-
-# Only create PR if it doesn't exist
-if [ -z "$EXISTING_PR" ]; then
-  gh pr create --title "Add $APP_NAME to $CATEGORY" \
-    --body "## 🆕 $APP_NAME
-
-- **Category:** \`$CATEGORY\`
-- **URL:** $URL
-
-Fixes #$ISSUE_NUMBER" \
-    --label "TIER-APP-REVIEW-PR" --base main --head "$BRANCH"
-fi
-```
-
-### 6. Update Issue
-
-```bash
-gh issue edit $ISSUE_NUMBER --remove-label "TIER-APP" --remove-label "TIER-APP-INCOMPLETE" --add-label "TIER-APP-REVIEW"
-
-# Only comment if new PR created, not on updates
-if [ -z "$EXISTING_PR" ]; then
-  gh issue comment $ISSUE_NUMBER --body "🎉 PR created for **$APP_NAME**! A maintainer will review shortly."
-fi
+# 8. Update issue label
+gh issue edit $ISSUE_NUMBER --remove-label "TIER-APP" --add-label "TIER-APP-REVIEW"
 ```
 
 ---
@@ -115,26 +68,7 @@ fi
 
 | Label | Meaning |
 |-------|---------|
-| `TIER-APP` | New - process it |
-| `TIER-APP-INCOMPLETE` | Waiting for user |
+| `TIER-APP` | New submission |
+| `TIER-APP-INCOMPLETE` | Waiting for user fix |
 | `TIER-APP-REVIEW` | PR created |
-| `TIER-APP-REJECTED` | Rejected |
-
----
-
-## APPS.md Format
-
-```
-| Emoji | Name | Description | Language | Category | GitHub | Repo | Stars | Discord | Other | Submitted |
-```
-
-Pick creative emoji based on app type. Stars format: `⭐123` or `⭐1.2k`.
-
----
-
-## Notes
-
-- Parse FULL context (body + comments)
-- Understand user corrections
-- Only comment when needed
-- Use existing scripts in `.github/scripts/`
+| `TIER-APP-REJECTED` | Rejected (duplicate, etc.) |

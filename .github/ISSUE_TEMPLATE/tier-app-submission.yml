@@ -8,7 +8,7 @@ body:
       value: |
         # Submit Your App to pollinations.ai
         
-        Thanks for submitting your app! Fill out the form below and we'll review it for the [pollinations.ai showcase](https://pollinations.ai).
+        Thanks for submitting your app! Fill out the form below and we'll review it for the [Official Showcase](https://pollinations.ai/apps).
 
         ---
 
@@ -16,14 +16,10 @@ body:
         - Have an account at [enter.pollinations.ai](https://enter.pollinations.ai) (sign up with GitHub)
         - Your app must use the pollinations.ai API
 
-        &nbsp;
-
         **💡 Credit pollinations.ai** *(optional but appreciated)*
         - Link to [pollinations.ai](https://pollinations.ai) in your frontend/README
-        - Official logos: [`logo.svg`](https://raw.githubusercontent.com/pollinations/pollinations/main/shared/assets/logo.svg) / [`logo-text.svg`](https://raw.githubusercontent.com/pollinations/pollinations/main/shared/assets/logo-text.svg)
-
+        - Official logos: [`Pollinations Logo White`](https://raw.githubusercontent.com/pollinations/pollinations/main/assets/logo.svg) / [`Pollinations Logo Text White`](https://raw.githubusercontent.com/pollinations/pollinations/main/assets/logo-text.svg)
         ---
-
         *Your GitHub username will be credited as the app author.*
 
   - type: input

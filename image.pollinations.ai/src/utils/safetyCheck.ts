@@ -60,7 +60,7 @@ export async function checkContentSafety(
                         content,
                     },
                 ],
-                max_tokens: 100,
+                max_tokens: 5,
                 temperature: 0,
             }),
             signal: AbortSignal.timeout(SAFETY_TIMEOUT_MS),
@@ -244,9 +244,9 @@ function parseResponse(response: string): SafetyCheckResult {
         return { safe: false, reason: "Content violates safety guidelines" };
     }
 
-    // Default to safe if response is unclear
-    log("Unclear safety response, defaulting to safe:", response);
-    return { safe: true };
+    // Default to unsafe if response is unclear (fail-closed)
+    logError("Unclear safety response, blocking request:", response);
+    return { safe: false, reason: "Safety check inconclusive" };
 }
 
 const SAFETY_SYSTEM_PROMPT = `You are a content safety classifier for an image generation API. The user will send you an image generation prompt (and optionally reference images). Your job is to classify if this request should be allowed or blocked.

@@ -2,13 +2,13 @@
 
 ## Weekly News Pipeline
 
-- **pr-create-weekly-news.yml** - Runs Monday 00:00 UTC. Scans merged PRs, creates `NEWS/{date}.md` PR.
-- **pr-create-highlights.yml** - When NEWS PR merges, AI extracts top highlights → creates PR for `NEWS/transformed/highlights.md`.
+- **pr-create-weekly-news.yml** - Runs Monday 00:00 UTC. Scans merged PRs, creates `social/news/{date}.md` PR.
+- **pr-create-highlights.yml** - When NEWS PR merges, AI extracts top highlights → creates PR for `social/news/transformed/highlights.md`.
 - **pr-update-readme.yml** - When highlights PR merges, takes top 10 entries → creates PR to update README's "Latest News" section.
 
 ## Discord
 
-- **discord-post-weekly-news.yml** - Triggered when `NEWS/*.md` is pushed. Posts weekly digest to Discord.
+- **discord-post-weekly-news.yml** - Triggered when `social/news/*.md` is pushed. Posts weekly digest to Discord.
 - **discord-post-merged-pr.yml** - Posts every merged PR to Discord immediately.
 
 ## Instagram
@@ -25,7 +25,7 @@
 flowchart TD
     subgraph CRON["Monday 00:00 UTC"]
         A[pr-create-weekly-news.yml] --> B[Scans merged PRs via GraphQL]
-        B --> C[Creates PR: NEWS/date.md]
+        B --> C[Creates PR: social/news/date.md]
     end
 
     C -->|PR reviewed & merged| D[TWO workflows trigger]
@@ -97,7 +97,7 @@ All scripts are in `.github/scripts/` and use Python 3 with the pollinations.ai 
 
 ## Reddit Bot
 
-Automated bot for **r/pollinations_ai** subreddit. Located at `.github/scripts/reddit_workflow/`.
+Automated bot for **r/pollinations_ai** subreddit. Located at `social/reddit/`.
 
 **Note**: This is **not** a GitHub Action - it runs as a self-hosted Devvit app.
 
@@ -121,7 +121,7 @@ Automated bot for **r/pollinations_ai** subreddit. Located at `.github/scripts/r
 ### Deployment
 
 ```bash
-cd .github/scripts/reddit_workflow
+cd social/reddit
 ./deploy.sh  # Deploy the Devvit app
 ./cron.sh    # Set up cron on your server
 ```

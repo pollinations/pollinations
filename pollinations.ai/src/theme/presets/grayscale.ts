@@ -146,7 +146,7 @@ export const GrayscaleMinimalCopy = {
         "A space for creators and developers to connect and build.",
     "COMMUNITY_PAGE.newsTitle.text": "What's New",
     "COMMUNITY_PAGE.newsFilePath":
-        "https://raw.githubusercontent.com/pollinations/pollinations/production/NEWS/transformed/highlights.md",
+        "https://raw.githubusercontent.com/pollinations/pollinations/production/social/news/transformed/highlights.md",
     "COMMUNITY_PAGE.discordTitle.text": "💬 Discord",
     "COMMUNITY_PAGE.discordSubtitle.text":
         "Connect with builders. Share work. Find support.",

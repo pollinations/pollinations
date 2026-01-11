@@ -8,6 +8,7 @@ import { pipe } from "./transforms/pipe.js";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
+import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
@@ -60,7 +61,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["myceli-deepseek-v3.2"],
+        config: portkeyConfig["deepseek-v3.2-maas"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -79,12 +80,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude",
-        config: portkeyConfig["us.anthropic.claude-sonnet-4-5-20250929-v1:0"],
+        config: portkeyConfig["claude-sonnet-4-5-vertex"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "claude-large",
-        config: portkeyConfig["global.anthropic.claude-opus-4-5-20251101-v1:0"],
+        config: portkeyConfig["claude-opus-4-5-vertex"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -94,6 +95,7 @@ const models: ModelDefinition[] = [
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
@@ -136,7 +138,7 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
-        name: "kimi-k2-thinking",
+        name: "kimi",
         config: portkeyConfig["kimi-k2-thinking-maas"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
@@ -147,12 +149,23 @@ const models: ModelDefinition[] = [
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-pro"),
         ),
     },
     {
-        name: "nova-micro",
+        name: "nova-fast",
         config: portkeyConfig["amazon.nova-micro-v1:0"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "glm",
+        config: portkeyConfig["accounts/fireworks/models/glm-4p7"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "minimax",
+        config: portkeyConfig["accounts/fireworks/models/minimax-m2p1"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
 ];
@@ -175,7 +188,7 @@ export function findModelByName(modelName: string) {
 
     // Try resolving via registry (handles aliases)
     try {
-        const resolvedServiceId = resolveServiceId(modelName, "generate.text");
+        const resolvedServiceId = resolveServiceId(modelName);
         return (
             availableModels.find((model) => model.name === resolvedServiceId) ||
             null

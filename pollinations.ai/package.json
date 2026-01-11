@@ -9,7 +9,6 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "@pollinations/react": "^2.0.7",
         "@types/webfontloader": "^1.6.38",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",

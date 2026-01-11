@@ -1,11 +1,16 @@
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { TEXT_SERVICES, DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import { z } from "zod";
+
+const VALID_TEXT_MODELS = [
+    ...Object.keys(TEXT_SERVICES),
+    ...Object.values(TEXT_SERVICES).flatMap((service) => service.aliases),
+] as const;
 
 export const GenerateTextRequestQueryParamsSchema = z.object({
     model: z
-        .enum(Object.keys(TEXT_SERVICES) as [string, ...string[]])
+        .enum(VALID_TEXT_MODELS as unknown as [string, ...string[]])
         .optional()
-        .default("openai")
+        .default(DEFAULT_TEXT_MODEL)
         .meta({
             description: "Text model to use for generation",
         }),
@@ -28,11 +33,6 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         .optional()
         .default(false)
         .meta({ description: "Stream response in real-time chunks" }),
-    private: z.coerce
-        .boolean()
-        .optional()
-        .default(false)
-        .meta({ description: "Hide from public feeds" }),
 });
 
 export type GenerateTextRequestQueryParams = z.infer<

@@ -12,6 +12,7 @@ import { createDocsRoutes } from "./routes/docs.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { webhooksRoutes } from "./routes/webhooks.ts";
 import { adminRoutes } from "./routes/admin.ts";
+import { modelStatsRoutes } from "./routes/model-stats.ts";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
 import { getLogger } from "@logtape/logtape";
@@ -30,6 +31,7 @@ export const api = new Hono<Env>()
     .route("/usage", usageRoutes)
     .route("/webhooks", webhooksRoutes)
     .route("/admin", adminRoutes)
+    .route("/model-stats", modelStatsRoutes)
     .route("/generate", proxyRoutes);
 
 export type ApiRoutes = typeof api;

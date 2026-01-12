@@ -8,7 +8,6 @@ const HomePage = () => {
     document.title = "Pollinations GSOC 2026",
     <Box sx={{ padding: '4rem 2rem' }}>
       <Grid container spacing={4} justifyContent="center">
-        {/* Main Hero Section */}
         <Grid item xs={12} md={8}>
           <Paper className='glass-card' sx={{ padding: '4rem 2rem', textAlign: 'center' }}>
             <Typography variant='h1' sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>

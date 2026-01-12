@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
+import { DEFAULT_API_KEY } from "../api.config";
 
 const STORAGE_KEY = "pollinations_api_key";
-const DEFAULT_API_KEY = "pk_WQYvjz9SpSpAcJdR";
 const ENTER_URL = "https://enter.pollinations.ai";
 
 interface UseAuthReturn {

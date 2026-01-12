@@ -120,23 +120,32 @@ def main():
 
     print(f"   Validation: {'✅ Passed' if validation.get('valid') else '❌ Failed'}")
 
-    # If validation failed, handle errors
+    # If validation failed, let AI handle the response
     if not validation.get("valid"):
         errors = validation.get("errors", [])
         error_msg = "\n".join(f"- {e}" for e in errors)
 
-        if any("not registered" in e.lower() for e in errors):
-            # Not registered
-            comment = f"Thanks for your app submission! Please register at [enter.pollinations.ai](https://enter.pollinations.ai) first to get your Flower tier benefits, then comment here and we'll process your submission."
-            label = "TIER-APP-INCOMPLETE"
-        elif any("duplicate" in e.lower() for e in errors):
-            # Duplicate
-            comment = f"This app appears to be a duplicate submission.\n\n{error_msg}"
+        # Determine label based on error type
+        if any("duplicate" in e.lower() for e in errors):
             label = "TIER-APP-REJECTED"
         else:
-            # Other errors
-            comment = f"There were some issues with your submission:\n\n{error_msg}\n\nPlease update your submission and comment here when ready."
             label = "TIER-APP-INCOMPLETE"
+
+        # Let AI generate the response
+        system_prompt = load_skill()
+        user_prompt = f"""Validation failed for app submission #{ISSUE_NUMBER}.
+
+Errors:
+{error_msg}
+
+Write a concise, helpful comment (2-3 sentences max) explaining the issue and what the user should do. Be friendly but direct. If not registered, mention enter.pollinations.ai. Don't use markdown headers."""
+
+        print("   🤖 Asking LLM for error response...")
+        try:
+            comment = call_llm(system_prompt, user_prompt)
+        except Exception as e:
+            print(f"   ⚠️ LLM failed: {e}, using fallback")
+            comment = "There was an issue processing your submission. Please check the requirements and try again, or comment here for help."
 
         # Post comment
         gh_api(f"/repos/pollinations/pollinations/issues/{ISSUE_NUMBER}/comments", "POST", {"body": comment})

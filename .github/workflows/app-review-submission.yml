@@ -23,12 +23,9 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event_name != 'pull_request_target' &&
-       (contains(github.event.issue.labels.*.name, 'TIER-APP') ||
-        contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE')) &&
-       (github.event_name == 'issues' ||
-        (github.event_name == 'issue_comment' &&
-         contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE') &&
-         github.event.comment.user.type != 'Bot')) &&
+       ((github.event_name == 'issues' && github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'TIER-APP')) ||
+        (github.event_name == 'issues' && github.event.action == 'edited' && contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE')) ||
+        (github.event_name == 'issue_comment' && contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE') && github.event.comment.user.type != 'Bot')) &&
        !contains(github.event.issue.labels.*.name, 'TIER-APP-REVIEW') &&
        !contains(github.event.issue.labels.*.name, 'TIER-APP-COMPLETE') &&
        !contains(github.event.issue.labels.*.name, 'TIER-APP-REJECTED') &&

@@ -350,7 +350,7 @@ function Layout() {
               {/* Left: Branding Text */}
               <div className="text-left flex-shrink-0">
                 <p className="font-headline text-xs font-black text-text-body-main uppercase tracking-wider">
-                  pollinations.ai - 2025
+                  pollinations.ai - 2026
                 </p>
                 <p className="font-body text-[10px] text-text-body-main">
                   Open source AI innovation from Berlin

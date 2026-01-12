@@ -114,7 +114,7 @@ const TimelinePage = () => {
                     transform: 'translate(-50%, -50%)',
                     zIndex: 2,
                     boxShadow: isActive ? '0 0 20px rgba(255,255,255,0.6)' : 'none',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.3s ease',
                   }}
                 />
 
@@ -123,15 +123,39 @@ const TimelinePage = () => {
                   sx={{
                     width: isMobile ? '100%' : '45%',
                     p: 3,
-                    background: 'rgba(255, 255, 255, 0.03)',
+                    background: isActive 
+                      ? 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)'
+                      : 'rgba(255, 255, 255, 0.03)',
                     backdropFilter: 'blur(10px)',
-                    border: '1px solid',
-                    borderColor: isActive ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.08)',
+                    border: '2px solid',
+                    borderColor: isActive 
+                      ? 'rgba(255,255,255,0.4)' 
+                      : 'rgba(255,255,255,0.08)',
                     borderRadius: '12px',
-                    transition: 'transform 0.3s ease',
+                    transition: 'all 0.3s ease',
+                    transform: isActive ? 'scale(1.02)' : 'scale(1)',
+                    boxShadow: isActive 
+                      ? '0 8px 32px rgba(255,255,255,0.1), 0 0 0 1px rgba(255,255,255,0.1)' 
+                      : 'none',
+                    position: 'relative',
+                    '&::before': isActive ? {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%)',
+                      borderRadius: '12px',
+                      pointerEvents: 'none'
+                    } : {},
                     '&:hover': {
-                      borderColor: 'rgba(255,255,255,0.2)',
-                      background: 'rgba(255, 255, 255, 0.05)',
+                      borderColor: isActive 
+                        ? 'rgba(255,255,255,0.5)' 
+                        : 'rgba(255,255,255,0.2)',
+                      background: isActive
+                        ? 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%)'
+                        : 'rgba(255, 255, 255, 0.05)',
                     }
                   }}
                 >
@@ -143,20 +167,52 @@ const TimelinePage = () => {
                       px: 1.5,
                       py: 0.5,
                       borderRadius: '99px',
-                      bgcolor: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      color: 'rgba(255,255,255,0.7)',
-                      fontFamily: 'monospace'
+                      bgcolor: isActive 
+                        ? 'rgba(255,255,255,0.15)' 
+                        : 'transparent',
+                      border: '1px solid',
+                      borderColor: isActive 
+                        ? 'rgba(255,255,255,0.2)' 
+                        : 'rgba(255,255,255,0.1)',
+                      color: isActive 
+                        ? 'rgba(255,255,255,0.9)' 
+                        : 'rgba(255,255,255,0.7)',
+                      fontFamily: 'monospace',
+                      fontWeight: isActive ? 600 : 400,
+                      position: 'relative',
+                      '&::after': isActive ? {
+                        content: '"CURRENT"',
+                        position: 'absolute',
+                        top: '-8px',
+                        right: '-8px',
+                        fontSize: '8px',
+                        fontWeight: 700,
+                        color: '#fff',
+                        bgcolor: 'rgba(34, 197, 94, 0.8)',
+                        px: 0.5,
+                        py: 0.25,
+                        borderRadius: '4px',
+                        letterSpacing: '0.05em'
+                      } : {}
                     }}
                   >
                     {format(startDate, 'MMM dd')} - {format(endDate, 'MMM dd')}
                   </Typography>
 
-                  <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: isActive ? '#fff' : '#e4e4e7' }}>
+                  <Typography variant="h5" sx={{ 
+                    fontWeight: isActive ? 700 : 600, 
+                    mb: 1, 
+                    color: isActive ? '#fff' : '#e4e4e7',
+                    textShadow: isActive ? '0 0 20px rgba(255,255,255,0.3)' : 'none'
+                  }}>
                     {phase.title}
                   </Typography>
                   
-                  <Typography variant="body2" sx={{ color: '#a1a1aa', lineHeight: 1.6 }}>
+                  <Typography variant="body2" sx={{ 
+                    color: isActive ? '#d1d5db' : '#a1a1aa', 
+                    lineHeight: 1.6,
+                    fontWeight: isActive ? 500 : 400
+                  }}>
                     {phase.description}
                   </Typography>
                 </Paper>

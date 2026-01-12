@@ -259,20 +259,42 @@ const HomePage = () => {
                   </Stack>
 
                   {/* Program Stats */}
-                  <Stack direction="row" spacing={4} flexWrap="wrap">
-                    {stats.map((stat, index) => (
-                      <motion.div
-                        key={index}
-                        variants={fadeInUp}
-                        initial="hidden"
-                        animate="visible"
-                        custom={index + 1}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                          <Box sx={{ color: '#60a5fa', fontSize: '1.5rem' }}>
-                            {stat.icon}
-                          </Box>
-                          <Box>
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'center', 
+                      alignItems: 'center', 
+                      mb: 4 
+                    }}
+                  >
+                    <Stack direction="row" spacing={4} flexWrap="wrap">
+                      {stats.map((stat, index) => (
+                        <motion.div
+                          key={index}
+                          variants={fadeInUp}
+                          initial="hidden"
+                          animate="visible"
+                          custom={index + 1}
+                        >
+                          <Box
+                            sx={{
+                              minWidth: 120,
+                              px: 3,
+                              py: 2,
+                              bgcolor: 'rgba(255,255,255,0.07)',
+                              borderRadius: '16px',
+                              border: '1px solid rgba(255,255,255,0.15)',
+                              boxShadow: '0 4px 24px rgba(96,165,250,0.08)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: 1,
+                              textAlign: 'center'
+                            }}
+                          >
+                            <Box sx={{ color: '#60a5fa', fontSize: '2rem', mb: 1 }}>
+                              {stat.icon}
+                            </Box>
                             <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff', lineHeight: 1 }}>
                               {stat.number}
                             </Typography>
@@ -280,23 +302,21 @@ const HomePage = () => {
                               {stat.label}
                             </Typography>
                           </Box>
-                        </Box>
-                      </motion.div>
-                    ))}
-                  </Stack>
-                </motion.div>
-              </Grid>
-
-              {/* Right Side - GSOC Section */}
+                        </motion.div>
+                      ))}
+                    </Stack>
+                  </Box>
+                  </motion.div>
+                </Grid>
               <Grid item xs={12} lg={5}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }}>
-                  {/* About GSOC Card - Centered */}
+                <Box sx={{ display: 'flex', justifyContent: 'center', height: '100%' }}>
+                  {/* About GSOC Card - Centered with Buttons */}
                   <motion.div
                     variants={fadeInUp}
                     initial="hidden"
                     animate="visible"
                     custom={2}
-                    style={{ width: '100%', maxWidth: '400px', marginBottom: '2rem' }}
+                    style={{ width: '100%', maxWidth: '450px' }}
                   >
                     <Card
                       elevation={0}
@@ -304,15 +324,15 @@ const HomePage = () => {
                         background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
                         backdropFilter: 'blur(30px)',
                         border: '1px solid rgba(255,255,255,0.15)',
-                        borderRadius: '20px',
+                        borderRadius: '24px',
                         color: '#fff',
                         position: 'relative',
                         overflow: 'hidden'
                       }}
                     >
-                      <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                      <CardContent sx={{ p: 4 }}>
                         {/* Program Badge */}
-                        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
                           <Chip
                             label="GSOC 2026"
                             sx={{
@@ -320,22 +340,23 @@ const HomePage = () => {
                               color: '#60a5fa',
                               border: '1px solid rgba(96, 165, 250, 0.25)',
                               fontWeight: 600,
-                              fontSize: '0.8rem'
+                              fontSize: '0.9rem'
                             }}
                           />
                         </Box>
 
                         {/* About GSOC */}
-                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#fff' }}>
+                        <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, color: '#fff', textAlign: 'center' }}>
                           About Google Summer of Code
                         </Typography>
 
                         <Typography 
-                          variant="body2" 
+                          variant="body1" 
                           sx={{ 
                             color: 'rgba(255,255,255,0.8)', 
                             lineHeight: 1.6,
-                            mb: 3
+                            mb: 4,
+                            textAlign: 'center'
                           }}
                         >
                           Google Summer of Code connects students with open source projects, 
@@ -344,174 +365,177 @@ const HomePage = () => {
 
                         {/* Key Highlight */}
                         <Box sx={{ 
-                          p: 2, 
-                          borderRadius: '12px', 
+                          p: 3, 
+                          borderRadius: '16px', 
                           bgcolor: 'rgba(96, 165, 250, 0.08)', 
                           border: '1px solid rgba(96, 165, 250, 0.15)',
-                          mb: 2
+                          mb: 4,
+                          textAlign: 'center'
                         }}>
-                          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>
+                          <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>
                             Join a global community of developers working on cutting-edge AI projects
                           </Typography>
                         </Box>
+
+                        <Divider sx={{ mb: 4, borderColor: 'rgba(255,255,255,0.1)' }} />
+
+                        {/* Navigation Buttons - 2x2 Grid */}
+                        <Grid container spacing={2}>
+                          {/* About Us Button */}
+                          <Grid item xs={6}>
+                            <motion.div
+                              variants={fadeInUp}
+                              initial="hidden"
+                              animate="visible"
+                              custom={3}
+                            >
+                              <Button
+                                component={Link}
+                                to='/about'
+                                variant="outlined"
+                                startIcon={<Rocket />}
+                                fullWidth
+                                sx={{
+                                  borderColor: 'rgba(255,255,255,0.2)',
+                                  color: 'rgba(255,255,255,0.9)',
+                                  textTransform: 'none',
+                                  fontWeight: 600,
+                                  py: 2.5,
+                                  px: 2,
+                                  borderRadius: '12px',
+                                  backdropFilter: 'blur(20px)',
+                                  background: 'rgba(255,255,255,0.03)',
+                                  fontSize: '0.85rem',
+                                  '&:hover': {
+                                    borderColor: 'rgba(255,255,255,0.4)',
+                                    color: '#fff',
+                                    backgroundColor: 'rgba(255,255,255,0.08)',
+                                    transform: 'translateY(-2px)'
+                                  }
+                                }}
+                              >
+                                About Us
+                              </Button>
+                            </motion.div>
+                          </Grid>
+
+                          {/* Mentors Button */}
+                          <Grid item xs={6}>
+                            <motion.div
+                              variants={fadeInUp}
+                              initial="hidden"
+                              animate="visible"
+                              custom={4}
+                            >
+                              <Button
+                                component={Link}
+                                to='/mentors'
+                                variant="outlined"
+                                startIcon={<GitHub />}
+                                fullWidth
+                                sx={{
+                                  borderColor: 'rgba(255,255,255,0.2)',
+                                  color: 'rgba(255,255,255,0.9)',
+                                  textTransform: 'none',
+                                  fontWeight: 600,
+                                  py: 2.5,
+                                  px: 2,
+                                  borderRadius: '12px',
+                                  backdropFilter: 'blur(20px)',
+                                  background: 'rgba(255,255,255,0.03)',
+                                  fontSize: '0.85rem',
+                                  '&:hover': {
+                                    borderColor: 'rgba(255,255,255,0.4)',
+                                    color: '#fff',
+                                    backgroundColor: 'rgba(255,255,255,0.08)',
+                                    transform: 'translateY(-2px)'
+                                  }
+                                }}
+                              >
+                                Mentors
+                              </Button>
+                            </motion.div>
+                          </Grid>
+
+                          {/* Contributing Guide Button */}
+                          <Grid item xs={6}>
+                            <motion.div
+                              variants={fadeInUp}
+                              initial="hidden"
+                              animate="visible"
+                              custom={5}
+                            >
+                              <Button
+                                component={Link}
+                                to='/contributing'
+                                variant="outlined"
+                                startIcon={<MenuBook />}
+                                fullWidth
+                                sx={{
+                                  borderColor: 'rgba(255,255,255,0.2)',
+                                  color: 'rgba(255,255,255,0.9)',
+                                  textTransform: 'none',
+                                  fontWeight: 600,
+                                  py: 2.5,
+                                  px: 2,
+                                  borderRadius: '12px',
+                                  backdropFilter: 'blur(20px)',
+                                  background: 'rgba(255,255,255,0.03)',
+                                  fontSize: '0.85rem',
+                                  '&:hover': {
+                                    borderColor: 'rgba(255,255,255,0.4)',
+                                    color: '#fff',
+                                    backgroundColor: 'rgba(255,255,255,0.08)',
+                                    transform: 'translateY(-2px)'
+                                  }
+                                }}
+                              >
+                                Contributing
+                              </Button>
+                            </motion.div>
+                          </Grid>
+
+                          {/* Code of Conduct Button */}
+                          <Grid item xs={6}>
+                            <motion.div
+                              variants={fadeInUp}
+                              initial="hidden"
+                              animate="visible"
+                              custom={6}
+                            >
+                              <Button
+                                component={Link}
+                                to='/code-of-conduct'
+                                variant="outlined"
+                                startIcon={<Gavel />}
+                                fullWidth
+                                sx={{
+                                  borderColor: 'rgba(255,255,255,0.2)',
+                                  color: 'rgba(255,255,255,0.9)',
+                                  textTransform: 'none',
+                                  fontWeight: 600,
+                                  py: 2.5,
+                                  px: 2,
+                                  borderRadius: '12px',
+                                  backdropFilter: 'blur(20px)',
+                                  background: 'rgba(255,255,255,0.03)',
+                                  fontSize: '0.85rem',
+                                  '&:hover': {
+                                    borderColor: 'rgba(255,255,255,0.4)',
+                                    color: '#fff',
+                                    backgroundColor: 'rgba(255,255,255,0.08)',
+                                    transform: 'translateY(-2px)'
+                                  }
+                                }}
+                              >
+                                Code of Conduct
+                              </Button>
+                            </motion.div>
+                          </Grid>
+                        </Grid>
                       </CardContent>
                     </Card>
                   </motion.div>
-
-                  {/* Navigation Buttons - 2x2 Grid */}
-                  <Grid container spacing={2} sx={{ maxWidth: '400px', width: '100%' }}>
-                    {/* About Us Button */}
-                    <Grid item xs={6}>
-                      <motion.div
-                        variants={fadeInUp}
-                        initial="hidden"
-                        animate="visible"
-                        custom={3}
-                      >
-                        <Button
-                          component={Link}
-                          to='/about'
-                          variant="outlined"
-                          startIcon={<Rocket />}
-                          fullWidth
-                          sx={{
-                            borderColor: 'rgba(255,255,255,0.2)',
-                            color: 'rgba(255,255,255,0.9)',
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            py: 2,
-                            px: 3,
-                            borderRadius: '12px',
-                            backdropFilter: 'blur(20px)',
-                            background: 'rgba(255,255,255,0.03)',
-                            fontSize: '0.9rem',
-                            '&:hover': {
-                              borderColor: 'rgba(255,255,255,0.4)',
-                              color: '#fff',
-                              backgroundColor: 'rgba(255,255,255,0.08)',
-                              transform: 'translateY(-1px)'
-                            }
-                          }}
-                        >
-                          About Us
-                        </Button>
-                      </motion.div>
-                    </Grid>
-
-                    {/* Mentors Button */}
-                    <Grid item xs={6}>
-                      <motion.div
-                        variants={fadeInUp}
-                        initial="hidden"
-                        animate="visible"
-                        custom={4}
-                      >
-                        <Button
-                          component={Link}
-                          to='/mentors'
-                          variant="outlined"
-                          startIcon={<GitHub />}
-                          fullWidth
-                          sx={{
-                            borderColor: 'rgba(255,255,255,0.2)',
-                            color: 'rgba(255,255,255,0.9)',
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            py: 2,
-                            px: 3,
-                            borderRadius: '12px',
-                            backdropFilter: 'blur(20px)',
-                            background: 'rgba(255,255,255,0.03)',
-                            fontSize: '0.9rem',
-                            '&:hover': {
-                              borderColor: 'rgba(255,255,255,0.4)',
-                              color: '#fff',
-                              backgroundColor: 'rgba(255,255,255,0.08)',
-                              transform: 'translateY(-1px)'
-                            }
-                          }}
-                        >
-                          Mentors
-                        </Button>
-                      </motion.div>
-                    </Grid>
-
-                    {/* Contributing Guide Button */}
-                    <Grid item xs={6}>
-                      <motion.div
-                        variants={fadeInUp}
-                        initial="hidden"
-                        animate="visible"
-                        custom={5}
-                      >
-                        <Button
-                          component={Link}
-                          to='/contributing'
-                          variant="outlined"
-                          startIcon={<MenuBook />}
-                          fullWidth
-                          sx={{
-                            borderColor: 'rgba(255,255,255,0.2)',
-                            color: 'rgba(255,255,255,0.9)',
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            py: 2,
-                            px: 3,
-                            borderRadius: '12px',
-                            backdropFilter: 'blur(20px)',
-                            background: 'rgba(255,255,255,0.03)',
-                            fontSize: '0.9rem',
-                            '&:hover': {
-                              borderColor: 'rgba(255,255,255,0.4)',
-                              color: '#fff',
-                              backgroundColor: 'rgba(255,255,255,0.08)',
-                              transform: 'translateY(-1px)'
-                            }
-                          }}
-                        >
-                          Contributing
-                        </Button>
-                      </motion.div>
-                    </Grid>
-
-                    {/* Code of Conduct Button */}
-                    <Grid item xs={6}>
-                      <motion.div
-                        variants={fadeInUp}
-                        initial="hidden"
-                        animate="visible"
-                        custom={6}
-                      >
-                        <Button
-                          component={Link}
-                          to='/code-of-conduct'
-                          variant="outlined"
-                          startIcon={<Gavel />}
-                          fullWidth
-                          sx={{
-                            borderColor: 'rgba(255,255,255,0.2)',
-                            color: 'rgba(255,255,255,0.9)',
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            py: 2,
-                            px: 3,
-                            borderRadius: '12px',
-                            backdropFilter: 'blur(20px)',
-                            background: 'rgba(255,255,255,0.03)',
-                            fontSize: '0.9rem',
-                            '&:hover': {
-                              borderColor: 'rgba(255,255,255,0.4)',
-                              color: '#fff',
-                              backgroundColor: 'rgba(255,255,255,0.08)',
-                              transform: 'translateY(-1px)'
-                            }
-                          }}
-                        >
-                          Code of Conduct
-                        </Button>
-                      </motion.div>
-                    </Grid>
-                  </Grid>
                 </Box>
               </Grid>
             </Grid>

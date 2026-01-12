@@ -201,7 +201,7 @@ const AboutPage = () => {
 
         {/* Stats Section */}
         <Box sx={{ mb: 8 }}>
-          <Grid container spacing={4}>
+          <Grid container spacing={4} justifyContent="center">
             {stats.map((stat, index) => (
               <Grid item xs={6} md={3} key={index}>
                 <motion.div
@@ -221,6 +221,7 @@ const AboutPage = () => {
                       color: '#fff',
                       textAlign: 'center',
                       transition: 'all 0.3s ease',
+                      height: '100%',
                       '&:hover': {
                         transform: 'translateY(-4px)',
                         borderColor: 'rgba(255,255,255,0.3)',
@@ -228,14 +229,24 @@ const AboutPage = () => {
                       }
                     }}
                   >
-                    <CardContent sx={{ p: 3 }}>
-                      <Box sx={{ mb: 2, color: '#60a5fa' }}>
+                    <CardContent 
+                      sx={{ 
+                        p: 3, 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        height: '100%',
+                        textAlign: 'center'
+                      }}
+                    >
+                      <Box sx={{ mb: 2, color: '#60a5fa', display: 'flex', justifyContent: 'center', fontSize: '2rem' }}>
                         {stat.icon}
                       </Box>
-                      <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, color: '#fff' }}>
+                      <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, color: '#fff', textAlign: 'center' }}>
                         {stat.number}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>
                         {stat.label}
                       </Typography>
                     </CardContent>
@@ -260,7 +271,7 @@ const AboutPage = () => {
             What Makes Us Special
           </Typography>
           
-          <Grid container spacing={4}>
+          <Grid container spacing={4} justifyContent="center">
             {features.map((feature, index) => (
               <Grid item xs={12} md={6} key={index}>
                 <motion.div
@@ -295,7 +306,10 @@ const AboutPage = () => {
                             borderRadius: '12px', 
                             bgcolor: 'rgba(96, 165, 250, 0.1)', 
                             border: '1px solid rgba(96, 165, 250, 0.2)',
-                            color: '#60a5fa'
+                            color: '#60a5fa',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
                           }}
                         >
                           {feature.icon}

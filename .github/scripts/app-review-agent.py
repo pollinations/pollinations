@@ -149,9 +149,20 @@ def main():
         errors = validation.get("errors", [])
         error_msg = "\n".join(f"- {e}" for e in errors)
 
-        # Determine label based on error type
-        if any("duplicate" in e.lower() for e in errors):
+        # Determine label based on error code (structured) or fallback to string matching
+        registration = validation.get("checks", {}).get("registration", {})
+        error_code = registration.get("error_code")
+        duplicate = validation.get("checks", {}).get("duplicate", {})
+
+        if duplicate.get("isDuplicate"):
             label = "TIER-APP-REJECTED"
+        elif error_code == "SPORE_TIER":
+            label = "TIER-APP-REJECTED"
+        elif error_code == "TIER_NOT_SET":
+            # System bug - don't reject, mark incomplete so we can investigate
+            label = "TIER-APP-INCOMPLETE"
+        elif error_code == "NOT_REGISTERED":
+            label = "TIER-APP-INCOMPLETE"
         else:
             label = "TIER-APP-INCOMPLETE"
 
@@ -285,8 +296,8 @@ Co-authored-by: {ISSUE_AUTHOR} <{ISSUE_AUTHOR}@users.noreply.github.com>"""
         pr_body = f"- Adds [{parsed['name']}]({parsed['url']}) to {category}\n- {description}\n\nFixes #{ISSUE_NUMBER}"
         run_cmd(f'gh pr create --title "Add {parsed["name"]} to {category}" --body "{pr_body}" --label "TIER-APP-REVIEW-PR"')
 
-    # Update issue label
-    run_cmd(f'gh issue edit {ISSUE_NUMBER} --remove-label "TIER-APP" --add-label "TIER-APP-REVIEW"')
+    # Update issue label (remove both TIER-APP and TIER-APP-INCOMPLETE if present)
+    run_cmd(f'gh issue edit {ISSUE_NUMBER} --remove-label "TIER-APP" --remove-label "TIER-APP-INCOMPLETE" --add-label "TIER-APP-REVIEW"')
 
     print(f"   ✅ Done!")
 

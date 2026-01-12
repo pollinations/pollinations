@@ -85,6 +85,61 @@ python .github/scripts/user_upgrade_spore_to_seed.py
 2. User must have at least **Seed tier** (Spore users cannot submit apps)
 3. App must not be a duplicate
 
+### Flow Diagram
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TD
+    subgraph submit [" "]
+        A[👤 User submits issue]
+    end
+    
+    A --> B[TIER-APP]
+    B --> V{Validation}
+    
+    V -->|Not registered| E1[TIER-APP-INCOMPLETE]
+    V -->|Spore tier| E2[TIER-APP-REJECTED]
+    V -->|Duplicate| E3[TIER-APP-REJECTED]
+    
+    E1 -->|User registers + comments| V
+    E2 --> CLOSED1[Issue Closed]
+    E3 --> CLOSED2[Issue Closed]
+    
+    V -->|Valid| G[🤖 AI creates PR]
+    G --> H[TIER-APP-REVIEW]
+    H --> PR[TIER-APP-REVIEW-PR]
+    PR --> I{Maintainer Review}
+    
+    I -->|Close| REJ[TIER-APP-REJECTED]
+    REJ --> CLOSED3[Issue Closed]
+    
+    I -->|Merge| J[TIER-APP-COMPLETE]
+    J --> K[⬆️ Upgrade to Flower]
+    K --> L[🎉 Celebrate!]
+
+    style B fill:#3b82f6,color:#fff
+    style E1 fill:#f59e0b,color:#000
+    style E2 fill:#ef4444,color:#fff
+    style E3 fill:#ef4444,color:#fff
+    style H fill:#8b5cf6,color:#fff
+    style PR fill:#8b5cf6,color:#fff
+    style REJ fill:#ef4444,color:#fff
+    style J fill:#22c55e,color:#fff
+    style CLOSED1 fill:#6b7280,color:#fff
+    style CLOSED2 fill:#6b7280,color:#fff
+    style CLOSED3 fill:#6b7280,color:#fff
+    style K fill:#ec4899,color:#fff
+    style L fill:#ec4899,color:#fff
+```
+
+**Color Legend:**
+- 🔵 **Blue** - New submission (`TIER-APP`)
+- 🟠 **Orange** - Incomplete, can retry (`TIER-APP-INCOMPLETE`)
+- 🟣 **Purple** - In review (`TIER-APP-REVIEW`, `TIER-APP-REVIEW-PR`)
+- 🟢 **Green** - Complete (`TIER-APP-COMPLETE`)
+- 🔴 **Red** - Rejected (`TIER-APP-REJECTED`)
+- ⚫ **Gray** - Closed
+
 ### Step-by-Step Process
 
 ---

@@ -361,7 +361,7 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
             status_code=400, 
             detail=f"Request dimensions {request.width}x{request.height} result in generation size {gen_w}x{gen_h}, which is below the minimum 256x256. "
                    f"Aspect ratio may be too extreme. Try a more balanced aspect ratio or larger dimensions. "
-                   f"Max: 2048x2048 or similar aspect-balanced sizes up to 2359296 total pixels."
+                   f"Max: 1536x1536 or similar aspect-balanced sizes up to {MAX_FINAL_PIXELS:,} total pixels."
         )
     
     if gen_w % 16 != 0 or gen_h % 16 != 0:

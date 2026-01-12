@@ -1,6 +1,9 @@
 {
     "name": "text.pollinations.ai",
     "version": "1.0.0",
+    "engines": {
+        "node": ">=20.0.0 <22.0.0"
+    },
     "scripts": {
         "decrypt-vars": "sops decrypt secrets/env.json --output-type dotenv > .env",
         "start": "npx tsx startServer.js",

@@ -59,6 +59,54 @@ export function extractApiVersion(endpoint) {
     return version;
 }
 
+/**
+ * Convert hyphenated keys to snake_case for Portkey config JSON
+ * e.g., "aws-access-key-id" -> "aws_access_key_id"
+ * @param {string} key - Hyphenated key
+ * @returns {string} - Snake_case key
+ */
+function toSnakeCase(key) {
+    return key.replace(/-/g, "_");
+}
+
+/**
+ * Resolve authKey functions and convert keys to snake_case for a target object
+ * @param {Object} target - Target configuration object
+ * @returns {Object} - Target with resolved auth and snake_case keys
+ */
+async function resolveTargetAuth(target) {
+    const resolved = {};
+
+    for (const [key, value] of Object.entries(target)) {
+        // Skip internal properties
+        if (key === "authKey" || key === "defaultOptions") continue;
+
+        // Convert hyphenated keys to snake_case
+        const snakeKey = toSnakeCase(key);
+        resolved[snakeKey] = value;
+    }
+
+    // Handle authKey separately
+    if (target.authKey) {
+        try {
+            if (typeof target.authKey === "function") {
+                const token = target.authKey();
+                const resolvedToken =
+                    token instanceof Promise ? await token : token;
+                // For Vertex AI, the token goes in api_key field
+                resolved.api_key = resolvedToken;
+            } else {
+                resolved.api_key = target.authKey;
+            }
+        } catch (error) {
+            errorLog("Error resolving auth for target:", error);
+            throw error;
+        }
+    }
+
+    return resolved;
+}
+
 export /**
  * Generate Portkey headers from a configuration object
  * @param {Object} config - Model configuration object
@@ -68,6 +116,33 @@ async function generatePortkeyHeaders(config) {
     if (!config) {
         errorLog("No configuration provided for header generation");
         throw new Error("No configuration provided for header generation");
+    }
+
+    // Check if this is a fallback/loadbalance config with strategy and targets
+    if (config.strategy && config.targets) {
+        log(
+            "Detected fallback/loadbalance config, using x-portkey-config header",
+        );
+
+        // Resolve authKey for each target
+        const resolvedTargets = await Promise.all(
+            config.targets.map(resolveTargetAuth),
+        );
+
+        // Build the config object for x-portkey-config header
+        const portkeyConfig = {
+            strategy: config.strategy,
+            targets: resolvedTargets,
+        };
+
+        log(
+            "Resolved fallback config:",
+            JSON.stringify(portkeyConfig, null, 2),
+        );
+
+        return {
+            "x-portkey-config": JSON.stringify(portkeyConfig),
+        };
     }
 
     // Use individual headers approach (proven to work with Azure OpenAI)
@@ -97,7 +172,7 @@ async function generatePortkeyHeaders(config) {
     for (const [key, value] of Object.entries(config)) {
         // Skip internal properties
         if (key === "removeSeed" || key === "authKey") continue;
-        
+
         // Add as individual header with x-portkey- prefix
         headers[`x-portkey-${key}`] = value;
     }
@@ -108,6 +183,9 @@ async function generatePortkeyHeaders(config) {
     }
 
     log("Generated Portkey headers:", Object.keys(headers));
-    log("strictOpenAiCompliance header value:", headers["x-portkey-strict-open-ai-compliance"]);
+    log(
+        "strictOpenAiCompliance header value:",
+        headers["x-portkey-strict-open-ai-compliance"],
+    );
     return headers;
 }

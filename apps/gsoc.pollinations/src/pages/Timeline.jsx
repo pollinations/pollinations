@@ -37,7 +37,7 @@ const TimelinePage = () => {
         minHeight: '100vh', 
         bgcolor: '#09090b', 
         color: '#fff',
-        padding: '4rem 2rem',
+        padding: '2rem 2rem 4rem',
         position: 'relative',
         overflow: 'hidden'
       }}

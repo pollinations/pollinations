@@ -66,7 +66,12 @@ async function main(): Promise<void> {
     // 1. Check Enter registration and tier
     try {
         // Sanitize username to prevent SQL injection (defense-in-depth)
-        const safeUsername = ISSUE_AUTHOR.replace(/[^a-zA-Z0-9_-]/g, "");
+        const safeUsername = ISSUE_AUTHOR?.replace(/[^a-zA-Z0-9_-]/g, "") || "";
+        if (!safeUsername) {
+            throw new Error(
+                "ISSUE_AUTHOR is required but was empty or undefined",
+            );
+        }
         const cmd = `cd enter.pollinations.ai && npx wrangler d1 execute DB --remote --env production --command "SELECT id, tier FROM user WHERE LOWER(github_username) = LOWER('${safeUsername}');" --json`;
         const output = execSync(cmd, {
             encoding: "utf-8",
@@ -79,7 +84,7 @@ async function main(): Promise<void> {
 
         result.checks.registration = {
             registered,
-            username: ISSUE_AUTHOR,
+            username: safeUsername,
             tier: tier,
         };
 

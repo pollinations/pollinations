@@ -163,8 +163,9 @@ flowchart TD
 
 | Test | Query/Check | Pass | Fail |
 |------|-------------|------|------|
-| **Registration** | `SELECT id, tier FROM user WHERE github_username = '${author}'` | User exists | → INCOMPLETE |
-| **Tier Check** | `tier !== 'spore'` | Seed or higher | → REJECTED + closed |
+| **Registration** | `SELECT id, tier FROM user WHERE github_username = '${author}'` | User exists | → `NOT_REGISTERED` |
+| **Tier Set** | `tier !== null` | Tier exists | → `TIER_NOT_SET` (system bug) |
+| **Tier Level** | `tier !== 'spore'` | Seed or higher | → `SPORE_TIER` + closed |
 | **Duplicate URL** | Check `apps/APPS.md` for same URL | Not found | → REJECTED + closed |
 | **Duplicate Repo** | Check `apps/APPS.md` for same GitHub repo | Not found | → REJECTED + closed |
 | **Duplicate Name+User** | Same app name by same user | Not found | → REJECTED + closed |

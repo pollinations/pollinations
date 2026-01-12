@@ -21,9 +21,7 @@ import {
   EmojiEvents,
   Rocket,
   GitHub,
-  VerifiedUser,
-  HandshakeOutlined,
-  Gavel
+  VerifiedUser
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
@@ -287,238 +285,149 @@ const HomePage = () => {
                 </motion.div>
               </Grid>
 
-              {/* Right Side - Interactive Cards */}
+              {/* Right Side - Interactive Card */}
               <Grid item xs={12} lg={5}>
-                <Stack spacing={3}>
-                  {/* About GSOC Card */}
-                  <motion.div
-                    variants={fadeInUp}
-                    initial="hidden"
-                    animate="visible"
-                    custom={2}
+                <motion.div
+                  variants={fadeInUp}
+                  initial="hidden"
+                  animate="visible"
+                  custom={2}
+                >
+                  <Card
+                    elevation={0}
+                    sx={{
+                      background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+                      backdropFilter: 'blur(30px)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      borderRadius: '24px',
+                      color: '#fff',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '4px',
+                        background: 'linear-gradient(90deg, #3b82f6, #06b6d4, #10b981)',
+                        borderRadius: '24px 24px 0 0'
+                      }
+                    }}
                   >
-                    <Card
-                      elevation={0}
-                      sx={{
-                        background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-                        backdropFilter: 'blur(30px)',
-                        border: '1px solid rgba(255,255,255,0.15)',
-                        borderRadius: '24px',
-                        color: '#fff',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          height: '4px',
-                          background: 'linear-gradient(90deg, #3b82f6, #06b6d4, #10b981)',
-                          borderRadius: '24px 24px 0 0'
-                        }
-                      }}
-                    >
-                      <CardContent sx={{ p: 4 }}>
-                        {/* Program Badge */}
-                        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-                          <Chip
-                            label="GSOC 2026 Program"
-                            sx={{
-                              bgcolor: 'rgba(34, 197, 94, 0.2)',
-                              color: '#4ade80',
-                              border: '1px solid rgba(34, 197, 94, 0.3)',
-                              fontWeight: 600,
-                              fontSize: '0.9rem'
-                            }}
-                          />
-                        </Box>
-
-                        {/* About GSOC */}
-                        <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, textAlign: 'center' }}>
-                          About Google Summer of Code
-                        </Typography>
-
-                        <Typography 
-                          variant="body1" 
-                          sx={{ 
-                            color: 'rgba(255,255,255,0.9)', 
-                            lineHeight: 1.7,
-                            mb: 4,
-                            textAlign: 'center'
+                    <CardContent sx={{ p: 4 }}>
+                      {/* Program Badge */}
+                      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                        <Chip
+                          label="GSOC 2026 Program"
+                          sx={{
+                            bgcolor: 'rgba(34, 197, 94, 0.2)',
+                            color: '#4ade80',
+                            border: '1px solid rgba(34, 197, 94, 0.3)',
+                            fontWeight: 600,
+                            fontSize: '0.9rem'
                           }}
-                        >
-                          Google Summer of Code is a global program that offers students stipends 
-                          to write code for open source projects. It connects the next generation 
-                          of developers with experienced mentors to create innovative solutions.
-                        </Typography>
+                        />
+                      </Box>
 
-                        <Divider sx={{ mb: 4, borderColor: 'rgba(255,255,255,0.1)' }} />
+                      {/* About GSOC */}
+                      <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, textAlign: 'center' }}>
+                        About Google Summer of Code
+                      </Typography>
 
-                        {/* Program Highlights */}
-                        <Stack spacing={3} sx={{ mb: 4 }}>
-                          {highlights.map((highlight, index) => (
-                            <motion.div
-                              key={index}
-                              variants={fadeInUp}
-                              initial="hidden"
-                              animate="visible"
-                              custom={index + 3}
-                            >
-                              <Box sx={{ display: 'flex', gap: 2 }}>
-                                <Box 
-                                  sx={{ 
-                                    p: 1.5, 
-                                    borderRadius: '12px', 
-                                    bgcolor: 'rgba(96, 165, 250, 0.1)', 
-                                    border: '1px solid rgba(96, 165, 250, 0.2)',
-                                    color: '#60a5fa',
-                                    flexShrink: 0
-                                  }}
-                                >
-                                  {highlight.icon}
-                                </Box>
-                                <Box>
-                                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                                    {highlight.title}
-                                  </Typography>
-                                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                                    {highlight.description}
-                                  </Typography>
-                                </Box>
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          color: 'rgba(255,255,255,0.9)', 
+                          lineHeight: 1.7,
+                          mb: 4,
+                          textAlign: 'center'
+                        }}
+                      >
+                        Google Summer of Code is a global program that offers students stipends 
+                        to write code for open source projects. It connects the next generation 
+                        of developers with experienced mentors to create innovative solutions.
+                      </Typography>
+
+                      <Divider sx={{ mb: 4, borderColor: 'rgba(255,255,255,0.1)' }} />
+
+                      {/* Program Highlights */}
+                      <Stack spacing={3}>
+                        {highlights.map((highlight, index) => (
+                          <motion.div
+                            key={index}
+                            variants={fadeInUp}
+                            initial="hidden"
+                            animate="visible"
+                            custom={index + 3}
+                          >
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                              <Box 
+                                sx={{ 
+                                  p: 1.5, 
+                                  borderRadius: '12px', 
+                                  bgcolor: 'rgba(96, 165, 250, 0.1)', 
+                                  border: '1px solid rgba(96, 165, 250, 0.2)',
+                                  color: '#60a5fa',
+                                  flexShrink: 0
+                                }}
+                              >
+                                {highlight.icon}
                               </Box>
-                            </motion.div>
-                          ))}
-                        </Stack>
+                              <Box>
+                                <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                  {highlight.title}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                                  {highlight.description}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </motion.div>
+                        ))}
+                      </Stack>
 
-                        {/* Action Buttons */}
-                        <Stack direction="column" spacing={2}>
-                          <Button
-                            component={Link}
-                            to='/about'
-                            variant="contained"
-                            startIcon={<Rocket />}
-                            sx={{
-                              bgcolor: 'rgba(255,255,255,0.1)',
-                              color: '#fff',
-                              textTransform: 'none',
-                              fontWeight: 600,
-                              '&:hover': {
-                                bgcolor: 'rgba(255,255,255,0.2)'
-                              }
-                            }}
-                          >
-                            Learn More About Us
-                          </Button>
-                          <Button
-                            component={Link}
-                            to='/mentors'
-                            variant="outlined"
-                            startIcon={<VerifiedUser />}
-                            sx={{
-                              borderColor: 'rgba(255,255,255,0.2)',
-                              color: 'rgba(255,255,255,0.8)',
-                              textTransform: 'none',
-                              '&:hover': {
-                                borderColor: 'rgba(255,255,255,0.4)',
-                                color: '#fff',
-                                backgroundColor: 'rgba(255,255,255,0.05)'
-                              }
-                            }}
-                          >
-                            Meet Our Mentors
-                          </Button>
-                        </Stack>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-
-                  {/* Community Guidelines Card */}
-                  <motion.div
-                    variants={fadeInUp}
-                    initial="hidden"
-                    animate="visible"
-                    custom={3}
-                  >
-                    <Card
-                      elevation={0}
-                      sx={{
-                        background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(96, 165, 250, 0.05) 100%)',
-                        backdropFilter: 'blur(20px)',
-                        border: '1px solid rgba(96, 165, 250, 0.15)',
-                        borderRadius: '20px',
-                        color: '#fff',
-                        position: 'relative',
-                        overflow: 'hidden'
-                      }}
-                    >
-                      <CardContent sx={{ p: 3 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, textAlign: 'center', color: '#60a5fa' }}>
-                          Community Guidelines
-                        </Typography>
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
-                            color: 'rgba(255,255,255,0.8)', 
-                            mb: 3, 
-                            textAlign: 'center',
-                            lineHeight: 1.5
+                      {/* Action Buttons */}
+                      <Stack direction="column" spacing={2} sx={{ mt: 4 }}>
+                        <Button
+                          component={Link}
+                          to='/about'
+                          variant="contained"
+                          startIcon={<Rocket />}
+                          sx={{
+                            bgcolor: 'rgba(255,255,255,0.1)',
+                            color: '#fff',
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            '&:hover': {
+                              bgcolor: 'rgba(255,255,255,0.2)'
+                            }
                           }}
                         >
-                          Get familiar with our community standards and contribution process
-                        </Typography>
-                        
-                        <Stack 
-                          direction={{ xs: 'column', lg: 'row' }} 
-                          spacing={2}
+                          Learn More About Us
+                        </Button>
+                        <Button
+                          component={Link}
+                          to='/mentors'
+                          variant="outlined"
+                          startIcon={<GitHub />}
+                          sx={{
+                            borderColor: 'rgba(255,255,255,0.2)',
+                            color: 'rgba(255,255,255,0.8)',
+                            textTransform: 'none',
+                            '&:hover': {
+                              borderColor: 'rgba(255,255,255,0.4)',
+                              color: '#fff',
+                              backgroundColor: 'rgba(255,255,255,0.05)'
+                            }
+                          }}
                         >
-                          <Button
-                            component={Link}
-                            to="/contributing"
-                            variant="outlined"
-                            size="small"
-                            startIcon={<HandshakeOutlined />}
-                            sx={{
-                              borderColor: 'rgba(96, 165, 250, 0.4)',
-                              color: '#60a5fa',
-                              textTransform: 'none',
-                              fontSize: '0.85rem',
-                              fontWeight: 500,
-                              flex: 1,
-                              '&:hover': {
-                                borderColor: '#60a5fa',
-                                backgroundColor: 'rgba(96, 165, 250, 0.1)'
-                              }
-                            }}
-                          >
-                            Contributing
-                          </Button>
-                          <Button
-                            component={Link}
-                            to="/code-of-conduct"
-                            variant="outlined"
-                            size="small"
-                            startIcon={<Gavel />}
-                            sx={{
-                              borderColor: 'rgba(96, 165, 250, 0.4)',
-                              color: '#60a5fa',
-                              textTransform: 'none',
-                              fontSize: '0.85rem',
-                              fontWeight: 500,
-                              flex: 1,
-                              '&:hover': {
-                                borderColor: '#60a5fa',
-                                backgroundColor: 'rgba(96, 165, 250, 0.1)'
-                              }
-                            }}
-                          >
-                            Code of Conduct
-                          </Button>
-                        </Stack>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </Stack>
+                          Meet Our Mentors
+                        </Button>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               </Grid>
             </Grid>
           </Box>

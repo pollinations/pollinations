@@ -9,7 +9,9 @@ import {
   Stack,
   Chip,
   Divider,
-  Avatar
+  Avatar,
+  Tooltip,
+  IconButton
 } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { 
@@ -23,7 +25,8 @@ import {
   GitHub,
   VerifiedUser,
   MenuBook,
-  Gavel
+  Gavel,
+  Info
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
@@ -68,6 +71,13 @@ const HomePage = () => {
     { number: "12", label: "Weeks", icon: <TimelineIcon /> },
     { number: "3+", label: "Projects", icon: <Code /> },
     { number: "5K+", label: "Pollens", icon: <EmojiEvents /> }
+  ];
+
+  const navigationItems = [
+    { icon: <Rocket />, path: '/about', tooltip: 'About Us' },
+    { icon: <GitHub />, path: '/mentors', tooltip: 'Meet Our Mentors' },
+    { icon: <MenuBook />, path: '/contributing', tooltip: 'Contributing Guide' },
+    { icon: <Gavel />, path: '/code-of-conduct', tooltip: 'Code of Conduct' }
   ];
 
   return (
@@ -258,7 +268,7 @@ const HomePage = () => {
                     </Button>
                   </Stack>
 
-                  {/* Program Stats */}
+                  {/* Program Stats - Made Square */}
                   <Box 
                     sx={{ 
                       display: 'flex', 
@@ -278,27 +288,45 @@ const HomePage = () => {
                         >
                           <Box
                             sx={{
-                              minWidth: 120,
-                              px: 3,
-                              py: 2,
-                              bgcolor: 'rgba(255,255,255,0.07)',
+                              width: 120,
+                              height: 120,
+                              background: 'linear-gradient(135deg, rgba(96,165,250,0.15) 0%, rgba(255,255,255,0.07) 100%)',
                               borderRadius: '16px',
-                              border: '1px solid rgba(255,255,255,0.15)',
-                              boxShadow: '0 4px 24px rgba(96,165,250,0.08)',
+                              border: '2px solid rgba(96,165,250,0.25)',
+                              boxShadow: '0 8px 32px rgba(96,165,250,0.12)',
                               display: 'flex',
                               flexDirection: 'column',
                               alignItems: 'center',
+                              justifyContent: 'center',
                               gap: 1,
-                              textAlign: 'center'
+                              textAlign: 'center',
+                              transition: 'all 0.3s ease',
+                              position: 'relative',
+                              overflow: 'hidden',
+                              '&:hover': {
+                                transform: 'translateY(-6px) scale(1.05)',
+                                boxShadow: '0 16px 40px rgba(96,165,250,0.18)',
+                                borderColor: '#60a5fa',
+                              },
+                              '&:before': {
+                                content: '""',
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                background: 'radial-gradient(circle at 70% 30%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%)',
+                                zIndex: 0,
+                              }
                             }}
                           >
-                            <Box sx={{ color: '#60a5fa', fontSize: '2rem', mb: 1 }}>
+                            <Box sx={{ color: '#60a5fa', fontSize: '2.2rem', mb: 1, zIndex: 1 }}>
                               {stat.icon}
                             </Box>
-                            <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff', lineHeight: 1 }}>
+                            <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff', lineHeight: 1, zIndex: 1 }}>
                               {stat.number}
                             </Typography>
-                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase' }}>
+                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: 1, zIndex: 1 }}>
                               {stat.label}
                             </Typography>
                           </Box>
@@ -306,237 +334,120 @@ const HomePage = () => {
                       ))}
                     </Stack>
                   </Box>
-                  </motion.div>
-                </Grid>
-              <Grid item xs={12} lg={5}>
-                <Box sx={{ display: 'flex', justifyContent: 'center', height: '100%' }}>
-                  {/* About GSOC Card - Centered with Buttons */}
-                  <motion.div
-                    variants={fadeInUp}
-                    initial="hidden"
-                    animate="visible"
-                    custom={2}
-                    style={{ width: '100%', maxWidth: '450px' }}
+                </motion.div>
+              </Grid>
+
+              {/* Right Side - About GSOC Card - Centered */}
+              <Grid item xs={12} lg={5} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <motion.div
+                  variants={fadeInUp}
+                  initial="hidden"
+                  animate="visible"
+                  custom={2}
+                  style={{ width: '100%', maxWidth: '450px' }}
+                >
+                  <Card
+                    elevation={0}
+                    sx={{
+                      background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
+                      backdropFilter: 'blur(30px)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      borderRadius: '24px',
+                      color: '#fff',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
                   >
-                    <Card
-                      elevation={0}
-                      sx={{
-                        background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
-                        backdropFilter: 'blur(30px)',
-                        border: '1px solid rgba(255,255,255,0.15)',
-                        borderRadius: '24px',
-                        color: '#fff',
-                        position: 'relative',
-                        overflow: 'hidden'
-                      }}
-                    >
-                      <CardContent sx={{ p: 4 }}>
-                        {/* Program Badge */}
-                        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-                          <Chip
-                            label="GSOC 2026"
-                            sx={{
-                              bgcolor: 'rgba(96, 165, 250, 0.15)',
-                              color: '#60a5fa',
-                              border: '1px solid rgba(96, 165, 250, 0.25)',
-                              fontWeight: 600,
-                              fontSize: '0.9rem'
-                            }}
-                          />
-                        </Box>
-
-                        {/* About GSOC */}
-                        <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, color: '#fff', textAlign: 'center' }}>
-                          About Google Summer of Code
-                        </Typography>
-
-                        <Typography 
-                          variant="body1" 
-                          sx={{ 
-                            color: 'rgba(255,255,255,0.8)', 
-                            lineHeight: 1.6,
-                            mb: 4,
-                            textAlign: 'center'
+                    <CardContent sx={{ p: 4 }}>
+                      {/* Program Badge */}
+                      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                        <Chip
+                          label="GSOC 2026"
+                          sx={{
+                            bgcolor: 'rgba(96, 165, 250, 0.15)',
+                            color: '#60a5fa',
+                            border: '1px solid rgba(96, 165, 250, 0.25)',
+                            fontWeight: 600,
+                            fontSize: '0.9rem'
                           }}
-                        >
-                          Google Summer of Code connects students with open source projects, 
-                          providing mentorship and stipends to contribute to innovative AI solutions.
-                        </Typography>
+                        />
+                      </Box>
 
-                        {/* Key Highlight */}
-                        <Box sx={{ 
-                          p: 3, 
-                          borderRadius: '16px', 
-                          bgcolor: 'rgba(96, 165, 250, 0.08)', 
-                          border: '1px solid rgba(96, 165, 250, 0.15)',
+                      {/* About GSOC */}
+                      <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, color: '#fff', textAlign: 'center' }}>
+                        About Google Summer of Code
+                      </Typography>
+
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          color: 'rgba(255,255,255,0.8)', 
+                          lineHeight: 1.6,
                           mb: 4,
                           textAlign: 'center'
-                        }}>
-                          <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>
-                            Join a global community of developers working on cutting-edge AI projects
-                          </Typography>
-                        </Box>
+                        }}
+                      >
+                        Google Summer of Code connects students with open source projects, 
+                        providing mentorship and stipends to contribute to innovative AI solutions.
+                      </Typography>
 
-                        <Divider sx={{ mb: 4, borderColor: 'rgba(255,255,255,0.1)' }} />
+                      {/* Key Highlight */}
+                      <Box sx={{ 
+                        p: 3, 
+                        borderRadius: '16px', 
+                        bgcolor: 'rgba(96, 165, 250, 0.08)', 
+                        border: '1px solid rgba(96, 165, 250, 0.15)',
+                        mb: 4,
+                        textAlign: 'center'
+                      }}>
+                        <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>
+                          Join a global community of developers working on cutting-edge AI projects
+                        </Typography>
+                      </Box>
 
-                        {/* Navigation Buttons - 2x2 Grid */}
-                        <Grid container spacing={2}>
-                          {/* About Us Button */}
-                          <Grid item xs={6}>
+                      <Divider sx={{ mb: 4, borderColor: 'rgba(255,255,255,0.1)' }} />
+
+                      {/* Navigation Icons with Tooltips - 2x2 Grid */}
+                      <Grid container spacing={2} justifyContent="center">
+                        {navigationItems.map((item, index) => (
+                          <Grid item xs={6} key={index} sx={{ display: 'flex', justifyContent: 'center' }}>
                             <motion.div
                               variants={fadeInUp}
                               initial="hidden"
                               animate="visible"
-                              custom={3}
+                              custom={index + 3}
                             >
-                              <Button
-                                component={Link}
-                                to='/about'
-                                variant="outlined"
-                                startIcon={<Rocket />}
-                                fullWidth
-                                sx={{
-                                  borderColor: 'rgba(255,255,255,0.2)',
-                                  color: 'rgba(255,255,255,0.9)',
-                                  textTransform: 'none',
-                                  fontWeight: 600,
-                                  py: 2.5,
-                                  px: 2,
-                                  borderRadius: '12px',
-                                  backdropFilter: 'blur(20px)',
-                                  background: 'rgba(255,255,255,0.03)',
-                                  fontSize: '0.85rem',
-                                  '&:hover': {
-                                    borderColor: 'rgba(255,255,255,0.4)',
-                                    color: '#fff',
-                                    backgroundColor: 'rgba(255,255,255,0.08)',
-                                    transform: 'translateY(-2px)'
-                                  }
-                                }}
-                              >
-                                About Us
-                              </Button>
+                              <Tooltip title={item.tooltip} placement="top" arrow>
+                                <IconButton
+                                  component={Link}
+                                  to={item.path}
+                                  sx={{
+                                    width: 70,
+                                    height: 70,
+                                    background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
+                                    border: '1px solid rgba(255,255,255,0.15)',
+                                    borderRadius: '16px',
+                                    color: '#60a5fa',
+                                    fontSize: '2rem',
+                                    transition: 'all 0.3s ease',
+                                    '&:hover': {
+                                      transform: 'translateY(-4px) scale(1.1)',
+                                      borderColor: '#60a5fa',
+                                      backgroundColor: 'rgba(96, 165, 250, 0.15)',
+                                      boxShadow: '0 8px 32px rgba(96, 165, 250, 0.25)'
+                                    }
+                                  }}
+                                >
+                                  {item.icon}
+                                </IconButton>
+                              </Tooltip>
                             </motion.div>
                           </Grid>
-
-                          {/* Mentors Button */}
-                          <Grid item xs={6}>
-                            <motion.div
-                              variants={fadeInUp}
-                              initial="hidden"
-                              animate="visible"
-                              custom={4}
-                            >
-                              <Button
-                                component={Link}
-                                to='/mentors'
-                                variant="outlined"
-                                startIcon={<GitHub />}
-                                fullWidth
-                                sx={{
-                                  borderColor: 'rgba(255,255,255,0.2)',
-                                  color: 'rgba(255,255,255,0.9)',
-                                  textTransform: 'none',
-                                  fontWeight: 600,
-                                  py: 2.5,
-                                  px: 2,
-                                  borderRadius: '12px',
-                                  backdropFilter: 'blur(20px)',
-                                  background: 'rgba(255,255,255,0.03)',
-                                  fontSize: '0.85rem',
-                                  '&:hover': {
-                                    borderColor: 'rgba(255,255,255,0.4)',
-                                    color: '#fff',
-                                    backgroundColor: 'rgba(255,255,255,0.08)',
-                                    transform: 'translateY(-2px)'
-                                  }
-                                }}
-                              >
-                                Mentors
-                              </Button>
-                            </motion.div>
-                          </Grid>
-
-                          {/* Contributing Guide Button */}
-                          <Grid item xs={6}>
-                            <motion.div
-                              variants={fadeInUp}
-                              initial="hidden"
-                              animate="visible"
-                              custom={5}
-                            >
-                              <Button
-                                component={Link}
-                                to='/contributing'
-                                variant="outlined"
-                                startIcon={<MenuBook />}
-                                fullWidth
-                                sx={{
-                                  borderColor: 'rgba(255,255,255,0.2)',
-                                  color: 'rgba(255,255,255,0.9)',
-                                  textTransform: 'none',
-                                  fontWeight: 600,
-                                  py: 2.5,
-                                  px: 2,
-                                  borderRadius: '12px',
-                                  backdropFilter: 'blur(20px)',
-                                  background: 'rgba(255,255,255,0.03)',
-                                  fontSize: '0.85rem',
-                                  '&:hover': {
-                                    borderColor: 'rgba(255,255,255,0.4)',
-                                    color: '#fff',
-                                    backgroundColor: 'rgba(255,255,255,0.08)',
-                                    transform: 'translateY(-2px)'
-                                  }
-                                }}
-                              >
-                                Contributing
-                              </Button>
-                            </motion.div>
-                          </Grid>
-
-                          {/* Code of Conduct Button */}
-                          <Grid item xs={6}>
-                            <motion.div
-                              variants={fadeInUp}
-                              initial="hidden"
-                              animate="visible"
-                              custom={6}
-                            >
-                              <Button
-                                component={Link}
-                                to='/code-of-conduct'
-                                variant="outlined"
-                                startIcon={<Gavel />}
-                                fullWidth
-                                sx={{
-                                  borderColor: 'rgba(255,255,255,0.2)',
-                                  color: 'rgba(255,255,255,0.9)',
-                                  textTransform: 'none',
-                                  fontWeight: 600,
-                                  py: 2.5,
-                                  px: 2,
-                                  borderRadius: '12px',
-                                  backdropFilter: 'blur(20px)',
-                                  background: 'rgba(255,255,255,0.03)',
-                                  fontSize: '0.85rem',
-                                  '&:hover': {
-                                    borderColor: 'rgba(255,255,255,0.4)',
-                                    color: '#fff',
-                                    backgroundColor: 'rgba(255,255,255,0.08)',
-                                    transform: 'translateY(-2px)'
-                                  }
-                                }}
-                              >
-                                Code of Conduct
-                              </Button>
-                            </motion.div>
-                          </Grid>
-                        </Grid>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </Box>
+                        ))}
+                      </Grid>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               </Grid>
             </Grid>
           </Box>
@@ -619,5 +530,3 @@ const HomePage = () => {
 };
 
 export default HomePage;
-
-

@@ -167,7 +167,7 @@ jobs:
           github_token: ${{ steps.token.outputs.token }}
           allowed_non_write_users: "*"
           prompt: |
-            FAST MODE - Minimum steps, no todo lists, NEVER ask questions - just do it.
+            FAST MODE - Minimum steps, no todo lists, NEVER ask questions - just do it. Do NOT use the Skill tool - follow these instructions directly.
 
             Issue #${{ steps.issue.outputs.number }} - Validation: ${{ steps.validate.outputs.result }}
 
@@ -193,7 +193,7 @@ jobs:
             7. Commit, push. If new PR: `gh pr create --title "Add NAME" --body "Fixes #${{ steps.issue.outputs.number }}" --label TIER-APP-REVIEW-PR`. Update issue label to TIER-APP-REVIEW
 
             Be fast and concise.
-          claude_args: "--dangerously-skip-permissions --allowedTools Bash,Read,Edit,Glob,Grep --disallowedTools AskUserQuestion,TodoWrite"
+          claude_args: "--dangerously-skip-permissions --allowedTools Bash,Read,Edit,Glob,Grep"
 
   app-handle-outcome:
     if: |

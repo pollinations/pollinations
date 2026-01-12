@@ -51,6 +51,12 @@ const ALL_MODELS = [
     ...Object.keys(IMAGE_SERVICES).map((id) => ({ id, label: getModelDisplayName(id), type: "image" as const })),
 ];
 
+// Time constants in milliseconds
+const MS_PER_HOUR = 3600000;
+const MS_PER_DAY = 86400000;
+const MS_PER_WEEK = MS_PER_DAY * 7;
+const MS_PER_30_DAYS = MS_PER_DAY * 30;
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // FILTER COMPONENTS - Matching existing dashboard patterns
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -59,11 +65,14 @@ type FilterButtonProps = {
     active: boolean;
     onClick: () => void;
     children: React.ReactNode;
+    ariaLabel?: string;
 };
 
-const FilterButton: FC<FilterButtonProps> = ({ active, onClick, children }) => (
+const FilterButton: FC<FilterButtonProps> = ({ active, onClick, children, ariaLabel }) => (
     <button
         onClick={onClick}
+        aria-label={ariaLabel}
+        aria-pressed={active}
         className={cn(
             "px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200",
             active
@@ -267,8 +276,9 @@ const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(600);
 
-    // Animate on mount
+    // Animate on mount with cleanup to prevent memory leaks
     useEffect(() => {
+        let animationId: number;
         const duration = 800;
         const start = performance.now();
         const animate = (now: number) => {
@@ -276,9 +286,12 @@ const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
             const progress = Math.min(elapsed / duration, 1);
             // Ease out cubic
             setAnimationProgress(1 - Math.pow(1 - progress, 3));
-            if (progress < 1) requestAnimationFrame(animate);
+            if (progress < 1) {
+                animationId = requestAnimationFrame(animate);
+            }
         };
-        requestAnimationFrame(animate);
+        animationId = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(animationId);
     }, [data]);
 
     // Responsive
@@ -557,6 +570,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
     const keys: ApiKeyInfo[] = apiKeys || [];
     const [usage, setUsage] = useState<UsageRecord[]>([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [fetchedRange, setFetchedRange] = useState<TimeRange | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [filters, setFilters] = useState<FilterState>({
@@ -572,11 +586,19 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
     const fetchUsage = (timeRange: TimeRange, customDays: number) => {
         const limit = getRecordLimit(timeRange, customDays);
         setLoading(true);
+        setError(null);
         fetch(`/api/usage?format=json&limit=${limit}`)
-            .then((r) => (r.ok ? r.json() : null))
+            .then((r) => {
+                if (!r.ok) throw new Error("Failed to fetch usage data");
+                return r.json();
+            })
             .then((data) => {
                 setUsage(data?.usage || []);
                 setFetchedRange(timeRange);
+            })
+            .catch((err) => {
+                setError(err.message || "Failed to load usage data");
+                setUsage([]);
             })
             .finally(() => setLoading(false));
     };
@@ -585,6 +607,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
     useEffect(() => {
         if (fetchedRange || !containerRef.current) return;
 
+        const container = containerRef.current;
         const observer = new IntersectionObserver(
             (entries) => {
                 if (entries[0].isIntersecting && !fetchedRange) {
@@ -595,16 +618,16 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
             { threshold: 0.1 } // Trigger when 10% visible
         );
 
-        observer.observe(containerRef.current);
+        observer.observe(container);
         return () => observer.disconnect();
-    }, [fetchedRange]);
+    }, [fetchedRange, filters.customDays]);
 
     // Re-fetch when time range changes to a larger range
     useEffect(() => {
         if (!fetchedRange) return; // Initial fetch not done yet
 
         // Only re-fetch if we need more data
-        const rangeOrder: TimeRange[] = ["24h", "7d", "30d", "all", "custom"];
+        const rangeOrder = ["24h", "7d", "30d", "all", "custom"] as const;
         const currentIdx = rangeOrder.indexOf(fetchedRange);
         const newIdx = rangeOrder.indexOf(filters.timeRange);
 
@@ -613,7 +636,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
             (filters.timeRange === "custom" && fetchedRange === "custom" && filters.customDays > 14)) {
             fetchUsage(filters.timeRange, filters.customDays);
         }
-    }, [filters.timeRange, filters.customDays]);
+    }, [filters.timeRange, filters.customDays, fetchedRange]);
 
     // Models that appear in usage data, enriched with registry display names
     const usedModels = useMemo(() => {
@@ -638,10 +661,10 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
     const { chartData, stats } = useMemo(() => {
         const now = new Date();
         const cutoff =
-            filters.timeRange === "24h" ? new Date(now.getTime() - 86400000) :
-            filters.timeRange === "7d" ? new Date(now.getTime() - 604800000) :
-            filters.timeRange === "30d" ? new Date(now.getTime() - 2592000000) :
-            filters.timeRange === "custom" ? new Date(now.getTime() - filters.customDays * 86400000) :
+            filters.timeRange === "24h" ? new Date(now.getTime() - MS_PER_DAY) :
+            filters.timeRange === "7d" ? new Date(now.getTime() - MS_PER_WEEK) :
+            filters.timeRange === "30d" ? new Date(now.getTime() - MS_PER_30_DAYS) :
+            filters.timeRange === "custom" ? new Date(now.getTime() - filters.customDays * MS_PER_DAY) :
             new Date(0);
 
         const filtered = usage.filter((r) => {
@@ -660,7 +683,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
             return true;
         });
 
-        const bucketSize = filters.timeRange === "24h" ? 3600000 : 86400000;
+        const bucketSize = filters.timeRange === "24h" ? MS_PER_HOUR : MS_PER_DAY;
         type BucketData = {
             requests: number;
             cost: number;
@@ -766,7 +789,20 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
                         <div className="h-[180px] bg-gray-100 rounded-xl" />
                     </div>
                 )}
-                {!loading && (
+                {error && !loading && (
+                    <div className="flex items-center justify-center h-[180px] rounded-xl bg-red-50 border border-dashed border-red-200">
+                        <div className="text-center">
+                            <p className="text-sm text-red-500 font-medium">{error}</p>
+                            <button
+                                onClick={() => fetchUsage(filters.timeRange, filters.customDays)}
+                                className="mt-2 text-xs text-red-600 hover:text-red-700 underline"
+                            >
+                                Try again
+                            </button>
+                        </div>
+                    </div>
+                )}
+                {!loading && !error && (
                     <>
                 {/* Filters Row 1: Time Range + Metric */}
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4">

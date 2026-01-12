@@ -1,23 +1,44 @@
 [
   {
     "name": "John Doe",
+    "title": "Senior Full-Stack Engineer",
     "bio": "Experienced software engineer with a passion for open-source.",
     "expertise": ["React", "Node.js", "GraphQL"],
+    "skills": ["JavaScript", "TypeScript", "React", "Node.js", "GraphQL", "MongoDB", "Docker", "AWS"],
+    "yearsExperience": 10,
+    "projects": 25,
     "longDescription": "John has over 10 years of experience in the software industry, working with various technologies and mentoring junior developers. He is a strong advocate for open-source and has contributed to several popular projects.",
-    "imageUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=60"
+    "imageUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=60",
+    "linkedin": "https://linkedin.com/in/johndoe-dev",
+    "github": "https://github.com/johndoe-dev",
+    "email": "john.doe@pollinations.ai"
   },
   {
     "name": "Jane Smith",
+    "title": "AI Research Scientist",
     "bio": "Data scientist and machine learning enthusiast.",
     "expertise": ["Python", "TensorFlow", "PyTorch"],
+    "skills": ["Python", "TensorFlow", "PyTorch", "Scikit-learn", "Pandas", "NumPy", "Computer Vision", "NLP"],
+    "yearsExperience": 8,
+    "projects": 18,
     "longDescription": "Jane is a data scientist with a background in academic research. She has a deep understanding of machine learning algorithms and has applied them to solve real-world problems in various domains.",
-    "imageUrl": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=60"
+    "imageUrl": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=60",
+    "linkedin": "https://linkedin.com/in/janesmith-ai",
+    "github": "https://github.com/janesmith-ml",
+    "email": "jane.smith@pollinations.ai"
   },
   {
     "name": "Peter Jones",
+    "title": "Lead UX Designer",
     "bio": "UX/UI designer with a focus on user-centered design.",
     "expertise": ["Figma", "Sketch", "Adobe XD"],
+    "skills": ["Figma", "Sketch", "Adobe XD", "Prototyping", "User Research", "Design Systems", "HTML/CSS", "React"],
+    "yearsExperience": 7,
+    "projects": 22,
     "longDescription": "Peter is a creative and detail-oriented designer who is passionate about creating intuitive and engaging user experiences. He has a strong understanding of design principles and has worked on a wide range of projects, from mobile apps to large-scale web applications.",
-    "imageUrl": "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=60"
+    "imageUrl": "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=60",
+    "linkedin": "https://linkedin.com/in/peterjones-ux",
+    "github": "https://github.com/peterjones-design",
+    "email": "peter.jones@pollinations.ai"
   }
 ]

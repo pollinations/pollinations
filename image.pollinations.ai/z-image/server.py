@@ -117,11 +117,18 @@ class ImageRequest(BaseModel):
             if total_pixels > MAX_FINAL_PIXELS:
                 max_h = MAX_FINAL_PIXELS // width
                 max_pixels_millions = MAX_FINAL_PIXELS / 1_000_000
+                max_square = int(math.sqrt(MAX_FINAL_PIXELS))
+                max_square_aligned = (max_square // 16) * 16
+                examples = [
+                    f"{max_square_aligned}x{max_square_aligned}",
+                    "1024x2048" if 1024 * 2048 <= MAX_FINAL_PIXELS else "1024x1024",
+                    "1024x1024"
+                ]
                 raise ValueError(
                     f"Requested {width}x{height} = {total_pixels:,} pixels exceeds limit of {MAX_FINAL_PIXELS:,} pixels ({max_pixels_millions:.2f}M). "
                     f"For width={width}px, maximum height is {max_h}px. "
-                    f"Example valid sizes: {min(4096, width)}x{min(4096, height)}, 2048x2048, 1024x1024. "
-                    f"Keep aspect ratio < 8:1 for best results."
+                    f"Example valid sizes: {', '.join(examples)}. "
+                    f"Keep aspect ratio balanced (8:1 or closer) for best results."
                 )
         return height
 

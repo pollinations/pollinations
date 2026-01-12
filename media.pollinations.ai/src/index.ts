@@ -184,7 +184,7 @@ app.post("/upload", async (c) => {
 app.get("/:hash", async (c) => {
     const hash = c.req.param("hash");
 
-    if (!/^[a-f0-9]{64}$/i.test(hash)) {
+    if (!/^[a-f0-9]{12}$/i.test(hash)) {
         return c.json({ error: "Invalid hash format" }, 400);
     }
 
@@ -218,7 +218,7 @@ app.get("/:hash", async (c) => {
 app.on("HEAD", "/:hash", async (c) => {
     const hash = c.req.param("hash");
 
-    if (!/^[a-f0-9]{64}$/i.test(hash)) {
+    if (!/^[a-f0-9]{12}$/i.test(hash)) {
         return new Response(null, { status: 400 });
     }
 
@@ -251,7 +251,8 @@ app.on("HEAD", "/:hash", async (c) => {
 async function generateHash(buffer: ArrayBuffer): Promise<string> {
     const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    const fullHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    return fullHash.substring(0, 12);
 }
 
 function isValidMediaType(contentType: string): boolean {

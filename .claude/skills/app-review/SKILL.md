@@ -11,7 +11,7 @@ Process app submissions from GitHub issues. Validation (registration, duplicates
 
 ## Categories
 
-Pick the best fit: `vibeCoding`, `creative`, `games`, `hackAndBuild`, `chat`, `socialBots`, `learn`
+Pick the best fit: `Creative`, `Chat`, `Games`, `Dev_Tools`, `Vibes`, `Social_Bots`, `Learn`
 
 ---
 

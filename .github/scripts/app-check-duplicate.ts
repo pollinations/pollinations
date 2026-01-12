@@ -1,26 +1,6 @@
-#!/usr/bin/env node
+#!/usr/bin/env npx ts-node
 
-/**
- * Check for duplicate app submissions in APPS.md
- *
- * This script replaces fragile bash string parsing that breaks on special characters
- * (single quotes, double quotes, backticks, dollar signs, etc.)
- *
- * Usage: node app-check-duplicate.js
- *
- * Environment variables:
- *   PROJECT_JSON - JSON string with app submission data (name, url, repo, description)
- *   GITHUB_USERNAME - GitHub username of the submitter
- *
- * Output (to GITHUB_OUTPUT):
- *   duplicate_found - file where duplicate was found (empty if none)
- *   match_type - type of match: url_exact, repo_exact, name_user_exact
- *   similarity_score - semantic similarity score (0-100)
- *   similarity_reason - explanation of similarity
- *   user_previous_apps - JSON array of user's previous app submissions
- */
-
-const fs = require("fs");
+import fs from "fs";
 
 // Parse environment variables
 const projectJson = process.env.PROJECT_JSON;
@@ -37,11 +17,33 @@ if (!githubUsername) {
     process.exit(1);
 }
 
-let project;
+interface Project {
+    name?: string;
+    url?: string;
+    repo?: string;
+}
+
+interface App {
+    emoji: string;
+    name: string;
+    nameRaw: string;
+    url: string;
+    desc: string;
+    language: string;
+    category: string;
+    github: string;
+    repo: string;
+    stars: string;
+    discord: string;
+    other: string;
+    submitted: string;
+}
+
+let project: Project;
 try {
     project = JSON.parse(projectJson);
 } catch (e) {
-    console.error("Error: Invalid PROJECT_JSON:", e.message);
+    console.error("Error: Invalid PROJECT_JSON:", (e as Error).message);
     process.exit(1);
 }
 
@@ -53,7 +55,7 @@ const appRepo = project.repo || "";
  * Parse APPS.md markdown table into structured data
  * Handles special characters safely (no shell parsing)
  */
-function parseAppsMarkdown(filePath) {
+function parseAppsMarkdown(filePath: string): App[] {
     if (!fs.existsSync(filePath)) {
         return [];
     }
@@ -68,7 +70,7 @@ function parseAppsMarkdown(filePath) {
     }
 
     // Parse data rows (skip header and separator)
-    const apps = [];
+    const apps: App[] = [];
     for (let i = headerIdx + 2; i < lines.length; i++) {
         const line = lines[i];
         if (!line.startsWith("|")) continue;
@@ -128,8 +130,8 @@ function parseAppsMarkdown(filePath) {
 /**
  * Check for exact URL match
  */
-function checkUrlMatch(apps, targetUrl) {
-    if (!targetUrl) return null;
+function checkUrlMatch(apps: App[], targetUrl: string): App | undefined {
+    if (!targetUrl) return undefined;
     const normalizedTarget = targetUrl.toLowerCase().replace(/\/$/, "");
     return apps.find((app) => {
         const normalizedApp = (app.url || "").toLowerCase().replace(/\/$/, "");
@@ -140,8 +142,8 @@ function checkUrlMatch(apps, targetUrl) {
 /**
  * Check for exact repo match
  */
-function checkRepoMatch(apps, targetRepo) {
-    if (!targetRepo) return null;
+function checkRepoMatch(apps: App[], targetRepo: string): App | undefined {
+    if (!targetRepo) return undefined;
     const normalizedTarget = targetRepo
         .toLowerCase()
         .replace(/\/$/, "")
@@ -158,7 +160,11 @@ function checkRepoMatch(apps, targetRepo) {
 /**
  * Check for name + user match
  */
-function checkNameUserMatch(apps, targetName, username) {
+function checkNameUserMatch(
+    apps: App[],
+    targetName: string,
+    username: string,
+): App | undefined {
     const normalizedTarget = targetName
         .toLowerCase()
         .replace(/[^a-z0-9 ]/g, "")
@@ -170,7 +176,8 @@ function checkNameUserMatch(apps, targetName, username) {
             .trim();
         return (
             normalizedApp === normalizedTarget &&
-            app.github.toLowerCase() === username.toLowerCase()
+            app.github.toLowerCase().trim().replace(/^@/, "") ===
+                username.toLowerCase().trim().replace(/^@/, "")
         );
     });
 }
@@ -178,7 +185,7 @@ function checkNameUserMatch(apps, targetName, username) {
 /**
  * Get user's previous submissions
  */
-function getUserPreviousApps(apps, username) {
+function getUserPreviousApps(apps: App[], username: string): App[] {
     return apps.filter(
         (app) => app.github.toLowerCase() === username.toLowerCase(),
     );
@@ -187,7 +194,7 @@ function getUserPreviousApps(apps, username) {
 /**
  * Write output to GITHUB_OUTPUT file
  */
-function writeOutput(key, value) {
+function writeOutput(key: string, value: string): void {
     if (!githubOutput) {
         console.log(`${key}=${value}`);
         return;
@@ -205,8 +212,8 @@ function writeOutput(key, value) {
 const appsFile = "apps/APPS.md";
 const apps = parseAppsMarkdown(appsFile);
 
-console.log(`Parsed ${apps.length} apps from ${appsFile}`);
-console.log(`Checking submission: "${appName}" by @${githubUsername}`);
+console.error(`Parsed ${apps.length} apps from ${appsFile}`);
+console.error(`Checking submission: "${appName}" by @${githubUsername}`);
 
 let duplicateFound = "";
 let matchType = "";
@@ -216,7 +223,7 @@ const urlMatch = checkUrlMatch(apps, appUrl);
 if (urlMatch) {
     duplicateFound = appsFile;
     matchType = "url_exact";
-    console.log(`❌ URL match found: ${urlMatch.name}`);
+    console.error(`❌ URL match found: ${urlMatch.name}`);
 }
 
 // 2. Check for exact repo match (HARD MATCH)
@@ -225,7 +232,7 @@ if (!duplicateFound && appRepo) {
     if (repoMatch) {
         duplicateFound = appsFile;
         matchType = "repo_exact";
-        console.log(`❌ Repo match found: ${repoMatch.name}`);
+        console.error(`❌ Repo match found: ${repoMatch.name}`);
     }
 }
 
@@ -235,7 +242,7 @@ if (!duplicateFound) {
     if (nameUserMatch) {
         duplicateFound = appsFile;
         matchType = "name_user_exact";
-        console.log(`❌ Name+User match found: ${nameUserMatch.name}`);
+        console.error(`❌ Name+User match found: ${nameUserMatch.name}`);
     }
 }
 
@@ -246,7 +253,7 @@ writeOutput("match_type", matchType);
 // Get user's previous apps for semantic similarity check (done externally via API)
 const userPreviousApps = getUserPreviousApps(apps, githubUsername);
 if (userPreviousApps.length > 0 && !duplicateFound) {
-    console.log(
+    console.error(
         `Found ${userPreviousApps.length} previous apps by @${githubUsername}`,
     );
 
@@ -263,4 +270,15 @@ if (userPreviousApps.length > 0 && !duplicateFound) {
 // Default similarity values (semantic check done separately via API call)
 writeOutput("similarity_score", "0");
 
-console.log("✅ Duplicate check complete");
+console.error("✅ Duplicate check complete");
+
+// Output JSON to stdout ONLY
+const result = {
+    isDuplicate: !!duplicateFound,
+    matchType: matchType,
+    reason: duplicateFound ? matchType : "",
+    userPreviousApps: userPreviousApps
+        .map((app) => `Name: ${app.name} | Desc: ${app.desc}`)
+        .join("\n")
+};
+console.log(JSON.stringify(result));

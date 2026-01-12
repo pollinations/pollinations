@@ -153,7 +153,7 @@ function AuthorizeComponent() {
 
                 <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 shadow-lg text-center">
                     <h1 className="text-2xl font-bold mb-4">
-                        Connect to Pollinations
+                        Connect to pollinations.ai
                     </h1>
 
                     {error ? (

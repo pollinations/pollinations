@@ -16,7 +16,7 @@ export const LAYOUT = {
     privacyLink: "Privacy",
     emailLink: "Email",
     copiedLabel: "Copied!",
-    footerBranding: "pollinations.ai - 2025",
+    footerBranding: "pollinations.ai - 2026",
     footerTagline: "Open source AI innovation from Berlin",
 };
 

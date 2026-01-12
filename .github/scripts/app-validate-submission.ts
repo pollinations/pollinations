@@ -65,7 +65,9 @@ async function main(): Promise<void> {
 
     // 1. Check Enter registration and tier
     try {
-        const cmd = `cd enter.pollinations.ai && npx wrangler d1 execute DB --remote --env production --command "SELECT id, tier FROM user WHERE LOWER(github_username) = LOWER('${ISSUE_AUTHOR}');" --json`;
+        // Sanitize username to prevent SQL injection (defense-in-depth)
+        const safeUsername = ISSUE_AUTHOR.replace(/[^a-zA-Z0-9_-]/g, "");
+        const cmd = `cd enter.pollinations.ai && npx wrangler d1 execute DB --remote --env production --command "SELECT id, tier FROM user WHERE LOWER(github_username) = LOWER('${safeUsername}');" --json`;
         const output = execSync(cmd, {
             encoding: "utf-8",
             stdio: ["pipe", "pipe", "pipe"],

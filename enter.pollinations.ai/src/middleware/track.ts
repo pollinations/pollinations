@@ -404,7 +404,11 @@ async function trackResponse(
             contentFilterResults,
         };
     }
-    const cost = calculateCost(modelUsage.model as ModelId, modelUsage.usage);
+    // Use service's canonical modelId for cost (not the provider's model ID from response)
+    const serviceModelId = getServiceDefinition(
+        resolvedModelRequested as ServiceId,
+    ).modelId;
+    const cost = calculateCost(serviceModelId as ModelId, modelUsage.usage);
     const price = calculatePrice(
         resolvedModelRequested as ServiceId,
         modelUsage.usage,

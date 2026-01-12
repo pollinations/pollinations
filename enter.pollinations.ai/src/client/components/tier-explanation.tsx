@@ -110,8 +110,8 @@ export const TierExplanation: FC = () => {
                                 Publish an app
                             </a>
                         </p>
-                        <p className="text-[10px] text-gray-400">
-                            or contribute to the ecosystem
+                        <p className="text-[10px] text-amber-600 mt-0.5">
+                            🌱 Must be Seed first
                         </p>
                     </div>
                 </div>

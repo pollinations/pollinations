@@ -176,55 +176,49 @@ flowchart TD
 
 #### Step 3A: Validation FAILED
 
-**Script:** `app-review-agent.py` (lines 148-184)
+| Error Type | Label | Issue State |
+|------------|-------|-------------|
+| Not registered | `TIER-APP-INCOMPLETE` | Open (can retry) |
+| Spore tier | `TIER-APP-REJECTED` | Closed |
+| Duplicate | `TIER-APP-REJECTED` | Closed |
 
-**What happens:**
+**Bot comments posted:**
 
-1. **AI generates comment:** LLM creates friendly error message explaining what's wrong
-2. **Comment posted:** Bot posts comment to issue via GitHub API
-3. **Label updated:**
-   - Duplicate → `TIER-APP-REJECTED`
-   - Spore tier → `TIER-APP-REJECTED`
-   - Not registered → `TIER-APP-INCOMPLETE`
-4. **Issue closed:** If `TIER-APP-REJECTED`, issue is closed
-5. **Issue stays open:** If `TIER-APP-INCOMPLETE`, user can fix and retry
+> 🟠 **Not Registered**
+> 
+> Hey @user! To submit an app, you need to register at enter.pollinations.ai first. Once registered, comment here and we'll retry.
 
-**Example comments:**
+> 🔴 **Spore Tier**
+> 
+> Thanks for your interest! To submit an app, you need at least Seed tier. This is automatically granted based on your GitHub activity. Please try again later.
 
-- **Not registered:** "Hey @user! To submit an app, you need to register at enter.pollinations.ai first. Once registered, comment here and we'll retry."
-- **Spore tier:** "Thanks for your interest! To submit an app, you need at least Seed tier. This is automatically granted based on your GitHub activity. Please try again later."
-- **Duplicate:** "This app appears to already be listed. If you believe this is an error, please comment here."
+> 🔴 **Duplicate**
+> 
+> This app appears to already be listed. If you believe this is an error, please comment here.
 
 ---
 
 #### Step 3B: Validation PASSED → PR Created
 
-**Script:** `app-review-agent.py` (lines 186-280)
+| Action | Details |
+|--------|---------|
+| AI processing | Selects emoji, category, description, language |
+| Branch | `auto/app-{issue_number}-{app_name_slug}` |
+| Files updated | `apps/APPS.md`, `README.md` |
+| PR label | `TIER-APP-REVIEW-PR` |
+| Issue label | `TIER-APP` → `TIER-APP-REVIEW` |
 
-**What happens:**
+**Bot comments posted:**
 
-1. **AI processing:** LLM selects emoji, category, description, language code
-2. **Branch created:** `auto/app-{issue_number}-{app_name_slug}`
-3. **APPS.md updated:** New row prepended via `app-prepend-row.js`
-4. **README updated:** Last 10 apps section via `app-update-readme.js`
-5. **Commit created:** 
-   ```
-   Add {App Name} to {category}
-   
-   Co-authored-by: {username} <{user_id}+{username}@users.noreply.github.com>
-   ```
-6. **PR created:** With `TIER-APP-REVIEW-PR` label
-7. **Issue label updated:** `TIER-APP` → `TIER-APP-REVIEW`
-8. **Comment posted to issue:**
-   ```
-   🎉 Thanks @user! PR created to add **App Name** to **category**.
-   
-   A maintainer will review shortly. Issue closes automatically when PR merges.
-   ```
-9. **Credit suggestion comment:**
-   ```
-   💡 @user, it would be awesome if you could add a credit to pollinations.ai in your app!
-   ```
+> 🟢 **PR Created**
+> 
+> 🎉 Thanks @user! PR created to add **App Name** to **category**.
+> 
+> A maintainer will review shortly. Issue closes automatically when PR merges.
+
+> 💡 **Credit Suggestion**
+> 
+> @user, it would be awesome if you could add a credit to pollinations.ai in your app!
 
 ---
 
@@ -241,26 +235,27 @@ flowchart TD
 
 #### Step 5A: PR Merged → Tier Upgrade
 
-**Workflow:** `app-upgrade-tier.yml` triggers on `pull_request_target: closed`
+**Workflow:** `app-upgrade-tier.yml`
 
-**Condition:** `merged == true` AND has `TIER-APP-REVIEW-PR` label
+| Action | Details |
+|--------|---------|
+| Trigger | PR closed + merged |
+| Condition | Has `TIER-APP-REVIEW-PR` label |
+| PR label | `TIER-APP-REVIEW-PR` → `TIER-APP-COMPLETE` |
+| User tier | Upgraded to `flower` (D1 + Polar) |
+| Issue | Closed automatically |
 
-**What happens:**
+**Bot comment posted:**
 
-1. **PR label updated:** `TIER-APP-REVIEW-PR` → `TIER-APP-COMPLETE`
-2. **Linked issue found:** Parses PR body for `Fixes #123`
-3. **User tier upgraded:**
-   - Script: `tier-update-user.ts`
-   - D1 database: `tier = 'flower'`
-   - Polar: subscription updated
-4. **Verification:** Script confirms tier was set correctly
-5. **Celebration comment posted to issue:**
-   ```
-   ✅ **Congratulations!** Your app **App Name** is now live on pollinations.ai! 🌸
-   ```
-6. **Issue closed automatically** (via `Fixes #123` in PR)
-
-> **Note:** For app submissions, the user is always registered before a PR is created (validated in Step 2). The "user not found" scenario only applies to direct code PRs that bypass the app submission flow.
+> 🎉 **App Approved & Verified!**
+> 
+> Your app has been added to the pollinations.ai showcase!
+> 
+> **🌸 Flower Tier Activated!**
+> 
+> @user, you've been upgraded to **Flower tier** (10 pollen/day)!
+> 
+> Check your balance at enter.pollinations.ai 🌻
 
 ---
 

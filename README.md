@@ -15,7 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [RESONANCE](https://resonanceai.netlify.app) | Mobile-first, user-centric image generator with many styles and optimization. | @Bakhshi7889 |
+| [elixpo](https://elixpo.com) | Create images from text prompts using AI | @Circuit-Overtime |
 | [FARABI.me](https://farabi.me) | AI app for students with MCQ, Flashcard and Image Generator features | @Farabi-Devs |
 | [FragBin](https://www.fragbin.com/) | Share code/text with expiry, password protection & AI-powered summaries | @maximeb97 |
 | [AI Pet Name Generator](https://petpetgenerator.cc/ai-pet-name-generator) | Generate unique pet names with styles like cute, funny, or fantasy | @loocao |

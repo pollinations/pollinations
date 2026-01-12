@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Grid, Link, IconButton, Chip, Divider } from '@mui/material';
-import { GitHub, Twitter, Email } from '@mui/icons-material';
+import { GitHub, Twitter, LinkedIn } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 
 export default function Footer() {
@@ -14,9 +14,9 @@ export default function Footer() {
   ];
 
   const communityLinks = [
-    { name: 'GitHub', icon: <GitHub />, url: 'https://github.com/pollinations' },
+    { name: 'GitHub', icon: <GitHub />, url: 'https://github.com/pollinations/pollinations' },
     { name: 'Twitter', icon: <Twitter />, url: 'https://twitter.com/pollinations_ai' },
-    { name: 'Discord', icon: <Email />, url: 'https://discord.gg/pollinations' }
+    { name: 'LinkedIn', icon: <LinkedIn/>, url: 'https://www.linkedin.com/company/pollinations-ai' }
   ];
 
   const legalLinks = [

@@ -152,6 +152,8 @@ def main():
         # Determine label based on error type
         if any("duplicate" in e.lower() for e in errors):
             label = "TIER-APP-REJECTED"
+        elif any("spore tier" in e.lower() for e in errors):
+            label = "TIER-APP-REJECTED"
         else:
             label = "TIER-APP-INCOMPLETE"
 

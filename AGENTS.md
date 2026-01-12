@@ -29,13 +29,13 @@ App submissions are now **fully automated** via the `app-review-submission.yml` 
 
 **Categories:**
 
-- Vibe Coding ✨ (`vibeCoding`): No-code / describe-to-code playgrounds and builders
-- Creative 🎨 (`creative`): Turn prompts into images, video, music, design, slides
-- Games 🎲 (`games`): AI-powered play, interactive fiction, puzzle & agent worlds
-- Hack-&-Build 🛠️ (`hackAndBuild`): SDKs, integration libs, extensions, dashboards, MCP servers
-- Chat 💬 (`chat`): Standalone chat UIs / multi-model playgrounds
-- Social Bots 🤖 (`socialBots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
-- Learn 📚 (`learn`): Tutorials, guides, style books & educational demos
+- Vibes ✨ (`Vibes`): No-code / describe-to-code playgrounds and builders
+- Creative 🎨 (`Creative`): Turn prompts into images, video, music, design, slides
+- Games 🎲 (`Games`): AI-powered play, interactive fiction, puzzle & agent worlds
+- Dev_Tools 🛠️ (`Dev_Tools`): SDKs, integration libs, extensions, dashboards, MCP servers
+- Chat 💬 (`Chat`): Standalone chat UIs / multi-model playgrounds
+- Social_Bots 🤖 (`Social_Bots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
+- Learn 📚 (`Learn`): Tutorials, guides, style books & educational demos
 
 ## Non-English Apps
 

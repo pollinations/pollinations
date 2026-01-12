@@ -267,7 +267,10 @@ export const track = (eventType: EventType) =>
                     const packBalance = currentUser[0]?.packBalance ?? 0;
 
                     // Decrement tier first, then pack
-                    const fromTier = Math.min(priceToDeduct, Math.max(0, tierBalance));
+                    const fromTier = Math.min(
+                        priceToDeduct,
+                        Math.max(0, tierBalance),
+                    );
                     const fromPack = priceToDeduct - fromTier;
 
                     await db
@@ -394,7 +397,11 @@ async function trackResponse(
             contentFilterResults,
         };
     }
-    const cost = calculateCost(modelUsage.model as ModelId, modelUsage.usage);
+    // Use service's canonical modelId for cost (not the provider's model ID from response)
+    const serviceModelId = getServiceDefinition(
+        resolvedModelRequested as ServiceId,
+    ).modelId;
+    const cost = calculateCost(serviceModelId as ModelId, modelUsage.usage);
     const price = calculatePrice(
         resolvedModelRequested as ServiceId,
         modelUsage.usage,

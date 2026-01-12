@@ -1,45 +1,307 @@
+import React from 'react';
+import { Box, Typography, Grid, Link, IconButton, Chip, Divider } from '@mui/material';
+import { GitHub, Twitter, Email } from '@mui/icons-material';
+import { Link as RouterLink } from 'react-router-dom';
+
 export default function Footer() {
-  const currentYear = new Date().getFullYear()
+  const currentYear = new Date().getFullYear();
+
+  const resourceLinks = [
+    { name: 'Timeline', path: '/timeline' },
+    { name: 'Projects', path: '/projects' },
+    { name: 'Mentors', path: '/mentors' },
+    { name: 'About', path: '/about' }
+  ];
+
+  const communityLinks = [
+    { name: 'GitHub', icon: <GitHub />, url: 'https://github.com/pollinations' },
+    { name: 'Twitter', icon: <Twitter />, url: 'https://twitter.com/pollinations_ai' },
+    { name: 'Discord', icon: <Email />, url: 'https://discord.gg/pollinations' }
+  ];
+
+  const legalLinks = [
+    { name: 'Privacy Policy', path: '/privacy' },
+    { name: 'Terms & Conditions', path: '/terms' },
+    { name: 'Contributing', url: 'https://github.com/pollinations/pollinations/blob/main/CONTRIBUTING.md' },
+    { name: 'Code of Conduct', url: 'https://github.com/pollinations/pollinations/blob/main/CODE_OF_CONDUCT.md' }
+  ];
 
   return (
-    <footer className="bg-gray-900 text-white mt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          <div>
-            <h3 className="text-lg font-bold mb-4">GSOC 2026</h3>
-            <p className="text-gray-400">Building the future of open source together.</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-semibold mb-4">Resources</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-white transition">Documentation</a></li>
-              <li><a href="#" className="hover:text-white transition">FAQ</a></li>
-              <li><a href="#" className="hover:text-white transition">Timeline</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-sm font-semibold mb-4">Community</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-white transition">Discord</a></li>
-              <li><a href="#" className="hover:text-white transition">GitHub</a></li>
-              <li><a href="#" className="hover:text-white transition">Twitter</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-sm font-semibold mb-4">Legal</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-white transition">Privacy</a></li>
-              <li><a href="#" className="hover:text-white transition">Terms</a></li>
-              <li><a href="#" className="hover:text-white transition">Code of Conduct</a></li>
-            </ul>
-          </div>
-        </div>
-        <div className="border-t border-gray-700 pt-8">
-          <p className="text-center text-gray-400">
-            © {currentYear} Google Summer of Code. All rights reserved.
-          </p>
-        </div>
-      </div>
-    </footer>
-  )
+    <Box 
+      component="footer" 
+      sx={{
+        background: 'linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 100%)',
+        backdropFilter: 'blur(20px)',
+        borderTop: '1px solid rgba(255,255,255,0.1)',
+        color: '#fff',
+        mt: 8,
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '600px',
+          height: '200px',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0) 70%)',
+          pointerEvents: 'none'
+        }
+      }}
+    >
+      <Box sx={{ maxWidth: '1200px', mx: 'auto', px: { xs: 2, md: 4 }, py: { xs: 4, md: 6 }, position: 'relative', zIndex: 1 }}>
+        <Grid container spacing={{ xs: 4, md: 6 }}>
+          {/* Brand Section */}
+          <Grid item xs={12} md={4}>
+            <Box sx={{ mb: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    fontWeight: 700,
+                    background: 'linear-gradient(135deg, #fff 0%, #a1a1aa 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    letterSpacing: '-0.02em'
+                  }}
+                >
+                  GSOC - pollinations.ai
+                </Typography>
+                <Chip 
+                  label="2026" 
+                  size="small" 
+                  sx={{ 
+                    bgcolor: 'rgba(255,255,255,0.1)', 
+                    color: 'rgba(255,255,255,0.8)',
+                    fontSize: '12px',
+                    height: '20px',
+                    fontFamily: 'monospace',
+                    fontWeight: 500,
+                    border: '1px solid rgba(255,255,255,0.2)'
+                  }} 
+                />
+              </Box>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: 'rgba(255,255,255,0.7)', 
+                  lineHeight: 1.6,
+                  mb: 3
+                }}
+              >
+                Building the future of AI and open source together through Google Summer of Code 2026.
+              </Typography>
+
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: 'rgba(255,255,255,0.7)', 
+                  lineHeight: 1.6,
+                  mb: 3
+                }}
+              >
+                ayushman@myceli.ai
+              </Typography>
+              
+              {/* Social Icons */}
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                {communityLinks.map((social) => (
+                  <IconButton
+                    key={social.name}
+                    component="a"
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      color: 'rgba(255,255,255,0.7)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '8px',
+                      p: 1,
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        color: '#fff',
+                        borderColor: 'rgba(255,255,255,0.3)',
+                        backgroundColor: 'rgba(255,255,255,0.05)',
+                        transform: 'translateY(-2px)'
+                      }
+                    }}
+                  >
+                    {social.icon}
+                  </IconButton>
+                ))}
+              </Box>
+            </Box>
+          </Grid>
+
+          {/* Resources Section */}
+          <Grid item xs={12} sm={6} md={2.5}>
+            <Typography 
+              variant="subtitle2" 
+              sx={{ 
+                fontWeight: 600, 
+                mb: 2,
+                color: '#fff',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                fontSize: '0.75rem'
+              }}
+            >
+              Resources
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              {resourceLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  component={RouterLink}
+                  to={link.path}
+                  sx={{
+                    color: 'rgba(255,255,255,0.7)',
+                    textDecoration: 'none',
+                    fontSize: '0.875rem',
+                    transition: 'all 0.3s ease',
+                    display: 'inline-block',
+                    '&:hover': {
+                      color: '#fff',
+                      transform: 'translateX(4px)'
+                    }
+                  }}
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </Box>
+          </Grid>
+
+          {/* Community Section */}
+          <Grid item xs={12} sm={6} md={2.5}>
+            <Typography 
+              variant="subtitle2" 
+              sx={{ 
+                fontWeight: 600, 
+                mb: 2,
+                color: '#fff',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                fontSize: '0.75rem'
+              }}
+            >
+              Community
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              {communityLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{
+                    color: 'rgba(255,255,255,0.7)',
+                    textDecoration: 'none',
+                    fontSize: '0.875rem',
+                    transition: 'all 0.3s ease',
+                    display: 'inline-block',
+                    '&:hover': {
+                      color: '#fff',
+                      transform: 'translateX(4px)'
+                    }
+                  }}
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </Box>
+          </Grid>
+
+          {/* Legal Section */}
+          <Grid item xs={12} sm={12} md={3}>
+            <Typography 
+              variant="subtitle2" 
+              sx={{ 
+                fontWeight: 600, 
+                mb: 2,
+                color: '#fff',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                fontSize: '0.75rem'
+              }}
+            >
+              Legal
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              {legalLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  component={link.path ? RouterLink : 'a'}
+                  to={link.path}
+                  href={link.url}
+                  target={link.url ? "_blank" : undefined}
+                  rel={link.url ? "noopener noreferrer" : undefined}
+                  sx={{
+                    color: 'rgba(255,255,255,0.7)',
+                    textDecoration: 'none',
+                    fontSize: '0.875rem',
+                    transition: 'all 0.3s ease',
+                    display: 'inline-block',
+                    '&:hover': {
+                      color: '#fff',
+                      transform: 'translateX(4px)'
+                    }
+                  }}
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </Box>
+          </Grid>
+        </Grid>
+
+        {/* Divider */}
+        <Divider 
+          sx={{ 
+            my: 4, 
+            borderColor: 'rgba(255,255,255,0.1)',
+            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)'
+          }} 
+        />
+
+        {/* Copyright */}
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2
+        }}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: 'rgba(255,255,255,0.6)',
+              fontFamily: 'monospace',
+              fontSize: '0.8rem'
+            }}
+          >
+            Copyright © {currentYear} pollinations.ai. All rights reserved.
+          </Typography>
+          
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              color: 'rgba(255,255,255,0.4)',
+              fontFamily: 'monospace',
+              fontSize: '0.7rem',
+              px: 2,
+              py: 0.5,
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '12px',
+              background: 'rgba(255,255,255,0.02)'
+            }}
+          >
+            2026
+          </Typography>
+        </Box>
+      </Box>
+    </Box>
+  );
 }
+

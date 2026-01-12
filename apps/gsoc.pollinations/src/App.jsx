@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { createTheme, ThemeProvider, CssBaseline } from '@mui/material';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import Home from './pages/Home';
 import Projects from './pages/Projects';
 import Mentors from './pages/Mentors';
@@ -53,6 +54,7 @@ function App() {
           <Route path='/timeline' element={<Timeline />} />
           <Route path='/about' element={<About />} />
         </Routes>
+        <Footer />
       </Router>
     </ThemeProvider>
   );

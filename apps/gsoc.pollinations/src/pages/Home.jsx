@@ -75,7 +75,7 @@ const HomePage = () => {
 
   const navigationItems = [
     { icon: <Rocket />, path: '/about', tooltip: 'About Us' },
-    { icon: <GitHub />, path: '/mentors', tooltip: 'Meet Our Mentors' },
+    { icon: <VerifiedUser />, path: '/mentors', tooltip: 'Meet Our Mentors' },
     { icon: <MenuBook />, path: '/contributing', tooltip: 'Contributing Guide' },
     { icon: <Gavel />, path: '/code-of-conduct', tooltip: 'Code of Conduct' }
   ];
@@ -127,7 +127,8 @@ const HomePage = () => {
           py: 8
         }}>
           <Box sx={{ maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-            <Grid container spacing={6} alignItems="center">
+            {/* Main Content - Centered */}
+            <Grid container spacing={6} alignItems="center" justifyContent="center">
               {/* Left Side - Content */}
               <Grid item xs={12} lg={7}>
                 <motion.div
@@ -268,7 +269,7 @@ const HomePage = () => {
                     </Button>
                   </Stack>
 
-                  {/* Program Stats - Made Square */}
+
                   <Box 
                     sx={{ 
                       display: 'flex', 
@@ -336,15 +337,16 @@ const HomePage = () => {
                   </Box>
                 </motion.div>
               </Grid>
+            </Grid>
 
-              {/* Right Side - About GSOC Card - Centered */}
-              <Grid item xs={12} lg={5} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            {/* About GSOC Card - Centered */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
+              <Box sx={{ maxWidth: '450px', width: '100%' }}>
                 <motion.div
                   variants={fadeInUp}
                   initial="hidden"
                   animate="visible"
                   custom={2}
-                  style={{ width: '100%', maxWidth: '450px' }}
                 >
                   <Card
                     elevation={0}
@@ -448,8 +450,8 @@ const HomePage = () => {
                     </CardContent>
                   </Card>
                 </motion.div>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </Box>
         </Box>
 

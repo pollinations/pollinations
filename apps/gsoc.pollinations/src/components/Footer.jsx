@@ -87,22 +87,61 @@ export default function Footer() {
                 sx={{ 
                   color: 'rgba(255,255,255,0.7)', 
                   lineHeight: 1.6,
-                  mb: 3
+                  mb: 2
                 }}
               >
                 Building the future of AI and open source together through Google Summer of Code 2026.
               </Typography>
 
-              <Typography 
-                variant="body2" 
+              {/* Contact Email Section */}
+              <Box 
                 sx={{ 
-                  color: 'rgba(255,255,255,0.7)', 
-                  lineHeight: 1.6,
-                  mb: 3
+                  mb: 3,
+                  p: 2,
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: 'rgba(255,255,255,0.02)'
                 }}
               >
-                ayushman@myceli.ai
-              </Typography>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: 'rgba(255,255,255,0.5)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontSize: '0.7rem',
+                    fontWeight: 600
+                  }}
+                >
+                  Contact Us
+                </Typography>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: 'rgba(255,255,255,0.8)', 
+                    fontFamily: 'monospace',
+                    fontSize: '0.875rem',
+                    mt: 0.5,
+                    userSelect: 'all',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ayushman@myceli.ai
+                </Typography>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: 'rgba(190, 157, 157, 0.8)', 
+                    fontFamily: 'monospace',
+                    fontSize: '0.875rem',
+                    mt: 0.5,
+                    userSelect: 'all',
+                    cursor: 'pointer'
+                  }}
+                >
+                Feel free to reach out at core@pollinations.ai for any program related queries.
+                </Typography>
+              </Box>
               
               {/* Social Icons */}
               <Box sx={{ display: 'flex', gap: 1 }}>

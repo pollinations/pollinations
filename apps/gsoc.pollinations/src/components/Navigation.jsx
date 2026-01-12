@@ -3,12 +3,6 @@ import { useState } from 'react'
 import '../styles/navigation.css'
 
 export default function Navigation() {
-  const [yearDropdown, setYearDropdown] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
-
-  const years = ['2026', '2025', '2024', '2023']
-  const currentYear = '2026'
-
   const navItems = [
     { name: 'Ideas', path: '/ideas' },
     { name: 'Mentors', path: '/mentors' },

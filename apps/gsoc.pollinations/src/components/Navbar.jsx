@@ -54,13 +54,16 @@ const Navbar = () => {
           pollinations.ai
         </Typography>
         <Chip 
-          label="v1.0.0 2026" 
+          label="2026" 
           size="small" 
           sx={{ 
             bgcolor: 'rgba(255,255,255,0.1)', 
             color: '#fff',
             fontSize: '10px',
-            height: '20px'
+            height: '20px',
+            fontSize: '15px',
+            fontFamily: 'monospace',
+            fontWeight: 500
           }} 
         />
       </Box>
@@ -132,15 +135,15 @@ const Navbar = () => {
                   letterSpacing: '-0.02em'
                 }}
               >
-                pollinations.ai
+                GSOC - pollinations.ai
               </Typography>
               <Chip 
-                label="v1.0.0 2026" 
+                label="2026" 
                 size="small" 
                 sx={{ 
                   bgcolor: 'rgba(255,255,255,0.1)', 
                   color: 'rgba(255,255,255,0.8)',
-                  fontSize: '10px',
+                  fontSize: '15px',
                   height: '22px',
                   fontFamily: 'monospace',
                   fontWeight: 500,

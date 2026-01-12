@@ -15,11 +15,18 @@
 
 import { execSync, spawn } from "child_process";
 
+// Error codes for structured error handling
+type RegistrationErrorCode =
+    | "NOT_REGISTERED" // User not found in Enter
+    | "TIER_NOT_SET" // User exists but tier is null (Polar sync bug)
+    | "SPORE_TIER"; // User has SPORE tier, needs SEED+
+
 interface RegistrationCheck {
     registered: boolean;
     username?: string;
-    tier?: string;
+    tier?: string | null;
     error?: string;
+    error_code?: RegistrationErrorCode;
 }
 
 interface DuplicateCheck {
@@ -90,15 +97,25 @@ async function main(): Promise<void> {
 
         if (!registered) {
             result.valid = false;
+            result.checks.registration!.error_code = "NOT_REGISTERED";
             result.errors.push(
                 `User @${ISSUE_AUTHOR} is not registered at enter.pollinations.ai`,
             );
-        } else if (tier?.toLowerCase() === "spore") {
+        } else if (tier === null || tier === undefined) {
+            // User exists but tier not set - this is a bug (Polar webhook didn't fire)
             result.valid = false;
+            result.checks.registration!.error_code = "TIER_NOT_SET";
+            result.errors.push(
+                `User @${ISSUE_AUTHOR} has no tier set. This is a system error - please contact support.`,
+            );
+        } else if (tier.toLowerCase() === "spore") {
+            result.valid = false;
+            result.checks.registration!.error_code = "SPORE_TIER";
             result.errors.push(
                 `User @${ISSUE_AUTHOR} has SPORE tier. To submit an app, you need at least SEED tier. SEED tier is automatically granted based on GitHub activity.`,
             );
         }
+        // SEED, FLOWER, NECTAR, ROUTER - all allowed to proceed
     } catch (err) {
         const error = err as Error;
         result.checks.registration = {

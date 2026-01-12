@@ -176,19 +176,24 @@ flowchart TD
 
 #### Step 3A: Validation FAILED
 
-| Error Type | Label | Issue State |
-|------------|-------|-------------|
-| Not registered | `TIER-APP-INCOMPLETE` | Open (can retry) |
-| Spore tier | `TIER-APP-REJECTED` | Closed |
-| Duplicate | `TIER-APP-REJECTED` | Closed |
+| Error Code | Error Type | Label | Issue State |
+|------------|------------|-------|-------------|
+| `NOT_REGISTERED` | Not registered | `TIER-APP-INCOMPLETE` | Open (can retry) |
+| `TIER_NOT_SET` | No tier (system bug) | `TIER-APP-INCOMPLETE` | Open (investigate) |
+| `SPORE_TIER` | Spore tier | `TIER-APP-REJECTED` | Closed |
+| — | Duplicate | `TIER-APP-REJECTED` | Closed |
 
 **Bot comments posted:**
 
-> 🟠 **Not Registered**
+> 🟠 **Not Registered** (`NOT_REGISTERED`)
 > 
 > Hey @user! To submit an app, you need to register at enter.pollinations.ai first. Once registered, comment here and we'll retry.
 
-> 🔴 **Spore Tier**
+> 🟠 **Tier Not Set** (`TIER_NOT_SET`)
+> 
+> Your account exists but has no tier set. This is a system error on our side - please contact support or try again later.
+
+> 🔴 **Spore Tier** (`SPORE_TIER`)
 > 
 > Thanks for your interest! To submit an app, you need at least Seed tier. This is automatically granted based on your GitHub activity. Please try again later.
 

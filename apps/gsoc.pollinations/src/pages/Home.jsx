@@ -289,8 +289,8 @@ const HomePage = () => {
 
               {/* Right Side - Interactive Cards */}
               <Grid item xs={12} lg={5}>
-                <Grid container spacing={3}>
-                  {/* About GSOC Card */}
+                <Grid container spacing={3} sx={{ height: '100%' }}>
+                  {/* About GSOC Card - Left Half */}
                   <Grid item xs={12} lg={6}>
                     <motion.div
                       variants={fadeInUp}
@@ -438,131 +438,96 @@ const HomePage = () => {
                     </motion.div>
                   </Grid>
 
-                  {/* Contributing & Code of Conduct Card */}
+                  {/* Buttons Stack - Right Half */}
                   <Grid item xs={12} lg={6}>
-                    <motion.div
-                      variants={fadeInUp}
-                      initial="hidden"
-                      animate="visible"
-                      custom={3}
-                    >
-                      <Card
-                        elevation={0}
-                        sx={{
-                          background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)',
-                          backdropFilter: 'blur(30px)',
-                          border: '1px solid rgba(255,255,255,0.12)',
-                          borderRadius: '24px',
-                          color: '#fff',
-                          position: 'relative',
-                          overflow: 'hidden',
-                          height: '100%',
-                          '&::before': {
-                            content: '""',
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            height: '4px',
-                            background: 'linear-gradient(90deg, #f59e0b, #ef4444, #8b5cf6)',
-                            borderRadius: '24px 24px 0 0'
-                          }
-                        }}
+                    <Stack spacing={3} sx={{ height: '100%', justifyContent: 'center' }}>
+                      {/* Contributing Guide Button */}
+                      <motion.div
+                        variants={fadeInUp}
+                        initial="hidden"
+                        animate="visible"
+                        custom={3}
                       >
-                        <CardContent sx={{ p: { xs: 3, lg: 3 }, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                          {/* Header */}
-                          <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, textAlign: 'center' }}>
-                            Get Involved
-                          </Typography>
-
-                          {/* Contributing Section */}
-                          <Box sx={{ mb: 3, flex: 1 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                              <Box 
-                                sx={{ 
-                                  p: 1, 
-                                  borderRadius: '8px', 
-                                  bgcolor: 'rgba(245, 158, 11, 0.1)', 
-                                  border: '1px solid rgba(245, 158, 11, 0.2)',
-                                  color: '#fbbf24'
-                                }}
-                              >
-                                <MenuBook />
-                              </Box>
-                              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                Contributing Guide
-                              </Typography>
-                            </Box>
-                            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', mb: 2, lineHeight: 1.5 }}>
-                              Learn how to contribute to our open source projects and make your mark in AI development.
-                            </Typography>
-                          </Box>
-
-                          {/* Code of Conduct Section */}
-                          <Box sx={{ mb: 3, flex: 1 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                              <Box 
-                                sx={{ 
-                                  p: 1, 
-                                  borderRadius: '8px', 
-                                  bgcolor: 'rgba(139, 92, 246, 0.1)', 
-                                  border: '1px solid rgba(139, 92, 246, 0.2)',
-                                  color: '#a78bfa'
-                                }}
-                              >
-                                <Gavel />
-                              </Box>
-                              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                Code of Conduct
-                              </Typography>
-                            </Box>
-                            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', mb: 2, lineHeight: 1.5 }}>
-                              Our community guidelines ensure a welcoming and inclusive environment for all contributors.
-                            </Typography>
-                          </Box>
-
-                          {/* Action Buttons */}
-                          <Stack direction="column" spacing={2}>
-                            <Button
-                              component={Link}
-                              to='/contributing'
-                              variant="contained"
-                              startIcon={<MenuBook />}
-                              size="small"
-                              sx={{
-                                bgcolor: 'rgba(245, 158, 11, 0.15)',
-                                color: '#fbbf24',
-                                textTransform: 'none',
-                                fontWeight: 600,
-                                '&:hover': {
-                                  bgcolor: 'rgba(245, 158, 11, 0.25)'
-                                }
-                              }}
-                            >
+                        <Button
+                          component={Link}
+                          to='/contributing'
+                          variant="contained"
+                          startIcon={<MenuBook />}
+                          size="large"
+                          fullWidth
+                          sx={{
+                            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%)',
+                            backdropFilter: 'blur(30px)',
+                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                            borderRadius: '16px',
+                            color: '#fbbf24',
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            py: 3,
+                            px: 4,
+                            fontSize: '1rem',
+                            '&:hover': {
+                              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(245, 158, 11, 0.15) 100%)',
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 8px 32px rgba(245, 158, 11, 0.2)'
+                            }
+                          }}
+                        >
+                          <Box sx={{ textAlign: 'left' }}>
+                            <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                               Contributing Guide
-                            </Button>
-                            <Button
-                              component={Link}
-                              to='/code-of-conduct'
-                              variant="outlined"
-                              startIcon={<Gavel />}
-                              size="small"
-                              sx={{
-                                borderColor: 'rgba(139, 92, 246, 0.3)',
-                                color: '#a78bfa',
-                                textTransform: 'none',
-                                '&:hover': {
-                                  borderColor: 'rgba(139, 92, 246, 0.5)',
-                                  backgroundColor: 'rgba(139, 92, 246, 0.05)'
-                                }
-                              }}
-                            >
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'rgba(251, 191, 36, 0.8)' }}>
+                              Learn how to contribute to our projects
+                            </Typography>
+                          </Box>
+                        </Button>
+                      </motion.div>
+
+                      {/* Code of Conduct Button */}
+                      <motion.div
+                        variants={fadeInUp}
+                        initial="hidden"
+                        animate="visible"
+                        custom={4}
+                      >
+                        <Button
+                          component={Link}
+                          to='/code-of-conduct'
+                          variant="outlined"
+                          startIcon={<Gavel />}
+                          size="large"
+                          fullWidth
+                          sx={{
+                            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)',
+                            backdropFilter: 'blur(30px)',
+                            border: '1px solid rgba(139, 92, 246, 0.3)',
+                            borderRadius: '16px',
+                            color: '#a78bfa',
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            py: 3,
+                            px: 4,
+                            fontSize: '1rem',
+                            '&:hover': {
+                              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.08) 100%)',
+                              borderColor: 'rgba(139, 92, 246, 0.5)',
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2)'
+                            }
+                          }}
+                        >
+                          <Box sx={{ textAlign: 'left' }}>
+                            <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                               Code of Conduct
-                            </Button>
-                          </Stack>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'rgba(167, 139, 250, 0.8)' }}>
+                              Our community guidelines and values
+                            </Typography>
+                          </Box>
+                        </Button>
+                      </motion.div>
+                    </Stack>
                   </Grid>
                 </Grid>
               </Grid>

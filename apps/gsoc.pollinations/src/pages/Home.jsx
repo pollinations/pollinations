@@ -20,7 +20,8 @@ import {
   Timeline as TimelineIcon,
   EmojiEvents,
   Rocket,
-  GitHub
+  GitHub,
+  VerifiedUser
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
@@ -64,7 +65,7 @@ const HomePage = () => {
   const stats = [
     { number: "12", label: "Weeks", icon: <TimelineIcon /> },
     { number: "3+", label: "Projects", icon: <Code /> },
-    { number: "5K+", label: "Stipend USD", icon: <EmojiEvents /> }
+    { number: "5K+", label: "Pollens", icon: <EmojiEvents /> }
   ];
 
   return (
@@ -156,7 +157,6 @@ const HomePage = () => {
                       ×
                     </Typography>
                     
-                    {/* Pollinations Logo */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                       <img 
                         src="/polli_white.svg" 
@@ -165,16 +165,6 @@ const HomePage = () => {
                           height: '50px'
                         }}
                       />
-                      <Typography 
-                        variant="h6" 
-                        sx={{ 
-                          color: '#fff',
-                          fontWeight: 600,
-                          letterSpacing: '-0.5px'
-                        }}
-                      >
-                        pollinations.ai
-                      </Typography>
                     </Box>
                   </Box>
 
@@ -420,7 +410,7 @@ const HomePage = () => {
                           component={Link}
                           to='/mentors'
                           variant="outlined"
-                          startIcon={<GitHub />}
+                          startIcon={<VerifiedUser />}
                           sx={{
                             borderColor: 'rgba(255,255,255,0.2)',
                             color: 'rgba(255,255,255,0.8)',

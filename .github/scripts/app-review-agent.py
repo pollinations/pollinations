@@ -296,8 +296,8 @@ Co-authored-by: {ISSUE_AUTHOR} <{ISSUE_AUTHOR}@users.noreply.github.com>"""
         pr_body = f"- Adds [{parsed['name']}]({parsed['url']}) to {category}\n- {description}\n\nFixes #{ISSUE_NUMBER}"
         run_cmd(f'gh pr create --title "Add {parsed["name"]} to {category}" --body "{pr_body}" --label "TIER-APP-REVIEW-PR"')
 
-    # Update issue label
-    run_cmd(f'gh issue edit {ISSUE_NUMBER} --remove-label "TIER-APP" --add-label "TIER-APP-REVIEW"')
+    # Update issue label (remove both TIER-APP and TIER-APP-INCOMPLETE if present)
+    run_cmd(f'gh issue edit {ISSUE_NUMBER} --remove-label "TIER-APP" --remove-label "TIER-APP-INCOMPLETE" --add-label "TIER-APP-REVIEW"')
 
     print(f"   ✅ Done!")
 

@@ -130,18 +130,18 @@ async function generatePortkeyHeaders(config) {
         );
 
         // Build the config object for x-portkey-config header
-        const portkeyConfig = {
+        const configPayload = {
             strategy: config.strategy,
             targets: resolvedTargets,
         };
 
         log(
             "Resolved fallback config:",
-            JSON.stringify(portkeyConfig, null, 2),
+            JSON.stringify(configPayload, null, 2),
         );
 
         return {
-            "x-portkey-config": JSON.stringify(portkeyConfig),
+            "x-portkey-config": JSON.stringify(configPayload),
         };
     }
 

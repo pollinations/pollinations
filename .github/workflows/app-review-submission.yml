@@ -13,6 +13,10 @@ on:
         description: 'Issue number to process'
         required: true
         type: number
+      issue_author:
+        description: 'Issue author username (optional, will be fetched if not provided)'
+        required: false
+        type: string
 
 concurrency:
   group: app-submission-${{ github.event.issue.number || github.event.inputs.issue_number || github.event.pull_request.number || github.run_id }}
@@ -46,9 +50,25 @@ jobs:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
 
-      - name: Get issue number
+      - name: Get issue number and author
         id: issue
-        run: echo "number=${{ github.event.inputs.issue_number || github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+        run: |
+          ISSUE_NUM="${{ github.event.inputs.issue_number || github.event.issue.number }}"
+          echo "number=$ISSUE_NUM" >> "$GITHUB_OUTPUT"
+          
+          # For workflow_dispatch, fetch author from API (input takes priority)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ -n "${{ github.event.inputs.issue_author }}" ]; then
+              echo "author=${{ github.event.inputs.issue_author }}" >> "$GITHUB_OUTPUT"
+            else
+              AUTHOR=$(gh api repos/${{ github.repository }}/issues/$ISSUE_NUM --jq .user.login)
+              echo "author=$AUTHOR" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "author=${{ github.event.issue.user.login }}" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
 
       - name: Setup
         id: setup
@@ -124,7 +144,7 @@ jobs:
         if: github.event_name != 'issue_comment' || steps.auth.outputs.authorized == 'true'
         continue-on-error: true
         run: |
-          npx tsx .github/scripts/app-validate-submission.ts > /tmp/validation.json 2>&1
+          npx tsx .github/scripts/app-validate-submission.ts > /tmp/validation.json 2>&1 || true
           cat /tmp/validation.json
           echo "result<<EOF" >> $GITHUB_OUTPUT
           cat /tmp/validation.json >> $GITHUB_OUTPUT
@@ -132,7 +152,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
-          ISSUE_AUTHOR: ${{ github.event.issue.user.login || '' }}
+          ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
           COMMENT_AUTHOR: ${{ github.event.comment.user.login || '' }}
           COMMENT_AUTHOR_ASSOCIATION: ${{ github.event.comment.author_association || '' }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
@@ -156,7 +176,7 @@ jobs:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           POLLINATIONS_API_KEY: ${{ secrets.CLAUDE_CODE_TOKEN }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
-          ISSUE_AUTHOR: ${{ github.event.issue.user.login || '' }}
+          ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
           VALIDATION_RESULT: ${{ steps.validate.outputs.result }}
           BOT_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
           BOT_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"

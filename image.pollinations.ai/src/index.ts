@@ -29,6 +29,8 @@ import {
 import { ImageParamsSchema, type ImageParams } from "./params.js";
 import { createProgressTracker, type ProgressManager } from "./progressBar.js";
 import { sleep } from "./util.ts";
+import { checkContentSafety } from "./utils/safetyCheck.ts";
+import { isMature as checkMatureWords } from "./utils/mature.ts";
 
 // Queue configuration for image service
 const QUEUE_CONFIG = {
@@ -38,6 +40,44 @@ const QUEUE_CONFIG = {
 
 const logError = debug("pollinations:error");
 const logApi = debug("pollinations:api");
+
+/**
+ * Performs pre-generation safety check (Tier 0 blocklist + Tier 1 AI)
+ * Throws HttpError if content is unsafe
+ */
+async function performSafetyCheck(
+    prompt: string,
+    imageUrls: unknown,
+    progress: ProgressManager,
+    requestId: string,
+    progressStart: number,
+    progressEnd: number,
+): Promise<void> {
+    progress.updateBar(requestId, progressStart, "Safety", "Checking content...");
+
+    // Tier 0: Fast blocklist check
+    if (checkMatureWords(prompt)) {
+        throw new HttpError(
+            "This request has been blocked due to content policy restrictions. " +
+                "For NSFW content generation, please use safe=false with supported models.",
+            400,
+        );
+    }
+
+    // Tier 1: AI-powered context-aware safety check
+    const urls = Array.isArray(imageUrls) ? imageUrls : [];
+    const safetyResult = await checkContentSafety(prompt, urls as string[]);
+
+    if (!safetyResult.safe) {
+        throw new HttpError(
+            `Content policy violation: ${safetyResult.reason || "Request contains content that cannot be generated in safe mode."}. ` +
+                "For mature content generation, set safe=false with supported models.",
+            400,
+        );
+    }
+
+    progress.updateBar(requestId, progressEnd, "Safety", "Content approved");
+}
 const logAuth = debug("pollinations:auth");
 
 export const currentJobs = [];
@@ -181,6 +221,18 @@ const imageGen = async ({
         logApi("display prompt", prompt);
         logApi("generation prompt", generationPrompt);
         logApi("safeParams", safeParams);
+
+        // Pre-generation safety check (when safe mode is enabled)
+        if (safeParams.safe) {
+            await performSafetyCheck(
+                generationPrompt,
+                safeParams.image,
+                progress,
+                requestId,
+                35,
+                38,
+            );
+        }
 
         // Server selection and image generation
         progress.updateBar(
@@ -352,6 +404,18 @@ const checkCacheAndGenerate = async (
             progress.updateBar(requestId, 10, "Processing", "Generating video");
             timingInfo = [{ step: "Request received.", timestamp: Date.now() }];
             progress.setProcessing(requestId);
+
+            // Pre-generation safety check for video (when safe mode is enabled)
+            if (safeParams.safe) {
+                await performSafetyCheck(
+                    originalPrompt,
+                    safeParams.image,
+                    progress,
+                    requestId,
+                    15,
+                    18,
+                );
+            }
 
             // Generate video directly (no caching)
             const videoResult = await createAndReturnVideo(

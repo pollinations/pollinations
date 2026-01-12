@@ -167,7 +167,7 @@ jobs:
           github_token: ${{ steps.token.outputs.token }}
           allowed_non_write_users: "*"
           prompt: |
-            FAST MODE - Minimum steps, no todo lists.
+            FAST MODE - Minimum steps, no todo lists, NEVER ask questions - just do it.
 
             Issue #${{ steps.issue.outputs.number }} - Validation: ${{ steps.validate.outputs.result }}
 
@@ -178,13 +178,13 @@ jobs:
             - PR body format: "- Adds [AppName](url) to category\n- Brief app description\n\nFixes #ISSUE" (no test plans, no todos, no headers)
 
             IF VALIDATION FAILED (check errors in result):
-            - Not registered → comment asking to register at enter.pollinations.ai, add TIER-APP-INCOMPLETE label
+            - Not registered → comment asking to register at enter.pollinations.ai (for Flower tier benefits), add TIER-APP-INCOMPLETE label
             - Duplicate → comment explaining, add TIER-APP-REJECTED label, close issue
-            - Other errors → comment helpfully, add TIER-APP-INCOMPLETE label
 
-            IF VALIDATION PASSED:
+            IF VALIDATION PASSED (user registered + no duplicate):
+            Apps do NOT need to be open-source. GitHub repo is optional. If issue looks valid (has name, url, description), create PR!
             1. Fetch issue: `gh issue view ${{ steps.issue.outputs.number }} --json body,author,title`
-            2. Parse issue - REQUIRED: name, url, description. OPTIONAL: repo, discord, language (infer if not given). Category: pick best fit yourself
+            2. Parse issue - REQUIRED: name, url, description, language (normalize to ISO code like en, zh-CN, es). OPTIONAL: repo, discord. Category: pick best fit yourself
             3. Pick emoji
             4. If existing_pr in validation result: checkout that branch and reset to origin/main
                Else: `git fetch origin main && git checkout -b auto/app-${{ steps.issue.outputs.number }}-SLUG origin/main`
@@ -193,7 +193,7 @@ jobs:
             7. Commit, push. If new PR: `gh pr create --title "Add NAME" --body "Fixes #${{ steps.issue.outputs.number }}" --label TIER-APP-REVIEW-PR`. Update issue label to TIER-APP-REVIEW
 
             Be fast and concise.
-          claude_args: "--dangerously-skip-permissions --allowedTools Bash,Read,Edit,Glob,Grep"
+          claude_args: "--dangerously-skip-permissions --allowedTools Bash,Read,Edit,Glob,Grep --disallowedTools AskUserQuestion,TodoWrite"
 
   app-handle-outcome:
     if: |

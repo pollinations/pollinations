@@ -7,6 +7,8 @@ description: Review and process app submissions for the Pollinations showcase. P
 
 Process app submissions from GitHub issues. Validation (registration, duplicates, stars) is pre-done by workflow.
 
+**IMPORTANT: NEVER ask questions. Just execute. This runs in non-interactive mode.**
+
 ---
 
 ## Categories
@@ -38,7 +40,7 @@ Comment helpfully based on error:
 # 1. Fetch issue
 gh issue view $ISSUE_NUMBER --json body,author,title
 
-# 2. Parse fields: name, url, description, category, repo, discord, language
+# 2. Parse fields - REQUIRED: name, url, description, language (normalize to ISO code: en, zh-CN, es, etc). OPTIONAL: repo, discord. Category: pick yourself
 
 # 3. Pick creative emoji
 

@@ -15,7 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [ScrollQuest Learn Languages](https://play.google.com/store/apps/details?id=com.ripvertices.wordwalker&pcampaignid=web_share) | AI-driven RPG stories for learning languages through interactive quests | @Nakler96 |
+| [Hinda AI](https://script.google.com/macros/s/AKfycbyd8XXzBRY4q3m1Bh9Rxt29m2DXOkMuTBBik3yKIBDBwOS7dEyhAAmVUX6nxcy6MPHb/exec) | Deer-themed creative writing workspace like Google Docs for fiction writers. | @Deerdeer633 |
 | [FARABI.me](https://farabi.me) | AI app for students with MCQ, Flashcard and Image Generator features | @Farabi-Devs |
 | [FragBin](https://www.fragbin.com/) | Share code/text with expiry, password protection & AI-powered summaries | @maximeb97 |
 | [AI Pet Name Generator](https://petpetgenerator.cc/ai-pet-name-generator) | Generate unique pet names with styles like cute, funny, or fantasy | @loocao |

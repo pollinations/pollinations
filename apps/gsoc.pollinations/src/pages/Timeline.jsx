@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Box, Typography, Paper, useTheme, useMediaQuery } from '@mui/material';
 import { motion } from 'framer-motion';
 import { format, parseISO } from 'date-fns';
@@ -17,9 +17,18 @@ const TimelinePage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const today = new Date();
+  const currentPhaseRef = useRef(null);
 
   useEffect(() => {
     document.title = "Timeline - GSOC 2026";
+    
+    // Auto-scroll to current phase
+    if (currentPhaseRef.current) {
+      currentPhaseRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }
   }, []);
 
   return (
@@ -80,7 +89,7 @@ const TimelinePage = () => {
         {gsocTimeline.map((phase, index) => {
           const startDate = parseISO(phase.startDate);
           const endDate = parseISO(phase.endDate);
-          const isActive = today >= startDate && today <= endDate;
+          const isActive = phase.isCurrent || (today >= startDate && today <= endDate);
           const isPast = today > endDate;
 
           return (
@@ -99,6 +108,7 @@ const TimelinePage = () => {
                   mb: 6,
                   pl: isMobile ? '60px' : 0
                 }}
+                ref={isActive ? currentPhaseRef : null}
               >
                 <Box 
                   sx={{

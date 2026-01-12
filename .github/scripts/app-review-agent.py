@@ -19,8 +19,8 @@ GH_TOKEN = os.environ.get("GH_TOKEN")
 POLLINATIONS_API_KEY = os.environ.get("POLLINATIONS_API_KEY", "")
 VALIDATION_RESULT = os.environ.get("VALIDATION_RESULT", "{}")
 ISSUE_AUTHOR = os.environ.get("ISSUE_AUTHOR", "")
-BOT_NAME = os.environ.get("BOT_NAME", "polly-github-app[bot]")
-BOT_EMAIL = os.environ.get("BOT_EMAIL", "polly-github-app[bot]@users.noreply.github.com")
+BOT_NAME = os.environ.get("BOT_NAME", "pollinations-ai[bot]")
+BOT_EMAIL = os.environ.get("BOT_EMAIL", "pollinations-ai[bot]@users.noreply.github.com")
 
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
 MODEL = "openai"

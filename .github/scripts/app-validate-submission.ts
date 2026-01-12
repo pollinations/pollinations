@@ -13,7 +13,7 @@
  *   ISSUE_NUMBER=123 ISSUE_AUTHOR=username npx ts-node app-validate-submission.ts
  */
 
-import { execSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
 
 interface RegistrationCheck {
   registered: boolean;
@@ -117,11 +117,48 @@ async function main(): Promise<void> {
           repo: result.repo_url || ''
         });
 
-        const dupCmd = `PROJECT_JSON='${projectJson.replace(/'/g, "\\'")}' GITHUB_USERNAME="${ISSUE_AUTHOR}" node .github/scripts/app-check-duplicate.js`;
-        const dupOutput = execSync(dupCmd, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
-        const dupResult = JSON.parse(dupOutput);
+        const dupResult = await new Promise<any>((resolve, reject) => {
+          const env = { ...process.env };
+          env.GITHUB_USERNAME = ISSUE_AUTHOR;
+          env.PROJECT_JSON = projectJson;
 
-        result.checks.duplicate = dupResult;
+          const proc = spawn('npx', ['ts-node', '.github/scripts/app-check-duplicate.ts'], {
+            env,
+            stdio: ['pipe', 'pipe', 'pipe'],
+            cwd: process.cwd()
+          });
+
+          let stdout = '';
+          let stderr = '';
+
+          proc.stdout.on('data', (data) => {
+            stdout += data.toString();
+          });
+
+          proc.stderr.on('data', (data) => {
+            stderr += data.toString();
+          });
+
+          proc.on('close', (code) => {
+            if (code !== 0) {
+              reject(new Error(`Command failed with code ${code}: ${stderr}`));
+            } else {
+              try {
+                resolve(JSON.parse(stdout.trim()));
+              } catch (err) {
+                reject(new Error(`Failed to parse output: ${stdout}`));
+              }
+            }
+          });
+
+          proc.on('error', reject);
+        });
+
+        result.checks.duplicate = {
+          isDuplicate: dupResult.isDuplicate,
+          matchType: dupResult.matchType || undefined,
+          reason: dupResult.reason || undefined
+        };
 
         if (dupResult.isDuplicate && ['url_exact', 'repo_exact', 'name_user_exact'].includes(dupResult.matchType)) {
           result.valid = false;

@@ -88,7 +88,15 @@ const HomePage = () => {
         minHeight: '100vh',
         bgcolor: '#09090b',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        '@keyframes pulse': {
+          '0%, 100%': { opacity: 0.4 },
+          '50%': { opacity: 0.8 }
+        },
+        '@keyframes fadeInOut': {
+          '0%, 100%': { opacity: 0.1 },
+          '50%': { opacity: 0.6 }
+        }
       }}
     >
       {/* Background Effects */}
@@ -183,37 +191,146 @@ const HomePage = () => {
                     </Box>
                   </Box>
 
-                  {/* Main Heading */}
-                  <Typography 
-                    variant='h1' 
-                    sx={{ 
-                      fontWeight: 700,
-                      letterSpacing: '-0.02em',
-                      background: 'linear-gradient(135deg, #fff 0%, #60a5fa 50%, #a1a1aa 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      fontSize: { xs: '2.5rem', md: '3.5rem', lg: '4rem' },
-                      lineHeight: 1.1,
-                      mb: 3
-                    }}
-                  >
-                    Build the Future of AI with Open Source
-                  </Typography>
+                  {/* Main Heading with Decorative Elements */}
+                  <Box sx={{ position: 'relative', mb: 4 }}>
+                    {/* Decorative Element - Left */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        left: { xs: -10, md: -20 },
+                        top: '20%',
+                        width: '3px',
+                        height: '60%',
+                        background: 'linear-gradient(180deg, transparent, #60a5fa, transparent)',
+                        borderRadius: '2px',
+                        opacity: 0.6
+                      }}
+                    />
+                    
+                    {/* Main Title */}
+                    <Typography 
+                      variant='h1' 
+                      sx={{ 
+                        fontWeight: 800,
+                        letterSpacing: '-0.03em',
+                        background: 'linear-gradient(135deg, #ffffff 0%, #60a5fa 30%, #e0e7ff 60%, #a1a1aa 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        fontSize: { xs: '2.8rem', md: '3.8rem', lg: '4.5rem' },
+                        lineHeight: 1.05,
+                        fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+                        textShadow: '0 0 30px rgba(96, 165, 250, 0.3)',
+                        position: 'relative',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, transparent 50%)',
+                          borderRadius: '8px',
+                          zIndex: -1,
+                          transform: 'skewY(-1deg)'
+                        }
+                      }}
+                    >
+                      Build the Future of{' '}
+                      <Box component="span" sx={{ 
+                        position: 'relative',
+                        '&::after': {
+                          content: '""',
+                          position: 'absolute',
+                          bottom: '-4px',
+                          left: 0,
+                          right: 0,
+                          height: '3px',
+                          background: 'linear-gradient(90deg, transparent, #60a5fa, transparent)',
+                          borderRadius: '2px',
+                          opacity: 0.8
+                        }
+                      }}>
+                        AI
+                      </Box>{' '}
+                      with Open Source
+                    </Typography>
 
-                  {/* Subtitle */}
-                  <Typography 
-                    variant='h5' 
-                    sx={{ 
-                      color: 'rgba(255,255,255,0.8)',
-                      fontWeight: 400,
-                      lineHeight: 1.4,
-                      mb: 4,
-                      maxWidth: '600px'
-                    }}
-                  >
-                    Join Google Summer of Code 2026 and contribute to cutting-edge AI projects 
-                    that democratize artificial intelligence for everyone.
-                  </Typography>
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        right: { xs: -10, md: -30 },
+                        top: '10%',
+                        width: '20px',
+                        height: '20px',
+                        background: 'radial-gradient(circle, #60a5fa 0%, transparent 70%)',
+                        borderRadius: '50%',
+                        opacity: 0.4,
+                        animation: 'pulse 2s infinite'
+                      }}
+                    />
+                  </Box>
+
+                  {/* Enhanced Subtitle */}
+                  <Box sx={{ position: 'relative', mb: 4 }}>
+                    <Typography 
+                      variant='h5' 
+                      sx={{ 
+                        color: 'rgba(255,255,255,0.9)',
+                        fontWeight: 400,
+                        lineHeight: 1.5,
+                        maxWidth: '650px',
+                        fontSize: { xs: '1.3rem', md: '1.5rem', lg: '1.6rem' },
+                        fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+                        position: 'relative',
+                        pl: 2,
+                        '&::before': {
+                          content: '"⚡"',
+                          position: 'absolute',
+                          left: '-8px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          fontSize: '1.2rem',
+                          opacity: 0.6
+                        }
+                      }}
+                    >
+                      Join{' '}
+                      <Box component="span" sx={{ 
+                        fontWeight: 600, 
+                        color: '#60a5fa',
+                        textShadow: '0 0 10px rgba(96, 165, 250, 0.3)'
+                      }}>
+                        Google Summer of Code 2026
+                      </Box>{' '}
+                      and contribute to cutting-edge AI projects that democratize artificial intelligence for everyone.
+                    </Typography>
+
+                    {/* Floating dots decoration */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        right: '-20px',
+                        top: '20%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        opacity: 0.3
+                      }}
+                    >
+                      {[1, 2, 3].map((dot) => (
+                        <Box
+                          key={dot}
+                          sx={{
+                            width: '4px',
+                            height: '4px',
+                            borderRadius: '50%',
+                            bgcolor: '#60a5fa',
+                            animation: `fadeInOut 3s infinite ${dot * 0.5}s`
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
 
                   {/* CTA Buttons */}
                   <Stack 
@@ -398,9 +515,149 @@ const HomePage = () => {
               </Grid>
             </Grid>
 
-            {/* About GSOC Card - Centered */}
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
-              <Box sx={{ maxWidth: '450px', width: '100%' }}>
+            {/* About GSOC Card - Centered with Side Decorations */}
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center',
+              position: 'relative',
+              mt: 8,
+              px: { xs: 2, md: 4 }
+            }}>
+              {/* Left Decorative Elements */}
+              <Box sx={{ 
+                position: 'absolute',
+                left: { xs: 10, md: 50, lg: 150 },
+                top: '20%',
+                display: { xs: 'none', md: 'block' },
+                zIndex: 0
+              }}>
+                {/* Geometric shapes */}
+                <Box sx={{
+                  position: 'relative',
+                  width: '80px',
+                  height: '80px'
+                }}>
+                  <Box sx={{
+                    position: 'absolute',
+                    width: '30px',
+                    height: '30px',
+                    border: '2px solid rgba(96, 165, 250, 0.3)',
+                    borderRadius: '4px',
+                    top: 0,
+                    left: 0,
+                    animation: 'pulse 3s infinite'
+                  }} />
+                  <Box sx={{
+                    position: 'absolute',
+                    width: '20px',
+                    height: '20px',
+                    bgcolor: 'rgba(96, 165, 250, 0.2)',
+                    borderRadius: '50%',
+                    top: '40px',
+                    left: '50px',
+                    animation: 'fadeInOut 4s infinite 1s'
+                  }} />
+                  <Box sx={{
+                    position: 'absolute',
+                    width: '40px',
+                    height: '2px',
+                    bgcolor: 'rgba(96, 165, 250, 0.4)',
+                    top: '70px',
+                    left: '10px',
+                    borderRadius: '1px'
+                  }} />
+                </Box>
+                
+                {/* Code-like lines */}
+                <Box sx={{ mt: 4, opacity: 0.3 }}>
+                  {[60, 40, 35, 50].map((width, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        width: `${width}px`,
+                        height: '2px',
+                        bgcolor: '#60a5fa',
+                        mb: '6px',
+                        borderRadius: '1px',
+                        animation: `fadeInOut 2s infinite ${index * 0.3}s`
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+
+              {/* Right Decorative Elements */}
+              <Box sx={{ 
+                position: 'absolute',
+                right: { xs: 10, md: 50, lg: 150 },
+                top: '30%',
+                display: { xs: 'none', md: 'block' },
+                zIndex: 0
+              }}>
+                {/* Circuit-like pattern */}
+                <Box sx={{ position: 'relative', width: '70px', height: '70px' }}>
+                  <Box sx={{
+                    position: 'absolute',
+                    width: '8px',
+                    height: '8px',
+                    border: '2px solid rgba(96, 165, 250, 0.4)',
+                    borderRadius: '50%',
+                    top: 0,
+                    left: 0
+                  }} />
+                  <Box sx={{
+                    position: 'absolute',
+                    width: '30px',
+                    height: '2px',
+                    bgcolor: 'rgba(96, 165, 250, 0.4)',
+                    top: '4px',
+                    left: '12px',
+                    borderRadius: '1px'
+                  }} />
+                  <Box sx={{
+                    position: 'absolute',
+                    width: '2px',
+                    height: '20px',
+                    bgcolor: 'rgba(96, 165, 250, 0.4)',
+                    top: '15px',
+                    left: '40px',
+                    borderRadius: '1px'
+                  }} />
+                  <Box sx={{
+                    position: 'absolute',
+                    width: '15px',
+                    height: '15px',
+                    border: '2px solid rgba(96, 165, 250, 0.3)',
+                    top: '50px',
+                    left: '30px',
+                    transform: 'rotate(45deg)',
+                    animation: 'pulse 2s infinite 0.5s'
+                  }} />
+                </Box>
+
+                {/* Floating particles */}
+                <Box sx={{ mt: 3 }}>
+                  {[1, 2, 3, 4, 5].map((particle) => (
+                    <Box
+                      key={particle}
+                      sx={{
+                        position: 'absolute',
+                        width: '3px',
+                        height: '3px',
+                        borderRadius: '50%',
+                        bgcolor: 'rgba(96, 165, 250, 0.4)',
+                        left: `${Math.random() * 60}px`,
+                        top: `${Math.random() * 60}px`,
+                        animation: `fadeInOut 3s infinite ${particle * 0.6}s`
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+
+              {/* Main Card */}
+              <Box sx={{ maxWidth: '450px', width: '100%', position: 'relative', zIndex: 2 }}>
                 <motion.div
                   variants={fadeInUp}
                   initial="hidden"

@@ -59,6 +59,28 @@ export function extractApiVersion(endpoint) {
     return version;
 }
 
+/**
+ * Resolve authKey functions for a target object.
+ * Configs should already use snake_case keys as required by Portkey.
+ * @param {Object} target - Target configuration object
+ * @returns {Object} - Target with resolved auth token
+ */
+async function resolveTargetAuth(target) {
+    const { authKey, defaultOptions, ...rest } = target;
+
+    if (!authKey) {
+        return rest;
+    }
+
+    try {
+        const token = typeof authKey === "function" ? await authKey() : authKey;
+        return { ...rest, api_key: token };
+    } catch (error) {
+        errorLog("Error resolving auth for target:", error);
+        throw error;
+    }
+}
+
 export /**
  * Generate Portkey headers from a configuration object
  * @param {Object} config - Model configuration object
@@ -68,6 +90,33 @@ async function generatePortkeyHeaders(config) {
     if (!config) {
         errorLog("No configuration provided for header generation");
         throw new Error("No configuration provided for header generation");
+    }
+
+    // Check if this is a fallback/loadbalance config with strategy and targets
+    if (config.strategy && config.targets) {
+        log(
+            "Detected fallback/loadbalance config, using x-portkey-config header",
+        );
+
+        // Resolve authKey for each target
+        const resolvedTargets = await Promise.all(
+            config.targets.map(resolveTargetAuth),
+        );
+
+        // Build the config object for x-portkey-config header
+        const configPayload = {
+            strategy: config.strategy,
+            targets: resolvedTargets,
+        };
+
+        log(
+            "Resolved fallback config:",
+            JSON.stringify(configPayload, null, 2),
+        );
+
+        return {
+            "x-portkey-config": JSON.stringify(configPayload),
+        };
     }
 
     // Use individual headers approach (proven to work with Azure OpenAI)
@@ -97,7 +146,7 @@ async function generatePortkeyHeaders(config) {
     for (const [key, value] of Object.entries(config)) {
         // Skip internal properties
         if (key === "removeSeed" || key === "authKey") continue;
-        
+
         // Add as individual header with x-portkey- prefix
         headers[`x-portkey-${key}`] = value;
     }
@@ -108,6 +157,9 @@ async function generatePortkeyHeaders(config) {
     }
 
     log("Generated Portkey headers:", Object.keys(headers));
-    log("strictOpenAiCompliance header value:", headers["x-portkey-strict-open-ai-compliance"]);
+    log(
+        "strictOpenAiCompliance header value:",
+        headers["x-portkey-strict-open-ai-compliance"],
+    );
     return headers;
 }

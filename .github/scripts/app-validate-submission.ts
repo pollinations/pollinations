@@ -1,4 +1,4 @@
-#!/usr/bin/env npx ts-node
+#!/usr/bin/env npx tsx
 /**
  * Validates app submission before Claude processes it.
  *
@@ -10,7 +10,7 @@
  * Outputs JSON with validation results.
  *
  * Usage:
- *   ISSUE_NUMBER=123 ISSUE_AUTHOR=username npx ts-node app-validate-submission.ts
+ *   ISSUE_NUMBER=123 ISSUE_AUTHOR=username npx tsx app-validate-submission.ts
  */
 
 import { execSync, spawn } from 'child_process';
@@ -122,7 +122,7 @@ async function main(): Promise<void> {
           env.GITHUB_USERNAME = ISSUE_AUTHOR;
           env.PROJECT_JSON = projectJson;
 
-          const proc = spawn('npx', ['ts-node', '.github/scripts/app-check-duplicate.ts'], {
+          const proc = spawn('npx', ['tsx', '.github/scripts/app-check-duplicate.ts'], {
             env,
             stdio: ['pipe', 'pipe', 'pipe'],
             cwd: process.cwd()

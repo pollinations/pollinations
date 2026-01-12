@@ -60,51 +60,25 @@ export function extractApiVersion(endpoint) {
 }
 
 /**
- * Convert hyphenated keys to snake_case for Portkey config JSON
- * e.g., "aws-access-key-id" -> "aws_access_key_id"
- * @param {string} key - Hyphenated key
- * @returns {string} - Snake_case key
- */
-function toSnakeCase(key) {
-    return key.replace(/-/g, "_");
-}
-
-/**
- * Resolve authKey functions and convert keys to snake_case for a target object
+ * Resolve authKey functions for a target object.
+ * Configs should already use snake_case keys as required by Portkey.
  * @param {Object} target - Target configuration object
- * @returns {Object} - Target with resolved auth and snake_case keys
+ * @returns {Object} - Target with resolved auth token
  */
 async function resolveTargetAuth(target) {
-    const resolved = {};
+    const { authKey, defaultOptions, ...rest } = target;
 
-    for (const [key, value] of Object.entries(target)) {
-        // Skip internal properties
-        if (key === "authKey" || key === "defaultOptions") continue;
-
-        // Convert hyphenated keys to snake_case
-        const snakeKey = toSnakeCase(key);
-        resolved[snakeKey] = value;
+    if (!authKey) {
+        return rest;
     }
 
-    // Handle authKey separately
-    if (target.authKey) {
-        try {
-            if (typeof target.authKey === "function") {
-                const token = target.authKey();
-                const resolvedToken =
-                    token instanceof Promise ? await token : token;
-                // For Vertex AI, the token goes in api_key field
-                resolved.api_key = resolvedToken;
-            } else {
-                resolved.api_key = target.authKey;
-            }
-        } catch (error) {
-            errorLog("Error resolving auth for target:", error);
-            throw error;
-        }
+    try {
+        const token = typeof authKey === "function" ? await authKey() : authKey;
+        return { ...rest, api_key: token };
+    } catch (error) {
+        errorLog("Error resolving auth for target:", error);
+        throw error;
     }
-
-    return resolved;
 }
 
 export /**

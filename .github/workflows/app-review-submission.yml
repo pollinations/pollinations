@@ -23,12 +23,9 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event_name != 'pull_request_target' &&
-       (contains(github.event.issue.labels.*.name, 'TIER-APP') ||
-        contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE')) &&
-       (github.event_name == 'issues' ||
-        (github.event_name == 'issue_comment' &&
-         contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE') &&
-         github.event.comment.user.type != 'Bot')) &&
+       ((github.event_name == 'issues' && github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'TIER-APP')) ||
+        (github.event_name == 'issues' && github.event.action == 'edited' && contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE')) ||
+        (github.event_name == 'issue_comment' && contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE') && github.event.comment.user.type != 'Bot')) &&
        !contains(github.event.issue.labels.*.name, 'TIER-APP-REVIEW') &&
        !contains(github.event.issue.labels.*.name, 'TIER-APP-COMPLETE') &&
        !contains(github.event.issue.labels.*.name, 'TIER-APP-REJECTED') &&
@@ -40,8 +37,6 @@ jobs:
       pull-requests: write
       id-token: write
       actions: read
-    env:
-      CLAUDE_CODE_TOKEN: ${{ secrets.CLAUDE_CODE_TOKEN }}
 
     steps:
       - name: Generate App Token
@@ -55,11 +50,6 @@ jobs:
         id: issue
         run: echo "number=${{ github.event.inputs.issue_number || github.event.issue.number }}" >> "$GITHUB_OUTPUT"
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
       - name: Setup
         id: setup
         run: |
@@ -70,20 +60,15 @@ jobs:
             gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=eyes || true
           fi
 
-          # Get bot user ID and setup router config
+          # Get bot user ID
           BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
-          mkdir -p $HOME/.claude-code-router
-          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"${CLAUDE_CODE_TOKEN}","models":["deepseek","gemini-search"]}],"Router":{"default":"pollinations,deepseek","webSearch":"pollinations,gemini-search"}}' > $HOME/.claude-code-router/config.json
-
-          # Start router with Bun
-          bunx @musistudio/claude-code-router start &
-          until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
 
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
           token: ${{ steps.token.outputs.token }}
 
@@ -139,7 +124,7 @@ jobs:
         if: github.event_name != 'issue_comment' || steps.auth.outputs.authorized == 'true'
         continue-on-error: true
         run: |
-          npx ts-node .github/scripts/app-validate-submission.ts > /tmp/validation.json 2>&1
+          npx tsx .github/scripts/app-validate-submission.ts > /tmp/validation.json 2>&1
           cat /tmp/validation.json
           echo "result<<EOF" >> $GITHUB_OUTPUT
           cat /tmp/validation.json >> $GITHUB_OUTPUT
@@ -154,44 +139,27 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - uses: anthropics/claude-code-action@v1
-        if: (github.event_name != 'issue_comment' || steps.auth.outputs.authorized == 'true')
-        env:
-          ANTHROPIC_BASE_URL: http://localhost:3456
-          USE_AGENT_SDK: "false"
-          GIT_AUTHOR_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
-          GIT_AUTHOR_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
-          GIT_COMMITTER_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
-          GIT_COMMITTER_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
+      - name: Setup Python
+        if: github.event_name != 'issue_comment' || steps.auth.outputs.authorized == 'true'
+        uses: actions/setup-python@v5
         with:
-          anthropic_api_key: "ccr-pollinations"
-          github_token: ${{ steps.token.outputs.token }}
-          prompt: |
-            FAST MODE - Minimum steps, no todo lists.
+          python-version: '3.11'
 
-            Issue #${{ steps.issue.outputs.number }} - Validation: ${{ steps.validate.outputs.result }}
+      - name: Install Python dependencies
+        if: github.event_name != 'issue_comment' || steps.auth.outputs.authorized == 'true'
+        run: pip install requests
 
-            RULES:
-            - ONLY edit apps/APPS.md and README.md - nothing else
-            - PR body format: "- Adds [AppName](url) to category\n- Brief app description\n\nFixes #ISSUE" (no test plans, no todos, no headers)
-
-            IF VALIDATION FAILED (check errors in result):
-            - Not registered → comment asking to register at enter.pollinations.ai, add TIER-APP-INCOMPLETE label
-            - Duplicate → comment explaining, add TIER-APP-REJECTED label, close issue
-            - Other errors → comment helpfully, add TIER-APP-INCOMPLETE label
-
-            IF VALIDATION PASSED:
-            1. Fetch issue: `gh issue view ${{ steps.issue.outputs.number }} --json body,author,title`
-            2. Parse: name, url, description, category, repo, discord, language (pick best category if unclear)
-            3. Pick emoji
-            4. If existing_pr in validation result: checkout that branch and reset to origin/main
-               Else: `git fetch origin main && git checkout -b auto/app-${{ steps.issue.outputs.number }}-SLUG origin/main`
-            5. Add row: `NEW_ROW="| EMOJI | [NAME](URL) | DESC | LANG | CAT | @AUTHOR | REPO | STARS | DISCORD | | DATE |" node .github/scripts/app-prepend-row.js`
-            6. Update: `node .github/scripts/app-update-readme.js`
-            7. Commit, push. If new PR: `gh pr create --title "Add NAME" --body "Fixes #${{ steps.issue.outputs.number }}" --label TIER-APP-REVIEW-PR`. Update issue label to TIER-APP-REVIEW
-
-            Be fast and concise.
-          claude_args: "--dangerously-skip-permissions"
+      - name: Run App Review Agent
+        if: github.event_name != 'issue_comment' || steps.auth.outputs.authorized == 'true'
+        run: python .github/scripts/app-review-agent.py
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          POLLINATIONS_API_KEY: ${{ secrets.CLAUDE_CODE_TOKEN }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login || '' }}
+          VALIDATION_RESULT: ${{ steps.validate.outputs.result }}
+          BOT_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
+          BOT_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
 
   app-handle-outcome:
     if: |

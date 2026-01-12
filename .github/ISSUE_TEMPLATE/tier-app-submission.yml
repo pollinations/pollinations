@@ -1,6 +1,6 @@
 name: SubmitApp
 description: Get your app featured on pollinations.ai
-title: "[App Submission] ${{inputs.app-name}}"
+title: "[App Submission]"
 labels: ["TIER-APP"]
 body:
   - type: markdown
@@ -37,7 +37,7 @@ body:
       description: Please provide a brief description of your app and how it uses pollinations.ai
       placeholder: "Describe what your app does and how it integrates with pollinations.ai..."
     validations:
-      required: false
+      required: true
 
   - type: input
     id: app-url
@@ -91,3 +91,5 @@ body:
       label: Email / Other Contact
       description: Any other way to reach you (Email, Twitter/X, Instagram, website, etc.)
       placeholder: "e.g., https://twitter.com/yourhandle"
+    validations:
+      required: true

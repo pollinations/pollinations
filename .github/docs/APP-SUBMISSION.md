@@ -25,17 +25,18 @@ Community apps built with Pollinations.AI can be submitted for inclusion on [pol
 
 ## Workflow: app-review-submission.yml
 
-Uses Claude Code via router (deepseek model) with pre-validation.
+Lightweight Python agent using Pollinations API directly with `SKILL.md` as system prompt.
 
 ### Triggers
 
-- Issue opened/edited with `TIER-APP` label
-- Comment on issue with `TIER-APP-INCOMPLETE` label (by issue author or org members only)
-- Manual dispatch with issue number
+| Event         | Condition                          |
+| ------------- | ---------------------------------- |
+| Issue opened  | Has `TIER-APP` label               |
+| Issue edited  | Has `TIER-APP-INCOMPLETE` label    |
+| Comment       | Has `TIER-APP-INCOMPLETE`, not bot |
+| Manual        | Workflow dispatch with issue number|
 
-### Step 1: Pre-Validation (Script)
-
-`app-validate-submission.ts` runs before Claude:
+### Step 1: Validation (`app-validate-submission.ts`)
 
 | Check        | What                             | Result if failed         |
 | ------------ | -------------------------------- | ------------------------ |
@@ -44,28 +45,26 @@ Uses Claude Code via router (deepseek model) with pre-validation.
 | Stars        | Fetch GitHub stars if repo found | Pass (0 if unavailable)  |
 | Existing PR  | Detect PR for this issue         | Update existing branch   |
 
-### Step 2: Claude Processing
+### Step 2: AI Processing (`app-review-agent.py`)
 
-Claude handles the "fuzzy" parts:
+If validation failed:
+- AI generates contextual error comment
+- Adds appropriate label
 
-- Parse issue body (name, url, description, category, discord, language)
-- Pick appropriate category if unclear
-- Pick creative emoji
-- Create branch from `origin/main`
-- Add row to `apps/APPS.md` using `app-prepend-row.js`
-- Update README using `app-update-readme.js`
-- Create PR with `TIER-APP-REVIEW-PR` label
+If validation passed:
+- AI picks emoji, category, description, language
+- Creates branch from `origin/main`
+- Adds row to `apps/APPS.md`
+- Updates README
+- Commits as bot with issue author as co-author
+- Creates PR with `TIER-APP-REVIEW-PR` label
 
-**Rules for Claude:**
-- Only edit `apps/APPS.md` and `README.md`
-- Concise PR body (no test plans, no todos)
+### Step 3: PR Outcome
 
-### Step 3: Handle PR Outcome
-
-**Triggers:** PR with `TIER-APP-REVIEW-PR` closed
-
-- **Merged** → `TIER-APP-COMPLETE` + success comment + close issue
-- **Closed without merge** → `TIER-APP-REJECTED` + decline comment
+| PR Action | Result |
+| --------- | ------ |
+| Merged    | `TIER-APP-COMPLETE` + congrats comment + close issue |
+| Closed    | `TIER-APP-REJECTED` + decline comment |
 
 ---
 
@@ -79,25 +78,15 @@ Claude handles the "fuzzy" parts:
 
 ---
 
-## Workflow: app-upgrade-tier.yml
-
-**Triggers:** PR with `TIER-APP-REVIEW` merged
-
-1. Update PR label → `TIER-APP-COMPLETE`
-2. Upgrade user to Flower tier (D1 + Polar)
-3. Verify upgrade in both systems
-4. Post celebration comment on PR + issue
-
----
-
 ## Scripts
 
-| Script                       | Purpose                           |
-| ---------------------------- | --------------------------------- |
+| Script                       | Purpose                                          |
+| ---------------------------- | ------------------------------------------------ |
+| `app-review-agent.py`        | Main agent - calls Pollinations API, creates PR  |
 | `app-validate-submission.ts` | Pre-validation (registration, duplicates, stars) |
-| `app-prepend-row.js`         | Add app row to APPS.md            |
-| `app-update-readme.js`       | Update README showcase            |
-| `app-check-duplicate.js`     | Duplicate detection logic         |
+| `app-prepend-row.js`         | Add app row to APPS.md                           |
+| `app-update-readme.js`       | Update README showcase                           |
+| `app-check-duplicate.ts`     | Duplicate detection logic                        |
 
 ---
 
@@ -107,12 +96,12 @@ Claude handles the "fuzzy" parts:
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
     A[User submits issue] --> B[TIER-APP]
-    B --> V{Validation Script}
+    B --> V{Validation}
     V -->|Duplicate| X[TIER-APP-REJECTED]
     V -->|Not registered| E[TIER-APP-INCOMPLETE]
-    E --> F[User signs up + comments]
+    E --> F[User fixes + edits/comments]
     F --> V
-    V -->|Valid| G[Claude creates PR]
+    V -->|Valid| G[AI creates PR]
     G --> H[TIER-APP-REVIEW]
     H --> I{Maintainer review}
     I -->|Reject| X
@@ -123,25 +112,25 @@ flowchart TD
 
 ---
 
-## Tier Hierarchy
+## Categories
 
-| Tier       | Level | Benefit                                |
-| ---------- | ----- | -------------------------------------- |
-| Spore      | 1     | Free tier                              |
-| Seed       | 2     | Basic tier                             |
-| **Flower** | 3     | **10 pollen/day** (contributor reward) |
-| Nectar     | 4+    | Higher tiers                           |
+| Category    | Description                                    |
+| ----------- | ---------------------------------------------- |
+| Vibes       | No-code / describe-to-code playgrounds         |
+| Creative    | Images, video, music, design, slides           |
+| Games       | AI-powered play, interactive fiction           |
+| Dev_Tools   | SDKs, extensions, dashboards, MCP servers      |
+| Chat        | Chat UIs / multi-model playgrounds             |
+| Social_Bots | Discord / Telegram / WhatsApp bots             |
+| Learn       | Tutorials, guides, educational demos           |
 
 ---
 
-## Categories
+## Tier Hierarchy
 
-| Category     | Code           | Description                                    |
-| ------------ | -------------- | ---------------------------------------------- |
-| Vibe Coding  | `vibeCoding`   | No-code / describe-to-code playgrounds         |
-| Creative     | `creative`     | Images, video, music, design, slides           |
-| Games        | `games`        | AI-powered play, interactive fiction           |
-| Hack & Build | `hackAndBuild` | SDKs, extensions, dashboards, MCP servers      |
-| Chat         | `chat`         | Chat UIs / multi-model playgrounds             |
-| Social Bots  | `socialBots`   | Discord / Telegram / WhatsApp bots             |
-| Learn        | `learn`        | Tutorials, guides, educational demos           |
+| Tier       | Benefit                                |
+| ---------- | -------------------------------------- |
+| Spore      | Free tier                              |
+| Seed       | Basic tier                             |
+| **Flower** | **10 pollen/day** (contributor reward) |
+| Nectar     | Higher tiers                           |

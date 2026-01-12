@@ -154,7 +154,7 @@ const HomePage = () => {
                     gap: 3,
                     mb: 4,
                     flexWrap: 'wrap',
-                    justifyContent: { xs: 'center', lg: 'flex-start' }
+                    justifyContent: 'center'
                   }}>
                     {/* GSOC Logo */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -192,12 +192,12 @@ const HomePage = () => {
                   </Box>
 
                   {/* Main Heading with Decorative Elements */}
-                  <Box sx={{ position: 'relative', mb: 4 }}>
+                  <Box sx={{ position: 'relative', mb: 4, textAlign: 'center' }}>
                     {/* Decorative Element - Left */}
                     <Box
                       sx={{
                         position: 'absolute',
-                        left: { xs: -10, md: -20 },
+                        left: { xs: '10%', md: '15%' },
                         top: '20%',
                         width: '3px',
                         height: '60%',
@@ -214,36 +214,45 @@ const HomePage = () => {
                         fontWeight: 800,
                         letterSpacing: '-0.03em',
                         background: 'linear-gradient(135deg, #ffffff 0%, #60a5fa 30%, #e0e7ff 60%, #a1a1aa 100%)',
+                        backgroundClip: 'text',
                         WebkitBackgroundClip: 'text',
+                        color: 'transparent',
                         WebkitTextFillColor: 'transparent',
                         fontSize: { xs: '2.8rem', md: '3.8rem', lg: '4.5rem' },
                         lineHeight: 1.05,
                         fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-                        textShadow: '0 0 30px rgba(96, 165, 250, 0.3)',
                         position: 'relative',
+                        textAlign: 'center',
                         '&::before': {
                           content: '""',
                           position: 'absolute',
                           top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          width: '80%',
+                          height: '100%',
                           background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, transparent 50%)',
                           borderRadius: '8px',
                           zIndex: -1,
-                          transform: 'skewY(-1deg)'
+                          transform: 'translateX(-50%) skewY(-1deg)'
                         }
                       }}
                     >
                       Build the Future of{' '}
                       <Box component="span" sx={{ 
                         position: 'relative',
+                        background: 'linear-gradient(135deg, #ffffff 0%, #60a5fa 50%, #e0e7ff 100%)',
+                        backgroundClip: 'text',
+                        WebkitBackgroundClip: 'text',
+                        color: 'transparent',
+                        WebkitTextFillColor: 'transparent',
                         '&::after': {
                           content: '""',
                           position: 'absolute',
                           bottom: '-4px',
-                          left: 0,
-                          right: 0,
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          width: '100%',
                           height: '3px',
                           background: 'linear-gradient(90deg, transparent, #60a5fa, transparent)',
                           borderRadius: '2px',
@@ -255,10 +264,11 @@ const HomePage = () => {
                       with Open Source
                     </Typography>
 
+                    {/* Decorative Accent */}
                     <Box
                       sx={{
                         position: 'absolute',
-                        right: { xs: -10, md: -30 },
+                        right: { xs: '10%', md: '15%' },
                         top: '10%',
                         width: '20px',
                         height: '20px',
@@ -271,7 +281,7 @@ const HomePage = () => {
                   </Box>
 
                   {/* Enhanced Subtitle */}
-                  <Box sx={{ position: 'relative', mb: 4 }}>
+                  <Box sx={{ position: 'relative', mb: 4, textAlign: 'center' }}>
                     <Typography 
                       variant='h5' 
                       sx={{ 
@@ -282,11 +292,12 @@ const HomePage = () => {
                         fontSize: { xs: '1.3rem', md: '1.5rem', lg: '1.6rem' },
                         fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
                         position: 'relative',
-                        pl: 2,
+                        textAlign: 'center',
+                        margin: '0 auto',
                         '&::before': {
                           content: '"⚡"',
                           position: 'absolute',
-                          left: '-8px',
+                          left: '-30px',
                           top: '50%',
                           transform: 'translateY(-50%)',
                           fontSize: '1.2rem',
@@ -309,7 +320,7 @@ const HomePage = () => {
                     <Box
                       sx={{
                         position: 'absolute',
-                        right: '-20px',
+                        right: '-40px',
                         top: '20%',
                         display: 'flex',
                         flexDirection: 'column',
@@ -333,62 +344,63 @@ const HomePage = () => {
                   </Box>
 
                   {/* CTA Buttons */}
-                  <Stack 
-                    direction={{ xs: 'column', sm: 'row' }} 
-                    spacing={3}
-                    sx={{ mb: 6 }}
-                  >
-                    <Button
-                      component={Link}
-                      to='/projects'
-                      variant="contained"
-                      size="large"
-                      endIcon={<ArrowForward />}
-                      sx={{
-                        bgcolor: 'rgba(255,255,255,0.15)',
-                        color: '#fff',
-                        textTransform: 'none',
-                        fontSize: '1.1rem',
-                        fontWeight: 600,
-                        py: 2,
-                        px: 4,
-                        borderRadius: '12px',
-                        backdropFilter: 'blur(20px)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        '&:hover': {
-                          bgcolor: 'rgba(255,255,255,0.25)',
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 8px 32px rgba(255,255,255,0.15)'
-                        }
-                      }}
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mb: 6 }}>
+                    <Stack 
+                      direction={{ xs: 'column', sm: 'row' }} 
+                      spacing={3}
                     >
-                      Explore Projects
-                    </Button>
-                    <Button
-                      component={Link}
-                      to='/timeline'
-                      variant="outlined"
-                      size="large"
-                      startIcon={<TimelineIcon />}
-                      sx={{
-                        borderColor: 'rgba(255,255,255,0.3)',
-                        color: '#fff',
-                        textTransform: 'none',
-                        fontSize: '1.1rem',
-                        py: 2,
-                        px: 4,
-                        borderRadius: '12px',
-                        '&:hover': {
-                          borderColor: 'rgba(255,255,255,0.5)',
-                          backgroundColor: 'rgba(255,255,255,0.05)'
-                        }
-                      }}
-                    >
-                      View Timeline
-                    </Button>
-                  </Stack>
+                      <Button
+                        component={Link}
+                        to='/projects'
+                        variant="contained"
+                        size="large"
+                        endIcon={<ArrowForward />}
+                        sx={{
+                          bgcolor: 'rgba(255,255,255,0.15)',
+                          color: '#fff',
+                          textTransform: 'none',
+                          fontSize: '1.1rem',
+                          fontWeight: 600,
+                          py: 2,
+                          px: 4,
+                          borderRadius: '12px',
+                          backdropFilter: 'blur(20px)',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          '&:hover': {
+                            bgcolor: 'rgba(255,255,255,0.25)',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 8px 32px rgba(255,255,255,0.15)'
+                          }
+                        }}
+                      >
+                        Explore Projects
+                      </Button>
+                      <Button
+                        component={Link}
+                        to='/timeline'
+                        variant="outlined"
+                        size="large"
+                        startIcon={<TimelineIcon />}
+                        sx={{
+                          borderColor: 'rgba(255,255,255,0.3)',
+                          color: '#fff',
+                          textTransform: 'none',
+                          fontSize: '1.1rem',
+                          py: 2,
+                          px: 4,
+                          borderRadius: '12px',
+                          '&:hover': {
+                            borderColor: 'rgba(255,255,255,0.5)',
+                            backgroundColor: 'rgba(255,255,255,0.05)'
+                          }
+                        }}
+                      >
+                        View Timeline
+                      </Button>
+                    </Stack>
+                  </Box>
 
-
+                  {/* Stats Section */}
                   <Box 
                     sx={{ 
                       display: 'flex', 

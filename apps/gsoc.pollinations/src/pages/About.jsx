@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { 
   Box, 
   Typography, 
@@ -21,9 +20,7 @@ import {
   GitHub,
   Language,
   EmojiEvents,
-  Timeline as TimelineIcon,
-  Gavel,
-  HandshakeOutlined
+  Timeline as TimelineIcon
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
@@ -492,7 +489,7 @@ const AboutPage = () => {
             <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.8)', mb: 4, maxWidth: '600px', mx: 'auto' }}>
               Join our community of innovators and help shape the future of AI technology through open source collaboration.
             </Typography>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center" sx={{ mb: 3 }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
               <Button
                 variant="contained"
                 size="large"
@@ -526,48 +523,6 @@ const AboutPage = () => {
                 }}
               >
                 View on GitHub
-              </Button>
-            </Stack>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
-              <Button
-                component={Link}
-                to="/contributing"
-                variant="outlined"
-                size="medium"
-                startIcon={<HandshakeOutlined />}
-                sx={{
-                  borderColor: 'rgba(96, 165, 250, 0.5)',
-                  color: '#60a5fa',
-                  textTransform: 'none',
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  '&:hover': {
-                    borderColor: '#60a5fa',
-                    backgroundColor: 'rgba(96, 165, 250, 0.05)'
-                  }
-                }}
-              >
-                Contributing Guidelines
-              </Button>
-              <Button
-                component={Link}
-                to="/code-of-conduct"
-                variant="outlined"
-                size="medium"
-                startIcon={<Gavel />}
-                sx={{
-                  borderColor: 'rgba(96, 165, 250, 0.5)',
-                  color: '#60a5fa',
-                  textTransform: 'none',
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  '&:hover': {
-                    borderColor: '#60a5fa',
-                    backgroundColor: 'rgba(96, 165, 250, 0.05)'
-                  }
-                }}
-              >
-                Code of Conduct
               </Button>
             </Stack>
           </motion.div>

@@ -15,7 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [Study Buzz](https://aistudybuzz.streamlit.app/) | Quizzes, flashcards, study guides & AI help with XP, streaks, rewards | @ash00718 |
+| [FARABI.me](https://farabi.me) | AI app for students: MCQ, Flashcard and Image Generator features | @Farabi-Devs |
 | [Onyx - The AI Storyboard Engine.](https://onyx-noir-storyboarder-qzfn3h1fe-eneryut.vercel.app/) | Dark AI storyboard engine turning scripts into noir visual sequences | @eneryu |
 | [ChatPUA](https://apps.apple.com/au/app/chatpua/id6753729837) | AI roleplay chat for PUA training with avatars, GIFs, groups & scenes | @Libre-Connect |
 | [Player or AI [Roblox]](https://www.roblox.com/games/95217169945642/Player-or-AI) | 2-min mystery chats—deduce if your partner is human or AI. | @YoussefElsafi |

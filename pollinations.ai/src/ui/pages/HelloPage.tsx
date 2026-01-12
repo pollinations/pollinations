@@ -134,7 +134,7 @@ function HelloPage() {
                                     variant="secondary"
                                     size="sm"
                                 >
-                                    Contribute on GitHub
+                                    {pageCopy.contributeOnGitHubButton}
                                     <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
                                 </Button>
                                 <Button
@@ -145,7 +145,7 @@ function HelloPage() {
                                     variant="secondary"
                                     size="sm"
                                 >
-                                    Submit Your App
+                                    {pageCopy.submitYourAppButton}
                                     <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
                                 </Button>
                             </div>
@@ -163,9 +163,6 @@ function HelloPage() {
                             >
                                 {pageCopy.tiersSubtitle}
                             </Heading>
-                            <Body size="sm" spacing="comfortable">
-                                {pageCopy.tiersDescription}
-                            </Body>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <TierCard
                                     tier="spore"
@@ -192,6 +189,10 @@ function HelloPage() {
                                     description={pageCopy.tierNectarDescription}
                                 />
                             </div>
+                            {/* Beta note */}
+                            <p className="text-sm text-text-highlight mt-4">
+                                {pageCopy.tiersBetaNote}
+                            </p>
                             {/* Tiers CTA */}
                             <div className="mt-4">
                                 <Button

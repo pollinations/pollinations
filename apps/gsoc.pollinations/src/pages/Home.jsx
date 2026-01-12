@@ -47,7 +47,7 @@ const fadeInUp = {
 
 const HomePage = () => {
   useEffect(() => {
-    document.title = "GSOC 2026 × pollinations.ai - Build the Future of AI";
+    document.title = "GSOC 2026 × pollinations.ai";
   }, []);
 
   const highlights = [
@@ -134,7 +134,7 @@ const HomePage = () => {
           display: 'flex', 
           alignItems: 'center',
           px: { xs: 2, md: 4 },
-          py: 8
+          py: 4
         }}>
           <Box sx={{ maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
             {/* Main Content - Centered */}
@@ -198,7 +198,7 @@ const HomePage = () => {
                       sx={{
                         position: 'absolute',
                         left: { xs: '10%', md: '15%' },
-                        top: '20%',
+                        top: '10%',
                         width: '3px',
                         height: '60%',
                         background: 'linear-gradient(180deg, transparent, #60a5fa, transparent)',
@@ -222,20 +222,7 @@ const HomePage = () => {
                         lineHeight: 1.05,
                         fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
                         position: 'relative',
-                        textAlign: 'center',
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          top: 0,
-                          left: '50%',
-                          transform: 'translateX(-50%)',
-                          width: '80%',
-                          height: '100%',
-                          background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, transparent 50%)',
-                          borderRadius: '8px',
-                          zIndex: -1,
-                          transform: 'translateX(-50%) skewY(-1deg)'
-                        }
+                        textAlign: 'center'
                       }}
                     >
                       Build the Future of{' '}

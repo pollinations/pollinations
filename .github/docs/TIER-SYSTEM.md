@@ -260,18 +260,7 @@ flowchart TD
    ```
 6. **Issue closed automatically** (via `Fixes #123` in PR)
 
-**If user not found in database:**
-```
-⚠️ Action Required: Claim Your Flower Tier
-
-@user, your contribution has been merged but we couldn't find your account to upgrade your tier.
-
-To claim your 🌸 Flower tier (10 pollen/day):
-1. Sign up at enter.pollinations.ai using GitHub
-2. Reply to this issue once you've signed up
-
-We'll upgrade your tier once you're registered. Thanks for contributing! 🌻
-```
+> **Note:** For app submissions, the user is always registered before a PR is created (validated in Step 2). The "user not found" scenario only applies to direct code PRs that bypass the app submission flow.
 
 ---
 

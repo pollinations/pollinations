@@ -2,9 +2,8 @@ import React, { useEffect } from 'react';
 import { Box, Typography, Paper, useTheme, useMediaQuery } from '@mui/material';
 import { motion } from 'framer-motion';
 import { format, parseISO } from 'date-fns';
-import gsocTimeline from '../info/timeline.json'; // Ensure path is correct
+import gsocTimeline from '../info/timeline.json'; 
 
-// 1. Animation Variants for Scroll Effects
 const cardVariants = {
   hidden: { opacity: 0, y: 50 },
   visible: { 
@@ -19,7 +18,6 @@ const TimelinePage = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const today = new Date();
 
-  // Fix: Move side effects out of render
   useEffect(() => {
     document.title = "Timeline - GSOC 2026";
   }, []);
@@ -28,14 +26,13 @@ const TimelinePage = () => {
     <Box 
       sx={{ 
         minHeight: '100vh', 
-        bgcolor: '#09090b', // Shadcn-like dark background (zinc-950)
+        bgcolor: '#09090b', 
         color: '#fff',
         padding: '4rem 2rem',
         position: 'relative',
         overflow: 'hidden'
       }}
     >
-      {/* Background Ambience (Metallic/Glass Glow) */}
       <Box 
         sx={{
           position: 'absolute',
@@ -57,19 +54,17 @@ const TimelinePage = () => {
           marginBottom: '5rem', 
           fontWeight: 700, 
           letterSpacing: '-0.02em',
-          background: 'linear-gradient(to bottom right, #fff, #a1a1aa)', // Metallic gradient text
+          background: 'linear-gradient(to bottom right, #fff, #a1a1aa)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           zIndex: 1,
           position: 'relative'
         }}
       >
-        GSOC 2026 Roadmap
+        GSOC 2026 Timeline
       </Typography>
 
       <Box sx={{ maxWidth: '1000px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        
-        {/* Central Line */}
         <Box 
           sx={{
             position: 'absolute',
@@ -105,7 +100,6 @@ const TimelinePage = () => {
                   pl: isMobile ? '60px' : 0
                 }}
               >
-                {/* Timeline Dot */}
                 <Box 
                   sx={{
                     position: 'absolute',
@@ -114,7 +108,7 @@ const TimelinePage = () => {
                     width: '16px',
                     height: '16px',
                     borderRadius: '50%',
-                    bgcolor: isActive ? '#fff' : '#09090b', // Active = White, Inactive = Dark
+                    bgcolor: isActive ? '#fff' : '#09090b',
                     border: '2px solid',
                     borderColor: isActive ? '#fff' : (isPast ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)'),
                     transform: 'translate(-50%, -50%)',
@@ -124,13 +118,12 @@ const TimelinePage = () => {
                   }}
                 />
 
-                {/* Glass Card */}
                 <Paper
                   elevation={0}
                   sx={{
                     width: isMobile ? '100%' : '45%',
                     p: 3,
-                    background: 'rgba(255, 255, 255, 0.03)', // Glass background
+                    background: 'rgba(255, 255, 255, 0.03)',
                     backdropFilter: 'blur(10px)',
                     border: '1px solid',
                     borderColor: isActive ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.08)',
@@ -142,7 +135,6 @@ const TimelinePage = () => {
                     }
                   }}
                 >
-                  {/* Date Badge */}
                   <Typography 
                     variant="caption" 
                     sx={{ 
@@ -178,3 +170,4 @@ const TimelinePage = () => {
 };
 
 export default TimelinePage;
+

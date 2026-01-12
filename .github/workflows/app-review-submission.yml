@@ -184,7 +184,7 @@ jobs:
 
             IF VALIDATION PASSED:
             1. Fetch issue: `gh issue view ${{ steps.issue.outputs.number }} --json body,author,title`
-            2. Parse: name, url, description, category, repo, discord, language (pick best category if unclear)
+            2. Parse issue - REQUIRED: name, url, description. OPTIONAL: repo, discord, language (infer if not given). Category: pick best fit yourself
             3. Pick emoji
             4. If existing_pr in validation result: checkout that branch and reset to origin/main
                Else: `git fetch origin main && git checkout -b auto/app-${{ steps.issue.outputs.number }}-SLUG origin/main`

@@ -97,16 +97,6 @@ class ImageRequest(BaseModel):
     height: int = Field(default=1024, ge=256, le=4096)
     seed: int | None = None
     
-    @field_validator('width', 'height')
-    @classmethod
-    def validate_dimensions_range(cls, v: int, info: ValidationInfo) -> int:
-        """Validate dimension is in valid range"""
-        if v < 256:
-            raise ValueError(f"Dimension {v}px is below minimum 256px")
-        if v > 4096:
-            raise ValueError(f"Dimension {v}px exceeds maximum 4096px")
-        return v
-    
     @field_validator('height')
     @classmethod
     def validate_total_pixels(cls, height: int, info: ValidationInfo) -> int:
@@ -124,6 +114,7 @@ class ImageRequest(BaseModel):
                     "1024x2048" if 1024 * 2048 <= MAX_FINAL_PIXELS else "1024x1024",
                     "1024x1024"
                 ]
+                examples = list(dict.fromkeys(examples))  
                 raise ValueError(
                     f"Requested {width}x{height} = {total_pixels:,} pixels exceeds limit of {MAX_FINAL_PIXELS:,} pixels ({max_pixels_millions:.2f}M). "
                     f"For width={width}px, maximum height is {max_h}px. "

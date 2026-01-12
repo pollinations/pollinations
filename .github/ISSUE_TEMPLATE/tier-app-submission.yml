@@ -71,9 +71,9 @@ body:
         - Creative
         - Chat
         - Games
-        - Dev Tools
+        - Dev_Tools
         - Vibes
-        - Social Bots
+        - Social_Bots
         - Learn
     validations:
       required: true

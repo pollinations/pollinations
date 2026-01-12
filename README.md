@@ -15,7 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [Study Buzz](https://aistudybuzz.streamlit.app/) | Quizzes, flashcards, study guides & AI help with XP, streaks, rewards | @ash00718 |
+| [ReplyFan](https://replyfan.ai/) | ReplyFan is the AI engagement assistant that learns your voice to draft contextual replies, bulk-approve comments, and grow creator communities. | @airton |
 | [Onyx - The AI Storyboard Engine.](https://onyx-noir-storyboarder-qzfn3h1fe-eneryut.vercel.app/) | Dark AI storyboard engine turning scripts into noir visual sequences | @eneryu |
 | [ChatPUA](https://apps.apple.com/au/app/chatpua/id6753729837) | AI roleplay chat for PUA training with avatars, GIFs, groups & scenes | @Libre-Connect |
 | [Player or AI [Roblox]](https://www.roblox.com/games/95217169945642/Player-or-AI) | 2-min mystery chats—deduce if your partner is human or AI. | @YoussefElsafi |

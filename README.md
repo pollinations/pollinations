@@ -15,7 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [AI YOUTUBE AUTOMATION](https://github.com/Ritik-The-Dev/Youtube-Automation-Workflow) | Python workflow to generate AI videos and automatically upload to YouTube. | @Ritik-The-Dev |
+| [Editor](https://github.com/SkalaSkalolaz/editor) | Console code editor with multi-language support and built-in LLM tools | @SkalaSkalolaz |
 | [FARABI.me](https://farabi.me) | AI app for students with MCQ, Flashcard and Image Generator features | @Farabi-Devs |
 | [FragBin](https://www.fragbin.com/) | Share code/text with expiry, password protection & AI-powered summaries | @maximeb97 |
 | [AI Pet Name Generator](https://petpetgenerator.cc/ai-pet-name-generator) | Generate unique pet names with styles like cute, funny, or fantasy | @loocao |

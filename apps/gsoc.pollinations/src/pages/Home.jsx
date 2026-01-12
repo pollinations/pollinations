@@ -26,7 +26,8 @@ import {
   VerifiedUser,
   MenuBook,
   Gavel,
-  Info
+  Info,
+  Star
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
@@ -68,9 +69,10 @@ const HomePage = () => {
   ];
 
   const stats = [
-    { number: "12", label: "Weeks", icon: <TimelineIcon /> },
-    { number: "3+", label: "Projects", icon: <Code /> },
-    { number: "5K+", label: "Pollens", icon: <EmojiEvents /> }
+    { number: "2K+", label: "GitHub Stars", icon: <Star /> },
+    { number: "150+", label: "Contributors", icon: <Group /> },
+    { number: "1st", label: "Year in GSOC", icon: <EmojiEvents /> },
+    { number: "12", label: "Week Program", icon: <TimelineIcon /> }
   ];
 
   const navigationItems = [
@@ -278,62 +280,119 @@ const HomePage = () => {
                       mb: 4 
                     }}
                   >
-                    <Stack direction="row" spacing={4} flexWrap="wrap">
+                    <Grid container spacing={3} justifyContent="center" sx={{ maxWidth: '600px' }}>
                       {stats.map((stat, index) => (
-                        <motion.div
-                          key={index}
-                          variants={fadeInUp}
-                          initial="hidden"
-                          animate="visible"
-                          custom={index + 1}
-                        >
-                          <Box
-                            sx={{
-                              width: 120,
-                              height: 120,
-                              background: 'linear-gradient(135deg, rgba(96,165,250,0.15) 0%, rgba(255,255,255,0.07) 100%)',
-                              borderRadius: '16px',
-                              border: '2px solid rgba(96,165,250,0.25)',
-                              boxShadow: '0 8px 32px rgba(96,165,250,0.12)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: 1,
-                              textAlign: 'center',
-                              transition: 'all 0.3s ease',
-                              position: 'relative',
-                              overflow: 'hidden',
-                              '&:hover': {
-                                transform: 'translateY(-6px) scale(1.05)',
-                                boxShadow: '0 16px 40px rgba(96,165,250,0.18)',
-                                borderColor: '#60a5fa',
-                              },
-                              '&:before': {
-                                content: '""',
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                height: '100%',
-                                background: 'radial-gradient(circle at 70% 30%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%)',
-                                zIndex: 0,
-                              }
-                            }}
+                        <Grid item xs={6} sm={3} key={index}>
+                          <motion.div
+                            variants={fadeInUp}
+                            initial="hidden"
+                            animate="visible"
+                            custom={index + 1}
                           >
-                            <Box sx={{ color: '#60a5fa', fontSize: '2.2rem', mb: 1, zIndex: 1 }}>
-                              {stat.icon}
+                            <Box
+                              sx={{
+                                height: '120px',
+                                width: '120px',
+                                background: 'linear-gradient(145deg, rgba(18, 18, 27, 0.9), rgba(27, 27, 38, 0.6))',
+                                borderRadius: '20px',
+                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 1.5,
+                                textAlign: 'center',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                boxShadow: `
+                                  inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                                  inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+                                  0 4px 20px rgba(0, 0, 0, 0.15)
+                                `,
+                                userSelect: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                '&:hover': {
+                                  transform: 'translateY(-2px)',
+                                  boxShadow: `
+                                    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                                    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+                                    0 8px 30px rgba(0, 0, 0, 0.2),
+                                    0 0 0 1px rgba(96, 165, 250, 0.1)
+                                  `,
+                                  '& .stat-icon': {
+                                    color: '#60a5fa',
+                                    transform: 'scale(1.1)'
+                                  }
+                                },
+                                '&:before': {
+                                  content: '""',
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  height: '1px',
+                                  background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
+                                },
+                                '&:after': {
+                                  content: '""',
+                                  position: 'absolute',
+                                  top: '50%',
+                                  left: '50%',
+                                  width: '60px',
+                                  height: '60px',
+                                  transform: 'translate(-50%, -50%)',
+                                  background: 'radial-gradient(circle, rgba(96, 165, 250, 0.03) 0%, transparent 70%)',
+                                  borderRadius: '50%',
+                                  zIndex: 0
+                                }
+                              }}
+                            >
+                              <Box 
+                                className="stat-icon"
+                                sx={{ 
+                                  color: 'rgba(255, 255, 255, 0.7)', 
+                                  fontSize: '1.8rem',
+                                  transition: 'all 0.3s ease',
+                                  zIndex: 1,
+                                  filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))'
+                                }}
+                              >
+                                {stat.icon}
+                              </Box>
+                              <Typography 
+                                variant="h5" 
+                                sx={{ 
+                                  fontWeight: 700, 
+                                  color: '#fff', 
+                                  lineHeight: 1, 
+                                  zIndex: 1,
+                                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                                  fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif'
+                                }}
+                              >
+                                {stat.number}
+                              </Typography>
+                              <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                  color: 'rgba(255, 255, 255, 0.6)', 
+                                  textTransform: 'uppercase', 
+                                  fontWeight: 500, 
+                                  letterSpacing: 0.5, 
+                                  zIndex: 1,
+                                  fontSize: '0.75rem',
+                                  lineHeight: 1.2,
+                                  fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif'
+                                }}
+                              >
+                                {stat.label}
+                              </Typography>
                             </Box>
-                            <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff', lineHeight: 1, zIndex: 1 }}>
-                              {stat.number}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: 1, zIndex: 1 }}>
-                              {stat.label}
-                            </Typography>
-                          </Box>
-                        </motion.div>
+                          </motion.div>
+                        </Grid>
                       ))}
-                    </Stack>
+                    </Grid>
                   </Box>
                 </motion.div>
               </Grid>

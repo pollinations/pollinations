@@ -86,7 +86,7 @@ async function main(): Promise<void> {
             result.errors.push(
                 `User @${ISSUE_AUTHOR} is not registered at enter.pollinations.ai`,
             );
-        } else if (tier === "spore") {
+        } else if (tier?.toLowerCase() === "spore") {
             result.valid = false;
             result.errors.push(
                 `User @${ISSUE_AUTHOR} has SPORE tier. To submit an app, you need at least SEED tier. SEED tier is automatically granted based on GitHub activity.`,

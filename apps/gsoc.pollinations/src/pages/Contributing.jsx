@@ -4,19 +4,19 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion } from 'framer-motion';
 
-const CodeOfConduct = () => {
+const Contributing = () => {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    document.title = "Code of Conduct - GSOC 2026 | pollinations.ai";
+    document.title = "Contributing - GSOC 2026 | pollinations.ai";
     
-    // Fetch the code of conduct markdown file
-    fetch('/GSOC/CODE_OF_CONDUCT.md')
+    // Fetch the contributing markdown file
+    fetch('/GSOC/CONTRIBUTING.md')
       .then(response => {
         if (!response.ok) {
-          throw new Error('Failed to fetch code of conduct');
+          throw new Error('Failed to fetch contributing guidelines');
         }
         return response.text();
       })
@@ -25,7 +25,7 @@ const CodeOfConduct = () => {
         setLoading(false);
       })
       .catch(err => {
-        console.error('Error fetching code of conduct:', err);
+        console.error('Error fetching contributing guidelines:', err);
         setError(err.message);
         setLoading(false);
       });
@@ -232,4 +232,4 @@ const CodeOfConduct = () => {
   );
 };
 
-export default CodeOfConduct;
+export default Contributing;

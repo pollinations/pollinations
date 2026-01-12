@@ -8,6 +8,8 @@ import Projects from './pages/Projects';
 import Mentors from './pages/Mentors';
 import About from './pages/About';
 import Timeline from './pages/Timeline';
+import Contributing from './pages/Contributing';
+import CodeOfConduct from './pages/CodeOfConduct';
 import './App.css';
 
 const darkTheme = createTheme({
@@ -53,6 +55,8 @@ function App() {
           <Route path='/mentors' element={<Mentors />} />
           <Route path='/timeline' element={<Timeline />} />
           <Route path='/about' element={<About />} />
+          <Route path='/contributing' element={<Contributing />} />
+          <Route path='/code-of-conduct' element={<CodeOfConduct />} />
         </Routes>
         <Footer />
       </Router>

@@ -11,6 +11,9 @@ import os
 import json
 import subprocess
 import requests
+import re
+import shlex
+import sys
 from datetime import datetime
 
 # Config
@@ -33,13 +36,24 @@ def load_skill():
     with open(SKILL_PATH, "r") as f:
         return f.read()
 
-def run_cmd(cmd, check=True):
-    """Run a shell command and return output."""
-    print(f"  $ {cmd}")
+import shlex
+
+def sanitize_string(s, max_length=100):
+    if not s or not isinstance(s, str):
+        return ""
+    safe_chars = re.sub(r'[^a-zA-Z0-9\s\-_\.]', '', s)
+    return safe_chars[:max_length].strip()
+
+def run_cmd(cmd_list, check=True):
+    if isinstance(cmd_list, str):
+        print(f"  WARNING: Using string command (unsafe): {cmd_list[:50]}...")
+        cmd_list = shlex.split(cmd_list)
+    
+    print(f"  $ {' '.join(shlex.quote(arg) for arg in cmd_list)}")
     env = dict(os.environ)
     env["GH_TOKEN"] = GH_TOKEN or ""
     result = subprocess.run(
-        cmd, shell=True, capture_output=True, text=True, env=env
+        cmd_list, capture_output=True, text=True, env=env  # Removed shell=True
     )
     if check and result.returncode != 0:
         print(f"  Error: {result.stderr}")
@@ -97,17 +111,27 @@ def parse_issue(body):
         return match.group(1).strip() if match else default
 
     return {
-        "name": extract(r"### App Name\s*\n(.+?)(?:\n|$)"),
-        "description": extract(r"### App Description\s*\n(.+?)(?:\n###|$)", ""),
+        "name": sanitize_string(extract(r"### App Name\s*\n(.+?)(?:\n|$)"), 50),
+        "description": sanitize_string(extract(r"### App Description\s*\n(.+?)(?:\n###|$)", ""), 200),
         "url": extract(r"### App URL\s*\n(.+?)(?:\n|$)"),
         "repo": extract(r"### GitHub.*Repository.*URL\s*\n(.+?)(?:\n|$)"),
         "discord": extract(r"### Discord.*\s*\n(.+?)(?:\n|$)"),
-        "category": extract(r"### App Category\s*\n(.+?)(?:\n|$)"),
+        "category": sanitize_string(extract(r"### App Category\s*\n(.+?)(?:\n|$)"), 20),
         "language": extract(r"### App Language\s*\n(.+?)(?:\n|$)", "en"),
         "email": extract(r"### Email.*\s*\n(.+?)(?:\n|$)")
     }
 
 def main():
+    if not GH_TOKEN:
+        print("❌ Error: GH_TOKEN environment variable is required")
+        sys.exit(1)
+    if not ISSUE_NUMBER:
+        print("❌ Error: ISSUE_NUMBER environment variable is required")
+        sys.exit(1)
+    if not ISSUE_AUTHOR:
+        print("❌ Error: ISSUE_AUTHOR environment variable is required")
+        sys.exit(1)
+
     print(f"🚀 App Review Agent")
     print(f"   Issue: #{ISSUE_NUMBER}")
     print(f"   Author: {ISSUE_AUTHOR}")
@@ -140,11 +164,11 @@ Errors:
 
 Write a concise, helpful comment (2-3 sentences max) explaining the issue and what the user should do. Be friendly but direct. If not registered, mention enter.pollinations.ai. Don't use markdown headers."""
 
-        print("   🤖 Asking LLM for error response...")
+        print("🤖 Asking LLM for error response...")
         try:
             comment = call_llm(system_prompt, user_prompt)
         except Exception as e:
-            print(f"   ⚠️ LLM failed: {e}, using fallback")
+            print(f"⚠️ LLM failed: {e}, using fallback")
             comment = "There was an issue processing your submission. Please check the requirements and try again, or comment here for help."
 
         # Post comment
@@ -187,7 +211,7 @@ Respond with ONLY a JSON object (no markdown, no explanation):
     "language": "ISO code like en, zh-CN, es, ja"
 }}"""
 
-    print("   🤖 Asking LLM for emoji/category...")
+    print("🤖 Asking LLM for emoji/category...")
     llm_response = call_llm(system_prompt, user_prompt)
 
     # Parse LLM response

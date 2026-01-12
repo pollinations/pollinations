@@ -117,6 +117,23 @@ jobs:
         if: github.event_name == 'issue_comment' && steps.auth.outputs.authorized == 'false'
         run: echo "Skipping - commenter not authorized"
 
+      - name: Update issue title
+        if: github.event_name == 'issues' && github.event.action == 'opened'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const body = context.payload.issue.body;
+            const appNameMatch = body?.match(/### App Name\s*\n(.*?)(?:\n|$)/);
+            const appName = appNameMatch ? appNameMatch[1].trim() : 'App';
+            
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              title: `[App Submission] ${appName}`
+            });
+
       - name: Validate submission
         id: validate
         if: github.event_name != 'issue_comment' || steps.auth.outputs.authorized == 'true'

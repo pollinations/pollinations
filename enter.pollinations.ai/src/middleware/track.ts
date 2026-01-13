@@ -436,7 +436,6 @@ function createTrackingEvent({
 }: TrackingEventInput): InsertGenerationEvent {
     return {
         id,
-        eventStatus: "pending",
         requestId,
         requestPath,
         startTime,

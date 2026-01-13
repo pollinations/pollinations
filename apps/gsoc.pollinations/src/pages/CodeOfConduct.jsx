@@ -11,8 +11,6 @@ const CodeOfConduct = () => {
 
   useEffect(() => {
     document.title = "Code of Conduct - GSOC 2026 | pollinations.ai";
-    
-    // Fetch the code of conduct markdown file
     fetch('/GSOC/CODE_OF_CONDUCT.md')
       .then(response => {
         if (!response.ok) {

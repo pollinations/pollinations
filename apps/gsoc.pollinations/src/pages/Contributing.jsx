@@ -11,8 +11,6 @@ const Contributing = () => {
 
   useEffect(() => {
     document.title = "Contributing - GSOC 2026 | pollinations.ai";
-    
-    // Fetch the contributing markdown file
     fetch('/GSOC/CONTRIBUTING.md')
       .then(response => {
         if (!response.ok) {

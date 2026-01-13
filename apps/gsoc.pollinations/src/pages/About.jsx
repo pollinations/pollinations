@@ -349,10 +349,10 @@ const AboutPage = () => {
                       src="/polli_white.svg"
                       alt="pollinations.ai logo"
                       sx={{
-                        width: 120,
-                        height: 120,
+                        width: 60,
+                        height: 60,
                         mb: 2,
-                        mx: 'auto',
+                        mx: '2px',
                         display: 'block',
                         objectFit: 'contain',
                         filter: 'brightness(1.1)',
@@ -479,6 +479,7 @@ const AboutPage = () => {
               <Button
                 variant="contained"
                 size="large"
+                onClick={() => window.open('https://pollinations.ai', '_blank')}
                 startIcon={<Language />}
                 sx={{
                   bgcolor: 'rgba(255,255,255,0.15)',

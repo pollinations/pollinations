@@ -70,27 +70,27 @@ function parseAppsMarkdown() {
             .map((c) => c.trim())
             .filter(Boolean);
 
-        if (cols.length < 11) continue;
+        if (cols.length < 13) continue;
 
-        // Format: Emoji | Name | Description | Language | Category | GitHub | Repo | Stars | Discord | Other | Submitted
-        const nameMatch = cols[1].match(/\[([^\]]+)\]\(([^)]+)\)/);
-        const name = nameMatch ? nameMatch[1] : cols[1];
-        const url = nameMatch ? nameMatch[2] : "";
+        // Format: Emoji | Name | Web_URL | Description | Language | Category | GitHub | GitHub_ID | Repo | Stars | Discord | Other | Submitted
+        const name = cols[1];
+        const url = cols[2];
 
         apps.push({
             lineIndex: headerIdx + 2 + i,
             emoji: cols[0],
             name,
             url,
-            description: cols[2],
-            language: cols[3],
-            category: cols[4].toLowerCase(),
-            github: cols[5],
-            repo: cols[6],
-            stars: cols[7],
-            discord: cols[8],
-            other: cols[9],
-            submitted: cols[10],
+            description: cols[3],
+            language: cols[4],
+            category: cols[5].toLowerCase(),
+            github: cols[6],
+            githubId: cols[7],
+            repo: cols[8],
+            stars: cols[9],
+            discord: cols[10],
+            other: cols[11],
+            submitted: cols[12],
             rawLine: row,
         });
     }

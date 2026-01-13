@@ -387,6 +387,7 @@ const socBotChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const pollyAPI = useRef(new socBotAPI());
 
   useEffect(() => {
@@ -400,11 +401,28 @@ const socBotChat = () => {
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    // Only scroll to bottom when messages are added (not on initial mount)
+    if (messages.length > 1) {
+      scrollToBottom();
+    }
   }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Use setTimeout to ensure DOM is updated
+    setTimeout(() => {
+      if (messagesContainerRef.current) {
+        const container = messagesContainerRef.current;
+        const isScrolledNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+        
+        // Only scroll if user is already near the bottom (auto-scroll behavior)
+        if (isScrolledNearBottom || messages.length <= 1) {
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }, 100);
   };
 
   const handleSendMessage = async (messageText = inputValue) => {
@@ -514,7 +532,7 @@ const socBotChat = () => {
         }} 
       />
 
-      <Container maxWidth="md" sx={{ position: 'relative', mt: 10, zIndex: 1, py: 4, height: '90vh', display: 'flex', flexDirection: 'column' }}>
+      <Container maxWidth="md" sx={{ position: 'relative', mt: 5, zIndex: 1, py: 4, height: '90vh', display: 'flex', flexDirection: 'column' }}>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -522,11 +540,13 @@ const socBotChat = () => {
         >
         </motion.div>
         <Box 
+          ref={messagesContainerRef}
           sx={{ 
             flex: 1, 
             overflowY: 'auto', 
             mb: 3,
             px: 1,
+            scrollBehavior: 'smooth',
             '&::-webkit-scrollbar': {
               width: '6px',
             },

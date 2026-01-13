@@ -83,7 +83,7 @@ const Navbar = () => {
           </ListItem>
         ))}
         
-        {/* GSOCPolly AI Assistant in Mobile Menu */}
+        {/* SocBot AI Assistant in Mobile Menu */}
         <ListItem 
           component={Link} 
           to="/socBot"
@@ -111,7 +111,7 @@ const Navbar = () => {
               }}
             />
             <ListItemText 
-              primary="GSOCPolly AI Assistant" 
+              primary="SocBot AI Assistant" 
               secondary="Ask me anything about GSOC!"
               sx={{ 
                 '& .MuiTypography-root': { 
@@ -231,9 +231,9 @@ const Navbar = () => {
                 </Button>
               ))}
               
-              {/* GSOCPolly AI Assistant Button */}
+              {/* SocBot AI Assistant Button */}
               <Box sx={{ ml: 2, position: 'relative' }}>
-                <Tooltip title="Ask GSOCPolly - Your AI Assistant" placement="bottom">
+                <Tooltip title="Ask SocBot - Your AI Assistant" placement="bottom">
                   <IconButton
                     component={Link}
                     to="/socBot"

@@ -44,6 +44,7 @@ You have access to comprehensive information about:
 - Technical requirements and skill recommendations
 - Community guidelines and contribution processes
 - Ask to contact ayushman@myceli.ai for anything you feel not safe to answer.
+- Limit within 1000 tokens
 
 Always end responses with a helpful suggestion or question to keep the conversation engaging.`;
   }
@@ -70,7 +71,7 @@ Always end responses with a helpful suggestion or question to keep the conversat
           ...this.conversationHistory
         ],
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 1000,
         stream: false
       };
 

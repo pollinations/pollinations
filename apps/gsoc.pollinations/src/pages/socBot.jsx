@@ -1,33 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Box, 
-  Typography, 
-  TextField, 
-  IconButton, 
-  Paper, 
-  Avatar, 
-  Chip,
-  Button,
-  Container,
-  Stack,
-  Card,
-  CardContent,
-  Fade,
-  Zoom,
-  CircularProgress,
-  Tooltip
-} from '@mui/material';
-import { 
-  Send, 
-  AutoAwesome, 
-  Clear,
-  LightbulbOutlined,
-  RocketLaunchOutlined,
-  SchoolOutlined,
-  CodeOutlined
-} from '@mui/icons-material';
+import { Box, Typography, TextField, IconButton, Paper, Avatar, Chip, Button, Container, Stack, Card, CardContent, Fade, Zoom, CircularProgress, Tooltip } from '@mui/material';
+import { Send, AutoAwesome, Clear, LightbulbOutlined, RocketLaunchOutlined, SchoolOutlined, CodeOutlined } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
-import GSOCPollyAPI from '../api/gsocPolly';
+import socBotAPI from '../api/socBot';
 
 const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
   return (
@@ -55,7 +30,6 @@ const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
               position: 'relative'
             }}
           />
-          {/* GSOC Logo overlay */}
           <Avatar
             src="/gsoc_logo.webp"
             sx={{
@@ -110,7 +84,7 @@ const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CircularProgress size={16} sx={{ color: '#60a5fa' }} />
               <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                GSOCPolly is thinking...
+                socBot is thinking...
               </Typography>
             </Box>
           ) : (
@@ -200,21 +174,21 @@ const SuggestedQuestion = ({ question, onClick, icon }) => (
   </motion.div>
 );
 
-const GSOCPollyChat = () => {
+const socBotChat = () => {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const messagesEndRef = useRef(null);
-  const pollyAPI = useRef(new GSOCPollyAPI());
+  const pollyAPI = useRef(new socBotAPI());
 
   useEffect(() => {
-    document.title = "GSOCPolly - AI Assistant | GSOC 2026 | pollinations.ai";
+    document.title = "socBot - AI Assistant | GSOC 2026 | pollinations.ai";
     
     // Welcome message
     setMessages([{
       id: 1,
-      content: "Hello! I'm GSOCPolly, your AI assistant for Google Summer of Code 2026 at pollinations.ai! 🚀\n\nI'm here to help you with everything related to GSOC - from understanding the program to choosing projects, application guidance, and technical support.\n\nWhat would you like to know about GSOC 2026?",
+      content: "Hello! I'm socBot, your AI assistant for Google Summer of Code 2026 at pollinations.ai! 🚀\n\nI'm here to help you with everything related to GSOC - from understanding the program to choosing projects, application guidance, and technical support.\n\nWhat would you like to know about GSOC 2026?",
       isBot: true,
       timestamp: new Date().toISOString()
     }]);
@@ -346,7 +320,7 @@ const GSOCPollyChat = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Box sx={{ textAlign: 'center', mb: 4, mt: 6 }}>
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 2 }}>
               <Avatar 
                 src="/polli_white.svg" 
@@ -369,7 +343,7 @@ const GSOCPollyChat = () => {
                     lineHeight: 1
                   }}
                 >
-                  GSOCPolly
+                  socBot
                 </Typography>
                 <Typography variant="subtitle1" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>
                   Your GSOC 2026 AI Assistant
@@ -579,4 +553,4 @@ const GSOCPollyChat = () => {
   );
 };
 
-export default GSOCPollyChat;
+export default socBotChat;

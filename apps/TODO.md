@@ -4,8 +4,8 @@ These apps need to be updated to use `gen.pollinations.ai` instead of legacy end
 
 | App                   | Current Endpoint                                | Status  |
 | --------------------- | ----------------------------------------------- | ------- |
-| **model-monitor**     | `enter.pollinations.ai/api`                     | Pending |
-| **catgpt**            | `enter.pollinations.ai`                         | Pending |
+| **model-monitor**     | `gen.pollinations.ai`                           | Done |
+| **catgpt**            | `gen.pollinations.ai`                            | Done |
 | **ai-dungeon-master** | `image.pollinations.ai`, `text.pollinations.ai` | Pending |
 
 ## Notes

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AppBar, Toolbar, Button, Box, Typography, IconButton, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme, Chip, Tooltip, Avatar } from '@mui/material';
 import { Menu, Close, AutoAwesome } from '@mui/icons-material';
-
+import '../index.css'
 const Navbar = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -231,7 +231,6 @@ const Navbar = () => {
                 </Button>
               ))}
               
-              {/* SocBot AI Assistant Button */}
               <Box sx={{ ml: 2, position: 'relative' }}>
                 <Tooltip title="Ask SocBot - Your AI Assistant" placement="bottom">
                   <IconButton
@@ -239,7 +238,6 @@ const Navbar = () => {
                     to="/socBot"
                     sx={{
                       background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%)',
-                      border: '2px solid rgba(96, 165, 250, 0.3)',
                       width: 48,
                       height: 48,
                       transition: 'all 0.3s ease',
@@ -250,16 +248,6 @@ const Navbar = () => {
                         background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.25) 0%, rgba(96, 165, 250, 0.15) 100%)',
                         borderColor: 'rgba(96, 165, 250, 0.5)',
                         boxShadow: '0 8px 32px rgba(96, 165, 250, 0.3)'
-                      },
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: '2px',
-                        background: 'linear-gradient(90deg, #60a5fa, #3b82f6)',
-                        animation: 'shimmer 2s linear infinite'
                       }
                     }}
                   >
@@ -284,7 +272,6 @@ const Navbar = () => {
                   </IconButton>
                 </Tooltip>
                 
-                {/* Pulsing indicator */}
                 <Box
                   sx={{
                     position: 'absolute',
@@ -292,9 +279,9 @@ const Navbar = () => {
                     right: -2,
                     width: 8,
                     height: 8,
-                    bgcolor: '#22c55e',
+                    bgcolor: 'var(--bot_status)',
                     borderRadius: '50%',
-                    boxShadow: '0 0 0 2px #09090b, 0 0 8px rgba(34, 197, 94, 0.6)',
+                    boxShadow: '0 0 0 2px #09090b, 0 0 8px var(--bot_status)',
                     animation: 'pulse 2s ease-in-out infinite'
                   }}
                 />

@@ -401,20 +401,16 @@ const socBotChat = () => {
   }, []);
 
   useEffect(() => {
-    // Only scroll to bottom when messages are added (not on initial mount)
     if (messages.length > 1) {
       scrollToBottom();
     }
   }, [messages]);
 
   const scrollToBottom = () => {
-    // Use setTimeout to ensure DOM is updated
     setTimeout(() => {
       if (messagesContainerRef.current) {
         const container = messagesContainerRef.current;
         const isScrolledNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-        
-        // Only scroll if user is already near the bottom (auto-scroll behavior)
         if (isScrolledNearBottom || messages.length <= 1) {
           container.scrollTo({
             top: container.scrollHeight,
@@ -532,7 +528,7 @@ const socBotChat = () => {
         }} 
       />
 
-      <Container maxWidth="md" sx={{ position: 'relative', mt: 5, zIndex: 1, py: 4, height: '90vh', display: 'flex', flexDirection: 'column' }}>
+      <Container maxWidth="md" sx={{ position: 'relative', mt: 1, zIndex: 1, py: 4, height: '90vh', display: 'flex', flexDirection: 'column' }}>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}

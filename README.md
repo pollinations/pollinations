@@ -15,7 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [Gen AI  Thumbnail Maker](https://play.google.com/store/apps/details?id=com.sparksolutionz.genai) | AI thumbnail maker using Pollinations API for image and text generation | @altonalvin9 |
+| [InstAI](https://adrikiwi.freeboxos.fr/instai/) | Social platform for creating, sharing and discovering AI-generated images | @AdrienMttn |
 | [FARABI.me](https://farabi.me) | AI app for students with MCQ, Flashcard and Image Generator features | @Farabi-Devs |
 | [FragBin](https://www.fragbin.com/) | Share code/text with expiry, password protection & AI-powered summaries | @maximeb97 |
 | [AI Pet Name Generator](https://petpetgenerator.cc/ai-pet-name-generator) | Generate unique pet names with styles like cute, funny, or fantasy | @loocao |

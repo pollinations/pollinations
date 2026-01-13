@@ -30,8 +30,8 @@ Traditional text-based RPGs lack visual immersion and dynamic storytelling. AI D
 
 ### **AI Integration**
 
-- **Text Generation**: Pollinations `/api/text/v1/chat/completions`
-- **Image Generation**: Pollinations `/api/image/prompt/` with Flux model
+- **Text Generation**: Pollinations `https://gen.pollinations.ai/v1/chat/completions` with OpenAI model
+- **Image Generation**: Pollinations `https://gen.pollinations.ai/image` with Flux model
 - **Context-Aware Processing**: Smart prompt engineering for consistent storytelling
 
 ### **State Management & Storage**
@@ -311,7 +311,7 @@ npm run preview
 
 ```javascript
 // POST /api/text/v1/chat/completions
-const response = await fetch("/v1/chat/completions", {
+const response = await fetch("https://gen.pollinations.ai/v1/chat/completions", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
@@ -331,11 +331,8 @@ const response = await fetch("/v1/chat/completions", {
 
 ```javascript
 // GET /api/image/prompt/{encoded_prompt}
-const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imagePrompt)}?width=1024&height=768&model=flux`;
+const imageUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(imagePrompt)}?width=1024&height=768&model=flux`;
 
-// Example prompt: fantasy rpg scene, ancient temple, digital art, atmospheric
-https://image.pollinations.ai/prompt/fantasy%20rpg%20scene%20ancient%20temple%20digital%20art%20atmospheric?width=1024&height=768&model=flux
-```
 
 ### **Error Handling & Fallbacks**
 

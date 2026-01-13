@@ -6,7 +6,7 @@ These apps need to be updated to use `gen.pollinations.ai` instead of legacy end
 | --------------------- | ----------------------------------------------- | ------- |
 | **model-monitor**     | `gen.pollinations.ai`                           | Done |
 | **catgpt**            | `gen.pollinations.ai`                            | Done |
-| **ai-dungeon-master** | `image.pollinations.ai`, `text.pollinations.ai` | Pending |
+| **ai-dungeon-master** | `gen.pollinations.ai` | Done |
 
 ## Notes
 

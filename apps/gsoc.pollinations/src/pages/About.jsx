@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { Box, Typography, Grid, Card, CardContent, Chip, Stack, Button, Avatar, Divider, } from '@mui/material'; 
-import { Code, Psychology, Groups, School, Rocket, GitHub, Language, EmojiEvents, Book, Timeline as TimelineIcon } from '@mui/icons-material'; import { motion } from 'framer-motion';
+import { Box, Typography, Grid, Card, CardContent, Chip, Stack, Button, Divider, } from '@mui/material'; 
+import { Code, Psychology, Groups, School, Rocket, GitHub, Language, EmojiEvents, Gavel, Timeline as TimelineIcon } from '@mui/icons-material'; import { motion } from 'framer-motion';
 
 // Animation variants
 const cardVariants = {
@@ -153,7 +153,7 @@ const AboutPage = () => {
               <Button
                 variant="outlined"
                 size="large"
-                startIcon={<Book />}
+                startIcon={<Gavel />}
                 sx={{
                   borderColor: 'rgba(255,255,255,0.3)',
                   color: '#fff',
@@ -167,7 +167,7 @@ const AboutPage = () => {
                   }
                 }}
               >
-                View Projects
+                Code of Conduct
               </Button>
             </Stack>
           </motion.div>

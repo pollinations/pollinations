@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import projects from '../info/projects.json';
 import mentors from '../info/mentors.json';
-import { Card, CardContent, Typography, Grid, Chip, Box, Collapse, IconButton, Button, Avatar, Stack, Divider, LinearProgress } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, Code, ArrowForward, GitHub, Schedule, Person, Lightbulb, Assignment, Star } from '@mui/icons-material';
+import { Card, CardContent, Typography, Chip, Box, Collapse, IconButton, Button, Avatar, Stack, Divider, LinearProgress } from '@mui/material';
+import { ExpandMore as ExpandMoreIcon, Code, ArrowForward, GitHub, Schedule, Person, Lightbulb, Assignment, Star, Email } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 const cardVariants = {
   hidden: { opacity: 0, y: 30 },
@@ -30,10 +30,8 @@ const ProjectsPage = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#09090b', padding: '2rem 2rem 4rem', position: 'relative', overflow: 'hidden' }}>
-       <Box sx={{ position: 'absolute', top: '-10%', left: '50%', transform: 'translateX(-50%)', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0) 70%)', zIndex: 0, pointerEvents: 'none' }} />
-
       <Box sx={{ maxWidth: '1400px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        {/* Header Section */}
+        
         <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Typography variant='h2' sx={{ marginBottom: '1rem', fontWeight: 700, letterSpacing: '-0.02em', background: 'linear-gradient(to bottom right, #fff, #a1a1aa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             GSOC 2026 Project Ideas
@@ -61,27 +59,25 @@ const ProjectsPage = () => {
           </Stack>
         </Box>
 
-        {/* Projects Grid - Full Width Layout */}
-        <Grid container spacing={4}>
+        {/* Projects List */}
+        <div className="flex flex-col gap-8">
           {projects && projects.map((project, index) => {
             const mentor = mentors.find(m => m.id === project.mentorID);
-            
             return (
-              <Grid item xs={12} key={index}>
+              <div key={index}>
                 <motion.div custom={index} variants={cardVariants} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                   <Card elevation={0} sx={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', color: '#fff', transition: 'all 0.4s ease', position: 'relative', overflow: 'hidden', '&:hover': { transform: 'translateY(-4px)', borderColor: 'rgba(255,255,255,0.3)', boxShadow: '0 25px 50px -10px rgba(0,0,0,0.5)' }, '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: `linear-gradient(90deg, ${project.category === 'AI/ML' ? '#f59e0b, #d97706' : project.category === 'Blockchain' ? '#3b82f6, #1d4ed8' : '#10b981, #059669'})`, borderRadius: '20px 20px 0 0' } }}>
                     <CardContent sx={{ padding: '2.5rem' }}>
-                      <Grid container spacing={4} alignItems="center">
-                        {/* Left Section - Project Info */}
-                        <Grid item xs={12} md={8}>
-                          {/* Header with Category & Difficulty */}
+                      {/* Main content area - unified single block with flexbox */}
+                      <div className="flex flex-col lg:flex-row gap-8">
+                        {/* Left Section - Project Information */}
+                        <div className="w-full lg:w-1/2">
                           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
                             <Chip label={project.category} size="medium" icon={<Lightbulb sx={{ fontSize: '18px !important' }} />} sx={{ bgcolor: project.category === 'AI/ML' ? 'rgba(245, 158, 11, 0.1)' : project.category === 'Blockchain' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: project.category === 'AI/ML' ? '#fbbf24' : project.category === 'Blockchain' ? '#60a5fa' : '#34d399', border: `1px solid ${project.category === 'AI/ML' ? 'rgba(245, 158, 11, 0.3)' : project.category === 'Blockchain' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`, fontWeight: 600, fontSize: '0.875rem', height: '32px' }} />
                             <Chip label={project.difficulty} size="medium" sx={{ bgcolor: project.difficulty === 'Beginner' ? 'rgba(34, 197, 94, 0.1)' : project.difficulty === 'Intermediate' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: project.difficulty === 'Beginner' ? '#4ade80' : project.difficulty === 'Intermediate' ? '#fbbf24' : '#f87171', border: `1px solid ${project.difficulty === 'Beginner' ? 'rgba(34, 197, 94, 0.3)' : project.difficulty === 'Intermediate' ? 'rgba(251, 191, 36, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`, fontWeight: 600, fontSize: '0.875rem', height: '32px' }} />
                             <Chip label={project.duration} size="medium" icon={<Schedule sx={{ fontSize: '18px !important' }} />} sx={{ bgcolor: 'rgba(156, 163, 175, 0.1)', color: '#d1d5db', border: '1px solid rgba(156, 163, 175, 0.2)', fontWeight: 600, fontSize: '0.875rem', height: '32px' }} />
                           </Box>
 
-                          {/* ...existing code... */}
                           <Typography variant='h4' sx={{ fontWeight: 700, mb: 2, lineHeight: 1.2, color: '#fff', fontSize: { xs: '1.75rem', md: '2rem' } }}>
                             {project.title}
                           </Typography>
@@ -100,81 +96,103 @@ const ProjectsPage = () => {
                               ))}
                             </Stack>
                           </Box>
-                        </Grid>
+                        </div>
 
-                        {/* Right Section - Mentor & Actions */}
-                        <Grid item xs={12} md={4}>
-                          <Box sx={{ p: 3, borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                            {/* Mentor Info */}
-                            <Box>
-                              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, mb: 2, display: 'block' }}>
-                                Project Mentor
-                              </Typography>
-                              
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                <Avatar src={mentor?.imageUrl} sx={{ width: 48, height: 48, border: '2px solid rgba(255,255,255,0.2)' }}>
-                                  {mentor?.name?.split(' ').map(n => n[0]).join('') || 'M'}
-                                </Avatar>
-                                <Box>
-                                  <Typography variant="h6" sx={{ color: '#fff', fontWeight: 600 }}>
-                                    {mentor?.name || 'TBA'}
-                                  </Typography>
-                                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                                    {mentor?.title || 'Mentor'}
-                                  </Typography>
-                                </Box>
+                        {/* Right Section - Mentor & Actions (unified with left section) */}
+                        <div className="w-full lg:w-1/2 flex flex-col justify-between">
+                          {/* Mentor Info */}
+                          <Box>
+                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, mb: 2, display: 'block' }}>
+                              Project Mentor
+                            </Typography>
+                            
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                              <Avatar src={mentor?.imageUrl} sx={{ width: 48, height: 48, border: '2px solid rgba(255,255,255,0.2)' }}>
+                                {mentor?.name?.split(' ').map(n => n[0]).join('') || 'M'}
+                              </Avatar>
+                              <Box sx={{ flex: 1 }}>
+                                <Typography variant="h6" sx={{ color: '#fff', fontWeight: 600 }}>
+                                  {mentor?.name || 'TBA'}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                                  {mentor?.title || 'Mentor'}
+                                </Typography>
                               </Box>
-
-                              {/* Mentor Expertise */}
-                              <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ mb: 3 }}>
-                                {(mentor?.expertise || []).slice(0, 3).map((skill, i) => (
-                                  <Chip key={i} label={skill} size="small" sx={{ fontSize: '0.7rem', height: '20px', bgcolor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.1)' }} />
-                                ))}
-                              </Stack>
-
-                              {/* Stats */}
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                                <Box sx={{ textAlign: 'center' }}>
-                                  <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>
-                                    {mentor?.projects || 0}
-                                  </Typography>
-                                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                                    Projects
-                                  </Typography>
-                                </Box>
-                                <Box sx={{ textAlign: 'center' }}>
-                                  <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>
-                                    {mentor?.yearsExperience || 0}+
-                                  </Typography>
-                                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                                    Years Exp
-                                  </Typography>
-                                </Box>
-                              </Box>
+                              {/* Email Capsule */}
+                              {mentor?.email && (
+                                <Button 
+                                  variant="outlined" 
+                                  size="small"
+                                  startIcon={<Email sx={{ fontSize: '16px !important' }} />}
+                                  href={`mailto:${mentor.email}`}
+                                  sx={{ 
+                                    textTransform: 'none',
+                                    borderColor: 'rgba(255,255,255,0.2)',
+                                    color: 'rgba(255,255,255,0.8)',
+                                    px: 2,
+                                    py: 0.5,
+                                    fontSize: '0.75rem',
+                                    borderRadius: '20px',
+                                    '&:hover': { 
+                                      borderColor: 'rgba(255,255,255,0.4)',
+                                      backgroundColor: 'rgba(255,255,255,0.05)'
+                                    }
+                                  }}
+                                >
+                                  Contact
+                                </Button>
+                              )}
                             </Box>
 
-                            {/* ...existing code... */}
-                            <Stack spacing={2}>
-                              <Button variant="contained" size="large" startIcon={<Assignment />} sx={{ bgcolor: 'rgba(255,255,255,0.15)', color: '#fff', textTransform: 'none', fontSize: '1rem', fontWeight: 600, py: 1.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.25)', transform: 'translateY(-1px)', boxShadow: '0 8px 25px rgba(0,0,0,0.3)' } }}>
-                                Apply for Project
-                              </Button>
-                              
-                              <Button variant="outlined" size="large" onClick={() => handleExpandClick(index)} endIcon={<ExpandMoreIcon sx={{ transform: expanded === index ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} />} sx={{ borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', textTransform: 'none', fontSize: '1rem', py: 1.5, '&:hover': { borderColor: 'rgba(255,255,255,0.4)', color: '#fff', backgroundColor: 'rgba(255,255,255,0.05)' } }}>
-                                {expanded === index ? 'Hide Details' : 'View Details'}
-                              </Button>
+                            {/* Mentor Expertise */}
+                            <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ mb: 3 }}>
+                              {(mentor?.expertise || []).slice(0, 3).map((skill, i) => (
+                                <Chip key={i} label={skill} size="small" sx={{ fontSize: '0.7rem', height: '20px', bgcolor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                              ))}
                             </Stack>
+
+                            {/* Stats */}
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+                              <Box sx={{ textAlign: 'center' }}>
+                                <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>
+                                  {mentor?.projects || 0}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+                                  Projects
+                                </Typography>
+                              </Box>
+                              <Box sx={{ textAlign: 'center' }}>
+                                <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>
+                                  {mentor?.yearsExperience || 0}+
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+                                  Years Exp
+                                </Typography>
+                              </Box>
+                            </Box>
                           </Box>
-                        </Grid>
-                      </Grid>
+
+                          {/* Actions */}
+                          <Stack spacing={2}>
+                            <Button variant="contained" size="large" startIcon={<Assignment />} sx={{ bgcolor: 'rgba(255,255,255,0.15)', color: '#fff', textTransform: 'none', fontSize: '1rem', fontWeight: 600, py: 1.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.25)', transform: 'translateY(-1px)', boxShadow: '0 8px 25px rgba(0,0,0,0.3)' } }}>
+                              Apply for Project
+                            </Button>
+                            
+                            <Button variant="outlined" size="large" onClick={() => handleExpandClick(index)} endIcon={<ExpandMoreIcon sx={{ transform: expanded === index ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} />} sx={{ borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', textTransform: 'none', fontSize: '1rem', py: 1.5, '&:hover': { borderColor: 'rgba(255,255,255,0.4)', color: '#fff', backgroundColor: 'rgba(255,255,255,0.05)' } }}>
+                              {expanded === index ? 'Hide Details' : 'View Details'}
+                            </Button>
+                          </Stack>
+                        </div>
+                      </div>
 
                       {/* Expandable Detailed Content */}
                       <Collapse in={expanded === index} timeout={600} sx={{ '& .MuiCollapse-wrapper': { transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important' } }}>
                         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: expanded === index ? 1 : 0, y: expanded === index ? 0 : -20 }} transition={{ duration: 0.4, delay: 0.1 }}>
                           <Divider sx={{ my: 4, borderColor: 'rgba(255,255,255,0.1)' }} />
                           
-                          <Grid container spacing={4}>
+                          <div className="flex flex-col lg:flex-row gap-8">
                             {/* Detailed Description */}
-                            <Grid item xs={12} md={8}>
+                            <div className="w-full lg:w-2/3">
                               <Typography variant="h5" sx={{ color: '#fff', fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Assignment sx={{ fontSize: '24px' }} />
                                 Detailed Project Description
@@ -185,46 +203,38 @@ const ProjectsPage = () => {
                               </Typography>
 
                               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                                <Button variant="contained" startIcon={<GitHub />} size="large" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: '#fff', textTransform: 'none', fontWeight: 600, py: 1.5, px: 3, '&:hover': { bgcolor: 'rgba(255,255,255,0.2)', transform: 'translateY(-2px)' } }}>
-                                  View Repository
-                                </Button>
                                 <Button variant="outlined" endIcon={<ArrowForward />} size="large" sx={{ borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', textTransform: 'none', py: 1.5, px: 3, '&:hover': { borderColor: 'rgba(255,255,255,0.4)', color: '#fff', backgroundColor: 'rgba(255,255,255,0.05)' } }}>
                                   Documentation
                                 </Button>
-                              </Stack>
-                            </Grid>
-                            <Grid item xs={12} md={4}>
-                              <Box sx={{ p: 3, borderRadius: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                {/* Mentor Contact Info */}
-                                {mentor && (
-                                  <>
-                                    <Typography variant="h6" sx={{ color: '#fff', fontWeight: 600, mb: 2 }}>Contact Mentor</Typography>
-                                    <Stack spacing={1}>
-                                      {mentor.github && (
-                                        <Button variant="outlined" size="small" startIcon={<GitHub />} href={mentor.github} target="_blank" sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', '&:hover': { borderColor: 'rgba(255,255,255,0.4)' } }}>
-                                          GitHub
-                                        </Button>
-                                      )}
-                                      {mentor.email && (
-                                        <Button variant="outlined" size="small" href={`mailto:${mentor.email}`} sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', '&:hover': { borderColor: 'rgba(255,255,255,0.4)' } }}>
-                                          Email
-                                        </Button>
-                                      )}
-                                    </Stack>
-                                  </>
+                                {mentor?.github && (
+                                  <Button variant="outlined" size="large" startIcon={<GitHub />} href={mentor.github} target="_blank" sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', py: 1.5, px: 3, '&:hover': { borderColor: 'rgba(255,255,255,0.4)' } }}>
+                                    GitHub
+                                  </Button>
                                 )}
+                                {mentor?.email && (
+                                  <Button variant="outlined" size="large" href={`mailto:${mentor.email}`} sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', py: 1.5, px: 3, '&:hover': { borderColor: 'rgba(255,255,255,0.4)' } }}>
+                                    Email
+                                  </Button>
+                                )}
+                              </Stack>
+                            </div>
+                            <div className="w-full lg:w-1/3">
+                              <Box sx={{ p: 3, borderRadius: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                {/* Additional project details can go here if needed */}
                               </Box>
-                            </Grid>
-                          </Grid>
+                            </div>
+                          </div>
                         </motion.div>
                       </Collapse>
                     </CardContent>
                   </Card>
                 </motion.div>
-              </Grid>
+              </div>
             );
           })}
-        </Grid>
+        </div>
+
+
       </Box>
     </Box>
   );

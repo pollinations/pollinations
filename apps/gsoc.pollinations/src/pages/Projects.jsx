@@ -137,7 +137,7 @@ const ProjectsPage = () => {
                                     }
                                   }}
                                 >
-                                  Contact
+                                  {mentor?.email}
                                 </Button>
                               )}
                             </Box>

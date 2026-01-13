@@ -15,7 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [Wall Street Vision](www.wallstreetvision.io) | AI platform turning market data into predictive insights for investors | @saboornasar164-del |
+| [LiberKey](https://liberkeyboard.com/) | MacOS keyboard app for multilingual typing and chat input. | @Libre-Connect |
 | [FARABI.me](https://farabi.me) | AI app for students with MCQ, Flashcard and Image Generator features | @Farabi-Devs |
 | [FragBin](https://www.fragbin.com/) | Share code/text with expiry, password protection & AI-powered summaries | @maximeb97 |
 | [AI Pet Name Generator](https://petpetgenerator.cc/ai-pet-name-generator) | Generate unique pet names with styles like cute, funny, or fantasy | @loocao |

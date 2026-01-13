@@ -185,14 +185,14 @@ const HomePage = () => {
                         WebkitBackgroundClip: 'text',
                         color: 'transparent',
                         WebkitTextFillColor: 'transparent',
-                        fontSize: { xs: '2.8rem', md: '3.8rem', lg: '4.5rem' },
+                        fontSize: { xs: '2.8rem', md: '3.2rem', lg: '3.5rem' },
                         lineHeight: 1.05,
                         fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
                         position: 'relative',
                         textAlign: 'center'
                       }}
                     >
-                      Build the Future of{' '}
+                      2026 GSOC - with {' '}
                       <Box component="span" sx={{ 
                         position: 'relative',
                         background: 'linear-gradient(135deg, #ffffff 0%, #60a5fa 50%, #e0e7ff 100%)',
@@ -213,9 +213,9 @@ const HomePage = () => {
                           opacity: 0.8
                         }
                       }}>
-                        AI
+                        pollinations.ai
                       </Box>{' '}
-                      with Open Source
+                      celebrating Open Source Development
                     </Typography>
 
                     <Box
@@ -257,15 +257,15 @@ const HomePage = () => {
                         }
                       }}
                     >
-                      Join{' '}
+                      This time with{' '}
                       <Box component="span" sx={{ 
                         fontWeight: 600, 
                         color: '#60a5fa',
                         textShadow: '0 0 10px rgba(96, 165, 250, 0.3)'
                       }}>
-                        Google Summer of Code 2026
+                        Google Summer of Code 2026,
                       </Box>{' '}
-                      and contribute to cutting-edge AI projects that democratize artificial intelligence for everyone.
+                      a 16 years old program, run every summer, with the intention of bringing more students into open source.
                     </Typography>
 
                     <Box

@@ -28,6 +28,60 @@ import { sql } from "drizzle-orm";
 
 const log = getLogger(["hono", "webhooks"]);
 
+// Send Polar webhook event to Tinybird for analytics
+async function sendPolarEventToTinybird(
+    env: Cloudflare.Env,
+    payload: unknown,
+): Promise<void> {
+    const tinybirdUrl = env.TINYBIRD_POLAR_INGEST_URL;
+    const tinybirdToken = env.TINYBIRD_INGEST_TOKEN;
+
+    if (!tinybirdUrl || !tinybirdToken) {
+        log.debug("Tinybird Polar ingest not configured, skipping");
+        return;
+    }
+
+    // Extract fields from payload
+    const p = payload as {
+        type?: string;
+        data?: { customer?: { externalId?: string } };
+    };
+    const userId = p?.data?.customer?.externalId ?? "";
+    const eventType = p?.type ?? "";
+
+    // Build event with extracted fields + full payload
+    const event = {
+        timestamp: new Date().toISOString().slice(0, 19).replace("T", " "),
+        event_type: eventType,
+        user_id: userId,
+        payload,
+    };
+
+    try {
+        const response = await fetch(tinybirdUrl, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${tinybirdToken}`,
+                "Content-Type": "application/x-ndjson",
+            },
+            body: JSON.stringify(event),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            log.error(
+                "Failed to send Polar event to Tinybird: {status} {error}",
+                {
+                    status: response.status,
+                    error: errorText,
+                },
+            );
+        }
+    } catch (error) {
+        log.error("Error sending Polar event to Tinybird: {error}", { error });
+    }
+}
+
 // Extract tier from product metadata slug (e.g., "v1:product:tier:spore" -> "spore")
 function tierFromProductSlug(slug: string | undefined): TierName | null {
     if (!slug?.includes(":tier:")) return null;
@@ -48,7 +102,16 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
 
     try {
         const payload = validateEvent(rawBody, headers, webhookSecret);
-        log.info("Received Polar webhook: {payload}", { payload });
+        log.info("📥 POLAR_WEBHOOK: type={webhookType}", {
+            eventType: "polar_webhook",
+            webhookType: payload.type,
+            payload,
+        });
+
+        // Send to Tinybird asynchronously (don't await to avoid blocking webhook response)
+        sendPolarEventToTinybird(c.env, payload).catch((err) =>
+            log.error("Tinybird send failed: {error}", { error: err }),
+        );
 
         switch (payload.type) {
             case "subscription.canceled":
@@ -310,40 +373,104 @@ async function handleBenefitGrant(
     // Distinguish pack vs tier by checking orderId vs subscriptionId
     // Pack purchases have orderId set, tier subscriptions have subscriptionId set
     const orderId = (payload.data as { orderId?: string }).orderId;
-    const subscriptionId = (payload.data as { subscriptionId?: string }).subscriptionId;
+    const subscriptionId = (payload.data as { subscriptionId?: string })
+        .subscriptionId;
     const isPack = orderId != null;
 
     const db = drizzle(env.DB);
 
-    if (isPack) {
-        // Pack purchase: ADD to pack_balance (cumulative)
-        await db
-            .update(userTable)
-            .set({
-                packBalance: sql`COALESCE(${userTable.packBalance}, 0) + ${units}`,
-            })
-            .where(eq(userTable.id, externalId));
+    try {
+        if (isPack) {
+            // Pack purchase: ADD to pack_balance (cumulative)
+            const result = await db
+                .update(userTable)
+                .set({
+                    packBalance: sql`COALESCE(${userTable.packBalance}, 0) + ${units}`,
+                })
+                .where(eq(userTable.id, externalId))
+                .returning({
+                    id: userTable.id,
+                    packBalance: userTable.packBalance,
+                });
 
-        log.info("[POLAR_CREDIT] pack: user={userId} +{units} orderId={orderId}", {
-            userId: externalId,
-            units,
-            orderId,
-        });
-    } else {
-        // Tier subscription: SET tier_balance (reset each cycle, not cumulative)
-        await db
-            .update(userTable)
-            .set({
-                tierBalance: units,
-                lastTierGrant: Math.floor(Date.now() / 1000),
-            })
-            .where(eq(userTable.id, externalId));
+            // Structured logging for Cloudflare dashboard filtering via properties.eventType
+            log.info(
+                "💰 PACK_PURCHASE: user={userId} +{units} pollen orderId={orderId} email={email} newBalance={newBalance} rowsUpdated={rowsUpdated}",
+                {
+                    eventType: "pack_purchase",
+                    userId: externalId,
+                    units,
+                    orderId,
+                    email: payload.data.customer.email ?? "unknown",
+                    newBalance: result[0]?.packBalance ?? null,
+                    rowsUpdated: result.length,
+                },
+            );
 
-        log.info("[POLAR_CREDIT] tier: user={userId} balance={units} subscriptionId={subscriptionId}", {
-            userId: externalId,
-            units,
-            subscriptionId,
-        });
+            if (result.length === 0) {
+                log.warn(
+                    "⚠️ PACK_PURCHASE_NO_USER: user={userId} not found in database orderId={orderId}",
+                    {
+                        eventType: "pack_purchase_error",
+                        userId: externalId,
+                        orderId,
+                        error: "user_not_found",
+                    },
+                );
+            }
+        } else {
+            // Tier subscription: SET tier_balance (reset each cycle, not cumulative)
+            const result = await db
+                .update(userTable)
+                .set({
+                    tierBalance: units,
+                    lastTierGrant: Math.floor(Date.now() / 1000),
+                })
+                .where(eq(userTable.id, externalId))
+                .returning({
+                    id: userTable.id,
+                    tierBalance: userTable.tierBalance,
+                });
+
+            // Structured logging for Cloudflare dashboard filtering via properties.eventType
+            log.info(
+                "🎫 TIER_GRANT: user={userId} balance={units} pollen subscriptionId={subscriptionId} rowsUpdated={rowsUpdated}",
+                {
+                    eventType: "tier_grant",
+                    userId: externalId,
+                    units,
+                    subscriptionId,
+                    rowsUpdated: result.length,
+                },
+            );
+
+            if (result.length === 0) {
+                log.warn(
+                    "⚠️ TIER_GRANT_NO_USER: user={userId} not found in database subscriptionId={subscriptionId}",
+                    {
+                        eventType: "tier_grant_error",
+                        userId: externalId,
+                        subscriptionId,
+                        error: "user_not_found",
+                    },
+                );
+            }
+        }
+    } catch (error) {
+        log.error(
+            "❌ BENEFIT_GRANT_ERROR: user={userId} error={errorMessage}",
+            {
+                eventType: isPack ? "pack_purchase_error" : "tier_grant_error",
+                userId: externalId,
+                units,
+                orderId: orderId ?? null,
+                subscriptionId: subscriptionId ?? null,
+                errorMessage:
+                    error instanceof Error ? error.message : String(error),
+                errorStack: error instanceof Error ? error.stack : undefined,
+            },
+        );
+        throw error;
     }
 }
 

@@ -1,20 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  AppBar, 
-  Toolbar, 
-  Button, 
-  Box, 
-  Typography, 
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemText,
-  useMediaQuery,
-  useTheme,
-  Chip
-} from '@mui/material';
+import { AppBar, Toolbar, Button, Box, Typography, IconButton, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme, Chip } from '@mui/material';
 import { Menu, Close } from '@mui/icons-material';
 
 const Navbar = () => {
@@ -125,7 +111,7 @@ const Navbar = () => {
               }}
             >
               <Typography 
-                variant="h5" 
+                variant="h6" 
                 sx={{ 
                   fontWeight: 700,
                   background: 'linear-gradient(135deg, #fff 0%, #a1a1aa 100%)',
@@ -142,7 +128,7 @@ const Navbar = () => {
                 sx={{ 
                   bgcolor: 'rgba(255,255,255,0.1)', 
                   color: 'rgba(255,255,255,0.8)',
-                  fontSize: '15px',
+                  fontSize: '10px',
                   height: '22px',
                   fontFamily: 'monospace',
                   fontWeight: 500,
@@ -205,7 +191,7 @@ const Navbar = () => {
               sx={{ 
                 color: 'rgba(255,255,255,0.8)',
                 '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.1)'
+                  backgroundColor: 'rgba(255,255,255,0.1)',
                 }
               }}
             >

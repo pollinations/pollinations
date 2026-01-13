@@ -370,20 +370,25 @@ const AboutPage = () => {
               <Grid container spacing={4} alignItems="center">
                 <Grid item xs={12} md={4}>
                   <Box sx={{ textAlign: 'center' }}>
-                    <Avatar
+                    <Box
+                      component="img"
+                      src="/polli_white.svg"
+                      alt="pollinations.ai logo"
                       sx={{
                         width: 120,
                         height: 120,
-                        bgcolor: 'rgba(255,255,255,0.1)',
-                        border: '3px solid rgba(255,255,255,0.2)',
                         mb: 2,
                         mx: 'auto',
-                        fontSize: '2rem',
-                        fontWeight: 700
+                        display: 'block',
+                        objectFit: 'contain',
+                        filter: 'brightness(1.1)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          transform: 'scale(1.05)',
+                          filter: 'brightness(1.3)'
+                        }
                       }}
-                    >
-                      P.AI
-                    </Avatar>
+                    />
                     <Chip
                       label="GSOC Organization"
                       sx={{

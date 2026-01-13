@@ -222,19 +222,9 @@ const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
               height: 40, 
               bgcolor: 'rgba(96, 165, 250, 0.1)',
               border: '2px solid rgba(96, 165, 250, 0.3)',
-              position: 'relative'
-            }}
-          />
-          <Avatar
-            src="/gsoc_logo.webp"
-            sx={{
-              width: 18,
-              height: 18,
-              position: 'absolute',
-              bottom: -2,
-              right: -2,
-              border: '2px solid #09090b',
-              bgcolor: '#fff'
+              position: 'relative',
+              px: 1,
+              py: 1,
             }}
           />
         </Box>

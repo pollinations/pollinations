@@ -12,8 +12,8 @@ Real-time health monitoring for pollinations.ai model endpoints.
 
 ## Endpoints Monitored
 
-- **Image Models**: `https://enter.pollinations.ai/api/generate/image/models`
-- **Text Models**: `https://enter.pollinations.ai/api/generate/text/models`
+- **Image Models**: `https://gen.pollinations.ai/image/models`
+- **Text Models**: `https://gen.pollinations.ai/text/models`
 
 ## Development
 

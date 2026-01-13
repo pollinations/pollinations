@@ -3,8 +3,11 @@ import axios from 'axios';
 const API_BASE_URL = 'https://gen.pollinations.ai/v1/chat/completions';
 
 export class socBotAPI {
+  conversationHistory: { role: string; content: string; }[];
+  systemPrompt: string;
+  
   constructor() {
-    this.conversationHistory = [];
+    this.conversationHistory = [] as Array<{ role: string; content: string }>;
     this.systemPrompt = `You are socBot, the official AI assistant for Google Summer of Code 2026 at pollinations.ai. You are a helpful, knowledgeable, and enthusiastic assistant specialized in:
 
 1. Google Summer of Code program information and guidelines
@@ -44,7 +47,7 @@ You have access to comprehensive information about:
 Always end responses with a helpful suggestion or question to keep the conversation engaging.`;
   }
 
-  async sendMessage(userMessage) {
+  async sendMessage(userMessage: string) {
     try {
       const apiKey = import.meta.env.VITE_POLLINATIONS_API_KEY;
       if (!apiKey) {
@@ -90,7 +93,7 @@ Always end responses with a helpful suggestion or question to keep the conversat
         timestamp: new Date().toISOString()
       };
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('socBot API Error:', error);
       
       const fallbackMessage = "I'm experiencing some technical difficulties right now. In the meantime, you can:\n\n• Check our FAQ page for common questions\n• Browse our project ideas\n• Join our Discord community for direct support\n• Contact mentors directly via email\n\nI'll be back online soon to help with your GSOC questions!";
@@ -104,15 +107,15 @@ Always end responses with a helpful suggestion or question to keep the conversat
     }
   }
 
-  clearHistory() {
+  clearHistory(): void {
     this.conversationHistory = [];
   }
 
-  getHistory() {
+  getHistory(): { role: string; content: string; }[] {
     return this.conversationHistory;
   }
 
-  getSuggestedQuestions() {
+  getSuggestedQuestions(): string[] {
     return [
       "What is Google Summer of Code and how can I participate?",
       "Tell me about pollinations.ai and the available projects",

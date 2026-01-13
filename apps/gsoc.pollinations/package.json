@@ -14,6 +14,7 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.7",
     "@mui/material": "^7.3.7",
+    "axios": "^1.13.2",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.25.0",
     "react": "^19.2.0",

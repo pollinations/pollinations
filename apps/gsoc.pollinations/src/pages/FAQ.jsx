@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import faqData from '../info/faq.json';
 import { Box, Typography, Accordion, AccordionSummary, AccordionDetails, Container, Chip, TextField, InputAdornment, Stack, Card, CardContent, Grid } from '@mui/material';
 import { ExpandMore, Search, HelpOutline, QuestionAnswer, Lightbulb, Group, School, Code, Timeline as TimelineIcon, Support } from '@mui/icons-material';
@@ -393,8 +394,10 @@ const FAQPage = () => {
             </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
               <Chip
-                label="Join Discord Community"
-                onClick={() => window.open('https://discord.gg/NJcAuQWA2y', '_blank')}
+                label="Chat with GSOCPolly AI"
+                component={Link}
+                to="/gsoc-polly"
+                onClick={() => {}}
                 sx={{
                   bgcolor: 'rgba(96, 165, 250, 0.15)',
                   color: '#60a5fa',
@@ -402,8 +405,26 @@ const FAQPage = () => {
                   px: 3,
                   py: 2,
                   fontSize: '0.9rem',
+                  textDecoration: 'none',
                   '&:hover': {
                     bgcolor: 'rgba(96, 165, 250, 0.25)',
+                    cursor: 'pointer',
+                    transform: 'scale(1.05)'
+                  }
+                }}
+              />
+              <Chip
+                label="Join Discord Community"
+                onClick={() => window.open('https://discord.gg/NJcAuQWA2y', '_blank')}
+                sx={{
+                  bgcolor: 'rgba(139, 92, 246, 0.15)',
+                  color: '#8b5cf6',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  px: 3,
+                  py: 2,
+                  fontSize: '0.9rem',
+                  '&:hover': {
+                    bgcolor: 'rgba(139, 92, 246, 0.25)',
                     cursor: 'pointer'
                   }
                 }}

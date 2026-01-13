@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { AppBar, Toolbar, Button, Box, Typography, IconButton, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme, Chip } from '@mui/material';
-import { Menu, Close } from '@mui/icons-material';
+import { AppBar, Toolbar, Button, Box, Typography, IconButton, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme, Chip, Tooltip, Avatar } from '@mui/material';
+import { Menu, Close, AutoAwesome } from '@mui/icons-material';
 
 const Navbar = () => {
   const theme = useTheme();
@@ -82,6 +82,57 @@ const Navbar = () => {
             />
           </ListItem>
         ))}
+        
+        {/* GSOCPolly AI Assistant in Mobile Menu */}
+        <ListItem 
+          component={Link} 
+          to="/gsoc-polly"
+          sx={{
+            color: 'rgba(96, 165, 250, 0.9)',
+            backgroundColor: 'rgba(96, 165, 250, 0.1)',
+            border: '1px solid rgba(96, 165, 250, 0.2)',
+            '&:hover': {
+              backgroundColor: 'rgba(96, 165, 250, 0.15)',
+              color: '#60a5fa'
+            },
+            transition: 'all 0.3s ease',
+            borderRadius: '8px',
+            mx: 1,
+            mt: 2
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
+            <Avatar 
+              src="/polli_white.svg" 
+              sx={{ 
+                width: 24, 
+                height: 24,
+                bgcolor: 'transparent'
+              }}
+            />
+            <ListItemText 
+              primary="GSOCPolly AI Assistant" 
+              secondary="Ask me anything about GSOC!"
+              sx={{ 
+                '& .MuiTypography-root': { 
+                  fontWeight: 600,
+                  color: '#60a5fa'
+                },
+                '& .MuiTypography-body2': {
+                  color: 'rgba(96, 165, 250, 0.7)',
+                  fontSize: '0.75rem'
+                }
+              }} 
+            />
+            <AutoAwesome 
+              sx={{ 
+                fontSize: '16px',
+                color: '#60a5fa',
+                animation: 'pulse 2s ease-in-out infinite'
+              }} 
+            />
+          </Box>
+        </ListItem>
       </List>
     </Box>
   );
@@ -144,7 +195,7 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           {!isMobile && (
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               {navItems.map((item) => (
                 <Button
                   key={item.name}
@@ -179,6 +230,75 @@ const Navbar = () => {
                   {item.name}
                 </Button>
               ))}
+              
+              {/* GSOCPolly AI Assistant Button */}
+              <Box sx={{ ml: 2, position: 'relative' }}>
+                <Tooltip title="Ask GSOCPolly - Your AI Assistant" placement="bottom">
+                  <IconButton
+                    component={Link}
+                    to="/gsoc-polly"
+                    sx={{
+                      background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%)',
+                      border: '2px solid rgba(96, 165, 250, 0.3)',
+                      width: 48,
+                      height: 48,
+                      transition: 'all 0.3s ease',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      '&:hover': {
+                        transform: 'scale(1.1)',
+                        background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.25) 0%, rgba(96, 165, 250, 0.15) 100%)',
+                        borderColor: 'rgba(96, 165, 250, 0.5)',
+                        boxShadow: '0 8px 32px rgba(96, 165, 250, 0.3)'
+                      },
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '2px',
+                        background: 'linear-gradient(90deg, #60a5fa, #3b82f6)',
+                        animation: 'shimmer 2s linear infinite'
+                      }
+                    }}
+                  >
+                    <Avatar 
+                      src="/polli_white.svg" 
+                      sx={{ 
+                        width: 24, 
+                        height: 24,
+                        filter: 'drop-shadow(0 0 8px rgba(96, 165, 250, 0.4))'
+                      }}
+                    />
+                    <AutoAwesome 
+                      sx={{ 
+                        position: 'absolute',
+                        top: 4,
+                        right: 4,
+                        fontSize: '12px',
+                        color: '#60a5fa',
+                        animation: 'pulse 2s ease-in-out infinite'
+                      }} 
+                    />
+                  </IconButton>
+                </Tooltip>
+                
+                {/* Pulsing indicator */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: -2,
+                    right: -2,
+                    width: 8,
+                    height: 8,
+                    bgcolor: '#22c55e',
+                    borderRadius: '50%',
+                    boxShadow: '0 0 0 2px #09090b, 0 0 8px rgba(34, 197, 94, 0.6)',
+                    animation: 'pulse 2s ease-in-out infinite'
+                  }}
+                />
+              </Box>
             </Box>
           )}
 

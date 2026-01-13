@@ -98,9 +98,7 @@ const ProjectsPage = () => {
                           </Box>
                         </div>
 
-                        {/* Right Section - Mentor & Actions (unified with left section) */}
                         <div className="w-full lg:w-1/2 flex flex-col justify-between">
-                          {/* Mentor Info */}
                           <Box>
                             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, mb: 2, display: 'block' }}>
                               Project Mentor
@@ -118,13 +116,12 @@ const ProjectsPage = () => {
                                   {mentor?.title || 'Mentor'}
                                 </Typography>
                               </Box>
-                              {/* Email Capsule */}
+                              
                               {mentor?.email && (
                                 <Button 
                                   variant="outlined" 
                                   size="small"
                                   startIcon={<Email sx={{ fontSize: '16px !important' }} />}
-                                  href={`mailto:${mentor.email}`}
                                   sx={{ 
                                     textTransform: 'none',
                                     borderColor: 'rgba(255,255,255,0.2)',
@@ -138,20 +135,21 @@ const ProjectsPage = () => {
                                       backgroundColor: 'rgba(255,255,255,0.05)'
                                     }
                                   }}
+                                 
                                 >
-                                  Contact
+                                  {mentor.email}
+                                  
                                 </Button>
                               )}
                             </Box>
 
-                            {/* Mentor Expertise */}
+
                             <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ mb: 3 }}>
                               {(mentor?.expertise || []).slice(0, 3).map((skill, i) => (
                                 <Chip key={i} label={skill} size="small" sx={{ fontSize: '0.7rem', height: '20px', bgcolor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.1)' }} />
                               ))}
                             </Stack>
 
-                            {/* Stats */}
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                               <Box sx={{ textAlign: 'center' }}>
                                 <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>
@@ -172,7 +170,6 @@ const ProjectsPage = () => {
                             </Box>
                           </Box>
 
-                          {/* Actions */}
                           <Stack spacing={2}>
                             <Button variant="contained" size="large" startIcon={<Assignment />} sx={{ bgcolor: 'rgba(255,255,255,0.15)', color: '#fff', textTransform: 'none', fontSize: '1rem', fontWeight: 600, py: 1.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.25)', transform: 'translateY(-1px)', boxShadow: '0 8px 25px rgba(0,0,0,0.3)' } }}>
                               Apply for Project
@@ -185,13 +182,11 @@ const ProjectsPage = () => {
                         </div>
                       </div>
 
-                      {/* Expandable Detailed Content */}
                       <Collapse in={expanded === index} timeout={600} sx={{ '& .MuiCollapse-wrapper': { transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important' } }}>
                         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: expanded === index ? 1 : 0, y: expanded === index ? 0 : -20 }} transition={{ duration: 0.4, delay: 0.1 }}>
                           <Divider sx={{ my: 4, borderColor: 'rgba(255,255,255,0.1)' }} />
                           
                           <div className="flex flex-col lg:flex-row gap-8">
-                            {/* Detailed Description */}
                             <div className="w-full lg:w-2/3">
                               <Typography variant="h5" sx={{ color: '#fff', fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Assignment sx={{ fontSize: '24px' }} />
@@ -206,22 +201,9 @@ const ProjectsPage = () => {
                                 <Button variant="outlined" endIcon={<ArrowForward />} size="large" sx={{ borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', textTransform: 'none', py: 1.5, px: 3, '&:hover': { borderColor: 'rgba(255,255,255,0.4)', color: '#fff', backgroundColor: 'rgba(255,255,255,0.05)' } }}>
                                   Documentation
                                 </Button>
-                                {mentor?.github && (
-                                  <Button variant="outlined" size="large" startIcon={<GitHub />} href={mentor.github} target="_blank" sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', py: 1.5, px: 3, '&:hover': { borderColor: 'rgba(255,255,255,0.4)' } }}>
-                                    GitHub
-                                  </Button>
-                                )}
-                                {mentor?.email && (
-                                  <Button variant="outlined" size="large" href={`mailto:${mentor.email}`} sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', py: 1.5, px: 3, '&:hover': { borderColor: 'rgba(255,255,255,0.4)' } }}>
-                                    Email
-                                  </Button>
-                                )}
                               </Stack>
                             </div>
                             <div className="w-full lg:w-1/3">
-                              <Box sx={{ p: 3, borderRadius: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                {/* Additional project details can go here if needed */}
-                              </Box>
                             </div>
                           </div>
                         </motion.div>

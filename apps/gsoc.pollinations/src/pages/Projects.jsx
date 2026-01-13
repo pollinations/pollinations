@@ -38,8 +38,7 @@ const ProjectsPage = () => {
           </Typography>
           
           <Typography variant='h6' sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 400, maxWidth: '800px', margin: '0 auto', lineHeight: 1.6 }}>
-            Explore cutting-edge projects in AI, decentralization, and collaborative tools. 
-            Join us in building the future of open source technology.
+            Explore the ideas that we have penned for GSOC 2026. Each project is designed to challenge and inspire you, with mentorship from pollination developers to guide you every step of the way.
           </Typography>
 
           {/* Stats Section */}

@@ -50,9 +50,8 @@ async function sendPolarEventToTinybird(
     const userId = p?.data?.customer?.externalId ?? "";
     const eventType = p?.type ?? "";
 
-    // Build event with extracted fields + full payload (stringified for Tinybird String column)
+    // Build event with extracted fields + full payload (timestamp uses DEFAULT now() in schema)
     const event = {
-        timestamp: new Date().toISOString().slice(0, 19).replace("T", " "),
         event_type: eventType,
         user_id: userId,
         payload: JSON.stringify(payload),

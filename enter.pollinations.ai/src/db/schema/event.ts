@@ -23,7 +23,8 @@ export type EventStatus = (typeof eventStatusValues)[number];
 const apiKeyTypeValues = ["secret", "publishable"] as const;
 export type ApiKeyType = (typeof apiKeyTypeValues)[number];
 
-export const event = sqliteTable(
+// Table definition kept for type inference only - table will be dropped via migration
+const event = sqliteTable(
     "event",
     {
         id: text("id").primaryKey(),
@@ -247,48 +248,16 @@ export const event = sqliteTable(
 export type InsertGenerationEvent = typeof event.$inferInsert;
 export type SelectGenerationEvent = typeof event.$inferSelect;
 
-export type EstimateGenerationEvent = Omit<
+export type TinybirdEvent = Omit<
     InsertGenerationEvent,
-    | "endTime"
-    | "responseTime"
-    | "responseStatus"
-    | "modelUsed"
-    // Token counts
-    | "tokenCountPromptText"
-    | "tokenCountPromptAudio"
-    | "tokenCountPromptCached"
-    | "tokenCountPromptImage"
-    | "tokenCountCompletionText"
-    | "tokenCountCompletionReasoning"
-    | "tokenCountCompletionAudio"
-    | "tokenCountCompletionImage"
-    | "tokenCountCompletionVideoSeconds"
-    | "tokenCountCompletionVideoTokens"
-    // Cost / Price
-    | "totalCost"
-    | "totalPrice"
-    // Cache
-    | "cacheHit"
-    | "cacheType"
-    | "cacheSemanticSimilarity"
-    | "cacheSemanticThreshold"
-    | "cacheKey"
-    // Moderation
-    | "moderationPromptHateSeverity"
-    | "moderationPromptSelfHarmSeverity"
-    | "moderationPromptSexualSeverity"
-    | "moderationPromptViolenceSeverity"
-    | "moderationPromptJailbreakDetected"
-    | "moderationCompletionHateSeverity"
-    | "moderationCompletionSelfHarmSeverity"
-    | "moderationCompletionSexualSeverity"
-    | "moderationCompletionViolenceSeverity"
-    | "moderationCompletionProtectedMaterialCodeDetected"
-    | "moderationCompletionProtectedMaterialTextDetected"
-    // Error
-    | "errorResponseCode"
-    | "errorSource"
-    | "errorMessage"
+    | "eventStatus"
+    | "eventProcessingId"
+    | "polarDeliveryAttempts"
+    | "polarDeliveredAt"
+    | "tinybirdDeliveryAttempts"
+    | "tinybirdDeliveredAt"
+    | "createdAt"
+    | "updatedAt"
 >;
 
 export type GenerationEventPriceParams = {

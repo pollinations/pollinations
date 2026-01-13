@@ -1,31 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import mentors from '../info/mentors.json';
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
-  Grid, 
-  Chip, 
-  Box, 
-  Collapse, 
-  IconButton, 
-  Avatar,
-  Button,
-  Stack,
-  Divider
-} from '@mui/material';
-import { 
-  ExpandMore as ExpandMoreIcon,
-  LinkedIn,
-  GitHub,
-  Email,
-  Work,
-  School,
-  Star
-} from '@mui/icons-material';
+import { Card, CardContent, Typography, Grid, Chip, Box, Collapse, IconButton, Avatar, Button, Stack, Divider } from '@mui/material';
+import { ExpandMore as ExpandMoreIcon, LinkedIn, GitHub, Email, Work, School, Star } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
-// Animation variants
 const cardVariants = {
   hidden: { opacity: 0, y: 30 },
   visible: (i) => ({
@@ -60,7 +38,6 @@ const MentorsPage = () => {
         overflow: 'hidden'
       }}
     >
-      {/* Background Glow Effects */}
       <Box 
         sx={{
           position: 'absolute',
@@ -102,7 +79,7 @@ const MentorsPage = () => {
               lineHeight: 1.6
             }}
           >
-            Learn from industry experts and experienced open-source contributors who will guide you through your GSOC journey.
+            With guidance of the mentors selected by the pollinations.ai team, you will have the opportunity to learn gain  insights into the world of generative AI and open-source development.
           </Typography>
 
           {/* Stats Section */}
@@ -125,7 +102,7 @@ const MentorsPage = () => {
             </Box>
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="h4" sx={{ color: '#fff', fontWeight: 700 }}>
-                25+
+                18
               </Typography>
               <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 Years Combined
@@ -133,7 +110,7 @@ const MentorsPage = () => {
             </Box>
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="h4" sx={{ color: '#fff', fontWeight: 700 }}>
-                65+
+                25+
               </Typography>
               <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 Projects Mentored
@@ -142,7 +119,7 @@ const MentorsPage = () => {
           </Stack>
         </Box>
 
-        {/* Mentors Grid - 2 per row on normal screens */}
+      
         <Grid container spacing={4}>
           {mentors.map((mentor, index) => (
             <Grid item xs={12} md={6} key={index}>
@@ -183,19 +160,20 @@ const MentorsPage = () => {
                   }}
                 >
                   <CardContent sx={{ padding: '2.5rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    {/* Header with Avatar and Basic Info */}
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 3, mb: 3 }}>
-                      <Avatar
-                        src={mentor.imageUrl}
+                      <Box
                         sx={{ 
                           width: 80, 
                           height: 80,
                           border: '3px solid rgba(255,255,255,0.2)',
-                          boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+                          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                          backgroundImage: `url(${mentor.imageUrl})`,
+                          backgroundSize: 'cover',
+                          borderRadius: '50%',
+                          backgroundPosition: 'center',
                         }}
                       >
-                        {mentor.name.split(' ').map(n => n[0]).join('')}
-                      </Avatar>
+                      </Box>
                       
                       <Box sx={{ flexGrow: 1 }}>
                         <Typography 

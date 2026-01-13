@@ -8,7 +8,7 @@
     "yearsExperience": 10,
     "projects": 25,
     "longDescription": "Computer Science and AI graduate from the University of Edinburgh with a background spanning interactive art, research, and technology. Spent nine years in São Paulo founding an art collective and building large-scale interactive installations, followed by AI foresight research for the World Government Summit in Germany. Subsequently focused on data-driven generative audio modeling and founded Pollinations.AI, an open-source platform making generative machine learning accessible to over 100,000 monthly users.",
-    "imageUrl": "/GSOC/MENTORS/thom_pfp.jpg",
+    "imageUrl": "/MENTORS/thom_pfp.jpg",
     "linkedin": "https://www.linkedin.com/in/thomashaferlach/",
     "github": "https://github.com/voodoohop",
     "email": "thomas@myceli.ai"
@@ -22,7 +22,7 @@
     "yearsExperience": 6,
     "projects": 10,
     "longDescription": "Ayushman is a developer with a strong background in DevOps and backend technologies. He has worked on various projects involving cloud infrastructure, CI/CD pipelines, and microservices architecture.",
-    "imageUrl": "/GSOC/MENTORS/ayushman_pfp.jpg",
+    "imageUrl": "/MENTORS/ayushman_pfp.jpg",
     "linkedin": "https://linkedin.com/in/elixpo",
     "github": "https://github.com/Circuit-Overtime",
     "email": "ayushman@myceli.ai"

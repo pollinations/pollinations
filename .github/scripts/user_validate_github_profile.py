@@ -70,26 +70,64 @@ def score_user(data: dict | None, username: str) -> dict:
     return {"username": username, "approved": approved, "reason": f"{score:.1f} pts"}
 
 
-def fetch_batch(usernames: list[str], retries: int = 3) -> list[dict]:
+def fetch_batch(usernames: list[str], retries: int = 5) -> list[dict]:
     """Fetch and score a batch of users. Simple synchronous request with retry."""
     query = build_query(usernames)
-    req = urllib.request.Request(
-        GITHUB_GRAPHQL,
-        data=json.dumps({"query": query}).encode(),
-        headers={
-            "Authorization": f"Bearer {GITHUB_TOKEN}",
-            "Content-Type": "application/json",
-        },
-    )
-    
+
     for attempt in range(retries):
+        # Create fresh request each attempt
+        req = urllib.request.Request(
+            GITHUB_GRAPHQL,
+            data=json.dumps({"query": query}).encode(),
+            headers={
+                "Authorization": f"Bearer {GITHUB_TOKEN}",
+                "Content-Type": "application/json",
+            },
+        )
+
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                # Check rate limit headers
+                remaining = resp.headers.get("X-RateLimit-Remaining")
+                reset_time = resp.headers.get("X-RateLimit-Reset")
+
+                if remaining and int(remaining) < 100:
+                    # Getting low on rate limit, slow down
+                    if reset_time:
+                        wait = max(0, int(reset_time) - int(time.time())) + 5
+                        if wait > 0 and wait < 900:  # Don't wait more than 15 min
+                            tqdm.write(f"⚠️ Rate limit low ({remaining}), waiting {wait}s...")
+                            time.sleep(wait)
+
                 data = json.loads(resp.read())
             break
         except urllib.error.HTTPError as e:
-            if attempt < retries - 1 and e.code in (502, 503, 504):
-                time.sleep(5 * (attempt + 1))  # 5s, 10s, 15s backoff
+            is_retryable = e.code in (403, 429, 502, 503, 504)
+
+            if attempt < retries - 1 and is_retryable:
+                if e.code in (403, 429):
+                    # Rate limited - check reset header
+                    reset_time = e.headers.get("X-RateLimit-Reset") if e.headers else None
+                    if reset_time:
+                        wait = max(0, int(reset_time) - int(time.time())) + 5
+                        wait = min(wait, 900)  # Cap at 15 min
+                    else:
+                        wait = 60 * (attempt + 1)  # 60s, 120s, 180s...
+                    tqdm.write(f"⚠️ Rate limited (403), waiting {wait}s (attempt {attempt + 1}/{retries})...")
+                    time.sleep(wait)
+                else:
+                    # Server error - shorter backoff
+                    wait = 10 * (attempt + 1)
+                    tqdm.write(f"⚠️ Server error ({e.code}), retrying in {wait}s...")
+                    time.sleep(wait)
+                continue
+            raise
+        except urllib.error.URLError as e:
+            # Network error - retry with backoff
+            if attempt < retries - 1:
+                wait = 10 * (attempt + 1)
+                tqdm.write(f"⚠️ Network error: {e.reason}, retrying in {wait}s...")
+                time.sleep(wait)
                 continue
             raise
 
@@ -108,15 +146,24 @@ def validate_users(usernames: list[str]) -> list[dict]:
     random.shuffle(usernames)
     results = []
     approved = 0
+    total_batches = (len(usernames) + BATCH_SIZE - 1) // BATCH_SIZE
     pbar = tqdm(range(0, len(usernames), BATCH_SIZE), desc="Validating", unit="batch", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{remaining}] {postfix}")
-    
+
     for batch_num, i in enumerate(pbar):
         if MAX_BATCHES and batch_num >= MAX_BATCHES:
             break
-        batch_results = fetch_batch(usernames[i:i + BATCH_SIZE])
-        results.extend(batch_results)
-        approved += sum(1 for r in batch_results if r["approved"])
-        pbar.set_postfix(seed=f"{100*approved/len(results):.0f}%")
-        time.sleep(2)
-        
+        try:
+            batch_results = fetch_batch(usernames[i:i + BATCH_SIZE])
+            results.extend(batch_results)
+            approved += sum(1 for r in batch_results if r["approved"])
+            pbar.set_postfix(seed=f"{100*approved/len(results):.0f}%")
+        except Exception as e:
+            tqdm.write(f"❌ Batch {batch_num + 1}/{total_batches} failed: {e}")
+            # Mark all users in this batch as not approved
+            for username in usernames[i:i + BATCH_SIZE]:
+                results.append({"username": username, "approved": False, "reason": f"API error: {e}"})
+
+        # Delay between batches to avoid rate limits
+        time.sleep(3)
+
     return results

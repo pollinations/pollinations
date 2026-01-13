@@ -412,7 +412,7 @@ const FAQPage = () => {
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
               <Chip
                 label="Join Discord Community"
-                onClick={() => window.open('https://discord.gg/pollinations', '_blank')}
+                onClick={() => window.open('https://discord.gg/NJcAuQWA2y', '_blank')}
                 sx={{
                   bgcolor: 'rgba(96, 165, 250, 0.15)',
                   color: '#60a5fa',
@@ -428,7 +428,7 @@ const FAQPage = () => {
               />
               <Chip
                 label="Read Documentation"
-                onClick={() => window.open('/CONTRIBUTING.md', '_blank')}
+                onClick={() => window.open('https://github.com/pollinations/pollinations', '_blank')}
                 sx={{
                   bgcolor: 'rgba(34, 197, 94, 0.15)',
                   color: '#22c55e',

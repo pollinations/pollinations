@@ -23,7 +23,7 @@ from tqdm import tqdm
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
-BATCH_SIZE = 50
+BATCH_SIZE = 20  # Reduced from 50 to avoid rate limits
 MAX_BATCHES = None  # Set to a number to limit batches for testing
 
 # Scoring config: each metric has a multiplier and max points
@@ -70,8 +70,8 @@ def score_user(data: dict | None, username: str) -> dict:
     return {"username": username, "approved": approved, "reason": f"{score:.1f} pts"}
 
 
-def fetch_batch(usernames: list[str], retries: int = 3) -> list[dict]:
-    """Fetch and score a batch of users. Simple synchronous request with retry."""
+def fetch_batch(usernames: list[str], retries: int = 5) -> list[dict]:
+    """Fetch and score a batch of users. Handles rate limits with exponential backoff."""
     query = build_query(usernames)
     req = urllib.request.Request(
         GITHUB_GRAPHQL,
@@ -88,8 +88,11 @@ def fetch_batch(usernames: list[str], retries: int = 3) -> list[dict]:
                 data = json.loads(resp.read())
             break
         except urllib.error.HTTPError as e:
-            if attempt < retries - 1 and e.code in (502, 503, 504):
-                time.sleep(5 * (attempt + 1))  # 5s, 10s, 15s backoff
+            # Retry on rate limit (403), server errors (502/503/504), and timeouts
+            if attempt < retries - 1 and e.code in (403, 429, 502, 503, 504):
+                backoff = min(60, (2 ** attempt) * 10)  # 10s, 20s, 40s, 80s, max 60s
+                print(f"      Rate limited, waiting {backoff}s before retry...")
+                time.sleep(backoff)
                 continue
             raise
 
@@ -101,7 +104,7 @@ def fetch_batch(usernames: list[str], retries: int = 3) -> list[dict]:
 
 
 def validate_users(usernames: list[str]) -> list[dict]:
-    """Validate users in batches of 50. Simple sequential processing."""
+    """Validate users in batches. Sequential processing with rate limit awareness."""
     if not usernames:
         return []
 
@@ -117,6 +120,6 @@ def validate_users(usernames: list[str]) -> list[dict]:
         results.extend(batch_results)
         approved += sum(1 for r in batch_results if r["approved"])
         pbar.set_postfix(seed=f"{100*approved/len(results):.0f}%")
-        time.sleep(2)
+        time.sleep(5)  # Increased from 2s to 5s between batches for rate limit safety
         
     return results

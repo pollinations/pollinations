@@ -277,7 +277,7 @@ const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CircularProgress size={16} sx={{ color: '#60a5fa' }} />
               <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                socBot is thinking...
+                SocBot is thinking...
               </Typography>
             </Box>
           ) : (
@@ -514,73 +514,12 @@ const socBotChat = () => {
         }} 
       />
 
-      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1, py: 4, height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Container maxWidth="md" sx={{ position: 'relative', mt: 10, zIndex: 1, py: 4, height: '90vh', display: 'flex', flexDirection: 'column' }}>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <Box sx={{ textAlign: 'center', mb: 4, mt: 6 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 2 }}>
-              <Avatar 
-                src="/polli_white.svg" 
-                sx={{ 
-                  width: 60, 
-                  height: 60,
-                  bgcolor: 'rgba(96, 165, 250, 0.1)',
-                  border: '3px solid rgba(96, 165, 250, 0.3)',
-                  position: 'relative'
-                }}
-              />
-              <Box>
-                <Typography 
-                  variant='h4' 
-                  sx={{ 
-                    fontWeight: 700, 
-                    background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)', 
-                    WebkitBackgroundClip: 'text', 
-                    WebkitTextFillColor: 'transparent',
-                    lineHeight: 1
-                  }}
-                >
-                  socBot
-                </Typography>
-                <Typography variant="subtitle1" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>
-                  Your GSOC 2026 AI Assistant
-                </Typography>
-              </Box>
-            </Box>
-            <Stack direction="row" spacing={1} justifyContent="center" sx={{ mb: 2 }}>
-              <Chip 
-                label="AI Powered" 
-                size="small" 
-                icon={<AutoAwesome />}
-                sx={{ 
-                  bgcolor: 'rgba(96, 165, 250, 0.15)', 
-                  color: '#60a5fa',
-                  border: '1px solid rgba(96, 165, 250, 0.3)'
-                }} 
-              />
-              <Chip 
-                label="GSOC Expert" 
-                size="small" 
-                sx={{ 
-                  bgcolor: 'rgba(34, 197, 94, 0.15)', 
-                  color: '#22c55e',
-                  border: '1px solid rgba(34, 197, 94, 0.3)'
-                }} 
-              />
-              <Chip 
-                label="24/7 Available" 
-                size="small" 
-                sx={{ 
-                  bgcolor: 'rgba(245, 158, 11, 0.15)', 
-                  color: '#f59e0b',
-                  border: '1px solid rgba(245, 158, 11, 0.3)'
-                }} 
-              />
-            </Stack>
-          </Box>
         </motion.div>
         <Box 
           sx={{ 

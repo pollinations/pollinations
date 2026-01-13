@@ -202,13 +202,13 @@ const ProjectsPage = () => {
                               </Stack>
                             </div>
                             <div className="w-full lg:w-1/3">
-                              <Box sx={{ p: 3, borderRadius: '12px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
+                              <Box sx={{mt: 2, pt:2, pl: 2, borderRadius: '12px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
                                 <Typography variant="subtitle2" sx={{ color: '#60a5fa', fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <Email sx={{ fontSize: '16px' }} />
-                                  Need Help?
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', lineHeight: 1.6 }}>
-                                  Contact the project mentor using the email button above for any questions or guidance about this project.
+                                  <Lightbulb sx={{ fontSize: '16px' }} />
+                                  Tip: contact mentor at 
+                                  <Typography variant="subtitle3" sx={{ color: 'rgba(169, 190, 224, 0.97)', fontWeight: 800, userSelect: 'all', cursor: 'pointer', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    {mentor?.email}
+                                  </Typography>
                                 </Typography>
                               </Box>
                             </div>

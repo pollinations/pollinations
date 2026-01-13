@@ -2,6 +2,7 @@
 - **2026-01-12** – **🎁 Free Tier Upgrades** Active users are now automatically upgraded to the Seed tier ($3/day) based on activity.
 - **2026-01-12** – **📱 New AI Apps** Try **Study Buzz** (study tools), **Onyx** (noir storyboards), and **Player or AI** (Roblox game).
 - **2026-01-12** – **🎥 Video Playback** Video generations now render with native players and improved tooltips.
+- **2026-01-05** – **🎵 React Audio Hook** New `usePollinationsAudio` hook for adding AI voice to your apps. [Docs](https://react-hooks.pollinations.ai)
 - **2026-01-05** – **🤖 Gemini Agent Tools** Enable `google_search`, `code_execution`, and `url_context` on Gemini models. [API Docs](https://enter.pollinations.ai/api/docs)
 - **2026-01-05** – **🚀 Qwen3-Coder** New `Qwen3-Coder-30B` model available for advanced code generation tasks.
 - **2026-01-05** – **🎨 Flux Returns** The popular `flux` model is back as a standalone option for image generation.

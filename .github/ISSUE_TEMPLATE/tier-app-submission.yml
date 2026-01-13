@@ -61,23 +61,7 @@ body:
       label: Discord Username
       description: Your Discord username so we can reach you (optional)
       placeholder: "e.g., username or username#1234"
-
-  - type: dropdown
-    id: app-category
-    attributes:
-      label: App Category
-      description: Select the category under which your app should be listed
-      options:
-        - Creative
-        - Chat
-        - Games
-        - Dev_Tools
-        - Vibes
-        - Social_Bots
-        - Learn
-    validations:
-      required: true
-
+      
   - type: input
     id: app-language
     attributes:

@@ -28,10 +28,12 @@ interface App {
     name: string;
     nameRaw: string;
     url: string;
+    webUrl: string;
     desc: string;
     language: string;
     category: string;
     github: string;
+    githubId: string;
     repo: string;
     stars: string;
     discord: string;
@@ -81,16 +83,18 @@ function parseAppsMarkdown(filePath: string): App[] {
         cols.shift();
         cols.pop();
 
-        if (cols.length < 6) continue;
+        if (cols.length < 13) continue;
 
-        // cols: [emoji, name, desc, language, category, github, repo, stars, discord, other, submitted]
+        // cols: [emoji, name, web_url, desc, language, category, github, github_id, repo, stars, discord, other, submitted]
         const [
             emoji,
             name,
+            webUrl,
             desc,
             language,
             category,
             github,
+            githubId,
             repo,
             stars,
             discord,
@@ -111,11 +115,13 @@ function parseAppsMarkdown(filePath: string): App[] {
             emoji,
             name: cleanName,
             nameRaw: name,
-            url,
+            url: url || webUrl,
+            webUrl,
             desc,
             language,
             category,
             github: github.replace(/^@/, ""),
+            githubId,
             repo,
             stars,
             discord,
@@ -279,6 +285,6 @@ const result = {
     reason: duplicateFound ? matchType : "",
     userPreviousApps: userPreviousApps
         .map((app) => `Name: ${app.name} | Desc: ${app.desc}`)
-        .join("\n")
+        .join("\n"),
 };
 console.log(JSON.stringify(result));

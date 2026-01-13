@@ -45,15 +45,26 @@ async function sendPolarEventToTinybird(
     // Extract fields from payload
     const p = payload as {
         type?: string;
-        data?: { customer?: { externalId?: string } };
+        data?: {
+            id?: string;
+            customer?: { id?: string; externalId?: string };
+            productId?: string;
+            product?: { id?: string };
+        };
     };
-    const userId = p?.data?.customer?.externalId ?? "";
     const eventType = p?.type ?? "";
+    const userId = p?.data?.customer?.externalId ?? "";
+    const customerId = p?.data?.customer?.id ?? "";
+    const productId = p?.data?.productId ?? p?.data?.product?.id ?? "";
+    const dataId = p?.data?.id ?? "";
 
     // Build event with extracted fields + full payload (timestamp uses DEFAULT now() in schema)
     const event = {
         event_type: eventType,
         user_id: userId,
+        customer_id: customerId,
+        product_id: productId,
+        data_id: dataId,
         payload: JSON.stringify(payload),
     };
 

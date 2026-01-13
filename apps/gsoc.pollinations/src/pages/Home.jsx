@@ -56,7 +56,7 @@ const HomePage = () => {
     { icon: <Rocket />, path: '/about', tooltip: 'About Us' },
     { icon: <VerifiedUser />, path: '/mentors', tooltip: 'Meet Our Mentors' },
     { icon: <MenuBook />, path: '/contributing', tooltip: 'Contributing Guide' },
-    { icon: <Gavel />, path: '/code-of-conduct', tooltip: 'Code of Conduct' }
+    { icon: <Gavel />, path: '/coc', tooltip: 'Code of Conduct' }
   ];
 
   return (

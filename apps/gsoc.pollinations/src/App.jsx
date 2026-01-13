@@ -56,7 +56,7 @@ function App() {
           <Route path='/timeline' element={<Timeline />} />
           <Route path='/about' element={<About />} />
           <Route path='/contributing' element={<Contributing />} />
-          <Route path='/code-of-conduct' element={<CodeOfConduct />} />
+          <Route path='/coc' element={<CodeOfConduct />} />
         </Routes>
         <Footer />
       </Router>

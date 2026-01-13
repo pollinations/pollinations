@@ -231,15 +231,15 @@ const Navbar = () => {
                 </Button>
               ))}
               
-              <Box sx={{ ml: 2, position: 'relative' }}>
+              <Box sx={{ ml: 1, position: 'relative' }}>
                 <Tooltip title="Ask SocBot - Your AI Assistant" placement="bottom">
                   <IconButton
                     component={Link}
                     to="/socBot"
                     sx={{
                       background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%)',
-                      width: 48,
-                      height: 48,
+                      width: 40,
+                      height: 40,
                       transition: 'all 0.3s ease',
                       position: 'relative',
                       overflow: 'hidden',

@@ -33,8 +33,9 @@ async function sendPolarEventToTinybird(
     env: Cloudflare.Env,
     payload: unknown,
 ): Promise<void> {
-    const tinybirdUrl = env.TINYBIRD_POLAR_INGEST_URL;
-    const tinybirdToken = env.TINYBIRD_INGEST_TOKEN;
+    const e = env as unknown as Record<string, string>;
+    const tinybirdUrl = e.TINYBIRD_POLAR_INGEST_URL;
+    const tinybirdToken = e.TINYBIRD_POLAR_INGEST_TOKEN;
 
     if (!tinybirdUrl || !tinybirdToken) {
         log.debug("Tinybird Polar ingest not configured, skipping");
@@ -49,12 +50,12 @@ async function sendPolarEventToTinybird(
     const userId = p?.data?.customer?.externalId ?? "";
     const eventType = p?.type ?? "";
 
-    // Build event with extracted fields + full payload
+    // Build event with extracted fields + full payload (stringified for Tinybird String column)
     const event = {
         timestamp: new Date().toISOString().slice(0, 19).replace("T", " "),
         event_type: eventType,
         user_id: userId,
-        payload,
+        payload: JSON.stringify(payload),
     };
 
     try {
@@ -108,9 +109,11 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
             payload,
         });
 
-        // Send to Tinybird asynchronously (don't await to avoid blocking webhook response)
-        sendPolarEventToTinybird(c.env, payload).catch((err) =>
-            log.error("Tinybird send failed: {error}", { error: err }),
+        // Send to Tinybird in background using waitUntil to prevent cancellation
+        c.executionCtx.waitUntil(
+            sendPolarEventToTinybird(c.env, payload).catch((err) =>
+                log.error("Tinybird send failed: {error}", { error: err }),
+            ),
         );
 
         switch (payload.type) {

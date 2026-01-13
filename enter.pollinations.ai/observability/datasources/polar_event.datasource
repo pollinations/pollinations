@@ -7,7 +7,7 @@ SCHEMA >
 `timestamp` DateTime `json:$.timestamp` DEFAULT now(),
 `event_type` LowCardinality(String) `json:$.event_type` DEFAULT '',
 `user_id` String `json:$.user_id` DEFAULT '',
-`payload` JSON `json:$.payload`
+`payload` String `json:$.payload`
 
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"

@@ -86,7 +86,7 @@ const Navbar = () => {
         {/* SocBot AI Assistant in Mobile Menu */}
         <ListItem 
           component={Link} 
-          to="/socBot"
+          to="/bot"
           sx={{
             color: 'rgba(96, 165, 250, 0.9)',
             backgroundColor: 'rgba(96, 165, 250, 0.1)',
@@ -235,7 +235,7 @@ const Navbar = () => {
                 <Tooltip title="Ask SocBot - Your AI Assistant" placement="bottom">
                   <IconButton
                     component={Link}
-                    to="/socBot"
+                    to="/bot"
                     sx={{
                       background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%)',
                       width: 40,

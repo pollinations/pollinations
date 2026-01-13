@@ -196,7 +196,7 @@ const ProjectsPage = () => {
                                 <Button variant="outlined" endIcon={<ArrowForward />} size="large" sx={{ borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', textTransform: 'none', py: 1.5, px: 3, '&:hover': { borderColor: 'rgba(255,255,255,0.4)', color: '#fff', backgroundColor: 'rgba(255,255,255,0.05)' } }}>
                                   Documentation
                                 </Button>
-                                <Button variant="outlined" endIcon={<Assignment />} size="large" href="/CONTRIBUTING.md" target="_blank" sx={{ borderColor: 'rgba(34, 197, 94, 0.3)', color: '#4ade80', textTransform: 'none', py: 1.5, px: 3, '&:hover': { borderColor: 'rgba(34, 197, 94, 0.5)', color: '#22c55e', backgroundColor: 'rgba(34, 197, 94, 0.05)' } }}>
+                                <Button variant="outlined" endIcon={<Assignment />} size="large" href="/contributing" target="_blank" sx={{ borderColor: 'rgba(34, 197, 94, 0.3)', color: '#4ade80', textTransform: 'none', py: 1.5, px: 3, '&:hover': { borderColor: 'rgba(34, 197, 94, 0.5)', color: '#22c55e', backgroundColor: 'rgba(34, 197, 94, 0.05)' } }}>
                                   Contributing Guide
                                 </Button>
                               </Stack>

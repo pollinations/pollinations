@@ -9,7 +9,7 @@ import Mentors from './pages/Mentors';
 import About from './pages/About';
 import Timeline from './pages/Timeline';
 import FAQ from './pages/FAQ';
-import GSOCPollyChat from './pages/bot';
+import socBotChat from './pages/socBot';
 import Contributing from './pages/Contributing';
 import CodeOfConduct from './pages/CodeOfConduct';
 import './App.css';
@@ -57,7 +57,7 @@ function App() {
           <Route path='/mentors' element={<Mentors />} />
           <Route path='/timeline' element={<Timeline />} />
           <Route path='/faq' element={<FAQ />} />
-          <Route path='/bot' element={<GSOCPollyChat />} />
+          <Route path='/bot' element={<socBotChat />} />
           <Route path='/about' element={<About />} />
           <Route path='/contributing' element={<Contributing />} />
           <Route path='/coc' element={<CodeOfConduct />} />

@@ -32,7 +32,10 @@ const simplifiedRows = last10.map((row) => {
     cols.shift();
     cols.pop();
     // cols: [emoji, name, web_url, desc, language, category, github, github_id, repo, stars, discord, other, submitted]
-    return "| " + cols[1] + " | " + cols[3] + " | " + cols[6] + " |";
+    const name = cols[1];
+    const url = cols[2];
+    const nameCell = url ? `[${name}](${url})` : name;
+    return "| " + nameCell + " | " + cols[3] + " | " + cols[6] + " |";
 });
 
 const recentAppsSection = `## 🆕 Recent Apps

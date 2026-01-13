@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { Box, Typography, Grid, Card, CardContent, Chip, Stack, Button, Avatar, Divider } from '@mui/material'; 
-import { Code, Psychology, Groups, School, Rocket, GitHub, Language, EmojiEvents, Timeline as TimelineIcon } from '@mui/icons-material'; import { motion } from 'framer-motion';
+import { Box, Typography, Grid, Card, CardContent, Chip, Stack, Button, Avatar, Divider, } from '@mui/material'; 
+import { Code, Psychology, Groups, School, Rocket, GitHub, Language, EmojiEvents, Book, Timeline as TimelineIcon } from '@mui/icons-material'; import { motion } from 'framer-motion';
 
 // Animation variants
 const cardVariants = {
@@ -23,26 +23,26 @@ const AboutPage = () => {
 
   const stats = [
     { number: "2026", label: "Program Year", icon: <EmojiEvents /> },
-    { number: "3+", label: "Project Categories", icon: <Code /> },
-    { number: "150+", label: "Expected Contributors", icon: <Groups /> },
+    { number: "3", label: "Project Categories", icon: <Code /> },
+    { number: "50+", label: "Expected Contributors", icon: <Groups /> },
     { number: "12", label: "Week Program", icon: <TimelineIcon /> }
   ];
 
   const features = [
     {
       icon: <Psychology />,
-      title: "AI-Powered Innovation",
-      description: "Work on cutting-edge AI projects that push the boundaries of artificial intelligence and machine learning."
+      title: "Open Source Transparency",
+      description: "We believe in building in the open, setting up a strong community of developers across the world"
     },
     {
       icon: <Code />,
-      title: "Open Source Excellence",
-      description: "Contribute to meaningful open-source projects that impact developers and researchers worldwide."
+      title: "Modular Code and Automation",
+      description: "We put forward clean and understandable code that's easy to navigate and contribute to."
     },
     {
       icon: <Groups />,
       title: "Expert Mentorship",
-      description: "Learn from industry professionals and experienced open-source contributors who guide your journey."
+      description: "Learn and grow with developers of pollinations.ai, having knowledge and understanding of our codebase"
     },
     {
       icon: <School />,
@@ -61,7 +61,6 @@ const AboutPage = () => {
         overflow: 'hidden'
       }}
     >
-      {/* Background Glow Effects */}
       <Box 
         sx={{
           position: 'absolute',
@@ -77,7 +76,6 @@ const AboutPage = () => {
       />
 
       <Box sx={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        {/* Hero Section */}
         <Box sx={{ textAlign: 'center', mb: 8 }}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -108,7 +106,7 @@ const AboutPage = () => {
                 fontSize: { xs: '1.5rem', md: '2rem' }
               }}
             >
-              Google Summer of Code 2026
+              Open Source Mono Repo
             </Typography>
 
             <Typography 
@@ -122,9 +120,7 @@ const AboutPage = () => {
                 mb: 4
               }}
             >
-              Join us in building the future of AI and open source technology. Pollinations.ai is 
-              a cutting-edge platform that democratizes AI-generated media creation, and we're 
-              excited to mentor the next generation of developers and researchers.
+              We are an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text, image, video, and audio generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
             </Typography>
 
             <Stack 
@@ -136,7 +132,7 @@ const AboutPage = () => {
               <Button
                 variant="contained"
                 size="large"
-                startIcon={<Rocket />}
+                startIcon={<GitHub />}
                 sx={{
                   bgcolor: 'rgba(255,255,255,0.15)',
                   color: '#fff',
@@ -152,12 +148,12 @@ const AboutPage = () => {
                   }
                 }}
               >
-                Get Started
+                View Repository
               </Button>
               <Button
                 variant="outlined"
                 size="large"
-                startIcon={<GitHub />}
+                startIcon={<Book />}
                 sx={{
                   borderColor: 'rgba(255,255,255,0.3)',
                   color: '#fff',
@@ -383,8 +379,32 @@ const AboutPage = () => {
                     pollinations.ai
                   </Typography>
                   <Typography variant="h6" sx={{ color: '#60a5fa', mb: 3 }}>
-                    Democratizing AI-Generated Media Creation
+                    Our Vision for the Future of AI
                   </Typography>
+                  <Box component="ul" sx={{ 
+                    color: 'rgba(255,255,255,0.9)', 
+                    fontSize: '1.1rem', 
+                    pl: 3, 
+                    mb: 3, 
+                    lineHeight: 1.7, 
+                    '& li': { mb: 1.2 } 
+                  }}>
+                    <li>
+                      <strong>Open & Accessible:</strong> AI should be available to everyone — earn daily Pollen by contributing, no credit card required.
+                    </li>
+                    <li>
+                      <strong>Transparent & Ethical:</strong> Our open-source approach ensures transparency in how our models work and behave.
+                    </li>
+                    <li>
+                      <strong>Community-Driven:</strong> We’re building a platform where developers, creators, and AI enthusiasts can collaborate and innovate.
+                    </li>
+                    <li>
+                      <strong>Interconnected:</strong> We’re creating an ecosystem where AI services can seamlessly work together, fostering innovation through composability.
+                    </li>
+                    <li>
+                      <strong>Evolving:</strong> We embrace the rapid evolution of AI technology while maintaining our commitment to openness and accessibility.
+                    </li>
+                  </Box>
                   <Typography 
                     variant="body1" 
                     sx={{ 
@@ -393,26 +413,9 @@ const AboutPage = () => {
                       mb: 3
                     }}
                   >
-                    Pollinations.ai is a cutting-edge platform that makes AI-generated media creation 
-                    accessible to everyone. We're building tools and infrastructure that democratize 
-                    access to AI models, enabling creators, developers, and researchers to easily 
-                    integrate AI-generated content into their projects.
+                    We’re committed to developing AI technology that serves humanity while respecting ethical boundaries and promoting responsible innovation. Join us in shaping the future of AI.
                   </Typography>
-                  <Typography 
-                    variant="body1" 
-                    sx={{ 
-                      color: 'rgba(255,255,255,0.9)', 
-                      lineHeight: 1.7,
-                      mb: 3
-                    }}
-                  >
-                    Our mission is to bridge the gap between complex AI technologies and practical 
-                    applications, fostering innovation and creativity in the open-source community.
-                  </Typography>
-
                   <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.1)' }} />
-                  
-                  {/* Contact Information */}
                   <Box>
                     <Typography variant="h6" sx={{ color: '#fff', mb: 2, fontWeight: 600 }}>
                       Get In Touch

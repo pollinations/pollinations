@@ -1,32 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import faqData from '../info/faq.json';
-import { 
-  Box, 
-  Typography, 
-  Accordion, 
-  AccordionSummary, 
-  AccordionDetails, 
-  Container, 
-  Chip,
-  TextField,
-  InputAdornment,
-  Stack,
-  Card,
-  CardContent,
-  Grid
-} from '@mui/material';
-import { 
-  ExpandMore, 
-  Search, 
-  HelpOutline, 
-  QuestionAnswer,
-  Lightbulb,
-  Group,
-  School,
-  Code,
-  Timeline as TimelineIcon,
-  Support
-} from '@mui/icons-material';
+import { Box, Typography, Accordion, AccordionSummary, AccordionDetails, Container, Chip, TextField, InputAdornment, Stack, Card, CardContent, Grid } from '@mui/material';
+import { ExpandMore, Search, HelpOutline, QuestionAnswer, Lightbulb, Group, School, Code, Timeline as TimelineIcon, Support } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
 const fadeInUp = {
@@ -191,28 +166,31 @@ const FAQPage = () => {
               mb: 6
             }}
           >
-            <CardContent sx={{ p: 2 }}>
+            <CardContent sx={{ p: 4 }}>
               <Grid container spacing={4} alignItems="center">
-                <Grid item xs={15} md={6}>
+                <Grid item xs={12} md={8}>
                   <TextField
                     fullWidth
                     variant="outlined"
-                    placeholder="Search questions or answers..."
+                    placeholder="Search questions you have in find"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Search sx={{ color: 'rgba(255,255,255,0.5)', borderRadius: '25px' }} />
+                          <Search sx={{ color: 'rgba(255,255,255,0.5)' }} />
                         </InputAdornment>
                       ),
                     }}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         color: '#fff',
+                        width: "350px",
                         bgcolor: 'rgba(255,255,255,0.05)',
+                        borderRadius: '25px',
                         '& fieldset': {
                           borderColor: 'rgba(255,255,255,0.2)',
+                          borderRadius: '25px',
                         },
                         '&:hover fieldset': {
                           borderColor: 'rgba(255,255,255,0.3)',
@@ -221,13 +199,15 @@ const FAQPage = () => {
                           borderColor: '#60a5fa',
                         },
                       },
-                      '& .MuiInputBase-input::placeholder': {
-                        color: 'rgba(255,255,255,0.5)',
+                      '& .MuiInputBase-input': {
+                        '&::placeholder': {
+                          color: 'rgba(255,255,255,0.5)',
+                        },
                       },
                     }}
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                   <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                     {categories.map((category) => (
                       <Chip
@@ -284,10 +264,12 @@ const FAQPage = () => {
                 }}
               >
                 <Typography variant="h6" sx={{ color: '#ef4444', mb: 2 }}>
-                  No questions found
+                  Oops!! This question didn't show up in our mind.
                 </Typography>
-                <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                  Try adjusting your search terms or category filter
+                <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.7)', mb: 2 }}>
+                  Try adjusting your search terms or category filter. Feel free to mail at
+                  <Typography sx={{ display: 'inline', fontWeight: 600 }}> ayushman@myceli.ai</Typography>
+                  for any further queries.
                 </Typography>
               </Card>
             </motion.div>

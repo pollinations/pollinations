@@ -122,6 +122,7 @@ const ProjectsPage = () => {
                                   variant="outlined" 
                                   size="small"
                                   startIcon={<Email sx={{ fontSize: '16px !important' }} />}
+                                  href={`mailto:${mentor.email}`}
                                   sx={{ 
                                     textTransform: 'none',
                                     borderColor: 'rgba(255,255,255,0.2)',
@@ -135,10 +136,8 @@ const ProjectsPage = () => {
                                       backgroundColor: 'rgba(255,255,255,0.05)'
                                     }
                                   }}
-                                 
                                 >
-                                  {mentor.email}
-                                  
+                                  Contact
                                 </Button>
                               )}
                             </Box>
@@ -171,12 +170,8 @@ const ProjectsPage = () => {
                           </Box>
 
                           <Stack spacing={2}>
-                            <Button variant="contained" size="large" startIcon={<Assignment />} sx={{ bgcolor: 'rgba(255,255,255,0.15)', color: '#fff', textTransform: 'none', fontSize: '1rem', fontWeight: 600, py: 1.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.25)', transform: 'translateY(-1px)', boxShadow: '0 8px 25px rgba(0,0,0,0.3)' } }}>
-                              Apply for Project
-                            </Button>
-                            
                             <Button variant="outlined" size="large" onClick={() => handleExpandClick(index)} endIcon={<ExpandMoreIcon sx={{ transform: expanded === index ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} />} sx={{ borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', textTransform: 'none', fontSize: '1rem', py: 1.5, '&:hover': { borderColor: 'rgba(255,255,255,0.4)', color: '#fff', backgroundColor: 'rgba(255,255,255,0.05)' } }}>
-                              {expanded === index ? 'Hide Details' : 'View Details'}
+                              {expanded === index ? 'Hide Details' : 'Interested? View Details'}
                             </Button>
                           </Stack>
                         </div>
@@ -201,9 +196,21 @@ const ProjectsPage = () => {
                                 <Button variant="outlined" endIcon={<ArrowForward />} size="large" sx={{ borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', textTransform: 'none', py: 1.5, px: 3, '&:hover': { borderColor: 'rgba(255,255,255,0.4)', color: '#fff', backgroundColor: 'rgba(255,255,255,0.05)' } }}>
                                   Documentation
                                 </Button>
+                                <Button variant="outlined" endIcon={<Assignment />} size="large" href="/CONTRIBUTING.md" target="_blank" sx={{ borderColor: 'rgba(34, 197, 94, 0.3)', color: '#4ade80', textTransform: 'none', py: 1.5, px: 3, '&:hover': { borderColor: 'rgba(34, 197, 94, 0.5)', color: '#22c55e', backgroundColor: 'rgba(34, 197, 94, 0.05)' } }}>
+                                  Contributing Guide
+                                </Button>
                               </Stack>
                             </div>
                             <div className="w-full lg:w-1/3">
+                              <Box sx={{ p: 3, borderRadius: '12px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
+                                <Typography variant="subtitle2" sx={{ color: '#60a5fa', fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Email sx={{ fontSize: '16px' }} />
+                                  Need Help?
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', lineHeight: 1.6 }}>
+                                  Contact the project mentor using the email button above for any questions or guidance about this project.
+                                </Typography>
+                              </Box>
                             </div>
                           </div>
                         </motion.div>

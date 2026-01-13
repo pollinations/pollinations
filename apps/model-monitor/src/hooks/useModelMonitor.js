@@ -8,8 +8,8 @@ const TINYBIRD_TOKEN =
 
 // Model list endpoints
 const MODEL_ENDPOINTS = {
-    image: "https://enter.pollinations.ai/api/generate/image/models",
-    text: "https://enter.pollinations.ai/api/generate/text/models",
+    image: "https://gen.pollinations.ai/image/models",
+    text: "https://gen.pollinations.ai/text/models",
 };
 
 // Tinybird pipes for different aggregation windows
@@ -82,7 +82,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
     const historyRef = useRef({}); // { modelKey: { prev: stats, sparkline: [{p95, err5xx, volume}, ...] } }
     const lastFetchRef = useRef(null); // Track when we last processed data
 
-    // Fetch model list from enter.pollinations.ai
+    // Fetch model list from gen.pollinations.ai
     const fetchModels = useCallback(async () => {
         let imageOk = false;
         let textOk = false;

@@ -43,6 +43,7 @@ You have access to comprehensive information about:
 - Timeline and important deadlines
 - Technical requirements and skill recommendations
 - Community guidelines and contribution processes
+- Ask to contact ayushman@myceli.ai for anything you feel not safe to answer.
 
 Always end responses with a helpful suggestion or question to keep the conversation engaging.`;
   }

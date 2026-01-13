@@ -653,23 +653,25 @@ const HomePage = () => {
                           color: 'rgba(255,255,255,0.8)', 
                           lineHeight: 1.6,
                           mb: 4,
-                          textAlign: 'center'
+                          fontSize: '1rem',
+                          textAlign: 'justify'
                         }}
                       >
-                        Google Summer of Code connects students with open source projects, 
-                        providing mentorship and stipends to contribute to innovative AI solutions.
+                        Open source projects apply as mentor organizations and if they are accepted, students send proposals to them to work on a few months' long project. 
+                        Projects can be planned out by the organizations in advance or can be proposed by students. Google pays the students, not the organizations they work with. 
+                        Beginning in 2023, Google is opening the program up to all newcomers of open source that are 18 years and older.
                       </Typography>
 
                       <Box sx={{ 
                         p: 3, 
-                        borderRadius: '16px', 
+                        borderRadius: '12px', 
                         bgcolor: 'rgba(96, 165, 250, 0.08)', 
                         border: '1px solid rgba(96, 165, 250, 0.15)',
                         mb: 4,
-                        textAlign: 'center'
+                        textAlign: 'justify'
                       }}>
                         <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>
-                          Join a global community of developers working on cutting-edge AI projects
+                          Join pollinations.ai this summer as we embark on an exciting journey of open source development with Google Summer of Code 2026!
                         </Typography>
                       </Box>
 
@@ -735,14 +737,14 @@ const HomePage = () => {
                 color: '#fff' 
               }}
             >
-              Get Started Today
+              Brief Sitemap For You - Navigate Easily
             </Typography>
             
             <Grid container spacing={4} justifyContent="center">
               {[
-                { title: 'View Projects', desc: 'Explore our cutting-edge AI projects', path: '/projects', icon: <Code /> },
+                { title: 'View Projects', desc: 'Explore the ideas we have penned', path: '/projects', icon: <Code /> },
                 { title: 'Program Timeline', desc: 'Check important dates and deadlines', path: '/timeline', icon: <TimelineIcon /> },
-                { title: 'Meet Mentors', desc: 'Learn from industry experts', path: '/mentors', icon: <School /> }
+                { title: 'Meet Mentors', desc: 'Developers from pollinations.ai', path: '/mentors', icon: <School /> }
               ].map((item, index) => (
                 <Grid item xs={12} sm={4} key={index}>
                   <motion.div

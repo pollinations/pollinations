@@ -15,6 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| []() | Missing name, URL, description, repo, and category — please provide details. | @xyz271801 |
 | [FARABI.me](https://farabi.me) | AI app for students with MCQ, Flashcard and Image Generator features | @Farabi-Devs |
 | [FragBin](https://www.fragbin.com/) | Share code/text with expiry, password protection & AI-powered summaries | @maximeb97 |
 | [AI Pet Name Generator](https://petpetgenerator.cc/ai-pet-name-generator) | Generate unique pet names with styles like cute, funny, or fantasy | @loocao |
@@ -24,7 +25,6 @@
 | [Hibiscus](https://hibiscus-yp9g.onrender.com) | AI Creative Studio with local gallery, auto-download & unified image/video gen | @Hirothewolf |
 | [PixArt AI](https://apps.apple.com/us/app/pixart-ai-ai-image-generator/id6749236127) | iOS app for text-to-image with 10+ art styles from pollinations.ai | @PixArtStudio |
 | [Udeki](https://udeki.com/) | Academic platform for schools connecting teachers, parents & students with AI | @carlosmolano |
-| [Pollination Gallery AI](https://lytura-ai-visions-forge.lovable.app/) | Powerful AI image generator based on pollinations.ai API | @malik498-r |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

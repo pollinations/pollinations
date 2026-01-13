@@ -1,12 +1,11 @@
-// GSOC Polly - Your AI Assistant for Google Summer of Code 2026
 import axios from 'axios';
 
 const API_BASE_URL = 'https://gen.pollinations.ai/v1/chat/completions';
 
-export class GSOCPollyAPI {
+export class socBotAPI {
   constructor() {
     this.conversationHistory = [];
-    this.systemPrompt = `You are GSOCPolly, the official AI assistant for Google Summer of Code 2026 at pollinations.ai. You are a helpful, knowledgeable, and enthusiastic assistant specialized in:
+    this.systemPrompt = `You are socBot, the official AI assistant for Google Summer of Code 2026 at pollinations.ai. You are a helpful, knowledgeable, and enthusiastic assistant specialized in:
 
 1. Google Summer of Code program information and guidelines
 2. pollinations.ai organization details and projects
@@ -37,13 +36,11 @@ Always end responses with a helpful suggestion or question to keep the conversat
 
   async sendMessage(userMessage) {
     try {
-      // Add user message to conversation history
       this.conversationHistory.push({
         role: 'user',
         content: userMessage
       });
 
-      // Prepare the API request
       const requestBody = {
         model: 'openai-large',
         messages: [
@@ -54,19 +51,19 @@ Always end responses with a helpful suggestion or question to keep the conversat
           ...this.conversationHistory
         ],
         temperature: 0.7,
-        max_tokens: 1000,
+        max_tokens: 500,
         stream: false
       };
 
       const response = await axios.post(API_BASE_URL, requestBody, {
         headers: {
+          'Authorization' : `Bearer ${process.env.POLLINATIONS_API_KEY}`,
           'Content-Type': 'application/json',
         }
       });
 
       const assistantMessage = response.data.choices[0].message.content;
 
-      // Add assistant response to conversation history
       this.conversationHistory.push({
         role: 'assistant',
         content: assistantMessage
@@ -79,9 +76,8 @@ Always end responses with a helpful suggestion or question to keep the conversat
       };
 
     } catch (error) {
-      console.error('GSOCPolly API Error:', error);
+      console.error('socBot API Error:', error);
       
-      // Fallback response for API errors
       const fallbackMessage = "I'm experiencing some technical difficulties right now. In the meantime, you can:\n\n• Check our FAQ page for common questions\n• Browse our project ideas\n• Join our Discord community for direct support\n• Contact mentors directly via email\n\nI'll be back online soon to help with your GSOC questions!";
       
       return {
@@ -93,17 +89,14 @@ Always end responses with a helpful suggestion or question to keep the conversat
     }
   }
 
-  // Clear conversation history
   clearHistory() {
     this.conversationHistory = [];
   }
 
-  // Get conversation history
   getHistory() {
     return this.conversationHistory;
   }
 
-  // Get suggested questions for first-time users
   getSuggestedQuestions() {
     return [
       "What is Google Summer of Code and how can I participate?",
@@ -118,4 +111,4 @@ Always end responses with a helpful suggestion or question to keep the conversat
   }
 }
 
-export default GSOCPollyAPI;
+export default socBotAPI;

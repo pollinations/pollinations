@@ -8,6 +8,7 @@ These apps need to be updated to use `gen.pollinations.ai` instead of legacy end
 | **catgpt**            | `gen.pollinations.ai`                            | Done |
 | **ai-dungeon-master** | `gen.pollinations.ai` | Done |
 
+> Updated at 2026-01-13
 ## Notes
 
 - Update both code and documentation together

@@ -59,7 +59,6 @@ const Navbar = () => {
           sx={{ 
             bgcolor: 'rgba(255,255,255,0.1)', 
             color: '#fff',
-            fontSize: '10px',
             height: '20px',
             fontSize: '15px',
             fontFamily: 'monospace',

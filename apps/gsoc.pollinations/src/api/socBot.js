@@ -46,10 +46,9 @@ Always end responses with a helpful suggestion or question to keep the conversat
 
   async sendMessage(userMessage) {
     try {
-      // Check if API key is available
-      const apiKey = import.meta.env.VITE_POLLINATIONS_API_KEY;
+      const apiKey = import.meta.env.POLLINATIONS_API_KEY;
       if (!apiKey) {
-        throw new Error('API key not configured. Please set VITE_POLLINATIONS_API_KEY in your .env file.');
+        throw new Error('API sanitation error! Key issue, contact dev ayushman@myceli.ai');
       }
 
       this.conversationHistory.push({

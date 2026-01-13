@@ -81,37 +81,41 @@ function promptUser(question: string): Promise<string> {
     });
 }
 
-// Data types
-type MismatchType = "tier_mismatch" | "missing_in_polar" | "duplicate_polar";
-
-interface Mismatch {
-    type: MismatchType;
+// Data types - matches output from compare-d1-polar-users.ts
+interface PolarIssue {
+    type: "polar-tier-mismatch";
     email: string;
-    d1Tier: TierName;
-    polarTier: TierName | null;
-    subscriptionId: string | null;
-    customerId: string | null;
+    d1: {
+        id: string;
+        tier: TierName;
+        name: string;
+        github_username: string | null;
+        github_id: number | null;
+        created_at: string;
+    };
+    polar: {
+        tier: TierName | null;
+        customerId: string | null;
+        subscriptionId: string | null;
+    };
 }
 
-interface CompareResult {
-    comparedAt: string;
-    polarDataFetchedAt: string;
-    summary: {
-        d1Users: number;
-        d1PaidUsers: number;
-        polarSubscriptions: number;
-        mismatches: number;
-        missingInPolar: number;
-        duplicatesInPolar: number;
-        anomalies: number;
+interface MismatchFile {
+    overview: {
+        comparedAt: string;
+        polarDataFetchedAt: string;
+        totalCount: number;
+        description: string;
     };
-    mismatches: Mismatch[];
+    users: PolarIssue[];
 }
 
 type ProductMap = Map<string, { id: string; name: string }>;
 
-const MISMATCHES_PATH = new URL("./data/mismatches.json", import.meta.url)
-    .pathname;
+const MISMATCHES_PATH = new URL(
+    "./data/polar-tier-mismatch.json",
+    import.meta.url,
+).pathname;
 
 async function getTierProductMap(polar: Polar): Promise<ProductMap> {
     const products = await polar.products.list({ limit: 100 });
@@ -137,30 +141,18 @@ async function main() {
         process.exit(1);
     }
 
-    const data: CompareResult = JSON.parse(
+    const data: MismatchFile = JSON.parse(
         readFileSync(MISMATCHES_PATH, "utf-8"),
     );
     console.log(`\nLoaded mismatches from: ${MISMATCHES_PATH}`);
-    console.log(`  Compared at: ${data.comparedAt}`);
-    console.log(`  Polar data from: ${data.polarDataFetchedAt}`);
+    console.log(`  Compared at: ${data.overview.comparedAt}`);
+    console.log(`  Polar data from: ${data.overview.polarDataFetchedAt}`);
 
-    // Filter actionable mismatches
-    const tierMismatches = data.mismatches.filter(
-        (m) => m.type === "tier_mismatch",
-    );
-    const missingInPolar = data.mismatches.filter(
-        (m) => m.type === "missing_in_polar",
-    );
-    const duplicates = data.mismatches.filter(
-        (m) => m.type === "duplicate_polar",
-    );
+    // All users in this file are tier mismatches
+    const tierMismatches = data.users;
 
     console.log(`\n📊 Summary:`);
-    console.log(`   Tier mismatches (can fix): ${tierMismatches.length}`);
-    console.log(
-        `   Missing in Polar (need customer): ${missingInPolar.length}`,
-    );
-    console.log(`   Duplicates (manual fix): ${duplicates.length}`);
+    console.log(`   Tier mismatches to fix: ${tierMismatches.length}`);
 
     if (tierMismatches.length === 0) {
         console.log("\n✅ No tier mismatches to fix!");
@@ -172,7 +164,7 @@ async function main() {
     console.log("TIER MISMATCHES TO FIX:");
     console.log("-".repeat(60));
     for (const m of tierMismatches.slice(0, 10)) {
-        console.log(`  🔄 ${m.email}: Polar ${m.polarTier} → D1 ${m.d1Tier}`);
+        console.log(`  🔄 ${m.email}: Polar ${m.polar.tier} → D1 ${m.d1.tier}`);
     }
     if (tierMismatches.length > 10) {
         console.log(`  ... and ${tierMismatches.length - 10} more`);
@@ -200,7 +192,7 @@ async function main() {
 
         if (mode === "i") {
             console.log(`\n[${i + 1}/${tierMismatches.length}] ${m.email}`);
-            console.log(`  Polar: ${m.polarTier} → D1: ${m.d1Tier}`);
+            console.log(`  Polar: ${m.polar.tier} → D1: ${m.d1.tier}`);
             const confirm = await promptUser(`  Apply? (y/n/q): `);
             if (confirm === "q") {
                 console.log("Quitting...");
@@ -213,16 +205,16 @@ async function main() {
         }
 
         // Get product for target tier
-        const slug = tierProductSlug(m.d1Tier);
+        const slug = tierProductSlug(m.d1.tier);
         const product = productMap.get(slug);
 
         if (!product) {
-            console.log(`  ❌ No product found for tier ${m.d1Tier}`);
+            console.log(`  ❌ No product found for tier ${m.d1.tier}`);
             errors++;
             continue;
         }
 
-        if (!m.subscriptionId) {
+        if (!m.polar.subscriptionId) {
             console.log(`  ❌ No subscription ID for ${m.email}`);
             errors++;
             continue;
@@ -232,7 +224,7 @@ async function main() {
             await withRetry(
                 () =>
                     polar.subscriptions.update({
-                        id: m.subscriptionId!,
+                        id: m.polar.subscriptionId!,
                         subscriptionUpdate: {
                             productId: product.id,
                         },
@@ -242,10 +234,10 @@ async function main() {
 
             if (mode === "a") {
                 console.log(
-                    `  ✅ [${i + 1}/${tierMismatches.length}] ${m.email}: ${m.polarTier} → ${m.d1Tier}`,
+                    `  ✅ [${i + 1}/${tierMismatches.length}] ${m.email}: ${m.polar.tier} → ${m.d1.tier}`,
                 );
             } else {
-                console.log(`  ✅ Updated to ${m.d1Tier}`);
+                console.log(`  ✅ Updated to ${m.d1.tier}`);
             }
             updated++;
             await sleep(2000); // Rate limit protection

@@ -18,7 +18,7 @@ Pick the best fit: `Creative`, `Chat`, `Games`, `Dev_Tools`, `Vibes`, `Social_Bo
 ## APPS.md Row Format
 
 ```
-| EMOJI | [Name](url) | Description (~80 chars) | LANG | category | @author | repo_url | ⭐stars | discord | other | YYYY-MM-DD |
+| EMOJI | Name | Web_URL | Description (~80 chars) | LANG | category | @author | github_id | repo_url | ⭐stars | discord | other | YYYY-MM-DD |
 ```
 
 ---
@@ -48,7 +48,7 @@ git fetch origin main
 # Else: git checkout -b auto/app-${ISSUE_NUMBER}-slug origin/main
 
 # 5. Add row
-export NEW_ROW="| EMOJI | [NAME](URL) | DESC | LANG | CAT | @AUTHOR | REPO | STARS | DISCORD | | $(date +%Y-%m-%d) |"
+export NEW_ROW="| EMOJI | NAME | URL | DESC | LANG | CAT | @AUTHOR | GITHUB_ID | REPO | STARS | DISCORD | | $(date +%Y-%m-%d) |"
 node .github/scripts/app-prepend-row.js
 node .github/scripts/app-update-readme.js
 

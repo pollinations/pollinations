@@ -15,7 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [Hinda AI](https://script.google.com/macros/s/AKfycbyd8XXzBRY4q3m1Bh9Rxt29m2DXOkMuTBBik3yKIBDBwOS7dEyhAAmVUX6nxcy6MPHb/exec) | Deer-themed creative writing workspace like Google Docs for fiction writers. | @Deerdeer633 |
+| [Athelte Studio](https://athletestudio.online/) | Turns Strava workouts into cinematic AI-generated sports posters. | @NaikDeepak |
 | [FARABI.me](https://farabi.me) | AI app for students with MCQ, Flashcard and Image Generator features | @Farabi-Devs |
 | [FragBin](https://www.fragbin.com/) | Share code/text with expiry, password protection & AI-powered summaries | @maximeb97 |
 | [AI Pet Name Generator](https://petpetgenerator.cc/ai-pet-name-generator) | Generate unique pet names with styles like cute, funny, or fantasy | @loocao |

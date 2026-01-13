@@ -15,7 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [Faster Vox](https://github.com/JorkeyLiu/faster-vox) | Transcribe audio using Faster Whisper with AI post-processing and custom prompts | @JorkeyLiu |
+| [Techlanche](Blog.techlanche.com) | AI-automated blog delivering snackable tech intelligence. | @innosaint-uche |
 | [FARABI.me](https://farabi.me) | AI app for students with MCQ, Flashcard and Image Generator features | @Farabi-Devs |
 | [FragBin](https://www.fragbin.com/) | Share code/text with expiry, password protection & AI-powered summaries | @maximeb97 |
 | [AI Pet Name Generator](https://petpetgenerator.cc/ai-pet-name-generator) | Generate unique pet names with styles like cute, funny, or fantasy | @loocao |

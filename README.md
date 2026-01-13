@@ -15,7 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [Techlanche](Blog.techlanche.com) | AI-automated blog delivering snackable tech intelligence. | @innosaint-uche |
+| [Pictify](https://pictify.wassy.in) | Text-to-image generator offering daily free credits and paid extra credits. | @janakdigitalk-create |
 | [FARABI.me](https://farabi.me) | AI app for students with MCQ, Flashcard and Image Generator features | @Farabi-Devs |
 | [FragBin](https://www.fragbin.com/) | Share code/text with expiry, password protection & AI-powered summaries | @maximeb97 |
 | [AI Pet Name Generator](https://petpetgenerator.cc/ai-pet-name-generator) | Generate unique pet names with styles like cute, funny, or fantasy | @loocao |

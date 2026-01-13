@@ -610,7 +610,7 @@ const HomePage = () => {
                 </Box>
               </Box>
 
-              <Box sx={{ maxWidth: '450px', width: '100%', position: 'relative', zIndex: 2 }}>
+              <Box sx={{ maxWidth: '650px', width: '100%', position: 'relative', zIndex: 2 }}>
                 <motion.div
                   variants={fadeInUp}
                   initial="hidden"

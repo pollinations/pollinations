@@ -59,18 +59,16 @@ const ProjectsPage = () => {
           </Stack>
         </Box>
 
-        {/* Projects List */}
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-8 mb-[25px]">
           {projects && projects.map((project, index) => {
             const mentor = mentors.find(m => m.id === project.mentorID);
             return (
               <div key={index}>
+
                 <motion.div custom={index} variants={cardVariants} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                  <Card elevation={0} sx={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', color: '#fff', transition: 'all 0.4s ease', position: 'relative', overflow: 'hidden', '&:hover': { transform: 'translateY(-4px)', borderColor: 'rgba(255,255,255,0.3)', boxShadow: '0 25px 50px -10px rgba(0,0,0,0.5)' }, '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: `linear-gradient(90deg, ${project.category === 'AI/ML' ? '#f59e0b, #d97706' : project.category === 'Blockchain' ? '#3b82f6, #1d4ed8' : '#10b981, #059669'})`, borderRadius: '20px 20px 0 0' } }}>
+                  <Card elevation={0} sx={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', color: '#fff', transition: 'all 0.4s ease', position: 'relative', marginBottom: '25px', overflow: 'hidden', '&:hover': { transform: 'translateY(-4px)', borderColor: 'rgba(255,255,255,0.3)', boxShadow: '0 25px 50px -10px rgba(0,0,0,0.5)' }, '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: `linear-gradient(90deg, ${project.category === 'AI/ML' ? '#f59e0b, #d97706' : project.category === 'Blockchain' ? '#3b82f6, #1d4ed8' : '#10b981, #059669'})`, borderRadius: '20px 20px 0 0' } }}>
                     <CardContent sx={{ padding: '2.5rem' }}>
-                      {/* Main content area - unified single block with flexbox */}
                       <div className="flex flex-col lg:flex-row gap-8">
-                        {/* Left Section - Project Information */}
                         <div className="w-full lg:w-1/2">
                           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
                             <Chip label={project.category} size="medium" icon={<Lightbulb sx={{ fontSize: '18px !important' }} />} sx={{ bgcolor: project.category === 'AI/ML' ? 'rgba(245, 158, 11, 0.1)' : project.category === 'Blockchain' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: project.category === 'AI/ML' ? '#fbbf24' : project.category === 'Blockchain' ? '#60a5fa' : '#34d399', border: `1px solid ${project.category === 'AI/ML' ? 'rgba(245, 158, 11, 0.3)' : project.category === 'Blockchain' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`, fontWeight: 600, fontSize: '0.875rem', height: '32px' }} />

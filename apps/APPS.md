@@ -11,12 +11,10 @@
 | 🤖 | CHATTY AI | https://ai.studio/apps/drive/1LrJOAZdc-qwB__D736EjWboWs4PPrjYK | Enhance and update CHATTY AI web app to work seamlessly on Free Tier. | en | Chat | @tefa2007h-dev | 236226459 |  |  |  | | 2026-01-12 |
 | 🎨 | Presintation web site | https://astro-prezintatsiya.vercel.app/ | AI-powered web app that creates professional presentations in seconds. | en | Creative | @cyberuz001 | 134840520 |  |  | prosta_hiro | | 2026-01-12 |
 | 🎨 | Resonance | https://resonanceai.netlify.app | Mobile-first image generator with many styles and features (Z Image Turbo, Flux) | en | Creative | @Bakhshi7889 | 216855486 |  |  | _bakhshi | | 2026-01-12 |
-| 💬 | slywia | https://slywia.tea.com | 中文 AI 聊天助手，提供自然对话、问答与信息检索 | zh-CN | Chat | @bombom0704 | 232115999 |  |  |  | | 2026-01-12 |
 | 🤖 | Ai chatbot | https://t.me/vriskas_channel | Chat with a powerful AI neural-network chatbot for free on Telegram. | ru | Chat | @VriskasYT | 244879637 |  |  |  | | 2026-01-12 |
 | 🎨 | AI prompt test page | https://jangyoonhee.netlify.app/ | Interactive course for writing prompts and generating images to study outcomes. | ko | Creative | @yoonheejangs | 212730413 |  |  |  | | 2026-01-12 |
 | 🤖 | YouTube MASHINA |  | Python automation for end-to-end YouTube workflow: analysis to video rendering. | ru | Dev_Tools | @j94469669-stack | 233967085 |  |  |  | | 2026-01-12 |
 | 🎙️ | Faster Vox |  | Transcribe audio using Faster Whisper with AI post-processing and custom prompts | en, zh-CN | Learn | @JorkeyLiu | 23549587 | https://github.com/JorkeyLiu/faster-vox | ⭐0 |  | | 2026-01-12 |
-| 📰 | Techlanche | https://blog.techlanche.com | AI-automated blog delivering snackable tech intelligence. | en | Vibes | @innosaint-uche | 103254545 |  |  |  | | 2026-01-12 |
 | 🎨 | Pictify | https://pictify.wassy.in | Text-to-image generator offering daily free credits and paid extra credits. | en | Creative | @janakdigitalk-create | 243748394 |  |  | janak_chauhan_20665 | | 2026-01-12 |
 | 💬 | Leo Ai |  | Testing API for AI-powered content creation on a web demo | en | Chat | @abdulbasatmegal99-sudo | 252299401 |  |  |  | | 2026-01-12 |
 | 🎬 | YT SHORTSs | https://ytai.com | Tool for creating and managing YouTube Shorts | tr | Chat | @TheCaptaiNN | 63120884 |  |  | zepzeng | | 2026-01-12 |

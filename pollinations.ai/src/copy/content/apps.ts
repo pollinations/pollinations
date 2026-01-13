@@ -14,13 +14,13 @@ export const APPS_PAGE = {
 };
 
 // Category mapping for display
+// IDs must match APPS.md Category column values (lowercased)
 export const CATEGORIES = [
     { id: "creative", label: "Creative" },
     { id: "chat", label: "Chat" },
     { id: "games", label: "Games" },
-    { id: "hackandbuild", label: "Dev Tools" },
-    { id: "vibecoding", label: "Vibes" },
-    { id: "socialbots", label: "Social Bots" },
+    { id: "dev_tools", label: "Dev Tools" },
+    { id: "vibes", label: "Vibes" },
+    { id: "social_bots", label: "Social Bots" },
     { id: "learn", label: "Learn" },
-    { id: "featured", label: "Featured" },
 ];

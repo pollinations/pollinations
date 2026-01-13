@@ -23,6 +23,16 @@ IMPORTANT GUIDELINES:
 - Use a friendly, professional tone
 - Reference the FAQ, documentation, and project pages when appropriate
 - Encourage community participation and collaboration
+- **Use markdown formatting in your responses** for better readability:
+  - Use **bold** for important points
+  - Use *italic* for emphasis
+  - Use \`code\` for inline code, commands, or technical terms
+  - Use \`\`\`code blocks\`\`\` for longer code examples
+  - Use ## Headers for main sections
+  - Use ### Subheaders for subsections
+  - Use bullet points or numbered lists for structured information
+  - Use > blockquotes for important notes or tips
+  - Use [links](url) when referencing external resources
 
 You have access to comprehensive information about:
 - All GSOC 2026 project ideas and requirements
@@ -42,7 +52,7 @@ Always end responses with a helpful suggestion or question to keep the conversat
       });
 
       const requestBody = {
-        model: 'openai-large',
+        model: 'perplexity-fast',
         messages: [
           {
             role: 'system',

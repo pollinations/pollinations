@@ -2,7 +2,202 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Box, Typography, TextField, IconButton, Paper, Avatar, Chip, Button, Container, Stack, Card, CardContent, Fade, Zoom, CircularProgress, Tooltip } from '@mui/material';
 import { Send, AutoAwesome, Clear, LightbulbOutlined, RocketLaunchOutlined, SchoolOutlined, CodeOutlined } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/github-dark.css';
 import socBotAPI from '../api/socBot';
+
+const MarkdownComponents = {
+  h1: ({ children }) => (
+    <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, color: '#60a5fa', borderBottom: '2px solid rgba(96, 165, 250, 0.3)', pb: 1 }}>
+      {children}
+    </Typography>
+  ),
+  h2: ({ children }) => (
+    <Typography variant="h5" sx={{ fontWeight: 600, mb: 2, mt: 3, color: '#60a5fa' }}>
+      {children}
+    </Typography>
+  ),
+  h3: ({ children }) => (
+    <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, mt: 2, color: '#22c55e' }}>
+      {children}
+    </Typography>
+  ),
+  h4: ({ children }) => (
+    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, mt: 2, color: '#f59e0b' }}>
+      {children}
+    </Typography>
+  ),
+  p: ({ children }) => (
+    <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.6, color: 'rgba(255,255,255,0.9)' }}>
+      {children}
+    </Typography>
+  ),
+  ul: ({ children }) => (
+    <Box component="ul" sx={{ pl: 3, mb: 2, '& li': { mb: 0.5 } }}>
+      {children}
+    </Box>
+  ),
+  ol: ({ children }) => (
+    <Box component="ol" sx={{ pl: 3, mb: 2, '& li': { mb: 0.5 } }}>
+      {children}
+    </Box>
+  ),
+  li: ({ children }) => (
+    <Typography component="li" variant="body1" sx={{ color: 'rgba(255,255,255,0.9)', lineHeight: 1.6 }}>
+      {children}
+    </Typography>
+  ),
+  code: ({ node, inline, className, children, ...props }) => {
+    if (inline) {
+      return (
+        <Box 
+          component="code" 
+          sx={{ 
+            bgcolor: 'rgba(96, 165, 250, 0.1)', 
+            color: '#60a5fa', 
+            px: 1, 
+            py: 0.5, 
+            borderRadius: '4px', 
+            fontSize: '0.875rem',
+            fontFamily: 'monospace'
+          }}
+          {...props}
+        >
+          {children}
+        </Box>
+      );
+    }
+    return (
+      <Paper
+        elevation={0}
+        sx={{
+          bgcolor: 'rgba(0,0,0,0.3)',
+          border: '1px solid rgba(96, 165, 250, 0.2)',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          mb: 2
+        }}
+      >
+        <Box
+          component="pre"
+          sx={{
+            p: 2,
+            overflow: 'auto',
+            fontSize: '0.875rem',
+            fontFamily: 'monospace',
+            '& code': {
+              color: '#e5e7eb !important',
+              background: 'transparent !important'
+            }
+          }}
+        >
+          <code className={className} {...props}>
+            {children}
+          </code>
+        </Box>
+      </Paper>
+    );
+  },
+  blockquote: ({ children }) => (
+    <Paper
+      elevation={0}
+      sx={{
+        bgcolor: 'rgba(34, 197, 94, 0.05)',
+        border: '1px solid rgba(34, 197, 94, 0.2)',
+        borderLeft: '4px solid #22c55e',
+        borderRadius: '0 8px 8px 0',
+        p: 2,
+        mb: 2,
+        fontStyle: 'italic'
+      }}
+    >
+      {children}
+    </Paper>
+  ),
+  a: ({ children, href }) => (
+    <Box
+      component="a"
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      sx={{
+        color: '#60a5fa',
+        textDecoration: 'underline',
+        '&:hover': {
+          color: '#3b82f6',
+          textDecoration: 'none'
+        }
+      }}
+    >
+      {children}
+    </Box>
+  ),
+  strong: ({ children }) => (
+    <Box component="strong" sx={{ fontWeight: 700, color: '#fff' }}>
+      {children}
+    </Box>
+  ),
+  em: ({ children }) => (
+    <Box component="em" sx={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.9)' }}>
+      {children}
+    </Box>
+  ),
+  hr: () => (
+    <Box
+      sx={{
+        height: '1px',
+        bgcolor: 'rgba(96, 165, 250, 0.3)',
+        border: 'none',
+        my: 3
+      }}
+    />
+  ),
+  table: ({ children }) => (
+    <Paper
+      elevation={0}
+      sx={{
+        bgcolor: 'rgba(255,255,255,0.02)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        mb: 2
+      }}
+    >
+      <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+        {children}
+      </Box>
+    </Paper>
+  ),
+  th: ({ children }) => (
+    <Box
+      component="th"
+      sx={{
+        p: 1.5,
+        bgcolor: 'rgba(96, 165, 250, 0.1)',
+        borderBottom: '1px solid rgba(96, 165, 250, 0.3)',
+        color: '#60a5fa',
+        fontWeight: 600,
+        textAlign: 'left'
+      }}
+    >
+      {children}
+    </Box>
+  ),
+  td: ({ children }) => (
+    <Box
+      component="td"
+      sx={{
+        p: 1.5,
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        color: 'rgba(255,255,255,0.9)'
+      }}
+    >
+      {children}
+    </Box>
+  )
+};
 
 const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
   return (
@@ -44,7 +239,6 @@ const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
           />
         </Box>
       )}
-      
       <Box
         sx={{
           maxWidth: '70%',
@@ -79,7 +273,6 @@ const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
               }}
             />
           )}
-          
           {isTyping ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CircularProgress size={16} sx={{ color: '#60a5fa' }} />
@@ -88,18 +281,33 @@ const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
               </Typography>
             </Box>
           ) : (
-            <Typography 
-              variant="body1" 
-              sx={{ 
-                lineHeight: 1.6,
-                whiteSpace: 'pre-wrap',
-                fontSize: '0.95rem'
-              }}
-            >
-              {message}
-            </Typography>
+            <>
+              {isBot ? (
+                <ReactMarkdown
+                  components={MarkdownComponents}
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight]}
+                  sx={{
+                    '& > *:last-child': { mb: 0 },
+                    '& > *:first-of-type': { mt: 0 }
+                  }}
+                >
+                  {message}
+                </ReactMarkdown>
+              ) : (
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    lineHeight: 1.6,
+                    whiteSpace: 'pre-wrap',
+                    fontSize: '0.95rem'
+                  }}
+                >
+                  {message}
+                </Typography>
+              )}
+            </>
           )}
-          
           {timestamp && !isTyping && (
             <Typography 
               variant="caption" 
@@ -116,7 +324,6 @@ const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
           )}
         </Paper>
       </Box>
-
       {!isBot && (
         <Avatar 
           src="/gsoc_logo.webp" 
@@ -184,8 +391,6 @@ const socBotChat = () => {
 
   useEffect(() => {
     document.title = "socBot - AI Assistant | GSOC 2026 | pollinations.ai";
-    
-    // Welcome message
     setMessages([{
       id: 1,
       content: "Hello! I'm socBot, your AI assistant for Google Summer of Code 2026 at pollinations.ai! 🚀\n\nI'm here to help you with everything related to GSOC - from understanding the program to choosing projects, application guidance, and technical support.\n\nWhat would you like to know about GSOC 2026?",
@@ -217,7 +422,6 @@ const socBotChat = () => {
     setShowSuggestions(false);
     setIsLoading(true);
 
-    // Add typing indicator
     const typingMessage = {
       id: Date.now() + 1,
       content: '',
@@ -228,8 +432,6 @@ const socBotChat = () => {
 
     try {
       const response = await pollyAPI.current.sendMessage(messageText);
-      
-      // Remove typing indicator and add actual response
       setMessages(prev => {
         const withoutTyping = prev.filter(msg => !msg.isTyping);
         return [...withoutTyping, {
@@ -287,7 +489,6 @@ const socBotChat = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#09090b', position: 'relative', overflow: 'hidden' }}>
-      {/* Background Effects */}
       <Box 
         sx={{
           position: 'absolute',
@@ -314,7 +515,6 @@ const socBotChat = () => {
       />
 
       <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1, py: 4, height: '100vh', display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -350,7 +550,6 @@ const socBotChat = () => {
                 </Typography>
               </Box>
             </Box>
-            
             <Stack direction="row" spacing={1} justifyContent="center" sx={{ mb: 2 }}>
               <Chip 
                 label="AI Powered" 
@@ -383,8 +582,6 @@ const socBotChat = () => {
             </Stack>
           </Box>
         </motion.div>
-
-        {/* Chat Messages Area */}
         <Box 
           sx={{ 
             flex: 1, 
@@ -416,8 +613,6 @@ const socBotChat = () => {
               isTyping={message.isTyping}
             />
           ))}
-          
-          {/* Suggested Questions */}
           <AnimatePresence>
             {showSuggestions && messages.length === 1 && (
               <motion.div
@@ -454,11 +649,8 @@ const socBotChat = () => {
               </motion.div>
             )}
           </AnimatePresence>
-          
           <div ref={messagesEndRef} />
         </Box>
-
-        {/* Input Area */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -500,7 +692,6 @@ const socBotChat = () => {
                   },
                 }}
               />
-              
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Tooltip title="Clear Chat">
                   <IconButton
@@ -517,7 +708,6 @@ const socBotChat = () => {
                     <Clear />
                   </IconButton>
                 </Tooltip>
-                
                 <Tooltip title="Send Message">
                   <IconButton
                     onClick={() => handleSendMessage()}

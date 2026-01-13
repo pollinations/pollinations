@@ -100,7 +100,6 @@ const FAQPage = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#09090b', position: 'relative', overflow: 'hidden' }}>
-      {/* Background Elements */}
       <Box 
         sx={{
           position: 'absolute',
@@ -127,7 +126,6 @@ const FAQPage = () => {
       />
 
       <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1, py: 8 }}>
-        {/* Header Section */}
         <motion.div
           variants={fadeInUp}
           initial="hidden"
@@ -164,7 +162,6 @@ const FAQPage = () => {
               Everything you need to know about participating in Google Summer of Code 2026 with pollinations.ai
             </Typography>
 
-            {/* Stats */}
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} sx={{ justifyContent: 'center', alignItems: 'center', mb: 6 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h4" sx={{ color: '#fff', fontWeight: 700 }}>{faqData.length}</Typography>
@@ -178,7 +175,6 @@ const FAQPage = () => {
           </Box>
         </motion.div>
 
-        {/* Search and Filter Section */}
         <motion.div
           variants={fadeInUp}
           initial="hidden"
@@ -195,9 +191,9 @@ const FAQPage = () => {
               mb: 6
             }}
           >
-            <CardContent sx={{ p: 4 }}>
+            <CardContent sx={{ p: 2 }}>
               <Grid container spacing={4} alignItems="center">
-                <Grid item xs={12} md={6}>
+                <Grid item xs={15} md={6}>
                   <TextField
                     fullWidth
                     variant="outlined"
@@ -207,7 +203,7 @@ const FAQPage = () => {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Search sx={{ color: 'rgba(255,255,255,0.5)' }} />
+                          <Search sx={{ color: 'rgba(255,255,255,0.5)', borderRadius: '25px' }} />
                         </InputAdornment>
                       ),
                     }}
@@ -324,8 +320,10 @@ const FAQPage = () => {
                         boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
                       },
                       '&.Mui-expanded': {
-                        borderColor: categoryStyle.border,
-                        boxShadow: `0 8px 32px ${categoryStyle.bg}`
+                        border: `3px solid ${categoryStyle.bg}`,
+                        borderColor: `${categoryStyle.bg}`,
+                        boxShadow: `0 8px 32px ${categoryStyle.bg}`,
+                        marginBottom: '16px !important'
                       },
                       '&:before': {
                         display: 'none',

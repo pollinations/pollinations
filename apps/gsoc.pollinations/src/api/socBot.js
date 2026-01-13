@@ -46,7 +46,7 @@ Always end responses with a helpful suggestion or question to keep the conversat
 
   async sendMessage(userMessage) {
     try {
-      const apiKey = import.meta.env.POLLINATIONS_API_KEY;
+      const apiKey = import.meta.env.VITE_POLLINATIONS_API_KEY;
       if (!apiKey) {
         throw new Error('API sanitation error! Key issue, contact dev ayushman@myceli.ai');
       }
@@ -57,7 +57,7 @@ Always end responses with a helpful suggestion or question to keep the conversat
       });
 
       const requestBody = {
-        model: 'perplexity-fast',
+        model: 'gemini-fast',
         messages: [
           {
             role: 'system',

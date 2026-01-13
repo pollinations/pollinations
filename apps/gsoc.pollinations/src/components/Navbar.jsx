@@ -86,7 +86,7 @@ const Navbar = () => {
         {/* GSOCPolly AI Assistant in Mobile Menu */}
         <ListItem 
           component={Link} 
-          to="/gsoc-polly"
+          to="/socBot"
           sx={{
             color: 'rgba(96, 165, 250, 0.9)',
             backgroundColor: 'rgba(96, 165, 250, 0.1)',
@@ -236,7 +236,7 @@ const Navbar = () => {
                 <Tooltip title="Ask GSOCPolly - Your AI Assistant" placement="bottom">
                   <IconButton
                     component={Link}
-                    to="/gsoc-polly"
+                    to="/socBot"
                     sx={{
                       background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%)',
                       border: '2px solid rgba(96, 165, 250, 0.3)',

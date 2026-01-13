@@ -46,6 +46,12 @@ Always end responses with a helpful suggestion or question to keep the conversat
 
   async sendMessage(userMessage) {
     try {
+      // Check if API key is available
+      const apiKey = import.meta.env.VITE_POLLINATIONS_API_KEY;
+      if (!apiKey) {
+        throw new Error('API key not configured. Please set VITE_POLLINATIONS_API_KEY in your .env file.');
+      }
+
       this.conversationHistory.push({
         role: 'user',
         content: userMessage
@@ -67,7 +73,7 @@ Always end responses with a helpful suggestion or question to keep the conversat
 
       const response = await axios.post(API_BASE_URL, requestBody, {
         headers: {
-          'Authorization' : `Bearer ${process.env.POLLINATIONS_API_KEY}`,
+          'Authorization' : `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         }
       });

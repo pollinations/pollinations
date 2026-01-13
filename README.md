@@ -15,16 +15,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [Pimp my Pics](https://t.me/pimp_my_bot) | Telegram bot to edit and enhance user photos with creative filters and effects. | @tderouze |
-| [FARABI.me](https://farabi.me) | AI app for students with MCQ, Flashcard and Image Generator features | @Farabi-Devs |
-| [FragBin](https://www.fragbin.com/) | Share code/text with expiry, password protection & AI-powered summaries | @maximeb97 |
-| [AI Pet Name Generator](https://petpetgenerator.cc/ai-pet-name-generator) | Generate unique pet names with styles like cute, funny, or fantasy | @loocao |
-| [Mundos de Fantasía](https://todoh.github.io/POLLINATIONS-MUNDOS-FANTASIA/) | AI world-builder: characters, maps, history & stories from a single idea | @todoh |
-| [AI therapist](https://play.google.com/store/apps/details?id=com.terapeuta.ai) | AI therapy app with chat, personalized routines & user data analysis | @Mundoapp |
-| [video-pwa-demo-img-generate](https://ym21082-png.github.io/video-pwa-demo-img-generate/) | Japanese AI image generator with style presets, auto-gen & ImgBB integration | @ym21082-png |
-| [Hibiscus](https://hibiscus-yp9g.onrender.com) | AI Creative Studio with local gallery, auto-download & unified image/video gen | @Hirothewolf |
-| [PixArt AI](https://apps.apple.com/us/app/pixart-ai-ai-image-generator/id6749236127) | iOS app for text-to-image with 10+ art styles from pollinations.ai | @PixArtStudio |
-| [Udeki](https://udeki.com/) | Academic platform for schools connecting teachers, parents & students with AI | @carlosmolano |
+| [Productivity Gears](http://productivitygears.com/) | Suite of 100 free productivity tools: AI assistants, converters, PDF editors. | @hadi0096 |
+| [Lapse Game 2075](https://makeypocket.github.io/LapseGame/) | AI-powered game where decisions shape a country's future over four pillars | @makeypocket |
+| [PixArt AI](https://apps.apple.com/us/app/pixart-ai-ai-image-generator/id6749236127) | iOS app that turns text prompts into AI-generated artwork via Pollinations. | @PixArtStudio |
+| [Polly IDE](none) | IDE to generate Angular and React sites using Pollinations AI models | @nulls-brawl-site |
+| [SteamKit](https://steamkit.dev/) | AI toolkit for Steam developers to generate marketing and store page assets. | @zouspants123321 |
+| [CHATTY AI](https://ai.studio/apps/drive/1LrJOAZdc-qwB__D736EjWboWs4PPrjYK) | Enhance and update CHATTY AI web app to work seamlessly on Free Tier. | @tefa2007h-dev |
+| [Presintation web site](https://astro-prezintatsiya.vercel.app/) | AI-powered web app that creates professional presentations in seconds. | @cyberuz001 |
+| [Resonance](https://resonanceai.netlify.app) | Mobile-first image generator with many styles and features (Z Image Turbo, Flux) | @Bakhshi7889 |
+| [slywia](https://slywia.tea.com) | 中文 AI 聊天助手，提供自然对话、问答与信息检索 | @bombom0704 |
+| [Ai chatbot](https://t.me/vriskas_channel) | Chat with a powerful AI neural-network chatbot for free on Telegram. | @VriskasYT |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

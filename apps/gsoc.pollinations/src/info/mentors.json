@@ -11,7 +11,8 @@
     "imageUrl": "/MENTORS/thom_pfp.jpg",
     "linkedin": "https://www.linkedin.com/in/thomashaferlach/",
     "github": "https://github.com/voodoohop",
-    "email": "thomas@myceli.ai"
+    "email": "thomas@myceli.ai",
+    "id" : "0xmnt01"
   },
   {
     "name": "Ayushman Bhattacharya",
@@ -25,6 +26,7 @@
     "imageUrl": "/MENTORS/ayushman_pfp.jpg",
     "linkedin": "https://linkedin.com/in/elixpo",
     "github": "https://github.com/Circuit-Overtime",
-    "email": "ayushman@myceli.ai"
+    "email": "ayushman@myceli.ai",
+    "id" : "0xmnt02"
   }
 ]

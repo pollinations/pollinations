@@ -1,28 +1,6 @@
 import React, { useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Grid,
-  Card,
-  CardContent,
-  Chip,
-  Stack,
-  Button,
-  Avatar,
-  Divider
-} from '@mui/material';
-import { 
-  Code, 
-  Psychology, 
-  Groups, 
-  School,
-  Rocket,
-  GitHub,
-  Language,
-  EmojiEvents,
-  Timeline as TimelineIcon
-} from '@mui/icons-material';
-import { motion } from 'framer-motion';
+import { Box, Typography, Grid, Card, CardContent, Chip, Stack, Button, Avatar, Divider } from '@mui/material'; 
+import { Code, Psychology, Groups, School, Rocket, GitHub, Language, EmojiEvents, Timeline as TimelineIcon } from '@mui/icons-material'; import { motion } from 'framer-motion';
 
 // Animation variants
 const cardVariants = {

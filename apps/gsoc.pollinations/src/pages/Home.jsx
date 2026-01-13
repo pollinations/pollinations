@@ -1,37 +1,14 @@
 import React, { useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Button, 
-  Grid, 
-  Card,
-  CardContent,
-  Stack,
-  Chip,
-  Divider,
-  Avatar,
-  Tooltip,
-  IconButton
+import {
+  Box, Typography, Button, Grid, Card, CardContent, Stack, Chip, Divider, Avatar, Tooltip, IconButton
 } from '@mui/material';
 import { Link } from 'react-router-dom';
-import { 
-  ArrowForward, 
-  Code, 
-  School, 
-  Group, 
-  Timeline as TimelineIcon,
-  EmojiEvents,
-  Rocket,
-  GitHub,
-  VerifiedUser,
-  MenuBook,
-  Gavel,
-  Info,
-  Star
+import {
+  ArrowForward, Code, School, Group, Timeline as TimelineIcon, EmojiEvents, Rocket, GitHub,
+  VerifiedUser, MenuBook, Gavel, Info, Star
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
-// Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
   visible: (i = 0) => ({
@@ -69,8 +46,8 @@ const HomePage = () => {
   ];
 
   const stats = [
-    { number: "2K+", label: "GitHub Stars", icon: <Star /> },
-    { number: "150+", label: "Contributors", icon: <Group /> },
+    { number: "3.7K", label: "GitHub Stars", icon: <Star /> },
+    { number: "250+", label: "Contributors", icon: <Group /> },
     { number: "1st", label: "Year in GSOC", icon: <EmojiEvents /> },
     { number: "12", label: "Week Program", icon: <TimelineIcon /> }
   ];
@@ -99,7 +76,6 @@ const HomePage = () => {
         }
       }}
     >
-      {/* Background Effects */}
       <Box 
         sx={{
           position: 'absolute',
@@ -128,7 +104,6 @@ const HomePage = () => {
       />
 
       <Box sx={{ position: 'relative', zIndex: 1 }}>
-        {/* Hero Section */}
         <Box sx={{ 
           minHeight: '100vh', 
           display: 'flex', 
@@ -137,9 +112,7 @@ const HomePage = () => {
           py: 4
         }}>
           <Box sx={{ maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-            {/* Main Content - Centered */}
             <Grid container spacing={6} alignItems="center" justifyContent="center">
-              {/* Left Side - Content */}
               <Grid item xs={12} lg={7}>
                 <motion.div
                   variants={fadeInUp}
@@ -147,7 +120,6 @@ const HomePage = () => {
                   animate="visible"
                   custom={0}
                 >
-                  {/* Logo Partnership */}
                   <Box sx={{ 
                     display: 'flex', 
                     alignItems: 'center', 
@@ -156,7 +128,6 @@ const HomePage = () => {
                     flexWrap: 'wrap',
                     justifyContent: 'center'
                   }}>
-                    {/* GSOC Logo */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                       <img 
                         src="/gsoc_logo.webp" 
@@ -168,7 +139,6 @@ const HomePage = () => {
                       />
                     </Box>
                     
-                    {/* Partnership Indicator */}
                     <Typography 
                       variant="h4" 
                       sx={{ 
@@ -191,9 +161,7 @@ const HomePage = () => {
                     </Box>
                   </Box>
 
-                  {/* Main Heading with Decorative Elements */}
                   <Box sx={{ position: 'relative', mb: 4, textAlign: 'center' }}>
-                    {/* Decorative Element - Left */}
                     <Box
                       sx={{
                         position: 'absolute',
@@ -207,7 +175,6 @@ const HomePage = () => {
                       }}
                     />
                     
-                    {/* Main Title */}
                     <Typography 
                       variant='h1' 
                       sx={{ 
@@ -251,7 +218,6 @@ const HomePage = () => {
                       with Open Source
                     </Typography>
 
-                    {/* Decorative Accent */}
                     <Box
                       sx={{
                         position: 'absolute',
@@ -267,7 +233,6 @@ const HomePage = () => {
                     />
                   </Box>
 
-                  {/* Enhanced Subtitle */}
                   <Box sx={{ position: 'relative', mb: 4, textAlign: 'center' }}>
                     <Typography 
                       variant='h5' 
@@ -303,7 +268,6 @@ const HomePage = () => {
                       and contribute to cutting-edge AI projects that democratize artificial intelligence for everyone.
                     </Typography>
 
-                    {/* Floating dots decoration */}
                     <Box
                       sx={{
                         position: 'absolute',
@@ -330,7 +294,6 @@ const HomePage = () => {
                     </Box>
                   </Box>
 
-                  {/* CTA Buttons */}
                   <Box sx={{ display: 'flex', justifyContent: 'center', mb: 6 }}>
                     <Stack 
                       direction={{ xs: 'column', sm: 'row' }} 
@@ -387,7 +350,6 @@ const HomePage = () => {
                     </Stack>
                   </Box>
 
-                  {/* Stats Section */}
                   <Box 
                     sx={{ 
                       display: 'flex', 
@@ -514,7 +476,6 @@ const HomePage = () => {
               </Grid>
             </Grid>
 
-            {/* About GSOC Card - Centered with Side Decorations */}
             <Box sx={{ 
               display: 'flex', 
               justifyContent: 'center', 
@@ -523,7 +484,6 @@ const HomePage = () => {
               mt: 8,
               px: { xs: 2, md: 4 }
             }}>
-              {/* Left Decorative Elements */}
               <Box sx={{ 
                 position: 'absolute',
                 left: { xs: 10, md: 50, lg: 150 },
@@ -531,7 +491,6 @@ const HomePage = () => {
                 display: { xs: 'none', md: 'block' },
                 zIndex: 0
               }}>
-                {/* Geometric shapes */}
                 <Box sx={{
                   position: 'relative',
                   width: '80px',
@@ -568,7 +527,6 @@ const HomePage = () => {
                   }} />
                 </Box>
                 
-                {/* Code-like lines */}
                 <Box sx={{ mt: 4, opacity: 0.3 }}>
                   {[60, 40, 35, 50].map((width, index) => (
                     <Box
@@ -586,7 +544,6 @@ const HomePage = () => {
                 </Box>
               </Box>
 
-              {/* Right Decorative Elements */}
               <Box sx={{ 
                 position: 'absolute',
                 right: { xs: 10, md: 50, lg: 150 },
@@ -594,7 +551,6 @@ const HomePage = () => {
                 display: { xs: 'none', md: 'block' },
                 zIndex: 0
               }}>
-                {/* Circuit-like pattern */}
                 <Box sx={{ position: 'relative', width: '70px', height: '70px' }}>
                   <Box sx={{
                     position: 'absolute',
@@ -635,7 +591,6 @@ const HomePage = () => {
                   }} />
                 </Box>
 
-                {/* Floating particles */}
                 <Box sx={{ mt: 3 }}>
                   {[1, 2, 3, 4, 5].map((particle) => (
                     <Box
@@ -655,7 +610,6 @@ const HomePage = () => {
                 </Box>
               </Box>
 
-              {/* Main Card */}
               <Box sx={{ maxWidth: '450px', width: '100%', position: 'relative', zIndex: 2 }}>
                 <motion.div
                   variants={fadeInUp}
@@ -676,7 +630,6 @@ const HomePage = () => {
                     }}
                   >
                     <CardContent sx={{ p: 4 }}>
-                      {/* Program Badge */}
                       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
                         <Chip
                           label="GSOC 2026"
@@ -690,7 +643,6 @@ const HomePage = () => {
                         />
                       </Box>
 
-                      {/* About GSOC */}
                       <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, color: '#fff', textAlign: 'center' }}>
                         About Google Summer of Code
                       </Typography>
@@ -708,7 +660,6 @@ const HomePage = () => {
                         providing mentorship and stipends to contribute to innovative AI solutions.
                       </Typography>
 
-                      {/* Key Highlight */}
                       <Box sx={{ 
                         p: 3, 
                         borderRadius: '16px', 
@@ -724,7 +675,6 @@ const HomePage = () => {
 
                       <Divider sx={{ mb: 4, borderColor: 'rgba(255,255,255,0.1)' }} />
 
-                      {/* Navigation Icons with Tooltips - 2x2 Grid */}
                       <Grid container spacing={2} justifyContent="center">
                         {navigationItems.map((item, index) => (
                           <Grid item xs={6} key={index} sx={{ display: 'flex', justifyContent: 'center' }}>
@@ -770,7 +720,6 @@ const HomePage = () => {
           </Box>
         </Box>
 
-        {/* Quick Navigation Section */}
         <Box sx={{ 
           py: 6, 
           px: { xs: 2, md: 4 },

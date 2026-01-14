@@ -4,6 +4,10 @@ import io
 import base64
 import logging
 import asyncio
+from huggingface_hub import login 
+from dotenv import load_dotenv
+load_dotenv()
+login (token = os.getenv("HF_TOKEN"))
 
 # Disable Flash Attention to avoid ABI mismatch errors
 os.environ['FLASH_ATTENTION_SKIP_CUDA_BUILD'] = '1'

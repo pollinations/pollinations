@@ -13,7 +13,6 @@ import {
     PackProductSlug,
     packProductSlugs,
 } from "@/utils/polar.ts";
-import { getPendingSpend } from "@/events.ts";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 
 const productParamSchema = z.enum(packProductSlugs.map(productSlugToUrlParam));
@@ -70,23 +69,6 @@ export const polarRoutes = new Hono<Env>()
         },
     )
     .get(
-        "/customer/pending-spend",
-        describeRoute({
-            tags: ["Auth"],
-            description:
-                "Get pending spend from recent events not yet processed by Polar.",
-            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
-        }),
-        async (c) => {
-            const user = c.var.auth.requireUser();
-            const pendingSpend = await getPendingSpend(
-                drizzle(c.env.DB),
-                user.id,
-            );
-            return c.json({ pendingSpend });
-        },
-    )
-    .get(
         "/customer/d1-balance",
         describeRoute({
             tags: ["Auth"],
@@ -97,7 +79,9 @@ export const polarRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             // Use getBalance which includes lazy init from Polar if not set
-            const { tierBalance, packBalance } = await c.var.polar.getBalance(user.id);
+            const { tierBalance, packBalance } = await c.var.polar.getBalance(
+                user.id,
+            );
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({ lastTierGrant: userTable.lastTierGrant })
@@ -105,7 +89,7 @@ export const polarRoutes = new Hono<Env>()
                 .where(eq(userTable.id, user.id))
                 .limit(1);
             const lastTierGrant = users[0]?.lastTierGrant ?? null;
-            
+
             return c.json({
                 tierBalance,
                 packBalance,

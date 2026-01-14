@@ -7,7 +7,8 @@
     "mentorID": "0xmnt01",
     "category": "Blockchain",
     "difficulty": "Advanced",
-    "duration": "350 hours"
+    "duration": "350 hours",
+    "id" : "0xprj01"
   },
   {
     "title": "AI-Powered Code Review Assistant",
@@ -17,16 +18,18 @@
     "mentorID": "0xmnt02",
     "category": "AI/ML",
     "difficulty": "Advanced",
-    "duration": "350 hours"
+    "duration": "350 hours",
+    "id" : "0xprj02"
   },
   {
     "title": "Real-time Collaborative Whiteboard",
     "description": "A web-based whiteboard that allows multiple users to collaborate in real-time.",
     "technologies": ["React", "WebSockets", "Canvas API"],
     "longDescription": "The Real-time Collaborative Whiteboard is a tool that enables remote teams to collaborate visually. It provides a shared canvas where users can draw, write, and share ideas in real-time. The application is built using modern web technologies and provides a seamless and intuitive user experience.",
-    "mentorID": "0xmnt02",
+    "mentorID": "0xmnt01",
     "category": "Web Development",
     "difficulty": "Intermediate",
-    "duration": "350 hours"
+    "duration": "350 hours",
+    "id" : "0xprj03"
   }
 ]

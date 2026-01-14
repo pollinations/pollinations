@@ -11,7 +11,7 @@ const cardVariants = {
     opacity: 1,
     y: 0,
     transition: {
-      delay: i * 0.1, // Stagger effect
+      delay: i * 0.1,
       duration: 0.5,
       ease: "easeOut"
     }
@@ -27,8 +27,8 @@ const ProjectsPage = () => {
     document.title = "Project Ideas - GSOC 2026 | pollinations.ai";
   }, []);
 
-  const handleExpandClick = (index) => {
-    setExpanded(expanded === index ? null : index);
+  const handleExpandClick = (projectId) => {
+    setExpanded(expanded === projectId ? null : projectId);
   };
     
 
@@ -176,7 +176,7 @@ const ProjectsPage = () => {
                           </Box>
 
                           <IconButton 
-                            onClick={() => handleExpandClick(index)} 
+                            onClick={() => handleExpandClick(project.id)} 
                             sx={{ 
                               position: 'absolute', 
                               bottom: '20px', 
@@ -196,12 +196,12 @@ const ProjectsPage = () => {
                               } 
                             }}
                           >
-                            <ExpandMoreIcon sx={{ transform: expanded === index ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} />
+                            <ExpandMoreIcon sx={{ transform: expanded === project.id ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} />
                           </IconButton>
                         </div>
                       </div>
-                      <Collapse in={expanded === index} timeout={600} sx={{ '& .MuiCollapse-wrapper': { transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important' } }}>
-                        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: expanded === index ? 1 : 0, y: expanded === index ? 0 : -20 }} transition={{ duration: 0.4, delay: 0.1 }}>
+                      <Collapse in={expanded === project.id} timeout={600} sx={{ '& .MuiCollapse-wrapper': { transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important' } }}>
+                        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: expanded === project.id ? 1 : 0, y: expanded === project.id ? 0 : -20 }} transition={{ duration: 0.4, delay: 0.1 }}>
                           <Divider sx={{ my: 4, borderColor: 'rgba(255,255,255,0.1)' }} />
                           
                           <div className="flex flex-col lg:flex-row gap-8">

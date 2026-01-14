@@ -31,8 +31,11 @@ import {
     usageToEventParams,
 } from "@/db/schema/event.ts";
 import { drizzle } from "drizzle-orm/d1";
-import { eq, sql } from "drizzle-orm";
-import { user as userTable } from "@/db/schema/better-auth.ts";
+import { and, eq, sql } from "drizzle-orm";
+import {
+    user as userTable,
+    apikey as apikeyTable,
+} from "@/db/schema/better-auth.ts";
 import { HonoRequest } from "hono";
 import type {
     ApiKeyType,
@@ -245,6 +248,41 @@ export const track = (eventType: EventType) =>
                             userId: userTracking.userId,
                             fromTier,
                             fromPack,
+                        },
+                    );
+                }
+
+                // Decrement per-key pollen budget after billable requests
+                // Only deduct if key has a budget set (pollenBalance is not null)
+                const apiKeyId = c.var.auth?.apiKey?.id;
+                const apiKeyPollenBalance = c.var.auth?.apiKey?.pollenBalance;
+                if (
+                    responseTracking.isBilledUsage &&
+                    responseTracking.price?.totalPrice &&
+                    apiKeyId &&
+                    apiKeyPollenBalance !== null &&
+                    apiKeyPollenBalance !== undefined
+                ) {
+                    const priceToDeduct = responseTracking.price.totalPrice;
+
+                    // Use D1 column for atomic decrement
+                    await db
+                        .update(apikeyTable)
+                        .set({
+                            pollenBalance: sql`${apikeyTable.pollenBalance} - ${priceToDeduct}`,
+                        })
+                        .where(
+                            and(
+                                eq(apikeyTable.id, apiKeyId),
+                                sql`${apikeyTable.pollenBalance} IS NOT NULL`,
+                            ),
+                        );
+
+                    log.debug(
+                        "Decremented {price} pollen from API key {keyId} budget",
+                        {
+                            price: priceToDeduct,
+                            keyId: apiKeyId,
                         },
                     );
                 }

@@ -16,7 +16,8 @@ import { describeRoute } from "hono-openapi";
 const UpdateApiKeySchema = z.object({
     // null = unrestricted (all models), [] or [...models] = restricted
     allowedModels: z.array(z.string()).nullable().optional(),
-    // Future: add more fields like name, description, enabled as needed
+    // null = unlimited, number = pollen budget cap
+    pollenBudget: z.number().nullable().optional(),
 });
 
 /**
@@ -42,7 +43,7 @@ export const apiKeysRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const authClient = c.var.auth.client;
             const { id } = c.req.param();
-            const { allowedModels } = c.req.valid("json");
+            const { allowedModels, pollenBudget } = c.req.valid("json");
 
             // Verify ownership before updating
             const db = drizzle(c.env.DB, { schema });
@@ -67,8 +68,7 @@ export const apiKeysRoutes = new Hono<Env>()
                       ? { models: allowedModels }
                       : undefined;
 
-            // Use better-auth's server API to update permissions
-            // userId is required for server-side calls to bypass auth checks
+            // Update permissions via better-auth's server API
             const updatedKey = await authClient.api.updateApiKey({
                 body: {
                     keyId: id,
@@ -77,10 +77,27 @@ export const apiKeysRoutes = new Hono<Env>()
                 },
             });
 
+            // Update pollenBalance directly in D1 if provided
+            // null = remove budget (unlimited), number = set budget
+            if (pollenBudget !== undefined) {
+                await db
+                    .update(schema.apikey)
+                    .set({
+                        pollenBalance: pollenBudget,
+                    })
+                    .where(eq(schema.apikey.id, id));
+            }
+
+            // Fetch updated key to return current pollenBalance
+            const finalKey = await db.query.apikey.findFirst({
+                where: eq(schema.apikey.id, id),
+            });
+
             return c.json({
                 id: updatedKey.id,
                 name: updatedKey.name,
                 permissions: updatedKey.permissions,
+                pollenBalance: finalKey?.pollenBalance ?? null,
             });
         },
     );

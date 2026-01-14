@@ -19,6 +19,8 @@ export type AuthVariables = {
         requireUser: () => User;
         /** Throws 403 if the API key doesn't have access to the resolved model from c.var.model. */
         requireModelAccess: () => void;
+        /** Throws 402 if the API key has a budget set and remaining <= 0. */
+        requireKeyBudget: () => void;
     };
 };
 
@@ -178,6 +180,32 @@ export const auth = (options: AuthOptions) =>
             }
         };
 
+        const requireKeyBudget = (): void => {
+            // No API key (session auth) = no budget check
+            if (!apiKey) return;
+
+            // Get pollenBalance from D1 column
+            const pollenBalance = apiKey.pollenBalance;
+
+            // No budget set = unlimited
+            if (pollenBalance === null || pollenBalance === undefined) return;
+
+            // Budget exhausted
+            if (pollenBalance <= 0) {
+                log.debug(
+                    "API key budget exhausted: {keyId} pollenBalance={pollenBalance}",
+                    {
+                        keyId: apiKey.id,
+                        pollenBalance,
+                    },
+                );
+                throw new HTTPException(402, {
+                    message:
+                        "API key budget exhausted. Please top up or create a new key.",
+                });
+            }
+        };
+
         c.set("auth", {
             client,
             user,
@@ -186,6 +214,7 @@ export const auth = (options: AuthOptions) =>
             requireAuthorization,
             requireUser,
             requireModelAccess,
+            requireKeyBudget,
         });
 
         await next();

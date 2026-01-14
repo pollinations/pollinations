@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { auth } from "@/middleware/auth.ts";
 import { polar } from "@/middleware/polar.ts";
-// TODO: Add audio-specific tracking (track middleware requires model resolution)
-// import { track } from "@/middleware/track.ts";
+import { track } from "@/middleware/track.ts";
+import { resolveModel } from "@/middleware/model.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { describeRoute } from "hono-openapi";
 import { validator } from "@/middleware/validator.ts";
@@ -168,7 +168,8 @@ export const audioRoutes = new Hono<Env>()
             },
         }),
         validator("json", CreateSpeechRequestSchema),
-        // TODO: Add audio-specific tracking middleware (track() requires model resolution)
+        resolveModel("generate.audio"),
+        track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("tts");
             await c.var.auth.requireAuthorization();

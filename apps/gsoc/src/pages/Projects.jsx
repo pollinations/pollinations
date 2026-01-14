@@ -124,35 +124,44 @@ const ProjectsPage = () => {
                               <Avatar src={mentor?.imageUrl} sx={{ width: 48, height: 48, border: '2px solid rgba(255,255,255,0.2)' }}>
                                 {mentor?.name?.split(' ').map(n => n[0]).join('') || 'M'}
                               </Avatar>
-                              <Box sx={{ flex: 1 }}>
-                                <Typography variant="h6" onClick={() => location.replace("/mentors")} sx={{ color: '#fff', fontWeight: 600, textDecoration: 'underline', userSelect: 'none', cursor: 'pointer'}}>
+                              <Box sx={{ display: 'flex', marginBottom: 2, flexDirection: 'row' }}>
+                                <Typography variant="h6" onClick={() => location.replace("/mentors")} sx={{ color: '#fff', display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'center', alignItems: 'center', fontWeight: 600, textDecoration: 'underline', userSelect: 'none', cursor: 'pointer'}}>
                                   {mentor?.name || 'TBA'}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+
+                                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
                                   {mentor?.email && (
-                                <Button 
-                                  variant="outlined" 
-                                  size="small"
-                                  startIcon={<Email sx={{ fontSize: '14px !important' }} />}
-                                  href={`mailto:${mentor.email}`}
-                                  sx={{ 
-                                    textTransform: 'none',
-                                    borderColor: 'rgba(255,255,255,0.2)',
-                                    color: 'rgba(255,255,255,0.8)',
-                                    px: 1.5,
-                                    py: 0.5,
-                                    mt : 0.5,
-                                    fontSize: '0.65rem',
-                                    borderRadius: '20px',
-                                    '&:hover': { 
-                                      borderColor: 'rgba(255,255,255,0.4)',
-                                      backgroundColor: 'rgba(255,255,255,0.05)'
-                                    }
-                                  }}
-                                >
-                                  {mentor?.email}
-                                </Button>
-                              )}
+                                    <IconButton
+                                      component="p"
+                                      onClick={async () => {
+                                        await navigator.clipboard.writeText(mentor.email);
+                                        setOpenToast(true);
+                                        }}
+                                        size="small"
+                                        sx={{
+                                        color: 'rgba(255,255,255,0.7)',
+                                        display: 'flex',
+                                        width: 'fit-content',
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        gap: 0.5,
+                                        mt: 0.5,
+                                        fontSize: '0.875rem',
+                                        px: '15px',
+                                        justifyContent: 'center',
+                                        border: '1px solid rgba(255,255,255,0.15)',
+                                        borderRadius: '25px',
+                                        '&:hover': {
+                                          color: '#e9d5ff',
+                                          backgroundColor: 'rgba(168, 85, 247, 0.15)'
+                                        }
+                                        }}
+                                      >
+                                        <Email sx={{ fontSize: '19px' }} /> {mentor?.email}
+                                    </IconButton>
+                                  )}
+                                </Typography>
+
+
                                 </Typography>
                               </Box>
                             </Box>

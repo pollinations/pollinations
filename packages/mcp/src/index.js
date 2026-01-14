@@ -25,7 +25,7 @@ const SERVER_INSTRUCTIONS = `# Pollinations MCP Server v2.0
 
 ## Authentication
 Set your API key first using the setApiKey tool:
-- **Publishable keys (pk_)**: Client-safe, rate-limited (1 pollen/hour per IP+key)
+- **Publishable keys (pk_)**: Client-safe, rate-limited (1 pollen per IP per hour)
 - **Secret keys (sk_)**: Server-side only, no rate limits, can spend Pollen
 
 Get your API key at: https://enter.pollinations.ai

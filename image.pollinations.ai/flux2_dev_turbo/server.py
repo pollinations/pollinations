@@ -4,7 +4,7 @@ import io
 import base64
 import logging
 import asyncio
-from huggingface_hub import login, snapshot_download
+from huggingface_hub import login, snapshot_download, hf_hub_download
 from dotenv import load_dotenv
 load_dotenv()
 login(token=os.getenv("HF_TOKEN"))
@@ -85,9 +85,13 @@ async def periodic_heartbeat():
 
 
 MODEL_ID = "fal/FLUX.2-dev-Turbo"
+MODEL_FILENAME = "flux.2-turbo-lora.safetensors"
 SANA_MODEL_ID = "Efficient-Large-Model/Sana_1600M_1024px_diffusers"
 MODEL_CACHE = "model_cache"
 UPSCALE_FACTOR = 2
+
+# Custom sigmas for FLUX.2-Turbo
+TURBO_SIGMAS = [1.0, 0.6509, 0.4374, 0.2932, 0.1893, 0.1108, 0.0495, 0.00031]
 
 MAX_GEN_RESOLUTION = 768
 MAX_FINAL_PIXELS = 2_359_296
@@ -165,12 +169,28 @@ async def lifespan(app: FastAPI):
     load_model_time = time.time()
     try:
         logger.info(f"Loading FLUX model: {MODEL_ID}")
+        
+        # Download the raw LoRA file
+        logger.info(f"Downloading {MODEL_FILENAME} from {MODEL_ID}")
+        model_file = hf_hub_download(
+            repo_id=MODEL_ID,
+            filename=MODEL_FILENAME,
+            cache_dir=MODEL_CACHE,
+            repo_type="model"
+        )
+        logger.info(f"Model file downloaded to: {model_file}")
+        
+        # Load FLUX pipeline with custom sigmas
         pipe = FluxPipeline.from_pretrained(
             MODEL_ID,
             torch_dtype=torch.bfloat16,
             cache_dir=MODEL_CACHE,
-        ).to("cuda")
-        logger.info("FLUX model loaded successfully")
+        )
+        
+        # Set custom sigmas for turbo
+        pipe.scheduler.sigmas = torch.tensor(TURBO_SIGMAS)
+        pipe = pipe.to("cuda")
+        logger.info("FLUX model loaded successfully with custom turbo sigmas")
         
         logger.info(f"Downloading SANA upscaler: {SANA_MODEL_ID}")
         sana_path = snapshot_download(

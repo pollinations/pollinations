@@ -108,8 +108,8 @@ const ProjectsPage = () => {
                     
                     
                     <CardContent sx={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                      <div className="flex flex-row lg:flex-row gap-8">
-                        <div className="w-1/2">
+                      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 3 }}>
+                        <Box sx={{ flex: 1 }}>
                           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
                             <Chip label={project.category} size="medium" icon={<Lightbulb sx={{ fontSize: '18px !important' }} />} sx={{ bgcolor: project.category === 'AI/ML' ? 'rgba(245, 158, 11, 0.1)' : project.category === 'Blockchain' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: project.category === 'AI/ML' ? '#fbbf24' : project.category === 'Blockchain' ? '#60a5fa' : '#34d399', border: `1px solid ${project.category === 'AI/ML' ? 'rgba(245, 158, 11, 0.3)' : project.category === 'Blockchain' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`, fontWeight: 600, fontSize: '0.875rem', height: '32px' }} />
                             <Chip label={project.difficulty} size="medium" sx={{ bgcolor: project.difficulty === 'Beginner' ? 'rgba(34, 197, 94, 0.1)' : project.difficulty === 'Intermediate' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: project.difficulty === 'Beginner' ? '#4ade80' : project.difficulty === 'Intermediate' ? '#fbbf24' : '#f87171', border: `1px solid ${project.difficulty === 'Beginner' ? 'rgba(34, 197, 94, 0.3)' : project.difficulty === 'Intermediate' ? 'rgba(251, 191, 36, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`, fontWeight: 600, fontSize: '0.875rem', height: '32px' }} />
@@ -131,58 +131,71 @@ const ProjectsPage = () => {
                               ))}
                             </Stack>
                           </Box>
-                        </div>
-                         <div className="w-1/2 flex flex-col justify-between">
-                          <Box>
-                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, mb: 2, display: 'block' }}>
-                              Project Mentor
-                            </Typography>
-                            
-                            <Box sx={{ display: 'flex', alignItems: 'center',  gap: 2, mb: 2 }}>
-                              <Avatar src={mentor?.imageUrl} sx={{ width: 65, height: 65, border: '2px solid rgba(255,255,255,0.2)' }}>
-                                {mentor?.name?.split(' ').map(n => n[0]).join('') || 'M'}
-                              </Avatar>
-                              <Box sx={{ display: 'flex', marginBottom: 2, flexDirection: 'column' }}>
-                                <Typography variant="h6" onClick={() => location.replace("/mentors")} sx={{ color: '#fff', display: 'flex', mt: 2, flexDirection: 'column', gap: 0.5, justifyContent: 'center', alignItems: 'center', fontWeight: 600, textDecoration: 'underline', userSelect: 'none', cursor: 'pointer'}}>
-                                  {mentor?.name || 'TBA'}
-                                </Typography>
-                                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                                  {mentor?.email && (
-                                    <IconButton
-                                      component="p"
-                                      onClick={async () => {
-                                        await navigator.clipboard.writeText(mentor.email);
-                                        copyEmailAddress(true);
-                                        }}
-                                        size="small"
-                                        sx={{
-                                        color: 'rgba(255,255,255,0.7)',
-                                        display: 'flex',
-                                        width: 'fit-content',
-                                        flexDirection: 'row',
-                                        alignItems: 'center',
-                                        gap: 0.5,
-                                        mt: 0.5,
-                                        fontSize: '0.875rem',
-                                        px: '15px',
-                                        justifyContent: 'center',
-                                        border: '1px solid rgba(255,255,255,0.15)',
-                                        borderRadius: '25px',
-                                        '&:hover': {
-                                          color: '#e9d5ff',
-                                          backgroundColor: 'rgba(168, 85, 247, 0.15)'
-                                        }
-                                        }}
-                                      >
-                                        <Email sx={{ fontSize: '19px' }} /> {mentor?.email}
-                                    </IconButton>
-                                  )}
-                                </Typography>
-                              </Box>
+                        </Box>
+
+                        <Box sx={{ display: { xs: 'none', lg: 'block' }, position: 'relative', width: '1px' }}>
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              left: '50%',
+                              top: 0,
+                              bottom: 0,
+                              width: '2px',
+                              background: 'linear-gradient(90deg,  rgba(96, 165, 250, 0.1) 50%, rgba(96, 165, 250, 0.5) 0%,rgba(96, 165, 250, 0) 100%)',
+                              transform: 'translateX(-50%)',
+                            }}
+                          />
+                        </Box>
+                         
+                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, mb: 2, display: 'block' }}>
+                            Project Mentor
+                          </Typography>
+                          
+                          <Box sx={{ display: 'flex', flexDirection: { xs: 'row', lg: 'column' }, alignItems: { xs: 'center', lg: 'flex-start' }, gap: 2, mb: 2 }}>
+                            <Avatar src={mentor?.imageUrl} sx={{ width: { xs: 65, lg: 80 }, height: { xs: 65, lg: 80 }, border: '2px solid rgba(255,255,255,0.2)', flexShrink: 0 }}>
+                              {mentor?.name?.split(' ').map(n => n[0]).join('') || 'M'}
+                            </Avatar>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                              <Typography variant="h6" onClick={() => location.replace("/mentors")} sx={{ color: '#fff', fontWeight: 600, textDecoration: 'underline', userSelect: 'none', cursor: 'pointer', fontSize: { xs: '0.9rem', lg: '1.1rem' } }}>
+                                {mentor?.name || 'TBA'}
+                              </Typography>
+                               <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                                {mentor?.email && (
+                                  <IconButton
+                                    component="p"
+                                    onClick={async () => {
+                                      await navigator.clipboard.writeText(mentor.email);
+                                      copyEmailAddress(true);
+                                      }}
+                                    size="small"
+                                    sx={{
+                                    color: 'rgba(255,255,255,0.7)',
+                                    display: 'flex',
+                                    width: 'fit-content',
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    gap: 0.5,
+                                    fontSize: '0.75rem',
+                                    px: '12px',
+                                    py: '6px',
+                                    justifyContent: 'flex-start',
+                                    border: '1px solid rgba(255,255,255,0.15)',
+                                    borderRadius: '25px',
+                                    '&:hover': {
+                                      color: '#e9d5ff',
+                                      backgroundColor: 'rgba(168, 85, 247, 0.15)'
+                                    }
+                                    }}
+                                  >
+                                    <Email sx={{ fontSize: '16px' }} /> {mentor?.email}
+                                </IconButton>
+                              )}
+                              </Typography>
                             </Box>
                           </Box>
-                        </div>
-                      </div>
+                        </Box>
+                      </Box>
                       <Collapse in={expanded === project.id} timeout={600} sx={{ '& .MuiCollapse-wrapper': { transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important' } }}>
                         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: expanded === project.id ? 1 : 0, y: expanded === project.id ? 0 : -20 }} transition={{ duration: 0.4, delay: 0.1 }}>
                           <Divider sx={{ my: 4, borderColor: 'rgba(255,255,255,0.1)' }} />

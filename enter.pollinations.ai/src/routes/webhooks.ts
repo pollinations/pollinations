@@ -42,18 +42,40 @@ async function sendPolarEventToTinybird(
         return;
     }
 
-    // Extract fields from payload
+    // Extract fields from payload for analytics indexing
+    // Note: data_id is intentionally generic - it represents the primary entity ID
+    // (subscription_id, order_id, benefit_grant_id, etc.) depending on event_type.
+    // For detailed queries, use JSONExtract on the payload column.
     const p = payload as {
         type?: string;
-        data?: { customer?: { externalId?: string } };
+        data?: {
+            id?: string;
+            customer?: { id?: string; externalId?: string };
+            customerId?: string;
+            productId?: string;
+            product?: { id?: string };
+            subscription?: { id?: string; productId?: string };
+            order?: { id?: string; productId?: string };
+        };
     };
-    const userId = p?.data?.customer?.externalId ?? "";
     const eventType = p?.type ?? "";
+    const userId = p?.data?.customer?.externalId ?? "";
+    const customerId = p?.data?.customer?.id ?? p?.data?.customerId ?? "";
+    const productId =
+        p?.data?.productId ??
+        p?.data?.product?.id ??
+        p?.data?.subscription?.productId ??
+        p?.data?.order?.productId ??
+        "";
+    const dataId = p?.data?.id ?? "";
 
     // Build event with extracted fields + full payload (timestamp uses DEFAULT now() in schema)
     const event = {
         event_type: eventType,
         user_id: userId,
+        customer_id: customerId,
+        product_id: productId,
+        data_id: dataId,
         payload: JSON.stringify(payload),
     };
 

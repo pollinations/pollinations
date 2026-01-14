@@ -1,5 +1,4 @@
-import { processEvents, storeEvents, updateEvent } from "@/events.ts";
-import { getModelStats, getEstimatedPrice } from "@/utils/model-stats.ts";
+import { sendToTinybird } from "@/events.ts";
 import {
     getActivePriceDefinition,
     calculateCost,
@@ -37,7 +36,6 @@ import { user as userTable } from "@/db/schema/better-auth.ts";
 import { HonoRequest } from "hono";
 import type {
     ApiKeyType,
-    EstimateGenerationEvent,
     EventType,
     GenerationEventContentFilterParams,
     InsertGenerationEvent,
@@ -136,42 +134,6 @@ export const track = (eventType: EventType) =>
             },
         });
 
-        let estimateEventId: string | undefined = generateRandomId();
-
-        if (userTracking.userId) {
-            try {
-                const modelStats = await getModelStats(c.env.KV, log);
-                const estimatedPrice = getEstimatedPrice(
-                    modelStats,
-                    requestTracking.resolvedModelRequested,
-                );
-
-                const estimateEvent = createEstimateEvent({
-                    id: estimateEventId,
-                    requestId: c.get("requestId"),
-                    requestPath: `${routePath(c)}`,
-                    startTime,
-                    environment: c.env.ENVIRONMENT,
-                    eventType,
-                    userTracking,
-                    requestTracking,
-                    estimatedPrice,
-                });
-
-                await storeEvents(db, log, [estimateEvent]);
-                log.debug(
-                    "Inserted estimate event: {estimateEventId} with estimatedPrice={estimatedPrice}",
-                    { estimateEventId, estimatedPrice },
-                );
-            } catch (error) {
-                log.error("Failed to insert estimate event: {error}", {
-                    error,
-                });
-                // Insertion failed, reset estimate event
-                estimateEventId = undefined;
-            }
-        }
-
         await next();
 
         const endTime = new Date();
@@ -205,7 +167,7 @@ export const track = (eventType: EventType) =>
                 } satisfies BalanceData;
 
                 const finalEvent = createTrackingEvent({
-                    id: estimateEventId || generateRandomId(),
+                    id: generateRandomId(),
                     requestId: c.get("requestId"),
                     requestPath: `${routePath(c)}`,
                     startTime,
@@ -232,17 +194,12 @@ export const track = (eventType: EventType) =>
                     { event: finalEvent },
                 );
 
-                if (estimateEventId) {
-                    // Update the estimate event with all final data
-                    await updateEvent(db, log, estimateEventId, finalEvent);
-                    log.debug(
-                        "Updated estimate event {eventId} with actual data",
-                        { eventId: estimateEventId },
-                    );
-                } else {
-                    // No pending event was inserted, store a new event
-                    await storeEvents(db, c.var.log, [finalEvent]);
-                }
+                await sendToTinybird(
+                    finalEvent,
+                    c.env.TINYBIRD_INGEST_URL,
+                    c.env.TINYBIRD_INGEST_TOKEN,
+                    log,
+                );
 
                 // Decrement local pollen balance after billable requests
                 // Strategy: decrement from tier_balance first, then pack_balance
@@ -297,25 +254,6 @@ export const track = (eventType: EventType) =>
                             fromPack,
                         },
                     );
-                }
-
-                // process events immediately in development/testing
-                if (
-                    ["test", "development", "local"].includes(c.env.ENVIRONMENT)
-                ) {
-                    log.trace(
-                        "Processing events immediately (ENVIRONMENT={environment})",
-                        { environment: c.env.ENVIRONMENT },
-                    );
-                    await processEvents(db, log.getChild("events"), {
-                        polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
-                        polarServer: c.env.POLAR_SERVER,
-                        tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
-                        tinybirdIngestToken: c.env.TINYBIRD_INGEST_TOKEN,
-                        minBatchSize: 0, // process all events immediately
-                        minRetryDelay: 0, // don't wait between retries
-                        maxRetryDelay: 0, // don't wait between retries
-                    });
                 }
             })(),
         );
@@ -474,52 +412,6 @@ type BalanceData = {
     balances: Record<string, number>;
 };
 
-type EstimateEventInput = {
-    id: string;
-    requestId: string;
-    requestPath: string;
-    startTime: Date;
-    environment: string;
-    eventType: EventType;
-    userTracking: UserData;
-    requestTracking: RequestTrackingData;
-    estimatedPrice: number;
-};
-
-function createEstimateEvent({
-    id,
-    requestId,
-    requestPath,
-    startTime,
-    environment,
-    eventType,
-    userTracking,
-    requestTracking,
-    estimatedPrice,
-}: EstimateEventInput): InsertGenerationEvent {
-    return {
-        id,
-        eventStatus: "estimate",
-        requestId,
-        requestPath,
-        startTime,
-        environment,
-        eventType,
-
-        ...userTracking,
-        ...requestTracking.referrerData,
-
-        modelRequested: requestTracking.modelRequested,
-        resolvedModelRequested: requestTracking.resolvedModelRequested,
-        modelProviderUsed: requestTracking.modelProvider,
-
-        isBilledUsage: false,
-        estimatedPrice,
-
-        ...priceToEventParams(requestTracking.modelPriceDefinition),
-    };
-}
-
 type TrackingEventInput = {
     id: string;
     requestId: string;
@@ -551,7 +443,6 @@ function createTrackingEvent({
 }: TrackingEventInput): InsertGenerationEvent {
     return {
         id,
-        eventStatus: "pending",
         requestId,
         requestPath,
         startTime,

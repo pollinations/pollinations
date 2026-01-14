@@ -250,41 +250,40 @@ const MentorsPage = () => {
 
                     {/* Core Expertise */}
                     <Box sx={{ mb: 3 }}>
-                      <Typography 
-                        variant="subtitle2" 
-                        sx={{ 
-                          color: 'rgba(255,255,255,0.6)', 
-                          textTransform: 'uppercase', 
-                          letterSpacing: '1px',
-                          fontWeight: 600,
-                          mb: 1.5,
-                          fontSize: '0.8rem'
-                        }}
-                      >
-                        Core Expertise
-                      </Typography>
-                      <Stack direction="row" flexWrap="wrap" gap={1}>
-                        {mentor.expertise.map((skill, i) => (
-                          <Chip
-                            key={i}
-                            label={skill}
-                            size="medium"
-                            icon={<Star sx={{ fontSize: '16px !important' }} />}
-                            sx={{
-                              fontSize: '0.8rem',
-                              height: '28px',
-                              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(16, 185, 129, 0.2))',
-                              color: '#e0f2fe',
-                              border: '1px solid rgba(59, 130, 246, 0.3)',
-                              fontWeight: 600,
-                              '&:hover': { 
-                                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(16, 185, 129, 0.3))',
-                                transform: 'translateY(-1px)'
-                              }
-                            }}
-                          />
-                        ))}
-                      </Stack>
+                    <Typography 
+                          variant="subtitle2" 
+                          sx={{ 
+                            color: 'rgba(255,255,255,0.7)', 
+                            mb: 2,
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1
+                          }}
+                        >
+                          <School sx={{ fontSize: '18px' }} />
+                          Technical Skills
+                        </Typography>
+                        <Stack direction="row" flexWrap="wrap" gap={1}>
+                          {mentor.skills.map((skill, i) => (
+                            <Chip
+                              key={i}
+                              label={skill}
+                              size="small"
+                              sx={{
+                                fontSize: '0.75rem',
+                                height: '24px',
+                                bgcolor: 'rgba(255,255,255,0.08)',
+                                color: 'rgba(255,255,255,0.9)',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                '&:hover': {
+                                  bgcolor: 'rgba(255,255,255,0.15)',
+                                  transform: 'translateY(-1px)'
+                                }
+                              }}
+                            />
+                          ))}
+                        </Stack>
                     </Box>
 
                     {/* Action Buttons */}
@@ -428,42 +427,6 @@ const MentorsPage = () => {
                         >
                           {mentor.longDescription}
                         </Typography>
-
-                        {/* All Skills */}
-                        <Typography 
-                          variant="subtitle2" 
-                          sx={{ 
-                            color: 'rgba(255,255,255,0.7)', 
-                            mb: 2,
-                            fontWeight: 600,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1
-                          }}
-                        >
-                          <School sx={{ fontSize: '18px' }} />
-                          Technical Skills
-                        </Typography>
-                        <Stack direction="row" flexWrap="wrap" gap={1}>
-                          {mentor.skills.map((skill, i) => (
-                            <Chip
-                              key={i}
-                              label={skill}
-                              size="small"
-                              sx={{
-                                fontSize: '0.75rem',
-                                height: '24px',
-                                bgcolor: 'rgba(255,255,255,0.08)',
-                                color: 'rgba(255,255,255,0.9)',
-                                border: '1px solid rgba(255,255,255,0.15)',
-                                '&:hover': {
-                                  bgcolor: 'rgba(255,255,255,0.15)',
-                                  transform: 'translateY(-1px)'
-                                }
-                              }}
-                            />
-                          ))}
-                        </Stack>
                       </motion.div>
                     </Collapse>
 

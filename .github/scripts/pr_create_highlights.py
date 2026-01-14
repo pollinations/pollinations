@@ -11,8 +11,8 @@ from datetime import datetime, timezone
 GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 MODEL = "gemini-large"
-NEWS_FOLDER = "NEWS"
-HIGHLIGHTS_PATH = "NEWS/transformed/highlights.md"
+NEWS_FOLDER = "social/news"
+HIGHLIGHTS_PATH = "social/news/transformed/highlights.md"
 
 
 def get_env(key: str, required: bool = True) -> str:
@@ -113,7 +113,7 @@ def get_current_highlights(github_token: str, owner: str, repo: str) -> str:
 
 
 def get_links_file(github_token: str, owner: str, repo: str) -> str:
-    """Fetch NEWS/LINKS.md containing reference links for highlights"""
+    """Fetch social/news/LINKS.md containing reference links for highlights"""
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {github_token}"

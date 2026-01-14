@@ -55,9 +55,24 @@ export const hasAudioInput = (modelName: string): boolean => {
     return modalities.input.includes("audio");
 };
 
+export const hasAudioOutput = (modelName: string): boolean => {
+    const modalities = getModalities(modelName);
+    return modalities.output.includes("audio");
+};
+
 export const isPersona = (modelName: string): boolean => {
     const service = getServiceDefinition(modelName as ServiceId);
     return service?.persona === true;
+};
+
+/**
+ * Check if a model is "new" (added within the last 14 days)
+ */
+export const isNewModel = (modelName: string): boolean => {
+    const service = getServiceDefinition(modelName as ServiceId);
+    if (!service?.cost?.[0]?.date) return false;
+    const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+    return service.cost[0].date > fourteenDaysAgo;
 };
 
 export const getTextModelId = (modelName: string): string | undefined => {

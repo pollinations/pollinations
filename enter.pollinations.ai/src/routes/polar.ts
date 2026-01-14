@@ -13,7 +13,6 @@ import {
     PackProductSlug,
     packProductSlugs,
 } from "@/utils/polar.ts";
-import { getPendingSpend } from "@/events.ts";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 
 const productParamSchema = z.enum(packProductSlugs.map(productSlugToUrlParam));
@@ -67,23 +66,6 @@ export const polarRoutes = new Hono<Env>()
                 externalCustomerId: user.id,
             });
             return c.json(result);
-        },
-    )
-    .get(
-        "/customer/pending-spend",
-        describeRoute({
-            tags: ["Auth"],
-            description:
-                "Get pending spend from recent events not yet processed by Polar.",
-            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
-        }),
-        async (c) => {
-            const user = c.var.auth.requireUser();
-            const pendingSpend = await getPendingSpend(
-                drizzle(c.env.DB),
-                user.id,
-            );
-            return c.json({ pendingSpend });
         },
     )
     .get(

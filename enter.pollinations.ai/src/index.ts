@@ -3,7 +3,6 @@ import { HTTPException } from "hono/http-exception";
 import { cors } from "hono/cors";
 import { createAuth } from "./auth.ts";
 import { handleError } from "./error.ts";
-import { processEvents } from "./events.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { nowpaymentsRoutes } from "./routes/nowpayments.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
@@ -14,11 +13,10 @@ import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { webhooksRoutes } from "./routes/webhooks.ts";
 import { webhooksCryptoRoutes } from "./routes/webhooks-crypto.ts";
 import { adminRoutes } from "./routes/admin.ts";
+import { modelStatsRoutes } from "./routes/model-stats.ts";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
-import { getLogger } from "@logtape/logtape";
 import type { Env } from "./env.ts";
-import { drizzle } from "drizzle-orm/d1";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
     return await createAuth(c.env).handler(c.req.raw);
@@ -34,6 +32,7 @@ export const api = new Hono<Env>()
     .route("/webhooks", webhooksRoutes)
     .route("/webhooks", webhooksCryptoRoutes)
     .route("/admin", adminRoutes)
+    .route("/model-stats", modelStatsRoutes)
     .route("/generate", proxyRoutes);
 
 export type ApiRoutes = typeof api;
@@ -88,15 +87,4 @@ export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 export default {
     fetch: app.fetch,
-    scheduled: async (_controller, env, _ctx) => {
-        const db = drizzle(env.DB);
-        const log = getLogger(["hono", "scheduled"]);
-
-        await processEvents(db, log, {
-            polarAccessToken: env.POLAR_ACCESS_TOKEN,
-            polarServer: env.POLAR_SERVER,
-            tinybirdIngestUrl: env.TINYBIRD_INGEST_URL,
-            tinybirdIngestToken: env.TINYBIRD_INGEST_TOKEN,
-        });
-    },
 } satisfies ExportedHandler<CloudflareBindings>;

@@ -2,9 +2,11 @@ import type { FC } from "react";
 import { getModelPrices } from "./data.ts";
 import { UnifiedModelTable } from "./ModelTable.tsx";
 import { Button } from "../button.tsx";
+import { useModelStats } from "./useModelStats.ts";
 
 export const Pricing: FC = () => {
-  const allModels = getModelPrices();
+  const { stats } = useModelStats();
+  const allModels = getModelPrices(stats);
 
   const imageModels = allModels.filter((m) => m.type === "image");
   const videoModels = allModels.filter((m) => m.type === "video");
@@ -46,7 +48,8 @@ export const Pricing: FC = () => {
               </div>
               <div className="space-y-1 text-gray-600">
                 <div>👁️ vision</div>
-                <div>👂 audio input</div>
+                <div>🎙️ audio input</div>
+                <div>🔊 audio output</div>
                 <div>🧠 reasoning</div>
                 <div>🔍 search</div>
                 <div>💻 code execution</div>

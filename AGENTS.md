@@ -22,20 +22,20 @@ App submissions are now **fully automated** via the `app-review-submission.yml` 
 **Table format in APPS.md:**
 
 ```markdown
-| Emoji | Name            | Description                   | Language | Category | GitHub  | Repo                   | Stars | Discord | Other | Submitted  |
-| ----- | --------------- | ----------------------------- | -------- | -------- | ------- | ---------------------- | ----- | ------- | ----- | ---------- |
-| 🎨    | [App Name](url) | Brief description (~80 chars) |          | creative | @github | https://github.com/... | ⭐123 |         |       | 2025-01-01 |
+| Emoji | Name     | Web_URL | Description                   | Language | Category | GitHub  | GitHub_ID | Repo                   | Stars | Discord | Other | Submitted  |
+| ----- | -------- | ------- | ----------------------------- | -------- | -------- | ------- | --------- | ---------------------- | ----- | ------- | ----- | ---------- |
+| 🎨    | App Name | url     | Brief description (~80 chars) |          | creative | @github | 12345678  | https://github.com/... | ⭐123 |         |       | 2025-01-01 |
 ```
 
 **Categories:**
 
-- Vibe Coding ✨ (`vibeCoding`): No-code / describe-to-code playgrounds and builders
-- Creative 🎨 (`creative`): Turn prompts into images, video, music, design, slides
-- Games 🎲 (`games`): AI-powered play, interactive fiction, puzzle & agent worlds
-- Hack-&-Build 🛠️ (`hackAndBuild`): SDKs, integration libs, extensions, dashboards, MCP servers
-- Chat 💬 (`chat`): Standalone chat UIs / multi-model playgrounds
-- Social Bots 🤖 (`socialBots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
-- Learn 📚 (`learn`): Tutorials, guides, style books & educational demos
+- Vibes ✨ (`Vibes`): No-code / describe-to-code playgrounds and builders
+- Creative 🎨 (`Creative`): Turn prompts into images, video, music, design, slides
+- Games 🎲 (`Games`): AI-powered play, interactive fiction, puzzle & agent worlds
+- Dev_Tools 🛠️ (`Dev_Tools`): SDKs, integration libs, extensions, dashboards, MCP servers
+- Chat 💬 (`Chat`): Standalone chat UIs / multi-model playgrounds
+- Social_Bots 🤖 (`Social_Bots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
+- Learn 📚 (`Learn`): Tutorials, guides, style books & educational demos
 
 ## Non-English Apps
 
@@ -60,8 +60,9 @@ pollinations/
 ├── image.pollinations.ai/     # Image generation backend service
 ├── text.pollinations.ai/      # Text generation backend service
 ├── pollinations.ai/           # Main React frontend application
-├── pollinations-react/        # React component library
-├── model-context-protocol/    # MCP server for AI assistant integration
+├── packages/                  # Publishable npm packages
+│   ├── sdk/                   # @pollinations/sdk - Client library with React hooks
+│   └── mcp/                   # @pollinations/model-context-protocol - MCP server
 ├── enter.pollinations.ai/     # Centralized auth gateway (ACTIVE)
 └── operations/                # Documentation and operations
 ```
@@ -79,12 +80,12 @@ All API requests go through `gen.pollinations.ai`, which routes to the `enter.po
 
 ## Model Context Protocol (MCP)
 
-The `model-context-protocol/` directory contains a Model Context Protocol server that allows AI agents to directly generate images, text, and audio using the pollinations.ai API.
+The `packages/mcp/` directory contains a Model Context Protocol server that allows AI agents to directly generate images, text, and audio using the pollinations.ai API.
 
 For detailed implementation notes, design principles, and troubleshooting, see:
 
-- `model-context-protocol/README.md` - Installation and usage
-- `model-context-protocol/AGENTS.md` - Implementation guidelines and debugging
+- `packages/mcp/README.md` - Installation and usage
+- `packages/mcp/AGENTS.md` - Implementation guidelines and debugging
 
 ## API Quick Reference
 
@@ -156,8 +157,8 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
    - Frontend changes should be in pollinations.ai/
    - Image generation in image.pollinations.ai/
    - Text generation in text.pollinations.ai/
-   - React components in pollinations-react/
-   - AI assistant integrations in model-context-protocol/
+   - SDK and React components in packages/sdk/
+   - AI assistant integrations in packages/mcp/
 
 6. Security:
    - Never expose API keys or secrets

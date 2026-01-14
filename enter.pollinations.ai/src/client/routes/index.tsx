@@ -296,7 +296,7 @@ function RouteComponent() {
                 <Pricing />
                 <div className="bg-violet-50/20 border border-violet-200/50 rounded-xl px-6 py-4 mt-4 w-fit mx-auto">
                     <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-3 text-sm text-gray-400">
-                        <span>© 2025 Myceli.AI</span>
+                        <span>© 2026 Myceli.AI</span>
                         <span className="hidden sm:inline">·</span>
                         <Link
                             to="/terms"

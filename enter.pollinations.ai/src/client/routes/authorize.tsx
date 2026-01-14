@@ -153,7 +153,7 @@ function AuthorizeComponent() {
 
                 <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 shadow-lg text-center">
                     <h1 className="text-2xl font-bold mb-4">
-                        Connect to Pollinations
+                        Connect to pollinations.ai
                     </h1>
 
                     {error ? (
@@ -212,49 +212,32 @@ function AuthorizeComponent() {
                     </div>
                 ) : (
                     <>
-                        {/* App info */}
-                        <div className="bg-gray-50 rounded-xl p-4 mb-6">
-                            <p className="font-semibold text-gray-900">
+                        {/* Security warning - short & sweet */}
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+                            <p className="font-semibold text-amber-900 mb-1">
+                                🔑 Sharing API key with:
+                            </p>
+                            <p className="font-mono text-amber-800 bg-amber-100 rounded px-2 py-1 break-all text-sm mb-2">
                                 {redirectHostname}
                             </p>
-                            <p className="text-xs text-gray-500">
-                                wants access to your Pollinations account
+                            <p className="text-xs text-amber-700">
+                                same as copy-pasting your key into their app ✨
                             </p>
                         </div>
 
-                        {/* What this allows */}
-                        <div className="mb-6">
-                            <h3 className="font-semibold text-sm text-gray-700 mb-2">
-                                This will allow the application to:
-                            </h3>
-                            <ul className="space-y-2 text-sm text-gray-600">
-                                <li className="flex items-start gap-2">
-                                    <span className="text-green-500 mt-0.5">
-                                        ✓
-                                    </span>
-                                    <span>
-                                        Generate images and text using your
-                                        account
-                                    </span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="text-green-500 mt-0.5">
-                                        ✓
-                                    </span>
-                                    <span>
-                                        Use your pollen balance for API requests
-                                    </span>
-                                </li>
-                            </ul>
+                        {/* What this allows - compact */}
+                        <div className="mb-4 text-sm text-gray-600">
+                            <span className="text-green-500">✓</span> Generate
+                            images & text
+                            <span className="mx-2">·</span>
+                            <span className="text-green-500">✓</span> Use your
+                            pollen
                         </div>
 
-                        {/* Expiry notice */}
-                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
-                            <p className="text-amber-800 text-sm">
-                                ⏱️ <strong>Temporary access:</strong> This key
-                                expires in 30 days
-                            </p>
-                        </div>
+                        {/* Expiry - inline */}
+                        <p className="text-xs text-gray-500 mb-6">
+                            ⏱️ Expires in 30 days · revoke anytime from dashboard
+                        </p>
 
                         {/* Model permissions */}
                         <div className="mb-6">

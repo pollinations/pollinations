@@ -4,6 +4,7 @@ import mentors from '../info/mentors.json';
 import { Card, CardContent, Typography, Chip, Box, Collapse, IconButton, Button, Avatar, Stack, Divider, LinearProgress } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, Code, ArrowForward, GitHub, Schedule, Person, Lightbulb, Assignment, Star, Email } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+import { href } from 'react-router-dom';
 const cardVariants = {
   hidden: { opacity: 0, y: 30 },
   visible: (i) => ({
@@ -58,17 +59,38 @@ const ProjectsPage = () => {
           </Stack>
         </Box>
 
-        <div className="flex flex-col gap-8 mb-[25px]">
+        <div className="flex ">
           {projects && projects.map((project, index) => {
             const mentor = mentors.find(m => m.id === project.mentorID);
             return (
-              <div key={index}>
-
+              <div key={index} className='bg-red-600 flex-row w-full flex-wrap justify-center gap-6'>
                 <motion.div custom={index} variants={cardVariants} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                  <Card elevation={0} sx={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', color: '#fff', transition: 'all 0.4s ease', position: 'relative', marginBottom: '25px', overflow: 'hidden', '&:hover': { transform: 'translateY(-4px)', borderColor: 'rgba(255,255,255,0.3)', boxShadow: '0 25px 50px -10px rgba(0,0,0,0.5)' }, '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: `linear-gradient(90deg, ${project.category === 'AI/ML' ? '#f59e0b, #d97706' : project.category === 'Blockchain' ? '#3b82f6, #1d4ed8' : '#10b981, #059669'})`, borderRadius: '20px 20px 0 0' } }}>
+                  <Card elevation={0} sx={{ 
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', 
+                    backdropFilter: 'blur(20px)', 
+                    width: {lg: '50%', xs: '100%'},
+                    border: '1px solid rgba(255,255,255,0.1)', 
+                    borderRadius: '20px', 
+                    color: '#fff', 
+                    transition: 'all 0.4s ease', position: 'relative', 
+                    marginBottom: '25px', overflow: 'hidden', 
+                    '&:hover': { transform: 'translateY(-4px)', borderColor: 'rgba(255,255,255,0.3)', 
+                    boxShadow: '0 25px 50px -10px rgba(0,0,0,0.5)' }, 
+                    '&::before': { content: '""', 
+                    position: 'absolute', 
+                    top: 0, 
+                    left: 0, 
+                    right: 0, 
+                    height: '4px', 
+                    borderRadius: '20px 20px 0 0',
+                    background: `linear-gradient(90deg, ${project.category === 'AI/ML' ? '#f59e0b, #d97706' : project.category === 'Blockchain' ? '#3b82f6, #1d4ed8' : '#10b981, #059669'})`, 
+                    } }}>
+                    
+                    
+                    
                     <CardContent sx={{ padding: '2.5rem' }}>
-                      <div className="flex flex-col lg:flex-row gap-8">
-                        <div className="w-full lg:w-1/2">
+                      <div className="flex flex-row lg:flex-row gap-8">
+                        <div className="w-1/2">
                           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
                             <Chip label={project.category} size="medium" icon={<Lightbulb sx={{ fontSize: '18px !important' }} />} sx={{ bgcolor: project.category === 'AI/ML' ? 'rgba(245, 158, 11, 0.1)' : project.category === 'Blockchain' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: project.category === 'AI/ML' ? '#fbbf24' : project.category === 'Blockchain' ? '#60a5fa' : '#34d399', border: `1px solid ${project.category === 'AI/ML' ? 'rgba(245, 158, 11, 0.3)' : project.category === 'Blockchain' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`, fontWeight: 600, fontSize: '0.875rem', height: '32px' }} />
                             <Chip label={project.difficulty} size="medium" sx={{ bgcolor: project.difficulty === 'Beginner' ? 'rgba(34, 197, 94, 0.1)' : project.difficulty === 'Intermediate' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: project.difficulty === 'Beginner' ? '#4ade80' : project.difficulty === 'Intermediate' ? '#fbbf24' : '#f87171', border: `1px solid ${project.difficulty === 'Beginner' ? 'rgba(34, 197, 94, 0.3)' : project.difficulty === 'Intermediate' ? 'rgba(251, 191, 36, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`, fontWeight: 600, fontSize: '0.875rem', height: '32px' }} />
@@ -84,9 +106,6 @@ const ProjectsPage = () => {
                           </Typography>
 
                           <Box sx={{ mb: 3 }}>
-                            <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, mb: 2, fontSize: '0.8rem' }}>
-                              Required Technologies
-                            </Typography>
                             <Stack direction="row" flexWrap="wrap" gap={1.5}>
                               {project.technologies.map((tech, i) => (
                                 <Chip label={tech} key={i} size="medium" sx={{ fontSize: '0.85rem', height: '28px', background: 'rgba(255,255,255,0.1)', color: '#f3f4f6', border: '1px solid rgba(255,255,255,0.2)', fontWeight: 500, '&:hover': { background: 'rgba(255,255,255,0.2)', transform: 'translateY(-1px)', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' } }} />
@@ -94,8 +113,7 @@ const ProjectsPage = () => {
                             </Stack>
                           </Box>
                         </div>
-
-                        <div className="w-full lg:w-1/2 flex flex-col justify-between">
+                         <div className="w-1/2 flex flex-col justify-between">
                           <Box>
                             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, mb: 2, display: 'block' }}>
                               Project Mentor
@@ -106,27 +124,23 @@ const ProjectsPage = () => {
                                 {mentor?.name?.split(' ').map(n => n[0]).join('') || 'M'}
                               </Avatar>
                               <Box sx={{ flex: 1 }}>
-                                <Typography variant="h6" sx={{ color: '#fff', fontWeight: 600 }}>
+                                <Typography variant="h6" onClick={() => location.replace("/mentors")} sx={{ color: '#fff', fontWeight: 600, textDecoration: 'underline', userSelect: 'none', cursor: 'pointer'}}>
                                   {mentor?.name || 'TBA'}
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                                  {mentor?.title || 'Mentor'}
-                                </Typography>
-                              </Box>
-                              
-                              {mentor?.email && (
+                                  {mentor?.email && (
                                 <Button 
                                   variant="outlined" 
                                   size="small"
-                                  startIcon={<Email sx={{ fontSize: '16px !important' }} />}
+                                  startIcon={<Email sx={{ fontSize: '14px !important' }} />}
                                   href={`mailto:${mentor.email}`}
                                   sx={{ 
                                     textTransform: 'none',
                                     borderColor: 'rgba(255,255,255,0.2)',
                                     color: 'rgba(255,255,255,0.8)',
-                                    px: 2,
+                                    px: 1.5,
                                     py: 0.5,
-                                    fontSize: '0.75rem',
+                                    fontSize: '0.65rem',
                                     borderRadius: '20px',
                                     '&:hover': { 
                                       borderColor: 'rgba(255,255,255,0.4)',
@@ -137,30 +151,6 @@ const ProjectsPage = () => {
                                   {mentor?.email}
                                 </Button>
                               )}
-                            </Box>
-
-
-                            <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ mb: 3 }}>
-                              {(mentor?.expertise || []).slice(0, 3).map((skill, i) => (
-                                <Chip key={i} label={skill} size="small" sx={{ fontSize: '0.7rem', height: '20px', bgcolor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.1)' }} />
-                              ))}
-                            </Stack>
-
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                              <Box sx={{ textAlign: 'center' }}>
-                                <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>
-                                  {mentor?.projects || 0}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                                  Projects
-                                </Typography>
-                              </Box>
-                              <Box sx={{ textAlign: 'center' }}>
-                                <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>
-                                  {mentor?.yearsExperience || 0}+
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                                  Years Exp
                                 </Typography>
                               </Box>
                             </Box>
@@ -173,7 +163,6 @@ const ProjectsPage = () => {
                           </Stack>
                         </div>
                       </div>
-
                       <Collapse in={expanded === index} timeout={600} sx={{ '& .MuiCollapse-wrapper': { transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important' } }}>
                         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: expanded === index ? 1 : 0, y: expanded === index ? 0 : -20 }} transition={{ duration: 0.4, delay: 0.1 }}>
                           <Divider sx={{ my: 4, borderColor: 'rgba(255,255,255,0.1)' }} />

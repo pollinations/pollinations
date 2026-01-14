@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+pydantic
+aiohttp
+requests
+
+torch
+torchvision
+torchaudio
+
+Pillow
+numpy
+diffusers
+transformers
+safetensors
+spandrel

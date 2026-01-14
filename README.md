@@ -15,6 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [Musify - Music Downloader](https://musifydl.vercel.app) | AI-powered Deezer music downloader — save tracks quickly from Deezer. | @KarlinCoder |
 | [Lapse Game 2075](https://makeypocket.github.io/LapseGame/) | AI-powered game where decisions shape a country's future over four pillars | @makeypocket |
 | [PixArt AI](https://apps.apple.com/us/app/pixart-ai-ai-image-generator/id6749236127) | iOS app that turns text prompts into AI-generated artwork via Pollinations. | @bhyahmed86-maker |
 | Polly IDE | IDE to generate Angular and React sites using Pollinations AI models | @nulls-brawl-site |
@@ -24,7 +25,6 @@
 | [Resonance](https://resonanceai.netlify.app) | Mobile-first image generator with many styles and features (Z Image Turbo, Flux) | @Bakhshi7889 |
 | [Ai chatbot](https://t.me/vriskas_channel) | Chat with a powerful AI neural-network chatbot for free on Telegram. | @VriskasYT |
 | [AI prompt test page](https://jangyoonhee.netlify.app/) | Interactive course for writing prompts and generating images to study outcomes. | @yoonheejangs |
-| YouTube MASHINA | Python automation for end-to-end YouTube workflow: analysis to video rendering. | @j94469669-stack |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

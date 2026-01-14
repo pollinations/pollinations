@@ -20,13 +20,8 @@ const useEasterEgg = () => {
     setClickCount(prev => {
       const newCount = prev + 1;
       
-      if (newCount === 5) {
+      if (newCount === 3) {
         setShowEasterEgg(true);
-        // Reset after showing
-        setTimeout(() => {
-          setShowEasterEgg(false);
-          setClickCount(0);
-        }, 4000);
         return 0;
       }
       

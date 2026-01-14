@@ -39,7 +39,8 @@ const EasterEggModal = ({ open, onClose }) => {
           backdropFilter: 'blur(20px)',
           border: '1px solid rgba(96, 165, 250, 0.3)',
           borderRadius: '20px',
-          boxShadow: '0 8px 32px rgba(96, 165, 250, 0.3)'
+          boxShadow: '0 8px 32px rgba(96, 165, 250, 0.3)',
+          overflow: 'hidden'
         }
       }}
     >
@@ -114,7 +115,7 @@ const EasterEggModal = ({ open, onClose }) => {
                 color: 'rgba(255,255,255,0.7)'
               }}
             >
-              💡 Hint: This easter egg appears randomly. Try clicking the logo 5 times!
+              💡 Hint: This easter egg appears randomly. Try clicking the logo 3 times!
             </Box>
           </Box>
         </DialogContent>

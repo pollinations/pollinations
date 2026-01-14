@@ -2,9 +2,6 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AppBar, Toolbar, Button, Box, Typography, IconButton, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme, Chip, Tooltip, Avatar } from '@mui/material';
 import { Menu, Close, AutoAwesome } from '@mui/icons-material';
-import useEasterEgg from '../hooks/useEasterEgg';
-import EasterEggModal from './EasterEggModal';
-import { motion } from 'framer-motion';
 import '../index.css'
 
 const Navbar = () => {
@@ -12,7 +9,6 @@ const Navbar = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { clickCount, showEasterEgg, showHint, handleLogoClick, closeEasterEgg, setShowHint } = useEasterEgg();
 
   const navItems = [
     { name: 'Home', path: '/' },
@@ -156,80 +152,45 @@ const Navbar = () => {
         <Toolbar sx={{ px: { xs: 2, md: 4 } }}>
           {/* Logo and Version */}
           <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
-            <Tooltip 
-              title={showHint ? "🎯 Click 5 times for a surprise!" : ""} 
-              open={showHint}
-              placement="bottom"
-              arrow
+            <Link 
+              to="/" 
+              style={{ 
+                textDecoration: 'none', 
+                color: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}
             >
-              <motion.div
-                animate={showHint ? { scale: [1, 1.05, 1] } : {}}
-                transition={{ duration: 0.5, repeat: showHint ? Infinity : 0 }}
-                onClick={handleLogoClick}
-                style={{ cursor: 'pointer', position: 'relative' }}
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  fontWeight: 700,
+                  background: 'linear-gradient(135deg, #fff 0%, #a1a1aa 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  letterSpacing: '-0.02em'
+                }}
               >
-                <Link 
-                  to="/" 
-                  style={{ 
-                    textDecoration: 'none', 
-                    color: 'inherit',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px'
-                  }}
-                  onClick={(e) => {
-                    handleLogoClick();
-                  }}
-                >
-                  <Typography 
-                    variant="h6" 
-                    sx={{ 
-                      fontWeight: 700,
-                      background: 'linear-gradient(135deg, #fff 0%, #a1a1aa 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      letterSpacing: '-0.02em'
-                    }}
-                  >
-                    GSOC - pollinations.ai
-                  </Typography>
-                  <Chip 
-                    label="2026" 
-                    size="small" 
-                    sx={{ 
-                      bgcolor: 'rgba(255,255,255,0.1)', 
-                      color: 'rgba(255,255,255,0.8)',
-                      fontSize: '10px',
-                      height: '22px',
-                      fontFamily: 'monospace',
-                      fontWeight: 500,
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      '&:hover': {
-                        bgcolor: 'rgba(255,255,255,0.15)'
-                      }
-                    }} 
-                  />
-                </Link>
-                {clickCount > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    style={{
-                      position: 'absolute',
-                      bottom: -20,
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      fontSize: '0.75rem',
-                      color: '#60a5fa',
-                      whiteSpace: 'nowrap',
-                      fontWeight: 600
-                    }}
-                  >
-                    {clickCount}/5
-                  </motion.div>
-                )}
-              </motion.div>
-            </Tooltip>
+                GSOC - pollinations.ai
+              </Typography>
+              <Chip 
+                label="2026" 
+                size="small" 
+                sx={{ 
+                  bgcolor: 'rgba(255,255,255,0.1)', 
+                  color: 'rgba(255,255,255,0.8)',
+                  fontSize: '10px',
+                  height: '22px',
+                  fontFamily: 'monospace',
+                  fontWeight: 500,
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.15)'
+                  }
+                }} 
+              />
+            </Link>
           </Box>
 
           {/* Desktop Navigation */}
@@ -347,8 +308,6 @@ const Navbar = () => {
           )}
         </Toolbar>
       </AppBar>
-
-      <EasterEggModal open={showEasterEgg} onClose={closeEasterEgg} />
 
       {/* Mobile Drawer */}
       <Drawer

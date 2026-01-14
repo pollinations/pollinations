@@ -8,6 +8,8 @@ import {
   VerifiedUser, MenuBook, Gavel, Info, Star
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+import useEasterEgg from '../hooks/useEasterEgg';
+import EasterEggModal from '../components/EasterEggModal';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -26,6 +28,8 @@ const HomePage = () => {
   useEffect(() => {
     document.title = "GSOC 26' - pollinations.ai";
   }, []);
+
+  const { clickCount, showEasterEgg, showHint, handleLogoClick, closeEasterEgg } = useEasterEgg();
 
   const stats = [
     { number: "3.7K", label: "GitHub Stars", icon: <Star /> },
@@ -58,6 +62,7 @@ const HomePage = () => {
         }
       }}
     >
+      <EasterEggModal open={showEasterEgg} onClose={closeEasterEgg} />
       <Box 
         sx={{
           position: 'absolute',
@@ -132,14 +137,50 @@ const HomePage = () => {
                       ×
                     </Typography>
                     
-                    <Box onClick={() => { location.href = "https://pollinations.ai"; }} sx={{ display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer', userSelect: 'none' }}>
-                      <img 
-                        src="/polli_white.svg" 
-                        alt="Pollinations.ai"
-                        style={{ 
-                          height: '50px'
-                        }}
-                      />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer', userSelect: 'none', position: 'relative' }}>
+                      <Tooltip 
+                        title={showHint ? "🎯 Click 5 times for a surprise!" : ""} 
+                        open={showHint}
+                        placement="bottom"
+                        arrow
+                      >
+                        <motion.div
+                          animate={showHint ? { scale: [1, 1.05, 1] } : {}}
+                          transition={{ duration: 0.5, repeat: showHint ? Infinity : 0 }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleLogoClick();
+                          }}
+                          style={{ cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center' }}
+                        >
+                          <img 
+                            src="/polli_white.svg" 
+                            alt="Pollinations.ai"
+                            style={{ 
+                              height: '50px'
+                            }}
+                          />
+                          {clickCount > 0 && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              style={{
+                                position: 'absolute',
+                                bottom: -15,
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                fontSize: '0.7rem',
+                                color: '#60a5fa',
+                                whiteSpace: 'nowrap',
+                                fontWeight: 600,
+                                opacity: 0.3
+                              }}
+                            >
+                              {clickCount}/3
+                            </motion.div>
+                          )}
+                        </motion.div>
+                      </Tooltip>
                     </Box>
                   </Box>
 

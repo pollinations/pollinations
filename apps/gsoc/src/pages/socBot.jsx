@@ -543,7 +543,7 @@ const socBotChat = () => {
         }} 
       />
 
-      <Container maxWidth="md" sx={{ position: 'relative', mt: 1, zIndex: 1, py: 4, height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
+      <Container maxWidth="md" sx={{ position: 'relative', mt: 1, zIndex: 1, py: 4, height: 'calc(100vh - 70px)', display: 'flex', flexDirection: 'column' }}>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -558,7 +558,7 @@ const socBotChat = () => {
             mb: 2,
             px: 1,
             scrollBehavior: 'smooth',
-            maxHeight: 'calc(100vh - 300px)',
+            maxHeight: 'calc(100vh - 100px)',
             '&::-webkit-scrollbar': {
               width: '6px',
             },
@@ -621,6 +621,8 @@ const socBotChat = () => {
                     color: '#fff',
                     fontSize: '1rem',
                     px: 2,
+                    justifyContent: 'center',
+                    alignItems: 'center',
                     py: 1.5,
                     '&::placeholder': {
                       color: 'rgba(255,255,255,0.5)',

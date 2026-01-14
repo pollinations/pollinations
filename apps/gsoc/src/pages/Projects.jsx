@@ -175,9 +175,29 @@ const ProjectsPage = () => {
                             </Box>
                           </Box>
 
-                          <Button variant="outlined" size="large" onClick={() => handleExpandClick(index)} endIcon={<ExpandMoreIcon sx={{ transform: expanded === index ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} />} sx={{ position: 'absolute', bottom: '20px', right: '2.5rem', borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', textTransform: 'none', fontSize: '1rem',  py: 1.5, '&:hover': { borderColor: 'rgba(255,255,255,0.4)', color: '#fff', backgroundColor: 'rgba(255,255,255,0.05)' } }}>
-                            {expanded === index ? 'Hide Details' : 'View Details'}
-                          </Button>
+                          <IconButton 
+                            onClick={() => handleExpandClick(index)} 
+                            sx={{ 
+                              position: 'absolute', 
+                              bottom: '20px', 
+                              right: '2.5rem',
+                              color: 'rgba(255,255,255,0.8)',
+                              border: '1px solid rgba(255,255,255,0.2)',
+                              borderRadius: '50%',
+                              width: '48px',
+                              height: '48px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              '&:hover': { 
+                                borderColor: 'rgba(255,255,255,0.4)', 
+                                color: '#fff', 
+                                backgroundColor: 'rgba(255,255,255,0.05)' 
+                              } 
+                            }}
+                          >
+                            <ExpandMoreIcon sx={{ transform: expanded === index ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} />
+                          </IconButton>
                         </div>
                       </div>
                       <Collapse in={expanded === index} timeout={600} sx={{ '& .MuiCollapse-wrapper': { transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important' } }}>
@@ -201,6 +221,9 @@ const ProjectsPage = () => {
                                 </Button>
                                 <Button variant="outlined" endIcon={<Assignment />} size="large" href="/contributing" target="_blank" sx={{ borderColor: 'rgba(34, 197, 94, 0.3)', color: '#4ade80', textTransform: 'none', py: 1.5, px: 3, '&:hover': { borderColor: 'rgba(34, 197, 94, 0.5)', color: '#22c55e', backgroundColor: 'rgba(34, 197, 94, 0.05)' } }}>
                                   Contributing Guide
+                                </Button>
+                                <Button variant="outlined" size="large" onClick={() => submitApplication(true)} sx={{ borderColor: 'rgba(59, 130, 246, 0.3)', color: '#60a5fa', textTransform: 'none', py: 1.5, px: 3, fontWeight: 600, '&:hover': { borderColor: 'rgba(59, 130, 246, 0.5)', color: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.05)' } }}>
+                                  Apply for this Project
                                 </Button>
                               </Stack>
                             </div>

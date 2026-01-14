@@ -520,7 +520,7 @@ const CreateKeyForm: FC<{
                 </li>
                 <li>Safe to use in client-side code (React, Vue, etc.)</li>
                 <li>
-                  Pollen-based rate limiting: 1 pollen/hour refill per IP+key
+                  Pollen-based rate limiting: 1 pollen per IP per hour
                 </li>
               </ul>
               <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs">

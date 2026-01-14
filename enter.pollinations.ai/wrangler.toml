@@ -6,9 +6,6 @@ compatibility_flags = [ "nodejs_compat", "nodejs_als" ]
 [dev]
 port = 3000
 
-[triggers]
-crons = [ "* * * * *" ] # every minute
-
 [assets]
 directory = "dist/client"
 not_found_handling = "single-page-application"

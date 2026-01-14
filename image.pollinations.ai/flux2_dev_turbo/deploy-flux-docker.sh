@@ -1,13 +1,9 @@
 #!/bin/bash
 
-# Deploy FLUX.2-dev-Turbo Docker container
-# Handles building, stopping, and starting the service
-
 set -e
 
 echo "=== FLUX.2-dev-Turbo Deployment Script ==="
 
-# Load environment
 if [ ! -f .env ]; then
     echo "❌ .env file not found. Run setup-flux-docker.sh first"
     exit 1
@@ -15,13 +11,11 @@ fi
 
 source .env
 
-# Colors for output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Stop existing container if running
 echo "Checking for running containers..."
 if docker ps --format '{{.Names}}' | grep -q "^flux2-dev-turbo$"; then
     echo "⏹️  Stopping existing flux2-dev-turbo container..."
@@ -30,7 +24,6 @@ if docker ps --format '{{.Names}}' | grep -q "^flux2-dev-turbo$"; then
     sleep 2
 fi
 
-# Build image
 echo "🔨 Building Docker image..."
 docker build -t flux2-dev-turbo:latest . || {
     echo -e "${RED}❌ Build failed${NC}"
@@ -38,7 +31,6 @@ docker build -t flux2-dev-turbo:latest . || {
 }
 echo -e "${GREEN}✅ Image built successfully${NC}"
 
-# Start container
 echo ""
 echo "🚀 Starting FLUX.2-dev-Turbo container..."
 docker run -d \
@@ -59,7 +51,6 @@ docker run -d \
 
 sleep 2
 
-# Check if container started
 if docker ps --format '{{.Names}}' | grep -q "^flux2-dev-turbo$"; then
     echo -e "${GREEN}✅ Container started successfully${NC}"
 else

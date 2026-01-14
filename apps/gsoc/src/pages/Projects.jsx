@@ -180,28 +180,6 @@ const ProjectsPage = () => {
                               </Box>
                             </Box>
                           </Box>
-
-                          <IconButton 
-                            onClick={() => handleExpandClick(project.id)} 
-                            sx={{ 
-                              color: 'rgba(255,255,255,0.8)',
-                              border: '1px solid rgba(255,255,255,0.2)',
-                              borderRadius: '15px',
-                              margin: "0 auto",
-                              width: '100%',
-                              height: '48px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              '&:hover': { 
-                                borderColor: 'rgba(255,255,255,0.4)', 
-                                color: '#fff', 
-                                backgroundColor: 'rgba(255,255,255,0.05)' 
-                              } 
-                            }}
-                          >
-                            <ExpandMoreIcon sx={{ transform: expanded === project.id ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} />
-                          </IconButton>
                         </div>
                       </div>
                       <Collapse in={expanded === project.id} timeout={600} sx={{ '& .MuiCollapse-wrapper': { transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important' } }}>
@@ -234,6 +212,30 @@ const ProjectsPage = () => {
                           </div>
                         </motion.div>
                       </Collapse>
+
+                      <IconButton 
+                        onClick={() => handleExpandClick(project.id)} 
+                        sx={{
+                          color: 'rgba(255,255,255,0.8)',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          borderRadius: '15px',
+                          margin: "1rem auto 0",
+                          width: '90%',
+                          height: '48px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          bottom: '15px',
+                          position: 'fixed',
+                          justifyContent: 'center',
+                          '&:hover': { 
+                            borderColor: 'rgba(255,255,255,0.4)', 
+                            color: '#fff', 
+                            backgroundColor: 'rgba(255,255,255,0.05)' 
+                          } 
+                        }}
+                      >
+                        <ExpandMoreIcon sx={{ transform: expanded === project.id ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} />
+                      </IconButton>
                     </CardContent>
                   </Card>
                 </motion.div>

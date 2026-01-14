@@ -85,7 +85,7 @@ async def periodic_heartbeat():
             await asyncio.sleep(5)
 
 
-MODEL_ID = "black-forest-labs/FLUX.1-dev"
+MODEL_ID = "fal/FLUX.2-dev-Turbo"
 MODEL_CACHE = "model_cache"
 SANA_MODEL_PATH = "model_cache/sana/sana_1600m_1024_diffusion_fp16.safetensors"  # 2x upscaler
 UPSCALE_FACTOR = 2

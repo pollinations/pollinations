@@ -1,0 +1,52 @@
+import { useState, useEffect, useCallback } from 'react';
+
+const useEasterEgg = () => {
+  const [clickCount, setClickCount] = useState(0);
+  const [showEasterEgg, setShowEasterEgg] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+
+  // Show hint randomly on mount
+  useEffect(() => {
+    const shouldShowHint = Math.random() < 0.3; // 30% chance
+    if (shouldShowHint) {
+      setShowHint(true);
+      // Hide hint after 5 seconds
+      const timer = setTimeout(() => setShowHint(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleLogoClick = useCallback(() => {
+    setClickCount(prev => {
+      const newCount = prev + 1;
+      
+      if (newCount === 5) {
+        setShowEasterEgg(true);
+        // Reset after showing
+        setTimeout(() => {
+          setShowEasterEgg(false);
+          setClickCount(0);
+        }, 4000);
+        return 0;
+      }
+      
+      return newCount;
+    });
+  }, []);
+
+  const closeEasterEgg = useCallback(() => {
+    setShowEasterEgg(false);
+    setClickCount(0);
+  }, []);
+
+  return {
+    clickCount,
+    showEasterEgg,
+    showHint,
+    handleLogoClick,
+    closeEasterEgg,
+    setShowHint
+  };
+};
+
+export default useEasterEgg;

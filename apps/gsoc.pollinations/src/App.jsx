@@ -12,6 +12,7 @@ import FAQ from './pages/FAQ';
 import SocBot from './pages/socBot';
 import Contributing from './pages/Contributing';
 import CodeOfConduct from './pages/CodeOfConduct';
+import NotFound from './pages/NotFound';
 import './App.css';
 
 const darkTheme = createTheme({
@@ -61,6 +62,7 @@ function App() {
           <Route path='/about' element={<About />} />
           <Route path='/contributing' element={<Contributing />} />
           <Route path='/coc' element={<CodeOfConduct />} />
+          <Route path='*' element={<NotFound />} />
         </Routes>
         <Footer />
       </Router>

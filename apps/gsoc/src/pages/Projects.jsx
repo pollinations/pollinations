@@ -42,7 +42,6 @@ const ProjectsPage = () => {
             Explore the ideas that we have penned for GSOC 2026. Each project is designed to challenge and inspire you, with mentorship from pollination developers to guide you every step of the way.
           </Typography>
 
-          {/* Stats Section */}
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} sx={{ mt: 4, justifyContent: 'center', alignItems: 'center' }}>
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="h4" sx={{ color: '#fff', fontWeight: 700 }}>{projects.length}</Typography>
@@ -59,21 +58,23 @@ const ProjectsPage = () => {
           </Stack>
         </Box>
 
-        <div className="flex ">
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 3 }}>
           {projects && projects.map((project, index) => {
             const mentor = mentors.find(m => m.id === project.mentorID);
             return (
-              <div key={index} className='bg-red-600 flex-row w-full flex-wrap justify-center gap-6'>
-                <motion.div custom={index} variants={cardVariants} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+              <motion.div key={index} custom={index} variants={cardVariants} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ width: 'calc(50% - 12px)', minWidth: '300px' }}>
                   <Card elevation={0} sx={{ 
                     background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', 
                     backdropFilter: 'blur(20px)', 
-                    width: {lg: '50%', xs: '100%'},
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
                     border: '1px solid rgba(255,255,255,0.1)', 
                     borderRadius: '20px', 
                     color: '#fff', 
                     transition: 'all 0.4s ease', position: 'relative', 
-                    marginBottom: '25px', overflow: 'hidden', 
+                    marginBottom: '25px', 
                     '&:hover': { transform: 'translateY(-4px)', borderColor: 'rgba(255,255,255,0.3)', 
                     boxShadow: '0 25px 50px -10px rgba(0,0,0,0.5)' }, 
                     '&::before': { content: '""', 
@@ -88,7 +89,7 @@ const ProjectsPage = () => {
                     
                     
                     
-                    <CardContent sx={{ padding: '2.5rem' }}>
+                    <CardContent sx={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
                       <div className="flex flex-row lg:flex-row gap-8">
                         <div className="w-1/2">
                           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
@@ -140,6 +141,7 @@ const ProjectsPage = () => {
                                     color: 'rgba(255,255,255,0.8)',
                                     px: 1.5,
                                     py: 0.5,
+                                    mt : 0.5,
                                     fontSize: '0.65rem',
                                     borderRadius: '20px',
                                     '&:hover': { 
@@ -204,10 +206,9 @@ const ProjectsPage = () => {
                     </CardContent>
                   </Card>
                 </motion.div>
-              </div>
             );
           })}
-        </div>
+        </Box>
 
 
       </Box>

@@ -38,9 +38,6 @@ type ApiKey = {
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
-    pollenRefillRate?: number | null;
-    pollenMaxBalance?: number | null;
-    lastPollenRefillAt?: Date | null;
 };
 
 type AuthResult = {
@@ -125,9 +122,6 @@ export const auth = (options: AuthOptions) =>
                     permissions,
                     metadata: keyResult.key.metadata || undefined,
                     pollenBalance: fullApiKey?.pollenBalance ?? null,
-                    pollenRefillRate: fullApiKey?.pollenRefillRate ?? null,
-                    pollenMaxBalance: fullApiKey?.pollenMaxBalance ?? null,
-                    lastPollenRefillAt: fullApiKey?.lastPollenRefillAt ?? null,
                 },
             };
         };

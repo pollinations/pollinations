@@ -127,9 +127,6 @@ export const apikey = sqliteTable("apikey", {
   permissions: text("permissions"),
   metadata: text("metadata"),
   pollenBalance: real("pollen_balance"),
-  pollenRefillRate: real("pollen_refill_rate"),
-  pollenMaxBalance: real("pollen_max_balance"),
-  lastPollenRefillAt: integer("last_pollen_refill_at", { mode: "timestamp" }),
 }, (table) => [
   index("idx_apikey_key").on(table.key),
   index('idx_apikey_expires_at').on(table.expiresAt),

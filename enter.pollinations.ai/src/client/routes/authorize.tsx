@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
 import { ModelPermissions } from "../components/model-permissions.tsx";
-import { authClient } from "../auth.ts";
 
 // 30 days in seconds
 const DEFAULT_EXPIRY_SECONDS = 30 * 24 * 60 * 60;
@@ -202,7 +202,9 @@ function AuthorizeComponent() {
             </div>
 
             <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 shadow-lg">
-                <h2 className="font-bold mb-4 text-center">Authorize Application</h2>
+                <h2 className="font-bold mb-4 text-center">
+                    Authorize Application
+                </h2>
 
                 {error ? (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -219,7 +221,8 @@ function AuthorizeComponent() {
                                 </span>
                             </p>
                             <p className="text-xs text-blue-600 mt-2">
-                                Same as copy-pasting your key into their app 💙 Only you can use it
+                                Same as copy-pasting your key into their app 💙
+                                Only you can use it
                             </p>
                         </div>
 
@@ -227,7 +230,9 @@ function AuthorizeComponent() {
                         <ul className="mb-6 text-sm text-gray-600 space-y-2">
                             <li className="flex items-start gap-2">
                                 <span className="text-green-500">✓</span>
-                                <span>Generate text, images, audio & video</span>
+                                <span>
+                                    Generate text, images, audio & video
+                                </span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-green-500">✓</span>
@@ -237,7 +242,10 @@ function AuthorizeComponent() {
                                 <span className="text-gray-400">⏱</span>
                                 <span>
                                     Expires in 30 days · revoke anytime from{" "}
-                                    <a href="/" className="text-blue-600 hover:underline">
+                                    <a
+                                        href="/"
+                                        className="text-blue-600 hover:underline"
+                                    >
                                         dashboard
                                     </a>
                                 </span>

@@ -16,8 +16,7 @@ import aiohttp
 import requests
 import numpy as np
 from PIL import Image
-from diffusers import FluxPipeline
-from spandrel import ImageModelDescriptor, ModelLoader
+from diffusers import Flux2Pipeline
 import time
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import JSONResponse
@@ -84,18 +83,14 @@ async def periodic_heartbeat():
             await asyncio.sleep(5)
 
 
-MODEL_ID = "fal/FLUX.2-dev-Turbo"
-MODEL_FILENAME = "flux.2-turbo-lora.safetensors"
-SANA_MODEL_ID = "Efficient-Large-Model/Sana_1600M_1024px_diffusers"
+
+FLUX_BASE_MODEL = "black-forest-labs/FLUX.2-dev"
+LORA_REPO_ID = "fal/FLUX.2-dev-Turbo"
+LORA_FILENAME = "flux.2-turbo-lora.safetensors"
 MODEL_CACHE = "model_cache"
-UPSCALE_FACTOR = 2
 
-# Custom sigmas for FLUX.2-Turbo
+# Pre-shifted custom sigmas for 8-step turbo inference
 TURBO_SIGMAS = [1.0, 0.6509, 0.4374, 0.2932, 0.1893, 0.1108, 0.0495, 0.00031]
-
-MAX_GEN_RESOLUTION = 768
-MAX_FINAL_PIXELS = 2_359_296
-MAX_DIMENSION = 2048
 
 generate_lock = threading.Lock()
 
@@ -112,40 +107,8 @@ def calc_time(start, end, msg):
     print(f"{msg} time: {elapsed:.2f} seconds")
 
 
-def calculate_generation_dimensions(requested_width: int, requested_height: int) -> tuple[int, int, int, int, bool]:
-    final_w = min(requested_width, MAX_DIMENSION)
-    final_h = min(requested_height, MAX_DIMENSION)
-    
-    total_pixels = final_w * final_h
-    if total_pixels > MAX_FINAL_PIXELS:
-        scale = math.sqrt(MAX_FINAL_PIXELS / total_pixels)
-        final_w = int(final_w * scale)
-        final_h = int(final_h * scale)
-    
-    final_w = (final_w // 16) * 16
-    final_h = (final_h // 16) * 16
-    
-    gen_w = MAX_GEN_RESOLUTION
-    gen_h = MAX_GEN_RESOLUTION
-    
-    should_upscale = (final_w > gen_w or final_h > gen_h)
-    
-    return gen_w, gen_h, final_w, final_h, should_upscale
-
-
 pipe = None
-upscaler = None
 heartbeat_task = None
-
-
-def upscale_with_sana(image_tensor: torch.Tensor) -> torch.Tensor:
-    if upscaler is None:
-        raise RuntimeError("Upscaler not loaded")
-    
-    with torch.no_grad():
-        output = upscaler(image_tensor)
-    
-    return output
 
 
 def pil_to_tensor(image: Image.Image) -> torch.Tensor:
@@ -162,62 +125,44 @@ def tensor_to_pil(tensor: torch.Tensor) -> Image.Image:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global pipe, upscaler, heartbeat_task
+    global pipe, heartbeat_task
     
     logger.info("Starting up...")
     
     load_model_time = time.time()
     try:
-        logger.info(f"Loading FLUX model: {MODEL_ID}")
-        
-        # Download the raw LoRA file
-        logger.info(f"Downloading {MODEL_FILENAME} from {MODEL_ID}")
-        model_file = hf_hub_download(
-            repo_id=MODEL_ID,
-            filename=MODEL_FILENAME,
-            cache_dir=MODEL_CACHE,
-            repo_type="model"
-        )
-        logger.info(f"Model file downloaded to: {model_file}")
-        
-        # Load FLUX pipeline with custom sigmas
-        pipe = FluxPipeline.from_pretrained(
-            MODEL_ID,
+        logger.info(f"Loading base FLUX.2-dev model...")
+        pipe = Flux2Pipeline.from_pretrained(
+            FLUX_BASE_MODEL,
             torch_dtype=torch.bfloat16,
             cache_dir=MODEL_CACHE,
+        ).to("cuda")
+        logger.info("Base FLUX.2-dev model loaded")
+        
+        logger.info(f"Loading LoRA weights from local cache...")
+        lora_path = os.path.join(
+            MODEL_CACHE,
+            "models--fal--FLUX.2-dev-Turbo",
+            "snapshots",
+            "9ee51cd87578162cf8d02355a870bc5f4570045c",
+            LORA_FILENAME
         )
         
-        # Set custom sigmas for turbo
-        pipe.scheduler.sigmas = torch.tensor(TURBO_SIGMAS)
-        pipe = pipe.to("cuda")
-        logger.info("FLUX model loaded successfully with custom turbo sigmas")
-        
-        logger.info(f"Downloading SANA upscaler: {SANA_MODEL_ID}")
-        sana_path = snapshot_download(
-            repo_id=SANA_MODEL_ID,
-            cache_dir=MODEL_CACHE,
-            repo_type="model"
-        )
-        logger.info(f"SANA model downloaded to: {sana_path}")
-        
-        sana_safetensors = None
-        for root, dirs, files in os.walk(sana_path):
-            for file in files:
-                if file.endswith('.safetensors') and 'diffusion' in file.lower():
-                    sana_safetensors = os.path.join(root, file)
-                    break
-            if sana_safetensors:
-                break
-        
-        if sana_safetensors:
-            logger.info(f"Loading SANA upscaler from {sana_safetensors}")
-            upscaler = ModelLoader().load_from_file(sana_safetensors)
-            assert isinstance(upscaler, ImageModelDescriptor), f"Expected ImageModelDescriptor, got {type(upscaler)}"
-            upscaler.cuda().eval()
-            logger.info(f"SANA upscaler loaded: scale={upscaler.scale}x")
+        if os.path.exists(lora_path):
+            logger.info(f"LoRA file found at: {lora_path}")
+            pipe.load_lora_weights(lora_path)
+            logger.info("LoRA weights loaded successfully")
         else:
-            logger.warning(f"SANA model files not found in {sana_path} - upscaling disabled")
-            upscaler = None
+            logger.warning(f"LoRA file not found at {lora_path}, attempting to download...")
+            lora_file = hf_hub_download(
+                repo_id=LORA_REPO_ID,
+                filename=LORA_FILENAME,
+                cache_dir=MODEL_CACHE,
+                repo_type="model"
+            )
+            logger.info(f"LoRA file downloaded to: {lora_file}")
+            pipe.load_lora_weights(lora_file)
+            logger.info("LoRA weights loaded successfully")
         
         load_model_time_end = time.time()
         calc_time(load_model_time, load_model_time_end, "Time to load models")
@@ -270,45 +215,21 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     logger.info(f"Using seed: {seed}")
     generator = torch.Generator("cuda").manual_seed(seed)
     
-    gen_w, gen_h, final_w, final_h, should_upscale = calculate_generation_dimensions(request.width, request.height)
-    logger.info(f"Requested: {request.width}x{request.height} -> Generation: {gen_w}x{gen_h} -> Final: {final_w}x{final_h} (upscale: {should_upscale})")
-    
     try:
         with generate_lock:
             with torch.inference_mode():
                 output = pipe(
                     prompt=request.prompts[0],
-                    generator=generator,
-                    width=gen_w,
-                    height=gen_h,
+                    sigmas=TURBO_SIGMAS,
+                    guidance_scale=2.5,
+                    height=request.height,
+                    width=request.width,
                     num_inference_steps=8,
-                    guidance_scale=3.5,
+                    generator=generator,
                 )
             
             image = output.images[0]
             logger.info(f"Generated image: {image.size}")
-            
-            if should_upscale and upscaler is not None:
-                logger.info(f"Upscaling {gen_w}x{gen_h} -> {final_w}x{final_h} with SANA")
-                
-                image_tensor = pil_to_tensor(image).cuda()
-                
-                upscaled_tensor = upscale_with_sana(image_tensor)
-                
-                image = tensor_to_pil(upscaled_tensor)
-                logger.info(f"Upscaled image: {image.size}")
-            
-            if image.size != (final_w, final_h):
-                if image.size[0] > final_w or image.size[1] > final_h:
-                    left = (image.size[0] - final_w) // 2
-                    top = (image.size[1] - final_h) // 2
-                    image = image.crop((left, top, left + final_w, top + final_h))
-                else:
-                    image.thumbnail((final_w, final_h), Image.Resampling.LANCZOS)
-                    new_image = Image.new("RGB", (final_w, final_h), (255, 255, 255))
-                    offset = ((final_w - image.size[0]) // 2, (final_h - image.size[1]) // 2)
-                    new_image.paste(image, offset)
-                    image = new_image
         
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='JPEG', quality=95)
@@ -335,7 +256,7 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
 async def health():
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
-    return {"status": "healthy", "model": MODEL_ID}
+    return {"status": "healthy", "model": FLUX_BASE_MODEL, "lora": LORA_REPO_ID}
 
 
 if __name__ == "__main__":

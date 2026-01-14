@@ -31,7 +31,7 @@ import {
     usageToEventParams,
 } from "@/db/schema/event.ts";
 import { drizzle } from "drizzle-orm/d1";
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import {
     user as userTable,
     apikey as apikeyTable,
@@ -271,12 +271,7 @@ export const track = (eventType: EventType) =>
                         .set({
                             pollenBalance: sql`${apikeyTable.pollenBalance} - ${priceToDeduct}`,
                         })
-                        .where(
-                            and(
-                                eq(apikeyTable.id, apiKeyId),
-                                sql`${apikeyTable.pollenBalance} IS NOT NULL`,
-                            ),
-                        );
+                        .where(eq(apikeyTable.id, apiKeyId));
 
                     log.debug(
                         "Decremented {price} pollen from API key {keyId} budget",

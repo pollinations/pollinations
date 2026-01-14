@@ -78,9 +78,14 @@ function RouteComponent() {
         const prefix = isPublishable ? "pk" : "sk";
 
         // Step 1: Create key via better-auth's native API
+        const SECONDS_PER_DAY = 24 * 60 * 60;
         const createResult = await authClient.apiKey.create({
             name: formState.name,
             prefix,
+            ...(formState.expiryDays !== null &&
+                formState.expiryDays !== undefined && {
+                    expiresIn: formState.expiryDays * SECONDS_PER_DAY,
+                }),
             metadata: {
                 description: formState.description,
                 keyType,
@@ -118,13 +123,6 @@ function RouteComponent() {
             formState.pollenBudget !== null &&
             formState.pollenBudget !== undefined;
 
-        console.log(
-            "DEBUG: formState.pollenBudget =",
-            formState.pollenBudget,
-            "hasPollenBudget =",
-            hasPollenBudget,
-        );
-
         if (hasAllowedModels || hasPollenBudget) {
             const updateResponse = await fetch(
                 `/api/api-keys/${apiKey.id}/update`,
@@ -149,8 +147,10 @@ function RouteComponent() {
                     "Failed to set API key permissions/budget:",
                     errorData,
                 );
-                // Key was created but update failed - still return the key
-                // User can update later
+                // Key was created but update failed - throw so user knows
+                throw new Error(
+                    `Key created but failed to set budget/permissions: ${(errorData as { message?: string }).message || "Unknown error"}`,
+                );
             }
         }
 

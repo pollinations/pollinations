@@ -2,6 +2,7 @@ import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import { formatDistanceToNowStrict, type FormatDistanceToken } from "date-fns";
 import { PollenBudgetInput } from "./pollen-budget-input.tsx";
+import { ExpiryDaysInput } from "./expiry-days-input.tsx";
 
 const shortFormatDistance: Record<FormatDistanceToken, string> = {
     lessThanXSeconds: "{{count}}s",
@@ -104,12 +105,8 @@ const LimitsBadge: FC<{
     const hasExpiry = expiresAt !== null && expiresAt !== undefined;
     const hasBudget = pollenBudget !== null && pollenBudget !== undefined;
 
-    if (!hasExpiry && !hasBudget) {
-        return <span className="text-xs text-gray-400">∞</span>;
-    }
-
-    const parts: string[] = [];
-
+    // Format expiry
+    let expiryStr = "∞";
     if (hasExpiry) {
         const expiresDate = new Date(expiresAt);
         const now = new Date();
@@ -117,49 +114,40 @@ const LimitsBadge: FC<{
             (expiresDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
         );
         if (daysLeft <= 0) {
-            parts.push("Expired");
+            expiryStr = "expired";
         } else {
             const timeLeft = formatDistanceToNowStrict(expiresDate, {
                 addSuffix: false,
                 locale: shortLocale,
             });
-            parts.push(timeLeft);
+            expiryStr = timeLeft;
         }
     }
 
+    // Format budget
+    let budgetStr = "∞";
+    const isExhausted = hasBudget && pollenBudget <= 0;
     if (hasBudget) {
-        const budgetStr =
+        budgetStr =
             pollenBudget <= 0
-                ? "0"
+                ? "empty"
                 : pollenBudget < 1
-                  ? pollenBudget.toFixed(2)
-                  : `${Math.floor(pollenBudget)}`;
-        parts.push(budgetStr);
+                  ? `${pollenBudget.toFixed(2)}🌸`
+                  : `${Math.floor(pollenBudget)}🌸`;
     }
 
-    const isExpired = hasExpiry && new Date(expiresAt) <= new Date();
-    const isBudgetLow = hasBudget && pollenBudget <= 0;
-    const isWarning =
-        (hasBudget && pollenBudget > 0 && pollenBudget <= 10) ||
-        (hasExpiry &&
-            !isExpired &&
-            new Date(expiresAt).getTime() - Date.now() <
-                7 * 24 * 60 * 60 * 1000);
-
     return (
-        <span
-            className={cn(
-                "text-xs px-2 py-0.5 rounded-full border",
-                isExpired || isBudgetLow
-                    ? "bg-red-100 text-red-700 border-red-300"
-                    : isWarning
-                      ? "bg-amber-100 text-amber-700 border-amber-300"
-                      : "bg-gray-100 text-gray-700 border-gray-300",
-            )}
-            title={`${hasExpiry ? `Expires: ${new Date(expiresAt).toLocaleDateString()}` : "No expiry"}${hasBudget ? ` | Budget: ${pollenBudget.toFixed(2)} pollen` : ""}`}
-        >
-            {parts.join(" · ")}
-        </span>
+        <div className="flex items-center text-xs whitespace-nowrap">
+            <span className="text-gray-600">{expiryStr}</span>
+            <span className="text-gray-400 mx-1">/</span>
+            <span
+                className={
+                    isExhausted ? "text-red-500 font-medium" : "text-gray-600"
+                }
+            >
+                {budgetStr}
+            </span>
+        </div>
     );
 };
 
@@ -263,7 +251,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     Created / Used
                                 </span>
                                 <span className="font-bold text-pink-400 text-sm">
-                                    Limits
+                                    Expiry / Budget
                                 </span>
                                 <span className="font-bold text-pink-400 text-sm">
                                     Models
@@ -455,6 +443,8 @@ export type CreateApiKey = {
     allowedModels?: string[] | null;
     /** Pollen budget cap for this key. null = unlimited */
     pollenBudget?: number | null;
+    /** Days until expiry. null = no expiry */
+    expiryDays?: number | null;
 };
 
 export type CreateApiKeyResponse = ApiKey & {
@@ -655,6 +645,15 @@ const CreateKeyForm: FC<{
                     disabled={isSubmitting}
                 />
             )}
+
+            {/* Expiry Days - optional time limit */}
+            {!createdKey && (
+                <ExpiryDaysInput
+                    value={formData.expiryDays ?? null}
+                    onChange={(val) => onInputChange("expiryDays", val)}
+                    disabled={isSubmitting}
+                />
+            )}
             <div className="flex gap-2 justify-end pt-4">
                 {!createdKey && (
                     <Button
@@ -730,6 +729,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         keyType: "secret", // Default to secret key
         allowedModels: null, // null = all models allowed
         pollenBudget: undefined, // undefined = unlimited (user can set a number)
+        expiryDays: null, // null = no expiry (unlimited)
     });
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,

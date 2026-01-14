@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
 import { ModelPermissions } from "../components/model-permissions.tsx";
+import { PollenBudgetInput } from "../components/pollen-budget-input.tsx";
+import { ExpiryDaysInput } from "../components/expiry-days-input.tsx";
 
-// 30 days in seconds
-const DEFAULT_EXPIRY_SECONDS = 30 * 24 * 60 * 60;
+const SECONDS_PER_DAY = 24 * 60 * 60;
 
 export const Route = createFileRoute("/authorize")({
     component: AuthorizeComponent,
@@ -30,6 +31,10 @@ function AuthorizeComponent() {
     const [isValidUrl, setIsValidUrl] = useState(false);
     // null = all models allowed, [] = restricted but none selected, [...] = specific models
     const [allowedModels, setAllowedModels] = useState<string[] | null>(null);
+    // null = no budget (unlimited), number = budget cap
+    const [pollenBudget, setPollenBudget] = useState<number | null>(null);
+    // null = no expiry, number = days until expiry (default 30 for authorize flow)
+    const [expiryDays, setExpiryDays] = useState<number | null>(30);
 
     // Parse and validate the redirect URL
     useEffect(() => {
@@ -72,7 +77,9 @@ function AuthorizeComponent() {
             // Create a temporary API key with 30-day expiry using better-auth's built-in endpoint
             const result = await authClient.apiKey.create({
                 name: `${redirectHostname}`,
-                expiresIn: DEFAULT_EXPIRY_SECONDS,
+                ...(expiryDays !== null && {
+                    expiresIn: expiryDays * SECONDS_PER_DAY,
+                }),
                 prefix: "sk",
                 metadata: {
                     keyType: "temporary",
@@ -88,20 +95,29 @@ function AuthorizeComponent() {
 
             const data = result.data;
 
-            // Set permissions if restricted (allowedModels is not null)
-            if (allowedModels !== null) {
+            // Set permissions and/or budget if configured
+            const hasAllowedModels = allowedModels !== null;
+            const hasPollenBudget = pollenBudget !== null;
+
+            if (hasAllowedModels || hasPollenBudget) {
                 const updateResponse = await fetch(
                     `/api/api-keys/${data.id}/update`,
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         credentials: "include",
-                        body: JSON.stringify({ allowedModels }),
+                        body: JSON.stringify({
+                            ...(hasAllowedModels && { allowedModels }),
+                            ...(hasPollenBudget && { pollenBudget }),
+                        }),
                     },
                 );
 
                 if (!updateResponse.ok) {
-                    console.error("Failed to set API key permissions");
+                    const errorData = await updateResponse.json();
+                    throw new Error(
+                        `Failed to set permissions/budget: ${(errorData as { message?: string }).message || "Unknown error"}`,
+                    );
                 }
             }
 
@@ -241,7 +257,7 @@ function AuthorizeComponent() {
                             <li className="flex items-start gap-2">
                                 <span className="text-gray-400">⏱</span>
                                 <span>
-                                    Expires in 30 days · revoke anytime from{" "}
+                                    Revoke anytime from{" "}
                                     <a
                                         href="/"
                                         className="text-blue-600 hover:underline"
@@ -262,6 +278,22 @@ function AuthorizeComponent() {
                                 value={allowedModels}
                                 onChange={setAllowedModels}
                                 compact
+                            />
+                        </div>
+
+                        {/* Pollen budget input */}
+                        <div className="mb-6">
+                            <PollenBudgetInput
+                                value={pollenBudget}
+                                onChange={setPollenBudget}
+                            />
+                        </div>
+
+                        {/* Expiry days input */}
+                        <div className="mb-6">
+                            <ExpiryDaysInput
+                                value={expiryDays}
+                                onChange={setExpiryDays}
                             />
                         </div>
 

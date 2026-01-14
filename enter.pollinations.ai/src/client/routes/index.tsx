@@ -22,21 +22,21 @@ export const Route = createFileRoute("/")({
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
-        const [
-            customer,
-            tierData,
-            apiKeysResult,
-            d1BalanceResult,
-        ] = await Promise.all([
-            apiClient.polar.customer.state
-                .$get()
-                .then((r) => (r.ok ? r.json() : null)),
-            apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
-            authClient.apiKey.list(),
-            apiClient.polar.customer["d1-balance"]
-                .$get()
-                .then((r) => (r.ok ? r.json() : null)),
-        ]);
+        const [customer, tierData, apiKeysResult, d1BalanceResult] =
+            await Promise.all([
+                apiClient.polar.customer.state
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+                apiClient.tiers.view
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+                apiClient["api-keys"]
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : { data: [] })),
+                apiClient.polar.customer["d1-balance"]
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+            ]);
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
@@ -108,12 +108,17 @@ function RouteComponent() {
             });
         }
 
-        // Step 2: Set permissions if restricted (allowedModels is not null)
-        // null = unrestricted (all models), array = restricted to specific models
-        if (
+        // Step 2: Set permissions and/or budget if provided
+        // allowedModels: null = unrestricted (all models), array = restricted to specific models
+        // pollenBudget: null = unlimited, number = budget cap
+        const hasAllowedModels =
             formState.allowedModels !== null &&
-            formState.allowedModels !== undefined
-        ) {
+            formState.allowedModels !== undefined;
+        const hasPollenBudget =
+            formState.pollenBudget !== null &&
+            formState.pollenBudget !== undefined;
+
+        if (hasAllowedModels || hasPollenBudget) {
             const updateResponse = await fetch(
                 `/api/api-keys/${apiKey.id}/update`,
                 {
@@ -121,16 +126,24 @@ function RouteComponent() {
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",
                     body: JSON.stringify({
-                        allowedModels: formState.allowedModels,
+                        ...(hasAllowedModels && {
+                            allowedModels: formState.allowedModels,
+                        }),
+                        ...(hasPollenBudget && {
+                            pollenBudget: formState.pollenBudget,
+                        }),
                     }),
                 },
             );
 
             if (!updateResponse.ok) {
                 const errorData = await updateResponse.json();
-                console.error("Failed to set API key permissions:", errorData);
-                // Key was created but permissions failed - still return the key
-                // User can update permissions later
+                console.error(
+                    "Failed to set API key permissions/budget:",
+                    errorData,
+                );
+                // Key was created but update failed - still return the key
+                // User can update later
             }
         }
 

@@ -28,6 +28,42 @@ const UpdateApiKeySchema = z.object({
 export const apiKeysRoutes = new Hono<Env>()
     .use(auth({ allowSessionCookie: true, allowApiKey: false }))
     /**
+     * List all API keys for the current user with pollenBalance from D1.
+     * Extends better-auth's native list with custom D1 columns.
+     */
+    .get(
+        "/",
+        describeRoute({
+            tags: ["Auth"],
+            description:
+                "List all API keys for the current user with pollenBalance.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const db = drizzle(c.env.DB, { schema });
+
+            const keys = await db.query.apikey.findMany({
+                where: eq(schema.apikey.userId, user.id),
+                orderBy: (apikey, { desc }) => [desc(apikey.createdAt)],
+            });
+
+            return c.json({
+                data: keys.map((key) => ({
+                    id: key.id,
+                    name: key.name,
+                    start: key.start,
+                    createdAt: key.createdAt,
+                    lastRequest: key.lastRequest,
+                    expiresAt: key.expiresAt,
+                    permissions: key.permissions,
+                    metadata: key.metadata,
+                    pollenBalance: key.pollenBalance,
+                })),
+            });
+        },
+    )
+    /**
      * Update an API key's permissions.
      * Uses auth.api.updateApiKey() which supports server-only fields like permissions.
      */

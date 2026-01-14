@@ -2,7 +2,7 @@ import requests
 import base64
 import time
 
-url = "http://localhost:10002/generate"
+url = "http://localhost:10003/generate"
 start_time = time.time()
 payload = {
     "prompts": ["joyous clipart of a cute corgi puppy playing with a colorful ball in a sunny park, vibrant colors, cartoon style"],

@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.12-venv \
     python3-pip \
     git \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1 && \
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
@@ -27,12 +28,13 @@ RUN pip install --no-cache-dir wheel ninja && \
     pip install --no-cache-dir https://github.com/Dao-AILab/flash-attention/releases/download/v2.7.4.post1/flash_attn-2.7.4.post1+cu12torch2.6cxx11abiFALSE-cp312-cp312-linux_x86_64.whl 2>/dev/null || true
 
 COPY server.py .
-COPY install/install_models.py .
+COPY entrypoint.sh .
 RUN mkdir -p /app/model_cache
+RUN chmod +x /app/entrypoint.sh
 
-EXPOSE 10002
+EXPOSE 10003
 
-ENV PORT=10002
-ENV SERVICE_TYPE=zimage
+ENV PORT=10003
+ENV SERVICE_TYPE=flux2-dev-turbo
 
-CMD ["python", "server.py"]
+ENTRYPOINT ["/app/entrypoint.sh"]

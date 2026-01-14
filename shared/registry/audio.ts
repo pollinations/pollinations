@@ -53,7 +53,7 @@ function perThousandChars(dollarsPerThousand: number): number {
 
 export const AUDIO_SERVICES = {
     elevenlabs: {
-        aliases: ["tts", "text-to-speech", "eleven"],
+        aliases: ["tts", "text-to-speech", "eleven", "tts-1", "tts-1-hd"],
         modelId: "eleven_multilingual_v2",
         provider: "elevenlabs",
         cost: [

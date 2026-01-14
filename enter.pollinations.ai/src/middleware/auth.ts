@@ -37,6 +37,10 @@ type ApiKey = {
     name?: string;
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
+    pollenBalance?: number | null;
+    pollenRefillRate?: number | null;
+    pollenMaxBalance?: number | null;
+    lastPollenRefillAt?: Date | null;
 };
 
 type AuthResult = {
@@ -103,6 +107,11 @@ export const auth = (options: AuthOptions) =>
                 where: eq(schema.user.id, keyResult.key.userId),
             });
 
+            // Fetch full API key with budget fields
+            const fullApiKey = await db.query.apikey.findFirst({
+                where: eq(schema.apikey.id, keyResult.key.id),
+            });
+
             log.debug("User lookup result: {found}", {
                 found: !!user,
                 userId: user?.id,
@@ -115,6 +124,10 @@ export const auth = (options: AuthOptions) =>
                     name: keyResult.key.name || undefined,
                     permissions,
                     metadata: keyResult.key.metadata || undefined,
+                    pollenBalance: fullApiKey?.pollenBalance ?? null,
+                    pollenRefillRate: fullApiKey?.pollenRefillRate ?? null,
+                    pollenMaxBalance: fullApiKey?.pollenMaxBalance ?? null,
+                    lastPollenRefillAt: fullApiKey?.lastPollenRefillAt ?? null,
                 },
             };
         };

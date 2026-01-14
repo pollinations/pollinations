@@ -410,13 +410,10 @@ const socBotChat = () => {
     setTimeout(() => {
       if (messagesContainerRef.current) {
         const container = messagesContainerRef.current;
-        const isScrolledNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-        if (isScrolledNearBottom || messages.length <= 1) {
-          container.scrollTo({
-            top: container.scrollHeight,
-            behavior: 'smooth'
-          });
-        }
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: 'smooth'
+        });
       }
     }, 100);
   };
@@ -434,6 +431,7 @@ const socBotChat = () => {
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
+    scrollToBottom();
 
     const typingMessage = {
       id: Date.now() + 1,
@@ -545,7 +543,7 @@ const socBotChat = () => {
         }} 
       />
 
-      <Container maxWidth="md" sx={{ position: 'relative', mt: 1, zIndex: 1, py: 4, minHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+      <Container maxWidth="md" sx={{ position: 'relative', mt: 1, zIndex: 1, py: 4, height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -560,6 +558,7 @@ const socBotChat = () => {
             mb: 2,
             px: 1,
             scrollBehavior: 'smooth',
+            maxHeight: 'calc(100vh - 300px)',
             '&::-webkit-scrollbar': {
               width: '6px',
             },

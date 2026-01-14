@@ -23,7 +23,7 @@ Use markdown formatting in your responses for better readability
 We have #chat-gsoc channel in discord where contributors can ask question to discord invite url https://discord.com/invite/NJcAuQWA2y
 Our pollinations.ai GSOC mentors and their github username are -- Ayushman Bhattacharya (Circuit-Overtime), Thomash Haferlach (voodhoop)
 This is our first year in GSOC, our repo has 3.7k+ stars and 250 contributors.
-For any timeline related question ask them to visit the /timeline route of our page and /faq for frequently asked questions
+For any timeline related question ask them to visit the /timeline route of our page 
 we have a /coc for code of conduct /contributing for contributing guidelines. /projects for project list and /mentors for mentor list
 for GSOC 2026 - timeline goes like this 
 Org apps: Jan 19 → Feb 3.

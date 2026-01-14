@@ -98,8 +98,7 @@ const NotFoundPage = () => {
           animate="visible"
           custom={0}
         >
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            {/* Large 404 with animation */}
+          <Box sx={{ textAlign: 'center', mb: 2 }}>
             <motion.div animate={float.animate}>
               <Typography 
                 variant='h1' 
@@ -212,7 +211,7 @@ const NotFoundPage = () => {
               </Button>
               <Button
                 component={Link}
-                to='/projects'
+                to='/about'
                 variant="outlined"
                 size="large"
                 startIcon={<ArrowBack />}
@@ -233,7 +232,7 @@ const NotFoundPage = () => {
                   }
                 }}
               >
-                Explore Projects
+                About Us
               </Button>
             </Stack>
           </Box>

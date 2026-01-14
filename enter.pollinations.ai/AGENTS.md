@@ -34,17 +34,17 @@
 
 **Two types of API keys available:**
 
-1. **🌐 Publishable Key** (starts with `pk_`)
+1. **🌐 Publishable Key** (starts with `pk_`) - ⚠️ **Beta: Not yet ready for production use**
    - Always visible in dashboard
-   - Safe for client-side code (React, Vue, etc.)
-   - Pollen-based rate limiting: 1 pollen per IP per hour
-   - Access to all models
+   - For client-side apps (React, Vue, etc.)
+   - IP rate-limited: 1 pollen per IP per hour
+   - **Consumes Pollen from your balance** - exposing in public code will drain your wallet if your app gets traffic
 2. **🔒 Secret Key** (starts with `sk_`)
    - Only shown once - copy immediately!
    - For server-side apps only
    - Never expose publicly
    - No rate limits
-   - Can spend Pollen for paid models
+   - **Consumes Pollen from your balance**
 
 **For testing, use Secret Keys** for better rate limits and pollen spending.
 
@@ -517,7 +517,7 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 ### Authentication
 
 - **Use Secret Keys (`sk_`) for testing**: Better rate limits and can spend pollen
-- **Publishable Keys (`pk_`)**: Only for client-side apps, IP rate limited (100 req/min)
+- **Publishable Keys (`pk_`)**: Only for client-side apps, IP rate limited (1 pollen per IP per hour)
 
 ### Performance
 

@@ -253,16 +253,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // Fireworks AI - glm-4.7, minimax-m2.1
+    // Fireworks AI - glm-4.7, minimax-m2.1, deepseek-v3.2
     // ============================================================================
     "accounts/fireworks/models/glm-4p7": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-4p7",
-            "max-tokens": 25344,
         }),
     "accounts/fireworks/models/minimax-m2p1": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m2p1",
-            "max-tokens": 25600,
+        }),
+    "accounts/fireworks/models/deepseek-v3p2": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v3p2",
         }),
 };

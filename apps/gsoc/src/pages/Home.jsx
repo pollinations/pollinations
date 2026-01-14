@@ -162,19 +162,6 @@ const HomePage = () => {
                   </Box>
 
                   <Box sx={{ position: 'relative', mb: 4, textAlign: 'center' }}>
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        left: { xs: '10%', md: '15%' },
-                        top: '10%',
-                        width: '3px',
-                        height: '60%',
-                        background: 'linear-gradient(180deg, transparent, #60a5fa, transparent)',
-                        borderRadius: '2px',
-                        opacity: 0.6
-                      }}
-                    />
-                    
                     <Typography 
                       variant='h1' 
                       sx={{ 
@@ -199,23 +186,12 @@ const HomePage = () => {
                         backgroundClip: 'text',
                         WebkitBackgroundClip: 'text',
                         color: 'transparent',
-                        WebkitTextFillColor: 'transparent',
-                        '&::after': {
-                          content: '""',
-                          position: 'absolute',
-                          bottom: '-4px',
-                          left: '50%',
-                          transform: 'translateX(-50%)',
-                          width: '100%',
-                          height: '3px',
-                          background: 'linear-gradient(90deg, transparent, #60a5fa, transparent)',
-                          borderRadius: '2px',
-                          opacity: 0.8
-                        }
+                        WebkitTextFillColor: 'transparent'
                       }}>
-                        pollinations.ai
+                        POLLINATIONS.AI
                       </Box>{' '}
-                      celebrating Open Source Development
+                      <br></br>
+                      Celebrating Open Source Development
                     </Typography>
 
                     <Box
@@ -246,15 +222,6 @@ const HomePage = () => {
                         position: 'relative',
                         textAlign: 'center',
                         margin: '0 auto',
-                        '&::before': {
-                          content: '"⚡"',
-                          position: 'absolute',
-                          left: '-30px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          fontSize: '1.2rem',
-                          opacity: 0.6
-                        }
                       }}
                     >
                       This time with{' '}

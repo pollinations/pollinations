@@ -118,6 +118,13 @@ function RouteComponent() {
             formState.pollenBudget !== null &&
             formState.pollenBudget !== undefined;
 
+        console.log(
+            "DEBUG: formState.pollenBudget =",
+            formState.pollenBudget,
+            "hasPollenBudget =",
+            hasPollenBudget,
+        );
+
         if (hasAllowedModels || hasPollenBudget) {
             const updateResponse = await fetch(
                 `/api/api-keys/${apiKey.id}/update`,

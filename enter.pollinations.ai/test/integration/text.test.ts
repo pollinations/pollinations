@@ -1245,3 +1245,37 @@ test(
         }
     },
 );
+
+// API key pollen budget enforcement tests
+describe("API key pollen budget enforcement", async () => {
+    test(
+        "API key with exhausted budget should return 402",
+        { timeout: 30000 },
+        async ({ exhaustedBudgetApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${exhaustedBudgetApiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "openai-fast",
+                        messages: [
+                            {
+                                role: "user",
+                                content: TEST_MESSAGE_CONTENT,
+                            },
+                        ],
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(402);
+            const body = await response.json();
+            expect((body as any).error.message).toContain("budget exhausted");
+        },
+    );
+});

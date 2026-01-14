@@ -49,6 +49,7 @@ const chatCompletionHandlers = factory.createHandlers(
         const log = c.get("log").getChild("generate");
         await c.var.auth.requireAuthorization();
         c.var.auth.requireModelAccess();
+        c.var.auth.requireKeyBudget();
 
         // Use resolved model from middleware for the backend request
         const requestBody = await c.req.json();
@@ -310,6 +311,7 @@ export const proxyRoutes = new Hono<Env>()
             const log = c.get("log").getChild("generate");
             await c.var.auth.requireAuthorization();
             c.var.auth.requireModelAccess();
+            c.var.auth.requireKeyBudget();
             await checkBalance(c.var);
 
             // Use resolved model from middleware
@@ -424,6 +426,7 @@ export const proxyRoutes = new Hono<Env>()
             const log = c.get("log").getChild("generate");
             await c.var.auth.requireAuthorization();
             c.var.auth.requireModelAccess();
+            c.var.auth.requireKeyBudget();
             await checkBalance(c.var);
 
             // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)

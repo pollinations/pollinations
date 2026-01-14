@@ -104,14 +104,17 @@ export const apiKeysRoutes = new Hono<Env>()
                       ? { models: allowedModels }
                       : undefined;
 
-            // Update permissions via better-auth's server API
-            const updatedKey = await authClient.api.updateApiKey({
-                body: {
-                    keyId: id,
-                    userId: user.id,
-                    permissions,
-                },
-            });
+            // Only call better-auth's updateApiKey if we have permission changes
+            // (it throws "No values to update" if permissions is undefined)
+            if (permissions !== undefined) {
+                await authClient.api.updateApiKey({
+                    body: {
+                        keyId: id,
+                        userId: user.id,
+                        permissions,
+                    },
+                });
+            }
 
             // Update pollenBalance directly in D1 if provided
             // null = remove budget (unlimited), number = set budget
@@ -124,15 +127,15 @@ export const apiKeysRoutes = new Hono<Env>()
                     .where(eq(schema.apikey.id, id));
             }
 
-            // Fetch updated key to return current pollenBalance
+            // Fetch updated key to return current state
             const finalKey = await db.query.apikey.findFirst({
                 where: eq(schema.apikey.id, id),
             });
 
             return c.json({
-                id: updatedKey.id,
-                name: updatedKey.name,
-                permissions: updatedKey.permissions,
+                id: finalKey?.id ?? id,
+                name: finalKey?.name,
+                permissions: finalKey?.permissions,
                 pollenBalance: finalKey?.pollenBalance ?? null,
             });
         },

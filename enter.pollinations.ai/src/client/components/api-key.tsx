@@ -729,6 +729,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         description: `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
         keyType: "secret", // Default to secret key
         allowedModels: null, // null = all models allowed
+        pollenBudget: undefined, // undefined = unlimited (user can set a number)
     });
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,

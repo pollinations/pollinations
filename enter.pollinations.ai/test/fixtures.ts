@@ -39,6 +39,8 @@ type Fixtures = {
     pubApiKey: string;
     /** API key restricted to only ["openai-fast", "flux"] models */
     restrictedApiKey: string;
+    /** API key with zero pollen budget (should be rejected with 402) */
+    exhaustedBudgetApiKey: string;
 };
 
 type SignupData = {
@@ -183,6 +185,44 @@ export const test = base.extend<Fixtures>({
         if (!updateResponse.ok) {
             throw new Error(
                 `Failed to set API key permissions: ${await updateResponse.text()}`,
+            );
+        }
+
+        await use(createApiKeyResponse.data.key);
+    },
+    /**
+     * Creates an API key with zero pollen budget (exhausted).
+     * Uses the /api/api-keys/:id/update endpoint to set pollenBudget to 0.
+     */
+    exhaustedBudgetApiKey: async ({ auth, sessionToken }, use) => {
+        const createApiKeyResponse = await auth.apiKey.create({
+            name: "exhausted-budget-key",
+            fetchOptions: {
+                headers: {
+                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        });
+        if (!createApiKeyResponse.data)
+            throw new Error("Failed to create exhausted budget API key");
+
+        // Set pollenBudget to 0 via the API endpoint
+        const updateResponse = await SELF.fetch(
+            `http://localhost:3000/api/api-keys/${createApiKeyResponse.data.id}/update`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    pollenBudget: 0,
+                }),
+            },
+        );
+        if (!updateResponse.ok) {
+            throw new Error(
+                `Failed to set API key budget: ${await updateResponse.text()}`,
             );
         }
 

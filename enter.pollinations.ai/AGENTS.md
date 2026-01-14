@@ -37,7 +37,7 @@
 1. **🌐 Publishable Key** (starts with `pk_`)
    - Always visible in dashboard
    - Safe for client-side code (React, Vue, etc.)
-   - Pollen-based rate limiting: 1 pollen/hour refill per IP+key
+   - Pollen-based rate limiting: 1 pollen per IP per hour
    - Access to all models
 2. **🔒 Secret Key** (starts with `sk_`)
    - Only shown once - copy immediately!

@@ -96,7 +96,7 @@ export const DOCS_PAGE = {
     keyTypesLabel: "Key Types",
     publishableLabel: "Publishable",
     publishableFeature1: "Client-side demos & prototypes",
-    publishableFeature2: "Rate limited: 1 pollen/hour per IP+key",
+    publishableFeature2: "Rate limited: 1 pollen per IP per hour",
     publishableBetaWarning:
         "⚠️ Beta — Turnstile protection coming soon. Not recommended for production yet.",
     secretLabel: "Secret",

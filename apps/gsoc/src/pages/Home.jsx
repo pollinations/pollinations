@@ -27,24 +27,6 @@ const HomePage = () => {
     document.title = "GSOC 26' - pollinations.ai";
   }, []);
 
-  const highlights = [
-    {
-      icon: <Code />,
-      title: "Open Source Excellence",
-      description: "Contribute to cutting-edge AI projects that impact millions of users worldwide."
-    },
-    {
-      icon: <School />,
-      title: "Expert Mentorship",
-      description: "Learn from industry professionals and experienced open-source maintainers."
-    },
-    {
-      icon: <Group />,
-      title: "Global Community",
-      description: "Join a worldwide network of developers, researchers, and AI enthusiasts."
-    }
-  ];
-
   const stats = [
     { number: "3.7K", label: "GitHub Stars", icon: <Star /> },
     { number: "250+", label: "Contributors", icon: <Group /> },
@@ -128,7 +110,7 @@ const HomePage = () => {
                     flexWrap: 'wrap',
                     justifyContent: 'center'
                   }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box onClick={() => { location.href = "https://summerofcode.withgoogle.com"; }} sx={{ display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer', userSelect: 'none' }}>
                       <img 
                         src="/gsoc_logo.webp" 
                         alt="Google Summer of Code"
@@ -150,7 +132,7 @@ const HomePage = () => {
                       ×
                     </Typography>
                     
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box onClick={() => { location.href = "https://pollinations.ai"; }} sx={{ display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer', userSelect: 'none' }}>
                       <img 
                         src="/polli_white.svg" 
                         alt="Pollinations.ai"
@@ -225,10 +207,14 @@ const HomePage = () => {
                       }}
                     >
                       This time with{' '}
-                      <Box component="span" sx={{ 
+                      <Box component="span" onClick={() => {
+                        location.href = "https://summerofcode.withgoogle.com";
+                      }} sx={{ 
                         fontWeight: 600, 
                         color: '#60a5fa',
-                        textShadow: '0 0 10px rgba(96, 165, 250, 0.3)'
+                        textShadow: '0 0 10px rgba(96, 165, 250, 0.3)',
+                        userSelect: 'none',
+                        cursor: 'pointer'
                       }}>
                         Google Summer of Code 2026,
                       </Box>{' '}

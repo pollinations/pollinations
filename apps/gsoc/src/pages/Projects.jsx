@@ -69,11 +69,17 @@ const ProjectsPage = () => {
           </Stack>
         </Box>
 
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 3 }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, minmax(0, 2fr))',
+              gap: 2
+            }}
+          >
           {projects && projects.map((project, index) => {
             const mentor = mentors.find(m => m.id === project.mentorID);
             return (
-              <motion.div key={index} custom={index} variants={cardVariants} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ width: 'calc(50% - 12px)', minWidth: '300px' }}>
+              <motion.div key={project.id} custom={index} variants={cardVariants} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                   <Card elevation={0} sx={{ 
                     background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)', 
                     backdropFilter: 'blur(20px)', 
@@ -131,7 +137,7 @@ const ProjectsPage = () => {
                               Project Mentor
                             </Typography>
                             
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center',  gap: 2, mb: 2 }}>
                               <Avatar src={mentor?.imageUrl} sx={{ width: 65, height: 65, border: '2px solid rgba(255,255,255,0.2)' }}>
                                 {mentor?.name?.split(' ').map(n => n[0]).join('') || 'M'}
                               </Avatar>
@@ -178,13 +184,11 @@ const ProjectsPage = () => {
                           <IconButton 
                             onClick={() => handleExpandClick(project.id)} 
                             sx={{ 
-                              position: 'absolute', 
-                              bottom: '20px', 
-                              right: '2.5rem',
                               color: 'rgba(255,255,255,0.8)',
                               border: '1px solid rgba(255,255,255,0.2)',
-                              borderRadius: '50%',
-                              width: '48px',
+                              borderRadius: '15px',
+                              margin: "0 auto",
+                              width: '100%',
                               height: '48px',
                               display: 'flex',
                               alignItems: 'center',

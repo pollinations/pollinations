@@ -135,15 +135,17 @@ type ServiceRegistryEntry = ServiceDefinition & {
 };
 
 const SERVICE_REGISTRY = Object.fromEntries(
-    Object.entries({ ...TEXT_SERVICES, ...IMAGE_SERVICES }).map(
-        ([name, service]) => [
-            name,
-            {
-                ...service,
-                price: sortDefinitions([...service.cost]),
-            } as ServiceRegistryEntry,
-        ],
-    ),
+    Object.entries({
+        ...TEXT_SERVICES,
+        ...IMAGE_SERVICES,
+        ...AUDIO_SERVICES,
+    }).map(([name, service]) => [
+        name,
+        {
+            ...service,
+            price: sortDefinitions([...service.cost]),
+        } as ServiceRegistryEntry,
+    ]),
 ) as Record<string, ServiceRegistryEntry>;
 
 /**

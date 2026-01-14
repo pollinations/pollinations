@@ -7,6 +7,56 @@ import type { Env } from "../env.ts";
 import { user as userTable } from "../db/schema/better-auth.ts";
 const log = getLogger(["hono", "webhooks-crypto"]);
 
+// Send crypto webhook event to Tinybird for analytics
+async function sendCryptoEventToTinybird(
+    env: Cloudflare.Env,
+    payload: NowPaymentsIpnPayload,
+    userId: string,
+): Promise<void> {
+    const e = env as unknown as Record<string, string>;
+    const tinybirdUrl = e.TINYBIRD_CRYPTO_INGEST_URL;
+    const tinybirdToken = e.TINYBIRD_CRYPTO_INGEST_TOKEN;
+
+    if (!tinybirdUrl || !tinybirdToken) {
+        log.debug("Tinybird Crypto ingest not configured, skipping");
+        return;
+    }
+
+    // Build event with extracted fields + full payload (timestamp uses DEFAULT now() in schema)
+    const event = {
+        event_type: payload.payment_status,
+        user_id: userId,
+        payment_id: String(payload.payment_id),
+        order_id: payload.order_id,
+        pay_currency: payload.pay_currency,
+        payload: JSON.stringify(payload),
+    };
+
+    try {
+        const response = await fetch(tinybirdUrl, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${tinybirdToken}`,
+                "Content-Type": "application/x-ndjson",
+            },
+            body: JSON.stringify(event),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            log.error(
+                "Failed to send crypto event to Tinybird: {status} {error}",
+                {
+                    status: response.status,
+                    error: errorText,
+                },
+            );
+        }
+    } catch (error) {
+        log.error("Error sending crypto event to Tinybird: {error}", { error });
+    }
+}
+
 // Crypto-only pack names (includes $1 option not available via Polar)
 const cryptoPackNames = ["1x2", "5x2", "10x2", "20x2", "50x2"] as const;
 type CryptoPackName = (typeof cryptoPackNames)[number];
@@ -139,6 +189,20 @@ export const webhooksCryptoRoutes = new Hono<Env>().post(
             priceAmount: payload.price_amount,
             actuallyPaidFiat: payload.actually_paid_fiat,
         });
+
+        // Parse order_id early to get userId for Tinybird logging
+        const orderInfoForLogging = parseOrderId(payload.order_id);
+        const userIdForLogging = orderInfoForLogging?.userId ?? "";
+
+        // Send to Tinybird in background using waitUntil to prevent cancellation
+        c.executionCtx.waitUntil(
+            sendCryptoEventToTinybird(c.env, payload, userIdForLogging).catch(
+                (err) =>
+                    log.error("Tinybird crypto send failed: {error}", {
+                        error: err,
+                    }),
+            ),
+        );
 
         // Accept finished or partially_paid payments
         // partially_paid occurs when crypto amount is slightly less due to network fees

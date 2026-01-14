@@ -12,6 +12,8 @@ POLAR_WEBHOOK_SECRET=your_polar_webhook_secret
 # Tinybird (analytics)
 TINYBIRD_ACCESS_TOKEN=your_tinybird_access_token
 TINYBIRD_INGEST_TOKEN=your_tinybird_ingest_token
+TINYBIRD_POLAR_INGEST_TOKEN=your_tinybird_polar_ingest_token
+TINYBIRD_CRYPTO_INGEST_TOKEN=your_tinybird_crypto_ingest_token
 
 # NOWPayments Crypto Payments (https://nowpayments.io)
 # Get keys from: https://account.nowpayments.io (production) or https://account-sandbox.nowpayments.io (sandbox)

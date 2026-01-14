@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
     getActivePriceDefinition,
+    getAudioServices,
     getImageServices,
     getServiceDefinition,
     getTextServices,
@@ -76,4 +77,11 @@ export function getTextModelsInfo(): ModelInfo[] {
  */
 export function getImageModelsInfo(): ModelInfo[] {
     return getImageServices().map(getModelInfo);
+}
+
+/**
+ * Get all audio models with enriched information
+ */
+export function getAudioModelsInfo(): ModelInfo[] {
+    return getAudioServices().map(getModelInfo);
 }

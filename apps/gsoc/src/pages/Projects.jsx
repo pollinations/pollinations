@@ -158,11 +158,9 @@ const ProjectsPage = () => {
                             </Box>
                           </Box>
 
-                          <Stack spacing={2}>
-                            <Button variant="outlined" size="large" onClick={() => handleExpandClick(index)} endIcon={<ExpandMoreIcon sx={{ transform: expanded === index ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} />} sx={{ borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', textTransform: 'none', fontSize: '1rem', py: 1.5, '&:hover': { borderColor: 'rgba(255,255,255,0.4)', color: '#fff', backgroundColor: 'rgba(255,255,255,0.05)' } }}>
-                              {expanded === index ? 'Hide Details' : 'Interested? View Details'}
-                            </Button>
-                          </Stack>
+                          <Button variant="outlined" size="large" onClick={() => handleExpandClick(index)} endIcon={<ExpandMoreIcon sx={{ transform: expanded === index ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} />} sx={{ position: 'absolute', bottom: '20px', right: '2.5rem', borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', textTransform: 'none', fontSize: '1rem',  py: 1.5, '&:hover': { borderColor: 'rgba(255,255,255,0.4)', color: '#fff', backgroundColor: 'rgba(255,255,255,0.05)' } }}>
+                            {expanded === index ? 'Hide Details' : 'View Details'}
+                          </Button>
                         </div>
                       </div>
                       <Collapse in={expanded === index} timeout={600} sx={{ '& .MuiCollapse-wrapper': { transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important' } }}>

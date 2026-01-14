@@ -181,10 +181,20 @@ const MentorsPage = () => {
                           sx={{ 
                             fontWeight: 700, 
                             mb: 0.5,
-                            color: '#fff'
+                            color: '#fff',
+                            display: 'flex',
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
                           }}
                         >
                           {mentor.name}
+                          <Box sx={{ textAlign: 'center', display: 'inline-flex', ml: 3, borderRadius: '12px', px: 1, height: "20px", bgcolor: 'rgba(255, 215, 0, 0.1)' }}>
+                          <Typography variant="p" sx={{ color: '#888', fontWeight: 700, fontSize: '12px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            {mentor.yearsExperience} yrs exp.
+                          </Typography>
+                        </Box>
+
                         </Typography>
                         
                         <Typography 
@@ -196,8 +206,9 @@ const MentorsPage = () => {
                           }}
                         >
                           {mentor.title}
+                          
                         </Typography>
-
+                        
                         <Typography 
                           variant="body2" 
                           sx={{ 
@@ -206,44 +217,6 @@ const MentorsPage = () => {
                           }}
                         >
                           {mentor.bio}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    {/* Stats Row */}
-                    <Box sx={{ 
-                      display: 'flex', 
-                      gap: 3, 
-                      mb: 3,
-                      p: 2,
-                      borderRadius: '12px',
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.08)'
-                    }}>
-                      <Box sx={{ textAlign: 'center', flexGrow: 1 }}>
-                        <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>
-                          {mentor.yearsExperience}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                          Years Exp.
-                        </Typography>
-                      </Box>
-                      <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-                      <Box sx={{ textAlign: 'center', flexGrow: 1 }}>
-                        <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>
-                          {mentor.projects}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                          Projects
-                        </Typography>
-                      </Box>
-                      <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-                      <Box sx={{ textAlign: 'center', flexGrow: 1 }}>
-                        <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>
-                          {mentor.expertise.length}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                          Expertise
                         </Typography>
                       </Box>
                     </Box>

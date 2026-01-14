@@ -104,6 +104,11 @@ Once your pull request is merged, you will automatically be issued the badge!
 
 Follow the Coding Style: Write your code using the same style and rules that the project already uses. This helps keep the code consistent and easy to read for everyone.
 
+**Code Formatting**: We use [Biome](https://biomejs.dev/) for code formatting and linting. Before submitting your PR:
+- Run `npm run format` to auto-format your code
+- Run `npm run lint` to check for issues
+- Our CI will automatically check formatting on changed files
+
 Write Clear Commit Messages: When saving your changes (committing), write messages that clearly and simply explain what you did and why.
 
 Document Your Changes Well: Add comments to your code where needed to explain how it works. If you are updating or adding documentation, make sure it is clear and accurate.

@@ -6,6 +6,7 @@
 // and re-generating the schema including the indexes.
 
 import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import { relations } from "drizzle-orm";
 
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
@@ -132,3 +133,31 @@ export const apikey = sqliteTable("apikey", {
   index('idx_apikey_expires_at').on(table.expiresAt),
   index("idx_apikey_user_id").on(table.userId),
 ]);
+
+// Drizzle relations for query builder joins
+export const userRelations = relations(user, ({ many }) => ({
+  apikeys: many(apikey),
+  sessions: many(session),
+  accounts: many(account),
+}));
+
+export const apikeyRelations = relations(apikey, ({ one }) => ({
+  user: one(user, {
+    fields: [apikey.userId],
+    references: [user.id],
+  }),
+}));
+
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
+  }),
+}));
+
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, {
+    fields: [account.userId],
+    references: [user.id],
+  }),
+}));

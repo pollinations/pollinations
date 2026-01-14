@@ -101,23 +101,19 @@ export const auth = (options: AuthOptions) =>
                 | { models?: string[] }
                 | undefined;
 
-            // Fetch user
-            const user = await db.query.user.findFirst({
-                where: eq(schema.user.id, keyResult.key.userId),
-            });
-
-            // Fetch full API key with budget fields
+            // Fetch API key with user in single query using relation
             const fullApiKey = await db.query.apikey.findFirst({
                 where: eq(schema.apikey.id, keyResult.key.id),
+                with: { user: true },
             });
 
-            log.debug("User lookup result: {found}", {
-                found: !!user,
-                userId: user?.id,
+            log.debug("API key lookup result: {found}", {
+                found: !!fullApiKey,
+                userId: fullApiKey?.user?.id,
             });
 
             return {
-                user: user as User,
+                user: fullApiKey?.user as User,
                 apiKey: {
                     id: keyResult.key.id,
                     name: keyResult.key.name || undefined,

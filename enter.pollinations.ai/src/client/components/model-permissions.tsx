@@ -136,10 +136,9 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                         i
                     </span>
                     <span
-                        className={`${showTooltip ? "visible" : "invisible"} absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-normal z-50 pointer-events-none`}
+                        className={`${showTooltip ? "visible" : "invisible"} absolute left-1/2 -translate-x-1/2 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none`}
                     >
-                        Restrict which models this API key can access. Useful
-                        for limiting keys to specific use cases.
+                        Limit this key to specific models
                     </span>
                 </button>
                 <span

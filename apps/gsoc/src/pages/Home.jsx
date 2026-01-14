@@ -137,12 +137,13 @@ const HomePage = () => {
                       ×
                     </Typography>
                     
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer', userSelect: 'none', position: 'relative' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer', userSelect: 'none', position: 'relative'}}>
                       <Tooltip 
-                        title={showHint ? "🎯 Click 5 times for a surprise!" : ""} 
+                        title={showHint ? "Click 3 times for a surprise!" : ""} 
                         open={showHint}
-                        placement="bottom"
+                        placement="top"
                         arrow
+                        sx={{ opacity: '0.3' }}
                       >
                         <motion.div
                           animate={showHint ? { scale: [1, 1.05, 1] } : {}}

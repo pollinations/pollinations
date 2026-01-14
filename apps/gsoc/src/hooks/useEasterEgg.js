@@ -7,11 +7,10 @@ const useEasterEgg = () => {
 
   // Show hint randomly on mount
   useEffect(() => {
-    const shouldShowHint = Math.random() < 0.3; // 30% chance
+    const shouldShowHint = Math.random() < 0.2; // 30% chance
     if (shouldShowHint) {
       setShowHint(true);
-      // Hide hint after 5 seconds
-      const timer = setTimeout(() => setShowHint(false), 5000);
+      const timer = setTimeout(() => setShowHint(false), 1000);
       return () => clearTimeout(timer);
     }
   }, []);

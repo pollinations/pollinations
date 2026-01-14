@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted |
 | ----- | ---- | ------- | ----------- | -------- | -------- | --------------- | ------------- | --------------------- | ----------------------- | ---------------- | ----- | --------- |
+| 🎵 | Musify - Music Downloader | https://musifydl.vercel.app | AI-powered Deezer music downloader — save tracks quickly from Deezer. | es, en | Vibes | @KarlinCoder | 175172444 | https://github.com/KarlinCoder/musify |  |  | | 2026-01-14 |
 | 🎮 | Lapse Game 2075 | https://makeypocket.github.io/LapseGame/ | AI-powered game where decisions shape a country's future over four pillars | en, ru | Games | @makeypocket | 108882883 | https://github.com/makeypocket/LapseGame | ⭐1 | termuxt | | 2026-01-12 |
 | 🎨 | PixArt AI | https://apps.apple.com/us/app/pixart-ai-ai-image-generator/id6749236127 | iOS app that turns text prompts into AI-generated artwork via Pollinations. | en | Creative | @bhyahmed86-maker | 253995477 |  |  |  | | 2026-01-12 |
 | 🛠️ | Polly IDE |  | IDE to generate Angular and React sites using Pollinations AI models | en | Dev_Tools | @nulls-brawl-site | 246980312 | https://github.com/nulls-brawl-site/polly-IDE | ⭐1 | monkedevhacc | | 2026-01-12 |

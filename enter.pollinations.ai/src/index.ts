@@ -3,7 +3,6 @@ import { HTTPException } from "hono/http-exception";
 import { cors } from "hono/cors";
 import { createAuth } from "./auth.ts";
 import { handleError } from "./error.ts";
-import { processEvents } from "./events.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
@@ -15,9 +14,7 @@ import { adminRoutes } from "./routes/admin.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
-import { getLogger } from "@logtape/logtape";
 import type { Env } from "./env.ts";
-import { drizzle } from "drizzle-orm/d1";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
     return await createAuth(c.env).handler(c.req.raw);
@@ -86,15 +83,4 @@ export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 export default {
     fetch: app.fetch,
-    scheduled: async (_controller, env, _ctx) => {
-        const db = drizzle(env.DB);
-        const log = getLogger(["hono", "scheduled"]);
-
-        await processEvents(db, log, {
-            polarAccessToken: env.POLAR_ACCESS_TOKEN,
-            polarServer: env.POLAR_SERVER,
-            tinybirdIngestUrl: env.TINYBIRD_INGEST_URL,
-            tinybirdIngestToken: env.TINYBIRD_INGEST_TOKEN,
-        });
-    },
 } satisfies ExportedHandler<CloudflareBindings>;

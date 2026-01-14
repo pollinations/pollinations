@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import mentors from '../info/mentors.json';
-import { Card, CardContent, Typography, Grid, Chip, Box, Collapse, IconButton, Avatar, Button, Stack, Divider } from '@mui/material';
+import { Card, CardContent, Typography, Grid, Chip, Box, Collapse, IconButton, Avatar, Button, Stack, Divider, Snackbar, Alert } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, LinkedIn, GitHub, Email, Work, School, Star } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
@@ -19,10 +19,15 @@ const cardVariants = {
 
 const MentorsPage = () => {
   const [expanded, setExpanded] = useState(null);
+  const [openToast, setOpenToast] = useState(false);
 
   useEffect(() => {
     document.title = "Mentors - GSOC 2026 | pollinations.ai";
   }, []);
+
+  const handleCloseToast = () => {
+    setOpenToast(false);
+  };
 
   const handleExpandClick = (index) => {
     setExpanded(expanded === index ? null : index);
@@ -307,25 +312,34 @@ const MentorsPage = () => {
                           <GitHub fontSize="small" />
                         </IconButton>
                         <IconButton
-                          component="a"
-                          href={`mailto:${mentor.email}`}
-                          size="small"
-                          sx={{
+                          component="p"
+                          onClick={async () => {
+                             await navigator.clipboard.writeText(mentor.email);
+                             setOpenToast(true);
+                            }}
+                            size="small"
+                            sx={{
                             color: 'rgba(255,255,255,0.7)',
+                            display: 'flex',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            fontSize: '0.875rem',
+                            px: '15px',
+                            justifyContent: 'center',
                             border: '1px solid rgba(255,255,255,0.15)',
-                            borderRadius: '8px',
+                            borderRadius: '25px',
                             '&:hover': {
-                              color: '#ea4335',
-                              borderColor: '#ea4335',
-                              backgroundColor: 'rgba(234, 67, 53, 0.1)'
+                              color: '#e9d5ff',
+                              backgroundColor: 'rgba(168, 85, 247, 0.15)'
                             }
-                          }}
-                        >
-                          <Email fontSize="small" />
-                        </IconButton>
-                      </Stack>
+                            }}
+                          >
+                            <Email sx={{ fontSize: '19px' }} /> {mentor?.email}
+                          </IconButton>
+                          </Stack>
 
-                      {/* Expand Button */}
+                          {/* Expand Button */}
                       <Button
                         variant="outlined"
                         size="small"
@@ -410,6 +424,11 @@ const MentorsPage = () => {
           ))}
         </Grid>
       </Box>
+      <Snackbar open={openToast} autoHideDuration={3000} onClose={handleCloseToast} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert onClose={handleCloseToast} severity="success" sx={{ width: '100%' }}>
+          Email copied to clipboard!
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

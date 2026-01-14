@@ -147,12 +147,12 @@ const ProjectsPage = () => {
                           />
                         </Box>
                          
-                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', paddingTop: { xs: 0, lg: 3 } }}>
                           <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, mb: 2, display: 'block' }}>
                             Project Mentor
                           </Typography>
                           
-                          <Box sx={{ display: 'flex', flexDirection: { xs: 'row', lg: 'column' }, alignItems: { xs: 'center', lg: 'flex-start' }, gap: 2, mb: 2 }}>
+                          <Box sx={{ display: 'flex', flexDirection: { xs: 'row', lg: 'column' }, alignItems: { xs: 'center', lg: 'center' }, gap: 2, mb: 2 }}>
                             <Avatar src={mentor?.imageUrl} sx={{ width: { xs: 65, lg: 80 }, height: { xs: 65, lg: 80 }, border: '2px solid rgba(255,255,255,0.2)', flexShrink: 0 }}>
                               {mentor?.name?.split(' ').map(n => n[0]).join('') || 'M'}
                             </Avatar>

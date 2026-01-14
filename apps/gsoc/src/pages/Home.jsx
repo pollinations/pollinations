@@ -24,7 +24,7 @@ const fadeInUp = {
 
 const HomePage = () => {
   useEffect(() => {
-    document.title = "GSOC 2026 × pollinations.ai";
+    document.title = "GSOC 26' - pollinations.ai";
   }, []);
 
   const highlights = [

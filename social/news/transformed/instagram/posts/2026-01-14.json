@@ -1,0 +1,55 @@
+{
+  "date": "2026-01-14",
+  "generated_at": "2026-01-14T16:12:49.496352+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art_carousel",
+  "linked_images": false,
+  "strategy_reasoning": "Using a 'Cozy Dev Log' carousel format allows us to turn dry technical updates (removing buffers, API keys) into a narrative about gardening and inventory management. The retro game aesthetic makes infrastructure changes feel like 'patch notes' for a beloved game, keeping engagement high while informing the community.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%208-bit%20pixel%20art%20workspace%20scene.%20A%20vintage%20CRT%20monitor%20glowing%20softly%20on%20a%20wooden%20desk%2C%20surrounded%20by%20pixelated%20potted%20plants%20and%20a%20tiny%20sleeping%20cat.%20On%20the%20screen%2C%20pixel%20text%20reads%20%27DEV%20LOG%27.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20gradient%20background%20outside%20the%20window.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20vibes%20like%20Unpacking%20or%20Stardew%20Valley.%20Nostalgic%20and%20welcoming.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=252957244",
+      "prompt": "Cozy 8-bit pixel art workspace scene. A vintage CRT monitor glowing softly on a wooden desk, surrounded by pixelated potted plants and a tiny sleeping cat. On the screen, pixel text reads 'DEV LOG'. Soft lime green (#ecf874) and lavender gradient background outside the window. Chunky retro sprites, warm lighting, lo-fi vibes like Unpacking or Stardew Valley. Nostalgic and welcoming.",
+      "description": "Cover slide setting the cozy mood for the update."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%208-bit%20pixel%20art%20scene%20showing%20a%20tiny%20bee%20character%20zooming%20fast%20across%20the%20screen%2C%20bypassing%20a%20clunky%20grey%20block%20labeled%20%27BUFFER%27.%20The%20bee%20is%20carrying%20a%20glowing%20data%20packet%20directly%20to%20a%20cute%20pixelated%20birdhouse%20%28Tinybird%29.%20Speed%20lines%20in%20lime%20green%20%28%23ecf874%29.%20Soft%20pastel%20sky%20background.%20Chunky%20pixels%2C%20happy%20vibes%20like%20A%20Short%20Hike.%20Visualizing%20the%20removal%20of%20D1%20buffer%20for%20direct%20sending.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1064944874",
+      "prompt": "Retro 8-bit pixel art scene showing a tiny bee character zooming fast across the screen, bypassing a clunky grey block labeled 'BUFFER'. The bee is carrying a glowing data packet directly to a cute pixelated birdhouse (Tinybird). Speed lines in lime green (#ecf874). Soft pastel sky background. Chunky pixels, happy vibes like A Short Hike. Visualizing the removal of D1 buffer for direct sending.",
+      "description": "Visualizing the removal of the D1 buffer for faster data flow."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20garden%20scene.%20A%20tiny%20robot%20gardener%20with%20a%20straw%20hat%20is%20pruning%20a%20digital%20bonsai%20tree.%20Snipping%20off%20a%20greyed-out%20branch%20labeled%20%27Unused%20API%27.%20Soft%20mint%20and%20peach%20gradient%20background.%20Peaceful%2C%20zen%20garden%20vibes.%208-bit%20aesthetic%20with%20modern%20lighting.%20Visualizing%20the%20removal%20of%20the%20Anthropic%20workflow.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1838074217",
+      "prompt": "Cozy pixel art garden scene. A tiny robot gardener with a straw hat is pruning a digital bonsai tree. Snipping off a greyed-out branch labeled 'Unused API'. Soft mint and peach gradient background. Peaceful, zen garden vibes. 8-bit aesthetic with modern lighting. Visualizing the removal of the Anthropic workflow.",
+      "description": "Visualizing code cleanup as gardening/pruning."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%20RPG%20game%20inventory%20UI%20screen.%20A%20grid%20of%20item%20slots.%20One%20slot%20is%20glowing%20bright%20lime%20green%20%28%23ecf874%29%20featuring%20a%20new%20item%20icon%3A%20a%20magical%20paintbrush%20labeled%20%27PolliDev%27.%20Text%20box%20at%20bottom%20says%20%27NEW%20TOOL%20EQUIPPED%27.%20Dark%20purple%20background%20with%20pixelated%20borders.%20Balatro%20or%20Stardew%20Valley%20UI%20style.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=250354089",
+      "prompt": "Retro RPG game inventory UI screen. A grid of item slots. One slot is glowing bright lime green (#ecf874) featuring a new item icon: a magical paintbrush labeled 'PolliDev'. Text box at bottom says 'NEW TOOL EQUIPPED'. Dark purple background with pixelated borders. Balatro or Stardew Valley UI style.",
+      "description": "Announcing the new PolliDev tool as an acquired game item."
+    }
+  ],
+  "caption": "Dev Log: Spring Cleaning & New Gear! 🧹✨\n\nWe’ve been busy tending to the digital garden. Here’s what’s blooming in the repo:\n\n🐝 **Speed Mode:** Removed the D1 event buffer! Data now flies directly to Tinybird. Zoom zoom.\n🌿 **Pruning:** Snipped some unused Anthropic workflows to keep things lightweight.\n🎒 **New Loot:** Added 'PolliDev' to the Dev_Tools inventory. Perfect for managing your gen-AI assets.\n🔍 **Visibility:** Better data tracking with new extracted fields.\n\nBuilding in public, one pixel at a time. \n\nLink in bio to check the code! 💻🌸\n\n#pollinations #opensource #indiedev #pixelart #devlog #codinglife #retrogaming #8bit #buildinpublic",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#indiedev",
+    "#pixelart",
+    "#devlog",
+    "#codinglife",
+    "#retrogaming",
+    "#8bit",
+    "#buildinpublic"
+  ],
+  "alt_text": "Carousel of cozy pixel art images. 1. A retro computer workspace with plants. 2. A pixel bee flying past a buffer block. 3. A robot gardening a digital tree. 4. A retro game inventory screen showing a new tool called PolliDev.",
+  "pr_references": [
+    "#7230",
+    "#7078",
+    "#7239",
+    "#7237",
+    "#7234",
+    "#7229",
+    "#7217",
+    "#7226",
+    "#7220"
+  ]
+}

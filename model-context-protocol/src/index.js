@@ -16,12 +16,7 @@ import { audioTools } from "./services/audioService.js";
 import { authTools } from "./services/authService.js";
 
 // Combine all tools
-const allTools = [
-    ...imageTools,
-    ...textTools,
-    ...audioTools,
-    ...authTools,
-];
+const allTools = [...imageTools, ...textTools, ...audioTools, ...authTools];
 
 /**
  * Server instructions shown to MCP clients
@@ -30,7 +25,7 @@ const SERVER_INSTRUCTIONS = `# Pollinations MCP Server v2.0
 
 ## Authentication
 Set your API key first using the setApiKey tool:
-- **Publishable keys (pk_)**: Client-safe, rate-limited (1 pollen/hour per IP+key)
+- **Publishable keys (pk_)**: Client-safe, rate-limited (1 pollen per IP per hour)
 - **Secret keys (sk_)**: Server-side only, no rate limits, can spend Pollen
 
 Get your API key at: https://enter.pollinations.ai
@@ -100,7 +95,7 @@ export async function startMcpServer() {
                 capabilities: {
                     tools: {},
                 },
-            }
+            },
         );
 
         // Register all tools
@@ -108,12 +103,17 @@ export async function startMcpServer() {
             try {
                 // Tool format: [name, description, inputSchema, handler]
                 if (!Array.isArray(tool) || tool.length < 4) {
-                    throw new Error(`Invalid tool format for ${tool[0] || 'unknown'}`);
+                    throw new Error(
+                        `Invalid tool format for ${tool[0] || "unknown"}`,
+                    );
                 }
                 const [name, description, inputSchema, handler] = tool;
                 server.tool(name, description, inputSchema, handler);
             } catch (error) {
-                console.error(`Failed to register tool ${tool[0]}:`, error.message);
+                console.error(
+                    `Failed to register tool ${tool[0]}:`,
+                    error.message,
+                );
             }
         });
 

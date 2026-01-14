@@ -145,7 +145,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "## Authentication",
                             "",
                             "**Two key types (both consume Pollen from your balance):**",
-                            "- **Publishable Keys (`pk_`):** ⚠️ **Beta - not yet ready for production use.** For client-side apps, IP rate-limited (1 req/hour per IP+key). **Warning:** Exposing in public code will consume your Pollen if your app gets traffic.",
+                            "- **Publishable Keys (`pk_`):** ⚠️ **Beta - not yet ready for production use.** For client-side apps, IP rate-limited (1 pollen per IP per hour). **Warning:** Exposing in public code will consume your Pollen if your app gets traffic.",
                             "- **Secret Keys (`sk_`):** Server-side only, no rate limits. Keep secret - never expose publicly.",
                             "",
                             "**Auth methods:**",

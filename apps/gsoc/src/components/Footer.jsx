@@ -120,19 +120,6 @@ export default function Footer() {
                 <Typography 
                   variant="body2" 
                   sx={{ 
-                    color: 'rgba(255,255,255,0.8)', 
-                    fontFamily: 'monospace',
-                    fontSize: '0.875rem',
-                    mt: 0.5,
-                    userSelect: 'all',
-                    cursor: 'pointer'
-                  }}
-                >
-                  ayushman@myceli.ai
-                </Typography>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
                     color: 'rgba(190, 157, 157, 0.8)', 
                     fontFamily: 'monospace',
                     fontSize: '0.875rem',
@@ -141,7 +128,7 @@ export default function Footer() {
                     cursor: 'pointer'
                   }}
                 >
-                Feel free to reach out at core@pollinations.ai for any program related queries.
+              gsoc@pollinations.ai
                 </Typography>
               </Box>
               

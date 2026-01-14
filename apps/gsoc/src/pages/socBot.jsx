@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Typography, TextField, IconButton, Paper, Avatar, Chip, Button, Container, Stack, Card, CardContent, Fade, Zoom, CircularProgress, Tooltip } from '@mui/material';
-import { Send, AutoAwesome, Clear, LightbulbOutlined, RocketLaunchOutlined, SchoolOutlined, CodeOutlined } from '@mui/icons-material';
+import { Box, Typography, TextField, IconButton, Paper, Avatar, Chip, Button, Container, Stack, Card, CardContent, Fade, Zoom, CircularProgress, Tooltip, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import { Send, AutoAwesome, Clear, LightbulbOutlined, RocketLaunchOutlined, SchoolOutlined, CodeOutlined, ExpandMore } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
 import socBotAPI from '../api/socBot.ts';
+import faqData from '../info/faq.json';
 
 const MarkdownComponents = {
   h1: ({ children }) => (
@@ -375,10 +376,19 @@ const socBotChat = () => {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(true);
+  const [expandedFaq, setExpandedFaq] = useState(null);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const pollyAPI = useRef(new socBotAPI());
+
+  // Group FAQ by category
+  const faqByCategory = faqData.reduce((acc, item) => {
+    if (!acc[item.category]) {
+      acc[item.category] = [];
+    }
+    acc[item.category].push(item);
+    return acc;
+  }, {});
 
   useEffect(() => {
     document.title = "socBot - AI Assistant | GSOC 2026 | pollinations.ai";
@@ -423,7 +433,6 @@ const socBotChat = () => {
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
-    setShowSuggestions(false);
     setIsLoading(true);
 
     const typingMessage = {
@@ -476,7 +485,10 @@ const socBotChat = () => {
       timestamp: new Date().toISOString()
     }]);
     pollyAPI.current.clearHistory();
-    setShowSuggestions(true);
+  };
+
+  const handleFaqClick = async (question) => {
+    await handleSendMessage(question);
   };
 
   const suggestedQuestions = pollyAPI.current.getSuggestedQuestions();
@@ -490,6 +502,21 @@ const socBotChat = () => {
     <CodeOutlined />,
     <RocketLaunchOutlined />
   ];
+
+  const categoryColors = {
+    'General': '#60a5fa',
+    'Application': '#3b82f6',
+    'Projects': '#10b981',
+    'Timeline': '#f59e0b',
+    'Mentorship': '#8b5cf6',
+    'Technical': '#ec4899',
+    'Community': '#06b6d4',
+    'Contribution': '#22c55e',
+    'Selection': '#f59e0b',
+    'Support': '#60a5fa',
+    'Post-GSOC': '#a78bfa',
+    'Troubleshooting': '#ef4444'
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#09090b', position: 'relative', overflow: 'hidden' }}>
@@ -559,7 +586,7 @@ const socBotChat = () => {
             />
           ))}
           <AnimatePresence>
-            {showSuggestions && messages.length === 1 && (
+            {messages.length === 1 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -572,22 +599,71 @@ const socBotChat = () => {
                     sx={{ 
                       color: 'rgba(255,255,255,0.6)', 
                       textAlign: 'center', 
-                      mb: 2,
+                      mb: 3,
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
                       fontWeight: 600
                     }}
                   >
-                    Suggested Questions
+                    Frequently Asked Questions
                   </Typography>
-                  <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
-                    {suggestedQuestions.slice(0, 6).map((question, index) => (
-                      <SuggestedQuestion
-                        key={index}
-                        question={question}
-                        icon={questionIcons[index]}
-                        onClick={handleSendMessage}
-                      />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {Object.entries(faqByCategory).map(([category, questions]) => (
+                      <Box key={category}>
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            color: categoryColors[category] || '#60a5fa',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            fontWeight: 700,
+                            mb: 1.5,
+                            display: 'block'
+                          }}
+                        >
+                          {category}
+                        </Typography>
+                        {questions.map((faq) => (
+                          <motion.div
+                            key={faq.id}
+                            whileHover={{ x: 4 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <Card
+                              onClick={() => handleFaqClick(faq.question)}
+                              elevation={0}
+                              sx={{
+                                cursor: 'pointer',
+                                background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                                border: `1px solid ${categoryColors[category] ? categoryColors[category] + '30' : 'rgba(255,255,255,0.1)'}`,
+                                borderRadius: '12px',
+                                transition: 'all 0.3s ease',
+                                mb: 1.5,
+                                '&:hover': {
+                                  borderColor: categoryColors[category] || '#60a5fa',
+                                  background: `linear-gradient(135deg, ${categoryColors[category] || '#60a5fa'}15 0%, ${categoryColors[category] || '#60a5fa'}08 100%)`,
+                                  boxShadow: `0 8px 32px ${categoryColors[category] || '#60a5fa'}30`,
+                                  transform: 'translateY(-2px)'
+                                }
+                              }}
+                            >
+                              <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                                <Typography 
+                                  variant="body2" 
+                                  sx={{ 
+                                    color: 'rgba(255,255,255,0.85)',
+                                    fontWeight: 500,
+                                    lineHeight: 1.4,
+                                    fontSize: '0.9rem'
+                                  }}
+                                >
+                                  {faq.question}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          </motion.div>
+                        ))}
+                      </Box>
                     ))}
                   </Box>
                 </Box>

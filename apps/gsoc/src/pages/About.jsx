@@ -434,23 +434,7 @@ const AboutPage = () => {
                             '&:hover': { color: '#93c5fd' }
                           }}
                         >
-                          core@pollinations.ai
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                          GSOC Inquiries:
-                        </Typography>
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
-                            color: '#60a5fa',
-                            fontFamily: 'monospace',
-                            cursor: 'pointer',
-                            '&:hover': { color: '#93c5fd' }
-                          }}
-                        >
-                          ayushman@myceli.ai
+                          gsoc@pollinations.ai
                         </Typography>
                       </Box>
                     </Stack>

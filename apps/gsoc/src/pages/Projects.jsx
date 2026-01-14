@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import projects from '../info/projects.json';
 import mentors from '../info/mentors.json';
-import { Card, CardContent, Typography, Chip, Box, Collapse, IconButton, Button, Avatar, Stack, Divider, LinearProgress } from '@mui/material';
+import { Card, CardContent, Typography, Chip, Box, Collapse, IconButton, Button, Avatar, Stack, Divider, LinearProgress, Snackbar, Alert} from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, Code, ArrowForward, GitHub, Schedule, Person, Lightbulb, Assignment, Star, Email } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { href } from 'react-router-dom';
@@ -20,6 +20,8 @@ const cardVariants = {
 
 const ProjectsPage = () => {
   const [expanded, setExpanded] = useState(null);
+  const [copyEmailToast, copyEmailAddress] = useState(false);
+  const [submitApplicationToast, submitApplication] = useState(false);
 
   useEffect(() => {
     document.title = "Project Ideas - GSOC 2026 | pollinations.ai";
@@ -28,6 +30,15 @@ const ProjectsPage = () => {
   const handleExpandClick = (index) => {
     setExpanded(expanded === index ? null : index);
   };
+    
+
+  const handleCopyEmail = () => {
+    copyEmailAddress(false);
+  };
+  const handleApplicationButton = () => {
+    submitApplication(false);
+  };
+
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#09090b', padding: '2rem 2rem 4rem', position: 'relative', overflow: 'hidden' }}>
@@ -121,20 +132,20 @@ const ProjectsPage = () => {
                             </Typography>
                             
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                              <Avatar src={mentor?.imageUrl} sx={{ width: 48, height: 48, border: '2px solid rgba(255,255,255,0.2)' }}>
+                              <Avatar src={mentor?.imageUrl} sx={{ width: 65, height: 65, border: '2px solid rgba(255,255,255,0.2)' }}>
                                 {mentor?.name?.split(' ').map(n => n[0]).join('') || 'M'}
                               </Avatar>
-                              <Box sx={{ display: 'flex', marginBottom: 2, flexDirection: 'row' }}>
-                                <Typography variant="h6" onClick={() => location.replace("/mentors")} sx={{ color: '#fff', display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'center', alignItems: 'center', fontWeight: 600, textDecoration: 'underline', userSelect: 'none', cursor: 'pointer'}}>
+                              <Box sx={{ display: 'flex', marginBottom: 2, flexDirection: 'column' }}>
+                                <Typography variant="h6" onClick={() => location.replace("/mentors")} sx={{ color: '#fff', display: 'flex', mt: 2, flexDirection: 'column', gap: 0.5, justifyContent: 'center', alignItems: 'center', fontWeight: 600, textDecoration: 'underline', userSelect: 'none', cursor: 'pointer'}}>
                                   {mentor?.name || 'TBA'}
-
-                                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                                </Typography>
+                                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
                                   {mentor?.email && (
                                     <IconButton
                                       component="p"
                                       onClick={async () => {
                                         await navigator.clipboard.writeText(mentor.email);
-                                        setOpenToast(true);
+                                        copyEmailAddress(true);
                                         }}
                                         size="small"
                                         sx={{
@@ -160,9 +171,6 @@ const ProjectsPage = () => {
                                     </IconButton>
                                   )}
                                 </Typography>
-
-
-                                </Typography>
                               </Box>
                             </Box>
                           </Box>
@@ -187,7 +195,7 @@ const ProjectsPage = () => {
                                 {project.longDescription}
                               </Typography>
 
-                              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                              <Stack direction={{ xs: 'column', sm: 'row'}} spacing={2}>
                                 <Button variant="outlined" endIcon={<ArrowForward />} size="large" sx={{ borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', textTransform: 'none', py: 1.5, px: 3, '&:hover': { borderColor: 'rgba(255,255,255,0.4)', color: '#fff', backgroundColor: 'rgba(255,255,255,0.05)' } }}>
                                   Documentation
                                 </Button>
@@ -195,17 +203,6 @@ const ProjectsPage = () => {
                                   Contributing Guide
                                 </Button>
                               </Stack>
-                            </div>
-                            <div className="w-full lg:w-1/3">
-                              <Box sx={{mt: 2, pt:2, pl: 2, borderRadius: '12px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
-                                <Typography variant="subtitle2" sx={{ color: '#60a5fa', fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <Lightbulb sx={{ fontSize: '16px' }} />
-                                  Tip: contact mentor at 
-                                  <Typography variant="subtitle3" sx={{ color: 'rgba(169, 190, 224, 0.97)', fontWeight: 800, userSelect: 'all', cursor: 'pointer', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    {mentor?.email}
-                                  </Typography>
-                                </Typography>
-                              </Box>
                             </div>
                           </div>
                         </motion.div>
@@ -216,9 +213,17 @@ const ProjectsPage = () => {
             );
           })}
         </Box>
-
-
       </Box>
+      <Snackbar open={submitApplicationToast} autoHideDuration={3000} onClose={handleApplicationButton} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+              <Alert onClose={handleApplicationButton} severity="success" sx={{ width: '100%' }}>
+               Contributor applications are yet to open. Check Timeline!
+              </Alert>
+      </Snackbar>
+      <Snackbar open={copyEmailToast} autoHideDuration={3000} onClose={handleCopyEmail} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+              <Alert onClose={handleCopyEmail} severity="success" sx={{ width: '100%' }}>
+               Email Address Copied to Clipboard!
+              </Alert>
+      </Snackbar>
     </Box>
   );
 };

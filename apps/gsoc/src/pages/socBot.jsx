@@ -545,7 +545,7 @@ const socBotChat = () => {
         }} 
       />
 
-      <Container maxWidth="md" sx={{ position: 'relative', mt: 1, zIndex: 1, py: 4, height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Container maxWidth="md" sx={{ position: 'relative', mt: 1, zIndex: 1, py: 4, minHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -555,7 +555,7 @@ const socBotChat = () => {
         <Box 
           ref={messagesContainerRef}
           sx={{ 
-            flex: 0.6, 
+            flex: 1, 
             overflowY: 'auto', 
             mb: 2,
             px: 1,
@@ -675,127 +675,131 @@ const socBotChat = () => {
             </Box>
           </Paper>
         </motion.div>
-        
-        {messages.length === 1 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-          >
-            <Box sx={{ flex: 0.4, overflowY: 'auto', px: 1, pb: 2 }}>
-              <Typography 
-                variant="subtitle2" 
-                sx={{ 
-                  color: 'rgba(255,255,255,0.6)', 
-                  mb: 2,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  fontWeight: 600
-                }}
-              >
-                Frequently Asked Questions
-              </Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1.5 }}>
-                {Object.entries(faqByCategory).map(([category, questions]) => (
-                  <Accordion 
-                    key={category}
-                    expanded={expandedFaq === category}
-                    onChange={() => setExpandedFaq(expandedFaq === category ? null : category)}
-                    elevation={0}
-                    sx={{
-                      background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-                      border: `1px solid ${categoryColors[category] ? categoryColors[category] + '30' : 'rgba(255,255,255,0.1)'}`,
-                      borderRadius: '12px !important',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        borderColor: categoryColors[category] || '#60a5fa',
-                        background: `linear-gradient(135deg, ${categoryColors[category] || '#60a5fa'}15 0%, ${categoryColors[category] || '#60a5fa'}08 100%)`,
-                      },
-                      '&.Mui-expanded': {
-                        margin: 0,
-                        borderColor: categoryColors[category] || '#60a5fa',
-                        gridColumn: 'span 2'
-                      },
-                      '&:before': {
-                        display: 'none'
-                      }
-                    }}
-                  >
-                    <AccordionSummary
-                      expandIcon={<ExpandMore sx={{ color: categoryColors[category] || '#60a5fa' }} />}
+      </Container>
+
+      <Box sx={{ bgcolor: '#09090b', py: 4, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
+          {messages.length === 1 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+            >
+              <Box>
+                <Typography 
+                  variant="subtitle2" 
+                  sx={{ 
+                    color: 'rgba(255,255,255,0.6)', 
+                    mb: 3,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    fontWeight: 600
+                  }}
+                >
+                  Frequently Asked Questions
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1.5, maxHeight: '500px', overflowY: 'auto', px: 1, '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-track': { background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }, '&::-webkit-scrollbar-thumb': { background: 'rgba(96, 165, 250, 0.3)', borderRadius: '10px' }, '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(96, 165, 250, 0.5)' } }}>
+                  {Object.entries(faqByCategory).map(([category, questions]) => (
+                    <Accordion 
+                      key={category}
+                      expanded={expandedFaq === category}
+                      onChange={() => setExpandedFaq(expandedFaq === category ? null : category)}
+                      elevation={0}
                       sx={{
-                        minHeight: '44px',
-                        '&.Mui-expanded': {
-                          minHeight: '44px'
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                        border: `1px solid ${categoryColors[category] ? categoryColors[category] + '30' : 'rgba(255,255,255,0.1)'}`,
+                        borderRadius: '12px !important',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          borderColor: categoryColors[category] || '#60a5fa',
+                          background: `linear-gradient(135deg, ${categoryColors[category] || '#60a5fa'}15 0%, ${categoryColors[category] || '#60a5fa'}08 100%)`,
                         },
-                        '& .MuiAccordionSummary-content': {
-                          my: 0.5
+                        '&.Mui-expanded': {
+                          margin: 0,
+                          borderColor: categoryColors[category] || '#60a5fa',
+                          gridColumn: 'span 2'
+                        },
+                        '&:before': {
+                          display: 'none'
                         }
                       }}
                     >
-                      <Typography 
-                        variant="caption" 
-                        sx={{ 
-                          color: categoryColors[category] || '#60a5fa',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                          fontWeight: 700,
-                          fontSize: '0.75rem'
+                      <AccordionSummary
+                        expandIcon={<ExpandMore sx={{ color: categoryColors[category] || '#60a5fa' }} />}
+                        sx={{
+                          minHeight: '44px',
+                          '&.Mui-expanded': {
+                            minHeight: '44px'
+                          },
+                          '& .MuiAccordionSummary-content': {
+                            my: 0.5
+                          }
                         }}
                       >
-                        {category} ({questions.length})
-                      </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails sx={{ pt: 0, pb: 1 }}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
-                        {questions.map((faq) => (
-                          <motion.div
-                            key={faq.id}
-                            whileHover={{ x: 4 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <Card
-                              onClick={() => handleFaqClick(faq.question)}
-                              elevation={0}
-                              sx={{
-                                cursor: 'pointer',
-                                background: 'rgba(255,255,255,0.03)',
-                                border: `1px solid rgba(255,255,255,0.1)`,
-                                borderRadius: '8px',
-                                transition: 'all 0.3s ease',
-                                '&:hover': {
-                                  borderColor: 'rgba(255,255,255,0.3)',
-                                  background: 'rgba(255,255,255,0.08)',
-                                  transform: 'translateX(4px)'
-                                }
-                              }}
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            color: categoryColors[category] || '#60a5fa',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            fontWeight: 700,
+                            fontSize: '0.75rem'
+                          }}
+                        >
+                          {category} ({questions.length})
+                        </Typography>
+                      </AccordionSummary>
+                      <AccordionDetails sx={{ pt: 0, pb: 1 }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+                          {questions.map((faq) => (
+                            <motion.div
+                              key={faq.id}
+                              whileHover={{ x: 4 }}
+                              whileTap={{ scale: 0.98 }}
                             >
-                              <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
-                                <Typography 
-                                  variant="body2" 
-                                  sx={{ 
-                                    color: 'rgba(255,255,255,0.85)',
-                                    fontWeight: 500,
-                                    lineHeight: 1.3,
-                                    fontSize: '0.8rem'
-                                  }}
-                                >
-                                  {faq.question}
-                                </Typography>
-                              </CardContent>
-                            </Card>
-                          </motion.div>
-                        ))}
-                      </Box>
-                    </AccordionDetails>
-                  </Accordion>
-                ))}
+                              <Card
+                                onClick={() => handleFaqClick(faq.question)}
+                                elevation={0}
+                                sx={{
+                                  cursor: 'pointer',
+                                  background: 'rgba(255,255,255,0.03)',
+                                  border: `1px solid rgba(255,255,255,0.1)`,
+                                  borderRadius: '8px',
+                                  transition: 'all 0.3s ease',
+                                  '&:hover': {
+                                    borderColor: 'rgba(255,255,255,0.3)',
+                                    background: 'rgba(255,255,255,0.08)',
+                                    transform: 'translateX(4px)'
+                                  }
+                                }}
+                              >
+                                <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                                  <Typography 
+                                    variant="body2" 
+                                    sx={{ 
+                                      color: 'rgba(255,255,255,0.85)',
+                                      fontWeight: 500,
+                                      lineHeight: 1.3,
+                                      fontSize: '0.8rem'
+                                    }}
+                                  >
+                                    {faq.question}
+                                  </Typography>
+                                </CardContent>
+                              </Card>
+                            </motion.div>
+                          ))}
+                        </Box>
+                      </AccordionDetails>
+                    </Accordion>
+                  ))}
+                </Box>
               </Box>
-            </Box>
-          </motion.div>
-        )}
-      </Container>
+            </motion.div>
+          )}
+        </Container>
+      </Box>
     </Box>
   );
 };

@@ -31,7 +31,7 @@ Get your API key at [pollinations.ai](https://pollinations.ai)
 
 **Key Types:**
 
-- `pk_` (Publishable): Client-safe, rate-limited (1 pollen/hour per IP+key)
+- `pk_` (Publishable): Client-safe, rate-limited (1 pollen per IP per hour)
 - `sk_` (Secret): Server-side only, no rate limits, can spend Pollen
 
 Set your key via environment variable or the `setApiKey` tool:

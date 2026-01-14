@@ -4,12 +4,11 @@ import io
 import base64
 import logging
 import asyncio
-from huggingface_hub import login 
+from huggingface_hub import login, snapshot_download
 from dotenv import load_dotenv
 load_dotenv()
-login (token = os.getenv("HF_TOKEN"))
+login(token=os.getenv("HF_TOKEN"))
 
-# Disable Flash Attention to avoid ABI mismatch errors
 os.environ['FLASH_ATTENTION_SKIP_CUDA_BUILD'] = '1'
 
 import torch
@@ -86,14 +85,13 @@ async def periodic_heartbeat():
 
 
 MODEL_ID = "fal/FLUX.2-dev-Turbo"
+SANA_MODEL_ID = "Efficient-Large-Model/Sana_1600M_1024px_diffusers"
 MODEL_CACHE = "model_cache"
-SANA_MODEL_PATH = "model_cache/sana/sana_1600m_1024_diffusion_fp16.safetensors"  # 2x upscaler
 UPSCALE_FACTOR = 2
 
-# Generation constraints
-MAX_GEN_RESOLUTION = 768  # Always generate at 768x768
-MAX_FINAL_PIXELS = 2_359_296  # 1536 × 1536 max
-MAX_DIMENSION = 2048  # Max single dimension
+MAX_GEN_RESOLUTION = 768
+MAX_FINAL_PIXELS = 2_359_296
+MAX_DIMENSION = 2048
 
 generate_lock = threading.Lock()
 
@@ -111,58 +109,32 @@ def calc_time(start, end, msg):
 
 
 def calculate_generation_dimensions(requested_width: int, requested_height: int) -> tuple[int, int, int, int, bool]:
-    """Calculate generation dimensions with SANA 2x upscaling support.
-    
-    Rules:
-    - Square: 1536×1536 (maximum square output)
-    - Landscape: 2048×1152 (wide output)
-    - Portrait: 1152×2048 (tall output)
-    - Any ratio: As long as width × height ≤ 2,359,296
-    
-    Returns: (gen_w, gen_h, final_w, final_h, should_upscale)
-    - Always generate at 768x768
-    - If request > 768x768, upscale output to final dimensions
-    """
-    # Validate and cap dimensions
     final_w = min(requested_width, MAX_DIMENSION)
     final_h = min(requested_height, MAX_DIMENSION)
     
-    # Cap to max pixels
     total_pixels = final_w * final_h
     if total_pixels > MAX_FINAL_PIXELS:
         scale = math.sqrt(MAX_FINAL_PIXELS / total_pixels)
         final_w = int(final_w * scale)
         final_h = int(final_h * scale)
     
-    # Align to 16px multiples for generation
     final_w = (final_w // 16) * 16
     final_h = (final_h // 16) * 16
     
-    # Generate at 768x768
     gen_w = MAX_GEN_RESOLUTION
     gen_h = MAX_GEN_RESOLUTION
     
-    # Determine if upscaling is needed
     should_upscale = (final_w > gen_w or final_h > gen_h)
     
     return gen_w, gen_h, final_w, final_h, should_upscale
 
 
-# Global model instances (initialized in lifespan)
 pipe = None
-upscaler = None  # SANA 2x upscaler
+upscaler = None
 heartbeat_task = None
 
 
 def upscale_with_sana(image_tensor: torch.Tensor) -> torch.Tensor:
-    """Upscale image using SANA 2x model.
-    
-    Args:
-        image_tensor: NCHW tensor in [0, 1] range
-    
-    Returns:
-        Upscaled NCHW tensor in [0, 1] range
-    """
     if upscaler is None:
         raise RuntimeError("Upscaler not loaded")
     
@@ -173,59 +145,71 @@ def upscale_with_sana(image_tensor: torch.Tensor) -> torch.Tensor:
 
 
 def pil_to_tensor(image: Image.Image) -> torch.Tensor:
-    """Convert PIL Image to NCHW tensor [0, 1]."""
     image_np = np.array(image).astype(np.float32) / 255.0
-    tensor = torch.from_numpy(image_np).permute(2, 0, 1).unsqueeze(0)  # HWC -> CHW -> NCHW
+    tensor = torch.from_numpy(image_np).permute(2, 0, 1).unsqueeze(0)
     return tensor
 
 
 def tensor_to_pil(tensor: torch.Tensor) -> Image.Image:
-    """Convert NCHW tensor [0, 1] to PIL Image."""
-    tensor = tensor.squeeze(0).permute(1, 2, 0).cpu()  # NCHW -> CHW -> HWC
+    tensor = tensor.squeeze(0).permute(1, 2, 0).cpu()
     image_np = torch.clamp(tensor * 255, 0, 255).numpy().astype(np.uint8)
     return Image.fromarray(image_np)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Handle startup and shutdown of the application."""
     global pipe, upscaler, heartbeat_task
     
     logger.info("Starting up...")
     
-    # Load models
     load_model_time = time.time()
     try:
+        logger.info(f"Loading FLUX model: {MODEL_ID}")
         pipe = FluxPipeline.from_pretrained(
             MODEL_ID,
             torch_dtype=torch.bfloat16,
             cache_dir=MODEL_CACHE,
         ).to("cuda")
+        logger.info("FLUX model loaded successfully")
         
-        # Load SANA 2x upscaler using Spandrel
-        logger.info(f"Loading SANA upscaler from {SANA_MODEL_PATH}")
-        if os.path.exists(SANA_MODEL_PATH):
-            upscaler = ModelLoader().load_from_file(SANA_MODEL_PATH)
+        logger.info(f"Downloading SANA upscaler: {SANA_MODEL_ID}")
+        sana_path = snapshot_download(
+            repo_id=SANA_MODEL_ID,
+            cache_dir=MODEL_CACHE,
+            repo_type="model"
+        )
+        logger.info(f"SANA model downloaded to: {sana_path}")
+        
+        sana_safetensors = None
+        for root, dirs, files in os.walk(sana_path):
+            for file in files:
+                if file.endswith('.safetensors') and 'diffusion' in file.lower():
+                    sana_safetensors = os.path.join(root, file)
+                    break
+            if sana_safetensors:
+                break
+        
+        if sana_safetensors:
+            logger.info(f"Loading SANA upscaler from {sana_safetensors}")
+            upscaler = ModelLoader().load_from_file(sana_safetensors)
             assert isinstance(upscaler, ImageModelDescriptor), f"Expected ImageModelDescriptor, got {type(upscaler)}"
             upscaler.cuda().eval()
             logger.info(f"SANA upscaler loaded: scale={upscaler.scale}x")
         else:
-            logger.warning(f"SANA model not found at {SANA_MODEL_PATH} - upscaling disabled")
+            logger.warning(f"SANA model files not found in {sana_path} - upscaling disabled")
             upscaler = None
         
         load_model_time_end = time.time()
         calc_time(load_model_time, load_model_time_end, "Time to load models")
-        logger.info("Models loaded successfully")
+        logger.info("All models loaded successfully")
     except Exception as e:
         logger.error(f"Failed to load models: {e}")
         raise
     
-    # Start heartbeat task
     heartbeat_task = asyncio.create_task(periodic_heartbeat())
     
     yield
     
-    # Cleanup
     if heartbeat_task:
         heartbeat_task.cancel()
         try:
@@ -270,53 +254,42 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     logger.info(f"Requested: {request.width}x{request.height} -> Generation: {gen_w}x{gen_h} -> Final: {final_w}x{final_h} (upscale: {should_upscale})")
     
     try:
-        # Lock entire pipeline: generation + upscaling (to prevent concurrent GPU ops)
         with generate_lock:
             with torch.inference_mode():
-                # Generate image at 768x768
                 output = pipe(
                     prompt=request.prompts[0],
                     generator=generator,
                     width=gen_w,
                     height=gen_h,
-                    num_inference_steps=8,  # 8 steps for turbo
+                    num_inference_steps=8,
                     guidance_scale=3.5,
                 )
             
             image = output.images[0]
             logger.info(f"Generated image: {image.size}")
             
-            # Upscale with SANA if needed
             if should_upscale and upscaler is not None:
                 logger.info(f"Upscaling {gen_w}x{gen_h} -> {final_w}x{final_h} with SANA")
                 
-                # Convert PIL to tensor
                 image_tensor = pil_to_tensor(image).cuda()
                 
-                # Upscale
                 upscaled_tensor = upscale_with_sana(image_tensor)
                 
-                # Convert back to PIL
                 image = tensor_to_pil(upscaled_tensor)
                 logger.info(f"Upscaled image: {image.size}")
             
-            # Crop/resize to exact final dimensions if needed
             if image.size != (final_w, final_h):
-                # Center crop or resize to final dimensions
                 if image.size[0] > final_w or image.size[1] > final_h:
-                    # Center crop
                     left = (image.size[0] - final_w) // 2
                     top = (image.size[1] - final_h) // 2
                     image = image.crop((left, top, left + final_w, top + final_h))
                 else:
-                    # Resize maintaining aspect ratio, then pad
                     image.thumbnail((final_w, final_h), Image.Resampling.LANCZOS)
                     new_image = Image.new("RGB", (final_w, final_h), (255, 255, 255))
                     offset = ((final_w - image.size[0]) // 2, (final_h - image.size[1]) // 2)
                     new_image.paste(image, offset)
                     image = new_image
         
-        # Encode image (outside lock for faster response)
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='JPEG', quality=95)
         img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')

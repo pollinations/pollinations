@@ -4,6 +4,10 @@ import io
 import base64
 import logging
 import asyncio
+
+# Disable Flash Attention to avoid ABI mismatch errors
+os.environ['FLASH_ATTENTION_SKIP_CUDA_BUILD'] = '1'
+
 import torch
 import aiohttp
 import requests

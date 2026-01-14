@@ -72,8 +72,9 @@ const ProjectsPage = () => {
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(2, minmax(0, 2fr))',
-              gap: 2
+              gridTemplateColumns: 'repeat(1, minmax(0, 2fr))',
+              gap: 2,
+              alignItems: 'start'
             }}
           >
           {projects && projects.map((project, index) => {
@@ -219,13 +220,12 @@ const ProjectsPage = () => {
                           color: 'rgba(255,255,255,0.8)',
                           border: '1px solid rgba(255,255,255,0.2)',
                           borderRadius: '15px',
-                          margin: "1rem auto 0",
-                          width: '90%',
+                          margin: "2rem auto 0",
+                          width: '100%',
                           height: '48px',
                           display: 'flex',
                           alignItems: 'center',
                           bottom: '15px',
-                          position: 'fixed',
                           justifyContent: 'center',
                           '&:hover': { 
                             borderColor: 'rgba(255,255,255,0.4)', 
@@ -234,7 +234,7 @@ const ProjectsPage = () => {
                           } 
                         }}
                       >
-                        <ExpandMoreIcon sx={{ transform: expanded === project.id ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} />
+                        <Typography>Interested? View Details</Typography><ExpandMoreIcon sx={{ transform: expanded === project.id ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} />
                       </IconButton>
                     </CardContent>
                   </Card>

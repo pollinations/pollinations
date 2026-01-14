@@ -34,7 +34,7 @@
 
 **Two types of API keys available:**
 
-1. **🌐 Publishable Key** (starts with `pk_`)
+1. **🌐 Publishable Key** (starts with `pk_`) - ⚠️ **Beta: Not yet ready for production use**
    - Always visible in dashboard
    - For client-side apps (React, Vue, etc.)
    - IP rate-limited: 1 req/hour per IP+key combo

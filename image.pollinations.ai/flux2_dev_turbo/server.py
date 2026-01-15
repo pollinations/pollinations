@@ -4,12 +4,15 @@ import io
 import base64
 import logging
 import asyncio
+import gc
 from huggingface_hub import login, snapshot_download, hf_hub_download
 from dotenv import load_dotenv
 load_dotenv()
 login(token=os.getenv("HF_TOKEN"))
 
 os.environ['FLASH_ATTENTION_SKIP_CUDA_BUILD'] = '1'
+# Memory management optimization to reduce fragmentation
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 
 import torch
 import aiohttp
@@ -107,6 +110,24 @@ def calc_time(start, end, msg):
     print(f"{msg} time: {elapsed:.2f} seconds")
 
 
+def free_gpu_memory():
+    """Aggressively free GPU memory"""
+    try:
+        if torch.cuda.is_available():
+            # Clear all GPU caches
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
+            # Force garbage collection
+            gc.collect()
+            
+            # Log memory usage
+            reserved = torch.cuda.memory_reserved() / 1e9
+            allocated = torch.cuda.memory_allocated() / 1e9
+            logger.info(f"GPU Memory - Reserved: {reserved:.2f}GB, Allocated: {allocated:.2f}GB")
+    except Exception as e:
+        logger.warning(f"Error freeing GPU memory: {e}")
+
+
 pipe = None
 heartbeat_task = None
 
@@ -137,6 +158,7 @@ async def lifespan(app: FastAPI):
             torch_dtype=torch.bfloat16,
             cache_dir=MODEL_CACHE,
         ).to("cuda")
+        
         logger.info("Base FLUX.2-dev model loaded")
         
         logger.info(f"Loading LoRA weights from local cache...")
@@ -150,23 +172,38 @@ async def lifespan(app: FastAPI):
         
         if os.path.exists(lora_path):
             logger.info(f"LoRA file found at: {lora_path}")
-            pipe.load_lora_weights(lora_path)
-            logger.info("LoRA weights loaded successfully")
+            try:
+                lora_load_start = time.time()
+                logger.info("Starting LoRA weights loading...")
+                pipe.load_lora_weights(lora_path)
+                lora_load_end = time.time()
+                logger.info(f"LoRA weights loaded successfully in {lora_load_end - lora_load_start:.2f}s")
+            except Exception as lora_err:
+                logger.error(f"Error loading LoRA weights: {lora_err}")
+                raise
         else:
             logger.warning(f"LoRA file not found at {lora_path}, attempting to download...")
-            lora_file = hf_hub_download(
-                repo_id=LORA_REPO_ID,
-                filename=LORA_FILENAME,
-                cache_dir=MODEL_CACHE,
-                repo_type="model"
-            )
-            logger.info(f"LoRA file downloaded to: {lora_file}")
-            pipe.load_lora_weights(lora_file)
-            logger.info("LoRA weights loaded successfully")
+            try:
+                lora_file = hf_hub_download(
+                    repo_id=LORA_REPO_ID,
+                    filename=LORA_FILENAME,
+                    cache_dir=MODEL_CACHE,
+                    repo_type="model"
+                )
+                logger.info(f"LoRA file downloaded to: {lora_file}")
+                pipe.load_lora_weights(lora_file)
+                logger.info("LoRA weights loaded successfully")
+            except Exception as download_err:
+                logger.error(f"Error downloading/loading LoRA weights: {download_err}")
+                raise
         
         load_model_time_end = time.time()
         calc_time(load_model_time, load_model_time_end, "Time to load models")
         logger.info("All models loaded successfully")
+        
+        # Initial memory cleanup
+        free_gpu_memory()
+        
     except Exception as e:
         logger.error(f"Failed to load models: {e}")
         raise
@@ -183,6 +220,7 @@ async def lifespan(app: FastAPI):
             pass
     
     logger.info("Shutting down...")
+    free_gpu_memory()
 
 
 app = FastAPI(title="FLUX.2-dev-Turbo API", lifespan=lifespan)
@@ -211,6 +249,9 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
     
+    # Pre-generation memory cleanup
+    free_gpu_memory()
+    
     seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(8), "big")
     logger.info(f"Using seed: {seed}")
     generator = torch.Generator("cuda").manual_seed(seed)
@@ -218,15 +259,16 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     try:
         with generate_lock:
             with torch.inference_mode():
-                output = pipe(
-                    prompt=request.prompts[0],
-                    sigmas=TURBO_SIGMAS,
-                    guidance_scale=2.5,
-                    height=request.height,
-                    width=request.width,
-                    num_inference_steps=8,
-                    generator=generator,
-                )
+                with torch.cuda.amp.autocast(dtype=torch.float16, enabled=True):
+                    output = pipe(
+                        prompt=request.prompts[0],
+                        sigmas=TURBO_SIGMAS,
+                        guidance_scale=2.5,
+                        height=request.height,
+                        width=request.width,
+                        num_inference_steps=8,
+                        generator=generator,
+                    )
             
             image = output.images[0]
             logger.info(f"Generated image: {image.size}")
@@ -234,6 +276,10 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='JPEG', quality=95)
         img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
+        
+        # Post-generation memory cleanup
+        del output
+        free_gpu_memory()
         
         response_content = [{
             "image": img_base64,
@@ -245,10 +291,13 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
         return JSONResponse(content=response_content)
     
     except torch.cuda.OutOfMemoryError as e:
-        logger.error(f"CUDA OOM Error: {e} - Exiting to trigger restart")
+        logger.error(f"CUDA OOM Error: {e}")
+        free_gpu_memory()
+        logger.error("Out of memory - attempting cleanup and exit for restart")
         sys.exit(1)
     except Exception as e:
         logger.error(f"Generation failed: {e}")
+        free_gpu_memory()
         raise HTTPException(status_code=500, detail=str(e))
 
 

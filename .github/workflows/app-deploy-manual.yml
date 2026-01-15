@@ -97,7 +97,7 @@ jobs:
             fi
             
             # Deploy via wrangler pages
-            APP_NAME="pollinations-$app"
+            APP_NAME="$app"
             SOURCE_DIR="apps/$app"
             
             # Get output dir from apps.json

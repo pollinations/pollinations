@@ -155,6 +155,8 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai)
 
 > ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs
 
+> 💡 **Building an app?** Use [Bring Your Own Pollen](./BRING_YOUR_OWN_POLLEN.md) — users pay for their own usage, you pay $0
+
 ### Model Restrictions
 
 Each API key can be scoped to specific models. When creating a key at [enter.pollinations.ai](https://enter.pollinations.ai), you can:

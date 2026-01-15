@@ -24,8 +24,31 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     itemLabel = "items",
 }) => {
     const [open, setOpen] = useState(false);
+    const [openDirection, setOpenDirection] = useState<"up" | "down">("up");
     const ref = useRef<HTMLDivElement>(null);
     const isAllSelected = selected.length === 0;
+
+    const calculateDirection = () => {
+        if (!ref.current) return "up";
+        const rect = ref.current.getBoundingClientRect();
+        const dropdownHeight = 280; // max-h-64 (256px) + some padding
+        const spaceAbove = rect.top;
+        const spaceBelow = window.innerHeight - rect.bottom;
+
+        // Prefer opening upward, but if not enough space, open downward
+        if (spaceAbove < dropdownHeight && spaceBelow > spaceAbove) {
+            return "down";
+        }
+        return "up";
+    };
+
+    const handleToggle = () => {
+        if (disabled) return;
+        if (!open) {
+            setOpenDirection(calculateDirection());
+        }
+        setOpen(!open);
+    };
 
     useEffect(() => {
         const handleClick = (e: MouseEvent) => {
@@ -58,7 +81,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
         <div ref={ref} className="relative group">
             <button
                 type="button"
-                onClick={() => !disabled && setOpen(!open)}
+                onClick={handleToggle}
                 disabled={disabled}
                 className={cn(
                     "flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full",
@@ -108,7 +131,10 @@ export const MultiSelect: FC<MultiSelectProps> = ({
             {open && !disabled && (
                 <div
                     className={cn(
-                        "absolute bottom-full mb-1 min-w-[320px] bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden",
+                        "absolute min-w-[320px] bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden",
+                        openDirection === "up"
+                            ? "bottom-full mb-1"
+                            : "top-full mt-1",
                         align === "end" ? "right-0" : "left-0",
                     )}
                 >

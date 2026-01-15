@@ -541,6 +541,22 @@ body.light .sidebar-auth-info {
   letter-spacing: 0.05em;
   color: rgba(74, 222, 128, 0.9);
   margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-auth-balance {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #4ade80;
+  margin-left: 0.5rem;
+}
+
+.sidebar-auth-balance-loading {
+  font-size: 0.875rem;
+  color: rgba(74, 222, 128, 0.5);
+  margin-left: 0.5rem;
 }
 
 .sidebar-auth-key {

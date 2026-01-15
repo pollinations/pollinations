@@ -12,6 +12,8 @@ const Sidebar = memo(({
   onOpenSettings,
   isLoggedIn,
   apiKey,
+  pollenBalance,
+  isLoadingBalance,
   onLogin,
   onLogout
 }) => {
@@ -159,25 +161,35 @@ const Sidebar = memo(({
                 {isLoggedIn ? (
                   <>
                     <div className="sidebar-auth-info">
-                      <div className="sidebar-auth-label">🌸 Your Pollen</div>
+                      <div className="sidebar-auth-label">
+                        🌸 Your Pollen
+                        {pollenBalance !== null && !isLoadingBalance && typeof pollenBalance.totalBalance === 'number' && (
+                          <span className="sidebar-auth-balance">
+                            {pollenBalance.totalBalance.toFixed(2)}
+                          </span>
+                        )}
+                        {isLoadingBalance && (
+                          <span className="sidebar-auth-balance-loading">...</span>
+                        )}
+                      </div>
                       <div className="sidebar-auth-key">{apiKey.slice(0, 14)}...</div>
                     </div>
-                    <button className="sidebar-btn sidebar-btn-secondary" onClick={onLogout} title="Disconnect">
+                    <button className="sidebar-btn sidebar-btn-secondary" onClick={onLogout} title="Disconnect your pollinations.ai account">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                         <polyline points="16 17 21 12 16 7"/>
                         <line x1="21" y1="12" x2="9" y2="12"/>
                       </svg>
-                      <span>Disconnect</span>
+                      <span>Disconnect account</span>
                     </button>
                   </>
                 ) : (
-                  <button className="sidebar-btn sidebar-btn-primary" onClick={onLogin} title="Connect with Pollinations">
+                  <button className="sidebar-btn sidebar-btn-primary" onClick={onLogin} title="Connect your pollinations.ai account">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10"/>
                       <path d="M12 16v-4M12 8h.01"/>
                     </svg>
-                    <span>Connect with Pollinations</span>
+                    <span>Connect your pollinations.ai account</span>
                   </button>
                 )}
               </div>

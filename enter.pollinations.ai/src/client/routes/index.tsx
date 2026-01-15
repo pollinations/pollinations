@@ -38,6 +38,7 @@ export const Route = createFileRoute("/")({
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
+        const cryptoBalance = d1BalanceResult?.cryptoBalance ?? 0;
 
         return {
             user: context.user,
@@ -46,16 +47,20 @@ export const Route = createFileRoute("/")({
             tierData,
             tierBalance,
             packBalance,
+            cryptoBalance,
         };
     },
 });
 
 function RouteComponent() {
     const router = useRouter();
-    const { user, apiKeys, tierData, tierBalance, packBalance } =
+    const { user, apiKeys, tierData, tierBalance, packBalance, cryptoBalance } =
         Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<"fiat" | "crypto">(
+        "fiat",
+    );
 
     const handleSignOut = async () => {
         if (isSigningOut) return; // Prevent double-clicks
@@ -149,8 +154,14 @@ function RouteComponent() {
     };
 
     const handleBuyPollen = (slug: string) => {
-        // Navigate directly to checkout endpoint - server will handle redirect
-        window.location.href = `/api/polar/checkout/${productSlugToUrlParam(slug)}?redirect=true`;
+        if (paymentMethod === "crypto") {
+            // Extract pack name from slug (e.g., "v1:product:pack:5x2" -> "5x2")
+            const pack = slug.split(":").pop();
+            window.location.href = `/api/nowpayments/invoice/${pack}?redirect=true`;
+        } else {
+            // Navigate directly to Polar checkout endpoint - server will handle redirect
+            window.location.href = `/api/polar/checkout/${productSlugToUrlParam(slug)}?redirect=true`;
+        }
     };
 
     return (
@@ -177,6 +188,42 @@ function RouteComponent() {
                     <div className="flex flex-col sm:flex-row justify-between gap-3">
                         <h2 className="font-bold flex-1">Balance</h2>
                         <div className="flex flex-wrap gap-3 items-center">
+                            <div className="flex items-center gap-1 bg-violet-100/50 rounded-lg p-1 mr-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setPaymentMethod("fiat")}
+                                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                                        paymentMethod === "fiat"
+                                            ? "bg-white text-violet-700 shadow-sm"
+                                            : "text-violet-600 hover:text-violet-700"
+                                    }`}
+                                >
+                                    💳 Fiat
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setPaymentMethod("crypto")}
+                                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                                        paymentMethod === "crypto"
+                                            ? "bg-white text-violet-700 shadow-sm"
+                                            : "text-violet-600 hover:text-violet-700"
+                                    }`}
+                                >
+                                    ₿ Crypto
+                                </button>
+                            </div>
+                            {paymentMethod === "crypto" && (
+                                <Button
+                                    as="button"
+                                    color="purple"
+                                    weight="light"
+                                    onClick={() =>
+                                        handleBuyPollen("v1:product:pack:1x2")
+                                    }
+                                >
+                                    + $1
+                                </Button>
+                            )}
                             <Button
                                 as="button"
                                 color="purple"
@@ -222,6 +269,7 @@ function RouteComponent() {
                     <PollenBalance
                         tierBalance={tierBalance}
                         packBalance={packBalance}
+                        cryptoBalance={cryptoBalance}
                     />
                 </div>
                 <UsageGraph apiKeys={apiKeys} />

@@ -131,6 +131,63 @@ export const portkeyConfig: PortkeyConfigMap = {
         "strict-open-ai-compliance": "true",
         defaultOptions: { max_tokens: 64000 },
     }),
+
+    // ============================================================================
+    // Fallback Configs - AWS Bedrock primary, Google Vertex AI fallback
+    // Uses snake_case for x-portkey-config JSON format
+    // ============================================================================
+    "claude-sonnet-4-5-fallback": () => ({
+        strategy: { mode: "fallback" },
+        targets: [
+            // Primary: AWS Bedrock (native)
+            {
+                provider: "bedrock",
+                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
+                aws_region: process.env.AWS_REGION || "us-east-1",
+                override_params: {
+                    model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+                },
+            },
+            // Fallback: Google Vertex AI
+            {
+                provider: "vertex-ai",
+                authKey: googleCloudAuth.getAccessToken,
+                vertex_project_id: process.env.GOOGLE_PROJECT_ID,
+                vertex_region: "europe-west1",
+                override_params: {
+                    model: "anthropic.claude-sonnet-4-5@20250929",
+                },
+            },
+        ],
+        defaultOptions: { max_tokens: 64000 },
+    }),
+    "claude-opus-4-5-fallback": () => ({
+        strategy: { mode: "fallback" },
+        targets: [
+            // Primary: AWS Bedrock (native)
+            {
+                provider: "bedrock",
+                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
+                aws_region: process.env.AWS_REGION || "us-east-1",
+                override_params: {
+                    model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+                },
+            },
+            // Fallback: Google Vertex AI
+            {
+                provider: "vertex-ai",
+                authKey: googleCloudAuth.getAccessToken,
+                vertex_project_id: process.env.GOOGLE_PROJECT_ID,
+                vertex_region: "europe-west1",
+                override_params: {
+                    model: "anthropic.claude-opus-4-5@20251101",
+                },
+            },
+        ],
+        defaultOptions: { max_tokens: 64000 },
+    }),
     "amazon.nova-micro-v1:0": () =>
         createBedrockLambdaModelConfig({
             model: "amazon.nova-micro-v1:0",
@@ -196,16 +253,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // Fireworks AI - glm-4.7, minimax-m2.1
+    // Fireworks AI - glm-4.7, minimax-m2.1, deepseek-v3.2
     // ============================================================================
     "accounts/fireworks/models/glm-4p7": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-4p7",
-            "max-tokens": 25344,
         }),
     "accounts/fireworks/models/minimax-m2p1": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m2p1",
-            "max-tokens": 25600,
+        }),
+    "accounts/fireworks/models/deepseek-v3p2": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v3p2",
         }),
 };

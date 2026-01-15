@@ -1,5 +1,3 @@
-import { getLogger } from "@logtape/logtape";
-import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
@@ -7,17 +5,18 @@ import { requestId } from "hono/request-id";
 import { createAuth } from "./auth.ts";
 import type { Env } from "./env.ts";
 import { handleError } from "./error.ts";
-import { processEvents } from "./events.ts";
 import { logger } from "./middleware/logger.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
+import { nowpaymentsRoutes } from "./routes/nowpayments.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
 import { usageDailyRoutes, usageRoutes } from "./routes/usage.ts";
 import { webhooksRoutes } from "./routes/webhooks.ts";
+import { webhooksCryptoRoutes } from "./routes/webhooks-crypto.ts";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
     return await createAuth(c.env).handler(c.req.raw);
@@ -26,11 +25,13 @@ const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
 export const api = new Hono<Env>()
     .route("/auth", authRoutes)
     .route("/polar", polarRoutes)
+    .route("/nowpayments", nowpaymentsRoutes)
     .route("/tiers", tiersRoutes)
     .route("/api-keys", apiKeysRoutes)
     .route("/usage", usageRoutes)
     .route("/usage/daily", usageDailyRoutes)
     .route("/webhooks", webhooksRoutes)
+    .route("/webhooks", webhooksCryptoRoutes)
     .route("/admin", adminRoutes)
     .route("/model-stats", modelStatsRoutes)
     .route("/generate", proxyRoutes);
@@ -87,15 +88,4 @@ export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 export default {
     fetch: app.fetch,
-    scheduled: async (_controller, env, _ctx) => {
-        const db = drizzle(env.DB);
-        const log = getLogger(["hono", "scheduled"]);
-
-        await processEvents(db, log, {
-            polarAccessToken: env.POLAR_ACCESS_TOKEN,
-            polarServer: env.POLAR_SERVER,
-            tinybirdIngestUrl: env.TINYBIRD_INGEST_URL,
-            tinybirdIngestToken: env.TINYBIRD_INGEST_TOKEN,
-        });
-    },
 } satisfies ExportedHandler<CloudflareBindings>;

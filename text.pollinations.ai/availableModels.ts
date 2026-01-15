@@ -61,7 +61,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["deepseek-v3.2-maas"],
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v3p2"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -80,12 +80,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude",
-        config: portkeyConfig["claude-sonnet-4-5-vertex"],
+        config: portkeyConfig["claude-sonnet-4-5-fallback"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "claude-large",
-        config: portkeyConfig["claude-opus-4-5-vertex"],
+        config: portkeyConfig["claude-opus-4-5-fallback"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {

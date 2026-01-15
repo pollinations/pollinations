@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
 import { ModelPermissions } from "../components/model-permissions.tsx";
-import { authClient } from "../auth.ts";
 
 // 30 days in seconds
 const DEFAULT_EXPIRY_SECONDS = 30 * 24 * 60 * 60;
@@ -152,9 +152,9 @@ function AuthorizeComponent() {
                 </div>
 
                 <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 shadow-lg text-center">
-                    <h1 className="text-2xl font-bold mb-4">
-                        Connect to Pollinations
-                    </h1>
+                    <h2 className="font-bold mb-4 text-center">
+                        Connect to pollinations.ai
+                    </h2>
 
                     {error ? (
                         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -202,9 +202,9 @@ function AuthorizeComponent() {
             </div>
 
             <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 shadow-lg">
-                <h1 className="text-2xl font-bold mb-6 text-center">
+                <h2 className="font-bold mb-4 text-center">
                     Authorize Application
-                </h1>
+                </h2>
 
                 {error ? (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -212,38 +212,52 @@ function AuthorizeComponent() {
                     </div>
                 ) : (
                     <>
-                        {/* Security warning - short & sweet */}
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-                            <p className="font-semibold text-amber-900 mb-1">
-                                🔑 Sharing API key with:
+                        {/* Security info - short & sweet */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                            <p className="font-semibold text-blue-900 mb-1">
+                                🔑 Sharing my API key with{" "}
+                                <span className="font-mono bg-blue-100 rounded px-1.5 py-0.5 text-blue-800">
+                                    {redirectHostname}
+                                </span>
                             </p>
-                            <p className="font-mono text-amber-800 bg-amber-100 rounded px-2 py-1 break-all text-sm mb-2">
-                                {redirectHostname}
-                            </p>
-                            <p className="text-xs text-amber-700">
-                                same as copy-pasting your key into their app ✨
+                            <p className="text-xs text-blue-600 mt-2">
+                                Same as copy-pasting your key into their app 💙
+                                Only you can use it
                             </p>
                         </div>
 
-                        {/* What this allows - compact */}
-                        <div className="mb-4 text-sm text-gray-600">
-                            <span className="text-green-500">✓</span> Generate
-                            images & text
-                            <span className="mx-2">·</span>
-                            <span className="text-green-500">✓</span> Use your
-                            pollen
-                        </div>
+                        {/* What this key allows */}
+                        <ul className="mb-6 text-sm text-gray-600 space-y-2">
+                            <li className="flex items-start gap-2">
+                                <span className="text-green-500">✓</span>
+                                <span>
+                                    Generate text, images, audio & video
+                                </span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-green-500">✓</span>
+                                <span>Use your pollen balance</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-gray-400">⏱</span>
+                                <span>
+                                    Expires in 30 days · revoke anytime from{" "}
+                                    <a
+                                        href="/"
+                                        className="text-blue-600 hover:underline"
+                                    >
+                                        dashboard
+                                    </a>
+                                </span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-gray-400">🔧</span>
+                                <span>Model access:</span>
+                            </li>
+                        </ul>
 
-                        {/* Expiry - inline */}
-                        <p className="text-xs text-gray-500 mb-6">
-                            ⏱️ Expires in 30 days · revoke anytime from dashboard
-                        </p>
-
-                        {/* Model permissions */}
-                        <div className="mb-6">
-                            <h3 className="font-semibold text-sm text-gray-700 mb-2">
-                                Model Access
-                            </h3>
+                        {/* Model permissions selector */}
+                        <div className="mb-6 -mt-2">
                             <ModelPermissions
                                 value={allowedModels}
                                 onChange={setAllowedModels}
@@ -252,7 +266,7 @@ function AuthorizeComponent() {
                         </div>
 
                         {/* Redirect URL display */}
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-6">
                             <p className="text-blue-800 text-xs mb-1 font-medium">
                                 You will be redirected to:
                             </p>
@@ -263,10 +277,19 @@ function AuthorizeComponent() {
                     </>
                 )}
 
-                <div className="text-center text-sm text-gray-500 mb-6">
+                <div className="text-center text-sm text-gray-500 mb-4">
                     Signed in as{" "}
                     <strong>{user?.githubUsername || user?.email}</strong>
                 </div>
+                <p className="text-center text-xs text-gray-400 mb-4">
+                    By authorizing, you agree to the{" "}
+                    <a
+                        href="/terms"
+                        className="text-gray-500 hover:text-gray-700 hover:underline"
+                    >
+                        Terms & Conditions
+                    </a>
+                </p>
                 <div className="flex gap-3">
                     <Button
                         as="button"

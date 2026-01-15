@@ -10,6 +10,7 @@ import {
 import { motion } from 'framer-motion';
 import useEasterEgg from '../hooks/useEasterEgg';
 import EasterEggModal from '../components/EasterEggModal';
+import CountdownButton from '../components/CountdownButton';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -320,28 +321,7 @@ const HomePage = () => {
                       >
                         Explore Projects
                       </Button>
-                      <Button
-                        component={Link}
-                        to='/timeline'
-                        variant="outlined"
-                        size="large"
-                        startIcon={<TimelineIcon />}
-                        sx={{
-                          borderColor: 'rgba(255,255,255,0.3)',
-                          color: '#fff',
-                          textTransform: 'none',
-                          fontSize: '1.1rem',
-                          py: 2,
-                          px: 4,
-                          borderRadius: '12px',
-                          '&:hover': {
-                            borderColor: 'rgba(255,255,255,0.5)',
-                            backgroundColor: 'rgba(255,255,255,0.05)'
-                          }
-                        }}
-                      >
-                        View Timeline
-                      </Button>
+                      <CountdownButton />
                     </Stack>
                   </Box>
 

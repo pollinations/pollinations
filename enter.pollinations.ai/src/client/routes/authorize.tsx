@@ -28,14 +28,32 @@ const parseNumber = (val: unknown): number | null => {
 
 export const Route = createFileRoute("/authorize")({
     component: AuthorizeComponent,
-    validateSearch: (search: Record<string, unknown>) => ({
-        redirect_url: (search.redirect_url as string) || "",
-        // Optional preselection params
-        models: parseList(search.models),
-        budget: parseNumber(search.budget),
-        expiry: parseNumber(search.expiry),
-        permissions: parseList(search.permissions),
-    }),
+    validateSearch: (search: Record<string, unknown>) => {
+        const result: {
+            redirect_url: string;
+            models?: string[] | null;
+            budget?: number | null;
+            expiry?: number | null;
+            permissions?: string[] | null;
+        } = {
+            redirect_url: (search.redirect_url as string) || "",
+        };
+
+        // Only include optional params if they're present
+        const models = parseList(search.models);
+        if (models !== null) result.models = models;
+
+        const budget = parseNumber(search.budget);
+        if (budget !== null) result.budget = budget;
+
+        const expiry = parseNumber(search.expiry);
+        if (expiry !== null) result.expiry = expiry;
+
+        const permissions = parseList(search.permissions);
+        if (permissions !== null) result.permissions = permissions;
+
+        return result;
+    },
     // No beforeLoad redirect - handle auth state in component for better UX
 });
 

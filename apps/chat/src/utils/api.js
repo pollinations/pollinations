@@ -2,7 +2,10 @@
 const BASE_IMAGE_URL = 'https://gen.pollinations.ai/image';
 const TEXT_MODELS_ENDPOINT = 'https://gen.pollinations.ai/v1/models';
 const IMAGE_MODELS_ENDPOINT = 'https://gen.pollinations.ai/image/models';
-const API_TOKEN = import.meta.env.VITE_POLLINATIONS_API_KEY || 'plln_pk_EiFtGHYIeDMxNeZBqKaRFBEJQRardmel';
+const DEFAULT_API_TOKEN = import.meta.env.VITE_POLLINATIONS_API_KEY || 'plln_pk_EiFtGHYIeDMxNeZBqKaRFBEJQRardmel';
+
+// Current API token - can be updated by setApiToken
+let currentApiToken = DEFAULT_API_TOKEN;
 
 let textModels = [];
 let imageModels = [];
@@ -13,6 +16,23 @@ let abortController = null;
 let modelsCache = null;
 let modelsCacheTime = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Set the API token to be used for all API calls
+ * @param {string} token - The API token to use
+ */
+export const setApiToken = (token) => {
+  currentApiToken = token || DEFAULT_API_TOKEN;
+  // Clear models cache when token changes to reload with new permissions
+  modelsCache = null;
+  modelsCacheTime = null;
+};
+
+/**
+ * Get the current API token
+ * @returns {string} The current API token
+ */
+export const getApiToken = () => currentApiToken;
 
 // Format model names
 const formatModelName = (modelId) => {
@@ -42,12 +62,12 @@ export const loadModels = async () => {
     const [textResponse, imageResponse] = await Promise.allSettled([
       fetch(TEXT_MODELS_ENDPOINT, {
         headers: {
-          'Authorization': `Bearer ${API_TOKEN}`
+          'Authorization': `Bearer ${currentApiToken}`
         }
       }),
       fetch(IMAGE_MODELS_ENDPOINT, {
         headers: {
-          'Authorization': `Bearer ${API_TOKEN}`
+          'Authorization': `Bearer ${currentApiToken}`
         }
       })
     ]);
@@ -383,7 +403,7 @@ export const sendMessage = async (messages, onChunk, onComplete, onError, modelI
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_TOKEN}`
+        'Authorization': `Bearer ${currentApiToken}`
       },
       body: JSON.stringify(requestBody),
       signal: abortController.signal
@@ -576,7 +596,7 @@ export const generateImage = async (prompt, options = {}) => {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${API_TOKEN}`
+        'Authorization': `Bearer ${currentApiToken}`
       }
     });
 
@@ -639,7 +659,7 @@ export const generateVideo = async (prompt, options = {}) => {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${API_TOKEN}`
+        'Authorization': `Bearer ${currentApiToken}`
       }
     });
 

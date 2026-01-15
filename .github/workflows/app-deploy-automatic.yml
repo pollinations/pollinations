@@ -39,8 +39,17 @@ jobs:
             APP_NAME=$(echo "$CHANGED" | sed 's|^apps/\([^/]*\)/.*|\1|')
           fi
           
+          # Set project name: gsoc has no prefix, others get pollinations- prefix
+          if [ "$APP_NAME" = "gsoc" ]; then
+            PROJECT_NAME="gsoc"
+          else
+            PROJECT_NAME="pollinations-$APP_NAME"
+          fi
+          
           echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
+          echo "project_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
           echo "📦 App: $APP_NAME"
+          echo "📋 Project: $PROJECT_NAME"
 
       - name: Check for worker
         id: worker
@@ -113,7 +122,7 @@ jobs:
           ")
           
           wrangler pages deploy "apps/${{ steps.app.outputs.app_name }}/$OUTPUT_DIR" \
-            --project-name="pollinations-${{ steps.app.outputs.app_name }}" \
+            --project-name="${{ steps.app.outputs.project_name }}" \
             --branch=main \
             --commit-dirty=true
 
@@ -123,9 +132,14 @@ jobs:
         with:
           script: |
             const app = '${{ steps.app.outputs.app_name }}';
+            const projectName = '${{ steps.app.outputs.project_name }}';
+            const url = app === 'gsoc' 
+              ? `https://gsoc.pollinations.ai`
+              : `https://${projectName}.pollinations.ai`;
+            
             github.rest.repos.createCommitComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               commit_sha: context.sha,
-              body: `🚀 Deployed ${app} to https://${app}.pollinations.ai\n\n_DNS propagation may take a few minutes_`
+              body: `🚀 Deployed ${app} to ${url}\n\n_DNS propagation may take a few minutes_`
             });

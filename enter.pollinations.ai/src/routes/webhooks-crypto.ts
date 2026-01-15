@@ -7,6 +7,56 @@ import type { Env } from "../env.ts";
 import { user as userTable } from "../db/schema/better-auth.ts";
 const log = getLogger(["hono", "webhooks-crypto"]);
 
+// Send crypto webhook event to Tinybird for analytics
+async function sendCryptoEventToTinybird(
+    env: Cloudflare.Env,
+    payload: NowPaymentsIpnPayload,
+    userId: string,
+): Promise<void> {
+    const e = env as unknown as Record<string, string>;
+    const tinybirdUrl = e.TINYBIRD_CRYPTO_INGEST_URL;
+    const tinybirdToken = e.TINYBIRD_CRYPTO_INGEST_TOKEN;
+
+    if (!tinybirdUrl || !tinybirdToken) {
+        log.debug("Tinybird Crypto ingest not configured, skipping");
+        return;
+    }
+
+    // Build event with extracted fields + full payload (timestamp uses DEFAULT now() in schema)
+    const event = {
+        event_type: payload.payment_status,
+        user_id: userId,
+        payment_id: String(payload.payment_id),
+        order_id: payload.order_id,
+        pay_currency: payload.pay_currency,
+        payload: JSON.stringify(payload),
+    };
+
+    try {
+        const response = await fetch(tinybirdUrl, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${tinybirdToken}`,
+                "Content-Type": "application/x-ndjson",
+            },
+            body: JSON.stringify(event),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            log.error(
+                "Failed to send crypto event to Tinybird: {status} {error}",
+                {
+                    status: response.status,
+                    error: errorText,
+                },
+            );
+        }
+    } catch (error) {
+        log.error("Error sending crypto event to Tinybird: {error}", { error });
+    }
+}
+
 // Crypto-only pack names (includes $1 option not available via Polar)
 const cryptoPackNames = ["1x2", "5x2", "10x2", "20x2", "50x2"] as const;
 type CryptoPackName = (typeof cryptoPackNames)[number];
@@ -29,6 +79,7 @@ interface NowPaymentsIpnPayload {
     price_currency: string;
     pay_amount: number;
     actually_paid: number;
+    actually_paid_fiat?: number; // Fiat equivalent of actually_paid
     pay_currency: string;
     order_id: string;
     order_description: string;
@@ -135,14 +186,57 @@ export const webhooksCryptoRoutes = new Hono<Env>().post(
             paymentId: payload.payment_id,
             status: payload.payment_status,
             orderId: payload.order_id,
+            priceAmount: payload.price_amount,
+            actuallyPaidFiat: payload.actually_paid_fiat,
         });
 
-        // Only process finished payments
-        if (payload.payment_status !== "finished") {
-            log.debug("Ignoring non-finished payment status: {status}", {
+        // Parse order_id early to get userId for Tinybird logging
+        const orderInfoForLogging = parseOrderId(payload.order_id);
+        const userIdForLogging = orderInfoForLogging?.userId ?? "";
+
+        // Send to Tinybird in background using waitUntil to prevent cancellation
+        c.executionCtx.waitUntil(
+            sendCryptoEventToTinybird(c.env, payload, userIdForLogging).catch(
+                (err) =>
+                    log.error("Tinybird crypto send failed: {error}", {
+                        error: err,
+                    }),
+            ),
+        );
+
+        // Accept finished or partially_paid payments
+        // partially_paid occurs when crypto amount is slightly less due to network fees
+        if (
+            payload.payment_status !== "finished" &&
+            payload.payment_status !== "partially_paid"
+        ) {
+            log.debug("Ignoring payment status: {status}", {
                 status: payload.payment_status,
             });
             return c.json({ received: true, processed: false });
+        }
+
+        // For partially_paid, only credit if user paid at least 90% of the expected amount
+        if (payload.payment_status === "partially_paid") {
+            const actuallyPaidFiat = payload.actually_paid_fiat ?? 0;
+            const expectedAmount = payload.price_amount;
+            const paidRatio = actuallyPaidFiat / expectedAmount;
+            if (paidRatio < 0.9) {
+                log.warn(
+                    "Partial payment below 90% threshold: {actuallyPaidFiat}/{expectedAmount} ({paidRatio}%)",
+                    {
+                        actuallyPaidFiat,
+                        expectedAmount,
+                        paidRatio: Math.round(paidRatio * 100),
+                        paymentId: payload.payment_id,
+                    },
+                );
+                return c.json({
+                    received: true,
+                    processed: false,
+                    reason: "partial_payment_below_threshold",
+                });
+            }
         }
 
         // Parse order_id to get user and pack
@@ -159,23 +253,35 @@ export const webhooksCryptoRoutes = new Hono<Env>().post(
         const { userId, pack } = orderInfo;
         const pollenAmount = PACK_POLLEN[pack];
 
+        // Idempotency: payment_id is logged to Tinybird for audit trail
+        // NOWPayments only sends webhooks on status changes, not arbitrary replays
+        // Manual dashboard replays are rare and can be reconciled via Tinybird logs
+
         // Credit pollen to user's crypto balance (separate from fiat pack balance)
         const db = drizzle(c.env.DB);
-
-        await db
+        const result = await db
             .update(userTable)
             .set({
                 cryptoBalance: sql`COALESCE(${userTable.cryptoBalance}, 0) + ${pollenAmount}`,
             })
             .where(eq(userTable.id, userId));
 
+        // Check if user was found and updated (D1 uses meta.changes)
+        if (result.meta?.changes === 0) {
+            log.error("User not found for crypto credit: {userId}", { userId });
+            throw new HTTPException(400, { message: "User not found" });
+        }
+
         log.info(
-            "[CRYPTO_CREDIT] crypto: user={userId} +{pollen} pack={pack} paymentId={paymentId}",
+            "[CRYPTO_CREDIT] crypto: user={userId} +{pollen} pack={pack} paymentId={paymentId} status={status}",
             {
                 userId,
                 pollen: pollenAmount,
                 pack,
                 paymentId: payload.payment_id,
+                status: payload.payment_status,
+                actuallyPaidFiat: payload.actually_paid_fiat,
+                priceAmount: payload.price_amount,
             },
         );
 

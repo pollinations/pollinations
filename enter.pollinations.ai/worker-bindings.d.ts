@@ -61,6 +61,8 @@ declare namespace Cloudflare {
         POLAR_ACCESS_TOKEN: string;
         POLAR_WEBHOOK_SECRET: string;
         TINYBIRD_INGEST_TOKEN: string;
+        TINYBIRD_POLAR_INGEST_TOKEN: string;
+        TINYBIRD_CRYPTO_INGEST_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
         NOWPAYMENTS_API_KEY: string;
         NOWPAYMENTS_IPN_SECRET: string;

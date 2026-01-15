@@ -12,6 +12,15 @@ POLAR_WEBHOOK_SECRET=your_polar_webhook_secret
 # Tinybird (analytics)
 TINYBIRD_ACCESS_TOKEN=your_tinybird_access_token
 TINYBIRD_INGEST_TOKEN=your_tinybird_ingest_token
+TINYBIRD_POLAR_INGEST_TOKEN=your_tinybird_polar_ingest_token
+TINYBIRD_CRYPTO_INGEST_TOKEN=your_tinybird_crypto_ingest_token
+
+# NOWPayments Crypto Payments (https://nowpayments.io)
+# Get keys from: https://account.nowpayments.io (production) or https://account-sandbox.nowpayments.io (sandbox)
+NOWPAYMENTS_API_KEY=your_nowpayments_api_key
+NOWPAYMENTS_IPN_SECRET=your_nowpayments_ipn_secret
+# Set to "sandbox" for testing, "production" for live payments
+NOWPAYMENTS_ENV=sandbox
 
 # Testing
 TESTING_REFERRER=optional_testing_referrer

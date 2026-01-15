@@ -195,7 +195,7 @@ export const track = (eventType: EventType) =>
         }
 
         // Decrement user pollen balance SYNCHRONOUSLY after billable requests
-        // Strategy: decrement from tier_balance first, then pack_balance
+        // Strategy: decrement from tier_balance first, then crypto_balance, then pack_balance
         if (
             responseTracking.isBilledUsage &&
             responseTracking.price?.totalPrice &&
@@ -208,6 +208,7 @@ export const track = (eventType: EventType) =>
                 const currentUser = await db
                     .select({
                         tierBalance: userTable.tierBalance,
+                        cryptoBalance: userTable.cryptoBalance,
                         packBalance: userTable.packBalance,
                     })
                     .from(userTable)
@@ -215,28 +216,36 @@ export const track = (eventType: EventType) =>
                     .limit(1);
 
                 const tierBalance = currentUser[0]?.tierBalance ?? 0;
+                const cryptoBalance = currentUser[0]?.cryptoBalance ?? 0;
 
-                // Decrement tier first, then pack
+                // Decrement in order: tier (free) → crypto → pack
                 const fromTier = Math.min(
                     priceToDeduct,
                     Math.max(0, tierBalance),
                 );
-                const fromPack = priceToDeduct - fromTier;
+                const remainingAfterTier = priceToDeduct - fromTier;
+                const fromCrypto = Math.min(
+                    remainingAfterTier,
+                    Math.max(0, cryptoBalance),
+                );
+                const fromPack = remainingAfterTier - fromCrypto;
 
                 await db
                     .update(userTable)
                     .set({
                         tierBalance: sql`${userTable.tierBalance} - ${fromTier}`,
+                        cryptoBalance: sql`${userTable.cryptoBalance} - ${fromCrypto}`,
                         packBalance: sql`${userTable.packBalance} - ${fromPack}`,
                     })
                     .where(eq(userTable.id, userTracking.userId));
 
                 log.debug(
-                    "Decremented {price} pollen from user {userId} (tier: -{fromTier}, pack: -{fromPack})",
+                    "Decremented {price} pollen from user {userId} (tier: -{fromTier}, crypto: -{fromCrypto}, pack: -{fromPack})",
                     {
                         price: priceToDeduct,
                         userId: userTracking.userId,
                         fromTier,
+                        fromCrypto,
                         fromPack,
                     },
                 );

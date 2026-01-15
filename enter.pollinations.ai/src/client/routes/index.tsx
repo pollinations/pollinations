@@ -14,7 +14,7 @@ import { Header } from "../components/header.tsx";
 import { PollenBalance } from "../components/pollen-balance.tsx";
 import { Pricing } from "../components/pricing/index.ts";
 import { TierPanel } from "../components/tier-panel.tsx";
-import { UsageGraph } from "../components/usage-graph.tsx";
+import { UsageGraph } from "../components/usage-analytics";
 import { User } from "../components/user.tsx";
 
 export const Route = createFileRoute("/")({

@@ -189,7 +189,7 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           github_token: ${{ steps.token.outputs.token }}
           trigger_phrase: "superpolly"
-          direct_prompt: |
+          prompt: |
             You are Claude Opus 4.5, the SECURITY SPECIALIST in a multi-model code review team.
 
             You have web search capability - use it to look up latest security best practices, CVEs, or OWASP guidelines when relevant.
@@ -205,7 +205,6 @@ jobs:
             - Prompt injection risks in AI-facing code
 
             Be concise. Include line numbers. Start with "## Claude (Security)"
-          output_mode: file
 
   # GPT 5.2 - BUG HUNTER
   # Why: Best-in-class async code review, 98.7% tool-calling accuracy, catches cross-system bugs
@@ -293,7 +292,7 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           github_token: ${{ steps.token.outputs.token }}
           trigger_phrase: "superpolly"
-          direct_prompt: |
+          prompt: |
             You are GPT 5.2, the BUG HUNTER in a multi-model code review team.
 
             You have web search capability - use it to look up known bugs, library issues, or best practices when relevant.
@@ -310,7 +309,6 @@ jobs:
             - Race conditions in async code
 
             Be concise. Include line numbers. Start with "## GPT 5.2 (Bugs)"
-          output_mode: file
 
   # Gemini 3 Pro - ARCHITECTURE REVIEWER
   # Why: Native multimodal, excellent at design patterns, relates diagrams to code
@@ -398,7 +396,7 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           github_token: ${{ steps.token.outputs.token }}
           trigger_phrase: "superpolly"
-          direct_prompt: |
+          prompt: |
             You are Gemini 3 Pro, the ARCHITECTURE REVIEWER in a multi-model code review team.
 
             You have web search capability - use it to look up design patterns, architectural best practices, or library documentation when relevant.
@@ -415,7 +413,6 @@ jobs:
             - DRY violations and code duplication
 
             Be concise. Include line numbers. Start with "## Gemini 3 Pro (Architecture)"
-          output_mode: file
 
   # Kimi K2 Thinking - PERFORMANCE & REASONING ANALYST
   # Why: Transparent chain-of-thought, systematic debugging, excellent audit trails
@@ -502,7 +499,7 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           github_token: ${{ steps.token.outputs.token }}
           trigger_phrase: "superpolly"
-          direct_prompt: |
+          prompt: |
             You are Kimi K2 Thinking, the PERFORMANCE & REASONING ANALYST in a multi-model code review team.
 
             You have web search capability - use it to look up performance benchmarks, optimization techniques, or algorithm complexity references when relevant.
@@ -520,7 +517,6 @@ jobs:
 
             Use your thinking capability to reason step-by-step about complex issues.
             Be concise in your final output. Include line numbers. Start with "## Kimi K2 (Performance)"
-          output_mode: file
 
   # ============================================================================
   # AGGREGATION JOB - Synthesizes all 4 reviews into final verdict
@@ -649,7 +645,7 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           github_token: ${{ steps.token.outputs.token }}
           trigger_phrase: "superpolly"
-          direct_prompt: |
+          prompt: |
             You are SuperPolly. You just orchestrated 4 different AI models to independently review the same PR/issue:
             - Claude Opus 4.5 focused on SECURITY
             - GPT 5.2 focused on BUGS

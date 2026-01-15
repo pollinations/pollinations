@@ -1,15 +1,15 @@
-import { useState, useMemo, useEffect, useRef } from "react";
-import type { FC } from "react";
-import { cn } from "@/util.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import type { FC } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { cn } from "@/util.ts";
 import { getModelDisplayName } from "./model-utils.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════════════════════
 
-type UsageRecord = {
+type _UsageRecord = {
     timestamp: string;
     type: string;
     model: string | null;
@@ -50,19 +50,39 @@ type FilterState = {
     selectedModels: string[]; // Changed to array for multi-select
 };
 
-type ModelBreakdown = { model: string; label: string; requests: number; pollen: number; tokens: number };
-type DataPoint = { label: string; value: number; timestamp: Date; fullDate: string; modelBreakdown?: ModelBreakdown[] };
+type ModelBreakdown = {
+    model: string;
+    label: string;
+    requests: number;
+    pollen: number;
+    tokens: number;
+};
+type DataPoint = {
+    label: string;
+    value: number;
+    timestamp: Date;
+    fullDate: string;
+    modelBreakdown?: ModelBreakdown[];
+};
 type SelectOption = { value: string | null; label: string };
 type ApiKeyInfo = { id: string; name?: string | null; start?: string | null };
 
 // Build model registry from shared source (same as pricing table)
 const ALL_MODELS = [
-    ...Object.keys(TEXT_SERVICES).map((id) => ({ id, label: getModelDisplayName(id), type: "text" as const })),
-    ...Object.keys(IMAGE_SERVICES).map((id) => ({ id, label: getModelDisplayName(id), type: "image" as const })),
+    ...Object.keys(TEXT_SERVICES).map((id) => ({
+        id,
+        label: getModelDisplayName(id),
+        type: "text" as const,
+    })),
+    ...Object.keys(IMAGE_SERVICES).map((id) => ({
+        id,
+        label: getModelDisplayName(id),
+        type: "image" as const,
+    })),
 ];
 
 // Time constants in milliseconds
-const MS_PER_HOUR = 3600000;
+const _MS_PER_HOUR = 3600000;
 const MS_PER_DAY = 86400000;
 const MS_PER_WEEK = MS_PER_DAY * 7;
 const MS_PER_30_DAYS = MS_PER_DAY * 30;
@@ -78,7 +98,12 @@ type FilterButtonProps = {
     ariaLabel?: string;
 };
 
-const FilterButton: FC<FilterButtonProps> = ({ active, onClick, children, ariaLabel }) => (
+const FilterButton: FC<FilterButtonProps> = ({
+    active,
+    onClick,
+    children,
+    ariaLabel,
+}) => (
     <button
         type="button"
         onClick={onClick}
@@ -88,7 +113,7 @@ const FilterButton: FC<FilterButtonProps> = ({ active, onClick, children, ariaLa
             "px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200",
             active
                 ? "bg-green-950 text-green-100"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200",
         )}
     >
         {children}
@@ -104,14 +129,22 @@ type SelectProps = {
     disabledText?: string;
 };
 
-const Select: FC<SelectProps> = ({ options, value, onChange, placeholder, disabled, disabledText }) => {
+const Select: FC<SelectProps> = ({
+    options,
+    value,
+    onChange,
+    placeholder,
+    disabled,
+    disabledText,
+}) => {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
     const selected = options.find((o) => o.value === value);
 
     useEffect(() => {
         const handleClick = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+            if (ref.current && !ref.current.contains(e.target as Node))
+                setOpen(false);
         };
         document.addEventListener("mousedown", handleClick);
         return () => document.removeEventListener("mousedown", handleClick);
@@ -129,16 +162,40 @@ const Select: FC<SelectProps> = ({ options, value, onChange, placeholder, disabl
                     disabled
                         ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-60"
                         : open
-                            ? "bg-green-950 border-green-950"
-                            : "bg-gray-100 border-gray-100 hover:bg-gray-200"
+                          ? "bg-green-950 border-green-950"
+                          : "bg-gray-100 border-gray-100 hover:bg-gray-200",
                 )}
             >
-                <span className={cn("truncate flex-1 text-left", disabled ? "text-gray-400" : open ? "text-green-100" : selected?.value ? "text-gray-600" : "text-gray-600")}>
-                    {disabled ? disabledText : (selected?.label || placeholder)}
+                <span
+                    className={cn(
+                        "truncate flex-1 text-left",
+                        disabled
+                            ? "text-gray-400"
+                            : open
+                              ? "text-green-100"
+                              : selected?.value
+                                ? "text-gray-600"
+                                : "text-gray-600",
+                    )}
+                >
+                    {disabled ? disabledText : selected?.label || placeholder}
                 </span>
-                <svg className={cn("w-3 h-3 transition-transform", open ? "text-green-100 rotate-180" : "text-gray-400")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                    className={cn(
+                        "w-3 h-3 transition-transform",
+                        open ? "text-green-100 rotate-180" : "text-gray-400",
+                    )}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
                     <title>Toggle dropdown</title>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                    />
                 </svg>
             </button>
             {open && !disabled && (
@@ -147,10 +204,15 @@ const Select: FC<SelectProps> = ({ options, value, onChange, placeholder, disabl
                         <button
                             type="button"
                             key={opt.value ?? "_all"}
-                            onClick={() => { onChange(opt.value); setOpen(false); }}
+                            onClick={() => {
+                                onChange(opt.value);
+                                setOpen(false);
+                            }}
                             className={cn(
                                 "w-full px-3 py-2 text-left text-xs transition-colors",
-                                value === opt.value ? "bg-green-950 text-green-100 font-medium" : "text-gray-600 hover:bg-gray-100"
+                                value === opt.value
+                                    ? "bg-green-950 text-green-100 font-medium"
+                                    : "text-gray-600 hover:bg-gray-100",
                             )}
                         >
                             {opt.label}
@@ -172,14 +234,22 @@ type MultiSelectProps = {
     disabledText?: string;
 };
 
-const MultiSelect: FC<MultiSelectProps> = ({ options, selected, onChange, placeholder, disabled, disabledText }) => {
+const MultiSelect: FC<MultiSelectProps> = ({
+    options,
+    selected,
+    onChange,
+    placeholder,
+    disabled,
+    disabledText,
+}) => {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
     const isAllSelected = selected.length === 0;
 
     useEffect(() => {
         const handleClick = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+            if (ref.current && !ref.current.contains(e.target as Node))
+                setOpen(false);
         };
         document.addEventListener("mousedown", handleClick);
         return () => document.removeEventListener("mousedown", handleClick);
@@ -198,10 +268,10 @@ const MultiSelect: FC<MultiSelectProps> = ({ options, selected, onChange, placeh
     const displayText = disabled
         ? disabledText
         : isAllSelected
-            ? placeholder
-            : selected.length === 1
-                ? options.find((o) => o.value === selected[0])?.label || selected[0]
-                : `${selected.length} models`;
+          ? placeholder
+          : selected.length === 1
+            ? options.find((o) => o.value === selected[0])?.label || selected[0]
+            : `${selected.length} models`;
 
     return (
         <div ref={ref} className="relative group">
@@ -215,16 +285,38 @@ const MultiSelect: FC<MultiSelectProps> = ({ options, selected, onChange, placeh
                     disabled
                         ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-60"
                         : open
-                            ? "bg-green-950 border-green-950"
-                            : "bg-gray-100 border-gray-100 hover:bg-gray-200"
+                          ? "bg-green-950 border-green-950"
+                          : "bg-gray-100 border-gray-100 hover:bg-gray-200",
                 )}
             >
-                <span className={cn("truncate flex-1 text-left", disabled ? "text-gray-400" : open ? "text-green-100" : "text-gray-600")}>
+                <span
+                    className={cn(
+                        "truncate flex-1 text-left",
+                        disabled
+                            ? "text-gray-400"
+                            : open
+                              ? "text-green-100"
+                              : "text-gray-600",
+                    )}
+                >
                     {displayText}
                 </span>
-                <svg className={cn("w-3 h-3 transition-transform", open ? "text-green-100 rotate-180" : "text-gray-400")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                    className={cn(
+                        "w-3 h-3 transition-transform",
+                        open ? "text-green-100 rotate-180" : "text-gray-400",
+                    )}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
                     <title>Toggle dropdown</title>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                    />
                 </svg>
             </button>
             {disabled && (
@@ -241,13 +333,19 @@ const MultiSelect: FC<MultiSelectProps> = ({ options, selected, onChange, placeh
                             onClick={selectAll}
                             className={cn(
                                 "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
-                                isAllSelected ? "bg-green-950 text-green-100 font-medium" : "text-gray-600 hover:bg-gray-100"
+                                isAllSelected
+                                    ? "bg-green-950 text-green-100 font-medium"
+                                    : "text-gray-600 hover:bg-gray-100",
                             )}
                         >
-                            <span className={cn(
-                                "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
-                                isAllSelected ? "bg-green-950 border-green-950 text-green-100" : "border-gray-300"
-                            )}>
+                            <span
+                                className={cn(
+                                    "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
+                                    isAllSelected
+                                        ? "bg-green-950 border-green-950 text-green-100"
+                                        : "border-gray-300",
+                                )}
+                            >
                                 {isAllSelected && "✓"}
                             </span>
                             All Models
@@ -262,16 +360,24 @@ const MultiSelect: FC<MultiSelectProps> = ({ options, selected, onChange, placeh
                                     onClick={() => toggleModel(opt.value)}
                                     className={cn(
                                         "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
-                                        isChecked ? "bg-green-950 text-green-100" : "text-gray-600 hover:bg-gray-100"
+                                        isChecked
+                                            ? "bg-green-950 text-green-100"
+                                            : "text-gray-600 hover:bg-gray-100",
                                     )}
                                 >
-                                    <span className={cn(
-                                        "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
-                                        isChecked ? "bg-green-950 border-green-950 text-green-100" : "border-gray-300"
-                                    )}>
+                                    <span
+                                        className={cn(
+                                            "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
+                                            isChecked
+                                                ? "bg-green-950 border-green-950 text-green-100"
+                                                : "border-gray-300",
+                                        )}
+                                    >
                                         {isChecked && "✓"}
                                     </span>
-                                    <span className="whitespace-nowrap">{opt.label}</span>
+                                    <span className="whitespace-nowrap">
+                                        {opt.label}
+                                    </span>
                                 </button>
                             );
                         })}
@@ -288,8 +394,12 @@ const MultiSelect: FC<MultiSelectProps> = ({ options, selected, onChange, placeh
 
 const Stat: FC<{ label: string; value: string }> = ({ label, value }) => (
     <div className="flex flex-col">
-        <span className="text-[10px] uppercase tracking-wide text-pink-400 font-bold">{label}</span>
-        <span className="text-lg font-bold text-green-950 tabular-nums">{value}</span>
+        <span className="text-[10px] uppercase tracking-wide text-pink-400 font-bold">
+            {label}
+        </span>
+        <span className="text-lg font-bold text-green-950 tabular-nums">
+            {value}
+        </span>
     </div>
 );
 
@@ -318,16 +428,17 @@ const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
             const elapsed = now - start;
             const progress = Math.min(elapsed / duration, 1);
             // Ease out cubic
-            setAnimationProgress(1 - Math.pow(1 - progress, 3));
+            setAnimationProgress(1 - (1 - progress) ** 3);
             if (progress < 1) animationId = requestAnimationFrame(animate);
         };
         animationId = requestAnimationFrame(animate);
         return () => cancelAnimationFrame(animationId);
-    }, [data]);
+    }, []);
 
     // Responsive
     useEffect(() => {
-        const update = () => containerRef.current && setWidth(containerRef.current.offsetWidth);
+        const update = () =>
+            containerRef.current && setWidth(containerRef.current.offsetWidth);
         update();
         window.addEventListener("resize", update);
         return () => window.removeEventListener("resize", update);
@@ -366,16 +477,26 @@ const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
     }, [data, cw, ch]);
 
     const formatVal = (v: number) =>
-        metric === "pollen" ? v.toFixed(2) :
-        metric === "tokens" ? (v >= 1e6 ? `${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(1)}K` : v.toFixed(0)) :
-        v.toFixed(0);
+        metric === "pollen"
+            ? v.toFixed(2)
+            : metric === "tokens"
+              ? v >= 1e6
+                  ? `${(v / 1e6).toFixed(1)}M`
+                  : v >= 1e3
+                    ? `${(v / 1e3).toFixed(1)}K`
+                    : v.toFixed(0)
+              : v.toFixed(0);
 
     if (data.length === 0) {
         return (
             <div className="flex items-center justify-center h-[180px] rounded-xl bg-gray-50 border border-dashed border-gray-200">
                 <div className="text-center">
-                    <p className="text-sm text-gray-400 font-medium">No usage data available</p>
-                    <p className="text-xs text-gray-300 mt-1">Make some API requests to see your analytics</p>
+                    <p className="text-sm text-gray-400 font-medium">
+                        No usage data available
+                    </p>
+                    <p className="text-xs text-gray-300 mt-1">
+                        Make some API requests to see your analytics
+                    </p>
                 </div>
             </div>
         );
@@ -383,16 +504,49 @@ const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
 
     return (
         <div ref={containerRef} className="w-full" style={{ height }}>
-            <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible" onMouseLeave={() => setHovered(null)}>
+            <svg
+                width="100%"
+                height="100%"
+                viewBox={`0 0 ${width} ${height}`}
+                className="overflow-visible"
+                onMouseLeave={() => setHovered(null)}
+                role="img"
+                aria-label="Usage chart"
+            >
+                <title>Usage statistics chart</title>
                 <defs>
                     {/* Gradient for area fill - using existing violet/purple theme */}
-                    <linearGradient id="usageAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.2" />
-                        <stop offset="50%" stopColor="#a78bfa" stopOpacity="0.1" />
-                        <stop offset="100%" stopColor="#c4b5fd" stopOpacity="0" />
+                    <linearGradient
+                        id="usageAreaGradient"
+                        x1="0%"
+                        y1="0%"
+                        x2="0%"
+                        y2="100%"
+                    >
+                        <stop
+                            offset="0%"
+                            stopColor="#8b5cf6"
+                            stopOpacity="0.2"
+                        />
+                        <stop
+                            offset="50%"
+                            stopColor="#a78bfa"
+                            stopOpacity="0.1"
+                        />
+                        <stop
+                            offset="100%"
+                            stopColor="#c4b5fd"
+                            stopOpacity="0"
+                        />
                     </linearGradient>
                     {/* Glow effect */}
-                    <filter id="lineGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <filter
+                        id="lineGlow"
+                        x="-20%"
+                        y="-20%"
+                        width="140%"
+                        height="140%"
+                    >
                         <feGaussianBlur stdDeviation="2" result="blur" />
                         <feMerge>
                             <feMergeNode in="blur" />
@@ -400,7 +554,13 @@ const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                         </feMerge>
                     </filter>
                     {/* Dot glow */}
-                    <filter id="dotGlow" x="-100%" y="-100%" width="300%" height="300%">
+                    <filter
+                        id="dotGlow"
+                        x="-100%"
+                        y="-100%"
+                        width="300%"
+                        height="300%"
+                    >
                         <feGaussianBlur stdDeviation="3" result="blur" />
                         <feMerge>
                             <feMergeNode in="blur" />
@@ -410,10 +570,23 @@ const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                 </defs>
 
                 {/* Grid lines */}
-                {yTicks.map((t, i) => (
-                    <g key={i}>
-                        <line x1={pad.left} y1={t.y} x2={width - pad.right} y2={t.y} stroke="#e5e7eb" strokeDasharray="4 4" />
-                        <text x={pad.left - 8} y={t.y} textAnchor="end" alignmentBaseline="middle" className="text-[10px] fill-gray-400 font-medium">
+                {yTicks.map((t) => (
+                    <g key={`tick-${t.value}`}>
+                        <line
+                            x1={pad.left}
+                            y1={t.y}
+                            x2={width - pad.right}
+                            y2={t.y}
+                            stroke="#e5e7eb"
+                            strokeDasharray="4 4"
+                        />
+                        <text
+                            x={pad.left - 8}
+                            y={t.y}
+                            textAnchor="end"
+                            alignmentBaseline="middle"
+                            className="text-[10px] fill-gray-400 font-medium"
+                        >
                             {formatVal(t.value)}
                         </text>
                     </g>
@@ -422,15 +595,45 @@ const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                 {/* X axis labels */}
                 {bars.length > 0 && (
                     <>
-                        <text x={bars[0].x + bars[0].width / 2} y={height - 8} textAnchor="middle" className="text-[10px] fill-gray-400">{bars[0].label}</text>
-                        {bars.length > 4 && <text x={bars[Math.floor(bars.length / 2)].x + bars[Math.floor(bars.length / 2)].width / 2} y={height - 8} textAnchor="middle" className="text-[10px] fill-gray-400">{bars[Math.floor(bars.length / 2)].label}</text>}
-                        <text x={bars[bars.length - 1].x + bars[bars.length - 1].width / 2} y={height - 8} textAnchor="middle" className="text-[10px] fill-gray-400">{bars[bars.length - 1].label}</text>
+                        <text
+                            x={bars[0].x + bars[0].width / 2}
+                            y={height - 8}
+                            textAnchor="middle"
+                            className="text-[10px] fill-gray-400"
+                        >
+                            {bars[0].label}
+                        </text>
+                        {bars.length > 4 && (
+                            <text
+                                x={
+                                    bars[Math.floor(bars.length / 2)].x +
+                                    bars[Math.floor(bars.length / 2)].width / 2
+                                }
+                                y={height - 8}
+                                textAnchor="middle"
+                                className="text-[10px] fill-gray-400"
+                            >
+                                {bars[Math.floor(bars.length / 2)].label}
+                            </text>
+                        )}
+                        <text
+                            x={
+                                bars[bars.length - 1].x +
+                                bars[bars.length - 1].width / 2
+                            }
+                            y={height - 8}
+                            textAnchor="middle"
+                            className="text-[10px] fill-gray-400"
+                        >
+                            {bars[bars.length - 1].label}
+                        </text>
                     </>
                 )}
 
                 {/* Bars */}
                 {bars.map((bar, idx) => (
                     <g key={bar.label}>
+                        {/* biome-ignore lint/a11y/noStaticElementInteractions: SVG rect for chart interaction */}
                         <rect
                             x={bar.x}
                             y={bar.y}
@@ -448,86 +651,144 @@ const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                 ))}
 
                 {/* Tooltip */}
-                {hovered !== null && bars[hovered] && (() => {
-                    const bar = bars[hovered];
-                    const allBreakdown = bar.modelBreakdown || [];
-                    // Filter to only show non-zero values for current metric
-                    const breakdown = allBreakdown.filter((m) => {
-                        const val = metric === "requests" ? m.requests : metric === "pollen" ? m.pollen : m.tokens;
-                        return val > 0;
-                    });
-                    const hasBreakdown = showModelBreakdown && breakdown.length > 0;
-                    const lineHeight = 16;
-                    // Layout: Date (20) + Total line (20) + separator (8) + breakdown items
-                    const headerHeight = 48;
-                    const separatorHeight = hasBreakdown ? 12 : 0;
-                    const tooltipHeight = headerHeight + separatorHeight + (hasBreakdown ? breakdown.length * lineHeight + 8 : 0);
-                    const tooltipWidth = hasBreakdown ? 280 : 160;
-                    const tooltipX = Math.max(pad.left, Math.min(bar.x + bar.width / 2 - tooltipWidth / 2, width - pad.right - tooltipWidth));
-                    const tooltipY = Math.max(pad.top, bar.y - tooltipHeight - 10);
-                    
-                    // Format date without weekday (e.g., "January 8, 2026")
-                    const dateOnly = bar.fullDate.replace(/^[A-Za-z]+,\s*/, "");
-                    
-                    // Truncate model name if too long
-                    const truncateLabel = (label: string, maxLen = 28) => 
-                        label.length > maxLen ? label.substring(0, maxLen - 2) + "..." : label;
+                {hovered !== null &&
+                    bars[hovered] &&
+                    (() => {
+                        const bar = bars[hovered];
+                        const allBreakdown = bar.modelBreakdown || [];
+                        // Filter to only show non-zero values for current metric
+                        const breakdown = allBreakdown.filter((m) => {
+                            const val =
+                                metric === "requests"
+                                    ? m.requests
+                                    : metric === "pollen"
+                                      ? m.pollen
+                                      : m.tokens;
+                            return val > 0;
+                        });
+                        const hasBreakdown =
+                            showModelBreakdown && breakdown.length > 0;
+                        const lineHeight = 16;
+                        // Layout: Date (20) + Total line (20) + separator (8) + breakdown items
+                        const headerHeight = 48;
+                        const separatorHeight = hasBreakdown ? 12 : 0;
+                        const tooltipHeight =
+                            headerHeight +
+                            separatorHeight +
+                            (hasBreakdown
+                                ? breakdown.length * lineHeight + 8
+                                : 0);
+                        const tooltipWidth = hasBreakdown ? 280 : 160;
+                        const tooltipX = Math.max(
+                            pad.left,
+                            Math.min(
+                                bar.x + bar.width / 2 - tooltipWidth / 2,
+                                width - pad.right - tooltipWidth,
+                            ),
+                        );
+                        const tooltipY = Math.max(
+                            pad.top,
+                            bar.y - tooltipHeight - 10,
+                        );
 
-                    return (
-                        <g style={{ pointerEvents: "none" }}>
-                            {/* Tooltip box */}
-                            <rect
-                                x={tooltipX}
-                                y={tooltipY}
-                                width={tooltipWidth}
-                                height={tooltipHeight}
-                                rx="8"
-                                fill="#0f172a"
-                                opacity="0.95"
-                            />
-                            {/* Date at top left */}
-                            <text
-                                x={tooltipX + 12}
-                                y={tooltipY + 18}
-                                textAnchor="start"
-                                className="text-xs fill-gray-400"
-                            >
-                                {dateOnly}
-                            </text>
-                            {/* Total line with metric label */}
-                            <text
-                                x={tooltipX + 12}
-                                y={tooltipY + 36}
-                                textAnchor="start"
-                                className="text-sm font-bold fill-white"
-                            >
-                                Total ({metric === "requests" ? "requests" : metric === "pollen" ? "pollen" : "tokens"}): {formatVal(bar.value)}
-                            </text>
-                            {/* Separator line */}
-                            {hasBreakdown && (
-                                <line
-                                    x1={tooltipX + 12}
-                                    y1={tooltipY + headerHeight + 2}
-                                    x2={tooltipX + tooltipWidth - 12}
-                                    y2={tooltipY + headerHeight + 2}
-                                    stroke="#374151"
-                                    strokeWidth="1"
+                        // Format date without weekday (e.g., "January 8, 2026")
+                        const dateOnly = bar.fullDate.replace(
+                            /^[A-Za-z]+,\s*/,
+                            "",
+                        );
+
+                        // Truncate model name if too long
+                        const truncateLabel = (label: string, maxLen = 28) =>
+                            label.length > maxLen
+                                ? `${label.substring(0, maxLen - 2)}...`
+                                : label;
+
+                        return (
+                            <g style={{ pointerEvents: "none" }}>
+                                {/* Tooltip box */}
+                                <rect
+                                    x={tooltipX}
+                                    y={tooltipY}
+                                    width={tooltipWidth}
+                                    height={tooltipHeight}
+                                    rx="8"
+                                    fill="#0f172a"
+                                    opacity="0.95"
                                 />
-                            )}
-                            {/* Model breakdown - show all non-zero */}
-                            {hasBreakdown && breakdown.map((m: { model: string; label: string; requests: number; pollen: number; tokens: number }, i: number) => (
+                                {/* Date at top left */}
                                 <text
-                                    key={m.model}
                                     x={tooltipX + 12}
-                                    y={tooltipY + headerHeight + separatorHeight + 4 + i * lineHeight}
-                                    className="text-xs fill-gray-300"
+                                    y={tooltipY + 18}
+                                    textAnchor="start"
+                                    className="text-xs fill-gray-400"
                                 >
-                                    {truncateLabel(m.label)}: {formatVal(metric === "requests" ? m.requests : metric === "pollen" ? m.pollen : m.tokens)}
+                                    {dateOnly}
                                 </text>
-                            ))}
-                        </g>
-                    );
-                })()}
+                                {/* Total line with metric label */}
+                                <text
+                                    x={tooltipX + 12}
+                                    y={tooltipY + 36}
+                                    textAnchor="start"
+                                    className="text-sm font-bold fill-white"
+                                >
+                                    Total (
+                                    {metric === "requests"
+                                        ? "requests"
+                                        : metric === "pollen"
+                                          ? "pollen"
+                                          : "tokens"}
+                                    ): {formatVal(bar.value)}
+                                </text>
+                                {/* Separator line */}
+                                {hasBreakdown && (
+                                    <line
+                                        x1={tooltipX + 12}
+                                        y1={tooltipY + headerHeight + 2}
+                                        x2={tooltipX + tooltipWidth - 12}
+                                        y2={tooltipY + headerHeight + 2}
+                                        stroke="#374151"
+                                        strokeWidth="1"
+                                    />
+                                )}
+                                {/* Model breakdown - show all non-zero */}
+                                {hasBreakdown &&
+                                    breakdown.map(
+                                        (
+                                            m: {
+                                                model: string;
+                                                label: string;
+                                                requests: number;
+                                                pollen: number;
+                                                tokens: number;
+                                            },
+                                            i: number,
+                                        ) => (
+                                            <text
+                                                key={m.model}
+                                                x={tooltipX + 12}
+                                                y={
+                                                    tooltipY +
+                                                    headerHeight +
+                                                    separatorHeight +
+                                                    4 +
+                                                    i * lineHeight
+                                                }
+                                                className="text-xs fill-gray-300"
+                                            >
+                                                {truncateLabel(m.label)}:{" "}
+                                                {formatVal(
+                                                    metric === "requests"
+                                                        ? m.requests
+                                                        : metric === "pollen"
+                                                          ? m.pollen
+                                                          : m.tokens,
+                                                )}
+                                            </text>
+                                        ),
+                                    )}
+                            </g>
+                        );
+                    })()}
             </svg>
         </div>
     );
@@ -542,12 +803,16 @@ type UsageGraphProps = {
 };
 
 // Map time range to approximate record limit (rough estimate based on usage patterns)
-const getRecordLimit = (timeRange: TimeRange, customDays: number): number => {
+const _getRecordLimit = (timeRange: TimeRange, customDays: number): number => {
     switch (timeRange) {
-        case "7d": return 3500;      // ~500/day * 7
-        case "30d": return 10000;    // cap at 10k
-        case "all": return 10000;    // cap at 10k
-        case "custom": return Math.min(customDays * 500, 10000);
+        case "7d":
+            return 3500; // ~500/day * 7
+        case "30d":
+            return 10000; // cap at 10k
+        case "all":
+            return 10000; // cap at 10k
+        case "custom":
+            return Math.min(customDays * 500, 10000);
     }
 };
 
@@ -567,14 +832,15 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
     });
 
     // Fetch all usage data (90 days, handled by backend)
-    const fetchUsage = () => {
+    const fetchUsage = useCallback(() => {
         if (hasFetched) return;
         setLoading(true);
         setError(null);
-        
+
         fetch("/api/usage/daily")
             .then((r) => {
-                if (!r.ok) throw new Error(`Failed to fetch usage data: ${r.status}`);
+                if (!r.ok)
+                    throw new Error(`Failed to fetch usage data: ${r.status}`);
                 return r.json() as Promise<{ usage: DailyUsageRecord[] }>;
             })
             .then((data) => {
@@ -587,7 +853,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
                 setDailyUsage([]);
             })
             .finally(() => setLoading(false));
-    };
+    }, [hasFetched]);
 
     // Lazy load: fetch data only when component comes into view
     useEffect(() => {
@@ -601,17 +867,19 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
                     observer.disconnect();
                 }
             },
-            { threshold: 0.1 } // Trigger when 10% visible
+            { threshold: 0.1 }, // Trigger when 10% visible
         );
 
         observer.observe(container);
         return () => observer.disconnect();
-    }, [hasFetched]);
+    }, [hasFetched, fetchUsage]);
 
     // Models that appear in usage data, enriched with registry display names
     const usedModels = useMemo(() => {
         const modelIds = new Set<string>();
-        dailyUsage.forEach((r) => r.model && modelIds.add(r.model));
+        for (const r of dailyUsage) {
+            if (r.model) modelIds.add(r.model);
+        }
 
         return Array.from(modelIds)
             .map((id) => {
@@ -625,16 +893,24 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
     const { chartData, stats, filteredData } = useMemo(() => {
         const now = new Date();
         const cutoff =
-            filters.timeRange === "7d" ? new Date(now.getTime() - MS_PER_WEEK) :
-            filters.timeRange === "30d" ? new Date(now.getTime() - MS_PER_30_DAYS) :
-            filters.timeRange === "custom" ? new Date(now.getTime() - filters.customDays * MS_PER_DAY) :
-            new Date(0);
+            filters.timeRange === "7d"
+                ? new Date(now.getTime() - MS_PER_WEEK)
+                : filters.timeRange === "30d"
+                  ? new Date(now.getTime() - MS_PER_30_DAYS)
+                  : filters.timeRange === "custom"
+                    ? new Date(now.getTime() - filters.customDays * MS_PER_DAY)
+                    : new Date(0);
 
         // Filter records by date and other criteria
         const filtered = dailyUsage.filter((r: DailyUsageRecord) => {
-            const recordDate = new Date(r.date + "T00:00:00");
+            const recordDate = new Date(`${r.date}T00:00:00`);
             if (recordDate < cutoff) return false;
-            if (filters.selectedModels.length > 0 && r.model && !filters.selectedModels.includes(r.model)) return false;
+            if (
+                filters.selectedModels.length > 0 &&
+                r.model &&
+                !filters.selectedModels.includes(r.model)
+            )
+                return false;
             return true;
         });
 
@@ -643,13 +919,21 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
             requests: number;
             pollen: number;
             tokens: number;
-            byModel: Map<string, { requests: number; pollen: number; tokens: number }>;
+            byModel: Map<
+                string,
+                { requests: number; pollen: number; tokens: number }
+            >;
         };
         const buckets = new Map<string, DayBucket>();
 
         filtered.forEach((r: DailyUsageRecord) => {
             const dateKey = r.date;
-            const cur = buckets.get(dateKey) || { requests: 0, pollen: 0, tokens: 0, byModel: new Map() };
+            const cur = buckets.get(dateKey) || {
+                requests: 0,
+                pollen: 0,
+                tokens: 0,
+                byModel: new Map(),
+            };
             const tokens = (r.input_tokens || 0) + (r.output_tokens || 0);
             cur.requests += r.requests || 0;
             cur.pollen += r.cost_usd || 0;
@@ -657,7 +941,11 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
 
             // Track per-model breakdown
             if (r.model) {
-                const modelData = cur.byModel.get(r.model) || { requests: 0, pollen: 0, tokens: 0 };
+                const modelData = cur.byModel.get(r.model) || {
+                    requests: 0,
+                    pollen: 0,
+                    tokens: 0,
+                };
                 modelData.requests += r.requests || 0;
                 modelData.pollen += r.cost_usd || 0;
                 modelData.tokens += tokens;
@@ -669,9 +957,11 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
         // Generate full date range from cutoff to today
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const startDate = new Date(Math.max(cutoff.getTime(), today.getTime() - 90 * MS_PER_DAY));
+        const startDate = new Date(
+            Math.max(cutoff.getTime(), today.getTime() - 90 * MS_PER_DAY),
+        );
         startDate.setHours(0, 0, 0, 0);
-        
+
         const allDates: string[] = [];
         const currentDate = new Date(startDate);
         while (currentDate <= today) {
@@ -681,43 +971,76 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
 
         // Build chart data with zero-fill for missing days
         const sorted = allDates.map((dateStr) => {
-                const date = new Date(dateStr + "T00:00:00");
-                const d = buckets.get(dateStr) || { requests: 0, pollen: 0, tokens: 0, byModel: new Map() };
-                const modelBreakdown: ModelBreakdown[] = Array.from(d.byModel.entries())
-                    .map(([modelId, modelStats]) => {
-                        const registered = ALL_MODELS.find((m) => m.id === modelId);
-                        return {
-                            model: modelId,
-                            label: registered?.label || modelId,
-                            requests: modelStats.requests,
-                            pollen: modelStats.pollen,
-                            tokens: modelStats.tokens,
-                        };
-                    })
-                    .sort((a, b) => b.requests - a.requests);
+            const date = new Date(`${dateStr}T00:00:00`);
+            const d = buckets.get(dateStr) || {
+                requests: 0,
+                pollen: 0,
+                tokens: 0,
+                byModel: new Map(),
+            };
+            const modelBreakdown: ModelBreakdown[] = Array.from(
+                d.byModel.entries(),
+            )
+                .map(([modelId, modelStats]) => {
+                    const registered = ALL_MODELS.find((m) => m.id === modelId);
+                    return {
+                        model: modelId,
+                        label: registered?.label || modelId,
+                        requests: modelStats.requests,
+                        pollen: modelStats.pollen,
+                        tokens: modelStats.tokens,
+                    };
+                })
+                .sort((a, b) => b.requests - a.requests);
 
-                return {
-                    label: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-                    fullDate: date.toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric" }),
-                    value: d[filters.metric],
-                    timestamp: date,
-                    modelBreakdown,
-                };
-            });
+            return {
+                label: date.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                }),
+                fullDate: date.toLocaleDateString("en-US", {
+                    weekday: "short",
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                }),
+                value: d[filters.metric],
+                timestamp: date,
+                modelBreakdown,
+            };
+        });
 
-        const totalReq = filtered.reduce((s: number, r: DailyUsageRecord) => s + (r.requests || 0), 0);
-        const totalPollen = filtered.reduce((s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0), 0);
-        const totalTok = filtered.reduce((s: number, r: DailyUsageRecord) => s + (r.input_tokens || 0) + (r.output_tokens || 0), 0);
+        const totalReq = filtered.reduce(
+            (s: number, r: DailyUsageRecord) => s + (r.requests || 0),
+            0,
+        );
+        const totalPollen = filtered.reduce(
+            (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
+            0,
+        );
+        const totalTok = filtered.reduce(
+            (s: number, r: DailyUsageRecord) =>
+                s + (r.input_tokens || 0) + (r.output_tokens || 0),
+            0,
+        );
 
         return {
             chartData: sorted,
-            stats: { totalRequests: totalReq, totalPollen, totalTokens: totalTok },
+            stats: {
+                totalRequests: totalReq,
+                totalPollen,
+                totalTokens: totalTok,
+            },
             filteredData: filtered,
         };
     }, [dailyUsage, filters]);
 
     const formatTokens = (n: number) =>
-        n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : n.toString();
+        n >= 1e6
+            ? `${(n / 1e6).toFixed(1)}M`
+            : n >= 1e3
+              ? `${(n / 1e3).toFixed(1)}K`
+              : n.toString();
 
     // Key options - show name first, fallback to masked key
     const keyOptions: SelectOption[] = [
@@ -729,10 +1052,15 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
     ];
 
     // Model options for multi-select
-    const modelSelectOptions = usedModels.map((m) => ({ value: m.id, label: m.label }));
+    const modelSelectOptions = usedModels.map((m) => ({
+        value: m.id,
+        label: m.label,
+    }));
 
     // Show model breakdown in tooltip when multiple models are visible
-    const showModelBreakdown = filters.selectedModels.length === 0 || filters.selectedModels.length > 1;
+    const showModelBreakdown =
+        filters.selectedModels.length === 0 ||
+        filters.selectedModels.length > 1;
 
     return (
         <div ref={containerRef} className="flex flex-col gap-2">
@@ -753,8 +1081,11 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
                 {error && !loading && (
                     <div className="flex items-center justify-center h-[180px] rounded-xl bg-red-50 border border-dashed border-red-200">
                         <div className="text-center">
-                            <p className="text-sm text-red-500 font-medium">{error}</p>
+                            <p className="text-sm text-red-500 font-medium">
+                                {error}
+                            </p>
                             <button
+                                type="button"
                                 onClick={() => fetchUsage()}
                                 className="mt-2 text-xs text-red-600 hover:text-red-700 underline"
                             >
@@ -765,109 +1096,213 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
                 )}
                 {!loading && !error && (
                     <>
-                {/* Filters Row 1: Time Range + Metric */}
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                {(["7d", "30d", "all"] as TimeRange[]).map((t) => (
-                            <FilterButton key={t} active={filters.timeRange === t} onClick={() => setFilters((f) => ({ ...f, timeRange: t }))}>
-                                {t === "7d" ? "7 days" : t === "30d" ? "30 days" : "90 days"}
-                            </FilterButton>
-                        ))}
-                        <FilterButton active={filters.timeRange === "custom"} onClick={() => setFilters((f) => ({ ...f, timeRange: "custom" }))}>
-                            Custom
-                        </FilterButton>
-                        {filters.timeRange === "custom" && (
-                            <div className="flex items-center gap-1.5 ml-1">
-                                <input
-                                    type="number"
-                                    min={1}
-                                    max={365}
-                                    value={filters.customDays}
-                                    onChange={(e) => setFilters((f) => ({ ...f, customDays: Math.max(1, Math.min(365, parseInt(e.target.value) || 1)) }))}
-                                    className="w-14 px-2 py-1 text-xs font-medium rounded-lg border border-gray-200 bg-white text-green-950 focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-200 tabular-nums"
-                                />
-                                <span className="text-xs text-gray-500">days</span>
+                        {/* Filters Row 1: Time Range + Metric */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                {(["7d", "30d", "all"] as TimeRange[]).map(
+                                    (t) => (
+                                        <FilterButton
+                                            key={t}
+                                            active={filters.timeRange === t}
+                                            onClick={() =>
+                                                setFilters((f) => ({
+                                                    ...f,
+                                                    timeRange: t,
+                                                }))
+                                            }
+                                        >
+                                            {t === "7d"
+                                                ? "7 days"
+                                                : t === "30d"
+                                                  ? "30 days"
+                                                  : "90 days"}
+                                        </FilterButton>
+                                    ),
+                                )}
+                                <FilterButton
+                                    active={filters.timeRange === "custom"}
+                                    onClick={() =>
+                                        setFilters((f) => ({
+                                            ...f,
+                                            timeRange: "custom",
+                                        }))
+                                    }
+                                >
+                                    Custom
+                                </FilterButton>
+                                {filters.timeRange === "custom" && (
+                                    <div className="flex items-center gap-1.5 ml-1">
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={365}
+                                            value={filters.customDays}
+                                            onChange={(e) =>
+                                                setFilters((f) => ({
+                                                    ...f,
+                                                    customDays: Math.max(
+                                                        1,
+                                                        Math.min(
+                                                            365,
+                                                            parseInt(
+                                                                e.target.value,
+                                                                10,
+                                                            ) || 1,
+                                                        ),
+                                                    ),
+                                                }))
+                                            }
+                                            className="w-14 px-2 py-1 text-xs font-medium rounded-lg border border-gray-200 bg-white text-green-950 focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-200 tabular-nums"
+                                        />
+                                        <span className="text-xs text-gray-500">
+                                            days
+                                        </span>
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                    <div className="flex gap-1.5 items-center">
-                        {(["requests", "pollen", "tokens"] as Metric[]).map((m) => (
-                            <FilterButton key={m} active={filters.metric === m} onClick={() => setFilters((f) => ({ ...f, metric: m }))}>
-                                {m === "requests" ? "Requests" : m === "pollen" ? "Pollen" : "Tokens"}
-                            </FilterButton>
-                        ))}
-                    </div>
-                </div>
+                            <div className="flex gap-1.5 items-center">
+                                {(
+                                    ["requests", "pollen", "tokens"] as Metric[]
+                                ).map((m) => (
+                                    <FilterButton
+                                        key={m}
+                                        active={filters.metric === m}
+                                        onClick={() =>
+                                            setFilters((f) => ({
+                                                ...f,
+                                                metric: m,
+                                            }))
+                                        }
+                                    >
+                                        {m === "requests"
+                                            ? "Requests"
+                                            : m === "pollen"
+                                              ? "Pollen"
+                                              : "Tokens"}
+                                    </FilterButton>
+                                ))}
+                            </div>
+                        </div>
 
-                {/* Filters Row 2: Dropdowns */}
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                    <MultiSelect
-                        options={modelSelectOptions}
-                        selected={filters.selectedModels}
-                        onChange={(v) => setFilters((f) => ({ ...f, selectedModels: v }))}
-                        placeholder="All Models"
-                        disabled={modelSelectOptions.length === 0}
-                        disabledText="0 models used"
-                    />
-                    <Select
-                        options={keyOptions}
-                        value={filters.apiKey}
-                        onChange={(v) => setFilters((f) => ({ ...f, apiKey: v }))}
-                        placeholder="All Keys"
-                        disabled={keys.length === 0}
-                        disabledText="No keys"
-                    />
-                </div>
+                        {/* Filters Row 2: Dropdowns */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                            <MultiSelect
+                                options={modelSelectOptions}
+                                selected={filters.selectedModels}
+                                onChange={(v) =>
+                                    setFilters((f) => ({
+                                        ...f,
+                                        selectedModels: v,
+                                    }))
+                                }
+                                placeholder="All Models"
+                                disabled={modelSelectOptions.length === 0}
+                                disabledText="0 models used"
+                            />
+                            <Select
+                                options={keyOptions}
+                                value={filters.apiKey}
+                                onChange={(v) =>
+                                    setFilters((f) => ({ ...f, apiKey: v }))
+                                }
+                                placeholder="All Keys"
+                                disabled={keys.length === 0}
+                                disabledText="No keys"
+                            />
+                        </div>
 
-                {/* Chart */}
-                <div className="relative bg-white rounded-xl p-4 border border-violet-200 mb-4">
-                    <Chart data={chartData} metric={filters.metric} showModelBreakdown={showModelBreakdown} />
-                </div>
+                        {/* Chart */}
+                        <div className="relative bg-white rounded-xl p-4 border border-violet-200 mb-4">
+                            <Chart
+                                data={chartData}
+                                metric={filters.metric}
+                                showModelBreakdown={showModelBreakdown}
+                            />
+                        </div>
 
-                {/* Stats Row */}
-                <div className="flex items-center gap-4 p-3 bg-white/50 rounded-xl border border-violet-200">
-                    <div className="flex-1 grid grid-cols-3 gap-4">
-                        <Stat label="Requests" value={stats.totalRequests.toLocaleString()} />
-                        <Stat label="Pollen" value={stats.totalPollen.toFixed(2)} />
-                        <Stat label="Tokens" value={formatTokens(stats.totalTokens)} />
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            if (filteredData.length === 0) return;
-                            const headers = ["date", "event_type", "model", "requests", "cost_usd", "input_tokens", "output_tokens"];
-                            const rows = filteredData.map((r: DailyUsageRecord) => [
-                                r.date,
-                                r.event_type || "",
-                                r.model || "",
-                                r.requests || 0,
-                                r.cost_usd || 0,
-                                r.input_tokens || 0,
-                                r.output_tokens || 0,
-                            ].join(","));
-                            const csv = [headers.join(","), ...rows].join("\n");
-                            const blob = new Blob([csv], { type: "text/csv" });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = `usage-${filters.timeRange}.csv`;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                        }}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-100 hover:bg-violet-200 transition-colors border border-violet-300 text-violet-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={filteredData.length === 0}
-                        title={filteredData.length === 0 ? "No data to download" : `Download CSV (${filteredData.length} rows)`}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <title>Download CSV</title>
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                            <polyline points="7 10 12 15 17 10" />
-                            <line x1="12" y1="15" x2="12" y2="3" />
-                        </svg>
-                        CSV
-                    </button>
-                </div>
-                </>
+                        {/* Stats Row */}
+                        <div className="flex items-center gap-4 p-3 bg-white/50 rounded-xl border border-violet-200">
+                            <div className="flex-1 grid grid-cols-3 gap-4">
+                                <Stat
+                                    label="Requests"
+                                    value={stats.totalRequests.toLocaleString()}
+                                />
+                                <Stat
+                                    label="Pollen"
+                                    value={stats.totalPollen.toFixed(2)}
+                                />
+                                <Stat
+                                    label="Tokens"
+                                    value={formatTokens(stats.totalTokens)}
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (filteredData.length === 0) return;
+                                    const headers = [
+                                        "date",
+                                        "event_type",
+                                        "model",
+                                        "requests",
+                                        "cost_usd",
+                                        "input_tokens",
+                                        "output_tokens",
+                                    ];
+                                    const rows = filteredData.map(
+                                        (r: DailyUsageRecord) =>
+                                            [
+                                                r.date,
+                                                r.event_type || "",
+                                                r.model || "",
+                                                r.requests || 0,
+                                                r.cost_usd || 0,
+                                                r.input_tokens || 0,
+                                                r.output_tokens || 0,
+                                            ].join(","),
+                                    );
+                                    const csv = [
+                                        headers.join(","),
+                                        ...rows,
+                                    ].join("\n");
+                                    const blob = new Blob([csv], {
+                                        type: "text/csv",
+                                    });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement("a");
+                                    a.href = url;
+                                    a.download = `usage-${filters.timeRange}.csv`;
+                                    a.click();
+                                    URL.revokeObjectURL(url);
+                                }}
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-100 hover:bg-violet-200 transition-colors border border-violet-300 text-violet-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={filteredData.length === 0}
+                                title={
+                                    filteredData.length === 0
+                                        ? "No data to download"
+                                        : `Download CSV (${filteredData.length} rows)`
+                                }
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <title>Download CSV</title>
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                CSV
+                            </button>
+                        </div>
+                    </>
                 )}
             </div>
         </div>

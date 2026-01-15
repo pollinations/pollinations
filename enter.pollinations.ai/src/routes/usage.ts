@@ -1,9 +1,9 @@
 import { Hono } from "hono";
-import { auth } from "../middleware/auth.ts";
-import { validator } from "../middleware/validator.ts";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
+import { auth } from "../middleware/auth.ts";
+import { validator } from "../middleware/validator.ts";
 
 // Query params schema
 const usageQuerySchema = z.object({
@@ -198,8 +198,7 @@ export const usageDailyRoutes = new Hono<Env>()
             const defaultSince = new Date(
                 now.getTime() - 90 * 24 * 60 * 60 * 1000,
             );
-            const sinceDate =
-                defaultSince.toISOString().split("T")[0] + " 00:00:00"; // YYYY-MM-DD HH:MM:SS format
+            const sinceDate = `${defaultSince.toISOString().split("T")[0]} 00:00:00`; // YYYY-MM-DD HH:MM:SS format
 
             log.debug("Fetching daily usage: userId={userId} since={since}", {
                 userId,

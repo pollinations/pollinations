@@ -12,25 +12,26 @@ export type KeyPermissions = {
     accountPermissions: string[] | null;
 };
 
-export type UseKeyPermissionsOptions = {
-    defaultExpiryDays?: number | null;
-};
+export type UseKeyPermissionsOptions = Partial<KeyPermissions>;
 
 /**
  * Hook to manage API key permission state.
  * Used by both dashboard key creation and authorize flow.
+ * All fields can be pre-populated via options (e.g., from URL params).
  */
 export function useKeyPermissions(options: UseKeyPermissionsOptions = {}) {
-    const { defaultExpiryDays = null } = options;
-
-    const [allowedModels, setAllowedModels] = useState<string[] | null>(null);
-    const [pollenBudget, setPollenBudget] = useState<number | null>(null);
+    const [allowedModels, setAllowedModels] = useState<string[] | null>(
+        options.allowedModels ?? null,
+    );
+    const [pollenBudget, setPollenBudget] = useState<number | null>(
+        options.pollenBudget ?? null,
+    );
     const [expiryDays, setExpiryDays] = useState<number | null>(
-        defaultExpiryDays,
+        options.expiryDays ?? null,
     );
     const [accountPermissions, setAccountPermissions] = useState<
         string[] | null
-    >(null);
+    >(options.accountPermissions ?? null);
 
     return {
         permissions: {

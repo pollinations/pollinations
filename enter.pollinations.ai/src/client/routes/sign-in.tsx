@@ -23,7 +23,13 @@ export const Route = createFileRoute("/sign-in")({
                 localStorage.removeItem("pending_redirect_url");
                 throw redirect({
                     to: "/authorize",
-                    search: { redirect_url: pendingRedirectUrl },
+                    search: {
+                        redirect_url: pendingRedirectUrl,
+                        models: null,
+                        budget: null,
+                        expiry: null,
+                        permissions: null,
+                    },
                 });
             }
             throw redirect({ to: "/" });

@@ -10,16 +10,43 @@ import {
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
+// Parse comma-separated string to array, or null if empty
+const parseList = (val: unknown): string[] | null => {
+    if (!val || typeof val !== "string") return null;
+    const items = val
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    return items.length ? items : null;
+};
+
+const parseNumber = (val: unknown): number | null => {
+    if (!val) return null;
+    const n = Number(val);
+    return Number.isFinite(n) ? n : null;
+};
+
 export const Route = createFileRoute("/authorize")({
     component: AuthorizeComponent,
     validateSearch: (search: Record<string, unknown>) => ({
         redirect_url: (search.redirect_url as string) || "",
+        // Optional preselection params
+        models: parseList(search.models),
+        budget: parseNumber(search.budget),
+        expiry: parseNumber(search.expiry),
+        permissions: parseList(search.permissions),
     }),
     // No beforeLoad redirect - handle auth state in component for better UX
 });
 
 function AuthorizeComponent() {
-    const { redirect_url } = Route.useSearch();
+    const {
+        redirect_url,
+        models,
+        budget,
+        expiry,
+        permissions: urlPermissions,
+    } = Route.useSearch();
     const navigate = useNavigate();
 
     // Fetch session directly using authClient
@@ -32,14 +59,19 @@ function AuthorizeComponent() {
     const [redirectHostname, setRedirectHostname] = useState<string>("");
     const [isValidUrl, setIsValidUrl] = useState(false);
 
-    // Use shared hook for key permissions (default 30 days expiry for authorize flow)
+    // Use shared hook for key permissions, pre-populated from URL params
     const {
         permissions,
         setAllowedModels,
         setPollenBudget,
         setExpiryDays,
         setAccountPermissions,
-    } = useKeyPermissions({ defaultExpiryDays: 30 });
+    } = useKeyPermissions({
+        allowedModels: models,
+        pollenBudget: budget,
+        expiryDays: expiry ?? 30, // Default 30 days if not specified
+        accountPermissions: urlPermissions,
+    });
 
     // Parse and validate the redirect URL
     useEffect(() => {

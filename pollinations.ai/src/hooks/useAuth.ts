@@ -1,12 +1,27 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_API_KEY } from "../api.config";
 
 const STORAGE_KEY = "pollinations_api_key";
 const ENTER_URL = "https://enter.pollinations.ai";
+const ACCOUNT_API_BASE = "https://enter.pollinations.ai/api";
+
+interface UserProfile {
+    name: string;
+    email: string;
+    githubUsername: string | null;
+}
+
+interface UserBalance {
+    userBalance: number;
+    keyBalance: number | null;
+}
 
 interface UseAuthReturn {
     apiKey: string;
     isLoggedIn: boolean;
+    profile: UserProfile | null;
+    balance: UserBalance | null;
+    isLoadingProfile: boolean;
     login: () => void;
     logout: () => void;
 }
@@ -22,6 +37,9 @@ export function useAuth(): UseAuthReturn {
         if (typeof window === "undefined") return null;
         return localStorage.getItem(STORAGE_KEY);
     });
+    const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [balance, setBalance] = useState<UserBalance | null>(null);
+    const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
     // Check URL fragment for API key on mount (redirect from enter.pollinations.ai)
     useEffect(() => {
@@ -45,6 +63,75 @@ export function useAuth(): UseAuthReturn {
         }
     }, []);
 
+    // Fetch profile when logged in (gracefully fails if no permission)
+    useEffect(() => {
+        if (!userApiKey) {
+            setProfile(null);
+            return;
+        }
+
+        const fetchProfile = async () => {
+            setIsLoadingProfile(true);
+            try {
+                const response = await fetch(
+                    `${ACCOUNT_API_BASE}/account/profile`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${userApiKey}`,
+                        },
+                    },
+                );
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setProfile({
+                        name: data.name,
+                        email: data.email,
+                        githubUsername: data.githubUsername,
+                    });
+                } else {
+                    // 403 = no permission, silently ignore
+                    setProfile(null);
+                }
+            } catch {
+                // Network error, silently ignore
+                setProfile(null);
+            } finally {
+                setIsLoadingProfile(false);
+            }
+        };
+
+        fetchProfile();
+
+        // Fetch balance (separate permission, gracefully fails)
+        const fetchBalance = async () => {
+            try {
+                const response = await fetch(
+                    `${ACCOUNT_API_BASE}/account/balance`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${userApiKey}`,
+                        },
+                    },
+                );
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setBalance({
+                        userBalance: data.userBalance,
+                        keyBalance: data.keyBalance,
+                    });
+                } else {
+                    setBalance(null);
+                }
+            } catch {
+                setBalance(null);
+            }
+        };
+
+        fetchBalance();
+    }, [userApiKey]);
+
     const login = useCallback(() => {
         const currentUrl = window.location.href.split("#")[0];
         const authUrl = `${ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}`;
@@ -54,11 +141,16 @@ export function useAuth(): UseAuthReturn {
     const logout = useCallback(() => {
         localStorage.removeItem(STORAGE_KEY);
         setUserApiKey(null);
+        setProfile(null);
+        setBalance(null);
     }, []);
 
     return {
         apiKey: userApiKey || DEFAULT_API_KEY,
         isLoggedIn: !!userApiKey,
+        profile,
+        balance,
+        isLoadingProfile,
         login,
         logout,
     };

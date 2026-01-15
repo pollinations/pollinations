@@ -89,133 +89,136 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
     const selectedCount = isUnrestricted ? totalModels : (value ?? []).length;
 
     return (
-        <div
-            className={cn(
-                "rounded-lg border border-gray-200 transition-all p-3 space-y-3",
-                !disabled && "hover:border-gray-300",
-                disabled && "opacity-50",
-                compact && "text-sm",
+        <div>
+            {!compact && (
+                <span className="flex items-center gap-1.5 text-sm font-semibold mb-2">
+                    Models
+                    <button
+                        type="button"
+                        className="relative inline-flex items-center"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setShowTooltip((prev) => !prev);
+                        }}
+                        onMouseEnter={() => setShowTooltip(true)}
+                        onMouseLeave={() => setShowTooltip(false)}
+                        aria-label="Show model access information"
+                    >
+                        <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold cursor-pointer">
+                            i
+                        </span>
+                        <span
+                            className={`${showTooltip ? "visible" : "invisible"} absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs font-normal rounded-lg shadow-lg border border-pink-200 w-max max-w-[200px] sm:max-w-none z-50 pointer-events-none`}
+                        >
+                            Limit this key to specific models
+                        </span>
+                    </button>
+                </span>
             )}
-        >
-            {/* Toggle between all/specific models */}
-            <label
+            <div
                 className={cn(
-                    "flex items-center gap-2 cursor-pointer",
-                    disabled && "cursor-not-allowed opacity-50",
+                    "rounded-lg border border-gray-200 transition-all p-3 space-y-3",
+                    !disabled && "hover:border-gray-300",
+                    disabled && "opacity-50",
+                    compact && "text-sm",
                 )}
             >
-                <input
-                    id="allow-all-models"
-                    name="allow-all-models"
-                    type="checkbox"
-                    checked={isUnrestricted}
-                    onChange={toggleRestrictionMode}
-                    disabled={disabled}
-                    className="w-4 h-4 rounded text-green-600"
-                />
-                <span className="text-sm font-medium">Allow all models</span>
-                <button
-                    type="button"
-                    className="relative inline-flex items-center"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setShowTooltip((prev) => !prev);
-                    }}
-                    onMouseEnter={() => setShowTooltip(true)}
-                    onMouseLeave={() => setShowTooltip(false)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            setShowTooltip((prev) => !prev);
-                        }
-                    }}
-                    aria-label="Show model access information"
-                >
-                    <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold cursor-pointer">
-                        i
-                    </span>
-                    <span
-                        className={`${showTooltip ? "visible" : "invisible"} absolute left-1/2 -translate-x-1/2 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none`}
-                    >
-                        Limit this key to specific models
-                    </span>
-                </button>
-                <span
+                {/* Toggle between all/specific models */}
+                <label
                     className={cn(
-                        "text-xs px-2 py-0.5 rounded-full ml-auto border",
-                        isUnrestricted
-                            ? "bg-green-100 text-green-700 border-green-300"
-                            : selectedCount === 0
-                              ? "bg-red-100 text-red-700 border-red-300"
-                              : "bg-amber-100 text-amber-700 border-amber-300",
+                        "flex items-center gap-2 cursor-pointer",
+                        disabled && "cursor-not-allowed opacity-50",
                     )}
                 >
-                    {`${selectedCount} selected`}
-                </span>
-            </label>
+                    <input
+                        id="allow-all-models"
+                        name="allow-all-models"
+                        type="checkbox"
+                        checked={isUnrestricted}
+                        onChange={toggleRestrictionMode}
+                        disabled={disabled}
+                        className="w-4 h-4 rounded text-green-600"
+                    />
+                    <span className="text-sm font-medium">
+                        Allow all models
+                    </span>
+                    <span
+                        className={cn(
+                            "text-xs px-2 py-0.5 rounded-full ml-auto border",
+                            isUnrestricted
+                                ? "bg-green-100 text-green-700 border-green-300"
+                                : selectedCount === 0
+                                  ? "bg-red-100 text-red-700 border-red-300"
+                                  : "bg-amber-100 text-amber-700 border-amber-300",
+                        )}
+                    >
+                        {`${selectedCount} selected`}
+                    </span>
+                </label>
 
-            {/* Show model chips when restricting to specific models */}
-            {!isUnrestricted && (
-                <div className="space-y-4">
-                    {/* Text models */}
-                    <div>
-                        <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                            Text
+                {/* Show model chips when restricting to specific models */}
+                {!isUnrestricted && (
+                    <div className="space-y-4">
+                        {/* Text models */}
+                        <div>
+                            <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
+                                Text
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                {textModels.map((model) => (
+                                    <ModelChip
+                                        key={model.id}
+                                        apiName={model.id}
+                                        officialName={model.label}
+                                        selected={isModelSelected(model.id)}
+                                        onClick={() => toggleModel(model.id)}
+                                        disabled={disabled}
+                                    />
+                                ))}
+                            </div>
                         </div>
-                        <div className="flex flex-col gap-1">
-                            {textModels.map((model) => (
-                                <ModelChip
-                                    key={model.id}
-                                    apiName={model.id}
-                                    officialName={model.label}
-                                    selected={isModelSelected(model.id)}
-                                    onClick={() => toggleModel(model.id)}
-                                    disabled={disabled}
-                                />
-                            ))}
+
+                        {/* Image models */}
+                        <div>
+                            <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
+                                Image
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                {imageModels.map((model) => (
+                                    <ModelChip
+                                        key={model.id}
+                                        apiName={model.id}
+                                        officialName={model.label}
+                                        selected={isModelSelected(model.id)}
+                                        onClick={() => toggleModel(model.id)}
+                                        disabled={disabled}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Video models */}
+                        <div>
+                            <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
+                                Video
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                {videoModels.map((model) => (
+                                    <ModelChip
+                                        key={model.id}
+                                        apiName={model.id}
+                                        officialName={model.label}
+                                        selected={isModelSelected(model.id)}
+                                        onClick={() => toggleModel(model.id)}
+                                        disabled={disabled}
+                                    />
+                                ))}
+                            </div>
                         </div>
                     </div>
-
-                    {/* Image models */}
-                    <div>
-                        <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                            Image
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            {imageModels.map((model) => (
-                                <ModelChip
-                                    key={model.id}
-                                    apiName={model.id}
-                                    officialName={model.label}
-                                    selected={isModelSelected(model.id)}
-                                    onClick={() => toggleModel(model.id)}
-                                    disabled={disabled}
-                                />
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Video models */}
-                    <div>
-                        <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                            Video
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            {videoModels.map((model) => (
-                                <ModelChip
-                                    key={model.id}
-                                    apiName={model.id}
-                                    officialName={model.label}
-                                    selected={isModelSelected(model.id)}
-                                    onClick={() => toggleModel(model.id)}
-                                    disabled={disabled}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };

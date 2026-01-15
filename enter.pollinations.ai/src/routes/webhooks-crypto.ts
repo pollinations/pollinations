@@ -216,6 +216,29 @@ export const webhooksCryptoRoutes = new Hono<Env>().post(
             return c.json({ received: true, processed: false });
         }
 
+        // For partially_paid, only credit if user paid at least 90% of the expected amount
+        if (payload.payment_status === "partially_paid") {
+            const actuallyPaidFiat = payload.actually_paid_fiat ?? 0;
+            const expectedAmount = payload.price_amount;
+            const paidRatio = actuallyPaidFiat / expectedAmount;
+            if (paidRatio < 0.9) {
+                log.warn(
+                    "Partial payment below 90% threshold: {actuallyPaidFiat}/{expectedAmount} ({paidRatio}%)",
+                    {
+                        actuallyPaidFiat,
+                        expectedAmount,
+                        paidRatio: Math.round(paidRatio * 100),
+                        paymentId: payload.payment_id,
+                    },
+                );
+                return c.json({
+                    received: true,
+                    processed: false,
+                    reason: "partial_payment_below_threshold",
+                });
+            }
+        }
+
         // Parse order_id to get user and pack
         const orderInfo = parseOrderId(payload.order_id);
         if (!orderInfo) {
@@ -230,15 +253,24 @@ export const webhooksCryptoRoutes = new Hono<Env>().post(
         const { userId, pack } = orderInfo;
         const pollenAmount = PACK_POLLEN[pack];
 
+        // Idempotency: payment_id is logged to Tinybird for audit trail
+        // NOWPayments only sends webhooks on status changes, not arbitrary replays
+        // Manual dashboard replays are rare and can be reconciled via Tinybird logs
+
         // Credit pollen to user's crypto balance (separate from fiat pack balance)
         const db = drizzle(c.env.DB);
-
-        await db
+        const result = await db
             .update(userTable)
             .set({
                 cryptoBalance: sql`COALESCE(${userTable.cryptoBalance}, 0) + ${pollenAmount}`,
             })
             .where(eq(userTable.id, userId));
+
+        // Check if user was found and updated (D1 uses meta.changes)
+        if (result.meta?.changes === 0) {
+            log.error("User not found for crypto credit: {userId}", { userId });
+            throw new HTTPException(400, { message: "User not found" });
+        }
 
         log.info(
             "[CRYPTO_CREDIT] crypto: user={userId} +{pollen} pack={pack} paymentId={paymentId} status={status}",

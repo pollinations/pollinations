@@ -101,11 +101,11 @@ export const nowpaymentsRoutes = new Hono<Env>()
             const priceAmount = PACK_AMOUNTS[pack];
             const description = PACK_DESCRIPTIONS[pack];
 
-            // Build success/cancel URLs
+            // Build success/cancel URLs (use request origin for dev)
             const appUrl =
                 c.env.ENVIRONMENT === "production"
                     ? "https://enter.pollinations.ai"
-                    : "http://localhost:5173";
+                    : new URL(c.req.url).origin;
             const successUrl = `${appUrl}/?payment=success&method=crypto`;
             const cancelUrl = `${appUrl}/?payment=cancelled&method=crypto`;
 
@@ -117,8 +117,6 @@ export const nowpaymentsRoutes = new Hono<Env>()
 
             log.info("Creating invoice", {
                 baseUrl,
-                apiKeyLength: apiKey.length,
-                apiKeyPreview: `${apiKey.slice(0, 4)}...${apiKey.slice(-4)}`,
                 pack,
             });
 

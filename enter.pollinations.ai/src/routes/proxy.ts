@@ -267,7 +267,7 @@ export const proxyRoutes = new Hono<Env>()
                 "`Authorization: Bearer YOUR_API_KEY`",
                 "",
                 "API keys can be created from your dashboard at enter.pollinations.ai.",
-                "Secret keys provide the best rate limits and can spend Pollen.",
+                "Both key types consume Pollen. Secret keys have no rate limits.",
             ].join("\n"),
             responses: {
                 200: {

@@ -61,7 +61,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["deepseek-v3.2-maas"],
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v3p2"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {

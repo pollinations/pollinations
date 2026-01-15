@@ -13,6 +13,7 @@
     "concurrently": "^9.2.1"
   },
   "dependencies": {
-    "lefthook": "^2.0.4"
+    "lefthook": "^2.0.4",
+    "wrangler": "^4.59.1"
   }
 }

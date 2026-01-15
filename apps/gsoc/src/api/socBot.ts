@@ -1,14 +1,17 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = '/api/socbot';
+const API_BASE_URL = "/api/socbot";
 
 export class socBotAPI {
-  conversationHistory: { role: string; content: string; }[];
-  systemPrompt: string;
-  
-  constructor() {
-    this.conversationHistory = [] as Array<{ role: string; content: string }>;
-    this.systemPrompt = `
+    conversationHistory: { role: string; content: string }[];
+    systemPrompt: string;
+
+    constructor() {
+        this.conversationHistory = [] as Array<{
+            role: string;
+            content: string;
+        }>;
+        this.systemPrompt = `
 You are socBot, the official AI assistant for Google Summer of Code 2026 at pollinations.ai. You are a helpful, knowledgeable, and enthusiastic assistant specialized in:
 Google Summer of Code program information and guidelines
 pollinations.ai organization details and projects 
@@ -40,78 +43,78 @@ If asked about what pollinations.ai are accepting please ask them to visit the /
 As of now the project list for pollinations hasn't been finalized yet, but once done we will provide the details to you 
 - Limit within 1000 tokens
 Always end responses with a helpful suggestion or question to keep the conversation engaging.`;
-  }
-
-  async sendMessage(userMessage: string) {
-    try {
-      this.conversationHistory.push({
-        role: 'user',
-        content: userMessage
-      });
-
-      const requestBody = {
-        messages: [
-          {
-            role: 'system',
-            content: this.systemPrompt
-          },
-          ...this.conversationHistory
-        ]
-      };
-
-      const response = await axios.post(API_BASE_URL, requestBody, {
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      const assistantMessage = response.data.choices[0].message.content;
-
-      this.conversationHistory.push({
-        role: 'assistant',
-        content: assistantMessage
-      });
-
-      return {
-        success: true,
-        message: assistantMessage,
-        timestamp: new Date().toISOString()
-      };
-
-    } catch (error: any) {
-      console.error('socBot API Error:', error);
-      
-      const fallbackMessage = "I'm experiencing some technical difficulties right now. In the meantime, you can:\n\n• Check our FAQ page for common questions\n• Browse our project ideas\n• Join our Discord community for direct support\n• Contact mentors directly via email\n\nI'll be back online soon to help with your GSOC questions!";
-      
-      return {
-        success: false,
-        message: fallbackMessage,
-        error: error.message,
-        timestamp: new Date().toISOString()
-      };
     }
-  }
 
-  clearHistory(): void {
-    this.conversationHistory = [];
-  }
+    async sendMessage(userMessage: string) {
+        try {
+            this.conversationHistory.push({
+                role: "user",
+                content: userMessage,
+            });
 
-  getHistory(): { role: string; content: string; }[] {
-    return this.conversationHistory;
-  }
+            const requestBody = {
+                messages: [
+                    {
+                        role: "system",
+                        content: this.systemPrompt,
+                    },
+                    ...this.conversationHistory,
+                ],
+            };
 
-  getSuggestedQuestions(): string[] {
-    return [
-      "What is Google Summer of Code and how can I participate?",
-      "Tell me about pollinations.ai and the available projects",
-      "What are the requirements to apply for GSOC 2026?",
-      "How do I choose the right project for my skill level?",
-      "What's the application timeline for GSOC 2026?",
-      "How can I connect with mentors and the community?",
-      "What skills are pollinations.ai looking for as an avegrage",
-      "How do I make my first contribution to pollinations.ai?"
-    ];
-  }
+            const response = await axios.post(API_BASE_URL, requestBody, {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+
+            const assistantMessage = response.data.choices[0].message.content;
+
+            this.conversationHistory.push({
+                role: "assistant",
+                content: assistantMessage,
+            });
+
+            return {
+                success: true,
+                message: assistantMessage,
+                timestamp: new Date().toISOString(),
+            };
+        } catch (error: any) {
+            console.error("socBot API Error:", error);
+
+            const fallbackMessage =
+                "I'm experiencing some technical difficulties right now. In the meantime, you can:\n\n• Check our FAQ page for common questions\n• Browse our project ideas\n• Join our Discord community for direct support\n• Contact mentors directly via email\n\nI'll be back online soon to help with your GSOC questions!";
+
+            return {
+                success: false,
+                message: fallbackMessage,
+                error: error.message,
+                timestamp: new Date().toISOString(),
+            };
+        }
+    }
+
+    clearHistory(): void {
+        this.conversationHistory = [];
+    }
+
+    getHistory(): { role: string; content: string }[] {
+        return this.conversationHistory;
+    }
+
+    getSuggestedQuestions(): string[] {
+        return [
+            "What is Google Summer of Code and how can I participate?",
+            "Tell me about pollinations.ai and the available projects",
+            "What are the requirements to apply for GSOC 2026?",
+            "How do I choose the right project for my skill level?",
+            "What's the application timeline for GSOC 2026?",
+            "How can I connect with mentors and the community?",
+            "What skills are pollinations.ai looking for as an avegrage",
+            "How do I make my first contribution to pollinations.ai?",
+        ];
+    }
 }
 
 export default socBotAPI;

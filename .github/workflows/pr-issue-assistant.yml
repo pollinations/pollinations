@@ -55,7 +55,14 @@ jobs:
             if (!body.includes('polly')) {
               console.log('Strict check failed: "polly" must be lowercase.');
               core.setOutput('authorized', 'false');
-              return; 
+              return;
+            }
+
+            // Don't trigger on 'superpolly' - that's handled by superpolly.yml
+            if (body.includes('superpolly')) {
+              console.log('Skipping: "superpolly" is handled by SuperPolly workflow.');
+              core.setOutput('authorized', 'false');
+              return;
             }
 
             const whitelist = ['voodoohop', 'ElliotEtag', 'eulervoid', 'Circuit-Overtime', 'Itachi-1824'];

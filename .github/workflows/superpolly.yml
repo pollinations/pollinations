@@ -113,17 +113,9 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
     env:
       CLAUDE_CODE_TOKEN: ${{ secrets.CLAUDE_CODE_TOKEN }}
     steps:
-      - uses: actions/create-github-app-token@v1
-        id: token
-        with:
-          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
-          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
-
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
@@ -132,12 +124,10 @@ jobs:
         run: |
           mkdir -p $HOME/.claude-code-router/plugins
 
-          # Claude: seed, temp only
           cat > $HOME/.claude-code-router/plugins/superpolly-transformer.js << 'TRANSFORMER'
           class SuperPollyTransformer {
             constructor(options) { this.name = 'superpolly-transformer'; }
             async transformRequestIn(body, provider, context) {
-              console.log('[superpolly] Claude: seed=-1, temp=0.3');
               body.stream = true;
               body.seed = -1;
               body.temperature = 0.3;
@@ -176,19 +166,31 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number)) || github.sha }}
-          token: ${{ steps.token.outputs.token }}
 
       - name: Run Claude Review
-        id: claude-review
-        uses: anthropics/claude-code-action@v1
+        run: |
+          npm install -g @anthropic-ai/claude-code
+
+          cat > /tmp/prompt.txt << 'PROMPT'
+          You are Claude Opus 4.5, the SECURITY SPECIALIST in a multi-model code review team.
+          Your primary focus: Security vulnerabilities, but report any issues you find.
+          Security priorities: Input validation (SQL/XSS/command injection), auth flaws, data exposure, secrets handling, cryptographic issues, race conditions, prompt injection in AI code.
+
+          Review the code in this repository. Be concise. Include file paths and line numbers.
+          PROMPT
+
+          echo "## Claude (Security)" > review.md
+          echo "" >> review.md
+          claude -p "$(cat /tmp/prompt.txt)" --dangerously-skip-permissions --output-format text >> review.md 2>&1 || echo "Review completed with warnings" >> review.md
         env:
           ANTHROPIC_BASE_URL: http://localhost:3456
+          ANTHROPIC_API_KEY: "ccr-pollinations"
+
+      - name: Upload Review
+        uses: actions/upload-artifact@v4
         with:
-          anthropic_api_key: "ccr-pollinations"
-          github_token: ${{ steps.token.outputs.token }}
-          trigger_phrase: "superpolly"
-          claude_args: |
-            --system-prompt "You are Claude Opus 4.5, the SECURITY SPECIALIST in a multi-model code review team. You have web search capability. Your primary focus: Security vulnerabilities, but report any issues you find. Security priorities: Input validation (SQL/XSS/command injection), auth flaws, data exposure, secrets handling, cryptographic issues, race conditions, prompt injection in AI code. Be concise. Include line numbers. Start with '## Claude (Security)'"
+          name: review-claude
+          path: review.md
 
   # GPT 5.2 - BUG HUNTER
   # Why: Best-in-class async code review, 98.7% tool-calling accuracy, catches cross-system bugs
@@ -199,17 +201,9 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
     env:
       CLAUDE_CODE_TOKEN: ${{ secrets.CLAUDE_CODE_TOKEN }}
     steps:
-      - uses: actions/create-github-app-token@v1
-        id: token
-        with:
-          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
-          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
-
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
@@ -218,12 +212,10 @@ jobs:
         run: |
           mkdir -p $HOME/.claude-code-router/plugins
 
-          # OpenAI: supports reasoning_effort=xhigh
           cat > $HOME/.claude-code-router/plugins/superpolly-transformer.js << 'TRANSFORMER'
           class SuperPollyTransformer {
             constructor(options) { this.name = 'superpolly-transformer'; }
             async transformRequestIn(body, provider, context) {
-              console.log('[superpolly] OpenAI: seed=-1, temp=0.3, reasoning_effort=xhigh');
               body.stream = true;
               body.seed = -1;
               body.temperature = 0.3;
@@ -263,19 +255,31 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number)) || github.sha }}
-          token: ${{ steps.token.outputs.token }}
 
       - name: Run OpenAI Review
-        id: openai-review
-        uses: anthropics/claude-code-action@v1
+        run: |
+          npm install -g @anthropic-ai/claude-code
+
+          cat > /tmp/prompt.txt << 'PROMPT'
+          You are GPT 5.2, the BUG HUNTER in a multi-model code review team.
+          Your primary focus: Finding bugs and logic errors, but report any issues you find.
+          Bug hunting priorities: Logic errors, edge cases, null/undefined handling, error handling, off-by-one errors, cross-file dependencies, async race conditions.
+
+          Review the code in this repository. Be concise. Include file paths and line numbers.
+          PROMPT
+
+          echo "## GPT 5.2 (Bugs)" > review.md
+          echo "" >> review.md
+          claude -p "$(cat /tmp/prompt.txt)" --dangerously-skip-permissions --output-format text >> review.md 2>&1 || echo "Review completed with warnings" >> review.md
         env:
           ANTHROPIC_BASE_URL: http://localhost:3456
+          ANTHROPIC_API_KEY: "ccr-pollinations"
+
+      - name: Upload Review
+        uses: actions/upload-artifact@v4
         with:
-          anthropic_api_key: "ccr-pollinations"
-          github_token: ${{ steps.token.outputs.token }}
-          trigger_phrase: "superpolly"
-          claude_args: |
-            --system-prompt "You are GPT 5.2, the BUG HUNTER in a multi-model code review team. You have web search capability. Your primary focus: Finding bugs and logic errors, but report any issues you find. Bug hunting priorities: Logic errors, edge cases, null/undefined handling, error handling, off-by-one errors, cross-file dependencies, async race conditions. Be concise. Include line numbers. Start with '## GPT 5.2 (Bugs)'"
+          name: review-openai
+          path: review.md
 
   # Gemini 3 Pro - ARCHITECTURE REVIEWER
   # Why: Native multimodal, excellent at design patterns, relates diagrams to code
@@ -286,17 +290,9 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
     env:
       CLAUDE_CODE_TOKEN: ${{ secrets.CLAUDE_CODE_TOKEN }}
     steps:
-      - uses: actions/create-github-app-token@v1
-        id: token
-        with:
-          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
-          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
-
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
@@ -305,32 +301,21 @@ jobs:
         run: |
           mkdir -p $HOME/.claude-code-router/plugins
 
-          # Gemini Schema Fix - handles thought_signature for Gemini models
+          # Gemini Schema Fix - handles thought_signature
           cat > $HOME/.claude-code-router/plugins/gemini-schema-fix.js << 'SCHEMAFIX'
           class GeminiSchemaFixTransformer {
             constructor(options) {
               this.name = 'gemini-schema-fix';
               this.SKIP_SIGNATURE = 'skip_thought_signature_validator';
-              this.unsupportedProps = [
-                'propertyNames', 'patternProperties', 'additionalItems',
-                'unevaluatedProperties', 'unevaluatedItems', 'contentEncoding',
-                'contentMediaType', 'contentSchema', '$schema', '$id', '$ref',
-                '$defs', 'definitions', 'if', 'then', 'else', 'allOf', 'anyOf',
-                'oneOf', 'not', 'dependentSchemas', 'dependentRequired',
-                'minContains', 'maxContains'
-              ];
+              this.unsupportedProps = ['propertyNames', 'patternProperties', 'additionalItems', 'unevaluatedProperties', 'unevaluatedItems', 'contentEncoding', 'contentMediaType', 'contentSchema', '$schema', '$id', '$ref', '$defs', 'definitions', 'if', 'then', 'else', 'allOf', 'anyOf', 'oneOf', 'not', 'dependentSchemas', 'dependentRequired', 'minContains', 'maxContains'];
             }
-            isGeminiModel(model) {
-              return model && model.toLowerCase().includes('gemini');
-            }
+            isGeminiModel(model) { return model && model.toLowerCase().includes('gemini'); }
             cleanSchema(obj) {
               if (!obj || typeof obj !== 'object') return obj;
               if (Array.isArray(obj)) return obj.map(item => this.cleanSchema(item));
               const cleaned = {};
               for (const [key, value] of Object.entries(obj)) {
-                if (!this.unsupportedProps.includes(key)) {
-                  cleaned[key] = this.cleanSchema(value);
-                }
+                if (!this.unsupportedProps.includes(key)) cleaned[key] = this.cleanSchema(value);
               }
               return cleaned;
             }
@@ -338,32 +323,22 @@ jobs:
               if (!messages || !Array.isArray(messages)) return messages;
               return messages.map(msg => {
                 if (msg.role === 'assistant' && msg.tool_calls && Array.isArray(msg.tool_calls)) {
-                  return {
-                    ...msg,
-                    tool_calls: msg.tool_calls.map(tc => {
-                      if (tc.function && !tc.function.thought_signature) {
-                        return {
-                          ...tc,
-                          function: { ...tc.function, thought_signature: this.SKIP_SIGNATURE }
-                        };
-                      }
-                      return tc;
-                    })
-                  };
+                  return { ...msg, tool_calls: msg.tool_calls.map(tc => {
+                    if (tc.function && !tc.function.thought_signature) {
+                      return { ...tc, function: { ...tc.function, thought_signature: this.SKIP_SIGNATURE } };
+                    }
+                    return tc;
+                  })};
                 }
                 return msg;
               });
             }
             async transformRequestIn(body, provider, context) {
               const model = body.model || '';
-              if (this.isGeminiModel(model) && body.messages) {
-                body.messages = this.addThoughtSignatureBypass(body.messages);
-              }
+              if (this.isGeminiModel(model) && body.messages) body.messages = this.addThoughtSignatureBypass(body.messages);
               if (body.tools && Array.isArray(body.tools)) {
                 body.tools = body.tools.map(tool => {
-                  if (tool.function && tool.function.parameters) {
-                    tool.function.parameters = this.cleanSchema(tool.function.parameters);
-                  }
+                  if (tool.function && tool.function.parameters) tool.function.parameters = this.cleanSchema(tool.function.parameters);
                   return tool;
                 });
               }
@@ -374,12 +349,10 @@ jobs:
           module.exports = GeminiSchemaFixTransformer;
           SCHEMAFIX
 
-          # Gemini params transformer
           cat > $HOME/.claude-code-router/plugins/superpolly-transformer.js << 'TRANSFORMER'
           class SuperPollyTransformer {
             constructor(options) { this.name = 'superpolly-transformer'; }
             async transformRequestIn(body, provider, context) {
-              console.log('[superpolly] Gemini: seed=-1, temp=0.3, reasoning_effort=high');
               body.stream = true;
               body.seed = -1;
               body.temperature = 0.3;
@@ -420,19 +393,31 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number)) || github.sha }}
-          token: ${{ steps.token.outputs.token }}
 
       - name: Run Gemini Review
-        id: gemini-review
-        uses: anthropics/claude-code-action@v1
+        run: |
+          npm install -g @anthropic-ai/claude-code
+
+          cat > /tmp/prompt.txt << 'PROMPT'
+          You are Gemini 3 Pro, the ARCHITECTURE REVIEWER in a multi-model code review team.
+          Your primary focus: Code structure and design, but report any issues you find.
+          Architecture priorities: Code organization, modularity, design patterns, dependency coupling, API design, maintainability, technical debt, DRY violations.
+
+          Review the code in this repository. Be concise. Include file paths and line numbers.
+          PROMPT
+
+          echo "## Gemini 3 Pro (Architecture)" > review.md
+          echo "" >> review.md
+          claude -p "$(cat /tmp/prompt.txt)" --dangerously-skip-permissions --output-format text >> review.md 2>&1 || echo "Review completed with warnings" >> review.md
         env:
           ANTHROPIC_BASE_URL: http://localhost:3456
+          ANTHROPIC_API_KEY: "ccr-pollinations"
+
+      - name: Upload Review
+        uses: actions/upload-artifact@v4
         with:
-          anthropic_api_key: "ccr-pollinations"
-          github_token: ${{ steps.token.outputs.token }}
-          trigger_phrase: "superpolly"
-          claude_args: |
-            --system-prompt "You are Gemini 3 Pro, the ARCHITECTURE REVIEWER in a multi-model code review team. You have web search capability. Your primary focus: Code structure and design, but report any issues you find. Architecture priorities: Code organization, modularity, design patterns, dependency coupling, API design, maintainability, technical debt, DRY violations. Be concise. Include line numbers. Start with '## Gemini 3 Pro (Architecture)'"
+          name: review-gemini
+          path: review.md
 
   # Kimi K2 Thinking - PERFORMANCE & REASONING ANALYST
   # Why: Transparent chain-of-thought, systematic debugging, excellent audit trails
@@ -443,17 +428,9 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
     env:
       CLAUDE_CODE_TOKEN: ${{ secrets.CLAUDE_CODE_TOKEN }}
     steps:
-      - uses: actions/create-github-app-token@v1
-        id: token
-        with:
-          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
-          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
-
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
@@ -462,12 +439,10 @@ jobs:
         run: |
           mkdir -p $HOME/.claude-code-router/plugins
 
-          # Kimi: has native thinking, no reasoning_effort needed
           cat > $HOME/.claude-code-router/plugins/superpolly-transformer.js << 'TRANSFORMER'
           class SuperPollyTransformer {
             constructor(options) { this.name = 'superpolly-transformer'; }
             async transformRequestIn(body, provider, context) {
-              console.log('[superpolly] Kimi: seed=-1, temp=0.3 (native thinking)');
               body.stream = true;
               body.seed = -1;
               body.temperature = 0.3;
@@ -506,19 +481,31 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number)) || github.sha }}
-          token: ${{ steps.token.outputs.token }}
 
       - name: Run Kimi Review
-        id: kimi-review
-        uses: anthropics/claude-code-action@v1
+        run: |
+          npm install -g @anthropic-ai/claude-code
+
+          cat > /tmp/prompt.txt << 'PROMPT'
+          You are Kimi K2 Thinking, the PERFORMANCE & REASONING ANALYST in a multi-model code review team.
+          Your primary focus: Performance issues and deep reasoning, but report any issues you find.
+          Performance priorities: Algorithmic complexity O(n), memory leaks, N+1 queries, unnecessary computations, caching opportunities, resource cleanup, async inefficiencies.
+
+          Review the code in this repository. Be concise. Include file paths and line numbers.
+          PROMPT
+
+          echo "## Kimi K2 (Performance)" > review.md
+          echo "" >> review.md
+          claude -p "$(cat /tmp/prompt.txt)" --dangerously-skip-permissions --output-format text >> review.md 2>&1 || echo "Review completed with warnings" >> review.md
         env:
           ANTHROPIC_BASE_URL: http://localhost:3456
+          ANTHROPIC_API_KEY: "ccr-pollinations"
+
+      - name: Upload Review
+        uses: actions/upload-artifact@v4
         with:
-          anthropic_api_key: "ccr-pollinations"
-          github_token: ${{ steps.token.outputs.token }}
-          trigger_phrase: "superpolly"
-          claude_args: |
-            --system-prompt "You are Kimi K2 Thinking, the PERFORMANCE & REASONING ANALYST in a multi-model code review team. You have web search capability. Your primary focus: Performance issues and deep reasoning, but report any issues you find. Performance priorities: Algorithmic complexity O(n), memory leaks, N+1 queries, unnecessary computations, caching opportunities, resource cleanup, async inefficiencies. Use your thinking capability for complex issues. Be concise. Include line numbers. Start with '## Kimi K2 (Performance)'"
+          name: review-kimi
+          path: review.md
 
   # ============================================================================
   # AGGREGATION JOB - Synthesizes all 4 reviews into final verdict
@@ -676,7 +663,7 @@ jobs:
       - name: Download All Reviews
         uses: actions/download-artifact@v4
         with:
-          pattern: claude-code-*
+          pattern: review-*
           merge-multiple: true
           path: reviews/
 

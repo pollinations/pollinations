@@ -1,19 +1,19 @@
 import {
-    getTextServices,
-    getServiceDefinition,
-} from "@shared/registry/registry.ts";
-import {
     createExecutionContext,
     env,
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { test } from "../fixtures.ts";
-import { describe, expect } from "vitest";
 import type { ServiceId } from "@shared/registry/registry.ts";
-import { CompletionUsageSchema } from "@/schemas/openai.ts";
+import {
+    getServiceDefinition,
+    getTextServices,
+} from "@shared/registry/registry.ts";
 import { parseUsageHeaders } from "@shared/registry/usage-headers.ts";
+import { describe, expect } from "vitest";
 import worker from "@/index.ts";
+import { CompletionUsageSchema } from "@/schemas/openai.ts";
+import { test } from "../fixtures.ts";
 
 const TEST_DISABLE_CACHE = false;
 const TEST_ALL_SERVICES = true;

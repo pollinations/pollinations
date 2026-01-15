@@ -32,7 +32,6 @@ jobs:
       issues: write
     outputs:
       authorized: ${{ steps.whitelist.outputs.authorized }}
-      app-token: ${{ steps.token.outputs.token }}
       app-slug: ${{ steps.token.outputs.app-slug }}
       user-id: ${{ steps.setup.outputs.user-id }}
     steps:

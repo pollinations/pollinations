@@ -1,5 +1,5 @@
-import { type FC, useState } from "react";
 import { Field } from "@ark-ui/react";
+import { type FC, useState } from "react";
 
 type PollenBudgetInputProps = {
     value: number | null;
@@ -44,7 +44,8 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
                         <span
                             className={`${showTooltip ? "visible" : "invisible"} absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs font-normal rounded-lg shadow-lg border border-pink-200 w-max max-w-[200px] sm:max-w-none z-50 pointer-events-none`}
                         >
-                            Set a spending limit for this key. Leave empty for unlimited.
+                            Set a spending limit for this key. Leave empty for
+                            unlimited.
                         </span>
                     </button>
                 </Field.Label>

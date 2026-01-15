@@ -1,12 +1,12 @@
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
+import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
-import { createAuth } from "../auth.ts";
-import type { LoggerVariables } from "./logger.ts";
 import { HTTPException } from "hono/http-exception";
 import type { Session, User } from "@/auth.ts";
-import { drizzle } from "drizzle-orm/d1";
-import { eq } from "drizzle-orm";
 import * as schema from "@/db/schema/better-auth.ts";
-import type { Context } from "hono";
+import { createAuth } from "../auth.ts";
+import type { LoggerVariables } from "./logger.ts";
 import type { ModelVariables } from "./model.ts";
 
 export type AuthVariables = {

@@ -1,13 +1,13 @@
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
-import { auth } from "../middleware/auth.ts";
-import { validator } from "../middleware/validator.ts";
+import { HTTPException } from "hono/http-exception";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
-import type { Env } from "../env.ts";
-import { drizzle } from "drizzle-orm/d1";
-import { eq } from "drizzle-orm";
 import { user as userTable } from "@/db/schema/better-auth.ts";
-import { HTTPException } from "hono/http-exception";
+import type { Env } from "../env.ts";
+import { auth } from "../middleware/auth.ts";
+import { validator } from "../middleware/validator.ts";
 
 // Query params schema for usage
 const usageQuerySchema = z.object({

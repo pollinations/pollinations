@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
 import {
-    useKeyPermissions,
-    updateKeyPermissions,
     KeyPermissionsInputs,
+    updateKeyPermissions,
+    useKeyPermissions,
 } from "../components/key-permissions.tsx";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;

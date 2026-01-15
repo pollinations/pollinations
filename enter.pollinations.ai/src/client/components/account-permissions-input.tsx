@@ -1,5 +1,5 @@
-import { type FC, useState } from "react";
 import { Field } from "@ark-ui/react";
+import { type FC, useState } from "react";
 
 type AccountPermissionsInputProps = {
     value: string[] | null;

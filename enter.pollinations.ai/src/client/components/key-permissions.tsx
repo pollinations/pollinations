@@ -1,9 +1,9 @@
 import type { FC } from "react";
 import { useState } from "react";
+import { AccountPermissionsInput } from "./account-permissions-input.tsx";
+import { ExpiryDaysInput } from "./expiry-days-input.tsx";
 import { ModelPermissions } from "./model-permissions.tsx";
 import { PollenBudgetInput } from "./pollen-budget-input.tsx";
-import { ExpiryDaysInput } from "./expiry-days-input.tsx";
-import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 
 export type KeyPermissions = {
     allowedModels: string[] | null;

@@ -125,97 +125,99 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                 )}
             >
                 {/* Toggle between all/specific models */}
-            <label
-                className={cn(
-                    "flex items-center gap-2 cursor-pointer",
-                    disabled && "cursor-not-allowed opacity-50",
-                )}
-            >
-                <input
-                    id="allow-all-models"
-                    name="allow-all-models"
-                    type="checkbox"
-                    checked={isUnrestricted}
-                    onChange={toggleRestrictionMode}
-                    disabled={disabled}
-                    className="w-4 h-4 rounded text-green-600"
-                />
-                <span className="text-sm font-medium">Allow all models</span>
-                <span
+                <label
                     className={cn(
-                        "text-xs px-2 py-0.5 rounded-full ml-auto border",
-                        isUnrestricted
-                            ? "bg-green-100 text-green-700 border-green-300"
-                            : selectedCount === 0
-                              ? "bg-red-100 text-red-700 border-red-300"
-                              : "bg-amber-100 text-amber-700 border-amber-300",
+                        "flex items-center gap-2 cursor-pointer",
+                        disabled && "cursor-not-allowed opacity-50",
                     )}
                 >
-                    {`${selectedCount} selected`}
-                </span>
-            </label>
+                    <input
+                        id="allow-all-models"
+                        name="allow-all-models"
+                        type="checkbox"
+                        checked={isUnrestricted}
+                        onChange={toggleRestrictionMode}
+                        disabled={disabled}
+                        className="w-4 h-4 rounded text-green-600"
+                    />
+                    <span className="text-sm font-medium">
+                        Allow all models
+                    </span>
+                    <span
+                        className={cn(
+                            "text-xs px-2 py-0.5 rounded-full ml-auto border",
+                            isUnrestricted
+                                ? "bg-green-100 text-green-700 border-green-300"
+                                : selectedCount === 0
+                                  ? "bg-red-100 text-red-700 border-red-300"
+                                  : "bg-amber-100 text-amber-700 border-amber-300",
+                        )}
+                    >
+                        {`${selectedCount} selected`}
+                    </span>
+                </label>
 
-            {/* Show model chips when restricting to specific models */}
-            {!isUnrestricted && (
-                <div className="space-y-4">
-                    {/* Text models */}
-                    <div>
-                        <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                            Text
+                {/* Show model chips when restricting to specific models */}
+                {!isUnrestricted && (
+                    <div className="space-y-4">
+                        {/* Text models */}
+                        <div>
+                            <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
+                                Text
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                {textModels.map((model) => (
+                                    <ModelChip
+                                        key={model.id}
+                                        apiName={model.id}
+                                        officialName={model.label}
+                                        selected={isModelSelected(model.id)}
+                                        onClick={() => toggleModel(model.id)}
+                                        disabled={disabled}
+                                    />
+                                ))}
+                            </div>
                         </div>
-                        <div className="flex flex-col gap-1">
-                            {textModels.map((model) => (
-                                <ModelChip
-                                    key={model.id}
-                                    apiName={model.id}
-                                    officialName={model.label}
-                                    selected={isModelSelected(model.id)}
-                                    onClick={() => toggleModel(model.id)}
-                                    disabled={disabled}
-                                />
-                            ))}
+
+                        {/* Image models */}
+                        <div>
+                            <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
+                                Image
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                {imageModels.map((model) => (
+                                    <ModelChip
+                                        key={model.id}
+                                        apiName={model.id}
+                                        officialName={model.label}
+                                        selected={isModelSelected(model.id)}
+                                        onClick={() => toggleModel(model.id)}
+                                        disabled={disabled}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Video models */}
+                        <div>
+                            <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
+                                Video
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                {videoModels.map((model) => (
+                                    <ModelChip
+                                        key={model.id}
+                                        apiName={model.id}
+                                        officialName={model.label}
+                                        selected={isModelSelected(model.id)}
+                                        onClick={() => toggleModel(model.id)}
+                                        disabled={disabled}
+                                    />
+                                ))}
+                            </div>
                         </div>
                     </div>
-
-                    {/* Image models */}
-                    <div>
-                        <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                            Image
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            {imageModels.map((model) => (
-                                <ModelChip
-                                    key={model.id}
-                                    apiName={model.id}
-                                    officialName={model.label}
-                                    selected={isModelSelected(model.id)}
-                                    onClick={() => toggleModel(model.id)}
-                                    disabled={disabled}
-                                />
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Video models */}
-                    <div>
-                        <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                            Video
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            {videoModels.map((model) => (
-                                <ModelChip
-                                    key={model.id}
-                                    apiName={model.id}
-                                    officialName={model.label}
-                                    selected={isModelSelected(model.id)}
-                                    onClick={() => toggleModel(model.id)}
-                                    disabled={disabled}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
+                )}
             </div>
         </div>
     );

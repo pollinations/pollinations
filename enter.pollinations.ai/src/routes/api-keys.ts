@@ -10,6 +10,22 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute } from "hono-openapi";
 
 /**
+ * Parse metadata that may be double-serialized by better-auth.
+ * Handles both: '{"key":"value"}' and '"{\\"key\\":\\"value\\"}"'
+ */
+function parseMetadata(metadata: string): Record<string, unknown> | null {
+    try {
+        let parsed = JSON.parse(metadata);
+        if (typeof parsed === "string") {
+            parsed = JSON.parse(parsed);
+        }
+        return parsed;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Schema for updating an API key.
  * Uses better-auth's server API which supports server-only fields like permissions.
  *
@@ -74,7 +90,7 @@ export const apiKeysRoutes = new Hono<Env>()
                     permissions: key.permissions
                         ? JSON.parse(key.permissions)
                         : null,
-                    metadata: key.metadata ? JSON.parse(key.metadata) : null,
+                    metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
                 })),
             });

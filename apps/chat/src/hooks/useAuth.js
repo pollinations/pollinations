@@ -70,7 +70,7 @@ export function useAuth() {
 
         const loadBalance = async () => {
             setIsLoadingBalance(true);
-            const balance = await fetchPollenBalance();
+            const balance = await fetchPollenBalance(userApiKey);
             setPollenBalance(balance);
             setIsLoadingBalance(false);
         };

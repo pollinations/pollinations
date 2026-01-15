@@ -163,7 +163,7 @@ const Sidebar = memo(({
                     <div className="sidebar-auth-info">
                       <div className="sidebar-auth-label">
                         🌸 Your Pollen
-                        {pollenBalance !== null && !isLoadingBalance && (
+                        {pollenBalance !== null && !isLoadingBalance && typeof pollenBalance.totalBalance === 'number' && (
                           <span className="sidebar-auth-balance">
                             {pollenBalance.totalBalance.toFixed(2)}
                           </span>

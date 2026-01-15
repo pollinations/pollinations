@@ -702,19 +702,20 @@ export const generateVideo = async (prompt, options = {}) => {
 /**
  * Fetch the user's pollen balance
  * Only works with user API keys (sk_), not publishable keys
+ * @param {string} apiToken - The API token to use for fetching balance
  * @returns {Promise<{totalBalance: number, tierBalance: number, packBalance: number, cryptoBalance: number} | null>}
  */
-export const fetchPollenBalance = async () => {
+export const fetchPollenBalance = async (apiToken) => {
   try {
     // Only fetch balance if using a user key (secret key starting with sk_)
-    if (!currentApiToken || !currentApiToken.startsWith('sk_')) {
+    if (!apiToken || !apiToken.startsWith('sk_')) {
       return null;
     }
 
     const response = await fetch(BALANCE_ENDPOINT, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${currentApiToken}`
+        'Authorization': `Bearer ${apiToken}`
       }
     });
 

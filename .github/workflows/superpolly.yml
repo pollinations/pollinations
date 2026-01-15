@@ -375,19 +375,19 @@ jobs:
           module.exports = SuperPollyTransformer;
           TRANSFORMER
 
-          cat > $HOME/.claude-code-router/config.json << 'EOF'
+          cat > $HOME/.claude-code-router/config.json << EOF
           {
-            "LOG": false,
+            "LOG": true,
             "NON_INTERACTIVE_MODE": true,
             "API_TIMEOUT_MS": 600000,
             "transformers": [
-              {"path": "~/.claude-code-router/plugins/gemini-schema-fix.js", "options": {}},
-              {"path": "~/.claude-code-router/plugins/superpolly-transformer.js", "options": {}}
+              {"path": "$HOME/.claude-code-router/plugins/gemini-schema-fix.js", "options": {}},
+              {"path": "$HOME/.claude-code-router/plugins/superpolly-transformer.js", "options": {}}
             ],
             "Providers": [{
               "name": "pollinations",
               "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
-              "api_key": "${CLAUDE_CODE_TOKEN}",
+              "api_key": "\${CLAUDE_CODE_TOKEN}",
               "models": ["gemini-large", "perplexity-reasoning"],
               "transformer": {"use": ["gemini-schema-fix", "superpolly-transformer"]}
             }],
@@ -627,19 +627,19 @@ jobs:
           module.exports = SuperPollyTransformer;
           TRANSFORMER
 
-          cat > $HOME/.claude-code-router/config.json << 'EOF'
+          cat > $HOME/.claude-code-router/config.json << EOF
           {
-            "LOG": false,
+            "LOG": true,
             "NON_INTERACTIVE_MODE": true,
             "API_TIMEOUT_MS": 600000,
             "transformers": [
-              {"path": "~/.claude-code-router/plugins/gemini-schema-fix.js", "options": {}},
-              {"path": "~/.claude-code-router/plugins/superpolly-transformer.js", "options": {}}
+              {"path": "$HOME/.claude-code-router/plugins/gemini-schema-fix.js", "options": {}},
+              {"path": "$HOME/.claude-code-router/plugins/superpolly-transformer.js", "options": {}}
             ],
             "Providers": [{
               "name": "pollinations",
               "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
-              "api_key": "${CLAUDE_CODE_TOKEN}",
+              "api_key": "\${CLAUDE_CODE_TOKEN}",
               "models": ["gemini-large", "perplexity-reasoning"],
               "transformer": {"use": ["gemini-schema-fix", "superpolly-transformer"]}
             }],

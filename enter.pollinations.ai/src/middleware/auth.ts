@@ -164,7 +164,9 @@ export const auth = (options: AuthOptions) =>
             const model = c.var.model;
             if (!model) return; // No model middleware ran, skip check
 
-            // Check if resolved model is in the allowlist
+            // Allowlist stores canonical model IDs (e.g., "flux-pro-1.1")
+            // User may request via alias (e.g., "flux") which resolves to canonical ID
+            // Check if the resolved canonical ID is in the allowlist
             if (!apiKey.permissions.models.includes(model.resolved)) {
                 log.debug("Model access denied: {model} not in allowlist", {
                     model: model.requested,

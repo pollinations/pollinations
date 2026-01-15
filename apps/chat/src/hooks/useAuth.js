@@ -1,8 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-
-const STORAGE_KEY = "pollinations_api_key";
-const ENTER_URL = "https://enter.pollinations.ai";
-const DEFAULT_API_KEY = "plln_pk_EiFtGHYIeDMxNeZBqKaRFBEJQRardmel";
+import { STORAGE_KEY, ENTER_URL, DEFAULT_API_KEY } from "../config/auth";
 
 /**
  * Hook for managing BYOP (Bring Your Own Pollen) authentication
@@ -23,18 +20,27 @@ export function useAuth() {
         const hash = window.location.hash.substring(1);
         if (!hash) return;
 
-        const hashParams = new URLSearchParams(hash);
-        const key = hashParams.get("api_key");
+        try {
+            const hashParams = new URLSearchParams(hash);
+            const key = hashParams.get("api_key");
 
-        if (key) {
-            localStorage.setItem(STORAGE_KEY, key);
-            setUserApiKey(key);
-            // Clean URL - remove fragment
-            window.history.replaceState(
-                {},
-                "",
-                window.location.pathname + window.location.search,
-            );
+            if (key) {
+                // Validate key format before storing
+                if (/^(sk_|plln_pk_|pk_)/.test(key)) {
+                    localStorage.setItem(STORAGE_KEY, key);
+                    setUserApiKey(key);
+                    // Clean URL - remove fragment
+                    window.history.replaceState(
+                        {},
+                        "",
+                        window.location.pathname + window.location.search,
+                    );
+                } else {
+                    console.error('Invalid API key format in URL fragment');
+                }
+            }
+        } catch (error) {
+            console.error('Error parsing URL fragment for API key:', error);
         }
     }, []);
 

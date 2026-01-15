@@ -130,8 +130,8 @@ const LimitsBadge: FC<{
             pollenBudget <= 0
                 ? "empty"
                 : pollenBudget < 1
-                  ? `${pollenBudget.toFixed(2)}🌸`
-                  : `${Math.floor(pollenBudget)}🌸`;
+                  ? `${pollenBudget.toFixed(2)}p`
+                  : `${Math.floor(pollenBudget)}p`;
     }
 
     return (
@@ -185,19 +185,37 @@ const ModelsBadge: FC<{
             >
                 {isAllModels ? "All" : modelCount}
             </span>
-            <span
-                className={`${showTooltip ? "visible" : "invisible"} absolute right-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 z-50 pointer-events-none whitespace-normal`}
-            >
-                {isAllModels ? (
-                    "Access to all models"
-                ) : modelCount === 0 ? (
-                    "No models allowed"
-                ) : (
-                    <span className="font-mono text-[10px] leading-relaxed">
-                        {models?.join(", ")}
-                    </span>
-                )}
-            </span>
+            {showTooltip && (
+                <div
+                    className="fixed z-[9999] px-2 py-1.5 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 pointer-events-none"
+                    style={{
+                        top: "var(--tooltip-top)",
+                        left: "var(--tooltip-left)",
+                    }}
+                    ref={(el) => {
+                        if (el) {
+                            const btn = el.parentElement;
+                            if (btn) {
+                                const rect = btn.getBoundingClientRect();
+                                el.style.setProperty("--tooltip-top", `${rect.bottom + 4}px`);
+                                el.style.setProperty("--tooltip-left", `${rect.left}px`);
+                            }
+                        }
+                    }}
+                >
+                    {isAllModels ? (
+                        "Access to all models"
+                    ) : modelCount === 0 ? (
+                        "No models allowed"
+                    ) : (
+                        <div className="font-mono text-[11px] leading-relaxed text-left whitespace-nowrap">
+                            {models?.map((model) => (
+                                <div key={model}>{model}</div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
         </button>
     );
 };
@@ -502,10 +520,10 @@ const CreateKeyForm: FC<{
     };
 
     return (
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-6">
             <Field.Root>
-                <Field.Label className="block text-sm font-medium mb-2">
-                    Key Type (*)
+                <Field.Label className="block text-sm font-semibold mb-2">
+                    Type
                 </Field.Label>
                 <div className="space-y-2">
                     <label
@@ -606,10 +624,10 @@ const CreateKeyForm: FC<{
             </Field.Root>
 
             <Field.Root>
-                <Field.Label className="block text-sm font-medium mb-1">
-                    {createdKey ? "Your API Key" : "Name (*)"}
+                <Field.Label className="block text-sm font-semibold mb-2">
+                    {createdKey ? "Your API Key" : "Name"}
                 </Field.Label>
-                <Field.Input
+                    <Field.Input
                     type="text"
                     value={createdKey ? createdKey.key : formData.name}
                     onChange={(e) => onInputChange("name", e.target.value)}
@@ -795,9 +813,11 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
                 <Dialog.Content
-                    className={
-                        "bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto"
-                    }
+                    className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto"
+                    style={{
+                        scrollbarWidth: "thin",
+                        scrollbarColor: "rgba(156, 163, 175, 0.5) transparent",
+                    }}
                 >
                     <Dialog.Title className="text-lg font-semibold mb-6">
                         Create New API Key

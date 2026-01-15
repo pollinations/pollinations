@@ -1,4 +1,4 @@
-import type { FC } from "react";
+import { type FC, useState } from "react";
 import { Field } from "@ark-ui/react";
 
 type ExpiryDaysInputProps = {
@@ -19,11 +19,34 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
     disabled = false,
     compact = false,
 }) => {
+    const [showTooltip, setShowTooltip] = useState(false);
+
     return (
         <Field.Root>
             {!compact && (
-                <Field.Label className="block text-sm font-medium mb-2">
+                <Field.Label className="flex items-center gap-1.5 text-sm font-semibold mb-2">
                     Expiry
+                    <button
+                        type="button"
+                        className="relative inline-flex items-center"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setShowTooltip((prev) => !prev);
+                        }}
+                        onMouseEnter={() => setShowTooltip(true)}
+                        onMouseLeave={() => setShowTooltip(false)}
+                        aria-label="Expiry information"
+                    >
+                        <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold cursor-pointer">
+                            i
+                        </span>
+                        <span
+                            className={`${showTooltip ? "visible" : "invisible"} absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs font-normal rounded-lg shadow-lg border border-pink-200 w-max max-w-[200px] sm:max-w-none z-50 pointer-events-none`}
+                        >
+                            Key expires after this many days. Leave empty for no expiry.
+                        </span>
+                    </button>
                 </Field.Label>
             )}
             <div className="flex items-center gap-2">
@@ -38,7 +61,7 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                         const val = e.target.value;
                         onChange(val === "" ? null : Number(val));
                     }}
-                    className={`flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                         compact ? "text-sm" : ""
                     }`}
                     placeholder="Never"
@@ -46,11 +69,6 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                 />
                 <span className="text-sm text-gray-500">days</span>
             </div>
-            {!compact && (
-                <p className="text-xs text-gray-500 mt-1">
-                    Key expires after this many days. Leave empty for no expiry.
-                </p>
-            )}
         </Field.Root>
     );
 };

@@ -89,15 +89,42 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
     const selectedCount = isUnrestricted ? totalModels : (value ?? []).length;
 
     return (
-        <div
-            className={cn(
-                "rounded-lg border border-gray-200 transition-all p-3 space-y-3",
-                !disabled && "hover:border-gray-300",
-                disabled && "opacity-50",
-                compact && "text-sm",
+        <div>
+            {!compact && (
+                <span className="flex items-center gap-1.5 text-sm font-semibold mb-2">
+                    Models
+                    <button
+                        type="button"
+                        className="relative inline-flex items-center"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setShowTooltip((prev) => !prev);
+                        }}
+                        onMouseEnter={() => setShowTooltip(true)}
+                        onMouseLeave={() => setShowTooltip(false)}
+                        aria-label="Show model access information"
+                    >
+                        <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold cursor-pointer">
+                            i
+                        </span>
+                        <span
+                            className={`${showTooltip ? "visible" : "invisible"} absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs font-normal rounded-lg shadow-lg border border-pink-200 w-max max-w-[200px] sm:max-w-none z-50 pointer-events-none`}
+                        >
+                            Limit this key to specific models
+                        </span>
+                    </button>
+                </span>
             )}
-        >
-            {/* Toggle between all/specific models */}
+            <div
+                className={cn(
+                    "rounded-lg border border-gray-200 transition-all p-3 space-y-3",
+                    !disabled && "hover:border-gray-300",
+                    disabled && "opacity-50",
+                    compact && "text-sm",
+                )}
+            >
+                {/* Toggle between all/specific models */}
             <label
                 className={cn(
                     "flex items-center gap-2 cursor-pointer",
@@ -114,33 +141,6 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                     className="w-4 h-4 rounded text-green-600"
                 />
                 <span className="text-sm font-medium">Allow all models</span>
-                <button
-                    type="button"
-                    className="relative inline-flex items-center"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setShowTooltip((prev) => !prev);
-                    }}
-                    onMouseEnter={() => setShowTooltip(true)}
-                    onMouseLeave={() => setShowTooltip(false)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            setShowTooltip((prev) => !prev);
-                        }
-                    }}
-                    aria-label="Show model access information"
-                >
-                    <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold cursor-pointer">
-                        i
-                    </span>
-                    <span
-                        className={`${showTooltip ? "visible" : "invisible"} absolute left-1/2 -translate-x-1/2 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none`}
-                    >
-                        Limit this key to specific models
-                    </span>
-                </button>
                 <span
                     className={cn(
                         "text-xs px-2 py-0.5 rounded-full ml-auto border",
@@ -216,6 +216,7 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                     </div>
                 </div>
             )}
+            </div>
         </div>
     );
 };

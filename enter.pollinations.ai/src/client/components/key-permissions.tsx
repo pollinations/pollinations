@@ -118,7 +118,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     compact = false,
 }) => {
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             <ModelPermissions
                 value={allowedModels}
                 onChange={onAllowedModelsChange}

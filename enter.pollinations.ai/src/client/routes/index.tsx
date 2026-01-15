@@ -1,21 +1,20 @@
-import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { productSlugToUrlParam } from "../../routes/polar.ts";
+import { apiClient } from "../api.ts";
+import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
     ApiKeyList,
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/api-key.tsx";
 import { Button } from "../components/button.tsx";
-import { config } from "../config.ts";
-import { User } from "../components/user.tsx";
-import { PollenBalance } from "../components/pollen-balance.tsx";
-import { TierPanel } from "../components/tier-panel.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
+import { PollenBalance } from "../components/pollen-balance.tsx";
 import { Pricing } from "../components/pricing/index.ts";
-import { apiClient } from "../api.ts";
-import { authClient, getUserOrRedirect } from "../auth.ts";
+import { TierPanel } from "../components/tier-panel.tsx";
+import { User } from "../components/user.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -58,7 +57,6 @@ function RouteComponent() {
     const router = useRouter();
     const {
         user,
-        customer,
         apiKeys,
         tierData,
         tierBalance,

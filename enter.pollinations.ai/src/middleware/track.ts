@@ -1,65 +1,64 @@
-import { sendToTinybird } from "@/events.ts";
+import { getLogger } from "@logtape/logtape";
 import {
-    getActivePriceDefinition,
     calculateCost,
     calculatePrice,
-    ServiceId,
-    ModelId,
-    UsageCost,
-    UsagePrice,
-    PriceDefinition,
+    getActivePriceDefinition,
     getServiceDefinition,
+    type ModelId,
+    type PriceDefinition,
+    type ServiceId,
+    type UsageCost,
+    type UsagePrice,
 } from "@shared/registry/registry.ts";
-import type { ModelVariables } from "./model.ts";
 import {
     openaiUsageToTokenUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
-import { routePath } from "hono/route";
-import { HTTPException } from "hono/http-exception";
-import {
-    CompletionUsage,
-    CompletionUsageSchema,
-    ContentFilterResult,
-    ContentFilterResultSchema,
-    ContentFilterSeveritySchema,
-} from "@/schemas/openai.ts";
-import { generateRandomId } from "@/util.ts";
-import { createMiddleware } from "hono/factory";
-import {
-    contentFilterResultsToEventParams,
-    priceToEventParams,
-    usageToEventParams,
-} from "@/db/schema/event.ts";
-import { drizzle } from "drizzle-orm/d1";
 import { eq, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
+import { EventSourceParserStream } from "eventsource-parser/stream";
+import type { HonoRequest } from "hono";
+import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
+import { routePath } from "hono/route";
+import { z } from "zod";
+import { mergeContentFilterResults } from "@/content-filter.ts";
 import {
-    user as userTable,
     apikey as apikeyTable,
+    user as userTable,
 } from "@/db/schema/better-auth.ts";
-import { HonoRequest } from "hono";
 import type {
     ApiKeyType,
     EventType,
     GenerationEventContentFilterParams,
     InsertGenerationEvent,
 } from "@/db/schema/event.ts";
-import type { AuthVariables } from "@/middleware/auth.ts";
-import { PolarVariables } from "./polar.ts";
-import { z } from "zod";
-import { TokenUsage } from "../../../shared/registry/registry.js";
-import { removeUnset } from "@/util.ts";
-import { EventSourceParserStream } from "eventsource-parser/stream";
-import { mergeContentFilterResults } from "@/content-filter.ts";
+import {
+    contentFilterResultsToEventParams,
+    priceToEventParams,
+    usageToEventParams,
+} from "@/db/schema/event.ts";
+import type { ErrorVariables } from "@/env.ts";
 import {
     getDefaultErrorMessage,
     getErrorCode,
     UpstreamError,
 } from "@/error.ts";
+import { sendToTinybird } from "@/events.ts";
+import type { AuthVariables } from "@/middleware/auth.ts";
+import {
+    type CompletionUsage,
+    CompletionUsageSchema,
+    type ContentFilterResult,
+    ContentFilterResultSchema,
+    ContentFilterSeveritySchema,
+} from "@/schemas/openai.ts";
+import { generateRandomId, removeUnset } from "@/util.ts";
+import type { TokenUsage } from "../../../shared/registry/registry.js";
 import type { LoggerVariables } from "./logger.ts";
-import type { ErrorVariables } from "@/env.ts";
+import type { ModelVariables } from "./model.ts";
+import type { PolarVariables } from "./polar.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
-import { getLogger } from "@logtape/logtape";
 
 export type ModelUsage = {
     model: ModelId;
@@ -608,8 +607,8 @@ async function extractUsageAndContentFilterResultsStream(
             .nullish(),
     });
 
-    let model = undefined;
-    let usage: CompletionUsage | undefined = undefined;
+    let model: string | undefined;
+    let usage: CompletionUsage | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
 

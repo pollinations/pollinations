@@ -1,34 +1,21 @@
 import { useState, useEffect } from 'react';
 
 const useTopContributors = () => {
-  const [contributors, setContributors] = useState([]);
+  const [contributors, setContributors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchContributors = async () => {
       try {
-        const response = await fetch(
-          'https://api.github.com/repos/pollinations/pollinations/contributors?per_page=10&sort=contributions',
-          {
-            headers: {
-              'Accept': 'application/vnd.github.v3+json',
-              'Authorization': `token ${import.meta.env.VITE_GSOC_APP_GITHUB_TOKEN}`
-            }
-          }
-        );
+        const response = await fetch('/api/github/contributors');
 
         if (!response.ok) {
-          throw new Error(`GitHub API error: ${response.status}`);
+          throw new Error(`API error: ${response.status}`);
         }
 
         const data = await response.json();
-        
-        const filteredContributors = data.filter((contributor: { login: string }) => 
-          !contributor.login.includes("[bot]") && !contributor.login.includes("dependabot")
-        );
-        
-        setContributors(filteredContributors.slice(0, 10));
+        setContributors(Array.isArray(data) ? data.slice(0, 10) : []);
         setError(null);
       } catch (err) {
         console.error('Error fetching contributors:', err);

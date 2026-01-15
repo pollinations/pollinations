@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://gen.pollinations.ai/v1/chat/completions';
+const API_BASE_URL = '/api/socbot';
 
 export class socBotAPI {
   conversationHistory: { role: string; content: string; }[];
@@ -44,33 +44,23 @@ Always end responses with a helpful suggestion or question to keep the conversat
 
   async sendMessage(userMessage: string) {
     try {
-      const apiKey = (import.meta.env as any).VITE_SOCBOT_POLLINATIONS_API_KEY;
-      if (!apiKey) {
-        throw new Error('API sanitation error! Key issue, contact dev ayushman@myceli.ai');
-      }
-
       this.conversationHistory.push({
         role: 'user',
         content: userMessage
       });
 
       const requestBody = {
-        model: 'gemini-fast',
         messages: [
           {
             role: 'system',
             content: this.systemPrompt
           },
           ...this.conversationHistory
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-        stream: false
+        ]
       };
 
       const response = await axios.post(API_BASE_URL, requestBody, {
         headers: {
-          'Authorization' : `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         }
       });

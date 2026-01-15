@@ -52,7 +52,7 @@ export const UsageGraph: FC = () => {
     return (
         <div ref={containerRef} className="flex flex-col gap-2">
             <div className="flex flex-col sm:flex-row justify-between gap-3">
-                <h2 className="font-bold flex-1">Usage Analytics</h2>
+                <h2 className="font-bold flex-1">Usage</h2>
             </div>
             <div className="bg-violet-50/30 rounded-2xl p-6 border border-violet-300">
                 {loading && (

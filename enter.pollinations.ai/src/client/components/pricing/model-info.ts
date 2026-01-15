@@ -2,8 +2,11 @@
  * Model metadata and information utilities
  */
 
+import {
+    getServiceDefinition,
+    type ServiceId,
+} from "@shared/registry/registry.ts";
 import type { Modalities } from "./types.ts";
-import { getServiceDefinition, ServiceId } from "@shared/registry/registry.ts";
 
 export const getModalities = (modelName: string): Modalities => {
     const service = getServiceDefinition(modelName as ServiceId);

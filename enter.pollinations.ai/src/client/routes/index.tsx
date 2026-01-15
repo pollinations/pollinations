@@ -272,7 +272,6 @@ function RouteComponent() {
                         cryptoBalance={cryptoBalance}
                     />
                 </div>
-                <UsageGraph />
                 {tierData && (
                     <div className="flex flex-col gap-2">
                         <div className="flex flex-col sm:flex-row justify-between gap-3">
@@ -286,6 +285,7 @@ function RouteComponent() {
                     onCreate={handleCreateApiKey}
                     onDelete={handleDeleteApiKey}
                 />
+                <UsageGraph />
                 <FAQ />
                 <Pricing />
                 <div className="bg-violet-50/20 border border-violet-200/50 rounded-xl px-6 py-4 mt-4 w-fit mx-auto">

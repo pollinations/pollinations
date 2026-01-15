@@ -10,7 +10,7 @@ type MultiSelectProps = {
     disabled?: boolean;
     disabledText?: string;
     align?: "start" | "end";
-    itemLabel?: string;
+    label?: string;
 };
 
 export const MultiSelect: FC<MultiSelectProps> = ({
@@ -21,7 +21,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     disabled,
     disabledText,
     align = "start",
-    itemLabel = "items",
+    label,
 }) => {
     const [open, setOpen] = useState(false);
     const [openDirection, setOpenDirection] = useState<"up" | "down">("up");
@@ -72,13 +72,16 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     const displayText = disabled
         ? disabledText
         : isAllSelected
-          ? placeholder
-          : selected.length === 1
-            ? options.find((o) => o.value === selected[0])?.label || selected[0]
-            : `${selected.length} ${itemLabel}`;
+          ? "All"
+          : `${selected.length} selected`;
 
     return (
-        <div ref={ref} className="relative group">
+        <div ref={ref} className="relative group flex items-center gap-2">
+            {label && (
+                <span className="text-xs font-medium text-gray-500">
+                    {label}
+                </span>
+            )}
             <button
                 type="button"
                 onClick={handleToggle}

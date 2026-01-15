@@ -86,6 +86,9 @@ export const UsageGraph: FC = () => {
                         {/* Filters Row 1: Time Range + Metric */}
                         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                             <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-xs font-medium text-gray-500 mr-1">
+                                    Last
+                                </span>
                                 {(["7d", "30d", "all"] as TimeRange[]).map(
                                     (t) => (
                                         <FilterButton
@@ -148,6 +151,9 @@ export const UsageGraph: FC = () => {
                                 )}
                             </div>
                             <div className="flex gap-1.5 items-center">
+                                <span className="text-xs font-medium text-gray-500 mr-1">
+                                    Type
+                                </span>
                                 {(
                                     ["requests", "pollen", "tokens"] as Metric[]
                                 ).map((m) => (
@@ -182,10 +188,10 @@ export const UsageGraph: FC = () => {
                                         selectedModels: v,
                                     }))
                                 }
-                                placeholder="All Models"
+                                placeholder="All"
                                 disabled={modelSelectOptions.length === 0}
-                                disabledText="0 models used"
-                                itemLabel="models"
+                                disabledText="None"
+                                label="Models"
                             />
                             <MultiSelect
                                 options={keySelectOptions}
@@ -196,11 +202,11 @@ export const UsageGraph: FC = () => {
                                         selectedKeys: v,
                                     }))
                                 }
-                                placeholder="All Keys"
+                                placeholder="All"
                                 disabled={usedKeys.length === 0}
-                                disabledText="No keys"
+                                disabledText="None"
                                 align="end"
-                                itemLabel="keys"
+                                label="API Keys"
                             />
                         </div>
 

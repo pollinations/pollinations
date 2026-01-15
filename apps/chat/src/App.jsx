@@ -30,7 +30,7 @@ function App() {
   } = useChat();
 
   // BYOP Authentication
-  const { apiKey, isLoggedIn, login, logout } = useAuth();
+  const { apiKey, isLoggedIn, pollenBalance, isLoadingBalance, login, logout } = useAuth();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState('openai');
@@ -582,6 +582,8 @@ function App() {
         onOpenSettings={() => setIsSettingsPanelOpen(true)}
         isLoggedIn={isLoggedIn}
         apiKey={apiKey}
+        pollenBalance={pollenBalance}
+        isLoadingBalance={isLoadingBalance}
         onLogin={login}
         onLogout={logout}
       />

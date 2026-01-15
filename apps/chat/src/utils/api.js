@@ -4,6 +4,7 @@ import { DEFAULT_API_KEY, isValidApiKey } from '../config/auth';
 const BASE_IMAGE_URL = 'https://gen.pollinations.ai/image';
 const TEXT_MODELS_ENDPOINT = 'https://gen.pollinations.ai/v1/models';
 const IMAGE_MODELS_ENDPOINT = 'https://gen.pollinations.ai/image/models';
+const BALANCE_ENDPOINT = 'https://enter.pollinations.ai/customer/d1-balance';
 const FALLBACK_API_TOKEN = import.meta.env.VITE_POLLINATIONS_API_KEY || DEFAULT_API_KEY;
 
 // Current API token - can be updated by setApiToken
@@ -695,5 +696,46 @@ export const generateVideo = async (prompt, options = {}) => {
   } catch (error) {
     console.error('❌ Video generation error:', error);
     throw error;
+  }
+};
+
+/**
+ * Fetch the user's pollen balance
+ * Only works with user API keys (sk_), not publishable keys
+ * @param {string} apiToken - The API token to use for fetching balance
+ * @returns {Promise<{totalBalance: number, tierBalance: number, packBalance: number, cryptoBalance: number} | null>}
+ */
+export const fetchPollenBalance = async (apiToken) => {
+  try {
+    // Only fetch balance if using a user key (secret key starting with sk_)
+    if (!apiToken || !apiToken.startsWith('sk_')) {
+      return null;
+    }
+
+    const response = await fetch(BALANCE_ENDPOINT, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiToken}`
+      }
+    });
+
+    if (!response.ok) {
+      console.warn('Failed to fetch pollen balance:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    const { tierBalance = 0, packBalance = 0, cryptoBalance = 0 } = data;
+    const totalBalance = tierBalance + packBalance + cryptoBalance;
+
+    return {
+      totalBalance,
+      tierBalance,
+      packBalance,
+      cryptoBalance
+    };
+  } catch (error) {
+    console.error('Error fetching pollen balance:', error);
+    return null;
   }
 };

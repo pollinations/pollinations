@@ -13,7 +13,7 @@ const useTopContributors = () => {
           {
             headers: {
               'Accept': 'application/vnd.github.v3+json',
-              'Authorization': `token ${import.meta.env.VITE_REACT_APP_GITHUB_TOKEN}`
+              'Authorization': `token ${import.meta.env.VITE_GSOC_APP_GITHUB_TOKEN}`
             }
           }
         );

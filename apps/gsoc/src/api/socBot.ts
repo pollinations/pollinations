@@ -44,7 +44,7 @@ Always end responses with a helpful suggestion or question to keep the conversat
 
   async sendMessage(userMessage: string) {
     try {
-      const apiKey = (import.meta.env as any).VITE_POLLINATIONS_API_KEY;
+      const apiKey = (import.meta.env as any).VITE_SOCBOT_POLLINATIONS_API_KEY;
       if (!apiKey) {
         throw new Error('API sanitation error! Key issue, contact dev ayushman@myceli.ai');
       }

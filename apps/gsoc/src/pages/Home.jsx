@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import {
-  Box, Typography, Button, Grid, Card, CardContent, Stack, Chip, Divider, Avatar, Tooltip, IconButton
+  Box, Typography, Button, Grid, Card, CardContent, Stack, Chip, Divider, Avatar, Tooltip, IconButton, Badge
 } from '@mui/material';
 import { Link } from 'react-router-dom';
 import {
@@ -11,6 +11,7 @@ import { motion } from 'framer-motion';
 import useEasterEgg from '../hooks/useEasterEgg';
 import EasterEggModal from '../components/EasterEggModal';
 import CountdownButton from '../components/CountdownButton';
+import useTopContributors from '../api/githubContri';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -31,6 +32,7 @@ const HomePage = () => {
   }, []);
 
   const { clickCount, showEasterEgg, showHint, handleLogoClick, closeEasterEgg } = useEasterEgg();
+  const { contributors, loading, error } = useTopContributors();
 
   const stats = [
     { number: "3.7K", label: "GitHub Stars", icon: <Star /> },
@@ -712,59 +714,111 @@ const HomePage = () => {
                 color: '#fff' 
               }}
             >
-              Brief Sitemap For You - Navigate Easily
+              Thanks to the Community Building Pollinations
             </Typography>
             
-            <Grid container spacing={4} justifyContent="center">
-              {[
-                { title: 'View Projects', desc: 'Explore the ideas we have penned', path: '/projects', icon: <Code /> },
-                { title: 'Program Timeline', desc: 'Check important dates and deadlines', path: '/timeline', icon: <TimelineIcon /> },
-                { title: 'Meet Mentors', desc: 'Developers from pollinations.ai', path: '/mentors', icon: <School /> }
-              ].map((item, index) => (
-                <Grid item xs={12} sm={4} key={index}>
+            {loading ? (
+              <Box sx={{ textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}>
+                Loading contributors...
+              </Box>
+            ) : error ? (
+              <Box sx={{ textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}>
+                Unable to load contributors
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                {contributors.map((contributor, index) => (
                   <motion.div
+                    key={contributor.id}
                     variants={fadeInUp}
                     initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true }}
+                    animate="visible"
                     custom={index}
                   >
-                    <Card
-                      component={Link}
-                      to={item.path}
-                      elevation={0}
-                      sx={{
-                        background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-                        backdropFilter: 'blur(20px)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '16px',
-                        color: '#fff',
-                        textDecoration: 'none',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer',
-                        '&:hover': {
-                          transform: 'translateY(-8px)',
-                          borderColor: 'rgba(255,255,255,0.3)',
-                          boxShadow: '0 20px 40px -10px rgba(0,0,0,0.4)'
-                        }
-                      }}
-                    >
-                      <CardContent sx={{ p: 3, textAlign: 'center' }}>
-                        <Box sx={{ color: '#60a5fa', mb: 2, fontSize: '2rem' }}>
-                          {item.icon}
+                    <Tooltip 
+                      title={
+                        <Box sx={{ textAlign: 'center' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {contributor.login}
+                          </Typography>
+                          <Typography variant="caption">
+                            {contributor.contributions} contributions
+                          </Typography>
                         </Box>
-                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                          {item.title}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                          {item.desc}
-                        </Typography>
-                      </CardContent>
-                    </Card>
+                      }
+                      arrow
+                      placement="top"
+                    >
+                      <Box
+                        component="a"
+                        href={contributor.html_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          position: 'relative',
+                          marginLeft: index > 0 ? '-12px' : 0,
+                          zIndex: contributors.length - index,
+                          transition: 'all 0.3s ease',
+                          cursor: 'pointer',
+                          '&:hover': {
+                            transform: 'scale(1.15) translateY(-8px)',
+                            zIndex: 100,
+                            filter: 'drop-shadow(0 8px 16px rgba(96, 165, 250, 0.4))'
+                          }
+                        }}
+                      >
+                        {index === contributors.length - 1 ? (
+                          <Badge
+                            badgeContent="+250"
+                            sx={{
+                              '& .MuiBadge-badge': {
+                                backgroundColor: '#60a5fa',
+                                color: '#fff',
+                                fontWeight: 700,
+                                fontSize: '0.75rem',
+                                padding: '4px 6px',
+                                borderRadius: '6px',
+                                border: '2px solid #09090b'
+                              }
+                            }}
+                          >
+                            <Avatar
+                              src={contributor.avatar_url}
+                              alt={contributor.login}
+                              sx={{
+                                width: 60,
+                                height: 60,
+                                border: '3px solid #09090b',
+                                backgroundColor: '#1a1a2e',
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                                transition: 'all 0.3s ease'
+                              }}
+                            />
+                          </Badge>
+                        ) : (
+                          <Avatar
+                            src={contributor.avatar_url}
+                            alt={contributor.login}
+                            sx={{
+                              width: 60,
+                              height: 60,
+                              border: '3px solid #09090b',
+                              backgroundColor: '#1a1a2e',
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                              transition: 'all 0.3s ease'
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </Tooltip>
                   </motion.div>
-                </Grid>
-              ))}
-            </Grid>
+                ))}
+              </Box>
+            )}
+          
           </Box>
         </Box>
       </Box>

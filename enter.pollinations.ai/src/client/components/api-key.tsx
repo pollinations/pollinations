@@ -800,6 +800,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             description: "",
             keyType: "secret",
             allowedModels: null,
+            pollenBudget: null,
+            expiryDays: null,
             accountPermissions: null,
         });
     }, []);

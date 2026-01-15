@@ -1,8 +1,13 @@
 // API utilities for Pollinations chat - Enhanced version from vanilla
+import { DEFAULT_API_KEY, isValidApiKey } from '../config/auth';
+
 const BASE_IMAGE_URL = 'https://gen.pollinations.ai/image';
 const TEXT_MODELS_ENDPOINT = 'https://gen.pollinations.ai/v1/models';
 const IMAGE_MODELS_ENDPOINT = 'https://gen.pollinations.ai/image/models';
-const API_TOKEN = import.meta.env.VITE_POLLINATIONS_API_KEY || 'plln_pk_EiFtGHYIeDMxNeZBqKaRFBEJQRardmel';
+const FALLBACK_API_TOKEN = import.meta.env.VITE_POLLINATIONS_API_KEY || DEFAULT_API_KEY;
+
+// Current API token - can be updated by setApiToken
+let currentApiToken = FALLBACK_API_TOKEN;
 
 let textModels = [];
 let imageModels = [];
@@ -13,6 +18,27 @@ let abortController = null;
 let modelsCache = null;
 let modelsCacheTime = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Set the API token to be used for all API calls
+ * @param {string} token - The API token to use
+ */
+export const setApiToken = (token) => {
+  // Validate token format - must be sk_ (secret key) or plln_pk_ (publishable key) or pk_ (legacy publishable key)
+  if (token && !isValidApiKey(token)) {
+    console.warn('Invalid API token format. Expected token to start with sk_, plln_pk_, or pk_');
+  }
+  currentApiToken = token || DEFAULT_API_KEY;
+  // Clear models cache when token changes to reload with new permissions
+  modelsCache = null;
+  modelsCacheTime = null;
+};
+
+/**
+ * Get the current API token
+ * @returns {string} The current API token
+ */
+export const getApiToken = () => currentApiToken;
 
 // Format model names
 const formatModelName = (modelId) => {
@@ -42,12 +68,12 @@ export const loadModels = async () => {
     const [textResponse, imageResponse] = await Promise.allSettled([
       fetch(TEXT_MODELS_ENDPOINT, {
         headers: {
-          'Authorization': `Bearer ${API_TOKEN}`
+          'Authorization': `Bearer ${currentApiToken}`
         }
       }),
       fetch(IMAGE_MODELS_ENDPOINT, {
         headers: {
-          'Authorization': `Bearer ${API_TOKEN}`
+          'Authorization': `Bearer ${currentApiToken}`
         }
       })
     ]);
@@ -383,7 +409,7 @@ export const sendMessage = async (messages, onChunk, onComplete, onError, modelI
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_TOKEN}`
+        'Authorization': `Bearer ${currentApiToken}`
       },
       body: JSON.stringify(requestBody),
       signal: abortController.signal
@@ -576,7 +602,7 @@ export const generateImage = async (prompt, options = {}) => {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${API_TOKEN}`
+        'Authorization': `Bearer ${currentApiToken}`
       }
     });
 
@@ -639,7 +665,7 @@ export const generateVideo = async (prompt, options = {}) => {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${API_TOKEN}`
+        'Authorization': `Bearer ${currentApiToken}`
       }
     });
 

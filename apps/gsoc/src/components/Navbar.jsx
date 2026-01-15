@@ -232,7 +232,7 @@ const Navbar = () => {
               ))}
               
               <Box sx={{ ml: 1, position: 'relative' }}>
-                <Tooltip title="Ask SocBot - Your AI Assistant" placement="bottom">
+                <Tooltip title="Ask Me Anything" placement="bottom">
                   <IconButton
                     component={Link}
                     to="/bot"

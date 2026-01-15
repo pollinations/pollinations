@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Box, Stack, Typography } from '@mui/material';
+import { Button, Box, Stack, Typography, Tooltip } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { Timeline as TimelineIcon } from '@mui/icons-material';
 import timeline from '../info/timeline.json';
@@ -44,6 +44,7 @@ const CountdownButton = () => {
   }, []);
 
   return (
+    <Tooltip title="Until Coding Period Begins" placement="bottom">
     <Button
       component={Link}
       to='/timeline'
@@ -67,7 +68,8 @@ const CountdownButton = () => {
         }
       }}
     >
-
+        
+    
       <Stack 
         direction="row" 
         spacing={1} 
@@ -77,6 +79,7 @@ const CountdownButton = () => {
           justifyContent: 'center'
         }}
       >
+        <Tooltip title="Ask SocBot - Your AI Assistant" placement="bottom"></Tooltip>
         <Box>
           <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', fontSize: '1rem' }}>
             {timeRemaining.days}
@@ -101,7 +104,9 @@ const CountdownButton = () => {
           </Typography>
         </Box>
       </Stack>
+      
     </Button>
+    </Tooltip>
   );
 };
 

@@ -25,27 +25,47 @@ export const MultiSelect: FC<MultiSelectProps> = ({
 }) => {
     const [open, setOpen] = useState(false);
     const [openDirection, setOpenDirection] = useState<"up" | "down">("up");
+    const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
     const ref = useRef<HTMLDivElement>(null);
     const isAllSelected = selected.length === 0;
 
-    const calculateDirection = () => {
-        if (!ref.current) return "up";
+    const calculatePosition = () => {
+        if (!ref.current) return { direction: "up" as const, style: {} };
         const rect = ref.current.getBoundingClientRect();
-        const dropdownHeight = 280; // max-h-64 (256px) + some padding
+        const dropdownHeight = 280;
+        const dropdownWidth = 320;
         const spaceAbove = rect.top;
         const spaceBelow = window.innerHeight - rect.bottom;
+        const isMobile = window.innerWidth < 640; // sm breakpoint
 
-        // Prefer opening upward, but if not enough space, open downward
-        if (spaceAbove < dropdownHeight && spaceBelow > spaceAbove) {
-            return "down";
+        const direction: "up" | "down" =
+            spaceAbove < dropdownHeight && spaceBelow > spaceAbove
+                ? "down"
+                : "up";
+
+        // On mobile with align=end, center the dropdown on screen
+        let style: React.CSSProperties = {};
+        if (isMobile && align === "end") {
+            const centeredLeft = (window.innerWidth - dropdownWidth) / 2;
+            style = {
+                position: "fixed",
+                left: centeredLeft,
+                top:
+                    direction === "down"
+                        ? rect.bottom + 4
+                        : rect.top - dropdownHeight - 4,
+            };
         }
-        return "up";
+
+        return { direction, style };
     };
 
     const handleToggle = () => {
         if (disabled) return;
         if (!open) {
-            setOpenDirection(calculateDirection());
+            const { direction, style } = calculatePosition();
+            setOpenDirection(direction);
+            setDropdownStyle(style);
         }
         setOpen(!open);
     };
@@ -134,12 +154,16 @@ export const MultiSelect: FC<MultiSelectProps> = ({
             {open && !disabled && (
                 <div
                     className={cn(
-                        "absolute min-w-[320px] bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden",
-                        openDirection === "up"
-                            ? "bottom-full mb-1"
-                            : "top-full mt-1",
-                        align === "end" ? "right-0" : "left-0",
+                        "min-w-[320px] bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden",
+                        !dropdownStyle.position && "absolute",
+                        !dropdownStyle.position &&
+                            (openDirection === "up"
+                                ? "bottom-full mb-1"
+                                : "top-full mt-1"),
+                        !dropdownStyle.position &&
+                            (align === "end" ? "right-0" : "left-0"),
                     )}
+                    style={dropdownStyle}
                 >
                     <div className="max-h-64 overflow-y-auto overflow-x-hidden">
                         <button

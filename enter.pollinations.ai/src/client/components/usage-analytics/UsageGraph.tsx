@@ -220,8 +220,8 @@ export const UsageGraph: FC = () => {
                         </div>
 
                         {/* Stats Row */}
-                        <div className="flex items-center gap-4 p-3 bg-white/50 rounded-xl border border-violet-200">
-                            <div className="flex-1 grid grid-cols-3 gap-4">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 p-3 bg-white/50 rounded-xl border border-violet-200">
+                            <div className="flex-1 flex flex-col gap-1 sm:grid sm:grid-cols-3 sm:gap-4">
                                 <Stat
                                     label="Requests"
                                     value={stats.totalRequests.toLocaleString()}

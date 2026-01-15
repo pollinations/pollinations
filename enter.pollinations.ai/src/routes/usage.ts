@@ -12,6 +12,12 @@ const usageQuerySchema = z.object({
     before: z.string().optional(), // ISO timestamp cursor for pagination
 });
 
+// Daily usage query params
+const usageDailyQuerySchema = z.object({
+    since: z.string().optional(), // ISO date (e.g., 2024-01-01)
+    until: z.string().optional(), // ISO date
+});
+
 export const usageRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
     .get(
@@ -157,6 +163,100 @@ export const usageRoutes = new Hono<Env>()
                 });
             } catch (error) {
                 log.error("Error fetching usage: {error}", { error });
+                return c.json({ error: "Failed to fetch usage data" }, 500);
+            }
+        },
+    );
+
+// Daily aggregated usage endpoint
+export const usageDailyRoutes = new Hono<Env>()
+    .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    .get(
+        "/",
+        describeRoute({
+            tags: ["Auth"],
+            description: "Get daily aggregated usage data",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("query", usageDailyQuerySchema),
+        async (c) => {
+            const log = c.get("log").getChild("usage-daily");
+
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view usage history",
+            });
+
+            const user = c.var.auth.requireUser();
+
+            // In development, use pollen-router's user_id for testing
+            const DEV_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh";
+            const userId =
+                c.env.ENVIRONMENT === "development" ? DEV_USER_ID : user.id;
+
+            // Default to 90 days of data
+            const now = new Date();
+            const defaultSince = new Date(
+                now.getTime() - 90 * 24 * 60 * 60 * 1000,
+            );
+            const sinceDate =
+                defaultSince.toISOString().split("T")[0] + " 00:00:00"; // YYYY-MM-DD HH:MM:SS format
+
+            log.debug("Fetching daily usage: userId={userId} since={since}", {
+                userId,
+                since: sinceDate,
+            });
+
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const tinybirdUrl = new URL(
+                "/v0/pipes/user_usage_daily.json",
+                tinybirdOrigin,
+            );
+            tinybirdUrl.searchParams.set("user_id", userId);
+            tinybirdUrl.searchParams.set("since", sinceDate);
+
+            try {
+                const response = await fetch(tinybirdUrl.toString(), {
+                    headers: {
+                        Authorization: `Bearer ${c.env.TINYBIRD_READ_TOKEN}`,
+                    },
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log.error("Tinybird error: {status} {error}", {
+                        status: response.status,
+                        error: errorText,
+                    });
+                    return c.json(
+                        { error: "Failed to fetch usage data" },
+                        response.status >= 500 ? 503 : 500,
+                    );
+                }
+
+                const data = (await response.json()) as {
+                    data: Array<{
+                        date: string;
+                        event_type: string;
+                        model: string | null;
+                        meter_source: string | null;
+                        requests: number;
+                        cost_usd: number;
+                        input_tokens: number;
+                        output_tokens: number;
+                        api_key_names: string[];
+                    }>;
+                };
+
+                log.debug("Fetched {count} daily records", {
+                    count: data.data.length,
+                });
+
+                return c.json({
+                    usage: data.data,
+                    count: data.data.length,
+                });
+            } catch (error) {
+                log.error("Error fetching daily usage: {error}", { error });
                 return c.json({ error: "Failed to fetch usage data" }, 500);
             }
         },

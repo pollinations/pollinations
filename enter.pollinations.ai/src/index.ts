@@ -7,7 +7,7 @@ import { processEvents } from "./events.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
-import { usageRoutes } from "./routes/usage.ts";
+import { usageRoutes, usageDailyRoutes } from "./routes/usage.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { webhooksRoutes } from "./routes/webhooks.ts";
@@ -29,6 +29,7 @@ export const api = new Hono<Env>()
     .route("/tiers", tiersRoutes)
     .route("/api-keys", apiKeysRoutes)
     .route("/usage", usageRoutes)
+    .route("/usage/daily", usageDailyRoutes)
     .route("/webhooks", webhooksRoutes)
     .route("/admin", adminRoutes)
     .route("/model-stats", modelStatsRoutes)

@@ -27,20 +27,30 @@ type UsageRecord = {
     response_time_ms: number | null;
 };
 
-type TimeRange = "24h" | "7d" | "30d" | "all" | "custom";
-type Metric = "requests" | "cost" | "tokens";
-type Modality = "all" | "text" | "image" | "audio" | "video";
+type DailyUsageRecord = {
+    date: string;
+    event_type: string;
+    model: string | null;
+    meter_source: string | null;
+    requests: number;
+    cost_usd: number;
+    input_tokens: number;
+    output_tokens: number;
+    api_key_names: string[];
+};
+
+type TimeRange = "7d" | "30d" | "all" | "custom";
+type Metric = "requests" | "pollen" | "tokens";
 
 type FilterState = {
     timeRange: TimeRange;
     customDays: number;
     metric: Metric;
-    modality: Modality;
     apiKey: string | null;
     selectedModels: string[]; // Changed to array for multi-select
 };
 
-type ModelBreakdown = { model: string; label: string; requests: number; cost: number; tokens: number };
+type ModelBreakdown = { model: string; label: string; requests: number; pollen: number; tokens: number };
 type DataPoint = { label: string; value: number; timestamp: Date; fullDate: string; modelBreakdown?: ModelBreakdown[] };
 type SelectOption = { value: string | null; label: string };
 type ApiKeyInfo = { id: string; name?: string | null; start?: string | null };
@@ -70,6 +80,7 @@ type FilterButtonProps = {
 
 const FilterButton: FC<FilterButtonProps> = ({ active, onClick, children, ariaLabel }) => (
     <button
+        type="button"
         onClick={onClick}
         aria-label={ariaLabel}
         aria-pressed={active}
@@ -89,9 +100,11 @@ type SelectProps = {
     value: string | null;
     onChange: (v: string | null) => void;
     placeholder: string;
+    disabled?: boolean;
+    disabledText?: string;
 };
 
-const Select: FC<SelectProps> = ({ options, value, onChange, placeholder }) => {
+const Select: FC<SelectProps> = ({ options, value, onChange, placeholder, disabled, disabledText }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
     const selected = options.find((o) => o.value === value);
@@ -107,38 +120,42 @@ const Select: FC<SelectProps> = ({ options, value, onChange, placeholder }) => {
     return (
         <div ref={ref} className="relative">
             <button
-                onClick={() => setOpen(!open)}
+                type="button"
+                onClick={() => !disabled && setOpen(!open)}
+                disabled={disabled}
                 className={cn(
-                    "flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg",
-                    "border transition-all duration-150 min-w-[130px]",
-                    open
-                        ? "bg-violet-50 border-violet-400"
-                        : "bg-white border-gray-200 hover:border-violet-300"
+                    "flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full",
+                    "border transition-all duration-200 min-w-[140px]",
+                    disabled
+                        ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-60"
+                        : open
+                            ? "bg-green-950 border-green-950"
+                            : "bg-gray-100 border-gray-100 hover:bg-gray-200"
                 )}
             >
-                <span className={cn("truncate flex-1 text-left", selected?.value ? "text-green-950" : "text-gray-400")}>
-                    {selected?.label || placeholder}
+                <span className={cn("truncate flex-1 text-left", disabled ? "text-gray-400" : open ? "text-green-100" : selected?.value ? "text-gray-600" : "text-gray-600")}>
+                    {disabled ? disabledText : (selected?.label || placeholder)}
                 </span>
-                <svg className={cn("w-3 h-3 text-gray-400 transition-transform", open && "rotate-180")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={cn("w-3 h-3 transition-transform", open ? "text-green-100 rotate-180" : "text-gray-400")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <title>Toggle dropdown</title>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
-            {open && (
-                <div className="absolute top-full left-0 mt-1 w-full min-w-[180px] bg-white border border-violet-200 rounded-lg shadow-lg z-50 overflow-hidden">
-                    <div className="max-h-60 overflow-y-auto">
-                        {options.map((opt) => (
-                            <button
-                                key={opt.value ?? "_all"}
-                                onClick={() => { onChange(opt.value); setOpen(false); }}
-                                className={cn(
-                                    "w-full px-3 py-2 text-left text-xs transition-colors",
-                                    value === opt.value ? "bg-violet-100 text-violet-900 font-medium" : "text-gray-700 hover:bg-gray-50"
-                                )}
-                            >
-                                {opt.label}
-                            </button>
-                        ))}
-                    </div>
+            {open && !disabled && (
+                <div className="absolute bottom-full left-0 mb-1 w-full min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
+                    {options.map((opt) => (
+                        <button
+                            type="button"
+                            key={opt.value ?? "_all"}
+                            onClick={() => { onChange(opt.value); setOpen(false); }}
+                            className={cn(
+                                "w-full px-3 py-2 text-left text-xs transition-colors",
+                                value === opt.value ? "bg-green-950 text-green-100 font-medium" : "text-gray-600 hover:bg-gray-100"
+                            )}
+                        >
+                            {opt.label}
+                        </button>
+                    ))}
                 </div>
             )}
         </div>
@@ -151,9 +168,11 @@ type MultiSelectProps = {
     selected: string[];
     onChange: (selected: string[]) => void;
     placeholder: string;
+    disabled?: boolean;
+    disabledText?: string;
 };
 
-const MultiSelect: FC<MultiSelectProps> = ({ options, selected, onChange, placeholder }) => {
+const MultiSelect: FC<MultiSelectProps> = ({ options, selected, onChange, placeholder, disabled, disabledText }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
     const isAllSelected = selected.length === 0;
@@ -176,45 +195,58 @@ const MultiSelect: FC<MultiSelectProps> = ({ options, selected, onChange, placeh
 
     const selectAll = () => onChange([]);
 
-    const displayText = isAllSelected
-        ? placeholder
-        : selected.length === 1
-        ? options.find((o) => o.value === selected[0])?.label || selected[0]
-        : `${selected.length} models`;
+    const displayText = disabled
+        ? disabledText
+        : isAllSelected
+            ? placeholder
+            : selected.length === 1
+                ? options.find((o) => o.value === selected[0])?.label || selected[0]
+                : `${selected.length} models`;
 
     return (
-        <div ref={ref} className="relative">
+        <div ref={ref} className="relative group">
             <button
-                onClick={() => setOpen(!open)}
+                type="button"
+                onClick={() => !disabled && setOpen(!open)}
+                disabled={disabled}
                 className={cn(
-                    "flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg",
-                    "border transition-all duration-150 min-w-[130px]",
-                    open
-                        ? "bg-violet-50 border-violet-400"
-                        : "bg-white border-gray-200 hover:border-violet-300"
+                    "flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full",
+                    "border transition-all duration-200 min-w-[140px]",
+                    disabled
+                        ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-60"
+                        : open
+                            ? "bg-green-950 border-green-950"
+                            : "bg-gray-100 border-gray-100 hover:bg-gray-200"
                 )}
             >
-                <span className={cn("truncate flex-1 text-left", isAllSelected ? "text-gray-400" : "text-green-950")}>
+                <span className={cn("truncate flex-1 text-left", disabled ? "text-gray-400" : open ? "text-green-100" : "text-gray-600")}>
                     {displayText}
                 </span>
-                <svg className={cn("w-3 h-3 text-gray-400 transition-transform", open && "rotate-180")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={cn("w-3 h-3 transition-transform", open ? "text-green-100 rotate-180" : "text-gray-400")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <title>Toggle dropdown</title>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
-            {open && (
-                <div className="absolute top-full left-0 mt-1 w-full min-w-[200px] bg-white border border-violet-200 rounded-lg shadow-lg z-50 overflow-hidden">
-                    <div className="max-h-60 overflow-y-auto">
+            {disabled && (
+                <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100]">
+                    No models used yet
+                </span>
+            )}
+            {open && !disabled && (
+                <div className="absolute bottom-full left-0 mb-1 min-w-[320px] bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
+                    <div className="max-h-64 overflow-y-auto">
                         {/* All option */}
                         <button
+                            type="button"
                             onClick={selectAll}
                             className={cn(
-                                "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-2",
-                                isAllSelected ? "bg-violet-100 text-violet-900 font-medium" : "text-gray-700 hover:bg-gray-50"
+                                "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
+                                isAllSelected ? "bg-green-950 text-green-100 font-medium" : "text-gray-600 hover:bg-gray-100"
                             )}
                         >
                             <span className={cn(
-                                "w-4 h-4 rounded border flex items-center justify-center text-[10px]",
-                                isAllSelected ? "bg-violet-600 border-violet-600 text-white" : "border-gray-300"
+                                "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
+                                isAllSelected ? "bg-green-950 border-green-950 text-green-100" : "border-gray-300"
                             )}>
                                 {isAllSelected && "✓"}
                             </span>
@@ -225,20 +257,21 @@ const MultiSelect: FC<MultiSelectProps> = ({ options, selected, onChange, placeh
                             const isChecked = selected.includes(opt.value);
                             return (
                                 <button
+                                    type="button"
                                     key={opt.value}
                                     onClick={() => toggleModel(opt.value)}
                                     className={cn(
-                                        "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-2",
-                                        isChecked ? "bg-violet-50 text-violet-900" : "text-gray-700 hover:bg-gray-50"
+                                        "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
+                                        isChecked ? "bg-green-950 text-green-100" : "text-gray-600 hover:bg-gray-100"
                                     )}
                                 >
                                     <span className={cn(
-                                        "w-4 h-4 rounded border flex items-center justify-center text-[10px]",
-                                        isChecked ? "bg-violet-600 border-violet-600 text-white" : "border-gray-300"
+                                        "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
+                                        isChecked ? "bg-green-950 border-green-950 text-green-100" : "border-gray-300"
                                     )}>
                                         {isChecked && "✓"}
                                     </span>
-                                    {opt.label}
+                                    <span className="whitespace-nowrap">{opt.label}</span>
                                 </button>
                             );
                         })}
@@ -261,7 +294,7 @@ const Stat: FC<{ label: string; value: string }> = ({ label, value }) => (
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// BEZIER CURVE CHART - Smooth, polished visualization
+// BAR CHART - Clean visualization
 // ═══════════════════════════════════════════════════════════════════════════════
 
 type ChartProps = {
@@ -286,9 +319,7 @@ const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
             const progress = Math.min(elapsed / duration, 1);
             // Ease out cubic
             setAnimationProgress(1 - Math.pow(1 - progress, 3));
-            if (progress < 1) {
-                animationId = requestAnimationFrame(animate);
-            }
+            if (progress < 1) animationId = requestAnimationFrame(animate);
         };
         animationId = requestAnimationFrame(animate);
         return () => cancelAnimationFrame(animationId);
@@ -307,52 +338,35 @@ const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
     const cw = width - pad.left - pad.right;
     const ch = height - pad.top - pad.bottom;
 
-    const { points, yTicks, bezierPath, areaPath } = useMemo(() => {
-        if (data.length === 0) return { points: [], yTicks: [], bezierPath: "", areaPath: "" };
+    const { bars, yTicks } = useMemo(() => {
+        if (data.length === 0) return { bars: [], yTicks: [] };
 
         const vals = data.map((d) => d.value);
-        const min = Math.min(...vals);
         const max = Math.max(...vals);
-        const range = max - min || 1;
-        const pMin = Math.max(0, min - range * 0.1);
-        const pMax = max + range * 0.15;
+        const pMax = max * 1.1 || 1;
 
-        const pts = data.map((d, i) => ({
-            x: pad.left + (i / Math.max(1, data.length - 1)) * cw,
-            y: pad.top + (1 - (d.value - pMin) / (pMax - pMin)) * ch,
+        const barWidth = Math.max(4, (cw / data.length) * 0.7);
+        const gap = (cw / data.length) * 0.3;
+
+        const barData = data.map((d, i) => ({
+            x: pad.left + i * (barWidth + gap) + gap / 2,
+            y: pad.top + ch - (d.value / pMax) * ch,
+            width: barWidth,
+            height: (d.value / pMax) * ch,
             ...d,
         }));
 
-        // Bezier curve path
-        let path = "";
-        if (pts.length > 0) {
-            path = `M ${pts[0].x} ${pts[0].y}`;
-            for (let i = 1; i < pts.length; i++) {
-                const prev = pts[i - 1];
-                const curr = pts[i];
-                const tension = 0.3;
-                const cp1x = prev.x + (curr.x - prev.x) * tension;
-                const cp2x = curr.x - (curr.x - prev.x) * tension;
-                path += ` C ${cp1x} ${prev.y}, ${cp2x} ${curr.y}, ${curr.x} ${curr.y}`;
-            }
-        }
-
-        // Area path
-        const area = pts.length > 0
-            ? `${path} L ${pts[pts.length - 1].x} ${pad.top + ch} L ${pts[0].x} ${pad.top + ch} Z`
-            : "";
-
         // Y ticks
         const ticks = Array.from({ length: 4 }, (_, i) => ({
-            value: pMin + ((pMax - pMin) * (3 - i)) / 3,
+            value: (pMax * (3 - i)) / 3,
             y: pad.top + (i / 3) * ch,
         }));
 
-        return { points: pts, yTicks: ticks, bezierPath: path, areaPath: area };
+        return { bars: barData, yTicks: ticks };
     }, [data, cw, ch]);
 
     const formatVal = (v: number) =>
-        metric === "cost" ? `$${v.toFixed(3)}` :
+        metric === "pollen" ? v.toFixed(2) :
         metric === "tokens" ? (v >= 1e6 ? `${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(1)}K` : v.toFixed(0)) :
         v.toFixed(0);
 
@@ -406,91 +420,61 @@ const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                 ))}
 
                 {/* X axis labels */}
-                {points.length > 0 && (
+                {bars.length > 0 && (
                     <>
-                        <text x={points[0].x} y={height - 8} textAnchor="start" className="text-[10px] fill-gray-400">{points[0].label}</text>
-                        {points.length > 4 && <text x={points[Math.floor(points.length / 2)].x} y={height - 8} textAnchor="middle" className="text-[10px] fill-gray-400">{points[Math.floor(points.length / 2)].label}</text>}
-                        <text x={points[points.length - 1].x} y={height - 8} textAnchor="end" className="text-[10px] fill-gray-400">{points[points.length - 1].label}</text>
+                        <text x={bars[0].x + bars[0].width / 2} y={height - 8} textAnchor="middle" className="text-[10px] fill-gray-400">{bars[0].label}</text>
+                        {bars.length > 4 && <text x={bars[Math.floor(bars.length / 2)].x + bars[Math.floor(bars.length / 2)].width / 2} y={height - 8} textAnchor="middle" className="text-[10px] fill-gray-400">{bars[Math.floor(bars.length / 2)].label}</text>}
+                        <text x={bars[bars.length - 1].x + bars[bars.length - 1].width / 2} y={height - 8} textAnchor="middle" className="text-[10px] fill-gray-400">{bars[bars.length - 1].label}</text>
                     </>
                 )}
 
-                {/* Animated area fill */}
-                <path
-                    d={areaPath}
-                    fill="url(#usageAreaGradient)"
-                    style={{
-                        clipPath: `inset(0 ${100 - animationProgress * 100}% 0 0)`,
-                        transition: "clip-path 0.1s ease-out",
-                    }}
-                />
-
-                {/* Animated bezier line */}
-                <path
-                    d={bezierPath}
-                    fill="none"
-                    stroke="#7c3aed"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    filter="url(#lineGlow)"
-                    style={{
-                        strokeDasharray: 2000,
-                        strokeDashoffset: 2000 * (1 - animationProgress),
-                        transition: "stroke-dashoffset 0.1s ease-out",
-                    }}
-                />
-
-                {/* Interactive areas & dots */}
-                {points.map((pt, i) => (
-                    <g key={i}>
+                {/* Bars */}
+                {bars.map((bar, idx) => (
+                    <g key={bar.label}>
                         <rect
-                            x={pt.x - cw / points.length / 2}
-                            y={pad.top}
-                            width={cw / points.length}
-                            height={ch}
-                            fill="transparent"
-                            onMouseEnter={() => setHovered(i)}
-                            style={{ cursor: "crosshair" }}
-                        />
-                        <circle
-                            cx={pt.x}
-                            cy={pt.y}
-                            r={hovered === i ? 6 : 4}
-                            fill={hovered === i ? "#fff" : "#7c3aed"}
-                            stroke="#7c3aed"
-                            strokeWidth="2"
-                            filter={hovered === i ? "url(#dotGlow)" : undefined}
+                            x={bar.x}
+                            y={bar.y}
+                            width={bar.width}
+                            height={Math.max(0, bar.height * animationProgress)}
+                            rx={2}
+                            fill={hovered === idx ? "#8b5cf6" : "#7c3aed"}
                             style={{
-                                opacity: animationProgress,
-                                transition: "r 0.15s ease-out, opacity 0.3s ease-out",
+                                transition: "fill 0.15s ease-out",
+                                cursor: "pointer",
                             }}
+                            onMouseEnter={() => setHovered(idx)}
                         />
                     </g>
                 ))}
 
                 {/* Tooltip */}
-                {hovered !== null && points[hovered] && (() => {
-                    const pt = points[hovered];
-                    const breakdown = pt.modelBreakdown || [];
-                    const hasBreakdown = showModelBreakdown && breakdown.length > 1;
-                    const tooltipHeight = hasBreakdown ? 48 + breakdown.length * 14 : 48;
-                    const tooltipWidth = hasBreakdown ? 160 : 120;
-                    const tooltipX = Math.max(pad.left, Math.min(pt.x - tooltipWidth / 2, width - pad.right - tooltipWidth));
-                    const tooltipY = Math.max(pad.top, pt.y - tooltipHeight - 10);
+                {hovered !== null && bars[hovered] && (() => {
+                    const bar = bars[hovered];
+                    const allBreakdown = bar.modelBreakdown || [];
+                    // Filter to only show non-zero values for current metric
+                    const breakdown = allBreakdown.filter((m) => {
+                        const val = metric === "requests" ? m.requests : metric === "pollen" ? m.pollen : m.tokens;
+                        return val > 0;
+                    });
+                    const hasBreakdown = showModelBreakdown && breakdown.length > 0;
+                    const lineHeight = 16;
+                    // Layout: Date (20) + Total line (20) + separator (8) + breakdown items
+                    const headerHeight = 48;
+                    const separatorHeight = hasBreakdown ? 12 : 0;
+                    const tooltipHeight = headerHeight + separatorHeight + (hasBreakdown ? breakdown.length * lineHeight + 8 : 0);
+                    const tooltipWidth = hasBreakdown ? 280 : 160;
+                    const tooltipX = Math.max(pad.left, Math.min(bar.x + bar.width / 2 - tooltipWidth / 2, width - pad.right - tooltipWidth));
+                    const tooltipY = Math.max(pad.top, bar.y - tooltipHeight - 10);
+                    
+                    // Format date without weekday (e.g., "January 8, 2026")
+                    const dateOnly = bar.fullDate.replace(/^[A-Za-z]+,\s*/, "");
+                    
+                    // Truncate model name if too long
+                    const truncateLabel = (label: string, maxLen = 28) => 
+                        label.length > maxLen ? label.substring(0, maxLen - 2) + "..." : label;
 
                     return (
                         <g style={{ pointerEvents: "none" }}>
-                            {/* Vertical line */}
-                            <line
-                                x1={pt.x}
-                                y1={pad.top}
-                                x2={pt.x}
-                                y2={pad.top + ch}
-                                stroke="#7c3aed"
-                                strokeWidth="1"
-                                strokeDasharray="3 3"
-                                opacity="0.4"
-                            />
                             {/* Tooltip box */}
                             <rect
                                 x={tooltipX}
@@ -501,44 +485,46 @@ const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                 fill="#0f172a"
                                 opacity="0.95"
                             />
-                            {/* Main value */}
+                            {/* Date at top left */}
                             <text
-                                x={tooltipX + tooltipWidth / 2}
-                                y={tooltipY + 16}
-                                textAnchor="middle"
-                                className="text-xs font-bold fill-white"
+                                x={tooltipX + 12}
+                                y={tooltipY + 18}
+                                textAnchor="start"
+                                className="text-xs fill-gray-400"
                             >
-                                {formatVal(pt.value)}
+                                {dateOnly}
                             </text>
-                            {/* Full date */}
+                            {/* Total line with metric label */}
                             <text
-                                x={tooltipX + tooltipWidth / 2}
-                                y={tooltipY + 30}
-                                textAnchor="middle"
-                                className="text-[10px] fill-gray-400"
+                                x={tooltipX + 12}
+                                y={tooltipY + 36}
+                                textAnchor="start"
+                                className="text-sm font-bold fill-white"
                             >
-                                {pt.fullDate}
+                                Total ({metric === "requests" ? "requests" : metric === "pollen" ? "pollen" : "tokens"}): {formatVal(bar.value)}
                             </text>
-                            {/* Model breakdown */}
-                            {hasBreakdown && breakdown.slice(0, 5).map((m, idx) => (
+                            {/* Separator line */}
+                            {hasBreakdown && (
+                                <line
+                                    x1={tooltipX + 12}
+                                    y1={tooltipY + headerHeight + 2}
+                                    x2={tooltipX + tooltipWidth - 12}
+                                    y2={tooltipY + headerHeight + 2}
+                                    stroke="#374151"
+                                    strokeWidth="1"
+                                />
+                            )}
+                            {/* Model breakdown - show all non-zero */}
+                            {hasBreakdown && breakdown.map((m: { model: string; label: string; requests: number; pollen: number; tokens: number }, i: number) => (
                                 <text
                                     key={m.model}
-                                    x={tooltipX + 8}
-                                    y={tooltipY + 46 + idx * 14}
-                                    className="text-[9px] fill-gray-300"
+                                    x={tooltipX + 12}
+                                    y={tooltipY + headerHeight + separatorHeight + 4 + i * lineHeight}
+                                    className="text-xs fill-gray-300"
                                 >
-                                    {m.label.slice(0, 12)}: {formatVal(metric === "requests" ? m.requests : metric === "cost" ? m.cost : m.tokens)}
+                                    {truncateLabel(m.label)}: {formatVal(metric === "requests" ? m.requests : metric === "pollen" ? m.pollen : m.tokens)}
                                 </text>
                             ))}
-                            {hasBreakdown && breakdown.length > 5 && (
-                                <text
-                                    x={tooltipX + 8}
-                                    y={tooltipY + 46 + 5 * 14}
-                                    className="text-[9px] fill-gray-500"
-                                >
-                                    +{breakdown.length - 5} more...
-                                </text>
-                            )}
                         </g>
                     );
                 })()}
@@ -558,7 +544,6 @@ type UsageGraphProps = {
 // Map time range to approximate record limit (rough estimate based on usage patterns)
 const getRecordLimit = (timeRange: TimeRange, customDays: number): number => {
     switch (timeRange) {
-        case "24h": return 500;      // ~500 requests/day max
         case "7d": return 3500;      // ~500/day * 7
         case "30d": return 10000;    // cap at 10k
         case "all": return 10000;    // cap at 10k
@@ -568,50 +553,51 @@ const getRecordLimit = (timeRange: TimeRange, customDays: number): number => {
 
 export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
     const keys: ApiKeyInfo[] = apiKeys || [];
-    const [usage, setUsage] = useState<UsageRecord[]>([]);
+    const [dailyUsage, setDailyUsage] = useState<DailyUsageRecord[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [fetchedRange, setFetchedRange] = useState<TimeRange | null>(null);
+    const [hasFetched, setHasFetched] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const [filters, setFilters] = useState<FilterState>({
-        timeRange: "24h",
+        timeRange: "7d",
         customDays: 14,
-        metric: "requests",
-        modality: "all",
+        metric: "pollen",
         apiKey: null,
         selectedModels: [], // Empty means "All"
     });
 
-    // Fetch usage data for the current time range
-    const fetchUsage = (timeRange: TimeRange, customDays: number) => {
-        const limit = getRecordLimit(timeRange, customDays);
+    // Fetch all usage data (90 days, handled by backend)
+    const fetchUsage = () => {
+        if (hasFetched) return;
         setLoading(true);
         setError(null);
-        fetch(`/api/usage?format=json&limit=${limit}`)
+        
+        fetch("/api/usage/daily")
             .then((r) => {
-                if (!r.ok) throw new Error("Failed to fetch usage data");
-                return r.json();
+                if (!r.ok) throw new Error(`Failed to fetch usage data: ${r.status}`);
+                return r.json() as Promise<{ usage: DailyUsageRecord[] }>;
             })
             .then((data) => {
-                setUsage(data?.usage || []);
-                setFetchedRange(timeRange);
+                setDailyUsage(data?.usage || []);
+                setHasFetched(true);
             })
             .catch((err) => {
+                console.error("Usage fetch error:", err);
                 setError(err.message || "Failed to load usage data");
-                setUsage([]);
+                setDailyUsage([]);
             })
             .finally(() => setLoading(false));
     };
 
     // Lazy load: fetch data only when component comes into view
     useEffect(() => {
-        if (fetchedRange || !containerRef.current) return;
+        if (hasFetched || !containerRef.current) return;
 
         const container = containerRef.current;
         const observer = new IntersectionObserver(
             (entries) => {
-                if (entries[0].isIntersecting && !fetchedRange) {
-                    fetchUsage("24h", filters.customDays);
+                if (entries[0].isIntersecting && !hasFetched) {
+                    fetchUsage();
                     observer.disconnect();
                 }
             },
@@ -620,28 +606,12 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
 
         observer.observe(container);
         return () => observer.disconnect();
-    }, [fetchedRange, filters.customDays]);
-
-    // Re-fetch when time range changes to a larger range
-    useEffect(() => {
-        if (!fetchedRange) return; // Initial fetch not done yet
-
-        // Only re-fetch if we need more data
-        const rangeOrder = ["24h", "7d", "30d", "all", "custom"] as const;
-        const currentIdx = rangeOrder.indexOf(fetchedRange);
-        const newIdx = rangeOrder.indexOf(filters.timeRange);
-
-        // Fetch if switching to a larger range, or if custom days increased
-        if (newIdx > currentIdx ||
-            (filters.timeRange === "custom" && fetchedRange === "custom" && filters.customDays > 14)) {
-            fetchUsage(filters.timeRange, filters.customDays);
-        }
-    }, [filters.timeRange, filters.customDays, fetchedRange]);
+    }, [hasFetched]);
 
     // Models that appear in usage data, enriched with registry display names
     const usedModels = useMemo(() => {
         const modelIds = new Set<string>();
-        usage.forEach((r) => r.model && modelIds.add(r.model));
+        dailyUsage.forEach((r) => r.model && modelIds.add(r.model));
 
         return Array.from(modelIds)
             .map((id) => {
@@ -649,111 +619,102 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
                 return { id, label: registered?.label || id };
             })
             .sort((a, b) => a.label.localeCompare(b.label));
-    }, [usage]);
+    }, [dailyUsage]);
 
-    // Helper to get tokens from a record
-    const getRecordTokens = (r: UsageRecord) =>
-        (r.input_text_tokens || 0) + (r.output_text_tokens || 0) +
-        (r.input_audio_tokens || 0) + (r.output_audio_tokens || 0) +
-        (r.input_image_tokens || 0) + (r.output_image_tokens || 0);
-
-    // Filter and aggregate
-    const { chartData, stats } = useMemo(() => {
+    // Filter and aggregate daily usage data
+    const { chartData, stats, filteredData } = useMemo(() => {
         const now = new Date();
         const cutoff =
-            filters.timeRange === "24h" ? new Date(now.getTime() - MS_PER_DAY) :
             filters.timeRange === "7d" ? new Date(now.getTime() - MS_PER_WEEK) :
             filters.timeRange === "30d" ? new Date(now.getTime() - MS_PER_30_DAYS) :
             filters.timeRange === "custom" ? new Date(now.getTime() - filters.customDays * MS_PER_DAY) :
             new Date(0);
 
-        const filtered = usage.filter((r) => {
-            const ts = new Date(r.timestamp);
-            if (ts < cutoff) return false;
-            if (filters.apiKey && r.api_key !== filters.apiKey) return false;
-            // Multi-select: if selectedModels is empty, show all; otherwise filter by selected
+        // Filter records by date and other criteria
+        const filtered = dailyUsage.filter((r: DailyUsageRecord) => {
+            const recordDate = new Date(r.date + "T00:00:00");
+            if (recordDate < cutoff) return false;
             if (filters.selectedModels.length > 0 && r.model && !filters.selectedModels.includes(r.model)) return false;
-            if (filters.modality !== "all") {
-                const t = r.type?.toLowerCase();
-                if (filters.modality === "text" && t !== "text" && t !== "chat") return false;
-                if (filters.modality === "image" && t !== "image") return false;
-                if (filters.modality === "audio" && t !== "audio") return false;
-                if (filters.modality === "video" && t !== "video") return false;
-            }
             return true;
         });
 
-        const bucketSize = filters.timeRange === "24h" ? MS_PER_HOUR : MS_PER_DAY;
-        type BucketData = {
+        // Aggregate by date (sum all models/event_types for each day)
+        type DayBucket = {
             requests: number;
-            cost: number;
+            pollen: number;
             tokens: number;
-            byModel: Map<string, { requests: number; cost: number; tokens: number }>;
+            byModel: Map<string, { requests: number; pollen: number; tokens: number }>;
         };
-        const buckets = new Map<number, BucketData>();
+        const buckets = new Map<string, DayBucket>();
 
-        filtered.forEach((r) => {
-            const key = Math.floor(new Date(r.timestamp).getTime() / bucketSize) * bucketSize;
-            const cur = buckets.get(key) || { requests: 0, cost: 0, tokens: 0, byModel: new Map() };
-            const tokens = getRecordTokens(r);
-            cur.requests++;
-            cur.cost += r.cost_usd || 0;
+        filtered.forEach((r: DailyUsageRecord) => {
+            const dateKey = r.date;
+            const cur = buckets.get(dateKey) || { requests: 0, pollen: 0, tokens: 0, byModel: new Map() };
+            const tokens = (r.input_tokens || 0) + (r.output_tokens || 0);
+            cur.requests += r.requests || 0;
+            cur.pollen += r.cost_usd || 0;
             cur.tokens += tokens;
 
             // Track per-model breakdown
             if (r.model) {
-                const modelData = cur.byModel.get(r.model) || { requests: 0, cost: 0, tokens: 0 };
-                modelData.requests++;
-                modelData.cost += r.cost_usd || 0;
+                const modelData = cur.byModel.get(r.model) || { requests: 0, pollen: 0, tokens: 0 };
+                modelData.requests += r.requests || 0;
+                modelData.pollen += r.cost_usd || 0;
                 modelData.tokens += tokens;
                 cur.byModel.set(r.model, modelData);
             }
-            buckets.set(key, cur);
+            buckets.set(dateKey, cur);
         });
 
-        const sorted = Array.from(buckets.entries())
-            .sort((a, b) => a[0] - b[0])
-            .map(([ts, d]) => {
-                const date = new Date(ts);
-                // Build model breakdown for tooltip
+        // Generate full date range from cutoff to today
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const startDate = new Date(Math.max(cutoff.getTime(), today.getTime() - 90 * MS_PER_DAY));
+        startDate.setHours(0, 0, 0, 0);
+        
+        const allDates: string[] = [];
+        const currentDate = new Date(startDate);
+        while (currentDate <= today) {
+            allDates.push(currentDate.toISOString().split("T")[0]);
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        // Build chart data with zero-fill for missing days
+        const sorted = allDates.map((dateStr) => {
+                const date = new Date(dateStr + "T00:00:00");
+                const d = buckets.get(dateStr) || { requests: 0, pollen: 0, tokens: 0, byModel: new Map() };
                 const modelBreakdown: ModelBreakdown[] = Array.from(d.byModel.entries())
-                    .map(([modelId, stats]) => {
+                    .map(([modelId, modelStats]) => {
                         const registered = ALL_MODELS.find((m) => m.id === modelId);
                         return {
                             model: modelId,
                             label: registered?.label || modelId,
-                            requests: stats.requests,
-                            cost: stats.cost,
-                            tokens: stats.tokens,
+                            requests: modelStats.requests,
+                            pollen: modelStats.pollen,
+                            tokens: modelStats.tokens,
                         };
                     })
-                    .sort((a, b) => b.requests - a.requests); // Sort by most requests
+                    .sort((a, b) => b.requests - a.requests);
 
                 return {
-                    label: filters.timeRange === "24h"
-                        ? date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
-                        : date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-                    fullDate: filters.timeRange === "24h"
-                        ? date.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
-                        : date.toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric" }),
+                    label: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+                    fullDate: date.toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric" }),
                     value: d[filters.metric],
                     timestamp: date,
                     modelBreakdown,
                 };
             });
 
-        const totalReq = filtered.length;
-        const totalCost = filtered.reduce((s, r) => s + (r.cost_usd || 0), 0);
-        const totalTok = filtered.reduce((s, r) => s + getRecordTokens(r), 0);
-        const avgTime = filtered.length
-            ? filtered.reduce((s, r) => s + (r.response_time_ms || 0), 0) / filtered.length
-            : 0;
+        const totalReq = filtered.reduce((s: number, r: DailyUsageRecord) => s + (r.requests || 0), 0);
+        const totalPollen = filtered.reduce((s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0), 0);
+        const totalTok = filtered.reduce((s: number, r: DailyUsageRecord) => s + (r.input_tokens || 0) + (r.output_tokens || 0), 0);
 
         return {
             chartData: sorted,
-            stats: { totalRequests: totalReq, totalCost, totalTokens: totalTok, avgResponseTime: avgTime },
+            stats: { totalRequests: totalReq, totalPollen, totalTokens: totalTok },
+            filteredData: filtered,
         };
-    }, [usage, filters]);
+    }, [dailyUsage, filters]);
 
     const formatTokens = (n: number) =>
         n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : n.toString();
@@ -775,10 +736,10 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
 
     return (
         <div ref={containerRef} className="flex flex-col gap-2">
-            <h2 className="font-bold">Usage Analytics</h2>
-
-            {/* Main card - matching existing violet theme */}
-            <div className="bg-violet-50/30 rounded-2xl p-4 sm:p-6 border border-violet-300">
+            <div className="flex flex-col sm:flex-row justify-between gap-3">
+                <h2 className="font-bold flex-1">Usage Analytics</h2>
+            </div>
+            <div className="bg-violet-50/30 rounded-2xl p-6 border border-violet-300">
                 {loading && (
                     <div className="animate-pulse space-y-4">
                         <div className="flex gap-2">
@@ -794,7 +755,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
                         <div className="text-center">
                             <p className="text-sm text-red-500 font-medium">{error}</p>
                             <button
-                                onClick={() => fetchUsage(filters.timeRange, filters.customDays)}
+                                onClick={() => fetchUsage()}
                                 className="mt-2 text-xs text-red-600 hover:text-red-700 underline"
                             >
                                 Try again
@@ -807,9 +768,9 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
                 {/* Filters Row 1: Time Range + Metric */}
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                     <div className="flex flex-wrap items-center gap-1.5">
-                        {(["24h", "7d", "30d", "all"] as TimeRange[]).map((t) => (
+                {(["7d", "30d", "all"] as TimeRange[]).map((t) => (
                             <FilterButton key={t} active={filters.timeRange === t} onClick={() => setFilters((f) => ({ ...f, timeRange: t }))}>
-                                {t === "24h" ? "24h" : t === "7d" ? "7 days" : t === "30d" ? "30 days" : "All"}
+                                {t === "7d" ? "7 days" : t === "30d" ? "30 days" : "90 days"}
                             </FilterButton>
                         ))}
                         <FilterButton active={filters.timeRange === "custom"} onClick={() => setFilters((f) => ({ ...f, timeRange: "custom" }))}>
@@ -829,46 +790,82 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
                             </div>
                         )}
                     </div>
-                    <div className="flex gap-1.5">
-                        {(["requests", "cost", "tokens"] as Metric[]).map((m) => (
+                    <div className="flex gap-1.5 items-center">
+                        {(["requests", "pollen", "tokens"] as Metric[]).map((m) => (
                             <FilterButton key={m} active={filters.metric === m} onClick={() => setFilters((f) => ({ ...f, metric: m }))}>
-                                {m === "requests" ? "Requests" : m === "cost" ? "Cost" : "Tokens"}
+                                {m === "requests" ? "Requests" : m === "pollen" ? "Pollen" : "Tokens"}
                             </FilterButton>
                         ))}
                     </div>
                 </div>
 
-                {/* Filters Row 2: Modality + Dropdowns */}
-                <div className="flex flex-wrap items-center gap-3 mb-4">
-                    <div className="flex flex-wrap gap-1.5">
-                        {(["all", "text", "image", "audio", "video"] as Modality[]).map((m) => (
-                            <FilterButton key={m} active={filters.modality === m} onClick={() => setFilters((f) => ({ ...f, modality: m }))}>
-                                {m === "all" ? "All" : m.charAt(0).toUpperCase() + m.slice(1)}
-                            </FilterButton>
-                        ))}
-                    </div>
-                    <div className="flex gap-2 ml-auto">
-                        <Select options={keyOptions} value={filters.apiKey} onChange={(v) => setFilters((f) => ({ ...f, apiKey: v }))} placeholder="All Keys" />
-                        <MultiSelect
-                            options={modelSelectOptions}
-                            selected={filters.selectedModels}
-                            onChange={(v) => setFilters((f) => ({ ...f, selectedModels: v }))}
-                            placeholder="All Models"
-                        />
-                    </div>
-                </div>
-
-                {/* Stats Row */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4 p-3 bg-white/50 rounded-xl border border-violet-200">
-                    <Stat label="Requests" value={stats.totalRequests.toLocaleString()} />
-                    <Stat label="Cost" value={`$${stats.totalCost.toFixed(4)}`} />
-                    <Stat label="Tokens" value={formatTokens(stats.totalTokens)} />
-                    <Stat label="Avg Time" value={`${stats.avgResponseTime.toFixed(0)}ms`} />
+                {/* Filters Row 2: Dropdowns */}
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <MultiSelect
+                        options={modelSelectOptions}
+                        selected={filters.selectedModels}
+                        onChange={(v) => setFilters((f) => ({ ...f, selectedModels: v }))}
+                        placeholder="All Models"
+                        disabled={modelSelectOptions.length === 0}
+                        disabledText="0 models used"
+                    />
+                    <Select
+                        options={keyOptions}
+                        value={filters.apiKey}
+                        onChange={(v) => setFilters((f) => ({ ...f, apiKey: v }))}
+                        placeholder="All Keys"
+                        disabled={keys.length === 0}
+                        disabledText="No keys"
+                    />
                 </div>
 
                 {/* Chart */}
-                <div className="bg-white rounded-xl p-4 border border-violet-200">
+                <div className="relative bg-white rounded-xl p-4 border border-violet-200 mb-4">
                     <Chart data={chartData} metric={filters.metric} showModelBreakdown={showModelBreakdown} />
+                </div>
+
+                {/* Stats Row */}
+                <div className="flex items-center gap-4 p-3 bg-white/50 rounded-xl border border-violet-200">
+                    <div className="flex-1 grid grid-cols-3 gap-4">
+                        <Stat label="Requests" value={stats.totalRequests.toLocaleString()} />
+                        <Stat label="Pollen" value={stats.totalPollen.toFixed(2)} />
+                        <Stat label="Tokens" value={formatTokens(stats.totalTokens)} />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (filteredData.length === 0) return;
+                            const headers = ["date", "event_type", "model", "requests", "cost_usd", "input_tokens", "output_tokens"];
+                            const rows = filteredData.map((r: DailyUsageRecord) => [
+                                r.date,
+                                r.event_type || "",
+                                r.model || "",
+                                r.requests || 0,
+                                r.cost_usd || 0,
+                                r.input_tokens || 0,
+                                r.output_tokens || 0,
+                            ].join(","));
+                            const csv = [headers.join(","), ...rows].join("\n");
+                            const blob = new Blob([csv], { type: "text/csv" });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `usage-${filters.timeRange}.csv`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-100 hover:bg-violet-200 transition-colors border border-violet-300 text-violet-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={filteredData.length === 0}
+                        title={filteredData.length === 0 ? "No data to download" : `Download CSV (${filteredData.length} rows)`}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <title>Download CSV</title>
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        CSV
+                    </button>
                 </div>
                 </>
                 )}

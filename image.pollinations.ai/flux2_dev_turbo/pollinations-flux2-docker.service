@@ -1,0 +1,56 @@
+[Unit]
+Description=Pollinations FLUX.2-dev-Turbo Docker Service
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=10
+User=ubuntu
+WorkingDirectory=/home/ubuntu/pollinations/image.pollinations.ai/flux2_dev_turbo
+
+# Load environment variables
+EnvironmentFile=/home/ubuntu/pollinations/image.pollinations.ai/flux2_dev_turbo/.env
+
+# Pre-start: ensure no conflicting container
+ExecStartPre=/bin/bash -c 'docker stop flux2-dev-turbo || true'
+ExecStartPre=/bin/bash -c 'docker rm flux2-dev-turbo || true'
+
+# Start the service
+ExecStart=/usr/bin/docker run --rm \
+    --name flux2-dev-turbo \
+    --gpus all \
+    -p 10003:10003 \
+    -e PORT=10003 \
+    -e SERVICE_TYPE=flux2-dev-turbo \
+    -e PLN_ENTER_TOKEN=${PLN_ENTER_TOKEN} \
+    -e CUDA_VISIBLE_DEVICES=0 \
+    -e HF_HOME=/app/model_cache \
+    -v /home/ubuntu/pollinations/image.pollinations.ai/flux2_dev_turbo/model_cache:/app/model_cache \
+    -v /home/ubuntu/pollinations/image.pollinations.ai/flux2_dev_turbo/logs:/app/logs \
+    --health-cmd='curl -f http://localhost:10003/health || exit 1' \
+    --health-interval=30s \
+    --health-timeout=10s \
+    --health-retries=3 \
+    flux2-dev-turbo:latest
+
+# Cleanup on stop
+ExecStop=/usr/bin/docker stop flux2-dev-turbo
+
+# Resource limits
+MemoryLimit=32G
+CPUQuota=400%
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=flux2-dev-turbo
+
+[Install]
+WantedBy=multi-user.target

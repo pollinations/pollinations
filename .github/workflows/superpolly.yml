@@ -305,7 +305,76 @@ jobs:
         run: |
           mkdir -p $HOME/.claude-code-router/plugins
 
-          # Gemini: supports reasoning_effort=high only
+          # Gemini Schema Fix - handles thought_signature for Gemini models
+          cat > $HOME/.claude-code-router/plugins/gemini-schema-fix.js << 'SCHEMAFIX'
+          class GeminiSchemaFixTransformer {
+            constructor(options) {
+              this.name = 'gemini-schema-fix';
+              this.SKIP_SIGNATURE = 'skip_thought_signature_validator';
+              this.unsupportedProps = [
+                'propertyNames', 'patternProperties', 'additionalItems',
+                'unevaluatedProperties', 'unevaluatedItems', 'contentEncoding',
+                'contentMediaType', 'contentSchema', '$schema', '$id', '$ref',
+                '$defs', 'definitions', 'if', 'then', 'else', 'allOf', 'anyOf',
+                'oneOf', 'not', 'dependentSchemas', 'dependentRequired',
+                'minContains', 'maxContains'
+              ];
+            }
+            isGeminiModel(model) {
+              return model && model.toLowerCase().includes('gemini');
+            }
+            cleanSchema(obj) {
+              if (!obj || typeof obj !== 'object') return obj;
+              if (Array.isArray(obj)) return obj.map(item => this.cleanSchema(item));
+              const cleaned = {};
+              for (const [key, value] of Object.entries(obj)) {
+                if (!this.unsupportedProps.includes(key)) {
+                  cleaned[key] = this.cleanSchema(value);
+                }
+              }
+              return cleaned;
+            }
+            addThoughtSignatureBypass(messages) {
+              if (!messages || !Array.isArray(messages)) return messages;
+              return messages.map(msg => {
+                if (msg.role === 'assistant' && msg.tool_calls && Array.isArray(msg.tool_calls)) {
+                  return {
+                    ...msg,
+                    tool_calls: msg.tool_calls.map(tc => {
+                      if (tc.function && !tc.function.thought_signature) {
+                        return {
+                          ...tc,
+                          function: { ...tc.function, thought_signature: this.SKIP_SIGNATURE }
+                        };
+                      }
+                      return tc;
+                    })
+                  };
+                }
+                return msg;
+              });
+            }
+            async transformRequestIn(body, provider, context) {
+              const model = body.model || '';
+              if (this.isGeminiModel(model) && body.messages) {
+                body.messages = this.addThoughtSignatureBypass(body.messages);
+              }
+              if (body.tools && Array.isArray(body.tools)) {
+                body.tools = body.tools.map(tool => {
+                  if (tool.function && tool.function.parameters) {
+                    tool.function.parameters = this.cleanSchema(tool.function.parameters);
+                  }
+                  return tool;
+                });
+              }
+              return body;
+            }
+            async transformResponseOut(response, context) { return response; }
+          }
+          module.exports = GeminiSchemaFixTransformer;
+          SCHEMAFIX
+
+          # Gemini params transformer
           cat > $HOME/.claude-code-router/plugins/superpolly-transformer.js << 'TRANSFORMER'
           class SuperPollyTransformer {
             constructor(options) { this.name = 'superpolly-transformer'; }
@@ -328,6 +397,7 @@ jobs:
             "NON_INTERACTIVE_MODE": true,
             "API_TIMEOUT_MS": 600000,
             "transformers": [
+              {"path": "~/.claude-code-router/plugins/gemini-schema-fix.js", "options": {}},
               {"path": "~/.claude-code-router/plugins/superpolly-transformer.js", "options": {}}
             ],
             "Providers": [{
@@ -335,7 +405,7 @@ jobs:
               "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
               "api_key": "${CLAUDE_CODE_TOKEN}",
               "models": ["gemini-large", "perplexity-reasoning"],
-              "transformer": {"use": ["superpolly-transformer"]}
+              "transformer": {"use": ["gemini-schema-fix", "superpolly-transformer"]}
             }],
             "Router": {
               "default": "pollinations,gemini-large",
@@ -484,7 +554,76 @@ jobs:
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
           mkdir -p $HOME/.claude-code-router/plugins
 
-          # Aggregator uses Gemini: reasoning_effort=high only
+          # Gemini Schema Fix - handles thought_signature for Gemini models
+          cat > $HOME/.claude-code-router/plugins/gemini-schema-fix.js << 'SCHEMAFIX'
+          class GeminiSchemaFixTransformer {
+            constructor(options) {
+              this.name = 'gemini-schema-fix';
+              this.SKIP_SIGNATURE = 'skip_thought_signature_validator';
+              this.unsupportedProps = [
+                'propertyNames', 'patternProperties', 'additionalItems',
+                'unevaluatedProperties', 'unevaluatedItems', 'contentEncoding',
+                'contentMediaType', 'contentSchema', '$schema', '$id', '$ref',
+                '$defs', 'definitions', 'if', 'then', 'else', 'allOf', 'anyOf',
+                'oneOf', 'not', 'dependentSchemas', 'dependentRequired',
+                'minContains', 'maxContains'
+              ];
+            }
+            isGeminiModel(model) {
+              return model && model.toLowerCase().includes('gemini');
+            }
+            cleanSchema(obj) {
+              if (!obj || typeof obj !== 'object') return obj;
+              if (Array.isArray(obj)) return obj.map(item => this.cleanSchema(item));
+              const cleaned = {};
+              for (const [key, value] of Object.entries(obj)) {
+                if (!this.unsupportedProps.includes(key)) {
+                  cleaned[key] = this.cleanSchema(value);
+                }
+              }
+              return cleaned;
+            }
+            addThoughtSignatureBypass(messages) {
+              if (!messages || !Array.isArray(messages)) return messages;
+              return messages.map(msg => {
+                if (msg.role === 'assistant' && msg.tool_calls && Array.isArray(msg.tool_calls)) {
+                  return {
+                    ...msg,
+                    tool_calls: msg.tool_calls.map(tc => {
+                      if (tc.function && !tc.function.thought_signature) {
+                        return {
+                          ...tc,
+                          function: { ...tc.function, thought_signature: this.SKIP_SIGNATURE }
+                        };
+                      }
+                      return tc;
+                    })
+                  };
+                }
+                return msg;
+              });
+            }
+            async transformRequestIn(body, provider, context) {
+              const model = body.model || '';
+              if (this.isGeminiModel(model) && body.messages) {
+                body.messages = this.addThoughtSignatureBypass(body.messages);
+              }
+              if (body.tools && Array.isArray(body.tools)) {
+                body.tools = body.tools.map(tool => {
+                  if (tool.function && tool.function.parameters) {
+                    tool.function.parameters = this.cleanSchema(tool.function.parameters);
+                  }
+                  return tool;
+                });
+              }
+              return body;
+            }
+            async transformResponseOut(response, context) { return response; }
+          }
+          module.exports = GeminiSchemaFixTransformer;
+          SCHEMAFIX
+
+          # Aggregator params transformer
           cat > $HOME/.claude-code-router/plugins/superpolly-transformer.js << 'TRANSFORMER'
           class SuperPollyTransformer {
             constructor(options) { this.name = 'superpolly-transformer'; }
@@ -507,6 +646,7 @@ jobs:
             "NON_INTERACTIVE_MODE": true,
             "API_TIMEOUT_MS": 600000,
             "transformers": [
+              {"path": "~/.claude-code-router/plugins/gemini-schema-fix.js", "options": {}},
               {"path": "~/.claude-code-router/plugins/superpolly-transformer.js", "options": {}}
             ],
             "Providers": [{
@@ -514,7 +654,7 @@ jobs:
               "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
               "api_key": "${CLAUDE_CODE_TOKEN}",
               "models": ["gemini-large", "perplexity-reasoning"],
-              "transformer": {"use": ["superpolly-transformer"]}
+              "transformer": {"use": ["gemini-schema-fix", "superpolly-transformer"]}
             }],
             "Router": {
               "default": "pollinations,gemini-large",

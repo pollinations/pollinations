@@ -9,6 +9,11 @@ type AccountPermissionsInputProps = {
 
 const ACCOUNT_PERMISSIONS = [
     {
+        id: "profile",
+        label: "Profile",
+        description: "Read name, email, GitHub username",
+    },
+    {
         id: "balance",
         label: "Balance",
         description: "Read pollen balance via API",

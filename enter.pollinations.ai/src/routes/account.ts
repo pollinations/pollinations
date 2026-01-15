@@ -17,11 +17,70 @@ const usageQuerySchema = z.object({
 });
 
 /**
- * Account routes - balance and usage endpoints.
+ * Account routes - profile, balance and usage endpoints.
  * Supports both session cookies and API keys with permission checks.
  */
 export const accountRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    .get(
+        "/profile",
+        describeRoute({
+            tags: ["Account"],
+            description:
+                "Get user profile info (name, email, GitHub username, tier). Requires `account:profile` permission for API keys.",
+            responses: {
+                200: {
+                    description:
+                        "User profile with name, email, githubUsername, tier, createdAt",
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:profile` permission",
+                },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            const apiKey = c.var.auth?.apiKey;
+
+            // Check permission for API key access
+            if (apiKey && !apiKey.permissions?.account?.includes("profile")) {
+                throw new HTTPException(403, {
+                    message:
+                        "API key does not have 'account:profile' permission",
+                });
+            }
+
+            // Get user profile from D1
+            const db = drizzle(c.env.DB);
+            const users = await db
+                .select({
+                    name: userTable.name,
+                    email: userTable.email,
+                    githubUsername: userTable.githubUsername,
+                    tier: userTable.tier,
+                    createdAt: userTable.createdAt,
+                })
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .limit(1);
+
+            const profile = users[0];
+            if (!profile) {
+                throw new HTTPException(404, { message: "User not found" });
+            }
+
+            return c.json({
+                name: profile.name,
+                email: profile.email,
+                githubUsername: profile.githubUsername ?? null,
+                tier: profile.tier,
+                createdAt: profile.createdAt,
+            });
+        },
+    )
     .get(
         "/balance",
         describeRoute({

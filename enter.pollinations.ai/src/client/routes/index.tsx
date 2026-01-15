@@ -55,14 +55,8 @@ export const Route = createFileRoute("/")({
 
 function RouteComponent() {
     const router = useRouter();
-    const {
-        user,
-        apiKeys,
-        tierData,
-        tierBalance,
-        packBalance,
-        cryptoBalance,
-    } = Route.useLoaderData();
+    const { user, apiKeys, tierData, tierBalance, packBalance, cryptoBalance } =
+        Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<"fiat" | "crypto">(

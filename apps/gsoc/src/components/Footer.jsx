@@ -318,22 +318,6 @@ export default function Footer() {
           >
             Copyright © {currentYear} pollinations.ai. All rights reserved.
           </Typography>
-          
-          <Typography 
-            variant="caption" 
-            sx={{ 
-              color: 'rgba(255,255,255,0.4)',
-              fontFamily: 'monospace',
-              fontSize: '0.7rem',
-              px: 2,
-              py: 0.5,
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '12px',
-              background: 'rgba(255,255,255,0.02)'
-            }}
-          >
-            2026
-          </Typography>
         </Box>
       </Box>
     </Box>

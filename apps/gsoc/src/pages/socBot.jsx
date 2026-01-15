@@ -700,101 +700,78 @@ const socBotChat = () => {
                 >
                   Frequently Asked Questions
                 </Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1.5, maxHeight: '500px', overflowY: 'auto', px: 1, '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-track': { background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }, '&::-webkit-scrollbar-thumb': { background: 'rgba(96, 165, 250, 0.3)', borderRadius: '10px' }, '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(96, 165, 250, 0.5)' } }}>
-                  {Object.entries(faqByCategory).map(([category, questions]) => (
-                    <Accordion 
-                      key={category}
-                      expanded={expandedFaq === category}
-                      onChange={() => setExpandedFaq(expandedFaq === category ? null : category)}
-                      elevation={0}
-                      sx={{
-                        background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-                        border: `1px solid ${categoryColors[category] ? categoryColors[category] + '30' : 'rgba(255,255,255,0.1)'}`,
-                        borderRadius: '12px !important',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          borderColor: categoryColors[category] || '#60a5fa',
-                          background: `linear-gradient(135deg, ${categoryColors[category] || '#60a5fa'}15 0%, ${categoryColors[category] || '#60a5fa'}08 100%)`,
-                        },
-                        '&.Mui-expanded': {
-                          margin: 0,
-                          borderColor: categoryColors[category] || '#60a5fa',
-                          gridColumn: 'span 2'
-                        },
-                        '&:before': {
-                          display: 'none'
-                        }
-                      }}
-                    >
-                      <AccordionSummary
-                        expandIcon={<ExpandMore sx={{ color: categoryColors[category] || '#60a5fa' }} />}
-                        sx={{
-                          minHeight: '44px',
-                          '&.Mui-expanded': {
-                            minHeight: '44px'
-                          },
-                          '& .MuiAccordionSummary-content': {
-                            my: 0.5
-                          }
-                        }}
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 2, maxHeight: '700px', overflowY: 'auto', px: 1, '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-track': { background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }, '&::-webkit-scrollbar-thumb': { background: 'rgba(96, 165, 250, 0.3)', borderRadius: '10px' }, '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(96, 165, 250, 0.5)' } }}>
+                  {faqData.map((faq) => {
+                    const categoryEmojis = {
+                      'General': '❓',
+                      'Application': '📝',
+                      'Projects': '🚀',
+                      'Timeline': '📅',
+                      'Mentorship': '👨‍🏫',
+                      'Technical': '💻',
+                      'Support': '🤝'
+                    };
+                    const emoji = categoryEmojis[faq.category] || '💡';
+                    const categoryColor = categoryColors[faq.category] || '#60a5fa';
+                    
+                    return (
+                      <motion.div
+                        key={faq.id}
+                        whileHover={{ y: -4 }}
+                        whileTap={{ scale: 0.98 }}
                       >
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
-                            color: categoryColors[category] || '#60a5fa',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
-                            fontWeight: 700,
-                            fontSize: '0.75rem'
+                        <Card
+                          onClick={() => handleFaqClick(faq.question)}
+                          elevation={0}
+                          sx={{
+                            cursor: 'pointer',
+                            background: `linear-gradient(135deg, ${categoryColor}15 0%, ${categoryColor}08 100%)`,
+                            border: `2px solid ${categoryColor}40`,
+                            borderRadius: '12px',
+                            transition: 'all 0.3s ease',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            '&:hover': {
+                              borderColor: categoryColor,
+                              background: `linear-gradient(135deg, ${categoryColor}25 0%, ${categoryColor}15 100%)`,
+                              boxShadow: `0 8px 24px ${categoryColor}30`,
+                              transform: 'translateY(-4px)'
+                            }
                           }}
                         >
-                          {category} ({questions.length})
-                        </Typography>
-                      </AccordionSummary>
-                      <AccordionDetails sx={{ pt: 0, pb: 1 }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
-                          {questions.map((faq) => (
-                            <motion.div
-                              key={faq.id}
-                              whileHover={{ x: 4 }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              <Card
-                                onClick={() => handleFaqClick(faq.question)}
-                                elevation={0}
-                                sx={{
-                                  cursor: 'pointer',
-                                  background: 'rgba(255,255,255,0.03)',
-                                  border: `1px solid rgba(255,255,255,0.1)`,
-                                  borderRadius: '8px',
-                                  transition: 'all 0.3s ease',
-                                  '&:hover': {
-                                    borderColor: 'rgba(255,255,255,0.3)',
-                                    background: 'rgba(255,255,255,0.08)',
-                                    transform: 'translateX(4px)'
-                                  }
+                          <CardContent sx={{ p: 2, '&:last-child': { pb: 2 }, flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography sx={{ fontSize: '1.5rem' }}>{emoji}</Typography>
+                              <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                  color: categoryColor,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.5px',
+                                  fontWeight: 700,
+                                  fontSize: '0.7rem'
                                 }}
                               >
-                                <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
-                                  <Typography 
-                                    variant="body2" 
-                                    sx={{ 
-                                      color: 'rgba(255,255,255,0.85)',
-                                      fontWeight: 500,
-                                      lineHeight: 1.3,
-                                      fontSize: '0.8rem'
-                                    }}
-                                  >
-                                    {faq.question}
-                                  </Typography>
-                                </CardContent>
-                              </Card>
-                            </motion.div>
-                          ))}
-                        </Box>
-                      </AccordionDetails>
-                    </Accordion>
-                  ))}
+                                {faq.category}
+                              </Typography>
+                            </Box>
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                color: '#fff',
+                                fontWeight: 600,
+                                lineHeight: 1.4,
+                                fontSize: '0.95rem'
+                              }}
+                            >
+                              {faq.question}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
                 </Box>
               </Box>
             </motion.div>

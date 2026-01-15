@@ -55,8 +55,8 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                     id="expiry-days-input"
                     name="expiry-days"
                     type="number"
-                    min="1"
-                    step="1"
+                    min="0"
+                    step="any"
                     value={value ?? ""}
                     onChange={(e) => {
                         const val = e.target.value;

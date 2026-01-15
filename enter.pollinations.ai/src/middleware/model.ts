@@ -1,10 +1,10 @@
-import { createMiddleware } from "hono/factory";
-import { HTTPException } from "hono/http-exception";
-import type { EventType } from "@shared/registry/types.ts";
+import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { resolveServiceId, type ServiceId } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
-import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
-import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
+import type { EventType } from "@shared/registry/types.ts";
+import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 
 export type ModelVariables = {
     model: {

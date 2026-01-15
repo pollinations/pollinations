@@ -5,7 +5,7 @@ import {
     getImageServices,
     getServiceDefinition,
     getTextServices,
-    ServiceId,
+    type ServiceId,
 } from "./registry";
 
 // Pricing uses registry field names directly, filtering out zero/undefined values

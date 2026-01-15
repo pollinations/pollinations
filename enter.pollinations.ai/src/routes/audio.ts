@@ -1,16 +1,17 @@
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { auth } from "@/middleware/auth.ts";
-import { polar } from "@/middleware/polar.ts";
-import { track } from "@/middleware/track.ts";
-import { resolveModel } from "@/middleware/model.ts";
-import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { describeRoute } from "hono-openapi";
-import { validator } from "@/middleware/validator.ts";
 import { z } from "zod";
 import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
+import { auth } from "@/middleware/auth.ts";
+import { resolveModel } from "@/middleware/model.ts";
+import { polar } from "@/middleware/polar.ts";
+import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
+import { track } from "@/middleware/track.ts";
+import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import type { Env } from "../env.ts";
+
 // Usage tracking helper - inline to avoid import path issues with Vite
 function buildAudioUsageHeaders(
     modelUsed: string,

@@ -1,22 +1,15 @@
 import { omit, safeRound } from "../utils";
 import {
-    TEXT_SERVICES,
-    DEFAULT_TEXT_MODEL,
-    TextServiceId,
-    TextModelId,
-} from "./text";
+    AUDIO_SERVICES,
+    type AudioModelId,
+    type AudioServiceId,
+} from "./audio";
 import {
     IMAGE_SERVICES,
-    DEFAULT_IMAGE_MODEL,
-    ImageServiceId,
-    ImageModelId,
+    type ImageModelId,
+    type ImageServiceId,
 } from "./image";
-import {
-    AUDIO_SERVICES,
-    DEFAULT_AUDIO_MODEL,
-    AudioServiceId,
-    AudioModelId,
-} from "./audio";
+import { TEXT_SERVICES, type TextModelId, type TextServiceId } from "./text";
 
 const PRECISION = 8;
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useChat } from './hooks/useChat';
-import { sendMessage, stopGeneration, initializeModels, generateImage, generateVideo } from './utils/api';
+import { useAuth } from './hooks/useAuth';
+import { sendMessage, stopGeneration, initializeModels, generateImage, generateVideo, setApiToken } from './utils/api';
 import { getSelectedModel, saveSelectedModel, getTheme, saveTheme } from './utils/storage';
 import Sidebar from './components/Sidebar';
 import ChatHeader from './components/ChatHeader';
@@ -27,6 +28,9 @@ function App() {
     removeMessagesAfter,
     clearAllChats
   } = useChat();
+
+  // BYOP Authentication
+  const { apiKey, isLoggedIn, login, logout } = useAuth();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState('openai');
@@ -82,6 +86,11 @@ function App() {
       setIsTutorialOpen(true);
     }
   }, []);
+
+  // Update API token when user logs in/out
+  useEffect(() => {
+    setApiToken(apiKey);
+  }, [apiKey]);
 
   const handleCloseTutorial = useCallback(() => {
     setIsTutorialOpen(false);
@@ -571,6 +580,10 @@ function App() {
         onDeleteChat={deleteChat}
         onThemeToggle={handleThemeToggle}
         onOpenSettings={() => setIsSettingsPanelOpen(true)}
+        isLoggedIn={isLoggedIn}
+        apiKey={apiKey}
+        onLogin={login}
+        onLogout={logout}
       />
       
       <div className={`chat-container ${isChatEmpty ? 'chat-container-empty' : ''}`}>

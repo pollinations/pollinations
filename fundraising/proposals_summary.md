@@ -2,19 +2,27 @@
 
 ---
 
-## ⭐ FINAL VERSION (Jan 13, 2026)
+## ⭐ FINAL VERSION (Jan 15, 2026)
 
-*Combined from Proposals 1, 2, and 4 based on feedback*
+*Refined from practice sessions — tightened for verbal delivery*
 
-### The Story
+### The Story (3 Parts, ~60 sec)
 
-1. **Obsession**: Programming at 13-14, obsessed with AI and artificial life before it was cool
-2. **Mastery**: Edinburgh CS & AI, top of class during "AI winter" — published peer-reviewed paper on neural networks (simulating desert ant navigation)
-3. **Big Tech**: Amazon AI engineer — saw how community and collaboration works from inside big tech
-4. **Art & Community**: Founded Voodoohop art collective in Brazil — 9 years building creative community
-5. **Insight**: Saw the broken pattern everywhere: credit cards, fragmented APIs, builders locked out. Today's 16-year-old in Brazil/Indonesia is stopped before they start.
-6. **The Fix**: Built Pollinations — what I wished I had at 16. One line of code, no signup, instant AI.
-7. **Proof**: Kids building hit games couldn't access AI — we gave them access. Result: "AI Character RP" 51M visits, $12K first month.
+**Part 1: The Beginnings** (~20 sec)
+- Obsessed with AI as a teenager — coding games, gravity simulations at 14
+- Edinburgh CS & AI — graduated top of class
+- Published peer-reviewed paper on neural networks — trained a neural network to simulate how desert ants navigate
+- *(Optional: 2nd place in 2007 simulated car racing — neural network driving a car)*
+
+**Part 2: Big Tech + Community** (~15 sec)
+- Amazon AI engineer + Founded Voodoohop art collective in Brazil (almost a decade)
+- **Key line**: "I've seen both corporate AI and grassroots creative communities from the inside"
+
+**Part 3: The Insight + The Fix** (~25 sec)
+- Saw the same walled gardens everywhere — credit cards, complex APIs, talent locked out
+- The barriers I faced as a teenager are now stopping the next generation
+- Built Pollinations — what I wished I had at 16
+- **Proof**: 600+ new devs/day, 20 new apps/day, "AI Character RP" on Roblox — 51M visits, $12K first month
 
 ### The Vision
 
@@ -27,10 +35,11 @@
 - **Framings**: "OpenID for AI" (technical), "Roblox for AI" (gaming)
 
 ### Key Credentials
-- ✅ Published peer-reviewed paper on neural networks
+- ✅ Published peer-reviewed paper on neural networks (biological systems, robotics)
 - ✅ Amazon AI team experience  
-- ✅ Built and scaled creative community (Voodoohop)
+- ✅ Built and scaled creative community (Voodoohop, almost a decade)
 - ⚠️ Don't mention specific years (avoid age bias)
+- ⚠️ Don't dwell on details — just hit the beats
 
 ---
 

@@ -36,7 +36,7 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
   -d '{"model": "openai", "messages": [{"role": "user", "content": [{"type": "text", "text": "Describe this image"}, {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}]}]}'
 ```
 
-**Gemini Tools:** `gemini`, `gemini-fast`, `gemini-large` have `code_execution` enabled by default. `gemini-search` has `google_search` enabled. Pass your own `tools` array to override (e.g., `[{"type": "function", "function": {"name": "google_search"}}]`).
+**Gemini Tools:** `gemini`, `gemini-large` have `code_execution` enabled (can generate images/plots). `gemini-search` has `google_search` enabled. Responses may include `content_blocks` with `image_url`, `text`, or `thinking` types.
 
 ### Simple Text Endpoint
 
@@ -63,10 +63,10 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 
 ## Authentication
 
-**Two key types:**
+**Two key types (both consume Pollen from your balance):**
 
-- **Publishable Keys (`pk_`):** Client-side safe, IP rate-limited (1 pollen per IP per hour)
-- **Secret Keys (`sk_`):** Server-side only, no rate limits, can spend Pollen
+- **Publishable Keys (`pk_`):** ⚠️ **Beta - not yet ready for production use.** For client-side apps, IP rate-limited (1 pollen per IP per hour). **Warning:** Exposing in public code will consume your Pollen if your app gets traffic.
+- **Secret Keys (`sk_`):** Server-side only, no rate limits. Keep secret - never expose publicly.
 
 **Auth methods:**
 
@@ -564,7 +564,7 @@ Include your API key in the `Authorization` header as a Bearer token:
 
 `Authorization: Bearer YOUR_API_KEY`
 
-API keys can be created from your dashboard at enter.pollinations.ai. Secret keys provide the best rate limits and can spend Pollen.
+API keys can be created from your dashboard at enter.pollinations.ai. Both key types consume Pollen. Secret keys have no rate limits.
 
 #### Request Body
 
@@ -722,7 +722,7 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
 
   - **`voice` (required)**
 
-    `string`, possible values: `"alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "dan"`
+    `string`, possible values: `"alloy", "echo", "fable", "onyx", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "dan"`
 
 - **`frequency_penalty`**
 
@@ -772,7 +772,7 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
 
 - **`model`**
 
-  `string`, default: `"openai"`
+  `string`, possible values: `"openai", "openai-fast", "openai-large", "qwen-coder", "mistral", "openai-audio", "gemini", "gemini-fast", "deepseek", "grok", "gemini-search", "chickytutor", "midijourney", "claude-fast", "claude", "claude-large", "perplexity-fast", "perplexity-reasoning", "kimi", "gemini-large", "nova-fast", "glm", "minimax"`, default: `"openai"` — AI model for text generation. See /v1/models for full list.
 
 - **`parallel_tool_calls`**
 

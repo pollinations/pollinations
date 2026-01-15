@@ -126,12 +126,7 @@ const LimitsBadge: FC<{
     let budgetStr = "∞";
     const isExhausted = hasBudget && pollenBudget <= 0;
     if (hasBudget) {
-        budgetStr =
-            pollenBudget <= 0
-                ? "empty"
-                : pollenBudget < 1
-                  ? `${pollenBudget.toFixed(2)}p`
-                  : `${Math.floor(pollenBudget)}p`;
+        budgetStr = pollenBudget <= 0 ? "empty" : `${pollenBudget.toFixed(2)}p`;
     }
 
     return (

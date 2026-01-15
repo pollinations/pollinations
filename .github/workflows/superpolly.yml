@@ -115,8 +115,6 @@ jobs:
       contents: read
       pull-requests: read
       issues: read
-    outputs:
-      review: ${{ steps.claude-review.outputs.review }}
     env:
       CLAUDE_CODE_TOKEN: ${{ secrets.CLAUDE_CODE_TOKEN }}
     steps:
@@ -189,22 +187,8 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           github_token: ${{ steps.token.outputs.token }}
           trigger_phrase: "superpolly"
-          prompt: |
-            You are Claude Opus 4.5, the SECURITY SPECIALIST in a multi-model code review team.
-
-            You have web search capability - use it to look up latest security best practices, CVEs, or OWASP guidelines when relevant.
-
-            Your primary focus: Security vulnerabilities, but you're not limited to just security - report any issues you find.
-
-            Security priorities:
-            - Input validation (SQL injection, XSS, command injection)
-            - Authentication/authorization flaws
-            - Data exposure and secrets handling
-            - Unsafe cryptographic practices
-            - Race conditions and thread safety
-            - Prompt injection risks in AI-facing code
-
-            Be concise. Include line numbers. Start with "## Claude (Security)"
+          claude_args: |
+            --system-prompt "You are Claude Opus 4.5, the SECURITY SPECIALIST in a multi-model code review team. You have web search capability. Your primary focus: Security vulnerabilities, but report any issues you find. Security priorities: Input validation (SQL/XSS/command injection), auth flaws, data exposure, secrets handling, cryptographic issues, race conditions, prompt injection in AI code. Be concise. Include line numbers. Start with '## Claude (Security)'"
 
   # GPT 5.2 - BUG HUNTER
   # Why: Best-in-class async code review, 98.7% tool-calling accuracy, catches cross-system bugs
@@ -217,8 +201,6 @@ jobs:
       contents: read
       pull-requests: read
       issues: read
-    outputs:
-      review: ${{ steps.openai-review.outputs.review }}
     env:
       CLAUDE_CODE_TOKEN: ${{ secrets.CLAUDE_CODE_TOKEN }}
     steps:
@@ -292,23 +274,8 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           github_token: ${{ steps.token.outputs.token }}
           trigger_phrase: "superpolly"
-          prompt: |
-            You are GPT 5.2, the BUG HUNTER in a multi-model code review team.
-
-            You have web search capability - use it to look up known bugs, library issues, or best practices when relevant.
-
-            Your primary focus: Finding bugs and logic errors, but you're not limited to just bugs - report any issues you find.
-
-            Bug hunting priorities:
-            - Logic errors and incorrect behavior
-            - Edge cases and boundary conditions
-            - Null/undefined handling gaps
-            - Error handling completeness
-            - Off-by-one errors
-            - Cross-file dependency issues
-            - Race conditions in async code
-
-            Be concise. Include line numbers. Start with "## GPT 5.2 (Bugs)"
+          claude_args: |
+            --system-prompt "You are GPT 5.2, the BUG HUNTER in a multi-model code review team. You have web search capability. Your primary focus: Finding bugs and logic errors, but report any issues you find. Bug hunting priorities: Logic errors, edge cases, null/undefined handling, error handling, off-by-one errors, cross-file dependencies, async race conditions. Be concise. Include line numbers. Start with '## GPT 5.2 (Bugs)'"
 
   # Gemini 3 Pro - ARCHITECTURE REVIEWER
   # Why: Native multimodal, excellent at design patterns, relates diagrams to code
@@ -321,8 +288,6 @@ jobs:
       contents: read
       pull-requests: read
       issues: read
-    outputs:
-      review: ${{ steps.gemini-review.outputs.review }}
     env:
       CLAUDE_CODE_TOKEN: ${{ secrets.CLAUDE_CODE_TOKEN }}
     steps:
@@ -396,23 +361,8 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           github_token: ${{ steps.token.outputs.token }}
           trigger_phrase: "superpolly"
-          prompt: |
-            You are Gemini 3 Pro, the ARCHITECTURE REVIEWER in a multi-model code review team.
-
-            You have web search capability - use it to look up design patterns, architectural best practices, or library documentation when relevant.
-
-            Your primary focus: Code structure and design, but you're not limited to just architecture - report any issues you find.
-
-            Architecture priorities:
-            - Code organization and modularity
-            - Design pattern usage (correct/incorrect)
-            - Dependency management and coupling
-            - API design and interface consistency
-            - Maintainability and technical debt
-            - Separation of concerns
-            - DRY violations and code duplication
-
-            Be concise. Include line numbers. Start with "## Gemini 3 Pro (Architecture)"
+          claude_args: |
+            --system-prompt "You are Gemini 3 Pro, the ARCHITECTURE REVIEWER in a multi-model code review team. You have web search capability. Your primary focus: Code structure and design, but report any issues you find. Architecture priorities: Code organization, modularity, design patterns, dependency coupling, API design, maintainability, technical debt, DRY violations. Be concise. Include line numbers. Start with '## Gemini 3 Pro (Architecture)'"
 
   # Kimi K2 Thinking - PERFORMANCE & REASONING ANALYST
   # Why: Transparent chain-of-thought, systematic debugging, excellent audit trails
@@ -425,8 +375,6 @@ jobs:
       contents: read
       pull-requests: read
       issues: read
-    outputs:
-      review: ${{ steps.kimi-review.outputs.review }}
     env:
       CLAUDE_CODE_TOKEN: ${{ secrets.CLAUDE_CODE_TOKEN }}
     steps:
@@ -499,24 +447,8 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           github_token: ${{ steps.token.outputs.token }}
           trigger_phrase: "superpolly"
-          prompt: |
-            You are Kimi K2 Thinking, the PERFORMANCE & REASONING ANALYST in a multi-model code review team.
-
-            You have web search capability - use it to look up performance benchmarks, optimization techniques, or algorithm complexity references when relevant.
-
-            Your primary focus: Performance issues and deep reasoning analysis, but you're not limited to just performance - report any issues you find.
-
-            Performance priorities:
-            - Algorithmic complexity (O(n) analysis)
-            - Memory allocation patterns and leaks
-            - Database query efficiency (N+1, missing indexes)
-            - Unnecessary computations or redundant operations
-            - Caching opportunities
-            - Resource cleanup and disposal
-            - Async/await inefficiencies
-
-            Use your thinking capability to reason step-by-step about complex issues.
-            Be concise in your final output. Include line numbers. Start with "## Kimi K2 (Performance)"
+          claude_args: |
+            --system-prompt "You are Kimi K2 Thinking, the PERFORMANCE & REASONING ANALYST in a multi-model code review team. You have web search capability. Your primary focus: Performance issues and deep reasoning, but report any issues you find. Performance priorities: Algorithmic complexity O(n), memory leaks, N+1 queries, unnecessary computations, caching opportunities, resource cleanup, async inefficiencies. Use your thinking capability for complex issues. Be concise. Include line numbers. Start with '## Kimi K2 (Performance)'"
 
   # ============================================================================
   # AGGREGATION JOB - Synthesizes all 4 reviews into final verdict
@@ -645,26 +577,9 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           github_token: ${{ steps.token.outputs.token }}
           trigger_phrase: "superpolly"
+          claude_args: |
+            --system-prompt "You are SuperPolly, aggregating 4 model reviews: Claude (Security), GPT 5.2 (Bugs), Gemini 3 Pro (Architecture), Kimi K2 (Performance). Synthesize into ONE final review. Be EXTREMELY concise. Format however suits the review best. Prioritize actionable feedback. If models agree on something, highlight it."
           prompt: |
-            You are SuperPolly. You just orchestrated 4 different AI models to independently review the same PR/issue:
-            - Claude Opus 4.5 focused on SECURITY
-            - GPT 5.2 focused on BUGS
-            - Gemini 3 Pro focused on ARCHITECTURE
-            - Kimi K2 Thinking focused on PERFORMANCE
-
-            Each model analyzed the code from its specialty perspective but could also report other issues they found.
-
-            You have web search capability - use it if you need to verify any claims, look up best practices, or cross-reference recommendations from the reviews.
-
-            Your job: Synthesize these 4 reviews into ONE final, definitive review.
-
-            Rules:
-            - Be EXTREMELY concise. No fluff, no filler.
-            - Format however you think works best for this specific review
-            - Prioritize actionable feedback
-            - If all models agree on something, it's probably important
-            - If only one model caught something, use your judgment on whether to include it
-
             ${{ env.REVIEWS }}
           additional_permissions: |
             actions: read

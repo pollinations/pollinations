@@ -56,13 +56,10 @@ export const UsageGraph: FC = () => {
             </div>
             <div className="bg-violet-50/30 rounded-2xl p-6 border border-violet-300">
                 {loading && (
-                    <div className="animate-pulse space-y-4">
-                        <div className="flex gap-2">
-                            <div className="h-8 bg-gray-200 rounded-full w-16" />
-                            <div className="h-8 bg-gray-200 rounded-full w-16" />
-                            <div className="h-8 bg-gray-200 rounded-full w-16" />
-                        </div>
-                        <div className="h-[180px] bg-gray-100 rounded-xl" />
+                    <div className="flex items-center justify-center h-[180px]">
+                        <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
+                            Fetching usage data…
+                        </p>
                     </div>
                 )}
                 {error && !loading && (

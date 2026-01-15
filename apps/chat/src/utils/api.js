@@ -1,5 +1,5 @@
 // API utilities for Pollinations chat - Enhanced version from vanilla
-import { DEFAULT_API_KEY } from '../config/auth';
+import { DEFAULT_API_KEY, isValidApiKey } from '../config/auth';
 
 const BASE_IMAGE_URL = 'https://gen.pollinations.ai/image';
 const TEXT_MODELS_ENDPOINT = 'https://gen.pollinations.ai/v1/models';
@@ -25,7 +25,7 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
  */
 export const setApiToken = (token) => {
   // Validate token format - must be sk_ (secret key) or plln_pk_ (publishable key) or pk_ (legacy publishable key)
-  if (token && !/^(sk_|plln_pk_|pk_)/.test(token)) {
+  if (token && !isValidApiKey(token)) {
     console.warn('Invalid API token format. Expected token to start with sk_, plln_pk_, or pk_');
   }
   currentApiToken = token || DEFAULT_API_KEY;

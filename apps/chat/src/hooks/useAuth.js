@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { STORAGE_KEY, ENTER_URL, DEFAULT_API_KEY } from "../config/auth";
+import { STORAGE_KEY, ENTER_URL, DEFAULT_API_KEY, isValidApiKey } from "../config/auth";
 
 /**
  * Hook for managing BYOP (Bring Your Own Pollen) authentication
@@ -26,7 +26,7 @@ export function useAuth() {
 
             if (key) {
                 // Validate key format before storing
-                if (/^(sk_|plln_pk_|pk_)/.test(key)) {
+                if (isValidApiKey(key)) {
                     localStorage.setItem(STORAGE_KEY, key);
                     setUserApiKey(key);
                     // Clean URL - remove fragment
@@ -36,7 +36,7 @@ export function useAuth() {
                         window.location.pathname + window.location.search,
                     );
                 } else {
-                    console.error('Invalid API key format in URL fragment');
+                    console.error('Invalid API key format in URL fragment. Expected key to start with sk_, plln_pk_, or pk_');
                 }
             }
         } catch (error) {

@@ -1,21 +1,20 @@
-import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { productSlugToUrlParam } from "../../routes/polar.ts";
+import { apiClient } from "../api.ts";
+import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
     ApiKeyList,
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/api-key.tsx";
 import { Button } from "../components/button.tsx";
-import { config } from "../config.ts";
-import { User } from "../components/user.tsx";
-import { PollenBalance } from "../components/pollen-balance.tsx";
-import { TierPanel } from "../components/tier-panel.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
+import { PollenBalance } from "../components/pollen-balance.tsx";
 import { Pricing } from "../components/pricing/index.ts";
-import { apiClient } from "../api.ts";
-import { authClient, getUserOrRedirect } from "../auth.ts";
+import { TierPanel } from "../components/tier-panel.tsx";
+import { User } from "../components/user.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -30,7 +29,9 @@ export const Route = createFileRoute("/")({
                 apiClient.tiers.view
                     .$get()
                     .then((r) => (r.ok ? r.json() : null)),
-                authClient.apiKey.list(),
+                apiClient["api-keys"]
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : { data: [] })),
                 apiClient.polar.customer["d1-balance"]
                     .$get()
                     .then((r) => (r.ok ? r.json() : null)),
@@ -54,15 +55,8 @@ export const Route = createFileRoute("/")({
 
 function RouteComponent() {
     const router = useRouter();
-    const {
-        user,
-        customer,
-        apiKeys,
-        tierData,
-        tierBalance,
-        packBalance,
-        cryptoBalance,
-    } = Route.useLoaderData();
+    const { user, apiKeys, tierData, tierBalance, packBalance, cryptoBalance } =
+        Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<"fiat" | "crypto">(
@@ -88,9 +82,14 @@ function RouteComponent() {
         const prefix = isPublishable ? "pk" : "sk";
 
         // Step 1: Create key via better-auth's native API
+        const SECONDS_PER_DAY = 24 * 60 * 60;
         const createResult = await authClient.apiKey.create({
             name: formState.name,
             prefix,
+            ...(formState.expiryDays !== null &&
+                formState.expiryDays !== undefined && {
+                    expiresIn: formState.expiryDays * SECONDS_PER_DAY,
+                }),
             metadata: {
                 description: formState.description,
                 keyType,
@@ -118,12 +117,22 @@ function RouteComponent() {
             });
         }
 
-        // Step 2: Set permissions if restricted (allowedModels is not null)
-        // null = unrestricted (all models), array = restricted to specific models
-        if (
+        // Step 2: Set permissions and/or budget if provided
+        // allowedModels: null = unrestricted (all models), array = restricted to specific models
+        // pollenBudget: null = unlimited, number = budget cap
+        // accountPermissions: null = no permissions, array = enabled permissions
+        const hasAllowedModels =
             formState.allowedModels !== null &&
-            formState.allowedModels !== undefined
-        ) {
+            formState.allowedModels !== undefined;
+        const hasPollenBudget =
+            formState.pollenBudget !== null &&
+            formState.pollenBudget !== undefined;
+        const hasAccountPermissions =
+            formState.accountPermissions !== null &&
+            formState.accountPermissions !== undefined &&
+            formState.accountPermissions.length > 0;
+
+        if (hasAllowedModels || hasPollenBudget || hasAccountPermissions) {
             const updateResponse = await fetch(
                 `/api/api-keys/${apiKey.id}/update`,
                 {
@@ -131,16 +140,29 @@ function RouteComponent() {
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",
                     body: JSON.stringify({
-                        allowedModels: formState.allowedModels,
+                        ...(hasAllowedModels && {
+                            allowedModels: formState.allowedModels,
+                        }),
+                        ...(hasPollenBudget && {
+                            pollenBudget: formState.pollenBudget,
+                        }),
+                        ...(hasAccountPermissions && {
+                            accountPermissions: formState.accountPermissions,
+                        }),
                     }),
                 },
             );
 
             if (!updateResponse.ok) {
                 const errorData = await updateResponse.json();
-                console.error("Failed to set API key permissions:", errorData);
-                // Key was created but permissions failed - still return the key
-                // User can update permissions later
+                console.error(
+                    "Failed to set API key permissions/budget:",
+                    errorData,
+                );
+                // Key was created but update failed - throw so user knows
+                throw new Error(
+                    `Key created but failed to set budget/permissions: ${(errorData as { message?: string }).message || "Unknown error"}`,
+                );
             }
         }
 

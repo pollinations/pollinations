@@ -1,17 +1,22 @@
 import { useState, useEffect, useCallback } from "react";
 import { STORAGE_KEY, ENTER_URL, DEFAULT_API_KEY, isValidApiKey } from "../config/auth";
+import { fetchPollenBalance } from "../utils/api";
 
 /**
  * Hook for managing BYOP (Bring Your Own Pollen) authentication
  * - Stores user's API key in localStorage
  * - Provides login/logout functions
  * - Returns current API key (user's or default)
+ * - Fetches and returns pollen balance for logged-in users
  */
 export function useAuth() {
     const [userApiKey, setUserApiKey] = useState(() => {
         if (typeof window === "undefined") return null;
         return localStorage.getItem(STORAGE_KEY);
     });
+
+    const [pollenBalance, setPollenBalance] = useState(null);
+    const [isLoadingBalance, setIsLoadingBalance] = useState(false);
 
     // Check URL fragment for API key on mount (redirect from enter.pollinations.ai)
     useEffect(() => {
@@ -53,11 +58,31 @@ export function useAuth() {
     const logout = useCallback(() => {
         localStorage.removeItem(STORAGE_KEY);
         setUserApiKey(null);
+        setPollenBalance(null);
     }, []);
+
+    // Fetch balance when user logs in
+    useEffect(() => {
+        if (!userApiKey) {
+            setPollenBalance(null);
+            return;
+        }
+
+        const loadBalance = async () => {
+            setIsLoadingBalance(true);
+            const balance = await fetchPollenBalance();
+            setPollenBalance(balance);
+            setIsLoadingBalance(false);
+        };
+
+        loadBalance();
+    }, [userApiKey]);
 
     return {
         apiKey: userApiKey || DEFAULT_API_KEY,
         isLoggedIn: !!userApiKey,
+        pollenBalance,
+        isLoadingBalance,
         login,
         logout,
     };

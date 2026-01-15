@@ -5,6 +5,7 @@ import {
     calculatePrice,
     ServiceId,
     ModelId,
+    TokenUsage,
     UsageCost,
     UsagePrice,
     PriceDefinition,
@@ -43,7 +44,6 @@ import type {
 import type { AuthVariables } from "@/middleware/auth.ts";
 import { PolarVariables } from "./polar.ts";
 import { z } from "zod";
-import { TokenUsage } from "../../../shared/registry/registry.js";
 import { removeUnset } from "@/util.ts";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import { mergeContentFilterResults } from "@/content-filter.ts";
@@ -116,7 +116,9 @@ export const track = (eventType: EventType) =>
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
             userTier: c.var.auth.user?.tier,
-            userGithubId: `${c.var.auth.user?.githubId}`,
+            userGithubId: c.var.auth.user?.githubId
+                ? String(c.var.auth.user.githubId)
+                : undefined,
             userGithubUsername: c.var.auth.user?.githubUsername,
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyType: c.var.auth.apiKey?.metadata?.keyType as ApiKeyType,

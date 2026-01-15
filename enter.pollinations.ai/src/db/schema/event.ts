@@ -1,7 +1,7 @@
 import type { PriceDefinition, TokenUsage } from "@shared/registry/registry.ts";
 import type { ContentFilterResult } from "@/schemas/openai";
 
-export type EventType = "generate.text" | "generate.image";
+export type EventType = "generate.text" | "generate.image" | "generate.audio";
 export type ApiKeyType = "secret" | "publishable";
 
 // Plain TypeScript type for Tinybird events (no D1 table - events sent directly to Tinybird)

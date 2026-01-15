@@ -5,6 +5,7 @@ import { createAuth } from "./auth.ts";
 import { handleError } from "./error.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
+import { audioRoutes } from "./routes/audio.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
 import { usageRoutes } from "./routes/usage.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
@@ -29,7 +30,8 @@ export const api = new Hono<Env>()
     .route("/webhooks", webhooksRoutes)
     .route("/admin", adminRoutes)
     .route("/model-stats", modelStatsRoutes)
-    .route("/generate", proxyRoutes);
+    .route("/generate", proxyRoutes)
+    .route("/generate/v1/audio", audioRoutes);
 
 export type ApiRoutes = typeof api;
 

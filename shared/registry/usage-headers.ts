@@ -151,3 +151,16 @@ export function createVideoTokenUsage(
         completionVideoTokens,
     };
 }
+
+/**
+ * Helper for audio/TTS services: create TokenUsage with audio tokens (characters)
+ * ElevenLabs bills by character count, so we use completionAudioTokens
+ */
+export function createAudioTokenUsage(
+    completionAudioTokens: number,
+): TokenUsage {
+    return {
+        unit: "TOKENS",
+        completionAudioTokens,
+    };
+}

@@ -17,4 +17,7 @@ TINYBIRD_INGEST_TOKEN=your_tinybird_ingest_token
 TESTING_REFERRER=optional_testing_referrer
 PLN_ENTER_TOKEN=optional_pln_enter_token
 
+# ElevenLabs (text-to-speech)
+ELEVENLABS_API_KEY=your_elevenlabs_api_key
+
 # Tip: Run `sops decrypt secrets/dev.vars.json > .dev.vars` to get all secrets

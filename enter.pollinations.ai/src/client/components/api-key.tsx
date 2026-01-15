@@ -1,6 +1,6 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
-import { formatDistanceToNowStrict, type FormatDistanceToken } from "date-fns";
+import { type FormatDistanceToken, formatDistanceToNowStrict } from "date-fns";
 import { KeyPermissionsInputs } from "./key-permissions.tsx";
 
 const shortFormatDistance: Record<FormatDistanceToken, string> = {
@@ -26,16 +26,16 @@ const shortLocale = {
     formatDistance: (token: FormatDistanceToken, count: number) =>
         shortFormatDistance[token].replace("{{count}}", String(count)),
 };
+
 import type { FC } from "react";
-import { useState, useEffect } from "react";
-import { cn } from "@/util.ts";
-import { Button } from "../components/button.tsx";
-import { Fragment } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import {
-    uniqueNamesGenerator,
     adjectives,
     animals,
+    uniqueNamesGenerator,
 } from "unique-names-generator";
+import { cn } from "@/util.ts";
+import { Button } from "../components/button.tsx";
 
 type ApiKey = {
     id: string;
@@ -197,8 +197,14 @@ const ModelsBadge: FC<{
                             const btn = el.parentElement;
                             if (btn) {
                                 const rect = btn.getBoundingClientRect();
-                                el.style.setProperty("--tooltip-top", `${rect.bottom + 4}px`);
-                                el.style.setProperty("--tooltip-left", `${rect.left}px`);
+                                el.style.setProperty(
+                                    "--tooltip-top",
+                                    `${rect.bottom + 4}px`,
+                                );
+                                el.style.setProperty(
+                                    "--tooltip-left",
+                                    `${rect.left}px`,
+                                );
                             }
                         }
                     }}
@@ -627,7 +633,7 @@ const CreateKeyForm: FC<{
                 <Field.Label className="block text-sm font-semibold mb-2">
                     {createdKey ? "Your API Key" : "Name"}
                 </Field.Label>
-                    <Field.Input
+                <Field.Input
                     type="text"
                     value={createdKey ? createdKey.key : formData.name}
                     onChange={(e) => onInputChange("name", e.target.value)}
@@ -788,20 +794,21 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         resetForm();
     };
 
-    const resetForm = () => {
+    // biome-ignore lint/correctness/useExhaustiveDependencies: generateFunName is a stable module-level function
+    const resetForm = useCallback(() => {
         setCreatedKey(null);
         setFormData({
-            name: "backend-" + generateFunName(),
+            name: `backend-${generateFunName()}`,
             description: "",
             keyType: "secret",
             allowedModels: null,
             accountPermissions: null,
         });
-    };
+    }, []);
 
     useEffect(() => {
         if (!isOpen) resetForm();
-    }, [isOpen]);
+    }, [isOpen, resetForm]);
 
     return (
         <Dialog.Root open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>

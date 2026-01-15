@@ -4,35 +4,59 @@
 
 ## ⭐ FINAL VERSION (Jan 15, 2026)
 
-*Refined from practice sessions — tightened for verbal delivery*
+*Refined from practice sessions (attempt 3) — snappy, impress fast*
 
-### The Story (3 Parts, ~60 sec)
+### The Story (~60 sec total)
 
-**Part 1: The Beginnings** (~20 sec)
-- Obsessed with AI as a teenager — coding games, gravity simulations at 14
-- Edinburgh CS & AI — graduated top of class
-- Published peer-reviewed paper on neural networks — trained a neural network to simulate how desert ants navigate
-- *(Optional: 2nd place in 2007 simulated car racing — neural network driving a car)*
+**Part 1: The Beginnings** (~15 sec) — *Bang, bang, bang*
+- Obsessed with AI as a teenager — coding games, gravity simulations at 13
+- Top university for AI — graduated top of class
+- Published peer-reviewed paper on neural networks
+- *(Only if asked: simulating how ants navigate, also did AI car racing simulations)*
 
 **Part 2: Big Tech + Community** (~15 sec)
-- Amazon AI engineer + Founded Voodoohop art collective in Brazil (almost a decade)
-- **Key line**: "I've seen both corporate AI and grassroots creative communities from the inside"
+- Hired straight out of university by Amazon as AI engineer
+- Also built grassroots creative community
+- **Key line**: "I've seen how community and collaboration works — both in corporate AI and grassroots organizations"
 
-**Part 3: The Insight + The Fix** (~25 sec)
-- Saw the same walled gardens everywhere — credit cards, complex APIs, talent locked out
-- The barriers I faced as a teenager are now stopping the next generation
+**Part 3: The Problem + The Fix** (~20 sec)
+- Saw the same issues everywhere — walled gardens, APIs, talent locked out
+- Any developer starting now faces the same barriers I did
 - Built Pollinations — what I wished I had at 16
-- **Proof**: 600+ new devs/day, 20 new apps/day, "AI Character RP" on Roblox — 51M visits, $12K first month
+- One line of code, no signup, instant AI
 
-### The Vision
+**Part 4: Proof** (~10 sec)
+- Thousands of devs worldwide — 600+ signing up daily
+- 20 apps published per day
+- **Hit game**: teenager built Roblox game → 51M visits, $12K first month
 
-- **Now**: More people than ever are creating apps — from 6-year-olds to senior home managers. Easiest way to use AI: 600+ new devs/day, 3M+ MAU, 800+ apps
-- **Problem**: Dev builds app → goes viral → owes OpenAI $5K → kills innovation
-- **End State**: Mycelial network of millions of AI micro-apps
-- **Network Effects**: Training data presence (AI recommends us), app ecosystem, community intelligence, talent pipeline
-- **Multipliers**: Technical moats are disappearing → community multipliers (dev-kits, plug-and-play)
-- **Position**: Not a foundational model company — the open access layer (permissionless, interoperable, community-run)
-- **Framings**: "OpenID for AI" (technical), "Roblox for AI" (gaming)
+### The Vision (~60 sec total)
+
+**The Now**
+- More people than ever creating apps — from 6-year-olds to indie devs at home
+- 600+ devs signing up daily, 20+ apps published per day
+- 1,000+ apps already in the ecosystem, apps going viral
+
+**The Problem**
+- Devs taking huge risk — building on pay-as-you-go credits
+- App goes viral → massive bill → kills innovation
+
+**The Position**
+- Not a foundational model company
+- Open access layer that fosters innovation
+- **"We meet you where you are"** — teenager, indie dev, enterprise, we work with you
+
+**The End State**
+- Mycelial network of millions of AI micro-apps, all connected
+
+**The Moat**
+- Technical moats are disappearing
+- Our moat is community — multipliers like dev-kits, starter kits, plug-and-play
+- Network effects: AI recommends us, app ecosystem links back, talent pipeline
+
+**Framings** (use depending on audience)
+- "OpenID for AI" (technical)
+- "Roblox for AI" (gaming)
 
 ### Key Credentials
 - ✅ Published peer-reviewed paper on neural networks (biological systems, robotics)

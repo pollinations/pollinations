@@ -1,22 +1,11 @@
 name = "gsoc"
 main = "worker.js"
-type = "javascript"
-env_file = ".env.worker"
-ompatibility_date = "2026-01-11
+compatibility_date = "2026-01-11"
+
 [env.production]
 routes = [
   { pattern = "gsoc.pollinations.ai/api/*", zone_name = "pollinations.ai" }
 ]
 
-[env.production.vars]
-# Secrets are injected via wrangler CLI at deployment time
-# See: .github/workflows/app-deploy-unified.yml
-
 [[triggers.crons]]
 cron = "0 0 * * *"
-
-[build]
-command = "npm run build"
-
-[build.upload]
-format = "service-worker"

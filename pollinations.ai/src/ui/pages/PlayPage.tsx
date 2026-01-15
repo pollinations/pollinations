@@ -99,10 +99,9 @@ function PlayPage() {
                                         {pageCopy.loggedInCtaText}
                                     </p>
                                 )}
-                                {balance && (
+                                {balance?.balance !== undefined && (
                                     <span className="text-xs text-text-body-secondary px-2 py-0.5 bg-input-background rounded">
-                                        🌸 {balance.userBalance.toFixed(2)}{" "}
-                                        pollen
+                                        🌸 {balance.balance.toFixed(2)} pollen
                                     </span>
                                 )}
                                 <span className="font-mono text-xs bg-input-background text-text-brand px-3 py-1.5 rounded border border-border-main">

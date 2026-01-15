@@ -301,44 +301,55 @@ jobs:
         run: |
           mkdir -p $HOME/.claude-code-router/plugins
 
-          # Gemini Schema Fix - handles thought_signature
+          # Gemini Schema Fix - handles thought_signature and cleans unsupported schema props
           cat > $HOME/.claude-code-router/plugins/gemini-schema-fix.js << 'SCHEMAFIX'
+          const UNSUPPORTED = ['propertyNames', 'patternProperties', 'additionalItems', 'unevaluatedProperties', 'unevaluatedItems', 'contentEncoding', 'contentMediaType', 'contentSchema', '$schema', '$id', '$ref', '$defs', 'definitions', 'if', 'then', 'else', 'allOf', 'anyOf', 'oneOf', 'not', 'dependentSchemas', 'dependentRequired', 'minContains', 'maxContains'];
+
+          function cleanSchema(obj) {
+            if (!obj || typeof obj !== 'object') return obj;
+            if (Array.isArray(obj)) return obj.map(cleanSchema);
+            const cleaned = {};
+            for (const [key, value] of Object.entries(obj)) {
+              if (!UNSUPPORTED.includes(key)) {
+                cleaned[key] = cleanSchema(value);
+              }
+            }
+            return cleaned;
+          }
+
           class GeminiSchemaFixTransformer {
             constructor(options) {
               this.name = 'gemini-schema-fix';
               this.SKIP_SIGNATURE = 'skip_thought_signature_validator';
-              this.unsupportedProps = ['propertyNames', 'patternProperties', 'additionalItems', 'unevaluatedProperties', 'unevaluatedItems', 'contentEncoding', 'contentMediaType', 'contentSchema', '$schema', '$id', '$ref', '$defs', 'definitions', 'if', 'then', 'else', 'allOf', 'anyOf', 'oneOf', 'not', 'dependentSchemas', 'dependentRequired', 'minContains', 'maxContains'];
-            }
-            isGeminiModel(model) { return model && model.toLowerCase().includes('gemini'); }
-            cleanSchema(obj) {
-              if (!obj || typeof obj !== 'object') return obj;
-              if (Array.isArray(obj)) return obj.map(item => this.cleanSchema(item));
-              const cleaned = {};
-              for (const [key, value] of Object.entries(obj)) {
-                if (!this.unsupportedProps.includes(key)) cleaned[key] = this.cleanSchema(value);
-              }
-              return cleaned;
-            }
-            addThoughtSignatureBypass(messages) {
-              if (!messages || !Array.isArray(messages)) return messages;
-              return messages.map(msg => {
-                if (msg.role === 'assistant' && msg.tool_calls && Array.isArray(msg.tool_calls)) {
-                  return { ...msg, tool_calls: msg.tool_calls.map(tc => {
-                    if (tc.function && !tc.function.thought_signature) {
-                      return { ...tc, function: { ...tc.function, thought_signature: this.SKIP_SIGNATURE } };
-                    }
-                    return tc;
-                  })};
-                }
-                return msg;
-              });
             }
             async transformRequestIn(body, provider, context) {
-              const model = body.model || '';
-              if (this.isGeminiModel(model) && body.messages) body.messages = this.addThoughtSignatureBypass(body.messages);
+              const model = (body.model || '').toLowerCase();
+              const isGemini = model.includes('gemini');
+
+              // Add thought_signature bypass for Gemini
+              if (isGemini && body.messages) {
+                body.messages = body.messages.map(msg => {
+                  if (msg.role === 'assistant' && msg.tool_calls && Array.isArray(msg.tool_calls)) {
+                    return {
+                      ...msg,
+                      tool_calls: msg.tool_calls.map(tc => {
+                        if (tc.function && !tc.function.thought_signature) {
+                          return { ...tc, function: { ...tc.function, thought_signature: this.SKIP_SIGNATURE } };
+                        }
+                        return tc;
+                      })
+                    };
+                  }
+                  return msg;
+                });
+              }
+
+              // Clean tool schemas for all models (removes unsupported JSON schema props)
               if (body.tools && Array.isArray(body.tools)) {
                 body.tools = body.tools.map(tool => {
-                  if (tool.function && tool.function.parameters) tool.function.parameters = this.cleanSchema(tool.function.parameters);
+                  if (tool.function && tool.function.parameters) {
+                    tool.function.parameters = cleanSchema(tool.function.parameters);
+                  }
                   return tool;
                 });
               }
@@ -541,64 +552,54 @@ jobs:
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
           mkdir -p $HOME/.claude-code-router/plugins
 
-          # Gemini Schema Fix - handles thought_signature for Gemini models
+          # Gemini Schema Fix - handles thought_signature and cleans unsupported schema props
           cat > $HOME/.claude-code-router/plugins/gemini-schema-fix.js << 'SCHEMAFIX'
+          const UNSUPPORTED = ['propertyNames', 'patternProperties', 'additionalItems', 'unevaluatedProperties', 'unevaluatedItems', 'contentEncoding', 'contentMediaType', 'contentSchema', '$schema', '$id', '$ref', '$defs', 'definitions', 'if', 'then', 'else', 'allOf', 'anyOf', 'oneOf', 'not', 'dependentSchemas', 'dependentRequired', 'minContains', 'maxContains'];
+
+          function cleanSchema(obj) {
+            if (!obj || typeof obj !== 'object') return obj;
+            if (Array.isArray(obj)) return obj.map(cleanSchema);
+            const cleaned = {};
+            for (const [key, value] of Object.entries(obj)) {
+              if (!UNSUPPORTED.includes(key)) {
+                cleaned[key] = cleanSchema(value);
+              }
+            }
+            return cleaned;
+          }
+
           class GeminiSchemaFixTransformer {
             constructor(options) {
               this.name = 'gemini-schema-fix';
               this.SKIP_SIGNATURE = 'skip_thought_signature_validator';
-              this.unsupportedProps = [
-                'propertyNames', 'patternProperties', 'additionalItems',
-                'unevaluatedProperties', 'unevaluatedItems', 'contentEncoding',
-                'contentMediaType', 'contentSchema', '$schema', '$id', '$ref',
-                '$defs', 'definitions', 'if', 'then', 'else', 'allOf', 'anyOf',
-                'oneOf', 'not', 'dependentSchemas', 'dependentRequired',
-                'minContains', 'maxContains'
-              ];
-            }
-            isGeminiModel(model) {
-              return model && model.toLowerCase().includes('gemini');
-            }
-            cleanSchema(obj) {
-              if (!obj || typeof obj !== 'object') return obj;
-              if (Array.isArray(obj)) return obj.map(item => this.cleanSchema(item));
-              const cleaned = {};
-              for (const [key, value] of Object.entries(obj)) {
-                if (!this.unsupportedProps.includes(key)) {
-                  cleaned[key] = this.cleanSchema(value);
-                }
-              }
-              return cleaned;
-            }
-            addThoughtSignatureBypass(messages) {
-              if (!messages || !Array.isArray(messages)) return messages;
-              return messages.map(msg => {
-                if (msg.role === 'assistant' && msg.tool_calls && Array.isArray(msg.tool_calls)) {
-                  return {
-                    ...msg,
-                    tool_calls: msg.tool_calls.map(tc => {
-                      if (tc.function && !tc.function.thought_signature) {
-                        return {
-                          ...tc,
-                          function: { ...tc.function, thought_signature: this.SKIP_SIGNATURE }
-                        };
-                      }
-                      return tc;
-                    })
-                  };
-                }
-                return msg;
-              });
             }
             async transformRequestIn(body, provider, context) {
-              const model = body.model || '';
-              if (this.isGeminiModel(model) && body.messages) {
-                body.messages = this.addThoughtSignatureBypass(body.messages);
+              const model = (body.model || '').toLowerCase();
+              const isGemini = model.includes('gemini');
+
+              // Add thought_signature bypass for Gemini
+              if (isGemini && body.messages) {
+                body.messages = body.messages.map(msg => {
+                  if (msg.role === 'assistant' && msg.tool_calls && Array.isArray(msg.tool_calls)) {
+                    return {
+                      ...msg,
+                      tool_calls: msg.tool_calls.map(tc => {
+                        if (tc.function && !tc.function.thought_signature) {
+                          return { ...tc, function: { ...tc.function, thought_signature: this.SKIP_SIGNATURE } };
+                        }
+                        return tc;
+                      })
+                    };
+                  }
+                  return msg;
+                });
               }
+
+              // Clean tool schemas for all models (removes unsupported JSON schema props)
               if (body.tools && Array.isArray(body.tools)) {
                 body.tools = body.tools.map(tool => {
                   if (tool.function && tool.function.parameters) {
-                    tool.function.parameters = this.cleanSchema(tool.function.parameters);
+                    tool.function.parameters = cleanSchema(tool.function.parameters);
                   }
                   return tool;
                 });
@@ -615,7 +616,6 @@ jobs:
           class SuperPollyTransformer {
             constructor(options) { this.name = 'superpolly-transformer'; }
             async transformRequestIn(body, provider, context) {
-              console.log('[superpolly] Aggregator (Gemini): seed=-1, temp=0.3, reasoning_effort=high');
               body.stream = true;
               body.seed = -1;
               body.temperature = 0.3;

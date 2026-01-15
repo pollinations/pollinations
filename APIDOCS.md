@@ -79,6 +79,54 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 
 ## Operations
 
+### GET /account/profile
+
+- **Method:** `GET`
+- **Path:** `/account/profile`
+- **Tags:** Account
+
+Get user profile info (name, email, GitHub username, tier). Requires `account:profile` permission for API keys.
+
+#### Responses
+
+##### Status: 200 User profile with name, email, githubUsername, tier, createdAt
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied - API key missing \`account:profile\` permission
+
+### GET /account/balance
+
+- **Method:** `GET`
+- **Path:** `/account/balance`
+- **Tags:** Account
+
+Get pollen balance. Returns the key's remaining budget if set, otherwise the user's total balance. Requires `account:balance` permission for API keys.
+
+#### Responses
+
+##### Status: 200 balance (remaining pollen)
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied - API key missing \`account:balance\` permission
+
+### GET /account/usage
+
+- **Method:** `GET`
+- **Path:** `/account/usage`
+- **Tags:** Account
+
+Get request history and spending data from Tinybird. Supports JSON and CSV formats. Requires `account:usage` permission for API keys.
+
+#### Responses
+
+##### Status: 200 Usage records with timestamp, model, tokens, cost\_usd, etc.
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied - API key missing \`account:usage\` permission
+
 ### GET /v1/models
 
 - **Method:** `GET`

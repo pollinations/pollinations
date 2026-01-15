@@ -12,8 +12,7 @@ interface UserProfile {
 }
 
 interface UserBalance {
-    userBalance: number;
-    keyBalance: number | null;
+    balance: number;
 }
 
 interface UseAuthReturn {
@@ -118,8 +117,7 @@ export function useAuth(): UseAuthReturn {
                 if (response.ok) {
                     const data = await response.json();
                     setBalance({
-                        userBalance: data.userBalance,
-                        keyBalance: data.keyBalance,
+                        balance: data.balance,
                     });
                 } else {
                     setBalance(null);

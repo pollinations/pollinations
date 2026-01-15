@@ -1,4 +1,4 @@
-name = "gsoc"
+name = "pollinations-gsoc-api"
 main = "worker.js"
 compatibility_date = "2026-01-11"
 

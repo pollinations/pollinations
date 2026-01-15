@@ -272,7 +272,7 @@ function RouteComponent() {
                         cryptoBalance={cryptoBalance}
                     />
                 </div>
-                <UsageGraph apiKeys={apiKeys} />
+                <UsageGraph />
                 {tierData && (
                     <div className="flex flex-col gap-2">
                         <div className="flex flex-col sm:flex-row justify-between gap-3">

@@ -46,8 +46,8 @@ type FilterState = {
     timeRange: TimeRange;
     customDays: number;
     metric: Metric;
-    apiKey: string | null;
-    selectedModels: string[]; // Changed to array for multi-select
+    selectedKeys: string[];
+    selectedModels: string[];
 };
 
 type ModelBreakdown = {
@@ -65,7 +65,7 @@ type DataPoint = {
     modelBreakdown?: ModelBreakdown[];
 };
 type SelectOption = { value: string | null; label: string };
-type ApiKeyInfo = { id: string; name?: string | null; start?: string | null };
+type _ApiKeyInfo = { id: string; name?: string | null; start?: string | null };
 
 // Build model registry from shared source (same as pricing table)
 const ALL_MODELS = [
@@ -129,7 +129,7 @@ type SelectProps = {
     disabledText?: string;
 };
 
-const Select: FC<SelectProps> = ({
+const _Select: FC<SelectProps> = ({
     options,
     value,
     onChange,
@@ -232,6 +232,8 @@ type MultiSelectProps = {
     placeholder: string;
     disabled?: boolean;
     disabledText?: string;
+    align?: "start" | "end";
+    itemLabel?: string;
 };
 
 const MultiSelect: FC<MultiSelectProps> = ({
@@ -241,6 +243,8 @@ const MultiSelect: FC<MultiSelectProps> = ({
     placeholder,
     disabled,
     disabledText,
+    align = "start",
+    itemLabel = "items",
 }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -271,7 +275,7 @@ const MultiSelect: FC<MultiSelectProps> = ({
           ? placeholder
           : selected.length === 1
             ? options.find((o) => o.value === selected[0])?.label || selected[0]
-            : `${selected.length} models`;
+            : `${selected.length} ${itemLabel}`;
 
     return (
         <div ref={ref} className="relative group">
@@ -325,8 +329,13 @@ const MultiSelect: FC<MultiSelectProps> = ({
                 </span>
             )}
             {open && !disabled && (
-                <div className="absolute bottom-full left-0 mb-1 min-w-[320px] bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
-                    <div className="max-h-64 overflow-y-auto">
+                <div
+                    className={cn(
+                        "absolute bottom-full mb-1 min-w-[320px] bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden",
+                        align === "end" ? "right-0" : "left-0",
+                    )}
+                >
+                    <div className="max-h-64 overflow-y-auto overflow-x-hidden">
                         {/* All option */}
                         <button
                             type="button"
@@ -798,9 +807,7 @@ const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-type UsageGraphProps = {
-    apiKeys?: ApiKeyInfo[];
-};
+type UsageGraphProps = Record<string, never>;
 
 // Map time range to approximate record limit (rough estimate based on usage patterns)
 const _getRecordLimit = (timeRange: TimeRange, customDays: number): number => {
@@ -816,8 +823,7 @@ const _getRecordLimit = (timeRange: TimeRange, customDays: number): number => {
     }
 };
 
-export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
-    const keys: ApiKeyInfo[] = apiKeys || [];
+export const UsageGraph: FC<UsageGraphProps> = () => {
     const [dailyUsage, setDailyUsage] = useState<DailyUsageRecord[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -827,7 +833,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
         timeRange: "7d",
         customDays: 14,
         metric: "pollen",
-        apiKey: null,
+        selectedKeys: [], // Empty means "All"
         selectedModels: [], // Empty means "All"
     });
 
@@ -889,6 +895,19 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [dailyUsage]);
 
+    // API keys that appear in usage data (extracted from TinyBird data)
+    const usedKeys = useMemo(() => {
+        const keyNames = new Set<string>();
+        for (const r of dailyUsage) {
+            if (r.api_key_names) {
+                for (const name of r.api_key_names) {
+                    if (name) keyNames.add(name);
+                }
+            }
+        }
+        return Array.from(keyNames).sort();
+    }, [dailyUsage]);
+
     // Filter and aggregate daily usage data
     const { chartData, stats, filteredData } = useMemo(() => {
         const now = new Date();
@@ -909,6 +928,14 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
                 filters.selectedModels.length > 0 &&
                 r.model &&
                 !filters.selectedModels.includes(r.model)
+            )
+                return false;
+            if (
+                filters.selectedKeys.length > 0 &&
+                (!r.api_key_names ||
+                    !filters.selectedKeys.some((k) =>
+                        r.api_key_names.includes(k),
+                    ))
             )
                 return false;
             return true;
@@ -1042,14 +1069,11 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
               ? `${(n / 1e3).toFixed(1)}K`
               : n.toString();
 
-    // Key options - show name first, fallback to masked key
-    const keyOptions: SelectOption[] = [
-        { value: null, label: "All Keys" },
-        ...keys.map((k) => ({
-            value: k.start || k.id,
-            label: k.name || (k.start ? `${k.start}...` : k.id.slice(0, 8)),
-        })),
-    ];
+    // Key options for multi-select (from TinyBird usage data)
+    const keySelectOptions = usedKeys.map((name) => ({
+        value: name,
+        label: name,
+    }));
 
     // Model options for multi-select
     const modelSelectOptions = usedModels.map((m) => ({
@@ -1198,16 +1222,22 @@ export const UsageGraph: FC<UsageGraphProps> = ({ apiKeys }) => {
                                 placeholder="All Models"
                                 disabled={modelSelectOptions.length === 0}
                                 disabledText="0 models used"
+                                itemLabel="models"
                             />
-                            <Select
-                                options={keyOptions}
-                                value={filters.apiKey}
+                            <MultiSelect
+                                options={keySelectOptions}
+                                selected={filters.selectedKeys}
                                 onChange={(v) =>
-                                    setFilters((f) => ({ ...f, apiKey: v }))
+                                    setFilters((f) => ({
+                                        ...f,
+                                        selectedKeys: v,
+                                    }))
                                 }
                                 placeholder="All Keys"
-                                disabled={keys.length === 0}
+                                disabled={usedKeys.length === 0}
                                 disabledText="No keys"
+                                align="end"
+                                itemLabel="keys"
                             />
                         </div>
 

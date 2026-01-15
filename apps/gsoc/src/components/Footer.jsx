@@ -102,7 +102,12 @@ export default function Footer() {
                   p: 2,
                   borderRadius: '8px',
                   border: '1px solid rgba(255,255,255,0.1)',
-                  background: 'rgba(255,255,255,0.02)'
+                  background: 'rgba(255,255,255,0.02)',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 2
                 }}
               >
                 <Typography 
@@ -125,11 +130,13 @@ export default function Footer() {
                     fontSize: '0.875rem',
                     mt: 0.5,
                     userSelect: 'all',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    textTransform: 'none'
                   }}
                 >
-              gsoc@pollinations.ai
+                      gsoc@pollinations.ai
                 </Typography>
+                
               </Box>
               
               {/* Social Icons */}

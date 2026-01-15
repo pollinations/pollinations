@@ -2,9 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
-import { ModelPermissions } from "../components/model-permissions.tsx";
-import { PollenBudgetInput } from "../components/pollen-budget-input.tsx";
-import { ExpiryDaysInput } from "../components/expiry-days-input.tsx";
+import {
+    useKeyPermissions,
+    updateKeyPermissions,
+    KeyPermissionsInputs,
+} from "../components/key-permissions.tsx";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
@@ -29,12 +31,15 @@ function AuthorizeComponent() {
     const [error, setError] = useState<string | null>(null);
     const [redirectHostname, setRedirectHostname] = useState<string>("");
     const [isValidUrl, setIsValidUrl] = useState(false);
-    // null = all models allowed, [] = restricted but none selected, [...] = specific models
-    const [allowedModels, setAllowedModels] = useState<string[] | null>(null);
-    // null = no budget (unlimited), number = budget cap
-    const [pollenBudget, setPollenBudget] = useState<number | null>(null);
-    // null = no expiry, number = days until expiry (default 30 for authorize flow)
-    const [expiryDays, setExpiryDays] = useState<number | null>(30);
+
+    // Use shared hook for key permissions (default 30 days expiry for authorize flow)
+    const {
+        permissions,
+        setAllowedModels,
+        setPollenBudget,
+        setExpiryDays,
+        setAccountPermissions,
+    } = useKeyPermissions({ defaultExpiryDays: 30 });
 
     // Parse and validate the redirect URL
     useEffect(() => {
@@ -74,11 +79,11 @@ function AuthorizeComponent() {
         setError(null);
 
         try {
-            // Create a temporary API key with 30-day expiry using better-auth's built-in endpoint
+            // Create a temporary API key using better-auth's built-in endpoint
             const result = await authClient.apiKey.create({
                 name: `${redirectHostname}`,
-                ...(expiryDays !== null && {
-                    expiresIn: expiryDays * SECONDS_PER_DAY,
+                ...(permissions.expiryDays !== null && {
+                    expiresIn: permissions.expiryDays * SECONDS_PER_DAY,
                 }),
                 prefix: "sk",
                 metadata: {
@@ -95,31 +100,8 @@ function AuthorizeComponent() {
 
             const data = result.data;
 
-            // Set permissions and/or budget if configured
-            const hasAllowedModels = allowedModels !== null;
-            const hasPollenBudget = pollenBudget !== null;
-
-            if (hasAllowedModels || hasPollenBudget) {
-                const updateResponse = await fetch(
-                    `/api/api-keys/${data.id}/update`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        credentials: "include",
-                        body: JSON.stringify({
-                            ...(hasAllowedModels && { allowedModels }),
-                            ...(hasPollenBudget && { pollenBudget }),
-                        }),
-                    },
-                );
-
-                if (!updateResponse.ok) {
-                    const errorData = await updateResponse.json();
-                    throw new Error(
-                        `Failed to set permissions/budget: ${(errorData as { message?: string }).message || "Unknown error"}`,
-                    );
-                }
-            }
+            // Set permissions using shared utility
+            await updateKeyPermissions(data.id, permissions);
 
             // Redirect back to the app with the key in URL fragment (not query param)
             // Using fragment prevents key from leaking to server logs/Referer headers
@@ -272,28 +254,22 @@ function AuthorizeComponent() {
                             </li>
                         </ul>
 
-                        {/* Model permissions selector */}
+                        {/* Key permissions inputs */}
                         <div className="mb-6 -mt-2">
-                            <ModelPermissions
-                                value={allowedModels}
-                                onChange={setAllowedModels}
+                            <KeyPermissionsInputs
+                                allowedModels={permissions.allowedModels}
+                                pollenBudget={permissions.pollenBudget}
+                                expiryDays={permissions.expiryDays}
+                                accountPermissions={
+                                    permissions.accountPermissions
+                                }
+                                onAllowedModelsChange={setAllowedModels}
+                                onPollenBudgetChange={setPollenBudget}
+                                onExpiryDaysChange={setExpiryDays}
+                                onAccountPermissionsChange={
+                                    setAccountPermissions
+                                }
                                 compact
-                            />
-                        </div>
-
-                        {/* Pollen budget input */}
-                        <div className="mb-6">
-                            <PollenBudgetInput
-                                value={pollenBudget}
-                                onChange={setPollenBudget}
-                            />
-                        </div>
-
-                        {/* Expiry days input */}
-                        <div className="mb-6">
-                            <ExpiryDaysInput
-                                value={expiryDays}
-                                onChange={setExpiryDays}
                             />
                         </div>
 

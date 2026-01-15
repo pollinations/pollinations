@@ -41,6 +41,8 @@ type Fixtures = {
     restrictedApiKey: string;
     /** API key with zero pollen budget (should be rejected with 402) */
     exhaustedBudgetApiKey: string;
+    /** API key with 100 pollen budget for testing decrement */
+    budgetedApiKey: { key: string; id: string };
 };
 
 type SignupData = {
@@ -227,5 +229,46 @@ export const test = base.extend<Fixtures>({
         }
 
         await use(createApiKeyResponse.data.key);
+    },
+    /**
+     * Creates an API key with 100 pollen budget for testing decrement.
+     * Returns both key and id so tests can verify balance changes.
+     */
+    budgetedApiKey: async ({ auth, sessionToken }, use) => {
+        const createApiKeyResponse = await auth.apiKey.create({
+            name: "budgeted-test-key",
+            fetchOptions: {
+                headers: {
+                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        });
+        if (!createApiKeyResponse.data)
+            throw new Error("Failed to create budgeted API key");
+
+        // Set pollenBudget to 100 via the API endpoint
+        const updateResponse = await SELF.fetch(
+            `http://localhost:3000/api/api-keys/${createApiKeyResponse.data.id}/update`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    pollenBudget: 100,
+                }),
+            },
+        );
+        if (!updateResponse.ok) {
+            throw new Error(
+                `Failed to set API key budget: ${await updateResponse.text()}`,
+            );
+        }
+
+        await use({
+            key: createApiKeyResponse.data.key,
+            id: createApiKeyResponse.data.id,
+        });
     },
 });

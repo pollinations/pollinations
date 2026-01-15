@@ -4,33 +4,116 @@ import { validator } from "../middleware/validator.ts";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
+import { drizzle } from "drizzle-orm/d1";
+import { eq } from "drizzle-orm";
+import { user as userTable } from "@/db/schema/better-auth.ts";
+import { HTTPException } from "hono/http-exception";
 
-// Query params schema
+// Query params schema for usage
 const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
     limit: z.coerce.number().min(1).max(10000).optional().default(100),
     before: z.string().optional(), // ISO timestamp cursor for pagination
 });
 
-export const usageRoutes = new Hono<Env>()
+/**
+ * Account routes - balance and usage endpoints.
+ * Supports both session cookies and API keys with permission checks.
+ */
+export const accountRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
     .get(
-        "/",
+        "/balance",
         describeRoute({
-            tags: ["Auth"],
-            description: "Get your request history and spending data",
-            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+            tags: ["Account"],
+            description:
+                "Get pollen balance. Returns keyBalance (API key's budget, null if unlimited) and userBalance (total user balance). Requires `account:balance` permission for API keys.",
+            responses: {
+                200: {
+                    description:
+                        "keyBalance (key budget or null), userBalance, tierBalance, packBalance, lastTierGrant",
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:balance` permission",
+                },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            const apiKey = c.var.auth?.apiKey;
+
+            // Check permission for API key access
+            if (apiKey && !apiKey.permissions?.account?.includes("balance")) {
+                throw new HTTPException(403, {
+                    message:
+                        "API key does not have 'account:balance' permission",
+                });
+            }
+
+            // Get user balance from D1
+            const db = drizzle(c.env.DB);
+            const users = await db
+                .select({
+                    tierBalance: userTable.tierBalance,
+                    packBalance: userTable.packBalance,
+                    lastTierGrant: userTable.lastTierGrant,
+                })
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .limit(1);
+
+            const tierBalance = users[0]?.tierBalance ?? 0;
+            const packBalance = users[0]?.packBalance ?? 0;
+            const lastTierGrant = users[0]?.lastTierGrant ?? null;
+
+            return c.json({
+                keyBalance: apiKey?.pollenBalance ?? null,
+                userBalance: tierBalance + packBalance,
+                tierBalance,
+                packBalance,
+                lastTierGrant,
+            });
+        },
+    )
+    .get(
+        "/usage",
+        describeRoute({
+            tags: ["Account"],
+            description:
+                "Get request history and spending data from Tinybird. Supports JSON and CSV formats. Requires `account:usage` permission for API keys.",
+            responses: {
+                200: {
+                    description:
+                        "Usage records with timestamp, model, tokens, cost_usd, etc.",
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
         }),
         validator("query", usageQuerySchema),
         async (c) => {
             const log = c.get("log").getChild("usage");
 
-            // Require authentication
             await c.var.auth.requireAuthorization({
                 message: "Authentication required to view usage history",
             });
 
             const user = c.var.auth.requireUser();
+            const apiKey = c.var.auth?.apiKey;
+
+            // Check permission for API key access
+            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+                throw new HTTPException(403, {
+                    message: "API key does not have 'account:usage' permission",
+                });
+            }
+
             const { format, limit, before } = c.req.valid("query");
 
             log.debug(
@@ -77,7 +160,6 @@ export const usageRoutes = new Hono<Env>()
                         },
                     );
 
-                    // Return 503 if Service Unavailable or similar network issues, else 500
                     const status = response.status >= 500 ? 503 : 500;
                     return c.json(
                         {
@@ -112,7 +194,6 @@ export const usageRoutes = new Hono<Env>()
                     }>;
                 };
 
-                // Pass through directly - Tinybird returns clean format
                 const usage = data.data;
 
                 log.debug("Fetched {count} usage records", {
@@ -162,4 +243,4 @@ export const usageRoutes = new Hono<Env>()
         },
     );
 
-export default usageRoutes;
+export default accountRoutes;

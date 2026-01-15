@@ -16,6 +16,7 @@ import {
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
 import { routePath } from "hono/route";
+import { HTTPException } from "hono/http-exception";
 import {
     CompletionUsage,
     CompletionUsageSchema,
@@ -141,15 +142,120 @@ export const track = (eventType: EventType) =>
 
         const endTime = new Date();
 
+        // Track response synchronously to get billing info before returning
+        const response = responseOverride || c.res.clone();
+        const responseTracking = await trackResponse(
+            eventType,
+            requestTracking,
+            response,
+        );
+
+        // Decrement per-key pollen budget SYNCHRONOUSLY after billable requests
+        // This ensures billing always happens - if D1 fails, we throw 500
+        // Only deduct if key has a budget set (pollenBalance is not null)
+        const apiKeyId = c.var.auth?.apiKey?.id;
+        const apiKeyPollenBalance = c.var.auth?.apiKey?.pollenBalance;
+        if (
+            responseTracking.isBilledUsage &&
+            responseTracking.price?.totalPrice &&
+            apiKeyId &&
+            apiKeyPollenBalance !== null &&
+            apiKeyPollenBalance !== undefined
+        ) {
+            const priceToDeduct = responseTracking.price.totalPrice;
+
+            try {
+                // Use D1 column for atomic decrement
+                await db
+                    .update(apikeyTable)
+                    .set({
+                        pollenBalance: sql`${apikeyTable.pollenBalance} - ${priceToDeduct}`,
+                    })
+                    .where(eq(apikeyTable.id, apiKeyId));
+
+                log.debug(
+                    "Decremented {price} pollen from API key {keyId} budget",
+                    {
+                        price: priceToDeduct,
+                        keyId: apiKeyId,
+                    },
+                );
+            } catch (error) {
+                log.error(
+                    "Failed to decrement API key budget for {keyId}: {error}",
+                    {
+                        keyId: apiKeyId,
+                        error: error instanceof Error ? error.message : error,
+                    },
+                );
+                throw new HTTPException(500, {
+                    message: "Failed to process billing. Please try again.",
+                });
+            }
+        }
+
+        // Decrement user pollen balance SYNCHRONOUSLY after billable requests
+        // Strategy: decrement from tier_balance first, then pack_balance
+        if (
+            responseTracking.isBilledUsage &&
+            responseTracking.price?.totalPrice &&
+            userTracking.userId
+        ) {
+            const priceToDeduct = responseTracking.price.totalPrice;
+
+            try {
+                // Get current balances to determine how to split the deduction
+                const currentUser = await db
+                    .select({
+                        tierBalance: userTable.tierBalance,
+                        packBalance: userTable.packBalance,
+                    })
+                    .from(userTable)
+                    .where(eq(userTable.id, userTracking.userId))
+                    .limit(1);
+
+                const tierBalance = currentUser[0]?.tierBalance ?? 0;
+
+                // Decrement tier first, then pack
+                const fromTier = Math.min(
+                    priceToDeduct,
+                    Math.max(0, tierBalance),
+                );
+                const fromPack = priceToDeduct - fromTier;
+
+                await db
+                    .update(userTable)
+                    .set({
+                        tierBalance: sql`${userTable.tierBalance} - ${fromTier}`,
+                        packBalance: sql`${userTable.packBalance} - ${fromPack}`,
+                    })
+                    .where(eq(userTable.id, userTracking.userId));
+
+                log.debug(
+                    "Decremented {price} pollen from user {userId} (tier: -{fromTier}, pack: -{fromPack})",
+                    {
+                        price: priceToDeduct,
+                        userId: userTracking.userId,
+                        fromTier,
+                        fromPack,
+                    },
+                );
+            } catch (error) {
+                log.error(
+                    "Failed to decrement user balance for {userId}: {error}",
+                    {
+                        userId: userTracking.userId,
+                        error: error instanceof Error ? error.message : error,
+                    },
+                );
+                throw new HTTPException(500, {
+                    message: "Failed to process billing. Please try again.",
+                });
+            }
+        }
+
         c.executionCtx.waitUntil(
             (async () => {
-                const response = responseOverride || c.res.clone();
-                const responseTracking = await trackResponse(
-                    eventType,
-                    requestTracking,
-                    response,
-                );
-
                 // register pollen consumption with rate limiter
                 await c.var.frontendKeyRateLimit?.consumePollen(
                     responseTracking.price?.totalPrice || 0,
@@ -203,84 +309,6 @@ export const track = (eventType: EventType) =>
                     c.env.TINYBIRD_INGEST_TOKEN,
                     log,
                 );
-
-                // Decrement local pollen balance after billable requests
-                // Strategy: decrement from tier_balance first, then pack_balance
-                if (
-                    responseTracking.isBilledUsage &&
-                    responseTracking.price?.totalPrice &&
-                    userTracking.userId
-                ) {
-                    const priceToDeduct = responseTracking.price.totalPrice;
-
-                    // Get current balances to determine how to split the deduction
-                    const currentUser = await db
-                        .select({
-                            tierBalance: userTable.tierBalance,
-                            packBalance: userTable.packBalance,
-                        })
-                        .from(userTable)
-                        .where(eq(userTable.id, userTracking.userId))
-                        .limit(1);
-
-                    const tierBalance = currentUser[0]?.tierBalance ?? 0;
-                    const packBalance = currentUser[0]?.packBalance ?? 0;
-
-                    // Decrement tier first, then pack
-                    const fromTier = Math.min(
-                        priceToDeduct,
-                        Math.max(0, tierBalance),
-                    );
-                    const fromPack = priceToDeduct - fromTier;
-
-                    await db
-                        .update(userTable)
-                        .set({
-                            tierBalance: sql`${userTable.tierBalance} - ${fromTier}`,
-                            packBalance: sql`${userTable.packBalance} - ${fromPack}`,
-                        })
-                        .where(eq(userTable.id, userTracking.userId));
-
-                    log.debug(
-                        "Decremented {price} pollen from user {userId} (tier: -{fromTier}, pack: -{fromPack})",
-                        {
-                            price: priceToDeduct,
-                            userId: userTracking.userId,
-                            fromTier,
-                            fromPack,
-                        },
-                    );
-                }
-
-                // Decrement per-key pollen budget after billable requests
-                // Only deduct if key has a budget set (pollenBalance is not null)
-                const apiKeyId = c.var.auth?.apiKey?.id;
-                const apiKeyPollenBalance = c.var.auth?.apiKey?.pollenBalance;
-                if (
-                    responseTracking.isBilledUsage &&
-                    responseTracking.price?.totalPrice &&
-                    apiKeyId &&
-                    apiKeyPollenBalance !== null &&
-                    apiKeyPollenBalance !== undefined
-                ) {
-                    const priceToDeduct = responseTracking.price.totalPrice;
-
-                    // Use D1 column for atomic decrement
-                    await db
-                        .update(apikeyTable)
-                        .set({
-                            pollenBalance: sql`${apikeyTable.pollenBalance} - ${priceToDeduct}`,
-                        })
-                        .where(eq(apikeyTable.id, apiKeyId));
-
-                    log.debug(
-                        "Decremented {price} pollen from API key {keyId} budget",
-                        {
-                            price: priceToDeduct,
-                            keyId: apiKeyId,
-                        },
-                    );
-                }
             })(),
         );
     });

@@ -1,8 +1,7 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import { formatDistanceToNowStrict, type FormatDistanceToken } from "date-fns";
-import { PollenBudgetInput } from "./pollen-budget-input.tsx";
-import { ExpiryDaysInput } from "./expiry-days-input.tsx";
+import { KeyPermissionsInputs } from "./key-permissions.tsx";
 
 const shortFormatDistance: Record<FormatDistanceToken, string> = {
     lessThanXSeconds: "{{count}}s",
@@ -37,7 +36,6 @@ import {
     adjectives,
     animals,
 } from "unique-names-generator";
-import { ModelPermissions } from "./model-permissions.tsx";
 
 type ApiKey = {
     id: string;
@@ -445,6 +443,8 @@ export type CreateApiKey = {
     pollenBudget?: number | null;
     /** Days until expiry. null = no expiry */
     expiryDays?: number | null;
+    /** Account permissions: ["balance", "usage"]. null = no permissions */
+    accountPermissions?: string[] | null;
 };
 
 export type CreateApiKeyResponse = ApiKey & {
@@ -626,31 +626,25 @@ const CreateKeyForm: FC<{
                 />
             </Field.Root>
 
-            {/* Model permissions - collapsible advanced option */}
+            {/* Key permissions - model access, budget, expiry, account permissions */}
             {!createdKey && (
-                <ModelPermissions
-                    value={formData.allowedModels ?? null}
-                    onChange={(models) =>
+                <KeyPermissionsInputs
+                    allowedModels={formData.allowedModels ?? null}
+                    pollenBudget={formData.pollenBudget ?? null}
+                    expiryDays={formData.expiryDays ?? null}
+                    accountPermissions={formData.accountPermissions ?? null}
+                    onAllowedModelsChange={(models) =>
                         onInputChange("allowedModels", models)
                     }
-                    disabled={isSubmitting}
-                />
-            )}
-
-            {/* Pollen Budget - optional spending limit */}
-            {!createdKey && (
-                <PollenBudgetInput
-                    value={formData.pollenBudget ?? null}
-                    onChange={(val) => onInputChange("pollenBudget", val)}
-                    disabled={isSubmitting}
-                />
-            )}
-
-            {/* Expiry Days - optional time limit */}
-            {!createdKey && (
-                <ExpiryDaysInput
-                    value={formData.expiryDays ?? null}
-                    onChange={(val) => onInputChange("expiryDays", val)}
+                    onPollenBudgetChange={(val) =>
+                        onInputChange("pollenBudget", val)
+                    }
+                    onExpiryDaysChange={(val) =>
+                        onInputChange("expiryDays", val)
+                    }
+                    onAccountPermissionsChange={(val) =>
+                        onInputChange("accountPermissions", val)
+                    }
                     disabled={isSubmitting}
                 />
             )}
@@ -730,6 +724,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         allowedModels: null, // null = all models allowed
         pollenBudget: undefined, // undefined = unlimited (user can set a number)
         expiryDays: null, // null = no expiry (unlimited)
+        accountPermissions: null, // null = no account permissions
     });
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
@@ -782,6 +777,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             description: "",
             keyType: "secret",
             allowedModels: null,
+            accountPermissions: null,
         });
     };
 

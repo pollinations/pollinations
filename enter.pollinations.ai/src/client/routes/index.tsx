@@ -116,14 +116,19 @@ function RouteComponent() {
         // Step 2: Set permissions and/or budget if provided
         // allowedModels: null = unrestricted (all models), array = restricted to specific models
         // pollenBudget: null = unlimited, number = budget cap
+        // accountPermissions: null = no permissions, array = enabled permissions
         const hasAllowedModels =
             formState.allowedModels !== null &&
             formState.allowedModels !== undefined;
         const hasPollenBudget =
             formState.pollenBudget !== null &&
             formState.pollenBudget !== undefined;
+        const hasAccountPermissions =
+            formState.accountPermissions !== null &&
+            formState.accountPermissions !== undefined &&
+            formState.accountPermissions.length > 0;
 
-        if (hasAllowedModels || hasPollenBudget) {
+        if (hasAllowedModels || hasPollenBudget || hasAccountPermissions) {
             const updateResponse = await fetch(
                 `/api/api-keys/${apiKey.id}/update`,
                 {
@@ -136,6 +141,9 @@ function RouteComponent() {
                         }),
                         ...(hasPollenBudget && {
                             pollenBudget: formState.pollenBudget,
+                        }),
+                        ...(hasAccountPermissions && {
+                            accountPermissions: formState.accountPermissions,
                         }),
                     }),
                 },

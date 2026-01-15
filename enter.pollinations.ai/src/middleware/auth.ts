@@ -97,8 +97,9 @@ export const auth = (options: AuthOptions) =>
 
             // Use permissions from verifyApiKey (set via createApiKey)
             // No fallback - permissions must be set at key creation time
+            // Format: { models?: string[], account?: string[] }
             const permissions = keyResult.key.permissions as
-                | { models?: string[] }
+                | { models?: string[]; account?: string[] }
                 | undefined;
 
             // Fetch API key with user in single query using relation

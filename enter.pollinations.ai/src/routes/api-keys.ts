@@ -12,12 +12,27 @@ import { describeRoute } from "hono-openapi";
 /**
  * Schema for updating an API key.
  * Uses better-auth's server API which supports server-only fields like permissions.
+ *
+ * Permissions format: { models?: string[], account?: string[] }
+ * - models: ["flux", "openai"] = restrict to specific models
+ * - account: ["balance", "usage"] = allow access to account endpoints
  */
 const UpdateApiKeySchema = z.object({
-    // null = unrestricted (all models), [] or [...models] = restricted
-    allowedModels: z.array(z.string()).nullable().optional(),
-    // null = unlimited, number = pollen budget cap
-    pollenBudget: z.number().nullable().optional(),
+    allowedModels: z
+        .array(z.string())
+        .nullable()
+        .optional()
+        .describe("Model IDs this key can access. null = all models allowed"),
+    pollenBudget: z
+        .number()
+        .nullable()
+        .optional()
+        .describe("Pollen budget cap for this key. null = unlimited"),
+    accountPermissions: z
+        .array(z.string())
+        .nullable()
+        .optional()
+        .describe('Account permissions: ["balance", "usage"]. null = none'),
 });
 
 /**
@@ -34,7 +49,7 @@ export const apiKeysRoutes = new Hono<Env>()
     .get(
         "/",
         describeRoute({
-            tags: ["Auth"],
+            tags: ["Account"],
             description:
                 "List all API keys for the current user with pollenBalance.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
@@ -70,8 +85,8 @@ export const apiKeysRoutes = new Hono<Env>()
     .post(
         "/:id/update",
         describeRoute({
-            tags: ["Auth"],
-            description: "Update an API key's permissions (allowed models).",
+            tags: ["Account"],
+            description: "Update an API key's permissions and budget.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         validator("json", UpdateApiKeySchema),
@@ -79,7 +94,8 @@ export const apiKeysRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const authClient = c.var.auth.client;
             const { id } = c.req.param();
-            const { allowedModels, pollenBudget } = c.req.valid("json");
+            const { allowedModels, pollenBudget, accountPermissions } =
+                c.req.valid("json");
 
             // Verify ownership before updating
             const db = drizzle(c.env.DB, { schema });
@@ -95,23 +111,41 @@ export const apiKeysRoutes = new Hono<Env>()
             }
 
             // Build permissions object
-            // null = remove restrictions (all models allowed)
-            // [] or [...models] = restricted to specific models
-            const permissions =
-                allowedModels === null
-                    ? null
-                    : allowedModels && allowedModels.length > 0
-                      ? { models: allowedModels }
-                      : undefined;
+            // Format: { models?: string[], account?: string[] }
+            const existingPermissions =
+                (existingKey.permissions as Record<string, string[]> | null) ??
+                {};
+            let newPermissions: Record<string, string[]> | null | undefined =
+                undefined;
+
+            // Handle allowedModels: null = remove, [...] = set
+            if (allowedModels === null) {
+                newPermissions = { ...existingPermissions };
+                delete newPermissions.models;
+            } else if (allowedModels && allowedModels.length > 0) {
+                newPermissions = {
+                    ...existingPermissions,
+                    models: allowedModels,
+                };
+            }
+
+            // Handle accountPermissions: null = remove, [...] = set
+            if (accountPermissions === null) {
+                newPermissions = newPermissions ?? { ...existingPermissions };
+                delete newPermissions.account;
+            } else if (accountPermissions && accountPermissions.length > 0) {
+                newPermissions = newPermissions ?? { ...existingPermissions };
+                newPermissions.account = accountPermissions;
+            }
 
             // Only call better-auth's updateApiKey if we have permission changes
             // (it throws "No values to update" if permissions is undefined)
-            if (permissions !== undefined) {
+            if (newPermissions !== undefined) {
                 await authClient.api.updateApiKey({
                     body: {
                         keyId: id,
                         userId: user.id,
-                        permissions,
+                        permissions: newPermissions,
                     },
                 });
             }

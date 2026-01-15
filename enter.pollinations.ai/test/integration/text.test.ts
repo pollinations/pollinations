@@ -1278,4 +1278,170 @@ describe("API key pollen budget enforcement", async () => {
             expect((body as any).error.message).toContain("budget exhausted");
         },
     );
+
+    test(
+        "billed request should decrement pollenBalance",
+        { timeout: 30000 },
+        async ({ budgetedApiKey, sessionToken, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const ctx = createExecutionContext();
+
+            // Make a billed request
+            const response = await worker.fetch(
+                new Request(
+                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "content-type": "application/json",
+                            "authorization": `Bearer ${budgetedApiKey.key}`,
+                        },
+                        body: JSON.stringify({
+                            model: "openai-fast",
+                            messages: [{ role: "user", content: "Say hi" }],
+                            seed: testSeed(),
+                        }),
+                    },
+                ),
+                env,
+                ctx,
+            );
+            expect(response.status).toBe(200);
+            await response.text();
+            await waitOnExecutionContext(ctx);
+
+            // Check that pollenBalance was decremented
+            const keysResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys`,
+                {
+                    headers: {
+                        "Cookie": `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const keysData = (await keysResponse.json()) as any;
+            const key = keysData.data.find(
+                (k: any) => k.id === budgetedApiKey.id,
+            );
+            expect(key.pollenBalance).toBeLessThan(100);
+        },
+    );
+
+    test(
+        "pollenBudget: null should allow unlimited usage",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            // apiKey fixture has no pollenBudget set (null) - should work
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "openai-fast",
+                        messages: [{ role: "user", content: "Say hi" }],
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            await response.text();
+        },
+    );
+
+    test(
+        "non-billed request (cache hit) should not decrement pollenBalance",
+        { timeout: 30000 },
+        async ({ budgetedApiKey, sessionToken, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            // First request to populate cache
+            const ctx1 = createExecutionContext();
+            const response1 = await worker.fetch(
+                new Request(
+                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "content-type": "application/json",
+                            "authorization": `Bearer ${budgetedApiKey.key}`,
+                        },
+                        body: JSON.stringify({
+                            model: "openai-fast",
+                            messages: [
+                                { role: "user", content: "Cache test message" },
+                            ],
+                            seed: 12345,
+                        }),
+                    },
+                ),
+                env,
+                ctx1,
+            );
+            expect(response1.status).toBe(200);
+            await response1.text();
+            await waitOnExecutionContext(ctx1);
+
+            // Get balance after first request
+            const keysResponse1 = await SELF.fetch(
+                `http://localhost:3000/api/api-keys`,
+                {
+                    headers: {
+                        "Cookie": `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const keysData1 = (await keysResponse1.json()) as any;
+            const balanceAfterFirst = keysData1.data.find(
+                (k: any) => k.id === budgetedApiKey.id,
+            ).pollenBalance;
+
+            // Second identical request (should be cache hit, isBilledUsage=false)
+            const ctx2 = createExecutionContext();
+            const response2 = await worker.fetch(
+                new Request(
+                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "content-type": "application/json",
+                            "authorization": `Bearer ${budgetedApiKey.key}`,
+                        },
+                        body: JSON.stringify({
+                            model: "openai-fast",
+                            messages: [
+                                { role: "user", content: "Cache test message" },
+                            ],
+                            seed: 12345,
+                        }),
+                    },
+                ),
+                env,
+                ctx2,
+            );
+            expect(response2.status).toBe(200);
+            await response2.text();
+            await waitOnExecutionContext(ctx2);
+
+            // Balance should be unchanged after cache hit
+            const keysResponse2 = await SELF.fetch(
+                `http://localhost:3000/api/api-keys`,
+                {
+                    headers: {
+                        "Cookie": `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const keysData2 = (await keysResponse2.json()) as any;
+            const balanceAfterSecond = keysData2.data.find(
+                (k: any) => k.id === budgetedApiKey.id,
+            ).pollenBalance;
+
+            expect(balanceAfterSecond).toBe(balanceAfterFirst);
+        },
+    );
 });

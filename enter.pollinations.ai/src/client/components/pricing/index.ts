@@ -1,2 +1,2 @@
 export { Pricing } from "./Pricing.tsx";
-export type { Modalities, ModelPrice } from "./types.ts";
+export type { ModelPrice, Modalities } from "./types.ts";

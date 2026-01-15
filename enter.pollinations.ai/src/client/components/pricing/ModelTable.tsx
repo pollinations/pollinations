@@ -1,8 +1,8 @@
 import type { FC } from "react";
-import { calculatePerPollen } from "./calculations.ts";
+import type { ModelPrice } from "./types.ts";
 import { ModelRow } from "./ModelRow.tsx";
 import { isPersona } from "./model-info.ts";
-import type { ModelPrice } from "./types.ts";
+import { calculatePerPollen } from "./calculations.ts";
 
 type ModelTableProps = {
     models: ModelPrice[];

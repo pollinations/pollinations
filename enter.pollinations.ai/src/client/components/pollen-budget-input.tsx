@@ -1,5 +1,5 @@
-import { Field } from "@ark-ui/react";
 import type { FC } from "react";
+import { Field } from "@ark-ui/react";
 
 type PollenBudgetInputProps = {
     value: number | null;

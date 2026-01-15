@@ -1,11 +1,11 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
-import { authClient } from "../auth.ts";
-import { Button } from "../components/button.tsx";
 import { FAQ } from "../components/faq.tsx";
+import { Button } from "../components/button.tsx";
 import { Header } from "../components/header.tsx";
 import { NewsBanner } from "../components/news-banner.tsx";
 import { Pricing } from "../components/pricing/index.ts";
+import { authClient } from "../auth.ts";
 
 export const Route = createFileRoute("/sign-in")({
     component: RouteComponent,

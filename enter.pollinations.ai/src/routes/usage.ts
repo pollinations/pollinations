@@ -68,7 +68,7 @@ export const usageRoutes = new Hono<Env>()
             try {
                 const response = await fetch(tinybirdUrl.toString(), {
                     headers: {
-                        Authorization: `Bearer ${c.env.TINYBIRD_READ_TOKEN}`,
+                        Authorization: `Bearer ${c.env.TINYBIRD_USAGE_READ_TOKEN}`,
                     },
                 });
 
@@ -216,7 +216,7 @@ export const usageDailyRoutes = new Hono<Env>()
             try {
                 const response = await fetch(tinybirdUrl.toString(), {
                     headers: {
-                        Authorization: `Bearer ${c.env.TINYBIRD_READ_TOKEN}`,
+                        Authorization: `Bearer ${c.env.TINYBIRD_USAGE_READ_TOKEN}`,
                     },
                 });
 

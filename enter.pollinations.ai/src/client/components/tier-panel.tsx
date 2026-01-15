@@ -1,6 +1,6 @@
-import { type FC, useEffect, useState } from "react";
-import type { TierName, TierStatus } from "../../utils/polar.ts";
+import { useEffect, useState, type FC } from "react";
 import { TierExplanation } from "./tier-explanation";
+import { TierName, TierStatus } from "../../utils/polar.ts";
 
 // Badge colors for each tier level
 const TIER_BADGE_COLORS: Record<TierStatus, string> = {

@@ -1,18 +1,18 @@
 import { type FC, useState } from "react";
-import { calculatePerPollen } from "./calculations.ts";
+import type { ModelPrice } from "./types.ts";
 import {
-    getModelDisplayName,
+    hasReasoning,
+    hasVision,
     hasAudioInput,
     hasAudioOutput,
-    hasCodeExecution,
-    hasReasoning,
     hasSearch,
-    hasVision,
+    hasCodeExecution,
+    getModelDisplayName,
     isNewModel,
 } from "./model-info.ts";
+import { calculatePerPollen } from "./calculations.ts";
 import { PriceBadge } from "./PriceBadge.tsx";
 import { Tooltip } from "./Tooltip.tsx";
-import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
     model: ModelPrice;

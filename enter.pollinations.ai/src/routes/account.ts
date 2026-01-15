@@ -86,11 +86,10 @@ export const accountRoutes = new Hono<Env>()
         describeRoute({
             tags: ["Account"],
             description:
-                "Get pollen balance. Returns keyBalance (API key's budget, null if unlimited) and userBalance (total user balance). Requires `account:balance` permission for API keys.",
+                "Get pollen balance. Returns the key's remaining budget if set, otherwise the user's total balance. Requires `account:balance` permission for API keys.",
             responses: {
                 200: {
-                    description:
-                        "keyBalance (key budget or null), userBalance, tierBalance, packBalance, lastTierGrant",
+                    description: "balance (remaining pollen)",
                 },
                 401: { description: "Unauthorized" },
                 403: {
@@ -112,13 +111,21 @@ export const accountRoutes = new Hono<Env>()
                 });
             }
 
-            // Get user balance from D1
+            // If API key has a budget, return that
+            if (
+                apiKey?.pollenBalance !== null &&
+                apiKey?.pollenBalance !== undefined
+            ) {
+                return c.json({ balance: apiKey.pollenBalance });
+            }
+
+            // Otherwise return user's total balance
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({
                     tierBalance: userTable.tierBalance,
                     packBalance: userTable.packBalance,
-                    lastTierGrant: userTable.lastTierGrant,
+                    cryptoBalance: userTable.cryptoBalance,
                 })
                 .from(userTable)
                 .where(eq(userTable.id, user.id))
@@ -126,14 +133,10 @@ export const accountRoutes = new Hono<Env>()
 
             const tierBalance = users[0]?.tierBalance ?? 0;
             const packBalance = users[0]?.packBalance ?? 0;
-            const lastTierGrant = users[0]?.lastTierGrant ?? null;
+            const cryptoBalance = users[0]?.cryptoBalance ?? 0;
 
             return c.json({
-                keyBalance: apiKey?.pollenBalance ?? null,
-                userBalance: tierBalance + packBalance,
-                tierBalance,
-                packBalance,
-                lastTierGrant,
+                balance: tierBalance + packBalance + cryptoBalance,
             });
         },
     )

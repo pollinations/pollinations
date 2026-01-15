@@ -122,11 +122,14 @@ const LimitsBadge: FC<{
         }
     }
 
-    // Format budget
+    // Format budget - show decimals only when needed
     let budgetStr = "∞";
     const isExhausted = hasBudget && pollenBudget <= 0;
     if (hasBudget) {
-        budgetStr = pollenBudget <= 0 ? "empty" : `${pollenBudget.toFixed(2)}p`;
+        const formatted = Number.isInteger(pollenBudget)
+            ? pollenBudget.toString()
+            : pollenBudget.toFixed(2);
+        budgetStr = pollenBudget <= 0 ? "empty" : `${formatted}p`;
     }
 
     return (

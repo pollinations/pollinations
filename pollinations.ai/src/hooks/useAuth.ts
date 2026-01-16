@@ -9,6 +9,7 @@ interface UserProfile {
     name: string;
     email: string;
     githubUsername: string | null;
+    tier: "anonymous" | "spore" | "seed" | "flower" | "nectar";
 }
 
 interface UserBalance {
@@ -87,6 +88,7 @@ export function useAuth(): UseAuthReturn {
                         name: data.name,
                         email: data.email,
                         githubUsername: data.githubUsername,
+                        tier: data.tier || "anonymous",
                     });
                 } else if (response.status === 401) {
                     // Invalid/expired key - clear it

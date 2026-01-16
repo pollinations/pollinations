@@ -1,104 +1,66 @@
 # Contributing to pollinations.ai
 
-Thank you for considering contributing to the pollinations.ai project! We are thrilled to have you join our community and help us enhance this exciting project. Your contributions are vital to improving our project and expanding its capabilities.
+Thank you for choosing `pollinations.ai` for GSOC 26'! We are excited to have you on board and look forward to your contributions. This guide will help you understand how to contribute effectively to the project.
 
 ## How to Contribute
 
-We have multiple projects under the `pollinations.ai` umbrella, and each project has its own set of issues. To make a meaningful contribution:
+We have multiple projects listed under our organization for GSOC 26 that can be found at the [Projects Page](https://gsoc.pollinations.ai/projects).
 
-### 1. Explore Projects and Issues
+### 1. Explore Projects under GSOC 26'
 
-Before you start, please refer to the main `README.md` file of the `pollinations.ai` repository. It lists all the insights and provides an overview. There are dedicated issues from versatile topics under the repository [Issues](https://github.com/pollinations/pollinations/issues) section.
+Before you start, please refer to the main [`README.md`](../../../../README.md) file of the `pollinations.ai` repository. It lists all the insights and provides an overview. There are dedicated issues from versatile topics under the repository [Issues](https://github.com/pollinations/pollinations/issues) section.
 
-Look for issues that interest you and feel free to tackle them!
+> For GSOC 26' you will be working on the projects listed under the [GSOC Projects Page](https://gsoc.pollinations.ai/projects). 
 
-### 2. Understand the Issue and Build an MVP
+- Each project has a set of objectives which you can read from the site.
+- Once your skillset aligns with the project objectives, you can choose to apply for that project from the Apply Now button on the project page.
+- The `Apply Now` button will redirect you to a GitHub issue template where you can fill in your details and submit your application.
+- Once we review your application, we will get back to you with further steps.
 
-Once you've selected an issue, take the time to thoroughly understand its requirements. For code contributions, focus on building a **Minimum Viable Product (MVP)** that addresses the core problem or implements the key feature described in the issue.
+### 2. After Selecting a Project
 
-### 3. Documentation Contributions
+- Once your application is reviewed we will rank your application based on various parameters and it will be sent to Google for final review.
 
-We are in profound need of members who can help enhance our documentation. If you possess experience in data science, machine learning, LLMs (Large Language Models), or Stable Diffusion, your insights will be invaluable. You can contribute by:
+- Depending on the Timeline as mentioned in the [GSOC 26' Timeline](https://summerofcode.withgoogle.com/how-it-works/#timeline), you will be notified if you have been accepted for the program.
 
-- Improving existing documentation to be clearer and more comprehensive.
-- Writing new guides or tutorials that explain complex concepts or workflows.
-- Providing practical examples of how to use different features of pollinations.ai.
-- Creating explanations for the underlying data science and ML principles.
+- If your application is selected we will run through a quick onboarding session with you to help you understand the pollinations codebase and for regulating your understanding with the project mentor.
 
-### 4. Build Apps with pollinations.ai
+### 3. Building the project under GSOC 26'
 
-Want to build something cool? Check out our **[apps folder](./apps/README.md)**!
+- Once onboarded, you can start working on the project as per the timeline.
+- The mentor will help you with the tasks and guide you through the development process.
+- We expect nearly  4 hours of engagement per week during the coding period.
+- Your work will be evaluated based on the milestones set in the project objectives
+- We will wait till the mid-evaluation period to see your progress and provide an intermediate feedback. 
+- Feel free to communicate with your mentor for any help or guidance or contact at gsoc@pollinations.ai.
 
-**How it works:**
-
-1. **Propose your app idea** by creating a GitHub issue using the "SubmitApp" template
-2. Describe what you want to build and which pollinations.ai APIs you'll use
-3. Get feedback from maintainers
-4. Build your app and submit a PR
-
-Create apps using pollinations.ai APIs and get them featured. Each app lives in its own folder with clear docs. Perfect for:
-
-- Creative tools (meme generators, art tools)
-- Productivity apps (thumbnail creators, content generators)
-- Fun projects (games, quizzes)
-- Developer tools (API playgrounds, dashboards)
-
-See the [apps README](./apps/README.md) for detailed guidelines and templates.
-
-### 5. Code Contributions
-
-If you're interested in coding, we enthusiastically welcome contributions in the following areas:
-
-- **Bug Fixes:** Identifying and resolving issues that hinder the project's functionality.
-- **Feature Enhancements:** Adding new capabilities or improving existing ones.
-- **Code Optimization:** Refactoring and improving the efficiency, readability, and maintainability of the codebase.
-- **New Functionalities:** Developing innovative features that expand the project's scope.
-
-### How to earn the "pollinations.ai Contributor" badge
-
-To earn this badge, contributors need to:
-
-1. Submit at least one meaningful pull request that gets merged into the repository.
-2. Ensure the pull request follows the project's contribution guidelines.
-3. The contribution can be related to bug fixes, feature additions, or documentation improvements.
-
-Once your pull request is merged, you will automatically be issued the badge!
+For the time being, you will be onboarded as an external contributor to the repository. With that being set, you shall be working on a specific feature branch created for your project. You can set a tracking issue within the repository to track your progress and link your pull requests to the issue.
 
 ## Getting Started
 
-1.  **Fork the Repository**: Click on the "Fork" button at the top right of the repository page to create your own copy of the project under your GitHub account.
 
-2.  **Clone Your Fork**: Clone your forked repository to your local machine. Replace `your-username` with your GitHub username.
+1.  **Create a Branch for Your Work**: Create a new branch for your specific contribution. It's good practice to name your branch related to the issue you're addressing (`gsoc/projectID`).
 
     ```bash
-    git clone https://github.com/your-username/pollinations.git
+    git checkout -b `gsoc/projectID`
     ```
 
-3.  **Create a Branch for Your Work**: Create a new branch for your specific contribution. It's good practice to name your branch related to the issue you're addressing (e.g., `fix/bug-description` or `feat/new-feature-name`).
+2.  **Make Your Changes**: Implement your changes, focusing on the MVP for the chosen issue.
+
+3.  **Commit Your Changes**: Commit your changes with a clear and descriptive message.
 
     ```bash
-    git checkout -b my-feature-branch
-    ```
-
-4.  **Make Your Changes**: Implement your changes, focusing on the MVP for the chosen issue.
-
-5.  **Commit Your Changes**: Commit your changes with a clear and descriptive message.
-
-    ```bash
-    git commit -m "feat: Implement new feature for issue #XYZ"
+    git commit -m "feat: COMMIT MESSAGE"
     ```
 
     (Replace "XYZ" with the actual issue number)
 
-6.  **Push Your Changes**: Push your local branch with your changes to your forked repository on GitHub.
+4.  **Push Your Changes**: Push your local branch with your changes to your forked repository on GitHub.
 
     ```bash
-    git push origin my-feature-branch
+    git push origin `gsoc/projectID`
     ```
 
-7.  **Create a Pull Request (PR)**: Go to the original `pollinations/pollinations` repository on GitHub. You will see an option to create a Pull Request from your recently pushed branch.
-    - **Crucially:** Link your PR to the original issue it addresses (e.g., "Closes #XYZ" in your PR description).
-    - Ensure your PR clearly explains the changes you've made and how they resolve the issue.
 
 ## Guidelines
 
@@ -110,4 +72,3 @@ Document Your Changes Well: Add comments to your code where needed to explain ho
 
 Test Your Work: If you can, write and run tests to check that your changes work correctly and do not break anything else.
 
-Thank You! Thank you for contributing! Your help makes the pollinations.ai project stronger and more useful for the community. Happy coding!

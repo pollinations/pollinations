@@ -1,10 +1,10 @@
-import { Hono } from "hono";
 import { Scalar } from "@scalar/hono-api-reference";
-import { openAPIRouteHandler } from "hono-openapi";
-import type { Env } from "@/env.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
-// @ts-ignore - raw import
+import { Hono } from "hono";
+import { openAPIRouteHandler } from "hono-openapi";
+import type { Env } from "@/env.ts";
+// @ts-expect-error - raw import
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 
 // Use markdown as-is (just trim whitespace)
@@ -156,6 +156,24 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "**Auth methods:**",
                             "1. Header: `Authorization: Bearer YOUR_API_KEY`",
                             "2. Query param: `?key=YOUR_API_KEY`",
+                            "",
+                            "## Account Management",
+                            "",
+                            "Check your balance and usage via `enter.pollinations.ai`:",
+                            "",
+                            "```bash",
+                            "# Check pollen balance",
+                            "curl 'https://enter.pollinations.ai/api/account/balance' \\",
+                            "  -H 'Authorization: Bearer YOUR_API_KEY'",
+                            "",
+                            "# Get profile info",
+                            "curl 'https://enter.pollinations.ai/api/account/profile' \\",
+                            "  -H 'Authorization: Bearer YOUR_API_KEY'",
+                            "",
+                            "# View usage history",
+                            "curl 'https://enter.pollinations.ai/api/account/usage' \\",
+                            "  -H 'Authorization: Bearer YOUR_API_KEY'",
+                            "```",
                         ].join("\n"),
                     },
                     components: {

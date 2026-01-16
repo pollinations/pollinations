@@ -90,7 +90,7 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/profile",
         describeRoute({
-            tags: ["Account"],
+            tags: ["gen.pollinations.ai"],
             description:
                 "Get user profile info (name, email, GitHub username, tier). Requires `account:profile` permission for API keys.",
             responses: {
@@ -154,7 +154,7 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/balance",
         describeRoute({
-            tags: ["Account"],
+            tags: ["gen.pollinations.ai"],
             description:
                 "Get pollen balance. Returns the key's remaining budget if set, otherwise the user's total balance. Requires `account:balance` permission for API keys.",
             responses: {
@@ -218,7 +218,7 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/usage",
         describeRoute({
-            tags: ["Account"],
+            tags: ["gen.pollinations.ai"],
             description:
                 "Get request history and spending data from Tinybird. Supports JSON and CSV formats. Requires `account:usage` permission for API keys.",
             responses: {

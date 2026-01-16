@@ -63,21 +63,239 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 
 ## Authentication
 
-**Two key types:**
+**Two key types (both consume Pollen from your balance):**
 
-- **Publishable Keys (`pk_`):** Client-side safe, IP rate-limited (1 pollen/hour per IP+key)
-- **Secret Keys (`sk_`):** Server-side only, no rate limits, can spend Pollen
+- **Publishable Keys (`pk_`):** ⚠️ **Beta - not yet ready for production use.** For client-side apps, IP rate-limited (1 pollen per IP per hour). **Warning:** Exposing in public code will consume your Pollen if your app gets traffic.
+- **Secret Keys (`sk_`):** Server-side only, no rate limits. Keep secret - never expose publicly.
 
 **Auth methods:**
 
 1. Header: `Authorization: Bearer YOUR_API_KEY`
 2. Query param: `?key=YOUR_API_KEY`
 
+## Account Management
+
+Check your balance and usage via `enter.pollinations.ai`:
+
+```bash
+# Check pollen balance
+curl 'https://enter.pollinations.ai/api/account/balance' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+
+# Get profile info
+curl 'https://enter.pollinations.ai/api/account/profile' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+
+# View usage history
+curl 'https://enter.pollinations.ai/api/account/usage' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+
 ## Servers
 
 - **URL:** `https://gen.pollinations.ai`
 
 ## Operations
+
+### GET /account/profile
+
+- **Method:** `GET`
+- **Path:** `/account/profile`
+- **Tags:** gen.pollinations.ai
+
+Get user profile info (name, email, GitHub username, tier). Requires `account:profile` permission for API keys.
+
+#### Responses
+
+##### Status: 200 User profile with name, email, githubUsername, tier, createdAt
+
+###### Content-Type: application/json
+
+- **`createdAt` (required)**
+
+  `string`, format: `date-time` — Account creation timestamp (ISO 8601)
+
+- **`email` (required)**
+
+  `object` — User's email address
+
+- **`githubUsername` (required)**
+
+  `object` — GitHub username if linked
+
+- **`name` (required)**
+
+  `object` — User's display name
+
+- **`tier` (required)**
+
+  `string`, possible values: `"anonymous", "seed", "flower", "nectar"` — User's current tier level
+
+**Example:**
+
+```json
+{
+  "name": "",
+  "email": "",
+  "githubUsername": "",
+  "tier": "anonymous",
+  "createdAt": ""
+}
+```
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied - API key missing \`account:profile\` permission
+
+### GET /account/balance
+
+- **Method:** `GET`
+- **Path:** `/account/balance`
+- **Tags:** gen.pollinations.ai
+
+Get pollen balance. Returns the key's remaining budget if set, otherwise the user's total balance. Requires `account:balance` permission for API keys.
+
+#### Responses
+
+##### Status: 200 Balance (remaining pollen)
+
+###### Content-Type: application/json
+
+- **`balance` (required)**
+
+  `number` — Remaining pollen balance (combines tier, pack, and crypto balances)
+
+**Example:**
+
+```json
+{
+  "balance": 1
+}
+```
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied - API key missing \`account:balance\` permission
+
+### GET /account/usage
+
+- **Method:** `GET`
+- **Path:** `/account/usage`
+- **Tags:** gen.pollinations.ai
+
+Get request history and spending data from Tinybird. Supports JSON and CSV formats. Requires `account:usage` permission for API keys.
+
+#### Responses
+
+##### Status: 200 Usage records with timestamp, model, tokens, cost\_usd, etc.
+
+###### Content-Type: application/json
+
+- **`count` (required)**
+
+  `number` — Number of records returned
+
+- **`usage` (required)**
+
+  `array` — Array of usage records
+
+  **Items:**
+
+  - **`api_key` (required)**
+
+    `object` — API key identifier used (masked)
+
+  - **`api_key_type` (required)**
+
+    `object` — Type of API key ('secret', 'publishable', 'temporary')
+
+  - **`cost_usd` (required)**
+
+    `number` — Cost in USD for this request
+
+  - **`input_audio_tokens` (required)**
+
+    `number` — Number of input audio tokens
+
+  - **`input_cached_tokens` (required)**
+
+    `number` — Number of cached input tokens
+
+  - **`input_image_tokens` (required)**
+
+    `number` — Number of input image tokens
+
+  - **`input_text_tokens` (required)**
+
+    `number` — Number of input text tokens
+
+  - **`meter_source` (required)**
+
+    `object` — Billing source ('tier', 'pack', 'crypto')
+
+  - **`model` (required)**
+
+    `object` — Model used for generation
+
+  - **`output_audio_tokens` (required)**
+
+    `number` — Number of output audio tokens
+
+  - **`output_image_tokens` (required)**
+
+    `number` — Number of output image tokens (1 per image)
+
+  - **`output_reasoning_tokens` (required)**
+
+    `number` — Number of reasoning tokens (for models with chain-of-thought)
+
+  - **`output_text_tokens` (required)**
+
+    `number` — Number of output text tokens
+
+  - **`response_time_ms` (required)**
+
+    `object` — Response time in milliseconds
+
+  - **`timestamp` (required)**
+
+    `string` — Request timestamp (YYYY-MM-DD HH:mm:ss format)
+
+  - **`type` (required)**
+
+    `string` — Request type (e.g., 'generate.image', 'generate.text')
+
+**Example:**
+
+```json
+{
+  "usage": [
+    {
+      "timestamp": "",
+      "type": "",
+      "model": "",
+      "api_key": "",
+      "api_key_type": "",
+      "meter_source": "",
+      "input_text_tokens": 1,
+      "input_cached_tokens": 1,
+      "input_audio_tokens": 1,
+      "input_image_tokens": 1,
+      "output_text_tokens": 1,
+      "output_reasoning_tokens": 1,
+      "output_audio_tokens": 1,
+      "output_image_tokens": 1,
+      "cost_usd": 1,
+      "response_time_ms": 1
+    }
+  ],
+  "count": 1
+}
+```
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied - API key missing \`account:usage\` permission
 
 ### GET /v1/models
 
@@ -564,7 +782,7 @@ Include your API key in the `Authorization` header as a Bearer token:
 
 `Authorization: Bearer YOUR_API_KEY`
 
-API keys can be created from your dashboard at enter.pollinations.ai. Secret keys provide the best rate limits and can spend Pollen.
+API keys can be created from your dashboard at enter.pollinations.ai. Both key types consume Pollen. Secret keys have no rate limits.
 
 #### Request Body
 

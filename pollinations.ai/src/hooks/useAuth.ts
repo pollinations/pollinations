@@ -88,12 +88,22 @@ export function useAuth(): UseAuthReturn {
                         email: data.email,
                         githubUsername: data.githubUsername,
                     });
+                } else if (response.status === 401) {
+                    // Invalid/expired key - clear it
+                    console.warn("[useAuth] API key invalid or expired");
+                    localStorage.removeItem(STORAGE_KEY);
+                    setUserApiKey(null);
+                    setProfile(null);
                 } else {
-                    // 403 = no permission, silently ignore
+                    // 403 = no permission, log for debugging
+                    console.debug(
+                        "[useAuth] Profile fetch failed:",
+                        response.status,
+                    );
                     setProfile(null);
                 }
-            } catch {
-                // Network error, silently ignore
+            } catch (err) {
+                console.warn("[useAuth] Profile fetch error:", err);
                 setProfile(null);
             } finally {
                 setIsLoadingProfile(false);
@@ -120,9 +130,14 @@ export function useAuth(): UseAuthReturn {
                         balance: data.balance,
                     });
                 } else {
+                    console.debug(
+                        "[useAuth] Balance fetch failed:",
+                        response.status,
+                    );
                     setBalance(null);
                 }
-            } catch {
+            } catch (err) {
+                console.warn("[useAuth] Balance fetch error:", err);
                 setBalance(null);
             }
         };

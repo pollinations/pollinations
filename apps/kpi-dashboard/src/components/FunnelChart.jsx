@@ -39,7 +39,7 @@ export function FunnelChart({ data, title }) {
                             labelStyle={{ color: "#9ca3af" }}
                             itemStyle={{ color: "#fff" }}
                             cursor={{ fill: "rgba(255,255,255,0.05)" }}
-                            formatter={(value, name, props) => [
+                            formatter={(value, _name, props) => [
                                 `${value.toLocaleString()} (${props.payload.rate}%)`,
                                 "Count",
                             ]}
@@ -47,7 +47,7 @@ export function FunnelChart({ data, title }) {
                         <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                             {data.map((entry, index) => (
                                 <Cell
-                                    key={`cell-${index}`}
+                                    key={`cell-${entry.stage}`}
                                     fill={colors[index % colors.length]}
                                 />
                             ))}
@@ -57,7 +57,7 @@ export function FunnelChart({ data, title }) {
             </div>
             <div className="flex justify-between mt-4 text-sm">
                 {data.slice(0, -1).map((item, idx) => (
-                    <div key={idx} className="text-center">
+                    <div key={item.stage} className="text-center">
                         <span className="text-gray-400">
                             {item.stage} → {data[idx + 1]?.stage}
                         </span>

@@ -22,18 +22,22 @@ export function RetentionTable({ data, title }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {data.map((row, idx) => (
-                            <tr key={idx} className="border-b border-gray-800">
+                        {data.map((row) => (
+                            <tr
+                                key={row.cohort}
+                                className="border-b border-gray-800"
+                            >
                                 <td className="py-2 px-3 text-white font-medium">
                                     {row.cohort}
                                 </td>
                                 <td className="py-2 px-3 text-center text-gray-300">
                                     {row.users}
                                 </td>
-                                {[row.w1, row.w2, row.w3, row.w4].map(
-                                    (val, i) => (
+                                {["w1", "w2", "w3", "w4"].map((weekKey) => {
+                                    const val = row[weekKey];
+                                    return (
                                         <td
-                                            key={i}
+                                            key={weekKey}
                                             className="py-2 px-3 text-center"
                                         >
                                             {val != null &&
@@ -49,8 +53,8 @@ export function RetentionTable({ data, title }) {
                                                 </span>
                                             )}
                                         </td>
-                                    ),
-                                )}
+                                    );
+                                })}
                             </tr>
                         ))}
                     </tbody>

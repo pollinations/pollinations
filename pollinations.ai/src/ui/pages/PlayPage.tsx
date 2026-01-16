@@ -105,7 +105,15 @@ function PlayPage() {
                                         {pageCopy.balanceLabel}
                                     </span>
                                     <span className="font-headline text-sm font-black text-text-brand">
-                                        🌸{" "}
+                                        {profile?.tier === "spore"
+                                            ? "🦠"
+                                            : profile?.tier === "seed"
+                                              ? "🌱"
+                                              : profile?.tier === "flower"
+                                                ? "🌸"
+                                                : profile?.tier === "nectar"
+                                                  ? "🍯"
+                                                  : "🌱"}{" "}
                                         {balance?.balance?.toFixed(2) ?? "0.00"}{" "}
                                         Pollen
                                     </span>

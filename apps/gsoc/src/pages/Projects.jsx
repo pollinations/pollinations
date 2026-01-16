@@ -159,7 +159,7 @@ const ProjectsPage = () => {
                                 variant="h4"
                                 sx={{ color: "#fff", fontWeight: 700 }}
                             >
-                                50+
+                                20+
                             </Typography>
                             <Typography
                                 variant="caption"
@@ -169,7 +169,7 @@ const ProjectsPage = () => {
                                     letterSpacing: "0.5px",
                                 }}
                             >
-                                Expected Contributors
+                                Expected Applications
                             </Typography>
                         </Box>
                     </Stack>

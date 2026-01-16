@@ -153,7 +153,7 @@ const MentorsPage = () => {
                                 variant="h4"
                                 sx={{ color: "#fff", fontWeight: 700 }}
                             >
-                                18
+                                16
                             </Typography>
                             <Typography
                                 variant="caption"
@@ -164,24 +164,6 @@ const MentorsPage = () => {
                                 }}
                             >
                                 Years Combined
-                            </Typography>
-                        </Box>
-                        <Box sx={{ textAlign: "center" }}>
-                            <Typography
-                                variant="h4"
-                                sx={{ color: "#fff", fontWeight: 700 }}
-                            >
-                                25+
-                            </Typography>
-                            <Typography
-                                variant="caption"
-                                sx={{
-                                    color: "rgba(255,255,255,0.6)",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.5px",
-                                }}
-                            >
-                                Projects Mentored
                             </Typography>
                         </Box>
                     </Stack>

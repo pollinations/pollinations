@@ -50,6 +50,9 @@ export function PlayGenerator({
     const { copy } = usePageCopy(PLAY_PAGE);
 
     const [result, setResult] = useState<string | null>(null);
+    const [resultType, setResultType] = useState<
+        "image" | "video" | "audio" | "text" | null
+    >(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -106,6 +109,8 @@ export function PlayGenerator({
     const handleGenerate = async () => {
         setIsLoading(true);
         setError(null);
+        setResult(null);
+        setResultType(null);
 
         if (isImageModel) {
             try {
@@ -138,6 +143,7 @@ export function PlayGenerator({
                 const blob = await response.blob();
                 const imageURL = URL.createObjectURL(blob);
                 setResult(imageURL);
+                setResultType(isVideoModel ? "video" : "image");
                 setIsLoading(false);
             } catch (err) {
                 console.error("Image generation error:", err);
@@ -203,6 +209,7 @@ export function PlayGenerator({
                 const blob = new Blob([bytes], { type: "audio/wav" });
                 const audioURL = URL.createObjectURL(blob);
                 setResult(audioURL);
+                setResultType("audio");
                 setIsLoading(false);
             } catch (err) {
                 console.error("Audio generation error:", err);
@@ -262,6 +269,7 @@ export function PlayGenerator({
                 const text =
                     data.choices?.[0]?.message?.content || copy.noResponse;
                 setResult(text);
+                setResultType(isVideoModel ? "video" : "text");
                 setIsLoading(false);
             } catch (err) {
                 console.error("Text generation error:", err);
@@ -547,46 +555,21 @@ export function PlayGenerator({
             )}
 
             {/* Result Display */}
-            {result && !error && (
+            {result && !error && resultType && (
                 <div
                     className={
-                        isImageModel || isAudioModel || isVideoModel
-                            ? ""
-                            : "bg-input-background p-6"
+                        resultType === "text" ? "bg-input-background p-6" : ""
                     }
                 >
-                    {isImageModel ? (
-                        isVideoModel ? (
-                            <video
-                                src={result}
-                                controls
-                                autoPlay
-                                loop
-                                muted
-                                className="w-full h-auto"
-                                onLoadedData={() => setIsLoading(false)}
-                            >
-                                <track kind="captions" />
-                            </video>
-                        ) : (
-                            <img
-                                src={result}
-                                alt="Generated"
-                                className="w-full h-auto"
-                                onLoad={() => setIsLoading(false)}
-                            />
-                        )
-                    ) : isAudioModel ? (
-                        <audio
+                    {resultType === "image" && (
+                        <img
                             src={result}
-                            controls
-                            autoPlay
-                            className="w-full"
-                            onLoadedData={() => setIsLoading(false)}
-                        >
-                            <track kind="captions" />
-                        </audio>
-                    ) : isVideoModel ? (
+                            alt="Generated"
+                            className="w-full h-auto"
+                            onLoad={() => setIsLoading(false)}
+                        />
+                    )}
+                    {resultType === "video" && (
                         <video
                             src={result}
                             controls
@@ -598,7 +581,19 @@ export function PlayGenerator({
                         >
                             <track kind="captions" />
                         </video>
-                    ) : (
+                    )}
+                    {resultType === "audio" && (
+                        <audio
+                            src={result}
+                            controls
+                            autoPlay
+                            className="w-full"
+                            onLoadedData={() => setIsLoading(false)}
+                        >
+                            <track kind="captions" />
+                        </audio>
+                    )}
+                    {resultType === "text" && (
                         <div className="font-body text-text-body-main whitespace-pre-wrap">
                             {result}
                         </div>

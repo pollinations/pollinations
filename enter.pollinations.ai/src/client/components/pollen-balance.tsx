@@ -66,26 +66,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             </div>
                         </div>
                         {/* Download usage button */}
-                        <button
-                            type="button"
-                            onClick={async () => {
-                                try {
-                                    const response = await fetch("/api/account/usage?format=csv&limit=10000", {
-                                        credentials: "include",
-                                    });
-                                    if (!response.ok) throw new Error("Failed to fetch usage data");
-                                    const blob = await response.blob();
-                                    const url = URL.createObjectURL(blob);
-                                    const a = document.createElement("a");
-                                    a.href = url;
-                                    a.download = `pollinations-usage-${new Date().toISOString().split("T")[0]}.csv`;
-                                    a.click();
-                                    URL.revokeObjectURL(url);
-                                } catch (e) {
-                                    console.error("Download failed:", e);
-                                }
-                            }}
-                            className="group relative flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors border border-gray-300 cursor-pointer"
+                        <a
+                            href="/api/account/usage?format=csv&limit=10000"
+                            download="pollinations-usage.csv"
+                            className="group relative flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors border border-gray-300"
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -106,7 +90,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                                 Download Usage CSV
                             </span>
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>

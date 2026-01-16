@@ -138,7 +138,7 @@ export function createFireworksModelConfig(additionalConfig = {}) {
 export function createItachiResearchConfig(additionalConfig = {}) {
     return {
         provider: "openai",
-        "custom-host": "http://51.15.192.6:48372/v1",
+        "custom-host": "https://scrape.pollinations.ai/v1",
         authKey: "sk_AfnAOIFin", // Public key - uses Pollinations under the hood
         ...additionalConfig,
     };

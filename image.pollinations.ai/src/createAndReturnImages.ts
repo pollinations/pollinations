@@ -1,35 +1,28 @@
 import debug from "debug";
-import { HttpError } from "./httpError.ts";
 import dotenv from "dotenv";
 import { fileTypeFromBuffer } from "file-type";
-
-// Import shared authentication utilities
 import sharp from "sharp";
 import {
     fetchFromLeastBusyFluxServer,
     fetchFromLeastBusyServer,
     getNextTurboServerUrl,
 } from "./availableServers.ts";
+import { HttpError } from "./httpError.ts";
+import { incrementModelCounter } from "./modelCounter.ts";
+import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
+import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
+import type { ImageParams } from "./params.ts";
+import type { ProgressManager } from "./progressBar.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";
 import {
     analyzeImageSafety,
     analyzeTextSafety,
     type ContentSafetyFlags,
 } from "./utils/azureContentSafety.ts";
-import type { TrackingData } from "./utils/trackingHeaders.ts";
-
-// Import GPT Image logging utilities
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
-// Import Vertex AI Gemini image generator
+import type { TrackingData } from "./utils/trackingHeaders.ts";
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
-import type { ImageParams } from "./params.ts";
-import type { ProgressManager } from "./progressBar.ts";
-
-// Import model handlers
-import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
-import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
-import { incrementModelCounter } from "./modelCounter.ts";
 
 dotenv.config();
 
@@ -814,12 +807,8 @@ const callAzureGPTImageWithEndpoint = async (
     }
 
     if (!response.ok) {
-        // Clone the response before consuming its body
-        const errorResponse = response.clone();
-        const errorText = await errorResponse.text();
-        throw new Error(
-            `Azure GPT Image API error: ${response.status} - error ${errorText}`,
-        );
+        const errorText = await response.text();
+        throw new HttpError(errorText, response.status);
     }
 
     const data = await response.json();

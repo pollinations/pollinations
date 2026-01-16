@@ -4,7 +4,6 @@ import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
 import {
     KeyPermissionsInputs,
-    updateKeyPermissions,
     useKeyPermissions,
 } from "../components/key-permissions.tsx";
 
@@ -78,16 +77,10 @@ function AuthorizeComponent() {
     const [isValidUrl, setIsValidUrl] = useState(false);
 
     // Use shared hook for key permissions, pre-populated from URL params
-    const {
-        permissions,
-        setAllowedModels,
-        setPollenBudget,
-        setExpiryDays,
-        setAccountPermissions,
-    } = useKeyPermissions({
+    const keyPermissions = useKeyPermissions({
         allowedModels: models,
         pollenBudget: budget,
-        expiryDays: expiry ?? 30, // Default 30 days if not specified
+        expiryDays: expiry ?? 30, // Default 30 days for authorize flow
         accountPermissions: urlPermissions,
     });
 
@@ -132,8 +125,9 @@ function AuthorizeComponent() {
             // Create a temporary API key using better-auth's built-in endpoint
             const result = await authClient.apiKey.create({
                 name: `${redirectHostname}`,
-                ...(permissions.expiryDays !== null && {
-                    expiresIn: permissions.expiryDays * SECONDS_PER_DAY,
+                ...(keyPermissions.permissions.expiryDays !== null && {
+                    expiresIn:
+                        keyPermissions.permissions.expiryDays * SECONDS_PER_DAY,
                 }),
                 prefix: "sk",
                 metadata: {
@@ -150,8 +144,8 @@ function AuthorizeComponent() {
 
             const data = result.data;
 
-            // Set permissions using shared utility
-            await updateKeyPermissions(data.id, permissions);
+            // Set permissions using hook's method
+            await keyPermissions.updatePermissions(data.id);
 
             // Redirect back to the app with the key in URL fragment (not query param)
             // Using fragment prevents key from leaking to server logs/Referer headers
@@ -307,18 +301,7 @@ function AuthorizeComponent() {
                         {/* Key permissions inputs */}
                         <div className="mb-6 -mt-2">
                             <KeyPermissionsInputs
-                                allowedModels={permissions.allowedModels}
-                                pollenBudget={permissions.pollenBudget}
-                                expiryDays={permissions.expiryDays}
-                                accountPermissions={
-                                    permissions.accountPermissions
-                                }
-                                onAllowedModelsChange={setAllowedModels}
-                                onPollenBudgetChange={setPollenBudget}
-                                onExpiryDaysChange={setExpiryDays}
-                                onAccountPermissionsChange={
-                                    setAccountPermissions
-                                }
+                                value={keyPermissions}
                                 compact
                             />
                         </div>

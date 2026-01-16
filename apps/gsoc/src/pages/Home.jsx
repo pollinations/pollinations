@@ -536,10 +536,10 @@ const HomePage = () => {
                                                                 overflow:
                                                                     "hidden",
                                                                 boxShadow: `
-                                  inset 0 1px 0 rgba(255, 255, 255, 0.05),
-                                  inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-                                  0 4px 20px rgba(0, 0, 0, 0.15)
-                                `,
+                                      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                                      inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+                                      0 4px 20px rgba(0, 0, 0, 0.15)
+                                    `,
                                                                 userSelect:
                                                                     "none",
                                                                 cursor: "pointer",
@@ -549,11 +549,11 @@ const HomePage = () => {
                                                                     transform:
                                                                         "translateY(-2px)",
                                                                     boxShadow: `
-                                    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-                                    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-                                    0 8px 30px rgba(0, 0, 0, 0.2),
-                                    0 0 0 1px rgba(96, 165, 250, 0.1)
-                                  `,
+                                        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                                        inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+                                        0 8px 30px rgba(0, 0, 0, 0.2),
+                                        0 0 0 1px rgba(96, 165, 250, 0.1)
+                                      `,
                                                                     "& .stat-icon":
                                                                         {
                                                                             color: "#60a5fa",
@@ -917,8 +917,25 @@ const HomePage = () => {
                                                         fontWeight: 500,
                                                     }}
                                                 >
-                                                    Join pollinations.ai this
-                                                    summer as we embark on an
+                                                    Join{" "}
+                                                    <Box
+                                                        component="span"
+                                                        onClick={() => {
+                                                            location.href = "https://pollinations.ai";
+                                                        }}
+                                                        sx={{
+                                                            fontWeight: "bold",
+                                                            cursor: "pointer",
+                                                            color: "#fff",
+                                                            transition: "all 0.3s ease",
+                                                            "&:hover": {
+                                                                color: "#60a5fa",
+                                                            },
+                                                        }}
+                                                    >
+                                                        pollinations.ai
+                                                    </Box>{" "}
+                                                    this summer as we embark on an
                                                     exciting journey of open
                                                     source development with
                                                     Google Summer of Code 2026!

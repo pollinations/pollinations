@@ -269,7 +269,7 @@ export function PlayGenerator({
                 const text =
                     data.choices?.[0]?.message?.content || copy.noResponse;
                 setResult(text);
-                setResultType(isVideoModel ? "video" : "text");
+                setResultType("text");
                 setIsLoading(false);
             } catch (err) {
                 console.error("Text generation error:", err);
@@ -511,13 +511,7 @@ export function PlayGenerator({
                     size={null}
                     className={isLoading ? "animate-pulse" : ""}
                     data-type={
-                        isVideoModel
-                            ? "video"
-                            : isAudioModel
-                              ? "audio"
-                              : isImageModel
-                                ? "image"
-                                : "text"
+                        isAudioModel ? "audio" : isImageModel ? "image" : "text"
                     }
                 >
                     {isLoading ? (
@@ -529,8 +523,6 @@ export function PlayGenerator({
                             </span>
                             {copy.generatingText}
                         </span>
-                    ) : isVideoModel ? (
-                        copy.generateVideoButton
                     ) : isAudioModel ? (
                         copy.generateAudioButton
                     ) : isImageModel ? (

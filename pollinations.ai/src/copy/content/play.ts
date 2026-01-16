@@ -34,7 +34,6 @@ export const PLAY_PAGE = {
     generateImageButton: "Generate Image",
     generateTextButton: "Generate Text",
     generateAudioButton: "Generate Audio",
-    generateVideoButton: "Generate Video",
 
     // Tooltips
     seedTooltip: "Same seed + same prompt = same image",

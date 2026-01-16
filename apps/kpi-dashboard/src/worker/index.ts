@@ -1,7 +1,7 @@
+import manifestJSON from "__STATIC_CONTENT_MANIFEST";
+import { getAssetFromKV } from "@cloudflare/kv-asset-handler";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { getAssetFromKV } from "@cloudflare/kv-asset-handler";
-import manifestJSON from "__STATIC_CONTENT_MANIFEST";
 
 const assetManifest = JSON.parse(manifestJSON);
 
@@ -147,6 +147,19 @@ app.get("/api/kpi/retention", async (c) => {
     const weeksBack = getWeeksSinceStart();
     const res = await fetch(
         `${c.env.TINYBIRD_API}/v0/pipes/weekly_retention.json?weeks_back=${weeksBack}`,
+        { headers: { Authorization: `Bearer ${c.env.TINYBIRD_TOKEN}` } },
+    );
+
+    if (!res.ok) return c.json({ error: "Tinybird error", data: [] }, 500);
+    const data = (await res.json()) as { data: unknown[] };
+    return c.json({ data: data.data });
+});
+
+// Tinybird: Health stats - service availability (from Oct 1, 2025)
+app.get("/api/kpi/health", async (c) => {
+    const weeksBack = getWeeksSinceStart();
+    const res = await fetch(
+        `${c.env.TINYBIRD_API}/v0/pipes/weekly_health_stats.json?weeks_back=${weeksBack}`,
         { headers: { Authorization: `Bearer ${c.env.TINYBIRD_TOKEN}` } },
     );
 

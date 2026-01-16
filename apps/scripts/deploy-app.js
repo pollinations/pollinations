@@ -82,9 +82,8 @@ async function deployApp(appName) {
 
     const subdomain = appConfig.subdomain || appName;
     // Special case: gsoc doesn't get the pollinations- prefix
-    const projectName = appName === 'gsoc' 
-      ? 'gsoc' 
-      : `pollinations-${subdomain}`;
+    const projectName =
+        appName === "gsoc" ? "gsoc" : `pollinations-${subdomain}`;
     const customDomain = `${subdomain}.pollinations.ai`;
 
     console.log(`📦 Project: ${projectName}`);

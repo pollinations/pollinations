@@ -1,11 +1,11 @@
+import { Close } from "@mui/icons-material";
 import {
+    Box,
     Dialog,
     DialogContent,
-    Box,
     IconButton,
     Typography,
 } from "@mui/material";
-import { Close } from "@mui/icons-material";
 import { motion } from "framer-motion";
 
 const easterEggMessages = [

@@ -1,82 +1,94 @@
 body {
-  background: linear-gradient(120deg, #1e0c42, #431d5a, #23114a);
-  color: #fff;
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  min-height: 100vh;
+    background: linear-gradient(120deg, #1e0c42, #431d5a, #23114a);
+    color: #fff;
+    margin: 0;
+    font-family: "Inter", sans-serif;
+    min-height: 100vh;
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
 .neumorphic-button {
-  border-radius: 50px;
-  background: #2a104f;
-  box-shadow: 10px 10px 20px #1a0a30, -10px -10px 20px #3a1a6e;
-  color: #a996c5;
-  border: none;
-  outline: none;
-  transition: all 0.2s ease-in-out;
+    border-radius: 50px;
+    background: #2a104f;
+    box-shadow:
+        10px 10px 20px #1a0a30,
+        -10px -10px 20px #3a1a6e;
+    color: #a996c5;
+    border: none;
+    outline: none;
+    transition: all 0.2s ease-in-out;
 }
 
 .neumorphic-button:hover {
-  box-shadow: 5px 5px 10px #1a0a30, -5px -5px 10px #3a1a6e;
-  color: #cbbde2;
+    box-shadow:
+        5px 5px 10px #1a0a30,
+        -5px -5px 10px #3a1a6e;
+    color: #cbbde2;
 }
 
 /* GSOCPolly AI Assistant Animations */
 @keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
 }
 
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.1);
-  }
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
 }
 
 /* Chat animations */
 @keyframes messageSlideIn {
-  0% {
-    opacity: 0;
-    transform: translateY(20px) scale(0.95);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 @keyframes typing {
-  0%, 60%, 100% {
-    transform: translateY(0);
-  }
-  30% {
-    transform: translateY(-10px);
-  }
+    0%,
+    60%,
+    100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-10px);
+    }
 }
 
 /* Glowing effects */
 @keyframes glow {
-  0%, 100% {
-    box-shadow: 0 0 5px rgba(96, 165, 250, 0.3), 0 0 10px rgba(96, 165, 250, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(96, 165, 250, 0.6), 0 0 30px rgba(96, 165, 250, 0.4);
-  }
+    0%,
+    100% {
+        box-shadow:
+            0 0 5px rgba(96, 165, 250, 0.3),
+            0 0 10px rgba(96, 165, 250, 0.2);
+    }
+    50% {
+        box-shadow:
+            0 0 20px rgba(96, 165, 250, 0.6),
+            0 0 30px rgba(96, 165, 250, 0.4);
+    }
 }

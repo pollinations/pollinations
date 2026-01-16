@@ -1,35 +1,57 @@
 [
   {
-    "title": "Decentralized Social Media Platform",
-    "description": "A social media platform where users have control over their data.",
-    "technologies": ["React", "IPFS", "Ethereum"],
-    "longDescription": "This project aims to build a decentralized social media platform that leverages technologies like IPFS and Ethereum to give users full control over their data. The platform will be censorship-resistant and will provide a more transparent and equitable alternative to traditional social media platforms.",
+    "title": "Pollinations Gaming SDKs (Roblox/Godot/Unity)",
+    "description": "Create plug-and-play SDKs to bring generative AI into popular game engines.",
+    "technologies": ["Lua", "C#", "GDScript", "Rest API"],
+    "longDescription": "The 'Roblox for AI' vision needs concrete tools. This project involves building and documenting easy-to-use SDKs or 'starter kits' for Roblox, Godot, or Unity. The goal is to allow a 'vibe coder' (a teenager with no credit card) to add generative AI NPCs, textures, or dialogue to their game in one line of code.",
     "mentorID": "0xmnt01",
-    "category": "Blockchain",
-    "difficulty": "Advanced",
-    "duration": "350 hours",
-    "id" : "0xprj01"
+    "category": "Game Dev",
+    "difficulty": "Intermediate",
+    "duration": "175 hours",
+    "id": "0xprj01"
   },
   {
-    "title": "AI-Powered Code Review Assistant",
-    "description": "An intelligent assistant that helps developers review code more effectively.",
-    "technologies": ["Python", "Machine Learning", "GitHub API"],
-    "longDescription": "The AI-Powered Code Review Assistant is a tool that uses machine learning to analyze code and provide feedback to developers. It can identify potential bugs, suggest improvements, and help developers save time and effort during the code review process.",
+    "title": "'Pollen' Economy Dashboard & Wallet",
+    "description": "A visual dashboard for the Pollen credit system and creator earnings.",
+    "technologies": ["React", "TypeScript", "Recharts/D3", "Web3 (Concepts)"],
+    "longDescription": "Pollinations is building a circular economy where developers earn 'Pollen' credits when people use their apps. This project involves building the user-facing 'Wallet' and 'Dashboard' that visualizes earnings, usage stats, and the flow of value. It should be gamified, 'crunchy', and satisfying to use.",
+    "mentorID": "0xmnt02",
+    "category": "Web Development",
+    "difficulty": "Intermediate",
+    "duration": "175 hours",
+    "id": "0xprj02"
+  },
+  {
+    "title": "Mycelial Network Visualizer",
+    "description": "Interactive 3D visualization of the Pollinations app ecosystem.",
+    "technologies": ["Three.js", "React Three Fiber", "Graph Theory"],
+    "longDescription": "Our vision is a 'mycelial network' of millions of micro-apps. This project creates a stunning, interactive 3D visualization of this network. Nodes represent apps/models, edges represent API calls/value flow. It will serve as the centerpiece of our homepage to show the scale and liveness of the ecosystem.",
+    "mentorID": "0xmnt01",
+    "category": "Data Visualization",
+    "difficulty": "Advanced",
+    "duration": "350 hours",
+    "id": "0xprj03"
+  },
+  {
+    "title": "AI Content Safety & Moderation Suite",
+    "description": "Community-driven safety tools for gaming-friendly AI.",
+    "technologies": ["Python", "TensorFlow/PyTorch", "FastAPI"],
+    "longDescription": "To support our 'Roblox for AI' strategy, safety is paramount. This project involves researching and implementing lightweight, low-latency content safety filters that can sit between the Pollinations API and game clients. It ensures generated text/images are appropriate for younger audiences.",
     "mentorID": "0xmnt02",
     "category": "AI/ML",
     "difficulty": "Advanced",
     "duration": "350 hours",
-    "id" : "0xprj02"
+    "id": "0xprj04"
   },
   {
-    "title": "Real-time Collaborative Whiteboard",
-    "description": "A web-based whiteboard that allows multiple users to collaborate in real-time.",
-    "technologies": ["React", "WebSockets", "Canvas API"],
-    "longDescription": "The Real-time Collaborative Whiteboard is a tool that enables remote teams to collaborate visually. It provides a shared canvas where users can draw, write, and share ideas in real-time. The application is built using modern web technologies and provides a seamless and intuitive user experience.",
+    "title": "Interactive 'Vibe Coding' Playground",
+    "description": "A web-based IDE for generating mini-apps from natural language.",
+    "technologies": ["React", "Monaco Editor", "WebContainers"],
+    "longDescription": "Lower the barrier to entry even further. Build a web-based playground where users can type natural language instructions ('Make a bouncing ball game') and see the code/app generated instantly using Pollinations' underlying models. It's about the 'teenage hacker spirit'—instant feedback, zero setup.",
     "mentorID": "0xmnt01",
     "category": "Web Development",
-    "difficulty": "Intermediate",
+    "difficulty": "Advanced",
     "duration": "350 hours",
-    "id" : "0xprj03"
+    "id": "0xprj05"
   }
 ]

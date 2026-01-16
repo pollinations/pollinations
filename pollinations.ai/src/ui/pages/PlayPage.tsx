@@ -117,7 +117,8 @@ function PlayPage() {
                                                     : profile?.tier === "nectar"
                                                       ? "🍯"
                                                       : "🌱"}{" "}
-                                            {balance.balance.toFixed(2)} Pollen
+                                            {balance.balance.toFixed(2)}{" "}
+                                            {pageCopy.pollenUnit}
                                         </span>
                                     </div>
                                 )}

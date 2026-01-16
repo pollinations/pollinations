@@ -62,6 +62,7 @@ export const PLAY_PAGE = {
     loggedInAsLabel: "Logged in as",
     balanceLabel: "Balance",
     apiKeyLabel: "API Key",
+    pollenUnit: "Pollen",
 
     // Login CTA
     loginCtaText: "Login to unlock all models · Get API keys at",

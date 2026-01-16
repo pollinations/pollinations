@@ -1148,16 +1148,7 @@ const generateImage = async (
         );
     }
 
-    try {
-        return await callSelfHostedServer(
-            prompt,
-            safeParams,
-            concurrentRequests,
-        );
-    } catch (_error) {
-        // Cloudflare Flux fallback disabled
-        throw _error;
-    }
+    return await callSelfHostedServer(prompt, safeParams, concurrentRequests);
 };
 
 // GPT Image logging functions have been moved to utils/gptImageLogger.js

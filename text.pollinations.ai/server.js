@@ -1,23 +1,19 @@
-import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
 import crypto from "crypto";
 import debug from "debug";
-import { promises as fs } from "fs";
-import path from "path";
 import dotenv from "dotenv";
-import { availableModels } from "./availableModels.js";
-import { generateTextPortkey } from "./generateTextPortkey.js";
-import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
-import { getRequestData } from "./requestUtils.js";
-
+import express from "express";
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
+import { getServiceDefinition } from "../shared/registry/registry.js";
 import {
     buildUsageHeaders,
     openaiUsageToTokenUsage,
 } from "../shared/registry/usage-headers.js";
-import { getServiceDefinition } from "../shared/registry/registry.js";
+import { availableModels } from "./availableModels.js";
+import { generateTextPortkey } from "./generateTextPortkey.js";
+import { getRequestData } from "./requestUtils.js";
 
 // Load environment variables including .env.local overrides
 // Load .env.local first (higher priority), then .env as fallback
@@ -26,66 +22,11 @@ dotenv.config();
 
 // Shared authentication and queue is initialized automatically in ipQueue.js
 
-const BANNED_PHRASES = [];
-
-// const blockedIPs = new Set();
-const blockedIPs = new Set();
-
-async function blockIP(ip) {
-    // Only proceed if IP isn't already blocked
-    if (!blockedIPs.has(ip)) {
-        blockedIPs.add(ip);
-        log("IP blocked:", ip);
-
-        try {
-            // Append IP to log file with newline
-            await fs.appendFile(BLOCKED_IPS_LOG, `${ip}\n`, "utf8");
-        } catch (error) {
-            errorLog("Failed to write blocked IP to log file:", error);
-        }
-    }
-}
-
-function isIPBlocked(ip) {
-    return blockedIPs.has(ip);
-}
-
 const app = express();
 
 const log = debug("pollinations:server");
 const errorLog = debug("pollinations:error");
 const authLog = debug("pollinations:auth");
-const BLOCKED_IPS_LOG = path.join(process.cwd(), "blocked_ips.txt");
-
-// Load blocked IPs from file on startup
-async function loadBlockedIPs() {
-    try {
-        const data = await fs.readFile(BLOCKED_IPS_LOG, "utf8");
-        const ips = data.split("\n").filter((ip) => ip.trim());
-        for (const ip of ips) {
-            blockedIPs.add(ip.trim());
-        }
-        log(`Loaded ${blockedIPs.size} blocked IPs from file`);
-    } catch (error) {
-        if (error.code !== "ENOENT") {
-            errorLog("Error loading blocked IPs:", error);
-        }
-    }
-}
-
-// Load blocked IPs before starting server
-loadBlockedIPs().catch((error) => {
-    errorLog("Failed to load blocked IPs:", error);
-});
-
-// Middleware to block IPs
-app.use((req, res, next) => {
-    const ip = getIp(req);
-    if (isIPBlocked(ip)) {
-        return res.status(403).end();
-    }
-    next();
-});
 
 // Remove the custom JSON parsing middleware and use the standard bodyParser
 app.use(bodyParser.json({ limit: "20mb" }));
@@ -130,13 +71,6 @@ app.get("/crossdomain.xml", (req, res) => {
 
 app.set("trust proxy", true);
 
-// Queue configuration for text service
-const QUEUE_CONFIG = {
-    interval: 18000, // 18 seconds between requests per IP (no auth)
-};
-
-// Using getIp from shared auth-utils.js
-
 // Deprecated /models endpoint - moved to gateway
 app.get("/models", (req, res) => {
     res.status(410).json({
@@ -148,8 +82,6 @@ app.get("/models", (req, res) => {
         documentation: "https://enter.pollinations.ai/api/docs",
     });
 });
-
-setupFeedEndpoint(app);
 
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, requestData) {
@@ -193,7 +125,7 @@ async function handleRequest(req, res, requestData) {
         const requestedModel = requestData.model;
 
         // Use request data as-is (no user-specific model mapping)
-        let finalRequestData = requestData;
+        const finalRequestData = requestData;
 
         // Add user info to request data - using authResult directly as a thin proxy
         // Exclude messages from options to prevent overwriting transformed messages
@@ -250,20 +182,6 @@ async function handleRequest(req, res, requestData) {
             : completion.choices?.[0]?.message?.content || "";
 
         log("Generated response", responseText);
-
-        // Extract token usage data
-        const tokenUsage = completion.usage || {};
-
-        // Send all requests to feed listeners, including private ones
-        // The feed.js implementation will handle filtering for non-authenticated clients
-        sendToFeedListeners(
-            responseText,
-            {
-                ...requestData,
-                ...tokenUsage,
-            },
-            getIp(req),
-        );
 
         if (requestData.stream) {
             log("Sending streaming response with sendAsOpenAIStream");
@@ -556,23 +474,6 @@ export function sendContentResponse(res, completion) {
 
 // Helper function to process requests with queueing and caching logic
 async function processRequest(req, res, requestData) {
-    const ip = getIp(req);
-
-    // Check for blocked IPs first
-    if (isIPBlocked(ip)) {
-        errorLog("Blocked IP:", ip);
-        const errorResponse = {
-            error: "Forbidden",
-            status: 403,
-            details: {
-                blockedIp: ip,
-                timestamp: new Date().toISOString(),
-            },
-        };
-
-        return res.status(403).json(errorResponse);
-    }
-
     // Authentication and rate limiting is now handled by enter.pollinations.ai
     // Just call handleRequest directly
     await handleRequest(req, res, requestData);

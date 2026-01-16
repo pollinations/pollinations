@@ -34,6 +34,7 @@ export const PLAY_PAGE = {
     generateImageButton: "Generate Image",
     generateTextButton: "Generate Text",
     generateAudioButton: "Generate Audio",
+    generateVideoButton: "Generate Video",
 
     // Tooltips
     seedTooltip: "Same seed + same prompt = same image",
@@ -42,6 +43,9 @@ export const PLAY_PAGE = {
     // Model selector
     audioLabel: "Audio",
     videoLabel: "Video",
+
+    // Voice selector
+    voiceLabel: "Voice",
 
     // Image feed
     waitingForImages: "Waiting for images...",

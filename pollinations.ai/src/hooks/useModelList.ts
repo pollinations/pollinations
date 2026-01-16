@@ -14,6 +14,7 @@ export interface Model {
     hasVideoOutput: boolean;
     inputModalities?: string[];
     outputModalities?: string[];
+    voices?: string[];
 }
 
 interface UseModelListReturn {
@@ -52,6 +53,7 @@ export function useModelList(apiKey: string): UseModelListReturn {
                   description?: string;
                   input_modalities?: string[];
                   output_modalities?: string[];
+                  voices?: string[];
               }
             | string
         >,
@@ -72,6 +74,7 @@ export function useModelList(apiKey: string): UseModelListReturn {
                     obj.output_modalities?.includes("video") || false,
                 inputModalities: obj.input_modalities,
                 outputModalities: obj.output_modalities,
+                voices: obj.voices,
             };
         });
     };

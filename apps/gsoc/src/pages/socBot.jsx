@@ -463,12 +463,6 @@ const socBotChat = () => {
         ]);
     }, []);
 
-    useEffect(() => {
-        if (messages.length > 1) {
-            scrollToBottom();
-        }
-    }, [messages, scrollToBottom]);
-
     const scrollToBottom = () => {
         setTimeout(() => {
             if (messagesContainerRef.current) {
@@ -480,6 +474,14 @@ const socBotChat = () => {
             }
         }, 100);
     };
+    
+    useEffect(() => {
+        if (messages.length > 1) {
+            scrollToBottom();
+        }
+    }, [messages, scrollToBottom]);
+
+    
 
     const handleSendMessage = async (messageText = inputValue) => {
         if (!messageText.trim()) return;

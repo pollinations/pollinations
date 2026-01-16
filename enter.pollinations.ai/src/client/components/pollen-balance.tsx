@@ -67,7 +67,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         </div>
                         {/* Download usage button */}
                         <a
-                            href="/api/usage?format=csv&limit=10000"
+                            href="/api/account/usage?format=csv&limit=10000"
                             download="pollinations-usage.csv"
                             className="group relative flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors border border-gray-300"
                         >
@@ -82,7 +82,9 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 className="text-gray-600"
+                                aria-label="Download"
                             >
+                                <title>Download</title>
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                 <polyline points="7 10 12 15 17 10" />
                                 <line x1="12" y1="15" x2="12" y2="3" />

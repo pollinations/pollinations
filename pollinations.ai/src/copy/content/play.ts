@@ -59,6 +59,9 @@ export const PLAY_PAGE = {
     // Auth
     loginButton: "Login",
     logoutButton: "Logout",
+    loggedInAsLabel: "Logged in as",
+    balanceLabel: "Balance",
+    apiKeyLabel: "API Key",
 
     // Login CTA
     loginCtaText: "Login to unlock all models · Get API keys at",

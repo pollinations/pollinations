@@ -1,35 +1,68 @@
 [
   {
-    "title": "Decentralized Social Media Platform",
-    "description": "A social media platform where users have control over their data.",
-    "technologies": ["React", "IPFS", "Ethereum"],
-    "longDescription": "This project aims to build a decentralized social media platform that leverages technologies like IPFS and Ethereum to give users full control over their data. The platform will be censorship-resistant and will provide a more transparent and equitable alternative to traditional social media platforms.",
+    "title": "Universal Semantic Cache",
+    "description": "CLIP embeddings for images, text embeddings for prompts, cache hits before generation to save compute.",
+    "technologies": ["CLIP", "Cloudflare Vectorize", "FAISS", "TypeScript"],
+    "longDescription": "Build a semantic caching layer that uses CLIP embeddings for images and text embeddings for prompts to enable cache hits before generation, significantly reducing compute costs. The system will support configurable similarity thresholds per model, with extensions for cache analytics dashboards and per-user/per-app isolation.",
     "mentorID": "0xmnt01",
-    "category": "Blockchain",
+    "category": "Infrastructure",
     "difficulty": "Advanced",
     "duration": "350 hours",
-    "id" : "0xprj01"
+    "id": "0xprj01"
   },
   {
-    "title": "AI-Powered Code Review Assistant",
-    "description": "An intelligent assistant that helps developers review code more effectively.",
-    "technologies": ["Python", "Machine Learning", "GitHub API"],
-    "longDescription": "The AI-Powered Code Review Assistant is a tool that uses machine learning to analyze code and provide feedback to developers. It can identify potential bugs, suggest improvements, and help developers save time and effort during the code review process.",
+    "title": "Roblox RP Character Framework",
+    "description": "Abstraction layer for roleplay characters with personality, memory, actions, and dialogue.",
+    "technologies": ["Luau", "Roblox HttpService", "YAML", "Pollinations API"],
+    "longDescription": "Create an abstraction layer for RP characters featuring personality, memory, actions, and dialogue systems. Uses YAML/JSON config for character traits and available actions. Natural language triggers actions like 'follow me' causing the character to follow. Built specifically for Roblox using Luau and HttpService. Extensions include a character template marketplace and visual editor plugin.",
     "mentorID": "0xmnt02",
+    "category": "Game Development",
+    "difficulty": "Intermediate",
+    "duration": "350 hours",
+    "id": "0xprj02"
+  },
+  {
+    "title": "Pluggable Memory Layer",
+    "description": "Memory-as-tools with remember(), recall(), forget() and pluggable backends.",
+    "technologies": ["TypeScript", "Cloudflare KV", "GitHub API", "SQLite", "MCP"],
+    "longDescription": "Build a memory-as-a-service system exposing remember(), recall(), and forget() as tools. Supports pluggable backends including Cloudflare KV (hosted), GitHub repos, local SQLite, or custom adapters (MCP supported). Features auto-extraction of memories from conversations. Extensions include 'Connect your GitHub' for coding context and cross-app sharing with OAuth-like scopes.",
+    "mentorID": "0xmnt01",
     "category": "AI/ML",
     "difficulty": "Advanced",
     "duration": "350 hours",
-    "id" : "0xprj02"
+    "id": "0xprj03"
   },
   {
-    "title": "Real-time Collaborative Whiteboard",
-    "description": "A web-based whiteboard that allows multiple users to collaborate in real-time.",
-    "technologies": ["React", "WebSockets", "Canvas API"],
-    "longDescription": "The Real-time Collaborative Whiteboard is a tool that enables remote teams to collaborate visually. It provides a shared canvas where users can draw, write, and share ideas in real-time. The application is built using modern web technologies and provides a seamless and intuitive user experience.",
+    "title": "Autonomous Platform Health Agent",
+    "description": "24/7 multi-agent system monitoring infrastructure, self-maintaining tests, auto-creating issues.",
+    "technologies": ["TypeScript", "Docker", "GitHub Actions", "Claude/GPT Agents"],
+    "longDescription": "Create a 24/7 multi-agent system that monitors Pollinations infrastructure. Tests API reliability, security, rate limiting, and model quality. Self-maintains test suites and auto-creates GitHub issues/PRs for findings. Extensions include chaos engineering (intentionally breaking things to test resilience) and a living health dashboard with historical trends.",
+    "mentorID": "0xmnt02",
+    "category": "DevOps/Security",
+    "difficulty": "Advanced",
+    "duration": "350 hours",
+    "id": "0xprj04"
+  },
+  {
+    "title": "Pollinations Assistant",
+    "description": "Multi-modal orchestrator routing to all Pollinations models with streaming support.",
+    "technologies": ["TypeScript", "Streaming SSE", "Semantic Routing", "Markdown"],
+    "longDescription": "Build a single chat endpoint that routes to all Pollinations models. Supports true multi-modal responses combining text, images, and audio in one response. Features auto model selection based on intent and streaming with interleaved content. Markdown responses with embedded media. Extensions include real-time streaming canvas via WebSocket and voice-first mode with duplex audio.",
     "mentorID": "0xmnt01",
-    "category": "Web Development",
+    "category": "AI/ML",
+    "difficulty": "Advanced",
+    "duration": "350 hours",
+    "id": "0xprj05"
+  },
+  {
+    "title": "Pollinations CLI",
+    "description": "Full platform management CLI: auth, keys, apps, deploy, usage, test, ai, skills, generate.",
+    "technologies": ["Node.js", "Commander.js", "OAuth 2.0", "MCP SDK"],
+    "longDescription": "Build a comprehensive CLI for platform management including: polli auth (login/sessions), polli keys (create/revoke API keys), polli apps (register, set tier, domains), polli deploy (deploy to hosting), polli usage (balance, stats), polli test (API tests), polli ai (conversational assistant), polli skills (install/manage tools), polli generate (quick image/text/audio). Extensions include --ui browser mode and GitHub Action for @pollinations PR mentions.",
+    "mentorID": "0xmnt02",
+    "category": "Developer Tools",
     "difficulty": "Intermediate",
     "duration": "350 hours",
-    "id" : "0xprj03"
+    "id": "0xprj06"
   }
 ]

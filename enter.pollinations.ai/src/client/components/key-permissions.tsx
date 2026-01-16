@@ -33,6 +33,14 @@ export function useKeyPermissions(options: UseKeyPermissionsOptions = {}) {
         string[] | null
     >(options.accountPermissions ?? null);
 
+    const updatePermissions = async (keyId: string) => {
+        await updateKeyPermissions(keyId, {
+            allowedModels,
+            pollenBudget,
+            accountPermissions,
+        });
+    };
+
     return {
         permissions: {
             allowedModels,
@@ -44,14 +52,15 @@ export function useKeyPermissions(options: UseKeyPermissionsOptions = {}) {
         setPollenBudget,
         setExpiryDays,
         setAccountPermissions,
+        updatePermissions,
     };
 }
 
 /**
  * Update API key permissions via the backend.
- * Shared between dashboard and authorize flows.
+ * Internal utility - prefer using the hook's updatePermissions method.
  */
-export async function updateKeyPermissions(
+async function updateKeyPermissions(
     keyId: string,
     permissions: Partial<KeyPermissions>,
 ): Promise<void> {
@@ -89,14 +98,14 @@ export async function updateKeyPermissions(
 }
 
 type KeyPermissionsInputsProps = {
-    allowedModels: string[] | null;
-    pollenBudget: number | null;
-    expiryDays: number | null;
-    accountPermissions: string[] | null;
-    onAllowedModelsChange: (value: string[] | null) => void;
-    onPollenBudgetChange: (value: number | null) => void;
-    onExpiryDaysChange: (value: number | null) => void;
-    onAccountPermissionsChange: (value: string[] | null) => void;
+    value: {
+        permissions: KeyPermissions;
+        setAllowedModels: (models: string[] | null) => void;
+        setPollenBudget: (val: number | null) => void;
+        setExpiryDays: (val: number | null) => void;
+        setAccountPermissions: (val: string[] | null) => void;
+        updatePermissions?: (keyId: string) => Promise<void>;
+    };
     disabled?: boolean;
     compact?: boolean;
 };
@@ -106,37 +115,38 @@ type KeyPermissionsInputsProps = {
  * Used by both dashboard key creation and authorize flow.
  */
 export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
-    allowedModels,
-    pollenBudget,
-    expiryDays,
-    accountPermissions,
-    onAllowedModelsChange,
-    onPollenBudgetChange,
-    onExpiryDaysChange,
-    onAccountPermissionsChange,
+    value,
     disabled = false,
     compact = false,
 }) => {
+    const {
+        permissions,
+        setAllowedModels,
+        setPollenBudget,
+        setExpiryDays,
+        setAccountPermissions,
+    } = value;
+
     return (
         <div className="space-y-6">
             <ModelPermissions
-                value={allowedModels}
-                onChange={onAllowedModelsChange}
+                value={permissions.allowedModels}
+                onChange={setAllowedModels}
                 compact={compact}
             />
             <PollenBudgetInput
-                value={pollenBudget}
-                onChange={onPollenBudgetChange}
+                value={permissions.pollenBudget}
+                onChange={setPollenBudget}
                 disabled={disabled}
             />
             <ExpiryDaysInput
-                value={expiryDays}
-                onChange={onExpiryDaysChange}
+                value={permissions.expiryDays}
+                onChange={setExpiryDays}
                 disabled={disabled}
             />
             <AccountPermissionsInput
-                value={accountPermissions}
-                onChange={onAccountPermissionsChange}
+                value={permissions.accountPermissions}
+                onChange={setAccountPermissions}
                 disabled={disabled}
             />
         </div>

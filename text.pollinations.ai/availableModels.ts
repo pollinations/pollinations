@@ -168,6 +168,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p1"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
+    {
+        name: "itachi-research",
+        config: portkeyConfig["gemini-scrape"],
+    },
 ];
 
 // Export models - metadata is in registry (single source of truth)

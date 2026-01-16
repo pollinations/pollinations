@@ -147,6 +147,7 @@ export const accountRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "User not found" });
             }
 
+            // Convert Unix seconds from DB to JS milliseconds
             const nextResetAt = profile.lastTierGrant
                 ? calculateNextPeriodStart(
                       new Date(profile.lastTierGrant * 1000),

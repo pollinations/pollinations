@@ -27,6 +27,39 @@ interface UseModelListReturn {
     allModels: Model[];
 }
 
+// Helper to format model response (outside hook to avoid dependency issues)
+const formatModels = (
+    list: Array<
+        | {
+              id?: string;
+              name?: string;
+              description?: string;
+              input_modalities?: string[];
+              output_modalities?: string[];
+              voices?: string[];
+          }
+        | string
+    >,
+    type: "image" | "text",
+): Model[] => {
+    return list.map((m) => {
+        const modelId = typeof m === "string" ? m : m.id || m.name || "";
+        const obj = typeof m === "string" ? {} : m;
+        return {
+            id: modelId,
+            name: modelId,
+            description: obj.description,
+            type,
+            hasImageInput: obj.input_modalities?.includes("image") || false,
+            hasAudioOutput: obj.output_modalities?.includes("audio") || false,
+            hasVideoOutput: obj.output_modalities?.includes("video") || false,
+            inputModalities: obj.input_modalities,
+            outputModalities: obj.output_modalities,
+            voices: obj.voices,
+        };
+    });
+};
+
 /**
  * Custom hook to fetch and manage available models from the API
  * Returns formatted lists of image and text models
@@ -43,41 +76,6 @@ export function useModelList(apiKey: string): UseModelListReturn {
     );
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<Error | null>(null);
-
-    // Helper to format model response
-    const formatModels = (
-        list: Array<
-            | {
-                  id?: string;
-                  name?: string;
-                  description?: string;
-                  input_modalities?: string[];
-                  output_modalities?: string[];
-                  voices?: string[];
-              }
-            | string
-        >,
-        type: "image" | "text",
-    ): Model[] => {
-        return list.map((m) => {
-            const modelId = typeof m === "string" ? m : m.id || m.name || "";
-            const obj = typeof m === "string" ? {} : m;
-            return {
-                id: modelId,
-                name: modelId,
-                description: obj.description,
-                type,
-                hasImageInput: obj.input_modalities?.includes("image") || false,
-                hasAudioOutput:
-                    obj.output_modalities?.includes("audio") || false,
-                hasVideoOutput:
-                    obj.output_modalities?.includes("video") || false,
-                inputModalities: obj.input_modalities,
-                outputModalities: obj.output_modalities,
-                voices: obj.voices,
-            };
-        });
-    };
 
     useEffect(() => {
         const fetchModels = async () => {

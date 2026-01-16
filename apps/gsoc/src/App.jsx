@@ -11,6 +11,8 @@ import NotFound from "./pages/NotFound";
 import Projects from "./pages/Projects";
 import SocBot from "./pages/socBot";
 import Timeline from "./pages/Timeline";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import "./App.css";
 
 const darkTheme = createTheme({
@@ -60,6 +62,8 @@ function App() {
                     <Route path="/about" element={<About />} />
                     <Route path="/contributing" element={<Contributing />} />
                     <Route path="/coc" element={<CodeOfConduct />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/privacy" element={<Privacy />} />
                     <Route path="*" element={<NotFound />} />
                 </Routes>
                 <Footer />

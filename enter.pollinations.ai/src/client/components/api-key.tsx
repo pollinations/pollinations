@@ -1,7 +1,7 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import { type FormatDistanceToken, formatDistanceToNowStrict } from "date-fns";
-import { useKeyPermissions, KeyPermissionsInputs } from "./key-permissions.tsx";
+import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 
 const shortFormatDistance: Record<FormatDistanceToken, string> = {
     lessThanXSeconds: "{{count}}s",

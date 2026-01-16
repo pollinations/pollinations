@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { describeRoute } from "hono-openapi";
+import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
@@ -16,6 +16,71 @@ const usageQuerySchema = z.object({
     before: z.string().optional(), // ISO timestamp cursor for pagination
 });
 
+// Response schemas for OpenAPI documentation
+const profileResponseSchema = z.object({
+    name: z.string().nullable().describe("User's display name"),
+    email: z.string().email().nullable().describe("User's email address"),
+    githubUsername: z.string().nullable().describe("GitHub username if linked"),
+    tier: z
+        .enum(["anonymous", "seed", "flower", "nectar"])
+        .describe("User's current tier level"),
+    createdAt: z
+        .string()
+        .datetime()
+        .describe("Account creation timestamp (ISO 8601)"),
+});
+
+const balanceResponseSchema = z.object({
+    balance: z
+        .number()
+        .describe(
+            "Remaining pollen balance (combines tier, pack, and crypto balances)",
+        ),
+});
+
+const usageRecordSchema = z.object({
+    timestamp: z
+        .string()
+        .describe("Request timestamp (YYYY-MM-DD HH:mm:ss format)"),
+    type: z
+        .string()
+        .describe("Request type (e.g., 'generate.image', 'generate.text')"),
+    model: z.string().nullable().describe("Model used for generation"),
+    api_key: z.string().nullable().describe("API key identifier used (masked)"),
+    api_key_type: z
+        .string()
+        .nullable()
+        .describe("Type of API key ('secret', 'publishable', 'temporary')"),
+    meter_source: z
+        .string()
+        .nullable()
+        .describe("Billing source ('tier', 'pack', 'crypto')"),
+    input_text_tokens: z.number().describe("Number of input text tokens"),
+    input_cached_tokens: z.number().describe("Number of cached input tokens"),
+    input_audio_tokens: z.number().describe("Number of input audio tokens"),
+    input_image_tokens: z.number().describe("Number of input image tokens"),
+    output_text_tokens: z.number().describe("Number of output text tokens"),
+    output_reasoning_tokens: z
+        .number()
+        .describe(
+            "Number of reasoning tokens (for models with chain-of-thought)",
+        ),
+    output_audio_tokens: z.number().describe("Number of output audio tokens"),
+    output_image_tokens: z
+        .number()
+        .describe("Number of output image tokens (1 per image)"),
+    cost_usd: z.number().describe("Cost in USD for this request"),
+    response_time_ms: z
+        .number()
+        .nullable()
+        .describe("Response time in milliseconds"),
+});
+
+const usageResponseSchema = z.object({
+    usage: z.array(usageRecordSchema).describe("Array of usage records"),
+    count: z.number().describe("Number of records returned"),
+});
+
 /**
  * Account routes - profile, balance and usage endpoints.
  * Supports both session cookies and API keys with permission checks.
@@ -25,13 +90,18 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/profile",
         describeRoute({
-            tags: ["Account"],
+            tags: ["gen.pollinations.ai"],
             description:
                 "Get user profile info (name, email, GitHub username, tier). Requires `account:profile` permission for API keys.",
             responses: {
                 200: {
                     description:
                         "User profile with name, email, githubUsername, tier, createdAt",
+                    content: {
+                        "application/json": {
+                            schema: resolver(profileResponseSchema),
+                        },
+                    },
                 },
                 401: { description: "Unauthorized" },
                 403: {
@@ -43,7 +113,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            const apiKey = c.var.auth?.apiKey;
+            const apiKey = c.var.auth.apiKey;
 
             // Check permission for API key access
             if (apiKey && !apiKey.permissions?.account?.includes("profile")) {
@@ -84,12 +154,17 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/balance",
         describeRoute({
-            tags: ["Account"],
+            tags: ["gen.pollinations.ai"],
             description:
                 "Get pollen balance. Returns the key's remaining budget if set, otherwise the user's total balance. Requires `account:balance` permission for API keys.",
             responses: {
                 200: {
-                    description: "balance (remaining pollen)",
+                    description: "Balance (remaining pollen)",
+                    content: {
+                        "application/json": {
+                            schema: resolver(balanceResponseSchema),
+                        },
+                    },
                 },
                 401: { description: "Unauthorized" },
                 403: {
@@ -101,7 +176,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            const apiKey = c.var.auth?.apiKey;
+            const apiKey = c.var.auth.apiKey;
 
             // Check permission for API key access
             if (apiKey && !apiKey.permissions?.account?.includes("balance")) {
@@ -143,13 +218,18 @@ export const accountRoutes = new Hono<Env>()
     .get(
         "/usage",
         describeRoute({
-            tags: ["Account"],
+            tags: ["gen.pollinations.ai"],
             description:
                 "Get request history and spending data from Tinybird. Supports JSON and CSV formats. Requires `account:usage` permission for API keys.",
             responses: {
                 200: {
                     description:
                         "Usage records with timestamp, model, tokens, cost_usd, etc.",
+                    content: {
+                        "application/json": {
+                            schema: resolver(usageResponseSchema),
+                        },
+                    },
                 },
                 401: { description: "Unauthorized" },
                 403: {
@@ -167,7 +247,7 @@ export const accountRoutes = new Hono<Env>()
             });
 
             const user = c.var.auth.requireUser();
-            const apiKey = c.var.auth?.apiKey;
+            const apiKey = c.var.auth.apiKey;
 
             // Check permission for API key access
             if (apiKey && !apiKey.permissions?.account?.includes("usage")) {

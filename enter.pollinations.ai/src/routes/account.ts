@@ -274,7 +274,10 @@ export const accountRoutes = new Hono<Env>()
                 "/v0/pipes/user_usage.json",
                 tinybirdOrigin,
             );
-            tinybirdUrl.searchParams.set("user_id", user.id);
+            tinybirdUrl.searchParams.set(
+                "user_id",
+                user.githubId?.toString() ?? user.id,
+            );
             tinybirdUrl.searchParams.set("limit", limit.toString());
             if (before) {
                 tinybirdUrl.searchParams.set("before", before);

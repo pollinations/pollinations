@@ -50,6 +50,9 @@ export function PlayGenerator({
     const { copy } = usePageCopy(PLAY_PAGE);
 
     const [result, setResult] = useState<string | null>(null);
+    const [resultType, setResultType] = useState<
+        "image" | "video" | "audio" | "text" | null
+    >(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -79,6 +82,22 @@ export function PlayGenerator({
     const isAudioModel = currentModelData?.hasAudioOutput || false;
     const isVideoModel = currentModelData?.hasVideoOutput || false;
     const supportsImageInput = currentModelData?.hasImageInput || false;
+    const availableVoices = currentModelData?.voices || [];
+
+    // Voice selection for audio models
+    const [selectedVoice, setSelectedVoice] = useState<string>(
+        availableVoices[0] || "",
+    );
+
+    // Update selected voice when model changes
+    useEffect(() => {
+        if (
+            availableVoices.length > 0 &&
+            !availableVoices.includes(selectedVoice)
+        ) {
+            setSelectedVoice(availableVoices[0]);
+        }
+    }, [availableVoices, selectedVoice]);
 
     const addImageUrl = () => {
         if (imageUrlInput.trim() && imageUrls.length < 4) {
@@ -90,6 +109,8 @@ export function PlayGenerator({
     const handleGenerate = async () => {
         setIsLoading(true);
         setError(null);
+        setResult(null);
+        setResultType(null);
 
         if (isImageModel) {
             try {
@@ -122,9 +143,76 @@ export function PlayGenerator({
                 const blob = await response.blob();
                 const imageURL = URL.createObjectURL(blob);
                 setResult(imageURL);
+                setResultType(isVideoModel ? "video" : "image");
                 setIsLoading(false);
             } catch (err) {
                 console.error("Image generation error:", err);
+                setError(
+                    err instanceof Error
+                        ? err.message
+                        : copy.somethingWentWrong,
+                );
+                setResult(null);
+                setIsLoading(false);
+            }
+        } else if (isAudioModel) {
+            // Audio models use chat completions with modalities parameter
+            try {
+                const response = await fetch(
+                    `${API_BASE}/v1/chat/completions`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${apiKey}`,
+                        },
+                        body: JSON.stringify({
+                            model: selectedModel,
+                            modalities: ["text", "audio"],
+                            audio: {
+                                voice: selectedVoice || "alloy",
+                                format: "wav",
+                            },
+                            messages: [
+                                {
+                                    role: "user",
+                                    content: prompt,
+                                },
+                            ],
+                        }),
+                    },
+                );
+
+                if (!response.ok) {
+                    const errorMsg = await extractErrorMessage(response);
+                    setError(errorMsg);
+                    setResult(null);
+                    setIsLoading(false);
+                    return;
+                }
+
+                const data = await response.json();
+                const audioData = data.choices?.[0]?.message?.audio?.data;
+                if (!audioData) {
+                    setError(copy.noResponse);
+                    setResult(null);
+                    setIsLoading(false);
+                    return;
+                }
+
+                // Decode base64 audio to blob URL
+                const binaryString = atob(audioData);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                const blob = new Blob([bytes], { type: "audio/wav" });
+                const audioURL = URL.createObjectURL(blob);
+                setResult(audioURL);
+                setResultType("audio");
+                setIsLoading(false);
+            } catch (err) {
+                console.error("Audio generation error:", err);
                 setError(
                     err instanceof Error
                         ? err.message
@@ -181,6 +269,7 @@ export function PlayGenerator({
                 const text =
                     data.choices?.[0]?.message?.content || copy.noResponse;
                 setResult(text);
+                setResultType("text");
                 setIsLoading(false);
             } catch (err) {
                 console.error("Text generation error:", err);
@@ -387,6 +476,31 @@ export function PlayGenerator({
                 </div>
             )}
 
+            {/* Voice Selector (only show for audio models with available voices) */}
+            {availableVoices.length > 0 && (
+                <div className="mb-6">
+                    <div className="font-headline text-text-body-main uppercase text-xs tracking-wider font-black mb-3">
+                        {copy.voiceLabel}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {availableVoices.map((voice) => (
+                            <Button
+                                key={voice}
+                                type="button"
+                                onClick={() => setSelectedVoice(voice)}
+                                variant="model"
+                                size={null}
+                                data-active={selectedVoice === voice}
+                                data-type="audio"
+                                className="border-2 border-indicator-audio"
+                            >
+                                {voice}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Generate Button */}
             <div className="relative group/generate inline-block mb-6">
                 <Button
@@ -433,30 +547,45 @@ export function PlayGenerator({
             )}
 
             {/* Result Display */}
-            {result && !error && (
-                <div className={isImageModel ? "" : "bg-input-background p-6"}>
-                    {isImageModel ? (
-                        isVideoModel ? (
-                            <video
-                                src={result}
-                                controls
-                                autoPlay
-                                loop
-                                muted
-                                className="w-full h-auto"
-                                onLoadedData={() => setIsLoading(false)}
-                            >
-                                <track kind="captions" />
-                            </video>
-                        ) : (
-                            <img
-                                src={result}
-                                alt="Generated"
-                                className="w-full h-auto"
-                                onLoad={() => setIsLoading(false)}
-                            />
-                        )
-                    ) : (
+            {result && !error && resultType && (
+                <div
+                    className={
+                        resultType === "text" ? "bg-input-background p-6" : ""
+                    }
+                >
+                    {resultType === "image" && (
+                        <img
+                            src={result}
+                            alt="Generated"
+                            className="w-full h-auto"
+                            onLoad={() => setIsLoading(false)}
+                        />
+                    )}
+                    {resultType === "video" && (
+                        <video
+                            src={result}
+                            controls
+                            autoPlay
+                            loop
+                            muted
+                            className="w-full h-auto"
+                            onLoadedData={() => setIsLoading(false)}
+                        >
+                            <track kind="captions" />
+                        </video>
+                    )}
+                    {resultType === "audio" && (
+                        <audio
+                            src={result}
+                            controls
+                            autoPlay
+                            className="w-full"
+                            onLoadedData={() => setIsLoading(false)}
+                        >
+                            <track kind="captions" />
+                        </audio>
+                    )}
+                    {resultType === "text" && (
                         <div className="font-body text-text-body-main whitespace-pre-wrap">
                             {result}
                         </div>

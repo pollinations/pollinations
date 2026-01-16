@@ -96,11 +96,11 @@ export const accountRoutes = new Hono<Env>()
         describeRoute({
             tags: ["gen.pollinations.ai"],
             description:
-                "Get user profile info (name, email, GitHub username, tier). Requires `account:profile` permission for API keys.",
+                "Get user profile info (name, email, GitHub username, tier, createdAt, nextResetAt). Requires `account:profile` permission for API keys.",
             responses: {
                 200: {
                     description:
-                        "User profile with name, email, githubUsername, tier, createdAt",
+                        "User profile with name, email, githubUsername, tier, createdAt, nextResetAt",
                     content: {
                         "application/json": {
                             schema: resolver(profileResponseSchema),

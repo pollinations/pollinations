@@ -423,6 +423,22 @@ const AboutPage = () => {
                     <Stack spacing={2}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                          Organisation Admin:
+                        </Typography>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            color: '#60a5fa',
+                            fontFamily: 'monospace',
+                            cursor: 'pointer',
+                            '&:hover': { color: '#93c5fd' }
+                          }}
+                        >
+                          elliot@pollinations.ai
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
                           Organization Core Team:
                         </Typography>
                         <Typography 

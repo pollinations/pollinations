@@ -15,51 +15,42 @@ export {
     chickyTutorPrompt,
 } from "./prompts.js";
 
-// Re-export configs
-export * from "./configs/index.js";
+// Re-export configs (excluding ProviderConfig to avoid conflict with types.ts)
+export {
+    extractResourceName,
+    extractDeploymentName,
+    extractApiVersion,
+    createAzureModelConfig,
+    createScalewayModelConfig,
+    createBedrockLambdaModelConfig,
+    createBedrockNativeConfig,
+    createMyceliGrok4FastConfig,
+    createPerplexityModelConfig,
+    createOVHcloudModelConfig,
+    createFireworksModelConfig,
+    createVertexAIModelConfig,
+    generatePortkeyHeaders,
+} from "./configs/index.js";
 
-// Types
-export interface Message {
-    role: "system" | "user" | "assistant" | "tool";
-    content: string;
-    name?: string;
-    tool_call_id?: string;
-    tool_calls?: unknown[];
-}
+// Re-export types (ProviderConfig comes from here)
+export * from "./types.js";
 
-export interface TextGenerationOptions {
-    model: string;
-    messages: Message[];
-    stream?: boolean;
-    temperature?: number;
-    max_tokens?: number;
-    top_p?: number;
-    frequency_penalty?: number;
-    presence_penalty?: number;
-    seed?: number;
-    tools?: unknown[];
-    tool_choice?: unknown;
-    response_format?: { type: string; schema?: unknown };
-    [key: string]: unknown;
-}
+// Re-export utils
+export {
+    validateAndNormalizeMessages,
+    normalizeOptions,
+    formatToOpenAIResponse,
+    generateRequestId,
+    cleanUndefined,
+    cleanNullAndUndefined,
+    createErrorResponse,
+    parseSSEData,
+    formatSSE,
+    formatSSEDone,
+} from "./utils.js";
 
-export interface TextGenerationResponse {
-    id: string;
-    object: string;
-    created: number;
-    model: string;
-    choices: Array<{
-        index: number;
-        message?: Message;
-        delta?: Partial<Message>;
-        finish_reason: string | null;
-    }>;
-    usage?: {
-        prompt_tokens: number;
-        completion_tokens: number;
-        total_tokens: number;
-    };
-}
+// Import types for function signature
+import type { TextGenerationRequest, TextGenerationResponse } from "./types.js";
 
 /**
  * Placeholder for the main text generation function.
@@ -69,7 +60,7 @@ export interface TextGenerationResponse {
  * This function will be used when we're ready to handle generation directly.
  */
 export async function generateText(
-    _options: TextGenerationOptions,
+    _options: TextGenerationRequest,
     _env: Record<string, string>,
 ): Promise<TextGenerationResponse | ReadableStream> {
     throw new Error(

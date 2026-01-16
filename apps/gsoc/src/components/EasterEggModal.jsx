@@ -12,27 +12,9 @@ const easterEggMessages = [
     {
         title: "🎉 You Found It!",
         message:
-            "Welcome to the secret realm of GSOC 2026! Keep pushing the boundaries and exploring the web. You're already thinking like a true pollinator!",
+            "Use the code 0x3yrTEAPlln with your gsoc application to get a special surprise! Keep exploring!",
         emoji: "🐝",
-    },
-    {
-        title: "✨ Easter Egg Unlocked!",
-        message:
-            "Great detective work! This hidden message is just a small token of appreciation for your curiosity. Keep that spirit when contributing to GSOC 2026!",
-        emoji: "🔓",
-    },
-    {
-        title: "🚀 Secret Achievement!",
-        message:
-            "You've discovered the pollinations.ai easter egg! This is what we love - curiosity and exploration. Apply that same energy to your GSOC projects!",
-        emoji: "🎯",
-    },
-    {
-        title: "💎 Hidden Gem Found!",
-        message:
-            "Congratulations! You're part of an exclusive club of explorers. Remember, the best discoveries come from curiosity and persistence.",
-        emoji: "✨",
-    },
+    }
 ];
 
 const EasterEggModal = ({ open, onClose }) => {

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "/api/socbot";
+const API_BASE_URL = "https://gen.pollinations.ai/v1/chat/completions";
 
 export class socBotAPI {
     conversationHistory: { role: string; content: string }[];
@@ -53,6 +53,7 @@ Always end responses with a helpful suggestion or question to keep the conversat
             });
 
             const requestBody = {
+                model: "openai",
                 messages: [
                     {
                         role: "system",
@@ -60,11 +61,13 @@ Always end responses with a helpful suggestion or question to keep the conversat
                     },
                     ...this.conversationHistory,
                 ],
+                max_tokens: 1000,
             };
 
             const response = await axios.post(API_BASE_URL, requestBody, {
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": "Bearer pk_UOodu50B7Ewh0FUg",
                 },
             });
 

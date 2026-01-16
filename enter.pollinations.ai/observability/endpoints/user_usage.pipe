@@ -25,7 +25,7 @@ SQL >
         total_price as cost_usd,
         response_time as response_time_ms
     FROM generation_event
-    WHERE user_id = {{String(user_id, '')}}
+    WHERE (user_id = {{String(user_id, '')}} OR user_github_id = {{String(user_id, '')}})
     AND total_price > 0
     AND start_time >= now() - INTERVAL 30 DAY
     {% if defined(before) %}

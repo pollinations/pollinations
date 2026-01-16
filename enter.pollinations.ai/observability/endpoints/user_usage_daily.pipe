@@ -1,0 +1,32 @@
+DESCRIPTION >
+    Get daily aggregated usage data for a user. Groups by date, event_type, and model.
+    Returns all historical data (no time limit). Use 'since' and 'until' for date range filtering.
+
+TOKEN model_usage READ
+
+NODE user_usage_daily_node
+SQL >
+    %
+    SELECT
+        toDate(start_time) as date,
+        event_type,
+        model_used as model,
+        splitByChar(':', selected_meter_slug)[-1] as meter_source,
+        count() as requests,
+        sum(total_price) as cost_usd,
+        sum(token_count_prompt_text + token_count_prompt_cached + token_count_prompt_audio + token_count_prompt_image) as input_tokens,
+        sum(token_count_completion_text + token_count_completion_reasoning + token_count_completion_audio + token_count_completion_image) as output_tokens,
+        groupArray(api_key_name) as api_key_names
+    FROM generation_event
+    WHERE user_id = {{String(user_id, '')}}
+    AND total_price > 0
+    {% if defined(since) %}
+    AND start_time >= {{DateTime(since)}}
+    {% end %}
+    {% if defined(until) %}
+    AND start_time < {{DateTime(until)}}
+    {% end %}
+    GROUP BY date, event_type, model, meter_source
+    ORDER BY date DESC, requests DESC
+
+TYPE endpoint

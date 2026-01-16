@@ -9,11 +9,11 @@ interface UserProfile {
     name: string;
     email: string;
     githubUsername: string | null;
+    tier: "anonymous" | "spore" | "seed" | "flower" | "nectar";
 }
 
 interface UserBalance {
-    userBalance: number;
-    keyBalance: number | null;
+    balance: number;
 }
 
 interface UseAuthReturn {
@@ -88,13 +88,24 @@ export function useAuth(): UseAuthReturn {
                         name: data.name,
                         email: data.email,
                         githubUsername: data.githubUsername,
+                        tier: data.tier || "anonymous",
                     });
+                } else if (response.status === 401) {
+                    // Invalid/expired key - clear it
+                    console.warn("[useAuth] API key invalid or expired");
+                    localStorage.removeItem(STORAGE_KEY);
+                    setUserApiKey(null);
+                    setProfile(null);
                 } else {
-                    // 403 = no permission, silently ignore
+                    // 403 = no permission, log for debugging
+                    console.debug(
+                        "[useAuth] Profile fetch failed:",
+                        response.status,
+                    );
                     setProfile(null);
                 }
-            } catch {
-                // Network error, silently ignore
+            } catch (err) {
+                console.warn("[useAuth] Profile fetch error:", err);
                 setProfile(null);
             } finally {
                 setIsLoadingProfile(false);
@@ -118,13 +129,17 @@ export function useAuth(): UseAuthReturn {
                 if (response.ok) {
                     const data = await response.json();
                     setBalance({
-                        userBalance: data.userBalance,
-                        keyBalance: data.keyBalance,
+                        balance: data.balance,
                     });
                 } else {
+                    console.debug(
+                        "[useAuth] Balance fetch failed:",
+                        response.status,
+                    );
                     setBalance(null);
                 }
-            } catch {
+            } catch (err) {
+                console.warn("[useAuth] Balance fetch error:", err);
                 setBalance(null);
             }
         };
@@ -134,7 +149,7 @@ export function useAuth(): UseAuthReturn {
 
     const login = useCallback(() => {
         const currentUrl = window.location.href.split("#")[0];
-        const authUrl = `${ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}`;
+        const authUrl = `${ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}&permissions=profile,balance`;
         window.location.href = authUrl;
     }, []);
 

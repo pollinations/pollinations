@@ -227,7 +227,7 @@ const ProjectsPage = () => {
                                             right: 0,
                                             height: "4px",
                                             borderRadius: "20px 20px 0 0",
-                                            background: `linear-gradient(90deg, ${project.category === "AI/ML" ? "#f59e0b, #d97706" : project.category === "Blockchain" ? "#3b82f6, #1d4ed8" : "#10b981, #059669"})`,
+                                            background: `linear-gradient(90deg, ${project.category === "AI/ML" ? "#f59e0b, #d97706" : project.category === "Data Visualization" ? "#3b82f6, #1d4ed8" : project.category === "Web Development" ? "#ec4899, #be185d" : project.category === "Game Dev" ? "#a855f7, #7e22ce" : "#10b981, #059669"})`,
                                         },
                                     }}
                                 >
@@ -270,28 +270,41 @@ const ProjectsPage = () => {
                                                             />
                                                         }
                                                         sx={{
-                                                            bgcolor:
-                                                                project.category ===
-                                                                "AI/ML"
-                                                                    ? "rgba(245, 158, 11, 0.1)"
-                                                                    : project.category ===
-                                                                        "Blockchain"
-                                                                      ? "rgba(59, 130, 246, 0.1)"
-                                                                      : "rgba(16, 185, 129, 0.1)",
-                                                            color:
-                                                                project.category ===
-                                                                "AI/ML"
-                                                                    ? "#fbbf24"
-                                                                    : project.category ===
-                                                                        "Blockchain"
-                                                                      ? "#60a5fa"
-                                                                      : "#34d399",
-                                                            border: `1px solid ${project.category === "AI/ML" ? "rgba(245, 158, 11, 0.3)" : project.category === "Blockchain" ? "rgba(59, 130, 246, 0.3)" : "rgba(16, 185, 129, 0.3)"}`,
-                                                            fontWeight: 600,
-                                                            fontSize:
-                                                                "0.875rem",
-                                                            height: "32px",
-                                                        }}
+                                                        bgcolor:
+                                                            project.category === "AI/ML"
+                                                                ? "rgba(245, 158, 11, 0.1)"
+                                                                : project.category === "Data Visualization"
+                                                                ? "rgba(59, 130, 246, 0.1)"
+                                                                : project.category === "Web Development"
+                                                                    ? "rgba(236, 72, 153, 0.1)"
+                                                                    : project.category === "Game Dev"
+                                                                    ? "rgba(168, 85, 247, 0.1)"
+                                                                    : "rgba(16, 185, 129, 0.1)",
+                                                        color:
+                                                            project.category === "AI/ML"
+                                                                ? "#fbbf24"
+                                                                : project.category === "Data Visualization"
+                                                                ? "#60a5fa"
+                                                                : project.category === "Web Development"
+                                                                    ? "#ec4899"
+                                                                    : project.category === "Game Dev"
+                                                                    ? "#d8b4fe"
+                                                                    : "#34d399",
+                                                        border: `1px solid ${
+                                                            project.category === "AI/ML"
+                                                                ? "rgba(245, 158, 11, 0.3)"
+                                                                : project.category === "Data Visualization"
+                                                                ? "rgba(59, 130, 246, 0.3)"
+                                                                : project.category === "Web Development"
+                                                                    ? "rgba(236, 72, 153, 0.3)"
+                                                                    : project.category === "Game Dev"
+                                                                    ? "rgba(168, 85, 247, 0.3)"
+                                                                    : "rgba(16, 185, 129, 0.3)"
+                                                        }`,
+                                                        fontWeight: 600,
+                                                        fontSize: "0.875rem",
+                                                        height: "32px",
+                                                    }}
                                                     />
                                                     <Chip
                                                         label={

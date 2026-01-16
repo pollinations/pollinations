@@ -86,33 +86,58 @@ function PlayPage() {
                             </Button>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-6 p-5 mb-8 bg-surface-card rounded-sub-card border-l-4 border-border-brand">
-                            <div className="flex-1 flex items-center gap-4 flex-wrap">
-                                {profile ? (
-                                    <span className="font-headline text-sm font-black text-text-body-main">
-                                        {profile.githubUsername
-                                            ? `@${profile.githubUsername}`
-                                            : profile.name}
-                                    </span>
-                                ) : (
-                                    <p className="font-headline text-sm font-black text-text-body-main">
-                                        {pageCopy.loggedInCtaText}
-                                    </p>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 mb-8 bg-surface-card rounded-sub-card border-l-4 border-border-brand">
+                            <div className="flex-1 flex flex-wrap items-start gap-6">
+                                {/* User - only show if profile permission granted */}
+                                {profile && (
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium">
+                                            {pageCopy.loggedInAsLabel}
+                                        </span>
+                                        <span className="font-headline text-sm font-black text-text-body-main">
+                                            {profile.githubUsername
+                                                ? `@${profile.githubUsername}`
+                                                : profile.name}
+                                        </span>
+                                    </div>
                                 )}
-                                {balance?.balance !== undefined && (
-                                    <span className="text-xs text-text-body-secondary px-2 py-0.5 bg-input-background rounded">
-                                        🌸 {balance.balance.toFixed(2)} pollen
-                                    </span>
+                                {/* Balance - only show if balance permission granted */}
+                                {balance !== null && (
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium">
+                                            {pageCopy.balanceLabel}
+                                        </span>
+                                        <span className="font-headline text-sm font-black text-text-brand">
+                                            {profile?.tier === "spore"
+                                                ? "🦠"
+                                                : profile?.tier === "seed"
+                                                  ? "🌱"
+                                                  : profile?.tier === "flower"
+                                                    ? "🌸"
+                                                    : profile?.tier === "nectar"
+                                                      ? "🍯"
+                                                      : "🌱"}{" "}
+                                            {balance.balance.toFixed(2)}{" "}
+                                            {pageCopy.pollenUnit}
+                                        </span>
+                                    </div>
                                 )}
-                                <span className="font-mono text-xs bg-input-background text-text-brand px-3 py-1.5 rounded border border-border-main">
-                                    🔑 {apiKey.slice(0, 14)}...
-                                </span>
+                                {/* API Key - always show */}
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium">
+                                        {pageCopy.apiKeyLabel}
+                                    </span>
+                                    <span className="font-mono text-sm text-text-body-secondary">
+                                        {apiKey.slice(0, 7)}••••
+                                    </span>
+                                </div>
                             </div>
                             <Button
                                 type="button"
                                 onClick={logout}
                                 variant="secondary"
                                 size="sm"
+                                className="self-start sm:self-center"
                             >
                                 {pageCopy.logoutButton}
                             </Button>

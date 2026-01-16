@@ -88,7 +88,10 @@ export function PlayGenerator({
 
     // Update selected voice when model changes
     useEffect(() => {
-        if (availableVoices.length > 0 && !availableVoices.includes(selectedVoice)) {
+        if (
+            availableVoices.length > 0 &&
+            !availableVoices.includes(selectedVoice)
+        ) {
             setSelectedVoice(availableVoices[0]);
         }
     }, [availableVoices, selectedVoice]);
@@ -500,7 +503,13 @@ export function PlayGenerator({
                     size={null}
                     className={isLoading ? "animate-pulse" : ""}
                     data-type={
-                        isVideoModel ? "video" : isAudioModel ? "audio" : isImageModel ? "image" : "text"
+                        isVideoModel
+                            ? "video"
+                            : isAudioModel
+                              ? "audio"
+                              : isImageModel
+                                ? "image"
+                                : "text"
                     }
                 >
                     {isLoading ? (
@@ -539,7 +548,13 @@ export function PlayGenerator({
 
             {/* Result Display */}
             {result && !error && (
-                <div className={isImageModel || isAudioModel || isVideoModel ? "" : "bg-input-background p-6"}>
+                <div
+                    className={
+                        isImageModel || isAudioModel || isVideoModel
+                            ? ""
+                            : "bg-input-background p-6"
+                    }
+                >
                     {isImageModel ? (
                         isVideoModel ? (
                             <video

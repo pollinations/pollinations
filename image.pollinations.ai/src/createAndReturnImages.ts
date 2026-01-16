@@ -730,7 +730,7 @@ const callAzureGPTImageWithEndpoint = async (
                     }
 
                     // Determine file extension and MIME type from Content-Type header
-                    let contentType =
+                    const contentType =
                         imageResponse.headers.get("content-type") || "";
                     let extension = ".png"; // Default extension
                     let mimeType = "image/png"; // Default MIME type
@@ -918,79 +918,72 @@ const generateImage = async (
                 ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}`
                 : "No userInfo provided",
         );
+        // For gptimage models, always throw errors instead of falling back
+        progress.updateBar(
+            requestId,
+            30,
+            "Processing",
+            "Checking prompt safety...",
+        );
 
-        // All requests assumed to come from enter.pollinations.ai - tier checks bypassed
-        {
-            // For gptimage models, always throw errors instead of falling back
-            progress.updateBar(
-                requestId,
-                30,
-                "Processing",
-                "Checking prompt safety...",
+        try {
+            // Check prompt safety with Azure Content Safety
+            const promptSafetyResult = await analyzeTextSafety(prompt);
+
+            // Log the prompt with safety analysis results
+            await logGptImagePrompt(
+                prompt,
+                safeParams,
+                userInfo,
+                promptSafetyResult,
             );
 
-            try {
-                // Check prompt safety with Azure Content Safety
-                const promptSafetyResult = await analyzeTextSafety(prompt);
+            if (!promptSafetyResult.safe) {
+                const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
+                logError("Azure Content Safety rejected prompt:", errorMessage);
+                progress.updateBar(
+                    requestId,
+                    100,
+                    "Error",
+                    "Prompt contains unsafe content",
+                );
 
-                // Log the prompt with safety analysis results
-                await logGptImagePrompt(
+                // Log the error with safety analysis results
+                const error = new HttpError(errorMessage, 400);
+                await logGptImageError(
                     prompt,
                     safeParams,
                     userInfo,
+                    error,
                     promptSafetyResult,
                 );
 
-                if (!promptSafetyResult.safe) {
-                    const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-                    logError(
-                        "Azure Content Safety rejected prompt:",
-                        errorMessage,
-                    );
-                    progress.updateBar(
-                        requestId,
-                        100,
-                        "Error",
-                        "Prompt contains unsafe content",
-                    );
-
-                    // Log the error with safety analysis results
-                    const error = new HttpError(errorMessage, 400);
-                    await logGptImageError(
-                        prompt,
-                        safeParams,
-                        userInfo,
-                        error,
-                        promptSafetyResult,
-                    );
-
-                    throw error;
-                }
-
-                progress.updateBar(
-                    requestId,
-                    35,
-                    "Processing",
-                    `Trying Azure GPT Image (${gptConfig.modelName})...`,
-                );
-                return await callAzureGPTImage(
-                    prompt,
-                    safeParams,
-                    userInfo,
-                    safeParams.model,
-                );
-            } catch (error) {
-                // Log the error but don't fall back - propagate it to the caller
-                logError(
-                    "Azure GPT Image generation or safety check failed:",
-                    error.message,
-                );
-
-                await logGptImageError(prompt, safeParams, userInfo, error);
-
-                progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }
+
+            progress.updateBar(
+                requestId,
+                35,
+                "Processing",
+                `Trying Azure GPT Image (${gptConfig.modelName})...`,
+            );
+            return await callAzureGPTImage(
+                prompt,
+                safeParams,
+                userInfo,
+                safeParams.model,
+            );
+        } catch (error) {
+            // Log the error but don't fall back - propagate it to the caller
+            logError(
+                "Azure GPT Image generation or safety check failed:",
+                error.message,
+            );
+
+            await logGptImageError(prompt, safeParams, userInfo, error);
+
+            progress.updateBar(requestId, 100, "Error", error.message);
+            throw error;
         }
     }
 

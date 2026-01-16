@@ -87,38 +87,41 @@ function PlayPage() {
                         </div>
                     ) : (
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 mb-8 bg-surface-card rounded-sub-card border-l-4 border-border-brand">
-                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
-                                {/* User */}
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium">
-                                        {pageCopy.loggedInAsLabel}
-                                    </span>
-                                    <span className="font-headline text-sm font-black text-text-body-main">
-                                        {profile?.githubUsername
-                                            ? `@${profile.githubUsername}`
-                                            : profile?.name || "User"}
-                                    </span>
-                                </div>
-                                {/* Balance */}
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium">
-                                        {pageCopy.balanceLabel}
-                                    </span>
-                                    <span className="font-headline text-sm font-black text-text-brand">
-                                        {profile?.tier === "spore"
-                                            ? "🦠"
-                                            : profile?.tier === "seed"
-                                              ? "🌱"
-                                              : profile?.tier === "flower"
-                                                ? "🌸"
-                                                : profile?.tier === "nectar"
-                                                  ? "🍯"
-                                                  : "🌱"}{" "}
-                                        {balance?.balance?.toFixed(2) ?? "0.00"}{" "}
-                                        Pollen
-                                    </span>
-                                </div>
-                                {/* API Key */}
+                            <div className="flex-1 flex flex-wrap items-start gap-6">
+                                {/* User - only show if profile permission granted */}
+                                {profile && (
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium">
+                                            {pageCopy.loggedInAsLabel}
+                                        </span>
+                                        <span className="font-headline text-sm font-black text-text-body-main">
+                                            {profile.githubUsername
+                                                ? `@${profile.githubUsername}`
+                                                : profile.name}
+                                        </span>
+                                    </div>
+                                )}
+                                {/* Balance - only show if balance permission granted */}
+                                {balance !== null && (
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium">
+                                            {pageCopy.balanceLabel}
+                                        </span>
+                                        <span className="font-headline text-sm font-black text-text-brand">
+                                            {profile?.tier === "spore"
+                                                ? "🦠"
+                                                : profile?.tier === "seed"
+                                                  ? "🌱"
+                                                  : profile?.tier === "flower"
+                                                    ? "🌸"
+                                                    : profile?.tier === "nectar"
+                                                      ? "🍯"
+                                                      : "🌱"}{" "}
+                                            {balance.balance.toFixed(2)} Pollen
+                                        </span>
+                                    </div>
+                                )}
+                                {/* API Key - always show */}
                                 <div className="flex flex-col gap-1">
                                     <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium">
                                         {pageCopy.apiKeyLabel}

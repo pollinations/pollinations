@@ -43,6 +43,9 @@ export const PLAY_PAGE = {
     audioLabel: "Audio",
     videoLabel: "Video",
 
+    // Voice selector
+    voiceLabel: "Voice",
+
     // Image feed
     waitingForImages: "Waiting for images...",
     waitingForContent: "Waiting for content...",
@@ -56,6 +59,10 @@ export const PLAY_PAGE = {
     // Auth
     loginButton: "Login",
     logoutButton: "Logout",
+    loggedInAsLabel: "Logged in as",
+    balanceLabel: "Balance",
+    apiKeyLabel: "API Key",
+    pollenUnit: "Pollen",
 
     // Login CTA
     loginCtaText: "Login to unlock all models · Get API keys at",

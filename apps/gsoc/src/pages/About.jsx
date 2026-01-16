@@ -155,6 +155,12 @@ const AboutPage = () => {
                             <Button
                                 variant="contained"
                                 size="large"
+                                onClick={() =>
+                                    window.open(
+                                        "https://github.com/pollinations/pollinations",
+                                        "_blank",
+                                    )
+                                }
                                 startIcon={<GitHub />}
                                 sx={{
                                     bgcolor: "rgba(255,255,255,0.15)",
@@ -176,6 +182,11 @@ const AboutPage = () => {
                             <Button
                                 variant="outlined"
                                 size="large"
+                                onClick={() =>
+                                    location.replace(
+                                        "/coc",
+                                    )
+                                }
                                 startIcon={<Gavel />}
                                 sx={{
                                     borderColor: "rgba(255,255,255,0.3)",
@@ -579,7 +590,7 @@ const AboutPage = () => {
                                                     elliot@pollinations.ai
                                                 </Typography>
                                             </Box>
-                                            
+
                                             <Box
                                                 sx={{
                                                     display: "flex",
@@ -677,6 +688,12 @@ const AboutPage = () => {
                             <Button
                                 variant="outlined"
                                 size="large"
+                                onClick={() =>
+                                    window.open(
+                                        "https://github.com/pollinations",
+                                        "_blank",
+                                    )
+                                }
                                 startIcon={<GitHub />}
                                 sx={{
                                     borderColor: "rgba(255,255,255,0.3)",
@@ -690,7 +707,7 @@ const AboutPage = () => {
                                     },
                                 }}
                             >
-                                View on GitHub
+                                View Organization
                             </Button>
                         </Stack>
                     </motion.div>

@@ -1,26 +1,19 @@
-import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
 import crypto from "crypto";
 import debug from "debug";
-import { promises as fs } from "fs";
-import path from "path";
 import dotenv from "dotenv";
-import { Transform } from "stream";
-import { availableModels } from "./availableModels.js";
-import { generateTextPortkey } from "./generateTextPortkey.js";
-import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
-import { processRequestForAds } from "./ads/initRequestFilter.js";
-import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
-import { getRequestData } from "./requestUtils.js";
-
+import express from "express";
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
+import { getServiceDefinition } from "../shared/registry/registry.js";
 import {
     buildUsageHeaders,
     openaiUsageToTokenUsage,
 } from "../shared/registry/usage-headers.js";
-import { getServiceDefinition } from "../shared/registry/registry.js";
+import { availableModels } from "./availableModels.js";
+import { generateTextPortkey } from "./generateTextPortkey.js";
+import { getRequestData } from "./requestUtils.js";
 
 // Load environment variables including .env.local overrides
 // Load .env.local first (higher priority), then .env as fallback
@@ -29,66 +22,11 @@ dotenv.config();
 
 // Shared authentication and queue is initialized automatically in ipQueue.js
 
-const BANNED_PHRASES = [];
-
-// const blockedIPs = new Set();
-const blockedIPs = new Set();
-
-async function blockIP(ip) {
-    // Only proceed if IP isn't already blocked
-    if (!blockedIPs.has(ip)) {
-        blockedIPs.add(ip);
-        log("IP blocked:", ip);
-
-        try {
-            // Append IP to log file with newline
-            await fs.appendFile(BLOCKED_IPS_LOG, `${ip}\n`, "utf8");
-        } catch (error) {
-            errorLog("Failed to write blocked IP to log file:", error);
-        }
-    }
-}
-
-function isIPBlocked(ip) {
-    return blockedIPs.has(ip);
-}
-
 const app = express();
 
 const log = debug("pollinations:server");
 const errorLog = debug("pollinations:error");
 const authLog = debug("pollinations:auth");
-const BLOCKED_IPS_LOG = path.join(process.cwd(), "blocked_ips.txt");
-
-// Load blocked IPs from file on startup
-async function loadBlockedIPs() {
-    try {
-        const data = await fs.readFile(BLOCKED_IPS_LOG, "utf8");
-        const ips = data.split("\n").filter((ip) => ip.trim());
-        for (const ip of ips) {
-            blockedIPs.add(ip.trim());
-        }
-        log(`Loaded ${blockedIPs.size} blocked IPs from file`);
-    } catch (error) {
-        if (error.code !== "ENOENT") {
-            errorLog("Error loading blocked IPs:", error);
-        }
-    }
-}
-
-// Load blocked IPs before starting server
-loadBlockedIPs().catch((error) => {
-    errorLog("Failed to load blocked IPs:", error);
-});
-
-// Middleware to block IPs
-app.use((req, res, next) => {
-    const ip = getIp(req);
-    if (isIPBlocked(ip)) {
-        return res.status(403).end();
-    }
-    next();
-});
 
 // Remove the custom JSON parsing middleware and use the standard bodyParser
 app.use(bodyParser.json({ limit: "20mb" }));
@@ -133,13 +71,6 @@ app.get("/crossdomain.xml", (req, res) => {
 
 app.set("trust proxy", true);
 
-// Queue configuration for text service
-const QUEUE_CONFIG = {
-    interval: 18000, // 18 seconds between requests per IP (no auth)
-};
-
-// Using getIp from shared auth-utils.js
-
 // Deprecated /models endpoint - moved to gateway
 app.get("/models", (req, res) => {
     res.status(410).json({
@@ -151,8 +82,6 @@ app.get("/models", (req, res) => {
         documentation: "https://enter.pollinations.ai/api/docs",
     });
 });
-
-setupFeedEndpoint(app);
 
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, requestData) {
@@ -196,7 +125,7 @@ async function handleRequest(req, res, requestData) {
         const requestedModel = requestData.model;
 
         // Use request data as-is (no user-specific model mapping)
-        let finalRequestData = requestData;
+        const finalRequestData = requestData;
 
         // Add user info to request data - using authResult directly as a thin proxy
         // Exclude messages from options to prevent overwriting transformed messages
@@ -248,54 +177,11 @@ async function handleRequest(req, res, requestData) {
             return;
         }
 
-        // Process referral links if there's content in the response
-        if (completion.choices?.[0]?.message?.content) {
-            // Check if this is an audio response - if so, skip content processing
-            const isAudioResponse =
-                completion.choices?.[0]?.message?.audio !== undefined;
-
-            // Skip ad processing for JSON mode responses
-            if (!isAudioResponse && !requestData.jsonMode) {
-                try {
-                    const content = completion.choices[0].message.content;
-
-                    // Then process regular referral links
-                    const adString = await processRequestForAds(
-                        req,
-                        content,
-                        requestData.messages,
-                    );
-
-                    // If an ad was generated, append it to the content
-                    if (adString) {
-                        completion.choices[0].message.content =
-                            content + "\n\n" + adString;
-                    }
-                } catch (error) {
-                    errorLog("Error processing content:", error);
-                }
-            }
-        }
-
         const responseText = completion.stream
             ? "Streaming response"
             : completion.choices?.[0]?.message?.content || "";
 
         log("Generated response", responseText);
-
-        // Extract token usage data
-        const tokenUsage = completion.usage || {};
-
-        // Send all requests to feed listeners, including private ones
-        // The feed.js implementation will handle filtering for non-authenticated clients
-        sendToFeedListeners(
-            responseText,
-            {
-                ...requestData,
-                ...tokenUsage,
-            },
-            getIp(req),
-        );
 
         if (requestData.stream) {
             log("Sending streaming response with sendAsOpenAIStream");
@@ -588,23 +474,6 @@ export function sendContentResponse(res, completion) {
 
 // Helper function to process requests with queueing and caching logic
 async function processRequest(req, res, requestData) {
-    const ip = getIp(req);
-
-    // Check for blocked IPs first
-    if (isIPBlocked(ip)) {
-        errorLog("Blocked IP:", ip);
-        const errorResponse = {
-            error: "Forbidden",
-            status: 403,
-            details: {
-                blockedIp: ip,
-                timestamp: new Date().toISOString(),
-            },
-        };
-
-        return res.status(403).json(errorResponse);
-    }
-
     // Authentication and rate limiting is now handled by enter.pollinations.ai
     // Just call handleRequest directly
     await handleRequest(req, res, requestData);
@@ -724,52 +593,6 @@ app.post("/v1/chat/completions", async (req, res) => {
     }
 });
 
-/**
- * Create a transform stream that captures usage data from SSE chunks
- * and adds HTTP trailers at the end (GitHub issue #4638)
- */
-function createUsageCaptureTransform(res) {
-    let finalUsage = null;
-    let finalModel = null;
-
-    return new Transform({
-        objectMode: true,
-        transform(chunk, _encoding, callback) {
-            const chunkStr = chunk.toString();
-
-            // Try to extract usage from chunks
-            try {
-                const dataMatches = chunkStr.match(/data: (.*?)(?:\n\n|$)/g);
-                if (dataMatches) {
-                    for (const match of dataMatches) {
-                        const dataContent = match.replace(/^data: /, "").trim();
-                        if (dataContent && dataContent !== "[DONE]") {
-                            const data = JSON.parse(dataContent);
-                            if (data.usage) {
-                                finalUsage = data.usage;
-                            }
-                            if (data.model) {
-                                finalModel = data.model;
-                            }
-                        }
-                    }
-                }
-            } catch (err) {
-                // Ignore parse errors
-            }
-
-            // Pass through unchanged
-            this.push(chunk);
-            callback();
-        },
-        flush(callback) {
-            // Removed trailers as they were causing issues
-            // TODO: Check if this function is still needed at all
-            callback();
-        },
-    });
-}
-
 async function sendAsOpenAIStream(res, completion, req = null) {
     log("sendAsOpenAIStream called with completion type:", typeof completion);
     if (completion) {
@@ -800,62 +623,17 @@ async function sendAsOpenAIStream(res, completion, req = null) {
     if (responseStream) {
         log("Attempting to proxy stream to client");
 
-        // Get messages from the request data
-        // For GET requests, messages will be in the request path
-        // For POST requests, messages will be in the request body
-        const messages = req
-            ? // Try to get messages from different sources
-              (req.body && req.body.messages) ||
-              (req.requestData && req.requestData.messages) ||
-              (completion.requestData && completion.requestData.messages) ||
-              []
-            : [];
+        // Pipe stream directly to response
+        responseStream.pipe(res);
 
-        // Get jsonMode from request data
-        const jsonMode = completion.requestData?.jsonMode || false;
-
-        // Check if we have messages and should process the stream for ads
-        if (req && messages.length > 0 && !jsonMode) {
-            log("Processing stream for ads with", messages.length, "messages");
-
-            // Create a wrapped stream that will add ads at the end
-            const wrappedStream = await createStreamingAdWrapper(
-                responseStream,
-                req,
-                messages,
-            );
-
-            // Pipe through usage capture to add trailers
-            wrappedStream.pipe(res);
-
-            // Handle client disconnect
-            if (req)
-                req.on("close", () => {
-                    log("Client disconnected");
-                    if (wrappedStream.destroy) {
-                        wrappedStream.destroy();
-                    }
-                    if (responseStream.destroy) {
-                        responseStream.destroy();
-                    }
-                });
-        } else {
-            // If no messages, no request object, or JSON mode, just pipe the stream directly
-            log(
-                "Skipping ad processing for stream" +
-                    (jsonMode ? " (JSON mode)" : ""),
-            );
-            responseStream.pipe(res);
-
-            // Handle client disconnect
-            if (req)
-                req.on("close", () => {
-                    log("Client disconnected");
-                    if (responseStream.destroy) {
-                        responseStream.destroy();
-                    }
-                });
-        }
+        // Handle client disconnect
+        if (req)
+            req.on("close", () => {
+                log("Client disconnected");
+                if (responseStream.destroy) {
+                    responseStream.destroy();
+                }
+            });
 
         return;
     }

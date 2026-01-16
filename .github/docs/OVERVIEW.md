@@ -5,7 +5,7 @@
 | Document                            | Description                                      |
 | ----------------------------------- | ------------------------------------------------ |
 | [Labels](LABELS.md)                 | Label system reference (inbox, tier, PR labels)  |
-| [App Submission](APP-SUBMISSION.md) | App submission workflow & Flower tier reward     |
+| [Tier System](TIER-SYSTEM.md)       | Tier upgrades, app submission & Flower tier      |
 | [News & Social](NEWS-SOCIAL.md)     | Weekly news, Discord, Instagram, Reddit          |
 | [Triage](TRIAGE.md)                 | Issue/PR labeling, AI agents, project management |
 | [Deployment](DEPLOYMENT.md)         | Deploy pipelines (Cloudflare, EC2)               |
@@ -76,7 +76,6 @@ Most workflows use **Polly Bot** (GitHub App) for authentication instead of pers
 .github/
 ├── docs/               # This documentation
 ├── scripts/            # Python/JS scripts called by workflows
-│   └── reddit_workflow/  # Devvit Reddit bot (self-hosted)
 ├── workflows/          # GitHub Actions YAML files
 └── ISSUE_TEMPLATE/     # Issue templates
 ```

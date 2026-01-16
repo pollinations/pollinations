@@ -3,17 +3,20 @@ import type { FC } from "react";
 type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
+    cryptoBalance: number;
 };
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
+    cryptoBalance,
 }) => {
-    const totalPollen = Math.max(0, tierBalance + packBalance);
+    const paidBalance = packBalance + cryptoBalance;
+    const totalPollen = Math.max(0, tierBalance + paidBalance);
     const freePercentage =
         totalPollen > 0 ? (tierBalance / totalPollen) * 100 : 0;
-    const packPercentage =
-        totalPollen > 0 ? (packBalance / totalPollen) * 100 : 0;
+    const paidPercentage =
+        totalPollen > 0 ? (paidBalance / totalPollen) * 100 : 0;
 
     return (
         <div className="bg-violet-50/30 rounded-2xl p-4 sm:p-8 border border-violet-300">
@@ -27,16 +30,16 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     {/* Gauge with download button */}
                     <div className="flex items-center gap-2 w-full max-w-[540px]">
                         <div className="relative flex-1 h-8 bg-gray-200 rounded-full overflow-hidden border border-purple-400">
-                            {/* Pack Pollen - Soft purple for paid */}
+                            {/* Paid Pollen - Soft purple for paid (pack + crypto) */}
                             <div
                                 className="absolute inset-y-0 left-0 bg-purple-200 transition-all duration-500 ease-out"
-                                style={{ width: `${packPercentage}%` }}
+                                style={{ width: `${paidPercentage}%` }}
                             >
-                                {/* Pack label inside */}
-                                {packPercentage > 15 && (
+                                {/* Paid label inside */}
+                                {paidPercentage > 15 && (
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <span className="text-purple-900 font-bold text-sm">
-                                            💎 {packBalance.toFixed(1)}
+                                            💎 {paidBalance.toFixed(1)}
                                         </span>
                                     </div>
                                 )}
@@ -45,7 +48,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             <div
                                 className="absolute inset-y-0 bg-teal-200 transition-all duration-500 ease-out"
                                 style={{
-                                    left: `${packPercentage}%`,
+                                    left: `${paidPercentage}%`,
                                     width: `${freePercentage}%`,
                                 }}
                             >
@@ -64,7 +67,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         </div>
                         {/* Download usage button */}
                         <a
-                            href="/api/usage?format=csv&limit=10000"
+                            href="/api/account/usage?format=csv&limit=10000"
                             download="pollinations-usage.csv"
                             className="group relative flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors border border-gray-300"
                         >
@@ -79,7 +82,9 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 className="text-gray-600"
+                                aria-label="Download"
                             >
+                                <title>Download</title>
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                 <polyline points="7 10 12 15 17 10" />
                                 <line x1="12" y1="15" x2="12" y2="3" />
@@ -106,6 +111,17 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         className="underline hover:text-violet-700"
                     >
                         Still missing?
+                    </a>
+                </p>
+                <p className="text-sm font-medium text-violet-900 mt-2">
+                    💳 Want to pay with a different method?{" "}
+                    <a
+                        href="https://github.com/pollinations/pollinations/issues/4826"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:text-violet-700"
+                    >
+                        Please vote
                     </a>
                 </p>
             </div>

@@ -57,7 +57,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     </div>
                     {showVision && (
                         <Tooltip
-                            text={
+                            content={
                                 model.type === "image"
                                     ? "Vision (image-to-image)"
                                     : "Vision input"
@@ -67,32 +67,32 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         </Tooltip>
                     )}
                     {showAudioInput && (
-                        <Tooltip text="Audio input">
+                        <Tooltip content="Audio input">
                             <span className="text-base">🎙️</span>
                         </Tooltip>
                     )}
                     {showAudioOutput && (
-                        <Tooltip text="Audio output">
+                        <Tooltip content="Audio output">
                             <span className="text-base">🔊</span>
                         </Tooltip>
                     )}
                     {showReasoning && (
-                        <Tooltip text="Reasoning">
+                        <Tooltip content="Reasoning">
                             <span className="text-base">🧠</span>
                         </Tooltip>
                     )}
                     {showSearch && (
-                        <Tooltip text="Web search">
+                        <Tooltip content="Web search">
                             <span className="text-base">🔍</span>
                         </Tooltip>
                     )}
                     {showCodeExecution && (
-                        <Tooltip text="Code execution">
+                        <Tooltip content="Code execution">
                             <span className="text-base">💻</span>
                         </Tooltip>
                     )}
                     {showNew && (
-                        <span className="text-[10px] text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full font-medium">
+                        <span className="text-[10px] text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full font-semibold border border-green-400 shadow-[0_0_6px_rgba(34,197,94,0.5)] animate-[glow_2s_ease-in-out_infinite]">
                             NEW
                         </span>
                     )}

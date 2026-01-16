@@ -61,7 +61,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["myceli-deepseek-v3.2"],
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v3p2"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -80,12 +80,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude",
-        config: portkeyConfig["claude-sonnet-4-5-vertex"],
+        config: portkeyConfig["claude-sonnet-4-5-fallback"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "claude-large",
-        config: portkeyConfig["claude-opus-4-5-vertex"],
+        config: portkeyConfig["claude-opus-4-5-fallback"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -138,7 +138,7 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
-        name: "kimi-k2-thinking",
+        name: "kimi",
         config: portkeyConfig["kimi-k2-thinking-maas"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
@@ -154,7 +154,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "nova-micro",
+        name: "nova-fast",
         config: portkeyConfig["amazon.nova-micro-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
@@ -188,7 +188,7 @@ export function findModelByName(modelName: string) {
 
     // Try resolving via registry (handles aliases)
     try {
-        const resolvedServiceId = resolveServiceId(modelName, "generate.text");
+        const resolvedServiceId = resolveServiceId(modelName);
         return (
             availableModels.find((model) => model.name === resolvedServiceId) ||
             null

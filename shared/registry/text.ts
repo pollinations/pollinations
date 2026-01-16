@@ -187,12 +187,13 @@ export const TEXT_SERVICES = {
     },
     "deepseek": {
         aliases: ["deepseek-v3", "deepseek-reasoning"],
-        modelId: "deepseek-v3.2",
-        provider: "azure",
+        modelId: "accounts/fireworks/models/deepseek-v3p2",
+        provider: "fireworks",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.58),
+                promptTextTokens: perMillion(0.56),
+                promptCachedTokens: perMillion(0.28),
                 completionTextTokens: perMillion(1.68),
             },
         ],
@@ -366,8 +367,8 @@ export const TEXT_SERVICES = {
         search: true,
         isSpecialized: false,
     },
-    "kimi-k2-thinking": {
-        aliases: ["kimi-k2", "kimi-thinking"],
+    "kimi": {
+        aliases: ["kimi-k2", "kimi-reasoning", "kimi-k2-thinking"],
         modelId: "moonshotai/kimi-k2-thinking-maas",
         provider: "google",
         cost: [
@@ -407,8 +408,8 @@ export const TEXT_SERVICES = {
         codeExecution: false, // Disabled - was breaking gemini-large
         isSpecialized: false,
     },
-    "nova-micro": {
-        aliases: ["amazon-nova-micro", "nova"],
+    "nova-fast": {
+        aliases: ["amazon-nova-micro", "nova", "nova-micro"],
         modelId: "amazon.nova-micro-v1:0",
         provider: "aws",
         cost: [

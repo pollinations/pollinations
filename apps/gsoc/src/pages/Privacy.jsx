@@ -17,7 +17,7 @@ const CodeOfConduct = () => {
 
     useEffect(() => {
         document.title = "Privacy Policy - GSOC 2026 | pollinations.ai";
-        fetch("/GSOC/PRIVACY_POLICY.md")
+        fetch("/LEGAL/PRIVACY_POLICY.md")
             .then((response) => {
                 if (!response.ok) {
                     throw new Error("Failed to fetch privacy policy");

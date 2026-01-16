@@ -17,7 +17,7 @@ const CodeOfConduct = () => {
 
     useEffect(() => {
         document.title = "Terms of Service - GSOC 2026 | pollinations.ai";
-        fetch("/GSOC/TERMS_OF_SERVICE.md")
+        fetch("/LEGAL/TERMS_OF_SERVICE.md")
             .then((response) => {
                 if (!response.ok) {
                     throw new Error("Failed to fetch terms of service");

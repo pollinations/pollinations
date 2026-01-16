@@ -57,7 +57,7 @@ export default function Footer() {
 
     const legalLinks = [
         { name: "Privacy Policy", path: "/privacy" },
-        { name: "Terms & Conditions", path: "/terms" },
+        { name: "Terms of Services", path: "/terms" },
         {
             name: "Contributing",
             url: "https://github.com/pollinations/pollinations/blob/main/CONTRIBUTING.md",

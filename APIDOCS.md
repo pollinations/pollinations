@@ -75,19 +75,19 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 
 ## Account Management
 
-Check your balance and usage via `enter.pollinations.ai`:
+Check your balance and usage:
 
 ```bash
 # Check pollen balance
-curl 'https://enter.pollinations.ai/api/account/balance' \
+curl 'https://gen.pollinations.ai/account/balance' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 
 # Get profile info
-curl 'https://enter.pollinations.ai/api/account/profile' \
+curl 'https://gen.pollinations.ai/account/profile' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 
 # View usage history
-curl 'https://enter.pollinations.ai/api/account/usage' \
+curl 'https://gen.pollinations.ai/account/usage' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 

@@ -113,7 +113,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            const apiKey = c.var.auth?.apiKey;
+            const apiKey = c.var.auth.apiKey;
 
             // Check permission for API key access
             if (apiKey && !apiKey.permissions?.account?.includes("profile")) {
@@ -176,7 +176,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            const apiKey = c.var.auth?.apiKey;
+            const apiKey = c.var.auth.apiKey;
 
             // Check permission for API key access
             if (apiKey && !apiKey.permissions?.account?.includes("balance")) {
@@ -247,7 +247,7 @@ export const accountRoutes = new Hono<Env>()
             });
 
             const user = c.var.auth.requireUser();
-            const apiKey = c.var.auth?.apiKey;
+            const apiKey = c.var.auth.apiKey;
 
             // Check permission for API key access
             if (apiKey && !apiKey.permissions?.account?.includes("usage")) {

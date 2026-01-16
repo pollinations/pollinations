@@ -85,146 +85,7 @@ const AboutPage = () => {
                 position: "relative",
                 overflow: "hidden",
             }}
-<<<<<<< HEAD
-          >
-            <CardContent sx={{ p: 4 }}>
-              <Grid container spacing={4} alignItems="center">
-                <Grid item xs={12} md={4}>
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Box
-                      component="img"
-                      src="/polli_white.svg"
-                      alt="pollinations.ai logo"
-                      sx={{
-                        width: 60,
-                        height: 60,
-                        mb: 2,
-                        mx: '2px',
-                        display: 'block',
-                        objectFit: 'contain',
-                        filter: 'brightness(1.1)',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          transform: 'scale(1.05)',
-                          filter: 'brightness(1.3)'
-                        }
-                      }}
-                    />
-                    <Chip
-                      label="GSOC Organization"
-                      sx={{
-                        bgcolor: 'rgba(34, 197, 94, 0.2)',
-                        color: '#4ade80',
-                        border: '1px solid rgba(34, 197, 94, 0.3)',
-                        fontWeight: 600
-                      }}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={12} md={8}>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, color: '#fff' }}>
-                    pollinations.ai
-                  </Typography>
-                  <Typography variant="h6" sx={{ color: '#60a5fa', mb: 3 }}>
-                    Our Vision for the Future of AI
-                  </Typography>
-                  <Box component="ul" sx={{ 
-                    color: 'rgba(255,255,255,0.9)', 
-                    fontSize: '1.1rem', 
-                    pl: 3, 
-                    mb: 3, 
-                    lineHeight: 1.7, 
-                    '& li': { mb: 1.2 } 
-                  }}>
-                    <li>
-                      <strong>Open & Accessible:</strong> AI should be available to everyone — earn daily Pollen by contributing, no credit card required.
-                    </li>
-                    <li>
-                      <strong>Transparent & Ethical:</strong> Our open-source approach ensures transparency in how our models work and behave.
-                    </li>
-                    <li>
-                      <strong>Community-Driven:</strong> We’re building a platform where developers, creators, and AI enthusiasts can collaborate and innovate.
-                    </li>
-                    <li>
-                      <strong>Interconnected:</strong> We’re creating an ecosystem where AI services can seamlessly work together, fostering innovation through composability.
-                    </li>
-                    <li>
-                      <strong>Evolving:</strong> We embrace the rapid evolution of AI technology while maintaining our commitment to openness and accessibility.
-                    </li>
-                  </Box>
-                  <Typography 
-                    variant="body1" 
-                    sx={{ 
-                      color: 'rgba(255,255,255,0.9)', 
-                      lineHeight: 1.7,
-                      mb: 3
-                    }}
-                  >
-                    We’re committed to developing AI technology that serves humanity while respecting ethical boundaries and promoting responsible innovation. Join us in shaping the future of AI.
-                  </Typography>
-                  <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.1)' }} />
-                  <Box>
-                    <Typography variant="h6" sx={{ color: '#fff', mb: 2, fontWeight: 600 }}>
-                      Get In Touch
-                    </Typography>
-                    <Stack spacing={2}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                          Organisation Admin:
-                        </Typography>
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
-                            color: '#60a5fa',
-                            fontFamily: 'monospace',
-                            cursor: 'pointer',
-                            '&:hover': { color: '#93c5fd' }
-                          }}
-                        >
-                          elliot@pollinations.ai
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                          Organization Core Team:
-                        </Typography>
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
-                            color: '#60a5fa',
-                            fontFamily: 'monospace',
-                            cursor: 'pointer',
-                            '&:hover': { color: '#93c5fd' }
-                          }}
-                        >
-                          gsoc@pollinations.ai
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </Box>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        </motion.div>
-=======
         >
-            <Box
-                sx={{
-                    position: "absolute",
-                    top: "-10%",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    width: "600px",
-                    height: "600px",
-                    background:
-                        "radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0) 70%)",
-                    zIndex: 0,
-                    pointerEvents: "none",
-                }}
-            />
->>>>>>> 8921f431cafda35e614c31d1c1edf66fb0f04a45
-
             <Box
                 sx={{
                     maxWidth: "1200px",
@@ -636,14 +497,14 @@ const AboutPage = () => {
                                         </li>
                                         <li>
                                             <strong>Community-Driven:</strong>{" "}
-                                            We’re building a platform where
+                                            We're building a platform where
                                             developers, creators, and AI
                                             enthusiasts can collaborate and
                                             innovate.
                                         </li>
                                         <li>
                                             <strong>Interconnected:</strong>{" "}
-                                            We’re creating an ecosystem where AI
+                                            We're creating an ecosystem where AI
                                             services can seamlessly work
                                             together, fostering innovation
                                             through composability.
@@ -664,7 +525,7 @@ const AboutPage = () => {
                                             mb: 3,
                                         }}
                                     >
-                                        We’re committed to developing AI
+                                        We're committed to developing AI
                                         technology that serves humanity while
                                         respecting ethical boundaries and
                                         promoting responsible innovation. Join
@@ -689,6 +550,36 @@ const AboutPage = () => {
                                             Get In Touch
                                         </Typography>
                                         <Stack spacing={2}>
+                                          <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 1,
+                                                }}
+                                            >
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                        color: "rgba(255,255,255,0.7)",
+                                                    }}
+                                                >
+                                                    Organization Admin:
+                                                </Typography>
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                        color: "#60a5fa",
+                                                        fontFamily: "monospace",
+                                                        cursor: "pointer",
+                                                        "&:hover": {
+                                                            color: "#93c5fd",
+                                                        },
+                                                    }}
+                                                >
+                                                    elliot@pollinations.ai
+                                                </Typography>
+                                            </Box>
+                                            
                                             <Box
                                                 sx={{
                                                     display: "flex",
@@ -718,6 +609,8 @@ const AboutPage = () => {
                                                     gsoc@pollinations.ai
                                                 </Typography>
                                             </Box>
+
+                                            
                                         </Stack>
                                     </Box>
                                 </Grid>

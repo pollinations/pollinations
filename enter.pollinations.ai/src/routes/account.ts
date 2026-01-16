@@ -5,6 +5,7 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import { user as userTable } from "@/db/schema/better-auth.ts";
+import { calculateNextPeriodStart, tierNames } from "@/utils/polar.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
@@ -19,15 +20,18 @@ const usageQuerySchema = z.object({
 // Response schemas for OpenAPI documentation
 const profileResponseSchema = z.object({
     name: z.string().nullable().describe("User's display name"),
-    email: z.string().email().nullable().describe("User's email address"),
+    email: z.email().nullable().describe("User's email address"),
     githubUsername: z.string().nullable().describe("GitHub username if linked"),
     tier: z
-        .enum(["anonymous", "seed", "flower", "nectar"])
+        .enum(["anonymous", ...tierNames])
         .describe("User's current tier level"),
-    createdAt: z
-        .string()
+    createdAt: z.iso
         .datetime()
         .describe("Account creation timestamp (ISO 8601)"),
+    nextResetAt: z.iso
+        .datetime()
+        .nullable()
+        .describe("Next daily pollen reset timestamp (ISO 8601)"),
 });
 
 const balanceResponseSchema = z.object({
@@ -132,6 +136,7 @@ export const accountRoutes = new Hono<Env>()
                     githubUsername: userTable.githubUsername,
                     tier: userTable.tier,
                     createdAt: userTable.createdAt,
+                    lastTierGrant: userTable.lastTierGrant,
                 })
                 .from(userTable)
                 .where(eq(userTable.id, user.id))
@@ -142,12 +147,19 @@ export const accountRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "User not found" });
             }
 
+            const nextResetAt = profile.lastTierGrant
+                ? calculateNextPeriodStart(
+                      new Date(profile.lastTierGrant * 1000),
+                  ).toISOString()
+                : null;
+
             return c.json({
                 name: profile.name,
                 email: profile.email,
                 githubUsername: profile.githubUsername ?? null,
                 tier: profile.tier,
                 createdAt: profile.createdAt,
+                nextResetAt,
             });
         },
     )

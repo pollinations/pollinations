@@ -1,7 +1,7 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import { type FormatDistanceToken, formatDistanceToNowStrict } from "date-fns";
-import { KeyPermissionsInputs } from "./key-permissions.tsx";
+import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 
 const shortFormatDistance: Record<FormatDistanceToken, string> = {
     lessThanXSeconds: "{{count}}s",
@@ -28,7 +28,7 @@ const shortLocale = {
 };
 
 import type { FC } from "react";
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useState } from "react";
 import {
     adjectives,
     animals,
@@ -246,7 +246,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     <div className="flex gap-3">
                         <ApiKeyDialog
                             onSubmit={onCreate}
-                            onUpdate={() => {}}
                             onComplete={() => {}}
                         />
                     </div>
@@ -474,258 +473,11 @@ export type CreateApiKeyResponse = ApiKey & {
 };
 
 type ApiKeyDialogProps = {
-    onUpdate: (state: CreateApiKey) => void;
     onSubmit: (state: CreateApiKey) => Promise<CreateApiKeyResponse>;
     onComplete: () => void;
 };
 
-const CreateKeyForm: FC<{
-    formData: CreateApiKey;
-    onInputChange: (
-        field: keyof CreateApiKey,
-        value: string | string[] | number | null | undefined,
-    ) => void;
-    onSubmit: (e: React.FormEvent) => void;
-    onCancel: () => void;
-    isSubmitting: boolean;
-    createdKey?: CreateApiKeyResponse | null;
-    onComplete?: () => void;
-}> = ({
-    formData,
-    onInputChange,
-    onSubmit,
-    onCancel,
-    isSubmitting,
-    createdKey,
-    onComplete,
-}) => {
-    const [copied, setCopied] = useState(false);
-
-    // Reset copied state when modal reopens (createdKey becomes null)
-    useEffect(() => {
-        if (!createdKey) {
-            setCopied(false);
-        }
-    }, [createdKey]);
-
-    const handleCopyAndClose = async () => {
-        if (createdKey) {
-            try {
-                await navigator.clipboard.writeText(createdKey.key);
-                setCopied(true);
-                setTimeout(() => {
-                    onComplete?.();
-                }, 500);
-            } catch (err) {
-                console.error("Failed to copy:", err);
-                onComplete?.();
-            }
-        }
-    };
-
-    return (
-        <form onSubmit={onSubmit} className="space-y-6">
-            <Field.Root>
-                <Field.Label className="block text-sm font-semibold mb-2">
-                    Type
-                </Field.Label>
-                <div className="space-y-2">
-                    <label
-                        className={cn(
-                            "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
-                            formData.keyType === "publishable"
-                                ? "border-blue-500 bg-blue-50"
-                                : "border-gray-200 hover:border-gray-300",
-                            createdKey &&
-                                formData.keyType !== "publishable" &&
-                                "opacity-40",
-                        )}
-                    >
-                        <input
-                            type="radio"
-                            name="keyType"
-                            value="publishable"
-                            checked={formData.keyType === "publishable"}
-                            onChange={(e) =>
-                                onInputChange("keyType", e.target.value)
-                            }
-                            className="mt-1 w-4 h-4 text-blue-600"
-                            disabled={isSubmitting || !!createdKey}
-                        />
-                        <div className="flex-1">
-                            <div className="font-medium text-blue-800">
-                                🌐 Publishable Key
-                            </div>
-                            <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
-                                <li className="font-semibold">
-                                    Always visible in your dashboard
-                                </li>
-                                <li>
-                                    Safe to use in client-side code (React, Vue,
-                                    etc.)
-                                </li>
-                                <li>
-                                    Pollen-based rate limiting: 1 pollen/hour
-                                    refill per IP+key
-                                </li>
-                            </ul>
-                            <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs">
-                                <div className="font-semibold text-amber-900 mb-1">
-                                    ⚠️ Beta Feature
-                                </div>
-                                <ul className="space-y-0.5 list-disc pl-4 text-amber-800">
-                                    <li>Still working out some bugs</li>
-                                    <li>
-                                        For stable production → use secret keys
-                                        (no rate limits)
-                                    </li>
-                                    <li>
-                                        Secret keys must be hidden in your
-                                        backend
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </label>
-                    <label
-                        className={cn(
-                            "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
-                            formData.keyType === "secret"
-                                ? "border-purple-500 bg-purple-50"
-                                : "border-gray-200 hover:border-gray-300",
-                            createdKey &&
-                                formData.keyType !== "secret" &&
-                                "opacity-40",
-                        )}
-                    >
-                        <input
-                            type="radio"
-                            name="keyType"
-                            value="secret"
-                            checked={formData.keyType === "secret"}
-                            onChange={(e) =>
-                                onInputChange("keyType", e.target.value)
-                            }
-                            className="mt-1 w-4 h-4 text-purple-600"
-                            disabled={isSubmitting || !!createdKey}
-                        />
-                        <div className="flex-1">
-                            <div className="font-medium text-purple-800">
-                                🔒 Secret Key
-                            </div>
-                            <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
-                                <li className="font-semibold text-amber-900">
-                                    Only shown once - copy it now!
-                                </li>
-                                <li>
-                                    For server-side apps - never expose publicly
-                                </li>
-                                <li>No rate limits</li>
-                            </ul>
-                        </div>
-                    </label>
-                </div>
-            </Field.Root>
-
-            <Field.Root>
-                <Field.Label className="block text-sm font-semibold mb-2">
-                    {createdKey ? "Your API Key" : "Name"}
-                </Field.Label>
-                <Field.Input
-                    type="text"
-                    value={createdKey ? createdKey.key : formData.name}
-                    onChange={(e) => onInputChange("name", e.target.value)}
-                    className={cn(
-                        "w-full px-3 py-2 border rounded",
-                        createdKey
-                            ? "border-green-300 bg-green-200 font-mono text-xs"
-                            : "border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500",
-                    )}
-                    placeholder={createdKey ? "" : "Enter API key name"}
-                    required={!createdKey}
-                    disabled={isSubmitting || !!createdKey}
-                    readOnly={!!createdKey}
-                />
-            </Field.Root>
-
-            {/* Key permissions - model access, budget, expiry, account permissions */}
-            {!createdKey && (
-                <KeyPermissionsInputs
-                    allowedModels={formData.allowedModels ?? null}
-                    pollenBudget={formData.pollenBudget ?? null}
-                    expiryDays={formData.expiryDays ?? null}
-                    accountPermissions={formData.accountPermissions ?? null}
-                    onAllowedModelsChange={(models) =>
-                        onInputChange("allowedModels", models)
-                    }
-                    onPollenBudgetChange={(val) =>
-                        onInputChange("pollenBudget", val)
-                    }
-                    onExpiryDaysChange={(val) =>
-                        onInputChange("expiryDays", val)
-                    }
-                    onAccountPermissionsChange={(val) =>
-                        onInputChange("accountPermissions", val)
-                    }
-                    disabled={isSubmitting}
-                />
-            )}
-            <div className="flex gap-2 justify-end pt-4">
-                {!createdKey && (
-                    <Button
-                        type="button"
-                        weight="outline"
-                        onClick={onCancel}
-                        className="disabled:opacity-50"
-                        disabled={isSubmitting}
-                    >
-                        Cancel
-                    </Button>
-                )}
-                {(() => {
-                    const noModelsSelected =
-                        Array.isArray(formData.allowedModels) &&
-                        formData.allowedModels.length === 0;
-                    const isDisabled =
-                        !createdKey &&
-                        (!formData.name.trim() ||
-                            isSubmitting ||
-                            noModelsSelected);
-
-                    return (
-                        <span
-                            title={
-                                noModelsSelected && !createdKey
-                                    ? "Select at least one model"
-                                    : undefined
-                            }
-                        >
-                            <Button
-                                type={createdKey ? "button" : "submit"}
-                                onClick={
-                                    createdKey ? handleCopyAndClose : undefined
-                                }
-                                className="disabled:opacity-50"
-                                disabled={isDisabled}
-                            >
-                                {copied
-                                    ? "✓ Copied! Closing..."
-                                    : createdKey
-                                      ? "Copy and Close"
-                                      : isSubmitting
-                                        ? "Creating..."
-                                        : "Create"}
-                            </Button>
-                        </span>
-                    );
-                })()}
-            </div>
-        </form>
-    );
-};
-
 export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
-    onUpdate,
     onSubmit,
     onComplete,
 }) => {
@@ -739,45 +491,40 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         });
     };
 
-    const [formData, setFormData] = useState<CreateApiKey>({
-        name: generateFunName(),
-        description: `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
-        keyType: "secret", // Default to secret key
-        allowedModels: null, // null = all models allowed
-        pollenBudget: undefined, // undefined = unlimited (user can set a number)
-        expiryDays: null, // null = no expiry (unlimited)
-        accountPermissions: null, // null = no account permissions
-    });
+    // Form state
+    const [name, setName] = useState(generateFunName());
+    const [description, setDescription] = useState(
+        `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
+    );
+    const [keyType, setKeyType] = useState<"secret" | "publishable">("secret");
+    const keyPermissions = useKeyPermissions();
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
     );
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [copied, setCopied] = useState(false);
 
-    const handleInputChange = (
-        field: keyof CreateApiKey,
-        value: string | string[] | number | null | undefined,
-    ) => {
-        const updatedData = { ...formData, [field]: value };
-
-        // When key type changes, regenerate name and clear/set description
-        if (field === "keyType") {
-            updatedData.name = generateFunName();
-            updatedData.description =
-                value === "publishable"
-                    ? ""
-                    : `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`;
-        }
-
-        setFormData(updatedData);
-        onUpdate(updatedData);
+    const handleKeyTypeChange = (newKeyType: "secret" | "publishable") => {
+        setKeyType(newKeyType);
+        setName(generateFunName());
+        setDescription(
+            newKeyType === "publishable"
+                ? ""
+                : `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
+        );
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const newKey = await onSubmit(formData);
+            const newKey = await onSubmit({
+                name,
+                description,
+                keyType,
+                ...keyPermissions.permissions,
+            });
             setCreatedKey(newKey);
         } catch (error) {
             console.error("Failed to create API key:", error);
@@ -786,29 +533,22 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         }
     };
 
-    const handleComplete = () => {
-        onComplete();
-        setIsOpen(false);
-        resetForm();
+    const handleCopyAndClose = async () => {
+        if (createdKey) {
+            try {
+                await navigator.clipboard.writeText(createdKey.key);
+                setCopied(true);
+                setTimeout(() => {
+                    onComplete();
+                    setIsOpen(false);
+                }, 500);
+            } catch (err) {
+                console.error("Failed to copy:", err);
+                onComplete();
+                setIsOpen(false);
+            }
+        }
     };
-
-    // biome-ignore lint/correctness/useExhaustiveDependencies: generateFunName is a stable module-level function
-    const resetForm = useCallback(() => {
-        setCreatedKey(null);
-        setFormData({
-            name: `backend-${generateFunName()}`,
-            description: "",
-            keyType: "secret",
-            allowedModels: null,
-            pollenBudget: null,
-            expiryDays: null,
-            accountPermissions: null,
-        });
-    }, []);
-
-    useEffect(() => {
-        if (!isOpen) resetForm();
-    }, [isOpen, resetForm]);
 
     return (
         <Dialog.Root open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>
@@ -830,15 +570,204 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                         Create New API Key
                     </Dialog.Title>
 
-                    <CreateKeyForm
-                        formData={formData}
-                        onInputChange={handleInputChange}
-                        onSubmit={handleSubmit}
-                        onCancel={() => setIsOpen(false)}
-                        isSubmitting={isSubmitting}
-                        createdKey={createdKey}
-                        onComplete={handleComplete}
-                    />
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <Field.Root>
+                            <Field.Label className="block text-sm font-semibold mb-2">
+                                Type
+                            </Field.Label>
+                            <div className="space-y-2">
+                                <label
+                                    className={cn(
+                                        "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
+                                        keyType === "publishable"
+                                            ? "border-blue-500 bg-blue-50"
+                                            : "border-gray-200 hover:border-gray-300",
+                                        createdKey &&
+                                            keyType !== "publishable" &&
+                                            "opacity-40",
+                                    )}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="keyType"
+                                        value="publishable"
+                                        checked={keyType === "publishable"}
+                                        onChange={(e) =>
+                                            handleKeyTypeChange(
+                                                e.target.value as "publishable",
+                                            )
+                                        }
+                                        className="mt-1 w-4 h-4 text-blue-600"
+                                        disabled={isSubmitting || !!createdKey}
+                                    />
+                                    <div className="flex-1">
+                                        <div className="font-medium text-blue-800">
+                                            🌐 Publishable Key
+                                        </div>
+                                        <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
+                                            <li className="font-semibold">
+                                                Always visible in your dashboard
+                                            </li>
+                                            <li>
+                                                Safe to use in client-side code
+                                                (React, Vue, etc.)
+                                            </li>
+                                            <li>
+                                                Pollen-based rate limiting: 1
+                                                pollen/hour refill per IP+key
+                                            </li>
+                                        </ul>
+                                        <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs">
+                                            <div className="font-semibold text-amber-900 mb-1">
+                                                ⚠️ Beta Feature
+                                            </div>
+                                            <ul className="space-y-0.5 list-disc pl-4 text-amber-800">
+                                                <li>
+                                                    Still working out some bugs
+                                                </li>
+                                                <li>
+                                                    For stable production → use
+                                                    secret keys (no rate limits)
+                                                </li>
+                                                <li>
+                                                    Secret keys must be hidden
+                                                    in your backend
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label
+                                    className={cn(
+                                        "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
+                                        keyType === "secret"
+                                            ? "border-purple-500 bg-purple-50"
+                                            : "border-gray-200 hover:border-gray-300",
+                                        createdKey &&
+                                            keyType !== "secret" &&
+                                            "opacity-40",
+                                    )}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="keyType"
+                                        value="secret"
+                                        checked={keyType === "secret"}
+                                        onChange={(e) =>
+                                            handleKeyTypeChange(
+                                                e.target.value as "secret",
+                                            )
+                                        }
+                                        className="mt-1 w-4 h-4 text-purple-600"
+                                        disabled={isSubmitting || !!createdKey}
+                                    />
+                                    <div className="flex-1">
+                                        <div className="font-medium text-purple-800">
+                                            🔒 Secret Key
+                                        </div>
+                                        <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
+                                            <li className="font-semibold text-amber-900">
+                                                Only shown once - copy it now!
+                                            </li>
+                                            <li>
+                                                For server-side apps - never
+                                                expose publicly
+                                            </li>
+                                            <li>No rate limits</li>
+                                        </ul>
+                                    </div>
+                                </label>
+                            </div>
+                        </Field.Root>
+
+                        <Field.Root>
+                            <Field.Label className="block text-sm font-semibold mb-2">
+                                {createdKey ? "Your API Key" : "Name"}
+                            </Field.Label>
+                            <Field.Input
+                                type="text"
+                                value={createdKey ? createdKey.key : name}
+                                onChange={(e) => setName(e.target.value)}
+                                className={cn(
+                                    "w-full px-3 py-2 border rounded",
+                                    createdKey
+                                        ? "border-green-300 bg-green-200 font-mono text-xs"
+                                        : "border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500",
+                                )}
+                                placeholder={
+                                    createdKey ? "" : "Enter API key name"
+                                }
+                                required={!createdKey}
+                                disabled={isSubmitting || !!createdKey}
+                                readOnly={!!createdKey}
+                            />
+                        </Field.Root>
+
+                        {!createdKey && (
+                            <KeyPermissionsInputs
+                                value={keyPermissions}
+                                disabled={isSubmitting}
+                            />
+                        )}
+                        <div className="flex gap-2 justify-end pt-4">
+                            {!createdKey && (
+                                <Button
+                                    type="button"
+                                    weight="outline"
+                                    onClick={() => setIsOpen(false)}
+                                    className="disabled:opacity-50"
+                                    disabled={isSubmitting}
+                                >
+                                    Cancel
+                                </Button>
+                            )}
+                            {(() => {
+                                const noModelsSelected =
+                                    Array.isArray(
+                                        keyPermissions.permissions
+                                            .allowedModels,
+                                    ) &&
+                                    keyPermissions.permissions.allowedModels
+                                        .length === 0;
+                                const isDisabled =
+                                    !createdKey &&
+                                    (!name.trim() ||
+                                        isSubmitting ||
+                                        noModelsSelected);
+
+                                return (
+                                    <span
+                                        title={
+                                            noModelsSelected && !createdKey
+                                                ? "Select at least one model"
+                                                : undefined
+                                        }
+                                    >
+                                        <Button
+                                            type={
+                                                createdKey ? "button" : "submit"
+                                            }
+                                            onClick={
+                                                createdKey
+                                                    ? handleCopyAndClose
+                                                    : undefined
+                                            }
+                                            className="disabled:opacity-50"
+                                            disabled={isDisabled}
+                                        >
+                                            {copied
+                                                ? "✓ Copied! Closing..."
+                                                : createdKey
+                                                  ? "Copy and Close"
+                                                  : isSubmitting
+                                                    ? "Creating..."
+                                                    : "Create"}
+                                        </Button>
+                                    </span>
+                                );
+                            })()}
+                        </div>
+                    </form>
                 </Dialog.Content>
             </Dialog.Positioner>
         </Dialog.Root>

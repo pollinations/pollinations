@@ -5,9 +5,10 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const PROFILE_README = join(__dirname, "..", "profile", "README.md");
 const ORG = "pollinations";
 const MAIN_REPO = "pollinations";
+const GITHUB_REPO = ".github";
+const PROFILE_PATH = "profile/README.md";
 
 const TIMEOUT_MS = 30000;
 
@@ -39,6 +40,60 @@ async function fetchGitHubAPI(endpoint) {
         clearTimeout(timeout);
     }
 }
+
+async function getOrUpdateProfileREADME(newContent) {
+    const endpoint = `/repos/${ORG}/${GITHUB_REPO}/contents/${PROFILE_PATH}`;
+    const token = process.env.GITHUB_TOKEN;
+
+    try {
+        // Get current file content and SHA
+        const { data: fileData } = await fetchGitHubAPI(endpoint);
+        const currentContent = Buffer.from(fileData.content, "base64").toString("utf-8");
+
+        // Only update if content changed
+        if (currentContent === newContent) {
+            console.log("Profile README already up to date, skipping update.");
+            return;
+        }
+
+        // Update file via GitHub API
+        const headers = {
+            "Accept": "application/vnd.github.v3+json",
+            "User-Agent": "pollinations-profile-updater",
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+        };
+
+        const response = await fetch(
+            `https://api.github.com${endpoint}`,
+            {
+                method: "PUT",
+                headers,
+                body: JSON.stringify({
+                    message: "chore: update org profile stats",
+                    content: Buffer.from(newContent).toString("base64"),
+                    sha: fileData.sha,
+                    branch: "main",
+                }),
+            },
+        );
+
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`GitHub API error: ${response.status} ${error}`);
+        }
+
+        console.log("Profile README updated successfully via GitHub API!");
+    } catch (error) {
+        if (error.message.includes("404")) {
+            console.error(
+                `File not found at ${PROFILE_PATH} in ${ORG}/${GITHUB_REPO}`,
+            );
+        } else {
+            console.error("Error updating profile README:", error.message);
+        }
+        throw error;
+    }
 
 async function getRepoStats() {
     const { data: repo } = await fetchGitHubAPI(`/repos/${ORG}/${MAIN_REPO}`);
@@ -131,22 +186,13 @@ async function main() {
 | 📝 **Commits (30d)** | ${activity.commits}+ |
 <!-- STATS:END -->`;
 
-        // Read current README
-        let readme = readFileSync(PROFILE_README, "utf-8");
-
-        // Replace stats section
-        const statsRegex = /<!-- STATS:START -->[\s\S]*?<!-- STATS:END -->/;
-        if (statsRegex.test(readme)) {
-            readme = readme.replace(statsRegex, statsMarkdown);
-            writeFileSync(PROFILE_README, readme);
-            console.log("Profile README updated successfully!");
-        } else {
-            console.log("Stats markers not found in README, skipping update.");
-        }
+        // Update profile README in org repo via GitHub API
+        await getOrUpdateProfileREADME(statsMarkdown);
     } catch (error) {
         console.error("Error updating stats:", error.message);
         process.exit(1);
     }
 }
 
+}
 main();

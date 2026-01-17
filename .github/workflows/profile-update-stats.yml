@@ -11,10 +11,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout org profile repo
+      - name: Checkout main repo
         uses: actions/checkout@v4
         with:
-          repository: pollinations/.github
+          repository: pollinations/pollinations
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
@@ -27,11 +27,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           node .github/scripts/profile-update-stats.js
-
-      - name: Commit changes
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add profile/README.md
-          git diff --staged --quiet || git commit -m "chore: update org profile stats"
-          git push

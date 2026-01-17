@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
-    getChats,
-    saveChats,
-    getActiveChatId,
-    saveActiveChatId,
     generateId,
+    getActiveChatId,
+    getChats,
+    saveActiveChatId,
+    saveChats,
 } from "../utils/storage";
 
 export const useChat = () => {
@@ -28,7 +28,12 @@ export const useChat = () => {
             );
         } else {
             // Create initial chat
-            const initialChat = createNewChat("New Chat");
+            const initialChat = {
+                id: generateId(),
+                title: "New Chat",
+                messages: [],
+                createdAt: Date.now(),
+            };
             setChats([initialChat]);
             setActiveChatId(initialChat.id);
         }

@@ -157,6 +157,20 @@ function App() {
     }, []);
 
     // Keyboard shortcuts
+    const handleThemeToggle = useCallback(() => {
+        // Toggle classes immediately for instant swap
+        const isDark = document.body.classList.contains("dark");
+        const newTheme = isDark ? "light" : "dark";
+
+        // Update DOM instantly
+        document.body.classList.toggle("dark");
+        document.body.classList.toggle("light");
+
+        // Update state and storage
+        setTheme(newTheme);
+        saveTheme(newTheme);
+    }, []);
+
     useEffect(() => {
         const handleKeyDown = (e) => {
             // Ctrl+K: Focus input
@@ -202,20 +216,6 @@ function App() {
     const handleVideoModelChange = useCallback((model) => {
         setSelectedVideoModel(model);
         localStorage.setItem("selectedVideoModel", model);
-    }, []);
-
-    const handleThemeToggle = useCallback(() => {
-        // Toggle classes immediately for instant swap
-        const isDark = document.body.classList.contains("dark");
-        const newTheme = isDark ? "light" : "dark";
-
-        // Update DOM instantly
-        document.body.classList.toggle("dark");
-        document.body.classList.toggle("light");
-
-        // Update state and storage
-        setTheme(newTheme);
-        saveTheme(newTheme);
     }, []);
 
     const _handleExportChat = () => {

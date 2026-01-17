@@ -1,21 +1,16 @@
-name: Deploy Cloudflare Workers from apps/
+name: Deploy GSOC Cloudflare Worker
 
 on:
   push:
     branches:
       - production
     paths:
-      - 'apps/grafana-discord-proxy/**'
+      - 'apps/gsoc.pollinations/**'
       - '.github/workflows/deploy-apps-cloudflare-workers.yml'
   workflow_dispatch:
-    inputs:
-      worker:
-        description: 'Worker to deploy (e.g., grafana-discord-proxy)'
-        required: true
-        default: 'grafana-discord-proxy'
 
 jobs:
-  deploy-grafana-discord-proxy:
+  deploy-gsoc:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -27,11 +22,44 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install
-        working-directory: ./apps/grafana-discord-proxy
+        run: |
+          if [ -f "package.json" ]; then
+            npm install
+          fi
+        working-directory: ./apps/gsoc.pollinations
+
+      - name: Build if build script exists
+        run: |
+          if [ -f "package.json" ] && npm run-script --silent build >/dev/null 2>&1; then
+            npm run build
+          fi
+        working-directory: ./apps/gsoc.pollinations
+
+      - name: Update wrangler.toml with correct subdomain
+        run: |
+          # Update the route to use gsoc.pollinations.ai
+          if grep -q "^route = " wrangler.toml; then
+            sed -i "s|^route = .*|route = \"gsoc.pollinations.ai/*\"|" wrangler.toml
+          elif grep -q "^\[env\.production\]" wrangler.toml; then
+            # Add route under production environment
+            sed -i "/^\[env\.production\]/a route = \"gsoc.pollinations.ai/*\"" wrangler.toml
+          else
+            # Add route at the end of the file
+            echo "route = \"gsoc.pollinations.ai/*\"" >> wrangler.toml
+          fi
+          
+          # Update name to pollinations-gsoc if not already set
+          if ! grep -q "^name = " wrangler.toml; then
+            echo "name = \"pollinations-gsoc\"" >> wrangler.toml
+          fi
+        working-directory: ./apps/gsoc.pollinations
 
       - name: Deploy to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: npx wrangler deploy
-        working-directory: ./apps/grafana-discord-proxy
+        run: npx wrangler deploy --env production
+        working-directory: ./apps/gsoc.pollinations
+
+      - name: Deployment Summary
+        run: |
+          echo "✅ Successfully deployed GSOC app to https://gsoc.pollinations.ai"

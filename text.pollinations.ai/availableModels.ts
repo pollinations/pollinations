@@ -164,7 +164,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nomnom",
-        config: portkeyConfig["gemini-scrape"],
+        config: portkeyConfig["nomnom"],
     },
 ];
 

@@ -6,6 +6,7 @@ import { createAuth } from "./auth.ts";
 import type { Env } from "./env.ts";
 import { handleError } from "./error.ts";
 import { logger } from "./middleware/logger.ts";
+import { accountRoutes } from "./routes/account.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
@@ -30,6 +31,7 @@ export const api = new Hono<Env>()
     .route("/api-keys", apiKeysRoutes)
     .route("/usage", usageRoutes)
     .route("/usage/daily", usageDailyRoutes)
+    .route("/account", accountRoutes)
     .route("/webhooks", webhooksRoutes)
     .route("/webhooks", webhooksCryptoRoutes)
     .route("/admin", adminRoutes)
@@ -41,29 +43,11 @@ export type ApiRoutes = typeof api;
 const docsRoutes = createDocsRoutes(api);
 
 const app = new Hono<Env>()
-    // Permissive CORS for public API endpoints (require API keys)
-    .use(
-        "/api/generate/*",
-        cors({
-            origin: "*",
-            allowMethods: ["GET", "POST", "OPTIONS"],
-            allowHeaders: ["Content-Type", "Authorization"],
-            exposeHeaders: ["Content-Length"],
-            maxAge: 600,
-        }),
-    )
-    // Restrictive CORS for auth/dashboard endpoints (use credentials)
+    // Permissive CORS for all API endpoints (all require API keys for auth)
     .use(
         "*",
         cors({
-            origin: (origin) => {
-                // Allow localhost on any port for development
-                if (origin.startsWith("http://localhost:")) return origin;
-                // Production origins
-                if (origin.endsWith(".pollinations.ai")) return origin;
-                return null;
-            },
-            credentials: true,
+            origin: "*",
             allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             allowHeaders: ["Content-Type", "Authorization"],
             exposeHeaders: ["Content-Length", "Content-Disposition"],

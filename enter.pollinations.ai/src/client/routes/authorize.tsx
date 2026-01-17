@@ -2,21 +2,68 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
-import { ModelPermissions } from "../components/model-permissions.tsx";
+import {
+    KeyPermissionsInputs,
+    useKeyPermissions,
+} from "../components/key-permissions.tsx";
 
-// 30 days in seconds
-const DEFAULT_EXPIRY_SECONDS = 30 * 24 * 60 * 60;
+const SECONDS_PER_DAY = 24 * 60 * 60;
+
+// Parse comma-separated string to array, or null if empty
+const parseList = (val: unknown): string[] | null => {
+    if (!val || typeof val !== "string") return null;
+    const items = val
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    return items.length ? items : null;
+};
+
+const parseNumber = (val: unknown): number | null => {
+    if (!val) return null;
+    const n = Number(val);
+    return Number.isFinite(n) ? n : null;
+};
 
 export const Route = createFileRoute("/authorize")({
     component: AuthorizeComponent,
-    validateSearch: (search: Record<string, unknown>) => ({
-        redirect_url: (search.redirect_url as string) || "",
-    }),
+    validateSearch: (search: Record<string, unknown>) => {
+        const result: {
+            redirect_url: string;
+            models?: string[] | null;
+            budget?: number | null;
+            expiry?: number | null;
+            permissions?: string[] | null;
+        } = {
+            redirect_url: (search.redirect_url as string) || "",
+        };
+
+        // Only include optional params if they're present
+        const models = parseList(search.models);
+        if (models !== null) result.models = models;
+
+        const budget = parseNumber(search.budget);
+        if (budget !== null) result.budget = budget;
+
+        const expiry = parseNumber(search.expiry);
+        if (expiry !== null) result.expiry = expiry;
+
+        const permissions = parseList(search.permissions);
+        if (permissions !== null) result.permissions = permissions;
+
+        return result;
+    },
     // No beforeLoad redirect - handle auth state in component for better UX
 });
 
 function AuthorizeComponent() {
-    const { redirect_url } = Route.useSearch();
+    const {
+        redirect_url,
+        models,
+        budget,
+        expiry,
+        permissions: urlPermissions,
+    } = Route.useSearch();
     const navigate = useNavigate();
 
     // Fetch session directly using authClient
@@ -28,8 +75,14 @@ function AuthorizeComponent() {
     const [error, setError] = useState<string | null>(null);
     const [redirectHostname, setRedirectHostname] = useState<string>("");
     const [isValidUrl, setIsValidUrl] = useState(false);
-    // null = all models allowed, [] = restricted but none selected, [...] = specific models
-    const [allowedModels, setAllowedModels] = useState<string[] | null>(null);
+
+    // Use shared hook for key permissions, pre-populated from URL params
+    const keyPermissions = useKeyPermissions({
+        allowedModels: models,
+        pollenBudget: budget,
+        expiryDays: expiry ?? 30, // Default 30 days for authorize flow
+        accountPermissions: urlPermissions,
+    });
 
     // Parse and validate the redirect URL
     useEffect(() => {
@@ -69,10 +122,13 @@ function AuthorizeComponent() {
         setError(null);
 
         try {
-            // Create a temporary API key with 30-day expiry using better-auth's built-in endpoint
+            // Create a temporary API key using better-auth's built-in endpoint
             const result = await authClient.apiKey.create({
                 name: `${redirectHostname}`,
-                expiresIn: DEFAULT_EXPIRY_SECONDS,
+                ...(keyPermissions.permissions.expiryDays !== null && {
+                    expiresIn:
+                        keyPermissions.permissions.expiryDays * SECONDS_PER_DAY,
+                }),
                 prefix: "sk",
                 metadata: {
                     keyType: "temporary",
@@ -88,22 +144,8 @@ function AuthorizeComponent() {
 
             const data = result.data;
 
-            // Set permissions if restricted (allowedModels is not null)
-            if (allowedModels !== null) {
-                const updateResponse = await fetch(
-                    `/api/api-keys/${data.id}/update`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        credentials: "include",
-                        body: JSON.stringify({ allowedModels }),
-                    },
-                );
-
-                if (!updateResponse.ok) {
-                    console.error("Failed to set API key permissions");
-                }
-            }
+            // Set permissions using hook's method
+            await keyPermissions.updatePermissions(data.id);
 
             // Redirect back to the app with the key in URL fragment (not query param)
             // Using fragment prevents key from leaking to server logs/Referer headers
@@ -241,7 +283,7 @@ function AuthorizeComponent() {
                             <li className="flex items-start gap-2">
                                 <span className="text-gray-400">⏱</span>
                                 <span>
-                                    Expires in 30 days · revoke anytime from{" "}
+                                    Revoke anytime from{" "}
                                     <a
                                         href="/"
                                         className="text-blue-600 hover:underline"
@@ -256,11 +298,10 @@ function AuthorizeComponent() {
                             </li>
                         </ul>
 
-                        {/* Model permissions selector */}
+                        {/* Key permissions inputs */}
                         <div className="mb-6 -mt-2">
-                            <ModelPermissions
-                                value={allowedModels}
-                                onChange={setAllowedModels}
+                            <KeyPermissionsInputs
+                                value={keyPermissions}
                                 compact
                             />
                         </div>

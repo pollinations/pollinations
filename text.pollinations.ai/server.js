@@ -1,6 +1,6 @@
+import crypto from "node:crypto";
 import bodyParser from "body-parser";
 import cors from "cors";
-import crypto from "crypto";
 import debug from "debug";
 import dotenv from "dotenv";
 import express from "express";
@@ -52,7 +52,7 @@ app.use((req, res, next) => {
     next();
 });
 // New route handler for root path
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
     res.redirect(
         301,
         "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md",
@@ -60,7 +60,7 @@ app.get("/", (req, res) => {
 });
 
 // Serve crossdomain.xml for Flash connections
-app.get("/crossdomain.xml", (req, res) => {
+app.get("/crossdomain.xml", (_req, res) => {
     res.setHeader("Content-Type", "application/xml");
     res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
@@ -85,7 +85,7 @@ app.get("/models", (req, res) => {
 
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, requestData) {
-    const startTime = Date.now();
+    const _startTime = Date.now();
     log(
         "Request: model=%s referrer=%s",
         requestData.model,
@@ -122,7 +122,7 @@ async function handleRequest(req, res, requestData) {
         }
 
         // Capture the originally requested model before any mapping/overrides
-        const requestedModel = requestData.model;
+        const _requestedModel = requestData.model;
 
         // Use request data as-is (no user-specific model mapping)
         const finalRequestData = requestData;
@@ -402,7 +402,7 @@ export function sendContentResponse(res, completion) {
     }
 
     // Only handle OpenAI-style responses (with choices array)
-    if (completion.choices && completion.choices[0]) {
+    if (completion.choices?.[0]) {
         const message = completion.choices[0].message;
 
         // If message is a string, send it directly
@@ -426,7 +426,7 @@ export function sendContentResponse(res, completion) {
         }
 
         // If the message contains audio, send the audio data as binary
-        if (message.audio && message.audio.data) {
+        if (message.audio?.data) {
             res.setHeader("Content-Type", "audio/mpeg");
             res.setHeader(
                 "Cache-Control",
@@ -552,10 +552,10 @@ app.post("/", async (req, res) => {
     }
 });
 
-app.get("/openai/models", (req, res) => {
+app.get("/openai/models", (_req, res) => {
     const models = availableModels.map((model) => {
         // Get provider from cost data using the model's config
-        const config =
+        const _config =
             typeof model.config === "function" ? model.config() : model.config;
         return {
             id: model.name,
@@ -694,7 +694,7 @@ async function generateTextBasedOnModel(messages, options) {
                     role: m.role,
                     content:
                         typeof m.content === "string"
-                            ? m.content.substring(0, 50) + "..."
+                            ? `${m.content.substring(0, 50)}...`
                             : "[non-string content]",
                 })),
             ),

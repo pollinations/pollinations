@@ -4,7 +4,6 @@ import type { TierStatus } from "../../../utils/polar";
 import { Chart } from "./components/Chart";
 import { FilterButton } from "./components/FilterButton";
 import { MultiSelect } from "./components/MultiSelect";
-import { Stat } from "./components/Stat";
 import { useUsageData } from "./hooks/useUsageData";
 import type { FilterState, Metric, TimeRange } from "./types";
 
@@ -191,25 +190,19 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
                             />
                         </div>
 
-                        {/* Stats Row */}
-                        <div className="flex flex-row justify-between gap-4 p-3 bg-white/50 rounded-xl border border-violet-200">
-                            <Stat
-                                label="Requests"
-                                value={stats.totalRequests.toLocaleString()}
-                            />
-                            <Stat
-                                label="Pollen"
-                                value={
-                                    <>
-                                        {stats.totalPollen.toFixed(2)}{" "}
-                                        <span className="text-xs text-gray-400">
-                                            ({TIER_EMOJIS[tier || "spore"]}{" "}
-                                            {stats.tierPollen.toFixed(2)} + 💎{" "}
-                                            {stats.packPollen.toFixed(2)})
-                                        </span>
-                                    </>
-                                }
-                            />
+                        {/* Stats */}
+                        <div className="space-y-1">
+                            <div>
+                                <span className="text-[10px] uppercase tracking-wide text-pink-400 font-bold">Requests</span>
+                                <span className="text-lg font-bold text-green-950 tabular-nums ml-2">{stats.totalRequests.toLocaleString()}</span>
+                            </div>
+                            <div>
+                                <span className="text-[10px] uppercase tracking-wide text-pink-400 font-bold">Pollen</span>
+                                <span className="text-lg font-bold text-green-950 tabular-nums ml-2">{stats.totalPollen.toFixed(2)}</span>
+                                <span className="text-xs text-gray-400 ml-1">
+                                    ({TIER_EMOJIS[tier || "spore"]} {stats.tierPollen.toFixed(2)} + 💎 {stats.packPollen.toFixed(2)})
+                                </span>
+                            </div>
                         </div>
                     </>
                 )}

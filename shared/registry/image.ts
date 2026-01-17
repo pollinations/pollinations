@@ -219,9 +219,9 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
-    "flux-klein": {
-        aliases: ["klein"],
-        modelId: "flux-klein",
+    "klein": {
+        aliases: ["flux-klein"],
+        modelId: "klein",
         provider: "modal",
         cost: [
             // Flux Klein on Modal L40S GPU

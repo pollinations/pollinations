@@ -90,15 +90,15 @@ GPU_OPTIONS = {
 
 
 @app.cls(
-    gpu="L40S",  # Best speed/cost balance: ~2.9s @ $0.0016/image
+    gpu="L40S",  # Best speed/cost balance: ~2.9s @ $0.008/image (15s avg)
     image=flux_klein_image,
     scaledown_window=5 * MINUTES,  # Scale down after 5 min idle
     timeout=10 * MINUTES,
-    # Autoscaling: Modal automatically scales containers for concurrent requests
-    # Each container handles 1 request at a time (GPU-bound), new containers spin up for parallel requests
-    # max_containers limits total parallel capacity, min_containers keeps warm pool
-    max_containers=10,  # Max 10 parallel requests (adjust based on budget)
-    # min_containers=1,  # Uncomment to keep 1 warm container (avoids cold starts, costs ~$0.16/hr)
+    # Autoscaling: max 2 containers, each handles 2 concurrent requests
+    # Total capacity: 4 concurrent requests (2 GPUs × 2 requests each)
+    max_containers=2,
+    # min_containers=1,  # Uncomment to keep 1 warm container (avoids cold starts)
+    concurrency_limit=2,  # Each container handles up to 2 concurrent requests
     volumes={
         "/cache": modal.Volume.from_name("hf-hub-cache", create_if_missing=True),
         "/root/.nv": modal.Volume.from_name("nv-cache", create_if_missing=True),

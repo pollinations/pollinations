@@ -381,86 +381,6 @@ const ChatInput = ({
         
         <div className="chat-input-wrapper-modern">
           <div className="chatbar-top">
-            <div className="chatbar-model-row">
-              <div className="model-selector-wrapper" ref={modelDropdownRef}>
-                <button
-                  type="button"
-                  className="model-chip"
-                  onClick={handleModelBadgeClick}
-                  disabled={!modelsLoaded}
-                  title={modelsLoaded ? modelLabel : 'Loading models...'}
-                >
-                  <span className="model-chip-icon" aria-hidden="true">
-                    {mode === 'imagine' ? '🖼️' : mode === 'video' ? '🎬' : '🌀'}
-                  </span>
-                  <span className="model-chip-name">{modelLabel}</span>
-                  <svg className="model-chip-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M6 9l6 6 6-6" />
-                  </svg>
-                </button>
-                {isModelDropdownOpen && (
-                  <div className="model-dropdown-compact">
-                    <div className="model-search-container">
-                      <input
-                        type="text"
-                        className="model-search-input"
-                        placeholder="Search models..."
-                        value={modelSearchTerm}
-                        onChange={(e) => setModelSearchTerm(e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      {modelSearchTerm && (
-                        <button
-                          type="button"
-                          className="model-search-clear"
-                          onClick={() => setModelSearchTerm('')}
-                          aria-label="Clear search"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="18" y1="6" x2="6" y2="18"/>
-                            <line x1="6" y1="6" x2="18" y2="18"/>
-                          </svg>
-                        </button>
-                      )}
-                      <svg className="model-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="M21 21l-4.35-4.35"/>
-                      </svg>
-                    </div>
-                    <div className="model-options-container">
-                      {Object.entries(activeModelsMap)
-                        .filter(([key, model]) => 
-                          (model.name || key).toLowerCase().includes(modelSearchTerm.toLowerCase())
-                        )
-                        .map(([key, model]) => (
-                          <button
-                            key={key}
-                            type="button"
-                            className={`model-option-compact ${activeModelId === key ? 'active' : ''}`}
-                            onClick={() => handleModelSelect(key)}
-                          >
-                            {model.name || key}
-                          </button>
-                        ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              {(mode === 'imagine' || mode === 'video') && onOpenGenerationOptions && (
-                <button
-                  type="button"
-                  className="generation-options-btn"
-                  onClick={() => onOpenGenerationOptions(mode)}
-                  title="Generation options"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24"/>
-                  </svg>
-                </button>
-              )}
-            </div>
-
             {(isImagineMode || isCanvasMode || isVideoMode) && (
               <div className="chatbar-tags">
                 {isImagineMode && (
@@ -540,6 +460,83 @@ const ChatInput = ({
 
           <div className="chatbar-bottom">
             <div className="chatbar-left">
+              <div className="model-selector-wrapper" ref={modelDropdownRef}>
+                <button
+                  type="button"
+                  className="model-chip"
+                  onClick={handleModelBadgeClick}
+                  disabled={!modelsLoaded}
+                  title={modelsLoaded ? modelLabel : 'Loading models...'}
+                >
+                  <span className="model-chip-icon" aria-hidden="true">
+                    {mode === 'imagine' ? '🖼️' : mode === 'video' ? '🎬' : '🌀'}
+                  </span>
+                  <span className="model-chip-name">{modelLabel}</span>
+                  <svg className="model-chip-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+                {isModelDropdownOpen && (
+                  <div className="model-dropdown-compact">
+                    <div className="model-search-container">
+                      <input
+                        type="text"
+                        className="model-search-input"
+                        placeholder="Search models..."
+                        value={modelSearchTerm}
+                        onChange={(e) => setModelSearchTerm(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      {modelSearchTerm && (
+                        <button
+                          type="button"
+                          className="model-search-clear"
+                          onClick={() => setModelSearchTerm('')}
+                          aria-label="Clear search"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                          </svg>
+                        </button>
+                      )}
+                      <svg className="model-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                      </svg>
+                    </div>
+                    <div className="model-options-container">
+                      {Object.entries(activeModelsMap)
+                        .filter(([key, model]) => 
+                          (model.name || key).toLowerCase().includes(modelSearchTerm.toLowerCase())
+                        )
+                        .map(([key, model]) => (
+                          <button
+                            key={key}
+                            type="button"
+                            className={`model-option-compact ${activeModelId === key ? 'active' : ''}`}
+                            onClick={() => handleModelSelect(key)}
+                          >
+                            {model.name || key}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              {(mode === 'imagine' || mode === 'video') && onOpenGenerationOptions && (
+                <button
+                  type="button"
+                  className="generation-options-btn"
+                  onClick={() => onOpenGenerationOptions(mode)}
+                  title="Generation options"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24"/>
+                  </svg>
+                </button>
+              )}
               <div className="attach-menu-wrapper" ref={attachMenuRef}>
                 <button
                   className="input-icon-btn"
@@ -622,9 +619,9 @@ const ChatInput = ({
                   title="Send message"
                   type="button"
                 >
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M4.5 11.134a1 1 0 0 0 0 1.732l14 8a1 1 0 0 0 1.5-.866V3a1 1 0 0 0-1.5-.866l-14 8z" />
-                    <path d="M10 13l9-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 2L11 13" />
+                    <path d="M22 2L15 22L11 13L2 9L22 2Z" />
                   </svg>
                 </button>
               )}

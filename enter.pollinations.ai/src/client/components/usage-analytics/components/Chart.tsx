@@ -381,7 +381,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                     width={tooltipWidth}
                                     height={tooltipHeight}
                                     rx="8"
-                                    fill="#0f172a"
+                                    fill="#18181b"
                                     opacity="0.95"
                                 />
                                 <text

@@ -214,6 +214,11 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
                                 </span>
                             </div>
                         </div>
+
+                        {/* Info */}
+                        <p className="text-[10px] text-gray-400 mt-4">
+                            Data refreshes every 5 minutes. Times shown in UTC.
+                        </p>
                     </>
                 )}
             </div>

@@ -224,10 +224,11 @@ export const IMAGE_SERVICES = {
         modelId: "flux-klein",
         provider: "modal",
         cost: [
-            // Flux Klein on Modal L40S GPU - ~$0.0016 per image
+            // Flux Klein on Modal L40S GPU
+            // L40S: $0.000542/sec × 15s avg (including cold starts) = $0.008/image
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.0016, // ~$0.0016 per image (L40S GPU cost)
+                completionImageTokens: 0.008, // ~$0.008 per image (L40S @ 15s avg)
             },
         ],
         description:

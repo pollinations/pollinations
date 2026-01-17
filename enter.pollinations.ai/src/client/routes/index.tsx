@@ -413,21 +413,19 @@ function RouteComponent() {
                                                         );
                                                     const data =
                                                         (await res.json()) as {
-                                                            data: Record<
+                                                            usage: Record<
                                                                 string,
                                                                 unknown
                                                             >[];
                                                         };
                                                     const headers = [
                                                         "date",
-                                                        "event_type",
                                                         "model",
+                                                        "meter_source",
                                                         "requests",
                                                         "cost_usd",
-                                                        "input_tokens",
-                                                        "output_tokens",
                                                     ];
-                                                    const rows = data.data.map(
+                                                    const rows = data.usage.map(
                                                         (
                                                             r: Record<
                                                                 string,
@@ -436,15 +434,11 @@ function RouteComponent() {
                                                         ) =>
                                                             [
                                                                 r.date,
-                                                                r.event_type ||
-                                                                    "",
                                                                 r.model || "",
+                                                                r.meter_source ||
+                                                                    "",
                                                                 r.requests || 0,
                                                                 r.cost_usd || 0,
-                                                                r.input_tokens ||
-                                                                    0,
-                                                                r.output_tokens ||
-                                                                    0,
                                                             ].join(","),
                                                     );
                                                     const csv = [

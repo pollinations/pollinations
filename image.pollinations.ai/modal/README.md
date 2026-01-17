@@ -11,11 +11,16 @@ pip install modal
 modal setup  # Authenticate with Modal
 ```
 
-### 2. Create Hugging Face Secret
+### 2. Create Modal Secrets
 
 1. Go to [Modal Secrets](https://modal.com/secrets)
-2. Create a new secret named `huggingface-secret`
-3. Add your Hugging Face token as `HF_TOKEN`
+2. Create `huggingface-secret` with key `HF_TOKEN` (your Hugging Face token)
+3. Create `enter-token` with key `ENTER_TOKEN` (the Pollinations Enter token for auth)
+
+**Token naming:**
+- Modal secret uses `ENTER_TOKEN` (internal Modal secret name)
+- Node.js service uses `PLN_ENTER_TOKEN` env var
+- Both must contain the same token value for authentication to work
 
 ### 3. Deploy
 
@@ -103,15 +108,17 @@ with open("output.png", "wb") as f:
 
 ## Hardware Requirements
 
-- **GPU**: A100 (40GB) recommended, also works on A10G
+- **GPU**: L40S (48GB) - currently deployed
 - **VRAM**: ~13GB minimum
-- **Inference time**: Sub-second on A100 after warm-up
+- **Inference time**: ~2-3 seconds on L40S after warm-up
 
 ## Cost Estimate
 
-On Modal with A100:
-- ~$0.001-0.002 per image (at ~1 second inference)
+On Modal with L40S:
+- ~$0.008 per image (at ~15s avg including cold starts)
+- L40S rate: $0.000542/sec
 - Cold start: ~30-60 seconds (model loading)
+- Warm inference: ~2-3 seconds
 
 ## Troubleshooting
 

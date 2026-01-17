@@ -71,7 +71,8 @@ export const callFluxKleinAPI = async (
         if (error instanceof HttpError) {
             throw error;
         }
-        throw new Error(`Flux Klein API generation failed: ${error.message}`);
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`Flux Klein API generation failed: ${message}`);
     }
 };
 
@@ -189,7 +190,7 @@ async function generateWithEditing(
             );
 
             const { base64, mimeType } = await withTimeoutSignal(
-                () => downloadImageAsBase64(imageUrl),
+                (signal) => downloadImageAsBase64(imageUrl, signal),
                 30000, // 30 second timeout
             );
 
@@ -201,10 +202,9 @@ async function generateWithEditing(
                 `Successfully processed reference image ${i + 1}: ${mimeType}, ${base64.length} chars`,
             );
         } catch (error) {
-            logError(
-                `Error processing reference image ${i + 1}:`,
-                error.message,
-            );
+            const message =
+                error instanceof Error ? error.message : String(error);
+            logError(`Error processing reference image ${i + 1}:`, message);
             // Continue with other images
         }
     }

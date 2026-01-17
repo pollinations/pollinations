@@ -406,6 +406,12 @@ function App() {
                     ((a.stats?.latency_p50_ms || 0) -
                         (b.stats?.latency_p50_ms || 0))
                 );
+            case "avg":
+                return (
+                    dir *
+                    ((a.stats?.avg_latency_ms || 0) -
+                        (b.stats?.avg_latency_ms || 0))
+                );
             case "p95":
                 return (
                     dir *
@@ -579,6 +585,13 @@ function App() {
                                     align="right"
                                 />
                                 <SortableTh
+                                    label="Avg"
+                                    sortKey="avg"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
                                     label="P95"
                                     sortKey="p95"
                                     currentSort={sort}
@@ -591,7 +604,7 @@ function App() {
                             {sortedModels.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={5}
+                                        colSpan={6}
                                         className="p-8 text-center text-gray-400"
                                     >
                                         {lastUpdated
@@ -615,6 +628,9 @@ function App() {
                                         (stats?.errors_502 || 0) +
                                         (stats?.errors_503 || 0) +
                                         (stats?.errors_504 || 0);
+                                    const avgSec = stats?.avg_latency_ms
+                                        ? stats.avg_latency_ms / 1000
+                                        : null;
                                     const p95Sec = stats?.latency_p95_ms
                                         ? stats.latency_p95_ms / 1000
                                         : null;
@@ -676,6 +692,20 @@ function App() {
                                                         —
                                                     </span>
                                                 )}
+                                            </td>
+                                            {/* Avg */}
+                                            <td
+                                                className={`px-3 py-2 text-right tabular-nums ${
+                                                    avgSec
+                                                        ? getLatencyColor(
+                                                              avgSec,
+                                                          )
+                                                        : "text-gray-300"
+                                                }`}
+                                            >
+                                                {avgSec
+                                                    ? `${avgSec.toFixed(1)}s`
+                                                    : "—"}
                                             </td>
                                             {/* P95 */}
                                             <td

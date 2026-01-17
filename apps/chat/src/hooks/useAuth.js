@@ -1,5 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
-import { STORAGE_KEY, ENTER_URL, DEFAULT_API_KEY, isValidApiKey } from "../config/auth";
+import { useCallback, useEffect, useState } from "react";
+import {
+    DEFAULT_API_KEY,
+    ENTER_URL,
+    isValidApiKey,
+    STORAGE_KEY,
+} from "../config/auth";
 import { fetchPollenBalance } from "../utils/api";
 
 /**
@@ -41,11 +46,13 @@ export function useAuth() {
                         window.location.pathname + window.location.search,
                     );
                 } else {
-                    console.error('Invalid API key format in URL fragment. Expected key to start with sk_, plln_pk_, or pk_');
+                    console.error(
+                        "Invalid API key format in URL fragment. Expected key to start with sk_, plln_pk_, or pk_",
+                    );
                 }
             }
         } catch (error) {
-            console.error('Error parsing URL fragment for API key:', error);
+            console.error("Error parsing URL fragment for API key:", error);
         }
     }, []);
 

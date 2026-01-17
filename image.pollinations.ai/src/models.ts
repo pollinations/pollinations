@@ -124,6 +124,13 @@ export const IMAGE_CONFIG = {
         enhance: false,
         defaultSideLength: 1024,
     },
+
+    // Flux Klein - Fast 4B parameter model on Modal (text-to-image + image editing)
+    "flux-klein": {
+        type: "modal-flux-klein",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
 } as const satisfies ImageModelsConfig;
 
 /**

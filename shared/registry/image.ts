@@ -219,4 +219,20 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
+    "flux-klein": {
+        aliases: ["klein"],
+        modelId: "flux-klein",
+        provider: "modal",
+        cost: [
+            // Flux Klein on Modal L40S GPU - ~$0.0016 per image
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.0016, // ~$0.0016 per image (L40S GPU cost)
+            },
+        ],
+        description:
+            "FLUX.2 Klein 4B - Fast image generation & editing on Modal",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

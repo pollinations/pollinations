@@ -1,10 +1,10 @@
 import debug from "debug";
-import { withTimeoutSignal } from "../util.ts";
-import { HttpError } from "../httpError.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
-import type { ImageParams } from "../params.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
+import { HttpError } from "../httpError.ts";
+import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { withTimeoutSignal } from "../util.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:flux-klein:ops");
 const logError = debug("pollinations:flux-klein:error");

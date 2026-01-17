@@ -10,8 +10,8 @@ import {
 import { HttpError } from "./httpError.ts";
 import { incrementModelCounter } from "./modelCounter.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
-import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
+import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
 import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";

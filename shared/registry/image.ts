@@ -219,4 +219,21 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
+    "flux-klein": {
+        aliases: ["klein"],
+        modelId: "flux-klein",
+        provider: "modal",
+        cost: [
+            // Flux Klein on Modal L40S GPU
+            // L40S: $0.000542/sec × 15s avg (including cold starts) = $0.008/image
+            {
+                date: new Date("2026-01-17").getTime(), // Launch date
+                completionImageTokens: 0.008, // ~$0.008 per image (L40S @ 15s avg)
+            },
+        ],
+        description:
+            "FLUX.2 Klein 4B - Fast image generation & editing on Modal",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

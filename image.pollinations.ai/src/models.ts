@@ -1,5 +1,5 @@
 // Import registry for model names and tier validation
-import { type ImageServiceId } from "../../shared/registry/image.ts";
+import type { ImageServiceId } from "../../shared/registry/image.ts";
 
 /**
  * Image/Video-specific configuration for each model
@@ -121,6 +121,13 @@ export const IMAGE_CONFIG = {
     // Flux Schnell - Fast high-quality image generation (IO.net, nunchaku-quantized)
     flux: {
         type: "flux",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Flux Klein - Fast 4B parameter model on Modal (text-to-image + image editing)
+    "flux-klein": {
+        type: "modal-flux-klein",
         enhance: false,
         defaultSideLength: 1024,
     },

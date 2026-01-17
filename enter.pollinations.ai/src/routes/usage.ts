@@ -187,11 +187,7 @@ export const usageDailyRoutes = new Hono<Env>()
             });
 
             const user = c.var.auth.requireUser();
-
-            // In development, use pollen-router's user_id for testing
-            const DEV_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh";
-            const userId =
-                c.env.ENVIRONMENT === "development" ? DEV_USER_ID : user.id;
+            const userId = user.id;
 
             // Default to 90 days of data
             const now = new Date();

@@ -467,17 +467,17 @@ export const TEXT_SERVICES = {
     },
     "nomnom": {
         aliases: ["gemini-scrape", "web-research"],
-        modelId: "gemini-scrape",
+        modelId: "nomnom",
         provider: "community",
         cost: [
             {
-                date: new Date("2026-01-16").getTime(),
+                date: new Date("2026-01-17").getTime(),
                 promptTextTokens: perMillion(0.0), // Free - uses Pollinations under the hood
                 completionTextTokens: perMillion(0.0),
             },
         ],
         description:
-            "NomNom - Web Research Model with Search, Scrape & Crawl Tools",
+            "NomNom by @Itachi-1824 - Web Research with Search, Scrape & Crawl (Alpha)",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,

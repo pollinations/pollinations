@@ -10,6 +10,7 @@ import {
 import { HttpError } from "./httpError.ts";
 import { incrementModelCounter } from "./modelCounter.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
+import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
 import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
@@ -1122,6 +1123,22 @@ const generateImage = async (
             );
         } catch (error) {
             logError("Seedream 4.5 Pro generation failed:", error.message);
+            progress.updateBar(requestId, 100, "Error", error.message);
+            throw error;
+        }
+    }
+
+    if (safeParams.model === "flux-klein") {
+        // Flux Klein - Fast 4B model on Modal (text-to-image + image editing)
+        try {
+            return await callFluxKleinAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
+        } catch (error) {
+            logError("Flux Klein generation failed:", error.message);
             progress.updateBar(requestId, 100, "Error", error.message);
             throw error;
         }

@@ -134,13 +134,14 @@ export function createFireworksModelConfig(additionalConfig = {}) {
 
 /**
  * Creates a NomNom model configuration (community model with web search/scrape/crawl)
- * Note: No authKey - user's Authorization header passes through for billing
+ * Uses user's API key for billing passthrough - NomNom calls Pollinations internally
  */
 export function createNomNomConfig(additionalConfig = {}) {
     return {
         provider: "openai",
         "custom-host": "https://scrape.pollinations.ai/v1",
-        // No authKey - user's API key passes through to NomNom, which uses it for Pollinations billing
+        // Flag to use user's API key from x-user-api-key header for billing passthrough
+        useUserApiKey: true,
         ...additionalConfig,
     };
 }

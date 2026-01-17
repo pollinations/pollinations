@@ -137,6 +137,8 @@ async function handleRequest(req, res, requestData) {
                 referrer: requestData.referrer || "unknown",
                 cf_ray: req.headers["cf-ray"] || "",
             },
+            // Pass user's API key for community models that need billing passthrough (e.g., NomNom)
+            userApiKey: req.headers["x-user-api-key"] || "",
         };
 
         const completion = await generateTextBasedOnModel(

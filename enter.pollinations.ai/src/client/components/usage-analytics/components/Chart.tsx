@@ -49,38 +49,72 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
 
         const vals = data.map((d) => d.value);
         const max = Math.max(...vals);
-        const pMax = max * 1.1 || 1;
+
+        // Calculate nice tick spacing based on data max
+        const getNiceStep = (maxVal: number): number => {
+            if (maxVal <= 0) return 1;
+            const magnitude = 10 ** Math.floor(Math.log10(maxVal));
+            const normalized = maxVal / magnitude;
+            // Pick step that gives 4-6 ticks and uses range well
+            // For normalized values (1-10), pick step that results in max being 60-100% of scale
+            if (normalized <= 1.2) return magnitude * 0.2;
+            if (normalized <= 1.5) return magnitude * 0.5;
+            if (normalized <= 2.5) return magnitude * 0.5;
+            if (normalized <= 3.5) return magnitude;
+            if (normalized <= 6) return magnitude;
+            if (normalized <= 8) return magnitude * 2;
+            return magnitude * 2;
+        };
+
+        // Calculate nice scale with tight fit
+        const tickSpacing = getNiceStep(max || 1);
+        // Round up to next tick, then add just one more tick for headroom
+        const niceMaxVal =
+            Math.ceil(max / tickSpacing) * tickSpacing || tickSpacing;
 
         const barWidth = Math.max(4, (cw / data.length) * 0.7);
         const gap = (cw / data.length) * 0.3;
 
-        const barData = data.map((d, i) => ({
-            x: pad.left + i * (barWidth + gap) + gap / 2,
-            y: pad.top + ch - (d.value / pMax) * ch,
-            width: barWidth,
-            height: (d.value / pMax) * ch,
-            ...d,
-        }));
+        const barData = data.map((d, i) => {
+            const tierHeight = (d.tierValue / niceMaxVal) * ch;
+            const packHeight = (d.packValue / niceMaxVal) * ch;
+            return {
+                x: pad.left + i * (barWidth + gap) + gap / 2,
+                y: pad.top + ch - (d.value / niceMaxVal) * ch,
+                width: barWidth,
+                height: (d.value / niceMaxVal) * ch,
+                tierHeight,
+                packHeight,
+                tierY: pad.top + ch - tierHeight,
+                packY: pad.top + ch - tierHeight - packHeight,
+                ...d,
+            };
+        });
 
-        // Y ticks
-        const ticks = Array.from({ length: 4 }, (_, i) => ({
-            value: (pMax * (3 - i)) / 3,
-            y: pad.top + (i / 3) * ch,
-        }));
+        // Generate nice Y ticks
+        const tickCount = Math.ceil(niceMaxVal / tickSpacing) + 1;
+        const ticks = Array.from({ length: Math.min(tickCount, 6) }, (_, i) => {
+            const value = i * tickSpacing;
+            return {
+                value,
+                y: pad.top + ch - (value / niceMaxVal) * ch,
+            };
+        }).filter((t) => t.value <= niceMaxVal);
 
         return { bars: barData, yTicks: ticks };
     }, [data, cw, ch]);
 
-    const formatVal = (v: number) =>
-        metric === "pollen"
-            ? v.toFixed(2)
-            : metric === "tokens"
-              ? v >= 1e6
-                  ? `${(v / 1e6).toFixed(1)}M`
-                  : v >= 1e3
-                    ? `${(v / 1e3).toFixed(1)}K`
-                    : v.toFixed(0)
-              : v.toFixed(0);
+    const formatVal = (v: number) => {
+        if (v >= 1e6) {
+            const m = v / 1e6;
+            return m % 1 === 0 ? `${m}M` : `${m.toFixed(1)}M`;
+        }
+        if (v >= 1e3) {
+            const k = v / 1e3;
+            return k % 1 === 0 ? `${k}k` : `${k.toFixed(1)}k`;
+        }
+        return Math.round(v).toString();
+    };
 
     if (data.length === 0) {
         return (
@@ -222,21 +256,62 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                     </>
                 )}
 
-                {/* Bars */}
+                {/* Bars - Stacked: tier (teal) at bottom, pack (purple) on top */}
                 {bars.map((bar, idx) => (
                     <g key={bar.label}>
+                        {/* Tier segment (bottom) - teal */}
+                        {bar.tierHeight > 0 && (
+                            <rect
+                                x={bar.x}
+                                y={
+                                    bar.tierY -
+                                    (bar.tierHeight * animationProgress -
+                                        bar.tierHeight)
+                                }
+                                width={bar.width}
+                                height={Math.max(
+                                    0,
+                                    bar.tierHeight * animationProgress,
+                                )}
+                                rx={bar.packHeight > 0 ? 0 : 2}
+                                style={{
+                                    fill:
+                                        hovered === idx ? "#5eead4" : "#99f6e4",
+                                    transition: "fill 0.15s ease-out",
+                                }}
+                            />
+                        )}
+                        {/* Pack segment (top) - purple */}
+                        {bar.packHeight > 0 && (
+                            <rect
+                                x={bar.x}
+                                y={
+                                    bar.packY -
+                                    (bar.height * animationProgress -
+                                        bar.height)
+                                }
+                                width={bar.width}
+                                height={Math.max(
+                                    0,
+                                    bar.packHeight * animationProgress,
+                                )}
+                                rx={2}
+                                style={{
+                                    fill:
+                                        hovered === idx ? "#c4b5fd" : "#ddd6fe",
+                                    transition: "fill 0.15s ease-out",
+                                }}
+                            />
+                        )}
+                        {/* Invisible overlay for consistent hover area */}
                         {/* biome-ignore lint/a11y/noStaticElementInteractions: SVG rect for chart interaction */}
                         <rect
                             x={bar.x}
                             y={bar.y}
                             width={bar.width}
                             height={Math.max(0, bar.height * animationProgress)}
-                            rx={2}
-                            fill={hovered === idx ? "#8b5cf6" : "#7c3aed"}
-                            style={{
-                                transition: "fill 0.15s ease-out",
-                                cursor: "pointer",
-                            }}
+                            fill="transparent"
+                            style={{ cursor: "pointer" }}
                             onMouseEnter={() => setHovered(idx)}
                         />
                     </g>

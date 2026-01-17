@@ -6,6 +6,7 @@ type FilterButtonProps = {
     onClick: () => void;
     children: React.ReactNode;
     ariaLabel?: string;
+    className?: string;
 };
 
 export const FilterButton: FC<FilterButtonProps> = ({
@@ -13,6 +14,7 @@ export const FilterButton: FC<FilterButtonProps> = ({
     onClick,
     children,
     ariaLabel,
+    className,
 }) => (
     <button
         type="button"
@@ -23,6 +25,7 @@ export const FilterButton: FC<FilterButtonProps> = ({
             active
                 ? "bg-green-950 text-green-100"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200",
+            className,
         )}
     >
         {children}

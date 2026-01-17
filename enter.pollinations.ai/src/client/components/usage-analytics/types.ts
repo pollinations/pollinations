@@ -1,17 +1,14 @@
 export type DailyUsageRecord = {
     date: string;
-    event_type: string;
     model: string | null;
     meter_source: string | null;
     requests: number;
     cost_usd: number;
-    input_tokens: number;
-    output_tokens: number;
     api_key_names: string[];
 };
 
 export type TimeRange = "7d" | "30d" | "all" | "custom";
-export type Metric = "requests" | "pollen" | "tokens";
+export type Metric = "requests" | "pollen";
 
 export type FilterState = {
     timeRange: TimeRange;
@@ -26,12 +23,13 @@ export type ModelBreakdown = {
     label: string;
     requests: number;
     pollen: number;
-    tokens: number;
 };
 
 export type DataPoint = {
     label: string;
     value: number;
+    tierValue: number;
+    packValue: number;
     timestamp: Date;
     fullDate: string;
     modelBreakdown?: ModelBreakdown[];

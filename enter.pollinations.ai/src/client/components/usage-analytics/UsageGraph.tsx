@@ -1,13 +1,23 @@
 import type { FC } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { TierStatus } from "../../../utils/polar";
 import { Chart } from "./components/Chart";
 import { FilterButton } from "./components/FilterButton";
 import { MultiSelect } from "./components/MultiSelect";
 import { Stat } from "./components/Stat";
 import { useUsageData } from "./hooks/useUsageData";
-import type { DailyUsageRecord, FilterState, Metric, TimeRange } from "./types";
+import type { FilterState, Metric, TimeRange } from "./types";
 
-export const UsageGraph: FC = () => {
+const TIER_EMOJIS: Record<TierStatus, string> = {
+    none: "🦠",
+    spore: "🦠",
+    seed: "🌱",
+    flower: "🌸",
+    nectar: "🍯",
+    router: "🔌",
+};
+
+export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
     const [filters, setFilters] = useState<FilterState>({
         timeRange: "7d",
         customDays: 14,
@@ -25,15 +35,7 @@ export const UsageGraph: FC = () => {
         usedKeys,
         chartData,
         stats,
-        filteredData,
     } = useUsageData(filters);
-
-    const formatTokens = (n: number) =>
-        n >= 1e6
-            ? `${(n / 1e6).toFixed(1)}M`
-            : n >= 1e3
-              ? `${(n / 1e3).toFixed(1)}K`
-              : n.toString();
 
     const keySelectOptions = usedKeys.map((name) => ({
         value: name,
@@ -49,11 +51,21 @@ export const UsageGraph: FC = () => {
         filters.selectedModels.length === 0 ||
         filters.selectedModels.length > 1;
 
+    // On mobile, if "all" (90 days) is selected, switch to 30d
+    useEffect(() => {
+        const handleResize = () => {
+            const isMobile = window.innerWidth < 640; // sm breakpoint
+            if (isMobile && filters.timeRange === "all") {
+                setFilters((f) => ({ ...f, timeRange: "30d" }));
+            }
+        };
+        handleResize(); // Check on mount
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, [filters.timeRange]);
+
     return (
         <div ref={containerRef} className="flex flex-col gap-2">
-            <div className="flex flex-col sm:flex-row justify-between gap-3">
-                <h2 className="font-bold flex-1">Usage</h2>
-            </div>
             <div className="bg-violet-50/30 rounded-2xl p-6 border border-violet-300">
                 {loading && (
                     <div className="flex items-center justify-center h-[180px]">
@@ -97,6 +109,11 @@ export const UsageGraph: FC = () => {
                                                     timeRange: t,
                                                 }))
                                             }
+                                            className={
+                                                t === "all"
+                                                    ? "hidden sm:inline-flex"
+                                                    : ""
+                                            }
                                         >
                                             {t === "7d"
                                                 ? "7 days"
@@ -106,71 +123,29 @@ export const UsageGraph: FC = () => {
                                         </FilterButton>
                                     ),
                                 )}
-                                <FilterButton
-                                    active={filters.timeRange === "custom"}
-                                    onClick={() =>
-                                        setFilters((f) => ({
-                                            ...f,
-                                            timeRange: "custom",
-                                        }))
-                                    }
-                                >
-                                    Custom
-                                </FilterButton>
-                                {filters.timeRange === "custom" && (
-                                    <div className="flex items-center gap-1.5 ml-1">
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            max={365}
-                                            value={filters.customDays}
-                                            onChange={(e) =>
-                                                setFilters((f) => ({
-                                                    ...f,
-                                                    customDays: Math.max(
-                                                        1,
-                                                        Math.min(
-                                                            365,
-                                                            parseInt(
-                                                                e.target.value,
-                                                                10,
-                                                            ) || 1,
-                                                        ),
-                                                    ),
-                                                }))
-                                            }
-                                            className="w-14 px-2 py-1 text-xs font-medium rounded-lg border border-gray-200 bg-white text-green-950 focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-200 tabular-nums"
-                                        />
-                                        <span className="text-xs text-gray-500">
-                                            days
-                                        </span>
-                                    </div>
-                                )}
                             </div>
                             <div className="flex gap-1.5 items-center">
                                 <span className="text-xs font-medium text-gray-500 mr-1">
                                     Type
                                 </span>
-                                {(
-                                    ["requests", "pollen", "tokens"] as Metric[]
-                                ).map((m) => (
-                                    <FilterButton
-                                        key={m}
-                                        active={filters.metric === m}
-                                        onClick={() =>
-                                            setFilters((f) => ({
-                                                ...f,
-                                                metric: m,
-                                            }))
-                                        }
-                                    >
-                                        {m === "requests"
-                                            ? "Requests"
-                                            : m === "pollen"
-                                              ? "Pollen"
-                                              : "Tokens"}
-                                    </FilterButton>
-                                ))}
+                                {(["requests", "pollen"] as Metric[]).map(
+                                    (m) => (
+                                        <FilterButton
+                                            key={m}
+                                            active={filters.metric === m}
+                                            onClick={() =>
+                                                setFilters((f) => ({
+                                                    ...f,
+                                                    metric: m,
+                                                }))
+                                            }
+                                        >
+                                            {m === "requests"
+                                                ? "Request"
+                                                : "Pollen"}
+                                        </FilterButton>
+                                    ),
+                                )}
                             </div>
                         </div>
 
@@ -217,86 +192,24 @@ export const UsageGraph: FC = () => {
                         </div>
 
                         {/* Stats Row */}
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 p-3 bg-white/50 rounded-xl border border-violet-200">
-                            <div className="flex-1 flex flex-col gap-1 sm:grid sm:grid-cols-3 sm:gap-4">
-                                <Stat
-                                    label="Requests"
-                                    value={stats.totalRequests.toLocaleString()}
-                                />
-                                <Stat
-                                    label="Pollen"
-                                    value={stats.totalPollen.toFixed(2)}
-                                />
-                                <Stat
-                                    label="Tokens"
-                                    value={formatTokens(stats.totalTokens)}
-                                />
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (filteredData.length === 0) return;
-                                    const headers = [
-                                        "date",
-                                        "event_type",
-                                        "model",
-                                        "requests",
-                                        "cost_usd",
-                                        "input_tokens",
-                                        "output_tokens",
-                                    ];
-                                    const rows = filteredData.map(
-                                        (r: DailyUsageRecord) =>
-                                            [
-                                                r.date,
-                                                r.event_type || "",
-                                                r.model || "",
-                                                r.requests || 0,
-                                                r.cost_usd || 0,
-                                                r.input_tokens || 0,
-                                                r.output_tokens || 0,
-                                            ].join(","),
-                                    );
-                                    const csv = [
-                                        headers.join(","),
-                                        ...rows,
-                                    ].join("\n");
-                                    const blob = new Blob([csv], {
-                                        type: "text/csv",
-                                    });
-                                    const url = URL.createObjectURL(blob);
-                                    const a = document.createElement("a");
-                                    a.href = url;
-                                    a.download = `usage-${filters.timeRange}.csv`;
-                                    a.click();
-                                    URL.revokeObjectURL(url);
-                                }}
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-100 hover:bg-violet-200 transition-colors border border-violet-300 text-violet-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={filteredData.length === 0}
-                                title={
-                                    filteredData.length === 0
-                                        ? "No data to download"
-                                        : `Download CSV (${filteredData.length} rows)`
+                        <div className="flex flex-row justify-between gap-4 p-3 bg-white/50 rounded-xl border border-violet-200">
+                            <Stat
+                                label="Requests"
+                                value={stats.totalRequests.toLocaleString()}
+                            />
+                            <Stat
+                                label="Pollen"
+                                value={
+                                    <>
+                                        {stats.totalPollen.toFixed(2)}{" "}
+                                        <span className="text-xs text-gray-400">
+                                            ({TIER_EMOJIS[tier || "spore"]}{" "}
+                                            {stats.tierPollen.toFixed(2)} + 💎{" "}
+                                            {stats.packPollen.toFixed(2)})
+                                        </span>
+                                    </>
                                 }
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                >
-                                    <title>Download CSV</title>
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                    <polyline points="7 10 12 15 17 10" />
-                                    <line x1="12" y1="15" x2="12" y2="3" />
-                                </svg>
-                                CSV
-                            </button>
+                            />
                         </div>
                     </>
                 )}

@@ -1,12 +1,12 @@
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 
 type StatProps = {
     label: string;
-    value: string;
+    value: ReactNode;
 };
 
 export const Stat: FC<StatProps> = ({ label, value }) => (
-    <div className="flex flex-row justify-between items-center sm:flex-col sm:items-start">
+    <div className="flex flex-col">
         <span className="text-[10px] uppercase tracking-wide text-pink-400 font-bold">
             {label}
         </span>

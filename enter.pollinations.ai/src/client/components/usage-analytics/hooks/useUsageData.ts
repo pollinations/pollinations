@@ -22,7 +22,12 @@ type UsageDataResult = {
     usedModels: { id: string; label: string }[];
     usedKeys: string[];
     chartData: DataPoint[];
-    stats: { totalRequests: number; totalPollen: number; totalTokens: number };
+    stats: {
+        totalRequests: number;
+        totalPollen: number;
+        tierPollen: number;
+        packPollen: number;
+    };
     filteredData: DailyUsageRecord[];
 };
 
@@ -75,10 +80,30 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         return () => observer.disconnect();
     }, [hasFetched, fetchUsage]);
 
-    // Models that appear in usage data
+    // Compute cutoff date based on time range
+    const cutoff = useMemo(() => {
+        const now = new Date();
+        return filters.timeRange === "7d"
+            ? new Date(now.getTime() - MS_PER_WEEK)
+            : filters.timeRange === "30d"
+              ? new Date(now.getTime() - MS_PER_30_DAYS)
+              : filters.timeRange === "custom"
+                ? new Date(now.getTime() - filters.customDays * MS_PER_DAY)
+                : new Date(0);
+    }, [filters.timeRange, filters.customDays]);
+
+    // Time-filtered data (without model/key filters)
+    const timeFilteredData = useMemo(() => {
+        return dailyUsage.filter((r) => {
+            const recordDate = new Date(`${r.date}T00:00:00`);
+            return recordDate >= cutoff;
+        });
+    }, [dailyUsage, cutoff]);
+
+    // Models that appear in time-filtered usage data
     const usedModels = useMemo(() => {
         const modelIds = new Set<string>();
-        for (const r of dailyUsage) {
+        for (const r of timeFilteredData) {
             if (r.model) modelIds.add(r.model);
         }
 
@@ -88,12 +113,12 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 return { id, label: registered?.label || id };
             })
             .sort((a, b) => a.label.localeCompare(b.label));
-    }, [dailyUsage]);
+    }, [timeFilteredData]);
 
-    // API keys that appear in usage data
+    // API keys that appear in time-filtered usage data
     const usedKeys = useMemo(() => {
         const keyNames = new Set<string>();
-        for (const r of dailyUsage) {
+        for (const r of timeFilteredData) {
             if (r.api_key_names) {
                 for (const name of r.api_key_names) {
                     if (name) keyNames.add(name);
@@ -101,20 +126,10 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             }
         }
         return Array.from(keyNames).sort();
-    }, [dailyUsage]);
+    }, [timeFilteredData]);
 
     // Filter and aggregate daily usage data
     const { chartData, stats, filteredData } = useMemo(() => {
-        const now = new Date();
-        const cutoff =
-            filters.timeRange === "7d"
-                ? new Date(now.getTime() - MS_PER_WEEK)
-                : filters.timeRange === "30d"
-                  ? new Date(now.getTime() - MS_PER_30_DAYS)
-                  : filters.timeRange === "custom"
-                    ? new Date(now.getTime() - filters.customDays * MS_PER_DAY)
-                    : new Date(0);
-
         const filtered = dailyUsage.filter((r: DailyUsageRecord) => {
             const recordDate = new Date(`${r.date}T00:00:00`);
             if (recordDate < cutoff) return false;
@@ -138,11 +153,11 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         type DayBucket = {
             requests: number;
             pollen: number;
-            tokens: number;
-            byModel: Map<
-                string,
-                { requests: number; pollen: number; tokens: number }
-            >;
+            tierRequests: number;
+            tierPollen: number;
+            packRequests: number;
+            packPollen: number;
+            byModel: Map<string, { requests: number; pollen: number }>;
         };
         const buckets = new Map<string, DayBucket>();
 
@@ -151,23 +166,31 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             const cur = buckets.get(dateKey) || {
                 requests: 0,
                 pollen: 0,
-                tokens: 0,
+                tierRequests: 0,
+                tierPollen: 0,
+                packRequests: 0,
+                packPollen: 0,
                 byModel: new Map(),
             };
-            const tokens = (r.input_tokens || 0) + (r.output_tokens || 0);
             cur.requests += r.requests || 0;
             cur.pollen += r.cost_usd || 0;
-            cur.tokens += tokens;
+
+            const isTier = r.meter_source === "tier";
+            if (isTier) {
+                cur.tierRequests += r.requests || 0;
+                cur.tierPollen += r.cost_usd || 0;
+            } else {
+                cur.packRequests += r.requests || 0;
+                cur.packPollen += r.cost_usd || 0;
+            }
 
             if (r.model) {
                 const modelData = cur.byModel.get(r.model) || {
                     requests: 0,
                     pollen: 0,
-                    tokens: 0,
                 };
                 modelData.requests += r.requests || 0;
                 modelData.pollen += r.cost_usd || 0;
-                modelData.tokens += tokens;
                 cur.byModel.set(r.model, modelData);
             }
             buckets.set(dateKey, cur);
@@ -192,7 +215,10 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             const d = buckets.get(dateStr) || {
                 requests: 0,
                 pollen: 0,
-                tokens: 0,
+                tierRequests: 0,
+                tierPollen: 0,
+                packRequests: 0,
+                packPollen: 0,
                 byModel: new Map(),
             };
             const modelBreakdown: ModelBreakdown[] = Array.from(
@@ -205,10 +231,14 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                         label: registered?.label || modelId,
                         requests: modelStats.requests,
                         pollen: modelStats.pollen,
-                        tokens: modelStats.tokens,
                     };
                 })
                 .sort((a, b) => b.requests - a.requests);
+
+            const tierKey =
+                filters.metric === "requests" ? "tierRequests" : "tierPollen";
+            const packKey =
+                filters.metric === "requests" ? "packRequests" : "packPollen";
 
             return {
                 label: date.toLocaleDateString("en-US", {
@@ -222,6 +252,8 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                     day: "numeric",
                 }),
                 value: d[filters.metric],
+                tierValue: d[tierKey],
+                packValue: d[packKey],
                 timestamp: date,
                 modelBreakdown,
             };
@@ -235,22 +267,29 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
             0,
         );
-        const totalTok = filtered.reduce(
-            (s: number, r: DailyUsageRecord) =>
-                s + (r.input_tokens || 0) + (r.output_tokens || 0),
-            0,
-        );
-
+        const tierPollen = filtered
+            .filter((r) => r.meter_source === "tier")
+            .reduce(
+                (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
+                0,
+            );
+        const packPollen = filtered
+            .filter((r) => r.meter_source !== "tier")
+            .reduce(
+                (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
+                0,
+            );
         return {
             chartData: sorted,
             stats: {
                 totalRequests: totalReq,
                 totalPollen,
-                totalTokens: totalTok,
+                tierPollen,
+                packPollen,
             },
             filteredData: filtered,
         };
-    }, [dailyUsage, filters]);
+    }, [dailyUsage, filters, cutoff]);
 
     return {
         dailyUsage,

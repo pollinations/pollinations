@@ -27,9 +27,9 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     <span className="text-4xl sm:text-5xl md:text-6xl font-bold text-green-950 tabular-nums">
                         {totalPollen.toFixed(2)} pollen
                     </span>
-                    {/* Gauge with download button */}
-                    <div className="flex items-center gap-2 w-full max-w-[540px]">
-                        <div className="relative flex-1 h-8 bg-gray-200 rounded-full overflow-hidden border border-purple-400">
+                    {/* Gauge */}
+                    <div className="w-full max-w-[540px]">
+                        <div className="relative h-8 bg-gray-200 rounded-full overflow-hidden border border-purple-400">
                             {/* Paid Pollen - Soft purple for paid (pack + crypto) */}
                             <div
                                 className="absolute inset-y-0 left-0 bg-purple-200 transition-all duration-500 ease-out"
@@ -65,34 +65,6 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 )}
                             </div>
                         </div>
-                        {/* Download usage button */}
-                        <a
-                            href="/api/account/usage?format=csv&limit=10000"
-                            download="pollinations-usage.csv"
-                            className="group relative flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors border border-gray-300"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="text-gray-600"
-                                aria-label="Download"
-                            >
-                                <title>Download</title>
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="7 10 12 15 17 10" />
-                                <line x1="12" y1="15" x2="12" y2="3" />
-                            </svg>
-                            <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                Download Usage CSV
-                            </span>
-                        </a>
                     </div>
                 </div>
             </div>

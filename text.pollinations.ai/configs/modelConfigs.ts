@@ -264,8 +264,8 @@ export const portkeyConfig: PortkeyConfigMap = {
     // ============================================================================
     // Community Models - NomNom (web search/scrape/crawl)
     // ============================================================================
-    "gemini-scrape": () =>
+    "nomnom": () =>
         createNomNomConfig({
-            model: "gemini-scrape",
+            model: "nomnom",
         }),
 };

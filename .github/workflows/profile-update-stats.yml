@@ -2,8 +2,8 @@ name: Update Org Profile Stats
 
 on:
   schedule:
-    - cron: '0 6 * * *'  # Daily at 6am UTC
-  workflow_dispatch:  # Manual trigger
+    - cron: '0 6 * * *'
+  workflow_dispatch:
 
 jobs:
   update-stats:
@@ -11,7 +11,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout org profile repo
+        uses: actions/checkout@v4
+        with:
+          repository: pollinations/.github
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -22,12 +26,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          node .github/scripts/profile-update-stats.js
+          node scripts/profile-update-stats.js
 
       - name: Commit changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add .github/profile/README.md
+          git add profile/README.md
           git diff --staged --quiet || git commit -m "chore: update org profile stats"
           git push

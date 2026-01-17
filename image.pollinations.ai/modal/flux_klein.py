@@ -18,6 +18,7 @@ from io import BytesIO
 from pathlib import Path
 
 import modal
+from fastapi import Header, HTTPException
 
 # Modal app configuration - uses myceli-ai workspace
 app = modal.App("flux-klein")
@@ -194,45 +195,38 @@ class FluxKlein:
         image.save(byte_stream, format="PNG")
         return byte_stream.getvalue()
     
-    def _verify_enter_token(self, request) -> bool:
-        """Verify the Enter token from request headers."""
+    def _verify_token(self, token: str | None) -> None:
+        """Verify the Enter token, raise HTTPException if invalid."""
         import os
         expected_token = os.environ.get("ENTER_TOKEN")
         if not expected_token:
             print("⚠️ ENTER_TOKEN not configured, allowing request")
-            return True
+            return
         
-        provided_token = request.headers.get(ENTER_TOKEN_HEADER)
-        if not provided_token:
+        if not token:
             print("❌ No Enter token provided")
-            return False
+            raise HTTPException(status_code=401, detail="Missing x-enter-token header")
         
-        if provided_token != expected_token:
+        if token != expected_token:
             print("❌ Invalid Enter token")
-            return False
-        
-        return True
+            raise HTTPException(status_code=401, detail="Invalid x-enter-token")
     
     @modal.fastapi_endpoint(method="GET")
     def generate_web(
         self,
-        request,  # FastAPI Request object
         prompt: str,
         width: int = 1024,
         height: int = 1024,
         guidance_scale: float = 4.0,
         num_inference_steps: int = 4,
         seed: int | None = None,
+        x_enter_token: str | None = Header(default=None),
     ):
         """Web endpoint for text-to-image generation (GET). Requires x-enter-token header."""
-        from fastapi.responses import Response, JSONResponse
+        from fastapi.responses import Response
         
         # Verify Enter token
-        if not self._verify_enter_token(request):
-            return JSONResponse(
-                status_code=401,
-                content={"error": "Unauthorized", "message": "Invalid or missing x-enter-token header"}
-            )
+        self._verify_token(x_enter_token)
         
         image_bytes = self.generate.local(
             prompt=prompt,
@@ -246,54 +240,30 @@ class FluxKlein:
         return Response(content=image_bytes, media_type="image/png")
     
     @modal.fastapi_endpoint(method="POST")
-    async def edit_web(
+    def edit_web(
         self,
-        request,  # FastAPI Request object
+        prompt: str,
+        images: list[str] | None = None,  # base64-encoded images (up to 10)
+        width: int = 1024,
+        height: int = 1024,
+        guidance_scale: float = 4.0,
+        num_inference_steps: int = 4,
+        seed: int | None = None,
+        x_enter_token: str | None = Header(default=None),
     ):
         """Web endpoint for image editing (POST). Requires x-enter-token header.
         
-        Accepts JSON body with:
-        - prompt: str (required)
-        - images: list[str] - base64-encoded images (up to 10)
-        - width, height, guidance_scale, num_inference_steps, seed (optional)
-        
+        Pass images as list of base64-encoded strings (up to 10).
         Reference images in the prompt by index ("image 1", "image 2") or description.
         """
-        from fastapi.responses import Response, JSONResponse
+        from fastapi.responses import Response
         import base64
         
         # Verify Enter token
-        if not self._verify_enter_token(request):
-            return JSONResponse(
-                status_code=401,
-                content={"error": "Unauthorized", "message": "Invalid or missing x-enter-token header"}
-            )
-        
-        # Parse JSON body
-        try:
-            body = await request.json()
-        except Exception as e:
-            return JSONResponse(
-                status_code=400,
-                content={"error": "Bad Request", "message": f"Invalid JSON body: {e}"}
-            )
-        
-        prompt = body.get("prompt")
-        if not prompt:
-            return JSONResponse(
-                status_code=400,
-                content={"error": "Bad Request", "message": "prompt is required"}
-            )
-        
-        width = body.get("width", 1024)
-        height = body.get("height", 1024)
-        guidance_scale = body.get("guidance_scale", 4.0)
-        num_inference_steps = body.get("num_inference_steps", 4)
-        seed = body.get("seed")
+        self._verify_token(x_enter_token)
         
         # Decode base64 images if provided
         ref_image_bytes_list = None
-        images = body.get("images", [])
         if images and len(images) > 0:
             ref_image_bytes_list = []
             for i, img_b64 in enumerate(images[:10]):  # Max 10 images

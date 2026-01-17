@@ -1128,8 +1128,8 @@ const generateImage = async (
         }
     }
 
-    if (safeParams.model === "flux-klein") {
-        // Flux Klein - Fast 4B model on Modal (text-to-image + image editing)
+    if (safeParams.model === "klein") {
+        // Klein - Fast 4B model on Modal (text-to-image + image editing)
         try {
             return await callFluxKleinAPI(
                 prompt,

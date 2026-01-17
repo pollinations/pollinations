@@ -479,11 +479,9 @@ function proxyHeaders(c: Context): Record<string, string> {
     const clientHost = c.req.header("host") || "";
     const headers = { ...c.req.header() };
 
-    // Extract user's API key before removing Authorization header
+    // Get user's raw API key from auth context (already extracted by auth middleware)
     // This allows community models (like NomNom) to receive the user's key for billing passthrough
-    const authHeader = c.req.header("authorization");
-    const userApiKey =
-        authHeader?.match(/^Bearer (.+)$/)?.[1] || c.req.query("key") || "";
+    const userApiKey = c.var.auth?.apiKey?.rawKey || "";
 
     // Remove Authorization header - we use x-enter-token for backend auth instead
     delete headers.authorization;

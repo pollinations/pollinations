@@ -11,7 +11,7 @@ import {
     createImageTokenUsage,
     createVideoSecondsUsage,
     createVideoTokenUsage,
-} from "../../../shared/registry/usage-headers.js";
+} from "../../../shared/registry/usage-headers.ts";
 
 const log = debug("pollinations:tracking-headers");
 

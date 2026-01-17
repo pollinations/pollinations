@@ -40,12 +40,16 @@ type ApiKey = {
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
+    /** The raw API key value (for passthrough to community models) */
+    rawKey?: string;
 };
 
 type AuthResult = {
     user?: User;
     session?: Session;
     apiKey?: ApiKey;
+    /** The raw API key value extracted from request (for passthrough) */
+    rawApiKey?: string;
 };
 
 /** Extracts Bearer token from Authorization header (RFC 6750) or query parameter */
@@ -78,15 +82,15 @@ export const auth = (options: AuthOptions) =>
 
         const authenticateApiKey = async (): Promise<AuthResult | null> => {
             if (!options.allowApiKey) return null;
-            const apiKey = extractApiKey(c);
+            const rawApiKey = extractApiKey(c);
             log.debug("Extracted API key: {hasKey}", {
-                hasKey: !!apiKey,
-                keyPrefix: apiKey?.substring(0, 8),
+                hasKey: !!rawApiKey,
+                keyPrefix: rawApiKey?.substring(0, 8),
             });
-            if (!apiKey) return null;
+            if (!rawApiKey) return null;
             const keyResult = await client.api.verifyApiKey({
                 body: {
-                    key: apiKey,
+                    key: rawApiKey,
                 },
             });
             log.debug("API key verification result: {valid}", {
@@ -121,7 +125,9 @@ export const auth = (options: AuthOptions) =>
                     permissions,
                     metadata: keyResult.key.metadata || undefined,
                     pollenBalance: fullApiKey?.pollenBalance ?? null,
+                    rawKey: rawApiKey,
                 },
+                rawApiKey,
             };
         };
 

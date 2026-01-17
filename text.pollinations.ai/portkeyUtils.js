@@ -1,4 +1,5 @@
 import debug from "debug";
+
 const log = debug("pollinations:portkey-utils");
 const errorLog = debug("pollinations:portkey-utils:error");
 
@@ -84,9 +85,10 @@ async function resolveTargetAuth(target) {
 export /**
  * Generate Portkey headers from a configuration object
  * @param {Object} config - Model configuration object
+ * @param {Object} requestOptions - Request options (optional, for user API key passthrough)
  * @returns {Object} - Headers object with x-portkey prefixes
  */
-async function generatePortkeyHeaders(config) {
+async function generatePortkeyHeaders(config, requestOptions = {}) {
     if (!config) {
         errorLog("No configuration provided for header generation");
         throw new Error("No configuration provided for header generation");
@@ -128,7 +130,12 @@ async function generatePortkeyHeaders(config) {
 
     // Get the auth key
     let apiKey;
-    if (config.authKey) {
+
+    // Check if this model uses user's API key for billing passthrough (e.g., NomNom)
+    if (config.useUserApiKey && requestOptions?.userApiKey) {
+        apiKey = requestOptions.userApiKey;
+        log("Using user's API key for billing passthrough");
+    } else if (config.authKey) {
         try {
             if (typeof config.authKey === "function") {
                 const token = config.authKey();
@@ -145,7 +152,12 @@ async function generatePortkeyHeaders(config) {
     // Add all config properties as individual x-portkey-* headers
     for (const [key, value] of Object.entries(config)) {
         // Skip internal properties
-        if (key === "removeSeed" || key === "authKey") continue;
+        if (
+            key === "removeSeed" ||
+            key === "authKey" ||
+            key === "useUserApiKey"
+        )
+            continue;
 
         // Add as individual header with x-portkey- prefix
         headers[`x-portkey-${key}`] = value;

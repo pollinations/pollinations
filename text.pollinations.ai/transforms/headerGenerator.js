@@ -14,7 +14,10 @@ export async function generateHeaders(messages, options) {
         return { messages, options };
     }
 
-    const additionalHeaders = await generatePortkeyHeaders(options.modelConfig);
+    const additionalHeaders = await generatePortkeyHeaders(
+        options.modelConfig,
+        options,
+    );
 
     log("Generated headers:", JSON.stringify(additionalHeaders, null, 2));
     log("Input options has modelDef:", !!options.modelDef);

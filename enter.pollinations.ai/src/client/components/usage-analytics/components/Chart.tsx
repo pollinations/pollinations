@@ -116,6 +116,13 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
         return Math.round(v).toString();
     };
 
+    const formatTooltipVal = (v: number) => {
+        if (Number.isInteger(v)) {
+            return v.toLocaleString();
+        }
+        return v.toFixed(2);
+    };
+
     if (data.length === 0) {
         return (
             <div className="flex items-center justify-center h-[180px] rounded-xl bg-gray-50 border border-dashed border-gray-200">
@@ -391,13 +398,12 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                     textAnchor="start"
                                     className="text-sm font-bold fill-white"
                                 >
-                                    Total (
                                     {metric === "requests"
                                         ? "requests"
                                         : metric === "pollen"
                                           ? "pollen"
-                                          : "tokens"}
-                                    ): {formatVal(bar.value)}
+                                          : "tokens"}{" "}
+                                    {formatTooltipVal(bar.value)}
                                 </text>
                                 {hasBreakdown && (
                                     <line
@@ -421,27 +427,46 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                             },
                                             i: number,
                                         ) => (
-                                            <text
-                                                key={m.model}
-                                                x={tooltipX + 12}
-                                                y={
-                                                    tooltipY +
-                                                    headerHeight +
-                                                    separatorHeight +
-                                                    4 +
-                                                    i * lineHeight
-                                                }
-                                                className="text-xs fill-gray-300"
-                                            >
-                                                {truncateLabel(m.label)}:{" "}
-                                                {formatVal(
-                                                    metric === "requests"
-                                                        ? m.requests
-                                                        : metric === "pollen"
-                                                          ? m.pollen
-                                                          : m.tokens,
-                                                )}
-                                            </text>
+                                            <g key={m.model}>
+                                                <text
+                                                    x={tooltipX + 12}
+                                                    y={
+                                                        tooltipY +
+                                                        headerHeight +
+                                                        separatorHeight +
+                                                        4 +
+                                                        i * lineHeight
+                                                    }
+                                                    className="text-xs fill-gray-300"
+                                                >
+                                                    {truncateLabel(m.label, 22)}
+                                                </text>
+                                                <text
+                                                    x={
+                                                        tooltipX +
+                                                        tooltipWidth -
+                                                        12
+                                                    }
+                                                    y={
+                                                        tooltipY +
+                                                        headerHeight +
+                                                        separatorHeight +
+                                                        4 +
+                                                        i * lineHeight
+                                                    }
+                                                    textAnchor="end"
+                                                    className="text-xs fill-white font-medium"
+                                                >
+                                                    {formatTooltipVal(
+                                                        metric === "requests"
+                                                            ? m.requests
+                                                            : metric ===
+                                                                "pollen"
+                                                              ? m.pollen
+                                                              : m.tokens,
+                                                    )}
+                                                </text>
+                                            </g>
                                         ),
                                     )}
                             </g>

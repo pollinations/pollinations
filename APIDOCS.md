@@ -2460,3 +2460,44 @@ API keys can be created from your dashboard at enter.pollinations.ai.
 - **Type:**
 
 **Example:**
+
+Union type for message content parts. Can be one of:
+
+- **Text content**: `{ type: "text", text: string, cache_control?: CacheControl }`
+- **Image content**: `{ type: "image_url", image_url: { url: string, detail?: "auto" | "low" | "high", mime_type?: string } }`
+- **Video content**: `{ type: "video_url", video_url: { url: string, mime_type?: string } }`
+- **Audio content**: `{ type: "input_audio", input_audio: { data: string, format: "wav" | "mp3" | "flac" | "opus" | "pcm16" }, cache_control?: CacheControl }`
+- **File content**: `{ type: "file", file: { file_data?: string, file_id?: string, file_name?: string, file_url?: string, mime_type?: string }, cache_control?: CacheControl }`
+- **Custom types**: Any object with a `type` field for provider-specific extensions
+
+**Example (text):**
+
+```json
+{
+  "type": "text",
+  "text": "Hello, world!"
+}
+```
+
+**Example (image):**
+
+```json
+{
+  "type": "image_url",
+  "image_url": {
+    "url": "https://example.com/image.jpg",
+    "detail": "high"
+  }
+}
+```
+
+**Example (video):**
+
+```json
+{
+  "type": "video_url",
+  "video_url": {
+    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  }
+}
+```

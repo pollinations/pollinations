@@ -13,6 +13,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
     const [animationProgress, setAnimationProgress] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(600);
+    const hoverTimeout = useRef<number | null>(null);
 
     // Animate on mount with cleanup to prevent memory leaks
     useEffect(() => {
@@ -87,6 +88,9 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                 packHeight,
                 tierY: pad.top + ch - tierHeight,
                 packY: pad.top + ch - tierHeight - packHeight,
+                filteredBreakdown: (d.modelBreakdown || []).filter(
+                    (m) => m.requests > 0 || m.pollen > 0,
+                ),
                 ...d,
             };
         });
@@ -139,7 +143,11 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
     }
 
     return (
-        <div ref={containerRef} className="w-full" style={{ height }}>
+        <div
+            ref={containerRef}
+            className="w-full"
+            style={{ height, position: "relative", zIndex: hovered !== null ? 50 : "auto" }}
+        >
             <svg
                 width="100%"
                 height="100%"
@@ -149,7 +157,6 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                 role="img"
                 aria-label="Usage chart"
             >
-                <title>Usage statistics chart</title>
                 <defs>
                     <linearGradient
                         id="usageAreaGradient"
@@ -310,17 +317,35 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                 }}
                             />
                         )}
-                        {/* Invisible overlay for consistent hover area */}
-                        {/* biome-ignore lint/a11y/noStaticElementInteractions: SVG rect for chart interaction */}
-                        <rect
-                            x={bar.x}
-                            y={bar.y}
-                            width={bar.width}
-                            height={Math.max(0, bar.height * animationProgress)}
-                            fill="transparent"
-                            style={{ cursor: "pointer" }}
-                            onMouseEnter={() => setHovered(idx)}
-                        />
+                        {/* Dot below bar as hover target (hidden on mobile) */}
+                        {width >= 640 && (
+                            <g>
+                                {/* Invisible larger hit area */}
+                                {/* biome-ignore lint/a11y/noStaticElementInteractions: SVG circle for chart interaction */}
+                                <circle
+                                    cx={bar.x + bar.width / 2}
+                                    cy={pad.top + ch + 8}
+                                    r={12}
+                                    fill="transparent"
+                                    style={{ cursor: "pointer" }}
+                                    onMouseEnter={() => {
+                                        if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+                                        hoverTimeout.current = window.setTimeout(() => setHovered(idx), 30);
+                                    }}
+                                />
+                                {/* Visible dot */}
+                                <circle
+                                    cx={bar.x + bar.width / 2}
+                                    cy={pad.top + ch + 8}
+                                    r={hovered === idx ? 5 : 3}
+                                    style={{
+                                        fill: hovered === idx ? "#a78bfa" : "#d1d5db",
+                                        pointerEvents: "none",
+                                        transition: "all 0.15s ease-out",
+                                    }}
+                                />
+                            </g>
+                        )}
                     </g>
                 ))}
 
@@ -329,16 +354,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                     bars[hovered] &&
                     (() => {
                         const bar = bars[hovered];
-                        const allBreakdown = bar.modelBreakdown || [];
-                        const breakdown = allBreakdown.filter((m) => {
-                            const val =
-                                metric === "requests"
-                                    ? m.requests
-                                    : metric === "pollen"
-                                      ? m.pollen
-                                      : m.tokens;
-                            return val > 0;
-                        });
+                        const breakdown = bar.filteredBreakdown;
                         const hasBreakdown =
                             showModelBreakdown && breakdown.length > 0;
                         const lineHeight = 16;
@@ -358,10 +374,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                 width - pad.right - tooltipWidth,
                             ),
                         );
-                        const tooltipY = Math.max(
-                            pad.top,
-                            bar.y - tooltipHeight - 10,
-                        );
+                        const tooltipY = pad.top + ch + 20;
 
                         const dateOnly = bar.fullDate.replace(
                             /^[A-Za-z]+,\s*/,

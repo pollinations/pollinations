@@ -43,7 +43,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             <td className="py-2 px-2 text-sm text-gray-700 whitespace-nowrap relative group">
                 <div className="flex items-center gap-2">
                     <div className="flex flex-col">
-                        <span className="font-medium">
+                        <span className={showNew ? "font-bold" : "font-medium"}>
                             {modelDisplayName || model.name}
                         </span>
                         <button

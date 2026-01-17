@@ -9,5 +9,5 @@ export const DEFAULT_API_KEY = "plln_pk_EiFtGHYIeDMxNeZBqKaRFBEJQRardmel";
  * @returns {boolean} True if valid format, false otherwise
  */
 export const isValidApiKey = (token) => {
-  return typeof token === 'string' && /^(sk_|plln_pk_|pk_)/.test(token);
+    return typeof token === "string" && /^(sk_|plln_pk_|pk_)/.test(token);
 };

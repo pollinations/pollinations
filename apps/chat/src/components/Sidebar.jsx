@@ -27,50 +27,16 @@ const Sidebar = memo(({
   });
   const sidebarRef = useRef(null);
 
-  // Close sidebar when clicking outside or focus leaves
+  // Mobile blur effect when sidebar is expanded
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isExpanded && sidebarRef.current && !sidebarRef.current.contains(event.target)) {
-        setIsExpanded(false);
-      }
-    };
-
-    const handleFocusOut = (event) => {
-      // Small delay to allow focus to move to new element
-      setTimeout(() => {
-        if (isExpanded && sidebarRef.current && !sidebarRef.current.contains(document.activeElement)) {
-          setIsExpanded(false);
-        }
-      }, 10);
-    };
-
-    if (isExpanded) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('focusout', handleFocusOut);
+    if (typeof window === 'undefined') return;
+    if (isExpanded && window.innerWidth <= 768) {
+      document.body.classList.add('sidebar-expanded-mobile');
+    } else {
+      document.body.classList.remove('sidebar-expanded-mobile');
     }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('focusout', handleFocusOut);
-    };
-  }, [isExpanded]);
-
-  useEffect(() => {
-    const toggleBodyBlur = () => {
-      if (typeof window === 'undefined') return;
-      if (isExpanded && window.innerWidth <= 768) {
-        document.body.classList.add('sidebar-expanded-mobile');
-      } else {
-        document.body.classList.remove('sidebar-expanded-mobile');
-      }
-    };
-
-    toggleBodyBlur();
-    window.addEventListener('resize', toggleBodyBlur);
-
     return () => {
       document.body.classList.remove('sidebar-expanded-mobile');
-      window.removeEventListener('resize', toggleBodyBlur);
     };
   }, [isExpanded]);
 
@@ -89,43 +55,31 @@ const Sidebar = memo(({
     if (onOpenSettings) {
       onOpenSettings();
     }
-    setIsExpanded(false);
   }, [onOpenSettings]);
-
-  const handleHoverOpen = useCallback(() => {
-    // Only expand on hover if the device supports hover
-    if (window.matchMedia('(hover: hover)').matches && !isExpanded) {
-      setIsExpanded(true);
-    }
-  }, [isExpanded]);
 
   return (
     <>
-      {isExpanded && <div className="sidebar-overlay" onClick={() => setIsExpanded(false)} />}
       <aside
         ref={sidebarRef}
         className={`sidebar ${isExpanded ? 'expanded' : ''}`}
-        onMouseEnter={handleHoverOpen}
       >
         <div className="sidebar-header">
           {isExpanded ? (
             <>
               <div className="sidebar-logo-full">
-                <img src="/pollinations-chat-ui/logo-text.svg" alt="Pollinations" />
+                <img src="/logo-text.svg" alt="pollinations.ai" />
               </div>
               
-              <button className="sidebar-toggle-btn expanded" onClick={() => setIsExpanded(!isExpanded)} title="Collapse sidebar">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/>
-                  <path d="M9 3v18"/>
+              <button className="sidebar-toggle-btn" onClick={() => setIsExpanded(false)} title="Close sidebar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6"/>
                 </svg>
               </button>
             </>
           ) : (
-            <button className="sidebar-icon-btn sidebar-toggle-icon" onClick={() => setIsExpanded(!isExpanded)} title="Expand sidebar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <path d="M9 3v18"/>
+            <button className="sidebar-icon-btn sidebar-toggle-icon" onClick={() => setIsExpanded(true)} title="Open sidebar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
               </svg>
             </button>
           )}

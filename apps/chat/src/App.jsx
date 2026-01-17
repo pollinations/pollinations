@@ -182,18 +182,18 @@ function App() {
   }, []);
 
   const handleThemeToggle = useCallback(() => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    // Toggle classes immediately for instant swap
+    const isDark = document.body.classList.contains('dark');
+    const newTheme = isDark ? 'light' : 'dark';
+    
+    // Update DOM instantly
+    document.body.classList.toggle('dark');
+    document.body.classList.toggle('light');
+    
+    // Update state and storage
     setTheme(newTheme);
     saveTheme(newTheme);
-    
-    if (newTheme === 'dark') {
-      document.body.classList.add('dark');
-      document.body.classList.remove('light');
-    } else {
-      document.body.classList.remove('dark');
-      document.body.classList.add('light');
-    }
-  }, [theme]);
+  }, []);
 
   const handleExportChat = () => {
     const activeChat = getActiveChat();

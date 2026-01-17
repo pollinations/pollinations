@@ -227,7 +227,7 @@ export const IMAGE_SERVICES = {
             // Flux Klein on Modal L40S GPU
             // L40S: $0.000542/sec × 15s avg (including cold starts) = $0.008/image
             {
-                date: COST_START_DATE,
+                date: new Date("2026-01-17").getTime(), // Launch date
                 completionImageTokens: 0.008, // ~$0.008 per image (L40S @ 15s avg)
             },
         ],

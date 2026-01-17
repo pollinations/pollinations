@@ -26,11 +26,9 @@ jobs:
 
       - name: Get changed files
         id: changed-files
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          # Get only files actually changed in PR (excludes merge commits)
-          FILES=$(gh pr diff ${{ github.event.pull_request.number }} --name-only | grep -E '\.(js|ts|jsx|tsx|json|jsonc)$' || true)
+          # Get only added/modified files (exclude deleted files)
+          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(js|ts|jsx|tsx|json|jsonc)$' || true)
           echo "Changed files:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT

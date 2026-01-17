@@ -1,5 +1,6 @@
 {
     "recommendations": [
+        "biomejs.biome",
         "foam.foam-vscode",
         "yzhang.markdown-all-in-one",
         "mushan.vscode-paste-image",

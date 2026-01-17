@@ -193,14 +193,24 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
                         {/* Stats */}
                         <div className="space-y-1">
                             <div>
-                                <span className="text-[10px] uppercase tracking-wide text-pink-400 font-bold">Requests</span>
-                                <span className="text-lg font-bold text-green-950 tabular-nums ml-2">{stats.totalRequests.toLocaleString()}</span>
+                                <span className="text-[10px] uppercase tracking-wide text-pink-400 font-bold">
+                                    Requests
+                                </span>
+                                <span className="text-lg font-bold text-green-950 tabular-nums ml-2">
+                                    {stats.totalRequests.toLocaleString()}
+                                </span>
                             </div>
                             <div>
-                                <span className="text-[10px] uppercase tracking-wide text-pink-400 font-bold">Pollen</span>
-                                <span className="text-lg font-bold text-green-950 tabular-nums ml-2">{stats.totalPollen.toFixed(2)}</span>
+                                <span className="text-[10px] uppercase tracking-wide text-pink-400 font-bold">
+                                    Pollen
+                                </span>
+                                <span className="text-lg font-bold text-green-950 tabular-nums ml-2">
+                                    {stats.totalPollen.toFixed(2)}
+                                </span>
                                 <span className="text-xs text-gray-400 ml-1">
-                                    ({TIER_EMOJIS[tier || "spore"]} {stats.tierPollen.toFixed(2)} + 💎 {stats.packPollen.toFixed(2)})
+                                    ({TIER_EMOJIS[tier || "spore"]}{" "}
+                                    {stats.tierPollen.toFixed(2)} + 💎{" "}
+                                    {stats.packPollen.toFixed(2)})
                                 </span>
                             </div>
                         </div>

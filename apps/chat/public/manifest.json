@@ -1,0 +1,22 @@
+{
+    "name": "chat.pollinations.ai",
+    "short_name": "chat.pollinations.ai",
+    "description": "AI chat interface powered by pollinations.ai - Multi-model conversations with open source AI",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#110518",
+    "theme_color": "#e7faec",
+    "icons": [{
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

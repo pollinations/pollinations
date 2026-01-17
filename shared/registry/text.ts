@@ -465,8 +465,8 @@ export const TEXT_SERVICES = {
         contextWindow: 200000,
         isSpecialized: false,
     },
-    "itachi-research": {
-        aliases: ["gemini-scrape", "itachi"],
+    "nomnom": {
+        aliases: ["gemini-scrape", "web-research"],
         modelId: "gemini-scrape",
         provider: "community",
         cost: [
@@ -477,7 +477,7 @@ export const TEXT_SERVICES = {
             },
         ],
         description:
-            "Itachi Research - Gemini with Web Search, Scrape & Crawl Tools",
+            "NomNom - Web Research Model with Search, Scrape & Crawl Tools",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,

@@ -133,9 +133,9 @@ export function createFireworksModelConfig(additionalConfig = {}) {
 }
 
 /**
- * Creates an Itachi Research model configuration (community model with web search/scrape)
+ * Creates a NomNom model configuration (community model with web search/scrape/crawl)
  */
-export function createItachiResearchConfig(additionalConfig = {}) {
+export function createNomNomConfig(additionalConfig = {}) {
     return {
         provider: "openai",
         "custom-host": "https://scrape.pollinations.ai/v1",

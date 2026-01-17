@@ -169,7 +169,7 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
-        name: "itachi-research",
+        name: "nomnom",
         config: portkeyConfig["gemini-scrape"],
     },
 ];

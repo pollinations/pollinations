@@ -9,7 +9,7 @@ import {
     createPerplexityModelConfig,
     createOVHcloudModelConfig,
     createFireworksModelConfig,
-    createItachiResearchConfig,
+    createNomNomConfig,
 } from "./providerConfigs.js";
 
 dotenv.config();
@@ -262,10 +262,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // Community Models - Itachi Research (web search/scrape/crawl)
+    // Community Models - NomNom (web search/scrape/crawl)
     // ============================================================================
     "gemini-scrape": () =>
-        createItachiResearchConfig({
+        createNomNomConfig({
             model: "gemini-scrape",
         }),
 };

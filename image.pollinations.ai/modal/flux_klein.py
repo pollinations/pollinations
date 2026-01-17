@@ -22,6 +22,10 @@ import modal
 # Modal app configuration - uses myceli-ai workspace
 app = modal.App("flux-klein")
 
+# Expected Enter token for authentication (set via Modal secret)
+# Create secret: modal secret create enter-token ENTER_TOKEN=your_token_here
+ENTER_TOKEN_HEADER = "x-enter-token"
+
 # CUDA base image with Python
 cuda_version = "12.4.0"
 flavor = "devel"
@@ -100,6 +104,7 @@ GPU_OPTIONS = {
         "/root/.triton": modal.Volume.from_name("triton-cache", create_if_missing=True),
         "/root/.inductor-cache": modal.Volume.from_name("inductor-cache", create_if_missing=True),
     },
+    secrets=[modal.Secret.from_name("enter-token", required_keys=["ENTER_TOKEN"])],
 )
 class FluxKlein:
     """Flux Klein image generation model."""
@@ -142,9 +147,14 @@ class FluxKlein:
         guidance_scale: float = 4.0,
         num_inference_steps: int = 4,  # Klein is fast - 4 steps is often enough
         seed: int | None = None,
-        image_bytes: bytes | None = None,  # Optional reference image for editing
+        image_bytes_list: list[bytes] | None = None,  # Optional reference images for editing (up to 10)
     ) -> bytes:
-        """Generate an image from a text prompt, optionally with a reference image for editing."""
+        """Generate an image from a text prompt, optionally with reference images for editing.
+        
+        FLUX.2 Klein supports up to 10 reference images. Reference them in the prompt by:
+        - Index: "image 1", "image 2", etc.
+        - Description: "the cat", "the landscape", etc.
+        """
         import torch
         from PIL import Image
         
@@ -154,15 +164,21 @@ class FluxKlein:
         if seed is not None:
             generator = torch.Generator(device="cuda").manual_seed(seed)
         
-        # Load reference image if provided
-        reference_image = None
-        if image_bytes is not None:
-            reference_image = Image.open(BytesIO(image_bytes)).convert("RGB")
-            print(f"📷 Using reference image: {reference_image.size}")
+        # Load reference images if provided (supports multiple images)
+        reference_images = None
+        if image_bytes_list and len(image_bytes_list) > 0:
+            reference_images = []
+            for i, img_bytes in enumerate(image_bytes_list[:10]):  # Max 10 images
+                img = Image.open(BytesIO(img_bytes)).convert("RGB")
+                reference_images.append(img)
+                print(f"📷 Reference image {i+1}: {img.size}")
+            # If only one image, pass it directly (not as list) for backward compatibility
+            if len(reference_images) == 1:
+                reference_images = reference_images[0]
         
         t0 = time.time()
         image = self.pipe(
-            image=reference_image,  # Reference image for editing (None for T2I)
+            image=reference_images,  # Reference image(s) for editing (None for T2I)
             prompt=prompt,  # Must be keyword arg
             height=height,
             width=width,
@@ -178,9 +194,29 @@ class FluxKlein:
         image.save(byte_stream, format="PNG")
         return byte_stream.getvalue()
     
+    def _verify_enter_token(self, request) -> bool:
+        """Verify the Enter token from request headers."""
+        import os
+        expected_token = os.environ.get("ENTER_TOKEN")
+        if not expected_token:
+            print("⚠️ ENTER_TOKEN not configured, allowing request")
+            return True
+        
+        provided_token = request.headers.get(ENTER_TOKEN_HEADER)
+        if not provided_token:
+            print("❌ No Enter token provided")
+            return False
+        
+        if provided_token != expected_token:
+            print("❌ Invalid Enter token")
+            return False
+        
+        return True
+    
     @modal.fastapi_endpoint(method="GET")
     def generate_web(
         self,
+        request,  # FastAPI Request object
         prompt: str,
         width: int = 1024,
         height: int = 1024,
@@ -188,8 +224,15 @@ class FluxKlein:
         num_inference_steps: int = 4,
         seed: int | None = None,
     ):
-        """Web endpoint for text-to-image generation (GET)."""
-        from fastapi.responses import Response
+        """Web endpoint for text-to-image generation (GET). Requires x-enter-token header."""
+        from fastapi.responses import Response, JSONResponse
+        
+        # Verify Enter token
+        if not self._verify_enter_token(request):
+            return JSONResponse(
+                status_code=401,
+                content={"error": "Unauthorized", "message": "Invalid or missing x-enter-token header"}
+            )
         
         image_bytes = self.generate.local(
             prompt=prompt,
@@ -203,27 +246,66 @@ class FluxKlein:
         return Response(content=image_bytes, media_type="image/png")
     
     @modal.fastapi_endpoint(method="POST")
-    def edit_web(
+    async def edit_web(
         self,
-        prompt: str,
-        image_url: str | None = None,
-        width: int = 1024,
-        height: int = 1024,
-        guidance_scale: float = 4.0,
-        num_inference_steps: int = 4,
-        seed: int | None = None,
+        request,  # FastAPI Request object
     ):
-        """Web endpoint for image editing (POST). Pass image_url to edit an existing image."""
-        from fastapi.responses import Response
-        import requests as http_requests
+        """Web endpoint for image editing (POST). Requires x-enter-token header.
         
-        # Fetch reference image if URL provided
-        ref_image_bytes = None
-        if image_url:
-            print(f"📥 Fetching reference image from: {image_url[:50]}...")
-            resp = http_requests.get(image_url, timeout=30)
-            resp.raise_for_status()
-            ref_image_bytes = resp.content
+        Accepts JSON body with:
+        - prompt: str (required)
+        - images: list[str] - base64-encoded images (up to 10)
+        - width, height, guidance_scale, num_inference_steps, seed (optional)
+        
+        Reference images in the prompt by index ("image 1", "image 2") or description.
+        """
+        from fastapi.responses import Response, JSONResponse
+        import base64
+        
+        # Verify Enter token
+        if not self._verify_enter_token(request):
+            return JSONResponse(
+                status_code=401,
+                content={"error": "Unauthorized", "message": "Invalid or missing x-enter-token header"}
+            )
+        
+        # Parse JSON body
+        try:
+            body = await request.json()
+        except Exception as e:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Bad Request", "message": f"Invalid JSON body: {e}"}
+            )
+        
+        prompt = body.get("prompt")
+        if not prompt:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Bad Request", "message": "prompt is required"}
+            )
+        
+        width = body.get("width", 1024)
+        height = body.get("height", 1024)
+        guidance_scale = body.get("guidance_scale", 4.0)
+        num_inference_steps = body.get("num_inference_steps", 4)
+        seed = body.get("seed")
+        
+        # Decode base64 images if provided
+        ref_image_bytes_list = None
+        images = body.get("images", [])
+        if images and len(images) > 0:
+            ref_image_bytes_list = []
+            for i, img_b64 in enumerate(images[:10]):  # Max 10 images
+                try:
+                    # Handle data URL format (data:image/png;base64,...) or raw base64
+                    if img_b64.startswith("data:"):
+                        img_b64 = img_b64.split(",", 1)[1]
+                    img_bytes = base64.b64decode(img_b64)
+                    ref_image_bytes_list.append(img_bytes)
+                    print(f"📷 Decoded reference image {i+1}: {len(img_bytes)} bytes")
+                except Exception as e:
+                    print(f"⚠️ Failed to decode image {i+1}: {e}")
         
         image_bytes = self.generate.local(
             prompt=prompt,
@@ -232,7 +314,7 @@ class FluxKlein:
             guidance_scale=guidance_scale,
             num_inference_steps=num_inference_steps,
             seed=seed,
-            image_bytes=ref_image_bytes,
+            image_bytes_list=ref_image_bytes_list,
         )
         
         return Response(content=image_bytes, media_type="image/png")

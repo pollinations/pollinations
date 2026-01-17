@@ -1,9 +1,23 @@
+import type { Logger } from "@logtape/logtape";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
+
+// Cache TTLs in seconds
+const CACHE_TTL_HISTORICAL = 24 * 60 * 60; // 24 hours for historical data
+const CACHE_TTL_TODAY = 5 * 60; // 5 minutes for today's data
+
+type DailyUsageRecord = {
+    date: string;
+    model: string | null;
+    meter_source: string | null;
+    requests: number;
+    cost_usd: number;
+    api_key_names: string[];
+};
 
 // Query params schema
 const usageQuerySchema = z.object({
@@ -168,7 +182,71 @@ export const usageRoutes = new Hono<Env>()
         },
     );
 
-// Daily aggregated usage endpoint
+// Helper: Get today's date string in UTC (YYYY-MM-DD)
+function getTodayUTC(): string {
+    return new Date().toISOString().split("T")[0];
+}
+
+// Helper: Fetch usage data from Tinybird for a date range
+async function fetchTinybirdUsage(
+    tinybirdOrigin: string,
+    tinybirdToken: string,
+    userId: string,
+    since: string,
+    until?: string,
+): Promise<DailyUsageRecord[]> {
+    const url = new URL("/v0/pipes/user_usage_daily.json", tinybirdOrigin);
+    url.searchParams.set("user_id", userId);
+    url.searchParams.set("since", since);
+    if (until) {
+        url.searchParams.set("until", until);
+    }
+
+    const response = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${tinybirdToken}` },
+    });
+
+    if (!response.ok) {
+        throw new Error(`Tinybird error: ${response.status}`);
+    }
+
+    const data = (await response.json()) as { data: DailyUsageRecord[] };
+    return data.data;
+}
+
+// Helper: Get cached data or fetch fresh
+async function getCachedOrFetch(
+    kv: KVNamespace,
+    cacheKey: string,
+    ttl: number,
+    fetcher: () => Promise<DailyUsageRecord[]>,
+    log?: Logger,
+): Promise<{ data: DailyUsageRecord[]; cached: boolean }> {
+    try {
+        log?.trace("KV get: {key}", { key: cacheKey });
+        const cached = await kv.get(cacheKey, "json");
+        if (cached) {
+            log?.trace("KV hit: {key}", { key: cacheKey });
+            return { data: cached as DailyUsageRecord[], cached: true };
+        }
+        log?.trace("KV miss: {key}", { key: cacheKey });
+    } catch (err) {
+        log?.trace("KV get error: {key} {err}", { key: cacheKey, err });
+    }
+
+    const data = await fetcher();
+
+    try {
+        log?.trace("KV put: {key} ttl={ttl}", { key: cacheKey, ttl });
+        await kv.put(cacheKey, JSON.stringify(data), { expirationTtl: ttl });
+    } catch (err) {
+        log?.trace("KV put error: {key} {err}", { key: cacheKey, err });
+    }
+
+    return { data, cached: false };
+}
+
+// Daily aggregated usage endpoint with two-tier caching
 export const usageDailyRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
     .get(
@@ -189,66 +267,78 @@ export const usageDailyRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const userId = user.id;
 
-            // Default to 90 days of data
+            // Calculate date boundaries (UTC)
             const now = new Date();
-            const defaultSince = new Date(
+            const todayStr = getTodayUTC();
+            const ninetyDaysAgo = new Date(
                 now.getTime() - 90 * 24 * 60 * 60 * 1000,
             );
-            const sinceDate = `${defaultSince.toISOString().split("T")[0]} 00:00:00`; // YYYY-MM-DD HH:MM:SS format
-
-            log.debug("Fetching daily usage: userId={userId} since={since}", {
-                userId,
-                since: sinceDate,
-            });
+            const historicalSince = `${ninetyDaysAgo.toISOString().split("T")[0]} 00:00:00`;
+            const historicalUntil = `${todayStr} 00:00:00`; // Up to but not including today
+            const todaySince = `${todayStr} 00:00:00`;
 
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-            const tinybirdUrl = new URL(
-                "/v0/pipes/user_usage_daily.json",
-                tinybirdOrigin,
-            );
-            tinybirdUrl.searchParams.set("user_id", userId);
-            tinybirdUrl.searchParams.set("since", sinceDate);
+            const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
+            const kv = c.env.KV;
 
             try {
-                const response = await fetch(tinybirdUrl.toString(), {
-                    headers: {
-                        Authorization: `Bearer ${c.env.TINYBIRD_READ_TOKEN}`,
+                // Cache keys: historical keyed by yesterday's date (immutable), today keyed by 5-min bucket
+                const fiveMinBucket = Math.floor(
+                    now.getTime() / (5 * 60 * 1000),
+                );
+                const historicalCacheKey = `usage:daily:${userId}:historical:${todayStr}`;
+                const todayCacheKey = `usage:daily:${userId}:today:${fiveMinBucket}`;
+
+                // Fetch historical data (cached for 24h)
+                const historicalResult = await getCachedOrFetch(
+                    kv,
+                    historicalCacheKey,
+                    CACHE_TTL_HISTORICAL,
+                    () =>
+                        fetchTinybirdUsage(
+                            tinybirdOrigin,
+                            tinybirdToken,
+                            userId,
+                            historicalSince,
+                            historicalUntil,
+                        ),
+                    log,
+                );
+
+                // Fetch today's data (cached for 5 min)
+                const todayResult = await getCachedOrFetch(
+                    kv,
+                    todayCacheKey,
+                    CACHE_TTL_TODAY,
+                    () =>
+                        fetchTinybirdUsage(
+                            tinybirdOrigin,
+                            tinybirdToken,
+                            userId,
+                            todaySince,
+                        ),
+                    log,
+                );
+
+                // Merge results
+                const allUsage = [
+                    ...historicalResult.data,
+                    ...todayResult.data,
+                ];
+
+                log.debug(
+                    "Fetched daily usage: historical={hCount} (cached={hCached}), today={tCount} (cached={tCached})",
+                    {
+                        hCount: historicalResult.data.length,
+                        hCached: historicalResult.cached,
+                        tCount: todayResult.data.length,
+                        tCached: todayResult.cached,
                     },
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    log.error("Tinybird error: {status} {error}", {
-                        status: response.status,
-                        error: errorText,
-                    });
-                    return c.json(
-                        { error: "Failed to fetch usage data" },
-                        response.status >= 500 ? 503 : 500,
-                    );
-                }
-
-                const data = (await response.json()) as {
-                    data: Array<{
-                        date: string;
-                        event_type: string;
-                        model: string | null;
-                        meter_source: string | null;
-                        requests: number;
-                        cost_usd: number;
-                        input_tokens: number;
-                        output_tokens: number;
-                        api_key_names: string[];
-                    }>;
-                };
-
-                log.debug("Fetched {count} daily records", {
-                    count: data.data.length,
-                });
+                );
 
                 return c.json({
-                    usage: data.data,
-                    count: data.data.length,
+                    usage: allUsage,
+                    count: allUsage.length,
                 });
             } catch (error) {
                 log.error("Error fetching daily usage: {error}", { error });

@@ -13,7 +13,7 @@ SQL >
         splitByChar(':', selected_meter_slug)[-1] as meter_source,
         count() as requests,
         sum(total_price) as cost_usd,
-        groupArray(api_key_name) as api_key_names
+        groupUniqArray(api_key_name) as api_key_names
     FROM generation_event
     WHERE user_id = {{String(user_id, '')}}
     AND total_price > 0

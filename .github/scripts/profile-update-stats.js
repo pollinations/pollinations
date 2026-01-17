@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-/**
- * Updates the org profile README with dynamic stats from GitHub API.
- * Run via: node .github/scripts/profile-update-stats.js
- */
 
 import { readFileSync, writeFileSync } from "fs";
 import { join, dirname } from "path";
@@ -67,12 +63,10 @@ async function getContributorCount() {
 
         total += data.length;
 
-        // Check if there are more pages via Link header
         const linkHeader = headers.get("link");
         if (!linkHeader || !linkHeader.includes('rel="next"')) break;
 
         page++;
-        // Safety limit to prevent infinite loops
         if (page > 50) break;
     }
 

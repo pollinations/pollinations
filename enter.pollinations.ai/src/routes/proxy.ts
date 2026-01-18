@@ -479,6 +479,10 @@ function proxyHeaders(c: Context): Record<string, string> {
     const clientHost = c.req.header("host") || "";
     const headers = { ...c.req.header() };
 
+    // Get user's raw API key from auth context (already extracted by auth middleware)
+    // This allows community models (like NomNom) to receive the user's key for billing passthrough
+    const userApiKey = c.var.auth?.apiKey?.rawKey || "";
+
     // Remove Authorization header - we use x-enter-token for backend auth instead
     delete headers.authorization;
     delete headers.Authorization;
@@ -490,6 +494,8 @@ function proxyHeaders(c: Context): Record<string, string> {
         "x-forwarded-for": clientIP,
         "x-real-ip": clientIP,
         "x-enter-token": c.env.PLN_ENTER_TOKEN,
+        // Forward user's API key for community models that need billing passthrough
+        "x-user-api-key": userApiKey,
     };
 }
 

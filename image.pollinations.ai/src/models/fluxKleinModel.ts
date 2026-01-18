@@ -215,19 +215,20 @@ async function generateWithEditing(
 
     logOps("Image editing mode with", base64Images.length, "processed images");
 
-    // Build request body for POST
-    const requestBody = {
+    // Build query parameters for edit endpoint
+    const params = new URLSearchParams({
         prompt: prompt,
-        images: base64Images,
-        width: safeParams.width || 1024,
-        height: safeParams.height || 1024,
-        seed: safeParams.seed,
-    };
-
-    logOps("Flux Klein POST request body (without images):", {
-        ...requestBody,
-        images: `[${base64Images.length} images]`,
+        width: String(safeParams.width || 1024),
+        height: String(safeParams.height || 1024),
     });
+
+    if (safeParams.seed !== undefined) {
+        params.append("seed", String(safeParams.seed));
+    }
+
+    const editUrl = `${FLUX_KLEIN_EDIT_URL}?${params.toString()}`;
+    logOps("Flux Klein POST URL:", editUrl);
+    logOps("Sending", base64Images.length, "images in body");
 
     progress.updateBar(
         requestId,
@@ -238,13 +239,13 @@ async function generateWithEditing(
 
     const response = await withTimeoutSignal(
         (signal) =>
-            fetch(FLUX_KLEIN_EDIT_URL, {
+            fetch(editUrl, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "x-enter-token": enterToken,
                 },
-                body: JSON.stringify(requestBody),
+                body: JSON.stringify(base64Images),
                 signal,
             }),
         120000, // 2 minute timeout for cold starts

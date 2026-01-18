@@ -14,7 +14,10 @@ import { Header } from "../components/header.tsx";
 import { PollenBalance } from "../components/pollen-balance.tsx";
 import { Pricing } from "../components/pricing/index.ts";
 import { TierPanel } from "../components/tier-panel.tsx";
-import { UsageGraph } from "../components/usage-analytics";
+import {
+    type DailyUsageRecord,
+    UsageGraph,
+} from "../components/usage-analytics";
 import { User } from "../components/user.tsx";
 
 export const Route = createFileRoute("/")({
@@ -413,10 +416,7 @@ function RouteComponent() {
                                                         );
                                                     const data =
                                                         (await res.json()) as {
-                                                            usage: Record<
-                                                                string,
-                                                                unknown
-                                                            >[];
+                                                            usage: DailyUsageRecord[];
                                                         };
                                                     const headers = [
                                                         "date",
@@ -426,12 +426,7 @@ function RouteComponent() {
                                                         "cost_usd",
                                                     ];
                                                     const rows = data.usage.map(
-                                                        (
-                                                            r: Record<
-                                                                string,
-                                                                unknown
-                                                            >,
-                                                        ) =>
+                                                        (r) =>
                                                             [
                                                                 r.date,
                                                                 r.model || "",

@@ -44,10 +44,16 @@ function transformOpenAPISchema(
     if (!paths) return schema;
 
     const newPaths: Record<string, unknown> = {};
+    const apiPaths = ["/account"]; // /api/ prefixed endpoints
+
     for (const [path, value] of Object.entries(paths)) {
-        // Strip /generate prefix: /generate/v1/models → /v1/models
         const cleanPath = path.replace(/^\/generate/, "");
-        newPaths[cleanPath] = value;
+        const needsApiPrefix = apiPaths.some(
+            (p) => cleanPath === p || cleanPath.startsWith(`${p}/`),
+        );
+
+        const finalPath = needsApiPrefix ? `/api${cleanPath}` : cleanPath;
+        newPaths[finalPath] = value;
     }
 
     // Filter aliases from the entire schema
@@ -163,15 +169,15 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "",
                             "```bash",
                             "# Check pollen balance",
-                            "curl 'https://gen.pollinations.ai/account/balance' \\",
+                            "curl 'https://gen.pollinations.ai/api/account/balance' \\",
                             "  -H 'Authorization: Bearer YOUR_API_KEY'",
                             "",
                             "# Get profile info",
-                            "curl 'https://gen.pollinations.ai/account/profile' \\",
+                            "curl 'https://gen.pollinations.ai/api/account/profile' \\",
                             "  -H 'Authorization: Bearer YOUR_API_KEY'",
                             "",
                             "# View usage history",
-                            "curl 'https://gen.pollinations.ai/account/usage' \\",
+                            "curl 'https://gen.pollinations.ai/api/account/usage' \\",
                             "  -H 'Authorization: Bearer YOUR_API_KEY'",
                             "```",
                         ].join("\n"),

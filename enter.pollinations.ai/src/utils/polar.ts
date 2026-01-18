@@ -1,9 +1,9 @@
-import { Polar } from "@polar-sh/sdk";
-import { cached } from "@/cache.ts";
 import { getLogger } from "@logtape/logtape";
-import z from "zod";
+import type { Polar } from "@polar-sh/sdk";
 import type { Product } from "@polar-sh/sdk/models/components/product.js";
 import { addDays, differenceInDays } from "date-fns";
+import z from "zod";
+import { cached } from "@/cache.ts";
 
 const PRODUCT_CACHE_TTL = 300; // 5 minutes in seconds
 

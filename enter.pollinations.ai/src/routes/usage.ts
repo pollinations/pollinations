@@ -26,10 +26,17 @@ const usageQuerySchema = z.object({
     before: z.string().optional(), // ISO timestamp cursor for pagination
 });
 
-// Daily usage query params
+// Daily usage query params - validate ISO date format (YYYY-MM-DD)
+const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
 const usageDailyQuerySchema = z.object({
-    since: z.string().optional(), // ISO date (e.g., 2024-01-01)
-    until: z.string().optional(), // ISO date
+    since: z
+        .string()
+        .regex(isoDateRegex, "Invalid date format. Use YYYY-MM-DD")
+        .optional(),
+    until: z
+        .string()
+        .regex(isoDateRegex, "Invalid date format. Use YYYY-MM-DD")
+        .optional(),
 });
 
 export const usageRoutes = new Hono<Env>()

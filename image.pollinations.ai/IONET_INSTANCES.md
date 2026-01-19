@@ -35,7 +35,7 @@ ssh -p 25656 -i ~/.ssh/thomashkey ionet@52.205.25.210
 | Model | Docker Image | Internal Port |
 |-------|--------------|---------------|
 | zimage | voodoohop/z-image-server:latest | 8765 |
-| flux | voodoohop/flux-svdquant:latest | 8765 |
+| flux | pollinations/flux-svdquant:latest | 8765 |
 
 ## Heartbeat Registration
 
@@ -61,7 +61,7 @@ docker run -d --gpus '"device=0"' --name flux1 \
   -e SERVICE_TYPE=flux \
   -e HF_TOKEN=<token> \
   -v /home/ionet/server.py:/app/server.py \
-  voodoohop/flux-svdquant:latest
+  pollinations/flux-svdquant:latest
 
 docker run -d --gpus '"device=1"' --name flux2 \
   -p 10001:8765 \
@@ -71,7 +71,7 @@ docker run -d --gpus '"device=1"' --name flux2 \
   -e SERVICE_TYPE=flux \
   -e HF_TOKEN=<token> \
   -v /home/ionet/server.py:/app/server.py \
-  voodoohop/flux-svdquant:latest
+  pollinations/flux-svdquant:latest
 ```
 
 ## Capacity Summary

@@ -14,7 +14,7 @@ const easterEggMessages = [
         message:
             "Use the code 0x3yrTEAPlln with your gsoc application to get a special surprise! Keep exploring!",
         emoji: "🐝",
-    }
+    },
 ];
 
 const EasterEggModal = ({ open, onClose }) => {

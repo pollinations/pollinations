@@ -182,11 +182,7 @@ const AboutPage = () => {
                             <Button
                                 variant="outlined"
                                 size="large"
-                                onClick={() =>
-                                    location.replace(
-                                        "/coc",
-                                    )
-                                }
+                                onClick={() => location.replace("/coc")}
                                 startIcon={<Gavel />}
                                 sx={{
                                     borderColor: "rgba(255,255,255,0.3)",
@@ -212,7 +208,7 @@ const AboutPage = () => {
                 <Box sx={{ mb: 8 }}>
                     <Grid container spacing={4} justifyContent="center">
                         {stats.map((stat, index) => (
-                            <Grid item xs={6} md={3} key={index}>
+                            <Grid item xs={6} md={3} key={stat.label}>
                                 <motion.div
                                     custom={index}
                                     variants={cardVariants}
@@ -309,7 +305,7 @@ const AboutPage = () => {
 
                     <Grid container spacing={4} justifyContent="center">
                         {features.map((feature, index) => (
-                            <Grid item xs={12} md={6} key={index}>
+                            <Grid item xs={12} md={6} key={feature.title}>
                                 <motion.div
                                     custom={index}
                                     variants={cardVariants}
@@ -561,7 +557,7 @@ const AboutPage = () => {
                                             Get In Touch
                                         </Typography>
                                         <Stack spacing={2}>
-                                          <Box
+                                            <Box
                                                 sx={{
                                                     display: "flex",
                                                     alignItems: "center",
@@ -620,8 +616,6 @@ const AboutPage = () => {
                                                     gsoc@pollinations.ai
                                                 </Typography>
                                             </Box>
-
-                                            
                                         </Stack>
                                     </Box>
                                 </Grid>

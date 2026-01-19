@@ -83,7 +83,7 @@ Always end responses with a helpful suggestion or question to keep the conversat
                 message: assistantMessage,
                 timestamp: new Date().toISOString(),
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("socBot API Error:", error);
 
             const fallbackMessage =
@@ -92,7 +92,7 @@ Always end responses with a helpful suggestion or question to keep the conversat
             return {
                 success: false,
                 message: fallbackMessage,
-                error: error.message,
+                error: error instanceof Error ? error.message : "Unknown error",
                 timestamp: new Date().toISOString(),
             };
         }

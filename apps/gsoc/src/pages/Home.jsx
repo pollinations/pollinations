@@ -504,7 +504,7 @@ const HomePage = () => {
                                                     item
                                                     xs={6}
                                                     sm={3}
-                                                    key={index}
+                                                    key={stat.label}
                                                 >
                                                     <motion.div
                                                         variants={fadeInUp}
@@ -716,7 +716,7 @@ const HomePage = () => {
                                 <Box sx={{ mt: 4, opacity: 0.3 }}>
                                     {[60, 40, 35, 50].map((width, index) => (
                                         <Box
-                                            key={index}
+                                            key={`width-${width}`}
                                             sx={{
                                                 width: `${width}px`,
                                                 height: "2px",
@@ -921,13 +921,15 @@ const HomePage = () => {
                                                     <Box
                                                         component="span"
                                                         onClick={() => {
-                                                            location.href = "https://pollinations.ai";
+                                                            location.href =
+                                                                "https://pollinations.ai";
                                                         }}
                                                         sx={{
                                                             fontWeight: "bold",
                                                             cursor: "pointer",
                                                             color: "#fff",
-                                                            transition: "all 0.3s ease",
+                                                            transition:
+                                                                "all 0.3s ease",
                                                             "&:hover": {
                                                                 color: "#60a5fa",
                                                             },
@@ -935,8 +937,8 @@ const HomePage = () => {
                                                     >
                                                         pollinations.ai
                                                     </Box>{" "}
-                                                    this summer as we embark on an
-                                                    exciting journey of open
+                                                    this summer as we embark on
+                                                    an exciting journey of open
                                                     source development with
                                                     Google Summer of Code 2026!
                                                 </Typography>
@@ -960,7 +962,7 @@ const HomePage = () => {
                                                         <Grid
                                                             item
                                                             xs={6}
-                                                            key={index}
+                                                            key={item.path}
                                                             sx={{
                                                                 display: "flex",
                                                                 justifyContent:

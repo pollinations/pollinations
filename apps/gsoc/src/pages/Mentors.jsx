@@ -171,7 +171,7 @@ const MentorsPage = () => {
 
                 <Grid container spacing={4}>
                     {mentors.map((mentor, index) => (
-                        <Grid item xs={12} md={6} key={index}>
+                        <Grid item xs={12} md={6} key={mentor.id}>
                             <motion.div
                                 custom={index}
                                 variants={cardVariants}
@@ -339,30 +339,27 @@ const MentorsPage = () => {
                                                 flexWrap="wrap"
                                                 gap={1}
                                             >
-                                                {mentor.skills.map(
-                                                    (skill, i) => (
-                                                        <Chip
-                                                            key={i}
-                                                            label={skill}
-                                                            size="small"
-                                                            sx={{
-                                                                fontSize:
-                                                                    "0.75rem",
-                                                                height: "24px",
+                                                {mentor.skills.map((skill) => (
+                                                    <Chip
+                                                        key={skill}
+                                                        label={skill}
+                                                        size="small"
+                                                        sx={{
+                                                            fontSize: "0.75rem",
+                                                            height: "24px",
+                                                            bgcolor:
+                                                                "rgba(255,255,255,0.08)",
+                                                            color: "rgba(255,255,255,0.9)",
+                                                            border: "1px solid rgba(255,255,255,0.15)",
+                                                            "&:hover": {
                                                                 bgcolor:
-                                                                    "rgba(255,255,255,0.08)",
-                                                                color: "rgba(255,255,255,0.9)",
-                                                                border: "1px solid rgba(255,255,255,0.15)",
-                                                                "&:hover": {
-                                                                    bgcolor:
-                                                                        "rgba(255,255,255,0.15)",
-                                                                    transform:
-                                                                        "translateY(-1px)",
-                                                                },
-                                                            }}
-                                                        />
-                                                    ),
-                                                )}
+                                                                    "rgba(255,255,255,0.15)",
+                                                                transform:
+                                                                    "translateY(-1px)",
+                                                            },
+                                                        }}
+                                                    />
+                                                ))}
                                             </Stack>
                                         </Box>
 

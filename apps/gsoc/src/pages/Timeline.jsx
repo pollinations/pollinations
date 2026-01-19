@@ -106,7 +106,7 @@ const TimelinePage = () => {
 
                     return (
                         <motion.div
-                            key={index}
+                            key={phase.title}
                             variants={cardVariants}
                             initial="hidden"
                             whileInView="visible"

@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 
+interface GitHubContributor {
+    id: number;
+    login: string;
+    avatar_url: string;
+    html_url: string;
+    contributions: number;
+}
+
 const useTopContributors = () => {
-    const [contributors, setContributors] = useState<any[]>([]);
+    const [contributors, setContributors] = useState<GitHubContributor[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +33,7 @@ const useTopContributors = () => {
                 const filtered = Array.isArray(data)
                     ? data
                           .filter(
-                              (c: any) =>
+                              (c: GitHubContributor) =>
                                   !c.login.includes("[bot]") &&
                                   !c.login.includes("dependabot"),
                           )
@@ -35,7 +43,7 @@ const useTopContributors = () => {
                 setError(null);
             } catch (err) {
                 console.error("Error fetching contributors:", err);
-                setError((err as any).message);
+                setError(err instanceof Error ? err.message : "Unknown error");
                 setContributors([]);
             } finally {
                 setLoading(false);

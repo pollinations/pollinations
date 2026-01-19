@@ -20,7 +20,7 @@ import {
     Typography,
 } from "@mui/material";
 import { motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
@@ -463,7 +463,7 @@ const socBotChat = () => {
         ]);
     }, []);
 
-    const scrollToBottom = () => {
+    const scrollToBottom = useCallback(() => {
         setTimeout(() => {
             if (messagesContainerRef.current) {
                 const container = messagesContainerRef.current;
@@ -473,15 +473,13 @@ const socBotChat = () => {
                 });
             }
         }, 100);
-    };
-    
+    }, []);
+
     useEffect(() => {
         if (messages.length > 1) {
             scrollToBottom();
         }
     }, [messages, scrollToBottom]);
-
-    
 
     const handleSendMessage = async (messageText = inputValue) => {
         if (!messageText.trim()) return;
@@ -565,14 +563,14 @@ const socBotChat = () => {
 
     const _suggestedQuestions = pollyAPI.current.getSuggestedQuestions();
     const _questionIcons = [
-        <LightbulbOutlined />,
-        <RocketLaunchOutlined />,
-        <SchoolOutlined />,
-        <CodeOutlined />,
-        <LightbulbOutlined />,
-        <SchoolOutlined />,
-        <CodeOutlined />,
-        <RocketLaunchOutlined />,
+        <LightbulbOutlined key="lightbulb-1" />,
+        <RocketLaunchOutlined key="rocket-1" />,
+        <SchoolOutlined key="school-1" />,
+        <CodeOutlined key="code-1" />,
+        <LightbulbOutlined key="lightbulb-2" />,
+        <SchoolOutlined key="school-2" />,
+        <CodeOutlined key="code-2" />,
+        <RocketLaunchOutlined key="rocket-2" />,
     ];
 
     const categoryColors = {

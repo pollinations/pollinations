@@ -8,11 +8,11 @@ import Contributing from "./pages/Contributing";
 import Home from "./pages/Home";
 import Mentors from "./pages/Mentors";
 import NotFound from "./pages/NotFound";
+import Privacy from "./pages/Privacy";
 import Projects from "./pages/Projects";
 import SocBot from "./pages/socBot";
-import Timeline from "./pages/Timeline";
 import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
+import Timeline from "./pages/Timeline";
 import "./App.css";
 
 const darkTheme = createTheme({

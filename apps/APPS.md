@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted |
 | ----- | ---- | ------- | ----------- | -------- | -------- | --------------- | ------------- | --------------------- | ----------------------- | ---------------- | ----- | --------- |
+| 🖼️ | Ask PollinationsAI for an image |  | PowerShell script to generate images and integrate with .NET apps | en | Creative | @BananaAcid | 1894723 | https://gist.github.com/BananaAcid/6bc2fc33d948d28d255674a7613f120c |  | bananaacid | | 2026-01-16 |
 | 🛠️ | PolliDev | https://fabioarieira.com/pollidev/ | Developer-focused tool for managing generative image assets and prompts. | en | Dev_Tools | @FabioArieiraBaia | 104397473 | https://github.com/FabioArieiraBaia/pollidev |  | fabioarieira8850 | | 2026-01-13 |
 | 🎮 | Lapse Game 2075 | https://makeypocket.github.io/LapseGame/ | AI-powered game where decisions shape a country's future over four pillars | en, ru | Games | @makeypocket | 108882883 | https://github.com/makeypocket/LapseGame | ⭐1 | termuxt | | 2026-01-12 |
 | 🎨 | PixArt AI | https://apps.apple.com/us/app/pixart-ai-ai-image-generator/id6749236127 | iOS app that turns text prompts into AI-generated artwork via Pollinations. | en | Creative | @bhyahmed86-maker | 253995477 |  |  |  | | 2026-01-12 |

@@ -7,3 +7,4 @@ dist/
 .env
 *.log
 backups/
+prod_data*.sql

@@ -210,17 +210,29 @@ const MentorsPage = () => {
                                 >
                                     <CardContent
                                         sx={{
-                                            padding: "2.5rem",
+                                            padding: {
+                                                xs: "1.5rem",
+                                                sm: "2rem",
+                                                md: "2.5rem",
+                                            },
                                             height: "100%",
                                             display: "flex",
                                             flexDirection: "column",
+                                            overflow: "hidden",
                                         }}
                                     >
                                         <Box
                                             sx={{
                                                 display: "flex",
-                                                alignItems: "flex-start",
-                                                gap: 3,
+                                                flexDirection: {
+                                                    xs: "column",
+                                                    sm: "row",
+                                                },
+                                                alignItems: {
+                                                    xs: "center",
+                                                    sm: "flex-start",
+                                                },
+                                                gap: { xs: 2, sm: 3 },
                                                 mb: 3,
                                             }}
                                         >
@@ -242,7 +254,13 @@ const MentorsPage = () => {
                                                 }}
                                             />
 
-                                            <Box sx={{ flexGrow: 1 }}>
+                                            <Box
+                                                sx={{
+                                                    flexGrow: 1,
+                                                    width: "100%",
+                                                    minWidth: 0,
+                                                }}
+                                            >
                                                 <Typography
                                                     variant="h5"
                                                     sx={{
@@ -250,10 +268,27 @@ const MentorsPage = () => {
                                                         mb: 0.5,
                                                         color: "#fff",
                                                         display: "flex",
-                                                        flexDirection: "row",
-                                                        justifyContent:
-                                                            "space-between",
-                                                        alignItems: "center",
+                                                        flexDirection: {
+                                                            xs: "column",
+                                                            sm: "row",
+                                                        },
+                                                        justifyContent: {
+                                                            xs: "center",
+                                                            sm: "space-between",
+                                                        },
+                                                        alignItems: {
+                                                            xs: "center",
+                                                            sm: "center",
+                                                        },
+                                                        textAlign: {
+                                                            xs: "center",
+                                                            sm: "left",
+                                                        },
+                                                        gap: 1,
+                                                        fontSize: {
+                                                            xs: "1.25rem",
+                                                            sm: "1.5rem",
+                                                        },
                                                     }}
                                                 >
                                                     {mentor.name}
@@ -262,13 +297,17 @@ const MentorsPage = () => {
                                                             textAlign: "center",
                                                             display:
                                                                 "inline-flex",
-                                                            ml: 3,
+                                                            ml: {
+                                                                xs: 0,
+                                                                sm: 2,
+                                                            },
                                                             borderRadius:
                                                                 "12px",
                                                             px: 1,
                                                             height: "20px",
                                                             bgcolor:
                                                                 "rgba(255, 215, 0, 0.1)",
+                                                            flexShrink: 0,
                                                         }}
                                                     >
                                                         <Typography
@@ -298,6 +337,10 @@ const MentorsPage = () => {
                                                         color: colors.lime.main,
                                                         fontWeight: 600,
                                                         mb: 1,
+                                                        textAlign: {
+                                                            xs: "center",
+                                                            sm: "left",
+                                                        },
                                                     }}
                                                 >
                                                     {mentor.title}
@@ -366,13 +409,32 @@ const MentorsPage = () => {
                                         <Box
                                             sx={{
                                                 display: "flex",
-                                                justifyContent: "space-between",
-                                                alignItems: "center",
+                                                flexDirection: {
+                                                    xs: "column",
+                                                    sm: "row",
+                                                },
+                                                justifyContent: {
+                                                    xs: "center",
+                                                    sm: "space-between",
+                                                },
+                                                alignItems: {
+                                                    xs: "stretch",
+                                                    sm: "center",
+                                                },
+                                                gap: { xs: 2, sm: 0 },
                                                 mt: "auto",
                                             }}
                                         >
                                             {/* Social Links */}
-                                            <Stack direction="row" spacing={1}>
+                                            <Stack
+                                                direction="row"
+                                                spacing={1}
+                                                justifyContent={{
+                                                    xs: "center",
+                                                    sm: "flex-start",
+                                                }}
+                                                flexWrap="wrap"
+                                            >
                                                 <IconButton
                                                     component="a"
                                                     href={mentor.linkedin}
@@ -473,16 +535,18 @@ const MentorsPage = () => {
                                                 }
                                                 sx={{
                                                     borderColor:
-                                                        "rgba(255,255,255,0.2)",
-                                                    color: "rgba(255,255,255,0.8)",
+                                                        colors.lime.border,
+                                                    color: colors.lime.main,
                                                     textTransform: "none",
                                                     fontSize: "0.875rem",
+                                                    borderRadius: "8px",
+                                                    px: 2,
                                                     "&:hover": {
                                                         borderColor:
-                                                            "rgba(255,255,255,0.4)",
+                                                            colors.lime.main,
                                                         color: "#fff",
                                                         backgroundColor:
-                                                            "rgba(255,255,255,0.05)",
+                                                            colors.lime.dim,
                                                     },
                                                 }}
                                             >

@@ -6,8 +6,9 @@ import { fileTypeFromBuffer } from "file-type";
  */
 export async function downloadImageAsBase64(
     imageUrl: string,
+    signal?: AbortSignal,
 ): Promise<{ base64: string; mimeType: string }> {
-    const imageResponse = await fetch(imageUrl);
+    const imageResponse = await fetch(imageUrl, { signal });
 
     if (!imageResponse.ok) {
         throw new Error(

@@ -50,6 +50,22 @@ export const APP_CONFIGS = {
             url: "https://hello.pollinations.ai",
         },
     },
+
+    chat: {
+        name: "chat.pollinations.ai",
+        outputDir: "apps/chat/public",
+        sourceSvg: "../../assets/logo.svg",
+        ogSourceSvg: "../../assets/logo-text.svg",
+        themeColor: "#e7faec",
+        backgroundColor: "#110518",
+        iconBackground: "transparent",
+        seo: {
+            title: "chat.pollinations.ai",
+            description:
+                "AI chat interface powered by pollinations.ai - Multi-model conversations with open source AI",
+            url: "https://chat.pollinations.ai",
+        },
+    },
 };
 
 /**

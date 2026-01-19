@@ -8,6 +8,7 @@ import {
     Psychology,
     RocketLaunch,
     School,
+    MenuBook,
 } from "@mui/icons-material";
 import {
     Avatar,
@@ -17,7 +18,7 @@ import {
     CardContent,
     Grid,
     Stack,
-    Typography,
+    Typography
 } from "@mui/material";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
@@ -554,7 +555,6 @@ const AboutPage = () => {
                     </motion.div>
                 </Box>
 
-                {/* Quick Links */}
                 <Box sx={{ mb: 8 }}>
                     <Typography
                         variant="h5"
@@ -665,6 +665,26 @@ const AboutPage = () => {
                         >
                             pollinations.ai
                         </Button>
+                        <Button
+                            href="/coc"
+                            target="_blank"
+                            startIcon={<MenuBook />}
+                            sx={{
+                                py: 1.5,
+                                px: 3,
+                                color: "#fff",
+                                border: `1px solid ${colors.border.light}`,
+                                borderRadius: "12px",
+                                textTransform: "none",
+                                fontSize: "1rem",
+                                "&:hover": {
+                                    borderColor: colors.lime.border,
+                                    backgroundColor: colors.lime.dim,
+                                },
+                            }}
+                        >
+                            Contributing
+                        </Button>
                     </Stack>
                 </Box>
 
@@ -761,62 +781,6 @@ const AboutPage = () => {
                             >
                                 View Project Ideas
                             </Button>
-                            <Stack
-                                direction={{ xs: "column", sm: "row" }}
-                                spacing={2}
-                            >
-                                <Button
-                                    href="https://summerofcode.withgoogle.com/"
-                                    target="_blank"
-                                    variant="outlined"
-                                    endIcon={
-                                        <OpenInNew sx={{ fontSize: 14 }} />
-                                    }
-                                    sx={{
-                                        borderColor: colors.border.light,
-                                        color: "#fff",
-                                        textTransform: "none",
-                                        "&:hover": {
-                                            borderColor: colors.lime.border,
-                                            backgroundColor: colors.lime.dim,
-                                        },
-                                    }}
-                                >
-                                    How to Apply
-                                </Button>
-                                <Button
-                                    href="https://discord.gg/pollinations-ai-885844321461485618"
-                                    target="_blank"
-                                    variant="outlined"
-                                    sx={{
-                                        borderColor: colors.border.light,
-                                        color: "#fff",
-                                        textTransform: "none",
-                                        "&:hover": {
-                                            borderColor: colors.lime.border,
-                                            backgroundColor: colors.lime.dim,
-                                        },
-                                    }}
-                                >
-                                    Discord
-                                </Button>
-                                <Button
-                                    component={Link}
-                                    to="/contributing"
-                                    variant="outlined"
-                                    sx={{
-                                        borderColor: colors.border.light,
-                                        color: "#fff",
-                                        textTransform: "none",
-                                        "&:hover": {
-                                            borderColor: colors.lime.border,
-                                            backgroundColor: colors.lime.dim,
-                                        },
-                                    }}
-                                >
-                                    Contribution Guide
-                                </Button>
-                            </Stack>
                         </Stack>
                     </motion.div>
                 </Box>

@@ -77,16 +77,16 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
 
         const barData = data.map((d, i) => {
             const tierHeight = (d.tierValue / niceMaxVal) * ch;
-            const packHeight = (d.packValue / niceMaxVal) * ch;
+            const paidHeight = (d.paidValue / niceMaxVal) * ch;
             return {
                 x: pad.left + i * (barWidth + gap) + gap / 2,
                 y: pad.top + ch - (d.value / niceMaxVal) * ch,
                 width: barWidth,
                 height: (d.value / niceMaxVal) * ch,
                 tierHeight,
-                packHeight,
+                paidHeight,
                 tierY: pad.top + ch - tierHeight,
-                packY: pad.top + ch - tierHeight - packHeight,
+                paidY: pad.top + ch - tierHeight - paidHeight,
                 ...d,
             };
         });
@@ -263,7 +263,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                     </>
                 )}
 
-                {/* Bars - Stacked: tier (teal) at bottom, pack (purple) on top */}
+                {/* Bars - Stacked: tier (teal) at bottom, paid (purple) on top */}
                 {bars.map((bar, idx) => (
                     <g key={bar.label}>
                         {/* Tier segment (bottom) - teal */}
@@ -280,7 +280,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                     0,
                                     bar.tierHeight * animationProgress,
                                 )}
-                                rx={bar.packHeight > 0 ? 0 : 2}
+                                rx={bar.paidHeight > 0 ? 0 : 2}
                                 style={{
                                     fill:
                                         hovered === idx ? "#5eead4" : "#99f6e4",
@@ -288,19 +288,19 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                 }}
                             />
                         )}
-                        {/* Pack segment (top) - purple */}
-                        {bar.packHeight > 0 && (
+                        {/* Paid segment (top) - purple */}
+                        {bar.paidHeight > 0 && (
                             <rect
                                 x={bar.x}
                                 y={
-                                    bar.packY -
+                                    bar.paidY -
                                     (bar.height * animationProgress -
                                         bar.height)
                                 }
                                 width={bar.width}
                                 height={Math.max(
                                     0,
-                                    bar.packHeight * animationProgress,
+                                    bar.paidHeight * animationProgress,
                                 )}
                                 rx={2}
                                 style={{

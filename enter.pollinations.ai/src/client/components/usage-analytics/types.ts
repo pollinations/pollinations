@@ -28,7 +28,7 @@ export type DataPoint = {
     label: string;
     value: number;
     tierValue: number;
-    packValue: number;
+    paidValue: number;
     timestamp: Date;
     fullDate: string;
     modelBreakdown?: ModelBreakdown[];

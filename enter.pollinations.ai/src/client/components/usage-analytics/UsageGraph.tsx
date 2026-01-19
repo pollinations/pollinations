@@ -209,14 +209,14 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
                                 <span className="text-xs text-gray-400 ml-1">
                                     ({TIER_EMOJIS[tier || "spore"]}{" "}
                                     {stats.tierPollen.toFixed(2)} + 💎{" "}
-                                    {stats.packPollen.toFixed(2)})
+                                    {stats.paidPollen.toFixed(2)})
                                 </span>
                             </div>
                         </div>
 
                         {/* Info */}
                         <p className="text-[10px] text-gray-400 mt-4">
-                            Data refreshes every 5 minutes. Times shown in UTC.
+                            Data refreshes every hour. Times shown in UTC.
                         </p>
                     </>
                 )}

@@ -16,7 +16,6 @@ type UsageDataResult = {
     dailyUsage: DailyUsageRecord[];
     loading: boolean;
     error: string | null;
-    hasFetched: boolean;
     containerRef: React.RefObject<HTMLDivElement | null>;
     fetchUsage: () => void;
     usedModels: { id: string; label: string }[];
@@ -26,7 +25,7 @@ type UsageDataResult = {
         totalRequests: number;
         totalPollen: number;
         tierPollen: number;
-        packPollen: number;
+        paidPollen: number;
     };
     filteredData: DailyUsageRecord[];
 };
@@ -35,11 +34,12 @@ export function useUsageData(filters: FilterState): UsageDataResult {
     const [dailyUsage, setDailyUsage] = useState<DailyUsageRecord[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [hasFetched, setHasFetched] = useState(false);
+    const hasFetchedRef = useRef(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const fetchUsage = useCallback(() => {
-        if (hasFetched) return;
+        if (hasFetchedRef.current) return;
+        hasFetchedRef.current = true;
         setLoading(true);
         setError(null);
 
@@ -51,24 +51,24 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             })
             .then((data) => {
                 setDailyUsage(data?.usage || []);
-                setHasFetched(true);
             })
             .catch((err) => {
                 console.error("Usage fetch error:", err);
                 setError(err.message || "Failed to load usage data");
                 setDailyUsage([]);
+                hasFetchedRef.current = false; // Allow retry on error
             })
             .finally(() => setLoading(false));
-    }, [hasFetched]);
+    }, []);
 
     // Lazy load: fetch data only when component comes into view
     useEffect(() => {
-        if (hasFetched || !containerRef.current) return;
+        if (!containerRef.current) return;
 
         const container = containerRef.current;
         const observer = new IntersectionObserver(
             (entries) => {
-                if (entries[0].isIntersecting && !hasFetched) {
+                if (entries[0].isIntersecting) {
                     fetchUsage();
                     observer.disconnect();
                 }
@@ -78,7 +78,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
 
         observer.observe(container);
         return () => observer.disconnect();
-    }, [hasFetched, fetchUsage]);
+    }, [fetchUsage]);
 
     // Compute cutoff date based on time range
     const cutoff = useMemo(() => {
@@ -153,8 +153,8 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             pollen: number;
             tierRequests: number;
             tierPollen: number;
-            packRequests: number;
-            packPollen: number;
+            paidRequests: number;
+            paidPollen: number;
             byModel: Map<string, { requests: number; pollen: number }>;
         };
         const buckets = new Map<string, DayBucket>();
@@ -166,8 +166,8 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 pollen: 0,
                 tierRequests: 0,
                 tierPollen: 0,
-                packRequests: 0,
-                packPollen: 0,
+                paidRequests: 0,
+                paidPollen: 0,
                 byModel: new Map(),
             };
             cur.requests += r.requests || 0;
@@ -178,8 +178,9 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 cur.tierRequests += r.requests || 0;
                 cur.tierPollen += r.cost_usd || 0;
             } else {
-                cur.packRequests += r.requests || 0;
-                cur.packPollen += r.cost_usd || 0;
+                // pack + crypto = paid
+                cur.paidRequests += r.requests || 0;
+                cur.paidPollen += r.cost_usd || 0;
             }
 
             if (r.model) {
@@ -215,8 +216,8 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 pollen: 0,
                 tierRequests: 0,
                 tierPollen: 0,
-                packRequests: 0,
-                packPollen: 0,
+                paidRequests: 0,
+                paidPollen: 0,
                 byModel: new Map(),
             };
             const modelBreakdown: ModelBreakdown[] = Array.from(
@@ -235,8 +236,8 @@ export function useUsageData(filters: FilterState): UsageDataResult {
 
             const tierKey =
                 filters.metric === "requests" ? "tierRequests" : "tierPollen";
-            const packKey =
-                filters.metric === "requests" ? "packRequests" : "packPollen";
+            const paidKey =
+                filters.metric === "requests" ? "paidRequests" : "paidPollen";
 
             return {
                 label: date.toLocaleDateString("en-US", {
@@ -251,7 +252,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 }),
                 value: d[filters.metric],
                 tierValue: d[tierKey],
-                packValue: d[packKey],
+                paidValue: d[paidKey],
                 timestamp: date,
                 modelBreakdown,
             };
@@ -271,7 +272,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
                 0,
             );
-        const packPollen = filtered
+        const paidPollen = filtered
             .filter((r) => r.meter_source !== "tier")
             .reduce(
                 (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
@@ -283,7 +284,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 totalRequests: totalReq,
                 totalPollen,
                 tierPollen,
-                packPollen,
+                paidPollen,
             },
             filteredData: filtered,
         };
@@ -293,7 +294,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         dailyUsage,
         loading,
         error,
-        hasFetched,
         containerRef,
         fetchUsage,
         usedModels,

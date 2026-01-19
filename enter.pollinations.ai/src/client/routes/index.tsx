@@ -447,7 +447,7 @@ function RouteComponent() {
                                                 setDownloadingDetailed(true);
                                                 try {
                                                     const res = await fetch(
-                                                        "/api/usage?format=csv",
+                                                        "/api/account/usage?format=csv&limit=50000",
                                                     );
                                                     if (!res.ok)
                                                         throw new Error(

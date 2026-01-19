@@ -26,7 +26,7 @@ const escapeCSV = (val: string | number | boolean | null) => {
 // Query params schema for usage
 const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
-    limit: z.coerce.number().min(1).max(10000).optional().default(100),
+    limit: z.coerce.number().min(1).max(50000).optional().default(100),
     before: z.string().optional(), // ISO timestamp cursor for pagination
 });
 

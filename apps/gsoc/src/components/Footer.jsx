@@ -116,30 +116,59 @@ export default function Footer() {
                                     mb: 2,
                                 }}
                             >
-                                <Typography
-                                    variant="h6"
+                                <Box
                                     sx={{
-                                        fontWeight: 700,
-                                        background:
-                                            "linear-gradient(135deg, #fff 0%, #a1a1aa 100%)",
-                                        WebkitBackgroundClip: "text",
-                                        WebkitTextFillColor: "transparent",
-                                        letterSpacing: "-0.02em",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1,
                                     }}
                                 >
-                                    GSOC - pollinations.ai
-                                </Typography>
+                                    <img
+                                        src="/gsoc_logo.webp"
+                                        alt="GSoC"
+                                        style={{ height: "24px" }}
+                                    />
+                                    <Typography
+                                        variant="h6"
+                                        sx={{
+                                            fontWeight: 700,
+                                            background:
+                                                "linear-gradient(135deg, #fff 0%, #a1a1aa 100%)",
+                                            WebkitBackgroundClip: "text",
+                                            WebkitTextFillColor: "transparent",
+                                            letterSpacing: "-0.02em",
+                                        }}
+                                    >
+                                        GSoC
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            color: "rgba(255,255,255,0.5)",
+                                            fontSize: "1.2rem",
+                                        }}
+                                    >
+                                        ×
+                                    </Typography>
+                                    <img
+                                        src="/logo-text.svg"
+                                        alt="pollinations.ai"
+                                        style={{
+                                            height: "28px",
+                                            filter: "brightness(0) invert(1)",
+                                        }}
+                                    />
+                                </Box>
                                 <Chip
                                     label="2026"
                                     size="small"
                                     sx={{
-                                        bgcolor: "rgba(255,255,255,0.1)",
-                                        color: "rgba(255,255,255,0.8)",
+                                        bgcolor: "rgba(122, 184, 255, 0.15)",
+                                        color: "#7AB8FF",
                                         fontSize: "12px",
                                         height: "20px",
                                         fontFamily: "monospace",
                                         fontWeight: 500,
-                                        border: "1px solid rgba(255,255,255,0.2)",
+                                        border: "1px solid rgba(122, 184, 255, 0.3)",
                                     }}
                                 />
                             </Box>

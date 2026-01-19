@@ -271,11 +271,14 @@ const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
                         sx={{
                             width: 40,
                             height: 40,
-                            bgcolor: "rgba(96, 165, 250, 0.1)",
-                            border: "2px solid rgba(96, 165, 250, 0.3)",
+                            bgcolor: "rgba(122, 184, 255, 0.1)",
+                            border: "2px solid rgba(122, 184, 255, 0.3)",
                             position: "relative",
                             px: 1,
                             py: 1,
+                            "& img": {
+                                filter: "brightness(0) saturate(100%) invert(68%) sepia(52%) saturate(497%) hue-rotate(182deg) brightness(103%) contrast(101%)",
+                            },
                         }}
                     />
                 </Box>
@@ -451,12 +454,12 @@ const socBotChat = () => {
     }, {});
 
     useEffect(() => {
-        document.title = "socBot - AI Assistant | GSOC 2026 | pollinations.ai";
+        document.title = "socBot - AI Assistant | GSoC 2026 | pollinations.ai";
         setMessages([
             {
                 id: 1,
                 content:
-                    "Hello! I'm socBot, your AI assistant for Google Summer of Code 2026 at pollinations.ai! 🚀\n\nI'm here to help you with everything related to GSOC - from understanding the program to choosing projects, application guidance, and technical support.\n\nWhat would you like to know about GSOC 2026?",
+                    "Hello! I'm socBot, your AI assistant for Google Summer of Code 2026 at pollinations.ai! 🚀\n\nI'm here to help you with everything related to GSoC - from understanding the program to choosing projects, application guidance, and technical support.\n\nWhat would you like to know about GSoC 2026?",
                 isBot: true,
                 timestamp: new Date().toISOString(),
             },
@@ -549,7 +552,7 @@ const socBotChat = () => {
         setMessages([
             {
                 id: 1,
-                content: "Chat cleared! How can I help you with GSOC 2026?",
+                content: "Chat cleared! How can I help you with GSoC 2026?",
                 isBot: true,
                 timestamp: new Date().toISOString(),
             },
@@ -584,7 +587,7 @@ const socBotChat = () => {
         "Contribution": "#22c55e",
         "Selection": "#f59e0b",
         "Support": "#60a5fa",
-        "Post-GSOC": "#a78bfa",
+        "Post-GSoC": "#a78bfa",
         "Troubleshooting": "#ef4444",
     };
 

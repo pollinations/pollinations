@@ -30,14 +30,14 @@ const float = {
 
 const NotFoundPage = () => {
     useEffect(() => {
-        document.title = "404 - Page Not Found | GSOC 2026";
+        document.title = "404 - Page Not Found | GSoC 2026";
     }, []);
 
     const funnyMessages = [
         "This page went to space before the rockets could launch! 🚀",
         "Looks like this page decided to take a summer break early... 😴",
         "Our AI ate this page for breakfast! 🤖",
-        "This page is as lost as a student without GSOC mentorship! 📚",
+        "This page is as lost as a student without GSoC mentorship! 📚",
         "Plot twist: This page never existed! 👻",
         "404: Dream Job Not Found... wait, wrong error! 💼",
         "This page went back in time and doesn't exist yet! ⏰",

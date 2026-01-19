@@ -47,7 +47,7 @@ const fadeInUp = {
 
 const HomePage = () => {
     useEffect(() => {
-        document.title = "GSOC 26' - pollinations.ai";
+        document.title = "GSoC 26' - pollinations.ai";
     }, []);
 
     const {
@@ -62,7 +62,7 @@ const HomePage = () => {
     const stats = [
         { number: "3.8K", label: "GitHub Stars", icon: <Star /> },
         { number: "250+", label: "Contributors", icon: <Group /> },
-        { number: "1st", label: "Year in GSOC", icon: <EmojiEvents /> },
+        { number: "1st", label: "Year in GSoC", icon: <EmojiEvents /> },
         { number: "12", label: "Week Program", icon: <TimelineIcon /> },
     ];
 
@@ -186,7 +186,6 @@ const HomePage = () => {
                                                 alt="Google Summer of Code"
                                                 style={{
                                                     height: "60px",
-                                                    filter: "brightness(1.1)",
                                                 }}
                                             />
                                         </Box>
@@ -253,9 +252,9 @@ const HomePage = () => {
                                                 >
                                                     <img
                                                         src="/polli_white.svg"
-                                                        alt="Pollinations.ai"
+                                                        alt="pollinations.ai"
                                                         style={{
-                                                            height: "50px",
+                                                            height: "55px",
                                                         }}
                                                     />
                                                     {clickCount > 0 && (
@@ -323,7 +322,7 @@ const HomePage = () => {
                                                 textAlign: "center",
                                             }}
                                         >
-                                            2026 GSOC - with{" "}
+                                            2026 GSoC - with{" "}
                                             <Box
                                                 component="span"
                                                 sx={{
@@ -849,7 +848,7 @@ const HomePage = () => {
                                                 }}
                                             >
                                                 <Chip
-                                                    label="GSOC 2026"
+                                                    label="GSoC 2026"
                                                     sx={{
                                                         bgcolor:
                                                             "rgba(96, 165, 250, 0.15)",

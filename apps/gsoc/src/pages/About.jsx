@@ -39,7 +39,7 @@ const cardVariants = {
 
 const AboutPage = () => {
     useEffect(() => {
-        document.title = "About - GSOC 2026 | pollinations.ai";
+        document.title = "About - GSoC 2026 | pollinations.ai";
     }, []);
 
     const stats = [
@@ -449,7 +449,7 @@ const AboutPage = () => {
                                             }}
                                         />
                                         <Chip
-                                            label="GSOC Organization"
+                                            label="GSoC Organization"
                                             sx={{
                                                 bgcolor:
                                                     "rgba(34, 197, 94, 0.2)",

@@ -324,6 +324,12 @@ async function generateAssetsForApp(appKey, appConfig) {
 
             writeFileSync(logoDest, logoContent);
             writeFileSync(logoTextDest, logoTextContent);
+        } else if (appKey === "gsoc") {
+            // Copy logo-text to public for direct use
+            const logoTextSource = join(__dirname, appConfig.ogSourceSvg);
+            const logoTextDest = join(outputDir, "logo-text.svg");
+            console.log(`  Copying logo-text → ${logoTextDest}`);
+            writeFileSync(logoTextDest, readFileSync(logoTextSource));
         }
 
         console.log(`\n✅ Done generating assets for ${appConfig.name}`);

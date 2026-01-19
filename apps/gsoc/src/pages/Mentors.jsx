@@ -43,7 +43,7 @@ const MentorsPage = () => {
     const [openToast, setOpenToast] = useState(false);
 
     useEffect(() => {
-        document.title = "Mentors - GSOC 2026 | pollinations.ai";
+        document.title = "Mentors - GSoC 2026 | pollinations.ai";
     }, []);
 
     const handleCloseToast = () => {

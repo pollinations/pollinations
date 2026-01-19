@@ -54,19 +54,45 @@ const Navbar = () => {
             onClick={handleDrawerToggle}
         >
             <Box sx={{ p: 2, borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                    pollinations.ai
-                </Typography>
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 1,
+                    }}
+                >
+                    <img
+                        src="/gsoc_logo.webp"
+                        alt="GSoC"
+                        style={{ height: "20px" }}
+                    />
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        GSoC
+                    </Typography>
+                    <Typography sx={{ color: "rgba(255,255,255,0.5)" }}>
+                        ×
+                    </Typography>
+                    <img
+                        src="/logo-text.svg"
+                        alt="pollinations.ai"
+                        style={{
+                            height: "24px",
+                            filter: "brightness(0) invert(1)",
+                        }}
+                    />
+                </Box>
                 <Chip
                     label="2026"
                     size="small"
                     sx={{
-                        bgcolor: "rgba(255,255,255,0.1)",
-                        color: "#fff",
+                        bgcolor: "rgba(122, 184, 255, 0.15)",
+                        color: "#7AB8FF",
                         height: "20px",
                         fontSize: "15px",
                         fontFamily: "monospace",
                         fontWeight: 500,
+                        border: "1px solid rgba(122, 184, 255, 0.3)",
                     }}
                 />
             </Box>
@@ -199,32 +225,61 @@ const Navbar = () => {
                                 gap: "12px",
                             }}
                         >
-                            <Typography
-                                variant="h6"
+                            <Box
                                 sx={{
-                                    fontWeight: 700,
-                                    background:
-                                        "linear-gradient(135deg, #fff 0%, #a1a1aa 100%)",
-                                    WebkitBackgroundClip: "text",
-                                    WebkitTextFillColor: "transparent",
-                                    letterSpacing: "-0.02em",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
                                 }}
                             >
-                                GSOC - pollinations.ai
-                            </Typography>
+                                <img
+                                    src="/gsoc_logo.webp"
+                                    alt="GSoC"
+                                    style={{ height: "24px" }}
+                                />
+                                <Typography
+                                    variant="h6"
+                                    sx={{
+                                        fontWeight: 700,
+                                        background:
+                                            "linear-gradient(135deg, #fff 0%, #a1a1aa 100%)",
+                                        WebkitBackgroundClip: "text",
+                                        WebkitTextFillColor: "transparent",
+                                        letterSpacing: "-0.02em",
+                                    }}
+                                >
+                                    GSoC
+                                </Typography>
+                                <Typography
+                                    sx={{
+                                        color: "rgba(255,255,255,0.5)",
+                                        fontSize: "1.2rem",
+                                    }}
+                                >
+                                    ×
+                                </Typography>
+                                <img
+                                    src="/logo-text.svg"
+                                    alt="pollinations.ai"
+                                    style={{
+                                        height: "28px",
+                                        filter: "brightness(0) invert(1)",
+                                    }}
+                                />
+                            </Box>
                             <Chip
                                 label="2026"
                                 size="small"
                                 sx={{
-                                    bgcolor: "rgba(255,255,255,0.1)",
-                                    color: "rgba(255,255,255,0.8)",
+                                    bgcolor: "rgba(122, 184, 255, 0.15)",
+                                    color: "#7AB8FF",
                                     fontSize: "10px",
                                     height: "22px",
                                     fontFamily: "monospace",
                                     fontWeight: 500,
-                                    border: "1px solid rgba(255,255,255,0.2)",
+                                    border: "1px solid rgba(122, 184, 255, 0.3)",
                                     "&:hover": {
-                                        bgcolor: "rgba(255,255,255,0.15)",
+                                        bgcolor: "rgba(122, 184, 255, 0.25)",
                                     },
                                 }}
                             />
@@ -292,8 +347,7 @@ const Navbar = () => {
                                         component={Link}
                                         to="/bot"
                                         sx={{
-                                            background:
-                                                "linear-gradient(135deg, rgba(96, 165, 250, 0.15) 0%, rgba(96, 165, 250, 0.1) 100%)",
+                                            background: "transparent",
                                             width: 40,
                                             height: 40,
                                             transition: "all 0.3s ease",
@@ -302,20 +356,18 @@ const Navbar = () => {
                                             "&:hover": {
                                                 transform: "scale(1.1)",
                                                 background:
-                                                    "linear-gradient(135deg, rgba(96, 165, 250, 0.25) 0%, rgba(96, 165, 250, 0.15) 100%)",
-                                                borderColor:
-                                                    "rgba(96, 165, 250, 0.5)",
-                                                boxShadow:
-                                                    "0 8px 32px rgba(96, 165, 250, 0.3)",
+                                                    "rgba(255,255,255,0.05)",
                                             },
                                         }}
                                     >
-                                        <Avatar
+                                        <Box
+                                            component="img"
                                             src="/polli_white.svg"
+                                            alt="Bot"
                                             sx={{
-                                                width: 24,
-                                                height: 24,
-                                                filter: "drop-shadow(0 0 8px rgba(96, 165, 250, 0.4))",
+                                                width: 22,
+                                                height: 22,
+                                                filter: "brightness(0) saturate(100%) invert(68%) sepia(52%) saturate(497%) hue-rotate(182deg) brightness(103%) contrast(101%)",
                                             }}
                                         />
                                         <AutoAwesome
@@ -324,29 +376,13 @@ const Navbar = () => {
                                                 top: 4,
                                                 right: 4,
                                                 fontSize: "12px",
-                                                color: "#60a5fa",
+                                                color: "#FBBC05",
                                                 animation:
                                                     "pulse 2s ease-in-out infinite",
                                             }}
                                         />
                                     </IconButton>
                                 </Tooltip>
-
-                                <Box
-                                    sx={{
-                                        position: "absolute",
-                                        top: -2,
-                                        right: -2,
-                                        width: 8,
-                                        height: 8,
-                                        bgcolor: "var(--bot_status)",
-                                        borderRadius: "50%",
-                                        boxShadow:
-                                            "0 0 0 2px #09090b, 0 0 8px var(--bot_status)",
-                                        animation:
-                                            "pulse 2s ease-in-out infinite",
-                                    }}
-                                />
                             </Box>
                         </Box>
                     )}

@@ -20,7 +20,7 @@ const TimelinePage = () => {
     const currentPhaseRef = useRef(null);
 
     useEffect(() => {
-        document.title = "Timeline - GSOC 2026";
+        document.title = "Timeline - GSoC 2026";
 
         // Auto-scroll to current phase
         if (currentPhaseRef.current) {
@@ -72,7 +72,7 @@ const TimelinePage = () => {
                     position: "relative",
                 }}
             >
-                GSOC 2026 Timeline
+                GSoC 2026 Timeline
             </Typography>
 
             <Box

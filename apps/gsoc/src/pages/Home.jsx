@@ -1071,7 +1071,7 @@ const HomePage = () => {
                             <Box
                                 component="span"
                                 sx={{
-                                    color: "#7AB8FF",
+                                    color: colors.lime.main,
                                     fontStyle: "italic",
                                 }}
                             >

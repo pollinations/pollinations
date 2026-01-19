@@ -465,4 +465,23 @@ export const TEXT_SERVICES = {
         contextWindow: 200000,
         isSpecialized: false,
     },
+    "nomnom": {
+        aliases: ["gemini-scrape", "web-research"],
+        modelId: "nomnom",
+        provider: "community",
+        cost: [
+            {
+                date: new Date("2026-01-17").getTime(),
+                promptTextTokens: perMillion(0.0), // Free - uses Pollinations under the hood
+                completionTextTokens: perMillion(0.0),
+            },
+        ],
+        description:
+            "NomNom by @Itachi-1824 - Web Research with Search, Scrape & Crawl (Alpha)",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        search: true,
+        isSpecialized: false,
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

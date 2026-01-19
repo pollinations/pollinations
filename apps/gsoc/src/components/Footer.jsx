@@ -115,9 +115,8 @@ export default function Footer() {
                     zIndex: 1,
                 }}
             >
-                <Grid container spacing={{ xs: 4, md: 6 }}>
-                    {/* Brand Section */}
-                    <Grid size={{ xs: 12, md: 4 }}>
+                <Grid container spacing={{ xs: 4, md: 6, lg : 8 }}>
+                    <Grid size={{ xs: 12, md: 4, lg: 6 }}>
                         <Box sx={{ mb: 3 }}>
                             <Box
                                 sx={{

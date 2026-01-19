@@ -27,7 +27,6 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
     const {
         loading,
         error,
-        containerRef,
         fetchUsage,
         usedModels,
         usedKeys,
@@ -63,7 +62,7 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
     }, [filters.timeRange]);
 
     return (
-        <div ref={containerRef} className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2">
             <div className="bg-violet-50/30 rounded-2xl p-6 border border-violet-300">
                 {loading && (
                     <div className="flex items-center justify-center h-[180px]">

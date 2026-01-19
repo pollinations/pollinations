@@ -1,10 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-    ALL_MODELS,
-    MS_PER_30_DAYS,
-    MS_PER_DAY,
-    MS_PER_WEEK,
-} from "../constants";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ALL_MODELS, MS_PER_30_DAYS, MS_PER_WEEK } from "../constants";
 import type {
     DailyUsageRecord,
     DataPoint,
@@ -16,7 +11,6 @@ type UsageDataResult = {
     dailyUsage: DailyUsageRecord[];
     loading: boolean;
     error: string | null;
-    containerRef: React.RefObject<HTMLDivElement | null>;
     fetchUsage: () => void;
     usedModels: { id: string; label: string }[];
     usedKeys: string[];
@@ -34,8 +28,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
     const [dailyUsage, setDailyUsage] = useState<DailyUsageRecord[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-
     const fetchUsage = useCallback(() => {
         setLoading(true);
         setError(null);
@@ -57,23 +49,9 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             .finally(() => setLoading(false));
     }, []);
 
-    // Lazy load: fetch data only when component comes into view
+    // Fetch on mount
     useEffect(() => {
-        if (!containerRef.current) return;
-
-        const container = containerRef.current;
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting) {
-                    fetchUsage();
-                    observer.disconnect();
-                }
-            },
-            { threshold: 0.1 },
-        );
-
-        observer.observe(container);
-        return () => observer.disconnect();
+        fetchUsage();
     }, [fetchUsage]);
 
     // Compute cutoff date based on time range
@@ -194,7 +172,10 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const startDate = new Date(
-            Math.max(cutoff.getTime(), today.getTime() - 90 * MS_PER_DAY),
+            Math.max(
+                cutoff.getTime(),
+                today.getTime() - 90 * 24 * 60 * 60 * 1000,
+            ),
         );
         startDate.setHours(0, 0, 0, 0);
 
@@ -290,7 +271,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         dailyUsage,
         loading,
         error,
-        containerRef,
         fetchUsage,
         usedModels,
         usedKeys,

@@ -22,9 +22,9 @@ App submissions are now **fully automated** via the `app-review-submission.yml` 
 **Table format in APPS.md:**
 
 ```markdown
-| Emoji | Name            | Description                   | Language | Category | GitHub  | Repo                   | Stars | Discord | Other | Submitted  |
-| ----- | --------------- | ----------------------------- | -------- | -------- | ------- | ---------------------- | ----- | ------- | ----- | ---------- |
-| 🎨    | [App Name](url) | Brief description (~80 chars) |          | creative | @github | https://github.com/... | ⭐123 |         |       | 2025-01-01 |
+| Emoji | Name     | Web_URL | Description                   | Language | Category | GitHub  | GitHub_ID | Repo                   | Stars | Discord | Other | Submitted  |
+| ----- | -------- | ------- | ----------------------------- | -------- | -------- | ------- | --------- | ---------------------- | ----- | ------- | ----- | ---------- |
+| 🎨    | App Name | url     | Brief description (~80 chars) |          | creative | @github | 12345678  | https://github.com/... | ⭐123 |         |       | 2025-01-01 |
 ```
 
 **Categories:**

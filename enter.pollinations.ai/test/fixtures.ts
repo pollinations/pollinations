@@ -1,14 +1,14 @@
-import { test as base, expect } from "vitest";
-import { createAuthClient } from "better-auth/client";
-import { apiKeyClient, adminClient } from "better-auth/client/plugins";
 import { SELF } from "cloudflare:test";
-import { createMockPolar } from "./mocks/polar.ts";
-import { createMockGithub } from "./mocks/github.ts";
-import { createMockTinybird } from "./mocks/tinybird.ts";
-import { teardownFetchMock, createFetchMock } from "./mocks/fetch.ts";
 import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
+import { createAuthClient } from "better-auth/client";
+import { adminClient, apiKeyClient } from "better-auth/client/plugins";
+import { test as base, expect } from "vitest";
 import { ensureConfigured } from "@/logger.ts";
+import { createFetchMock, teardownFetchMock } from "./mocks/fetch.ts";
+import { createMockGithub } from "./mocks/github.ts";
+import { createMockPolar } from "./mocks/polar.ts";
+import { createMockTinybird } from "./mocks/tinybird.ts";
 import { createMockVcr } from "./mocks/vcr.ts";
 
 const createAuthClientInstance = () =>
@@ -39,6 +39,10 @@ type Fixtures = {
     pubApiKey: string;
     /** API key restricted to only ["openai-fast", "flux"] models */
     restrictedApiKey: string;
+    /** API key with zero pollen budget (should be rejected with 402) */
+    exhaustedBudgetApiKey: string;
+    /** API key with 100 pollen budget for testing decrement */
+    budgetedApiKey: { key: string; id: string };
 };
 
 type SignupData = {
@@ -46,16 +50,16 @@ type SignupData = {
 };
 
 export const test = base.extend<Fixtures>({
-    log: async ({/* empty */}, use) => {
+    log: async (_, use) => {
         await ensureConfigured({ level: "trace" });
         await use(getLogger(["test"]));
     },
-    mocks: async ({/* empty */}, use) => {
+    mocks: async (_, use) => {
         const mocks = createFetchMock(createMocks(), { logRequests: true });
         await use(mocks);
         await teardownFetchMock();
     },
-    auth: async ({/* empty */}, use) => {
+    auth: async (_, use) => {
         const auth = createAuthClientInstance();
         await use(auth);
     },
@@ -187,5 +191,84 @@ export const test = base.extend<Fixtures>({
         }
 
         await use(createApiKeyResponse.data.key);
+    },
+    /**
+     * Creates an API key with zero pollen budget (exhausted).
+     * Uses the /api/api-keys/:id/update endpoint to set pollenBudget to 0.
+     */
+    exhaustedBudgetApiKey: async ({ auth, sessionToken }, use) => {
+        const createApiKeyResponse = await auth.apiKey.create({
+            name: "exhausted-budget-key",
+            fetchOptions: {
+                headers: {
+                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        });
+        if (!createApiKeyResponse.data)
+            throw new Error("Failed to create exhausted budget API key");
+
+        // Set pollenBudget to 0 via the API endpoint
+        const updateResponse = await SELF.fetch(
+            `http://localhost:3000/api/api-keys/${createApiKeyResponse.data.id}/update`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    pollenBudget: 0,
+                }),
+            },
+        );
+        if (!updateResponse.ok) {
+            throw new Error(
+                `Failed to set API key budget: ${await updateResponse.text()}`,
+            );
+        }
+
+        await use(createApiKeyResponse.data.key);
+    },
+    /**
+     * Creates an API key with 100 pollen budget for testing decrement.
+     * Returns both key and id so tests can verify balance changes.
+     */
+    budgetedApiKey: async ({ auth, sessionToken }, use) => {
+        const createApiKeyResponse = await auth.apiKey.create({
+            name: "budgeted-test-key",
+            fetchOptions: {
+                headers: {
+                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        });
+        if (!createApiKeyResponse.data)
+            throw new Error("Failed to create budgeted API key");
+
+        // Set pollenBudget to 100 via the API endpoint
+        const updateResponse = await SELF.fetch(
+            `http://localhost:3000/api/api-keys/${createApiKeyResponse.data.id}/update`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    pollenBudget: 100,
+                }),
+            },
+        );
+        if (!updateResponse.ok) {
+            throw new Error(
+                `Failed to set API key budget: ${await updateResponse.text()}`,
+            );
+        }
+
+        await use({
+            key: createApiKeyResponse.data.key,
+            id: createApiKeyResponse.data.id,
+        });
     },
 });

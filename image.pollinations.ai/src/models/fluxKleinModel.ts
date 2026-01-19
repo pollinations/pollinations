@@ -143,7 +143,7 @@ async function generateTextToImage(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "flux-klein",
+            actualModel: "klein",
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,
@@ -280,7 +280,7 @@ async function generateWithEditing(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "flux-klein",
+            actualModel: "klein",
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,

@@ -206,8 +206,8 @@ const AboutPage = () => {
                                 View Project Ideas
                             </Button>
                             <Button
-                                component={Link}
-                                to="/timeline"
+                                href="https://summerofcode.withgoogle.com/how-it-works/"
+                                target="_blank"
                                 variant="outlined"
                                 size="large"
                                 sx={{
@@ -222,6 +222,9 @@ const AboutPage = () => {
                                         backgroundColor: colors.lime.dim,
                                     },
                                 }}
+                                endIcon={
+                                        <OpenInNew sx={{ fontSize: 14 }} />
+                                    }
                             >
                                 How GSoC Works
                             </Button>
@@ -400,7 +403,7 @@ const AboutPage = () => {
                             <Box sx={{ mt: 4 }}>
                                 <Button
                                     component={Link}
-                                    to="/projects"
+                                    to="/coc"
                                     variant="contained"
                                     endIcon={<ArrowForward />}
                                     sx={{
@@ -413,7 +416,7 @@ const AboutPage = () => {
                                         },
                                     }}
                                 >
-                                    View Project Ideas
+                                    Code of Conduct
                                 </Button>
                             </Box>
                         </Card>

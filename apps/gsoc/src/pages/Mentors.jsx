@@ -228,6 +228,9 @@ const MentorsPage = () => {
                                                 sx={{
                                                     width: 80,
                                                     height: 80,
+                                                    minWidth: 80,
+                                                    minHeight: 80,
+                                                    flexShrink: 0,
                                                     border: "3px solid rgba(255,255,255,0.2)",
                                                     boxShadow:
                                                         "0 8px 32px rgba(0,0,0,0.3)",
@@ -237,7 +240,7 @@ const MentorsPage = () => {
                                                     backgroundPosition:
                                                         "center",
                                                 }}
-                                            ></Box>
+                                            />
 
                                             <Box sx={{ flexGrow: 1 }}>
                                                 <Typography

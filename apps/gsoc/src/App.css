@@ -1,36 +1,49 @@
 body {
-    background: linear-gradient(120deg, #1e0c42, #431d5a, #23114a);
-    color: #fff;
+    background: linear-gradient(135deg, #0c0f0a 0%, #0f1410 50%, #0c0f0a 100%);
+    color: var(--text-primary, #f5f5f4);
     margin: 0;
-    font-family: "Inter", sans-serif;
+    font-family: var(--font-body, "DM Sans", sans-serif);
     min-height: 100vh;
+    position: relative;
+}
+
+/* Subtle organic grain texture overlay */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.025;
+    pointer-events: none;
+    z-index: 0;
 }
 
 .glass-card {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(16, 24, 12, 0.6);
     backdrop-filter: blur(10px);
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(163, 230, 53, 0.1);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
 .neumorphic-button {
     border-radius: 50px;
-    background: #2a104f;
+    background: rgba(16, 24, 12, 0.8);
     box-shadow:
-        10px 10px 20px #1a0a30,
-        -10px -10px 20px #3a1a6e;
-    color: #a996c5;
-    border: none;
+        10px 10px 20px rgba(0, 0, 0, 0.3),
+        -10px -10px 20px rgba(163, 230, 53, 0.05);
+    color: var(--lime, #a3e635);
+    border: 1px solid rgba(163, 230, 53, 0.2);
     outline: none;
     transition: all 0.2s ease-in-out;
 }
 
 .neumorphic-button:hover {
     box-shadow:
-        5px 5px 10px #1a0a30,
-        -5px -5px 10px #3a1a6e;
-    color: #cbbde2;
+        5px 5px 10px rgba(0, 0, 0, 0.3),
+        -5px -5px 10px rgba(163, 230, 53, 0.08);
+    color: var(--sage, #86efac);
+    border-color: rgba(163, 230, 53, 0.3);
 }
 
 /* GSOCPolly AI Assistant Animations */
@@ -83,12 +96,12 @@ body {
     0%,
     100% {
         box-shadow:
-            0 0 5px rgba(96, 165, 250, 0.3),
-            0 0 10px rgba(96, 165, 250, 0.2);
+            0 0 5px rgba(163, 230, 53, 0.3),
+            0 0 10px rgba(163, 230, 53, 0.2);
     }
     50% {
         box-shadow:
-            0 0 20px rgba(96, 165, 250, 0.6),
-            0 0 30px rgba(96, 165, 250, 0.4);
+            0 0 20px rgba(163, 230, 53, 0.6),
+            0 0 30px rgba(163, 230, 53, 0.4);
     }
 }

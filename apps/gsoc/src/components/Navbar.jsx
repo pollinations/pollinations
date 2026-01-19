@@ -1,7 +1,6 @@
 import { AutoAwesome, Close, Menu } from "@mui/icons-material";
 import {
     AppBar,
-    Avatar,
     Box,
     Button,
     Chip,
@@ -19,6 +18,7 @@ import {
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "../index.css";
+import { colors, gradients } from "../theme";
 
 const Navbar = () => {
     const theme = useTheme();
@@ -45,15 +45,16 @@ const Navbar = () => {
             sx={{
                 width: 250,
                 height: "100%",
-                background:
-                    "linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 100%)",
+                background: gradients.bgOverlay,
                 backdropFilter: "blur(20px)",
-                color: "#fff",
+                color: colors.text.primary,
             }}
             role="presentation"
             onClick={handleDrawerToggle}
         >
-            <Box sx={{ p: 2, borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+            <Box
+                sx={{ p: 2, borderBottom: `1px solid ${colors.border.light}` }}
+            >
                 <Box
                     sx={{
                         display: "flex",
@@ -86,13 +87,13 @@ const Navbar = () => {
                     label="2026"
                     size="small"
                     sx={{
-                        bgcolor: "rgba(122, 184, 255, 0.15)",
-                        color: "#7AB8FF",
+                        bgcolor: colors.lime.dim,
+                        color: colors.lime.main,
                         height: "20px",
                         fontSize: "15px",
                         fontFamily: "monospace",
                         fontWeight: 500,
-                        border: "1px solid rgba(122, 184, 255, 0.3)",
+                        border: `1px solid ${colors.lime.border}`,
                     }}
                 />
             </Box>
@@ -104,14 +105,14 @@ const Navbar = () => {
                         to={item.path}
                         sx={{
                             color: isActivePath(item.path)
-                                ? "#fff"
-                                : "rgba(255,255,255,0.7)",
+                                ? colors.lime.main
+                                : colors.text.muted,
                             backgroundColor: isActivePath(item.path)
-                                ? "rgba(255,255,255,0.1)"
+                                ? colors.lime.dim
                                 : "transparent",
                             "&:hover": {
-                                backgroundColor: "rgba(255,255,255,0.05)",
-                                color: "#fff",
+                                backgroundColor: colors.bg.cardGlass,
+                                color: colors.lime.main,
                             },
                             transition: "all 0.3s ease",
                             borderRadius: "8px",
@@ -132,17 +133,20 @@ const Navbar = () => {
                     </ListItem>
                 ))}
 
-                {/* SocBot AI Assistant in Mobile Menu */}
+                {/* Polly AI Assistant in Mobile Menu */}
                 <ListItem
                     component={Link}
                     to="/bot"
                     sx={{
-                        color: "rgba(96, 165, 250, 0.9)",
-                        backgroundColor: "rgba(96, 165, 250, 0.1)",
-                        border: "1px solid rgba(96, 165, 250, 0.2)",
+                        color: isActivePath("/bot")
+                            ? colors.lime.main
+                            : colors.text.muted,
+                        backgroundColor: isActivePath("/bot")
+                            ? colors.lime.dim
+                            : "transparent",
                         "&:hover": {
-                            backgroundColor: "rgba(96, 165, 250, 0.15)",
-                            color: "#60a5fa",
+                            backgroundColor: colors.bg.cardGlass,
+                            color: colors.lime.main,
                         },
                         transition: "all 0.3s ease",
                         borderRadius: "8px",
@@ -158,33 +162,26 @@ const Navbar = () => {
                             width: "100%",
                         }}
                     >
-                        <Avatar
+                        <Box
+                            component="img"
                             src="/polli_white.svg"
+                            alt="Polly"
                             sx={{
                                 width: 24,
                                 height: 24,
-                                bgcolor: "transparent",
+                                filter: isActivePath("/bot")
+                                    ? "brightness(0) saturate(100%) invert(79%) sepia(55%) saturate(497%) hue-rotate(44deg) brightness(103%) contrast(101%)"
+                                    : "brightness(0) invert(0.7)",
                             }}
                         />
                         <ListItemText
-                            primary="SocBot AI Assistant"
-                            secondary="Ask me anything about GSOC!"
+                            primary="Polly"
                             sx={{
                                 "& .MuiTypography-root": {
-                                    fontWeight: 600,
-                                    color: "#60a5fa",
+                                    fontWeight: isActivePath("/bot")
+                                        ? 600
+                                        : 400,
                                 },
-                                "& .MuiTypography-body2": {
-                                    color: "rgba(96, 165, 250, 0.7)",
-                                    fontSize: "0.75rem",
-                                },
-                            }}
-                        />
-                        <AutoAwesome
-                            sx={{
-                                fontSize: "16px",
-                                color: "#60a5fa",
-                                animation: "pulse 2s ease-in-out infinite",
                             }}
                         />
                     </Box>
@@ -199,10 +196,9 @@ const Navbar = () => {
                 position="sticky"
                 elevation={0}
                 sx={{
-                    background:
-                        "linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 100%)",
+                    background: gradients.bgOverlay,
                     backdropFilter: "blur(20px)",
-                    borderBottom: "1px solid rgba(255,255,255,0.1)",
+                    borderBottom: `1px solid ${colors.border.light}`,
                     zIndex: theme.zIndex.drawer + 1,
                 }}
             >
@@ -252,7 +248,7 @@ const Navbar = () => {
                                 </Typography>
                                 <Typography
                                     sx={{
-                                        color: "rgba(255,255,255,0.5)",
+                                        color: colors.text.subtle,
                                         fontSize: "1.2rem",
                                     }}
                                 >
@@ -271,15 +267,15 @@ const Navbar = () => {
                                 label="2026"
                                 size="small"
                                 sx={{
-                                    bgcolor: "rgba(122, 184, 255, 0.15)",
-                                    color: "#7AB8FF",
+                                    bgcolor: colors.lime.dim,
+                                    color: colors.lime.main,
                                     fontSize: "10px",
                                     height: "22px",
                                     fontFamily: "monospace",
                                     fontWeight: 500,
-                                    border: "1px solid rgba(122, 184, 255, 0.3)",
+                                    border: `1px solid ${colors.lime.border}`,
                                     "&:hover": {
-                                        bgcolor: "rgba(122, 184, 255, 0.25)",
+                                        bgcolor: colors.lime.border,
                                     },
                                 }}
                             />
@@ -302,8 +298,8 @@ const Navbar = () => {
                                     to={item.path}
                                     sx={{
                                         color: isActivePath(item.path)
-                                            ? "#fff"
-                                            : "rgba(255,255,255,0.7)",
+                                            ? colors.lime.main
+                                            : colors.text.muted,
                                         fontWeight: isActivePath(item.path)
                                             ? 600
                                             : 400,
@@ -313,9 +309,9 @@ const Navbar = () => {
                                         borderRadius: "8px",
                                         transition: "all 0.3s ease",
                                         "&:hover": {
-                                            color: "#fff",
+                                            color: colors.text.primary,
                                             backgroundColor:
-                                                "rgba(255,255,255,0.08)",
+                                                colors.bg.cardGlassHover,
                                         },
                                         "&::after": isActivePath(item.path)
                                             ? {
@@ -327,9 +323,9 @@ const Navbar = () => {
                                                   width: "4px",
                                                   height: "4px",
                                                   borderRadius: "50%",
-                                                  backgroundColor: "#fff",
-                                                  boxShadow:
-                                                      "0 0 8px rgba(255,255,255,0.6)",
+                                                  backgroundColor:
+                                                      colors.lime.main,
+                                                  boxShadow: `0 0 8px ${colors.lime.glow}`,
                                               }
                                             : {},
                                     }}
@@ -338,52 +334,49 @@ const Navbar = () => {
                                 </Button>
                             ))}
 
-                            <Box sx={{ ml: 1, position: "relative" }}>
-                                <Tooltip
-                                    title="Ask Me Anything"
-                                    placement="bottom"
+                            <Tooltip title="Polly" placement="bottom">
+                                <IconButton
+                                    component={Link}
+                                    to="/bot"
+                                    sx={{
+                                        background: "transparent",
+                                        width: 40,
+                                        height: 40,
+                                        ml: 1,
+                                        position: "relative",
+                                        transition: "all 0.3s ease",
+                                        "&:hover": {
+                                            background:
+                                                colors.bg.cardGlassHover,
+                                        },
+                                    }}
                                 >
-                                    <IconButton
-                                        component={Link}
-                                        to="/bot"
+                                    <Box
+                                        component="img"
+                                        src="/polli_white.svg"
+                                        alt="Polly"
                                         sx={{
-                                            background: "transparent",
-                                            width: 40,
-                                            height: 40,
-                                            transition: "all 0.3s ease",
-                                            position: "relative",
-                                            overflow: "hidden",
-                                            "&:hover": {
-                                                transform: "scale(1.1)",
-                                                background:
-                                                    "rgba(255,255,255,0.05)",
-                                            },
+                                            width: 22,
+                                            height: 22,
+                                            filter: isActivePath("/bot")
+                                                ? "brightness(0) saturate(100%) invert(79%) sepia(55%) saturate(497%) hue-rotate(44deg) brightness(103%) contrast(101%)"
+                                                : "brightness(0) invert(0.7)",
+                                            transition: "filter 0.3s ease",
                                         }}
-                                    >
-                                        <Box
-                                            component="img"
-                                            src="/polli_white.svg"
-                                            alt="Bot"
-                                            sx={{
-                                                width: 22,
-                                                height: 22,
-                                                filter: "brightness(0) saturate(100%) invert(68%) sepia(52%) saturate(497%) hue-rotate(182deg) brightness(103%) contrast(101%)",
-                                            }}
-                                        />
-                                        <AutoAwesome
-                                            sx={{
-                                                position: "absolute",
-                                                top: 4,
-                                                right: 4,
-                                                fontSize: "12px",
-                                                color: "#FBBC05",
-                                                animation:
-                                                    "pulse 2s ease-in-out infinite",
-                                            }}
-                                        />
-                                    </IconButton>
-                                </Tooltip>
-                            </Box>
+                                    />
+                                    <AutoAwesome
+                                        sx={{
+                                            position: "absolute",
+                                            top: 4,
+                                            right: 4,
+                                            fontSize: "12px",
+                                            color: colors.lime.main,
+                                            animation:
+                                                "pulse 2s ease-in-out infinite",
+                                        }}
+                                    />
+                                </IconButton>
+                            </Tooltip>
                         </Box>
                     )}
 
@@ -395,9 +388,9 @@ const Navbar = () => {
                             edge="end"
                             onClick={handleDrawerToggle}
                             sx={{
-                                color: "rgba(255,255,255,0.8)",
+                                color: colors.text.secondary,
                                 "&:hover": {
-                                    backgroundColor: "rgba(255,255,255,0.1)",
+                                    backgroundColor: colors.border.light,
                                 },
                             }}
                         >
@@ -430,10 +423,10 @@ const Navbar = () => {
                             position: "absolute",
                             top: 8,
                             right: 8,
-                            color: "rgba(255,255,255,0.8)",
+                            color: colors.text.secondary,
                             zIndex: 1,
                             "&:hover": {
-                                backgroundColor: "rgba(255,255,255,0.1)",
+                                backgroundColor: colors.border.light,
                             },
                         }}
                     >

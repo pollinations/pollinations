@@ -72,8 +72,8 @@ export const APP_CONFIGS = {
         outputDir: "apps/gsoc/public",
         sourceSvg: "../../assets/logo.svg",
         ogSourceSvg: "../../assets/logo-text.svg",
-        themeColor: "#7AB8FF",
-        backgroundColor: "#7AB8FF",
+        themeColor: "#a3e635",
+        backgroundColor: "#a3e635",
         iconBackground: "transparent",
         seo: {
             title: "GSoC 2026 × pollinations.ai",

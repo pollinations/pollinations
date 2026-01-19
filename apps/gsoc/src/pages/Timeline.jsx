@@ -3,6 +3,7 @@ import { format, parseISO } from "date-fns";
 import { motion } from "framer-motion";
 import { useEffect, useRef } from "react";
 import gsocTimeline from "../info/timeline.json";
+import { colors, gradients } from "../theme";
 
 const cardVariants = {
     hidden: { opacity: 0, y: 50 },
@@ -35,7 +36,7 @@ const TimelinePage = () => {
         <Box
             sx={{
                 minHeight: "100vh",
-                bgcolor: "#09090b",
+                bgcolor: colors.bg.deep,
                 color: "#fff",
                 padding: "2rem 2rem 4rem",
                 position: "relative",
@@ -64,8 +65,7 @@ const TimelinePage = () => {
                     marginBottom: "5rem",
                     fontWeight: 700,
                     letterSpacing: "-0.02em",
-                    background:
-                        "linear-gradient(to bottom right, #fff, #a1a1aa)",
+                    background: gradients.textHeading,
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                     zIndex: 1,
@@ -152,7 +152,9 @@ const TimelinePage = () => {
                                         width: "16px",
                                         height: "16px",
                                         borderRadius: "50%",
-                                        bgcolor: isActive ? "#fff" : "#09090b",
+                                        bgcolor: isActive
+                                            ? colors.lime.main
+                                            : colors.bg.deep,
                                         border: "2px solid",
                                         borderColor: isActive
                                             ? "#fff"
@@ -162,7 +164,7 @@ const TimelinePage = () => {
                                         transform: "translate(-50%, -50%)",
                                         zIndex: 2,
                                         boxShadow: isActive
-                                            ? "0 0 20px rgba(255,255,255,0.6)"
+                                            ? `0 0 20px ${colors.lime.glow}`
                                             : "none",
                                         transition: "all 0.3s ease",
                                     }}
@@ -174,84 +176,74 @@ const TimelinePage = () => {
                                         width: isMobile ? "100%" : "45%",
                                         p: 3,
                                         background: isActive
-                                            ? "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)"
+                                            ? `linear-gradient(135deg, ${colors.lime.dim} 0%, rgba(163, 230, 53, 0.03) 100%)`
                                             : "rgba(255, 255, 255, 0.03)",
                                         backdropFilter: "blur(10px)",
                                         border: "2px solid",
                                         borderColor: isActive
-                                            ? "rgba(255,255,255,0.4)"
-                                            : "rgba(255,255,255,0.08)",
-                                        borderRadius: "12px",
+                                            ? colors.lime.border
+                                            : colors.border.light,
+                                        borderRadius: "16px",
                                         transition: "all 0.3s ease",
                                         transform: isActive
                                             ? "scale(1.02)"
                                             : "scale(1)",
                                         boxShadow: isActive
-                                            ? "0 8px 32px rgba(255,255,255,0.1), 0 0 0 1px rgba(255,255,255,0.1)"
+                                            ? `0 8px 32px ${colors.lime.glow}, 0 0 0 1px ${colors.lime.border}`
                                             : "none",
                                         position: "relative",
-                                        "&::before": isActive
-                                            ? {
-                                                  content: '""',
-                                                  position: "absolute",
-                                                  top: 0,
-                                                  left: 0,
-                                                  right: 0,
-                                                  bottom: 0,
-                                                  background:
-                                                      "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%)",
-                                                  borderRadius: "12px",
-                                                  pointerEvents: "none",
-                                              }
-                                            : {},
+                                        overflow: "visible",
                                         "&:hover": {
                                             borderColor: isActive
-                                                ? "rgba(255,255,255,0.5)"
-                                                : "rgba(255,255,255,0.2)",
+                                                ? colors.lime.main
+                                                : colors.border.hover,
                                             background: isActive
-                                                ? "linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%)"
+                                                ? `linear-gradient(135deg, ${colors.lime.dim} 0%, rgba(163, 230, 53, 0.05) 100%)`
                                                 : "rgba(255, 255, 255, 0.05)",
                                         },
                                     }}
                                 >
+                                    {/* Current badge - top right */}
+                                    {isActive && (
+                                        <Box
+                                            sx={{
+                                                position: "absolute",
+                                                top: -12,
+                                                right: 16,
+                                                bgcolor: colors.lime.main,
+                                                color: colors.bg.deep,
+                                                px: 1.5,
+                                                py: 0.5,
+                                                borderRadius: "6px",
+                                                fontSize: "11px",
+                                                fontWeight: 700,
+                                                letterSpacing: "0.05em",
+                                                boxShadow: `0 4px 12px ${colors.lime.glow}`,
+                                            }}
+                                        >
+                                            CURRENT
+                                        </Box>
+                                    )}
                                     <Typography
                                         variant="caption"
                                         sx={{
                                             display: "inline-block",
-                                            mb: 1,
+                                            mb: 1.5,
                                             px: 1.5,
                                             py: 0.5,
-                                            borderRadius: "99px",
+                                            borderRadius: "8px",
                                             bgcolor: isActive
-                                                ? "rgba(255,255,255,0.15)"
+                                                ? colors.lime.dim
                                                 : "transparent",
                                             border: "1px solid",
                                             borderColor: isActive
-                                                ? "rgba(255,255,255,0.2)"
-                                                : "rgba(255,255,255,0.1)",
+                                                ? colors.lime.border
+                                                : colors.border.light,
                                             color: isActive
-                                                ? "rgba(255,255,255,0.9)"
-                                                : "rgba(255,255,255,0.7)",
+                                                ? colors.lime.main
+                                                : "rgba(255,255,255,0.6)",
                                             fontFamily: "monospace",
                                             fontWeight: isActive ? 600 : 400,
-                                            position: "relative",
-                                            "&::after": isActive
-                                                ? {
-                                                      content: '"CURRENT"',
-                                                      position: "absolute",
-                                                      top: "-8px",
-                                                      right: "-8px",
-                                                      fontSize: "8px",
-                                                      fontWeight: 700,
-                                                      color: "#fff",
-                                                      bgcolor:
-                                                          "rgba(34, 197, 94, 0.8)",
-                                                      px: 0.5,
-                                                      py: 0.25,
-                                                      borderRadius: "4px",
-                                                      letterSpacing: "0.05em",
-                                                  }
-                                                : {},
                                         }}
                                     >
                                         {format(startDate, "MMM dd")} -{" "}

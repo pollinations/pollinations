@@ -26,6 +26,7 @@ import remarkGfm from "remark-gfm";
 import "highlight.js/styles/github-dark.css";
 import socBotAPI from "../api/socBot.ts";
 import faqData from "../info/faq.json";
+import { colors } from "../theme";
 
 const MarkdownComponents = {
     h1: ({ children }) => (
@@ -34,8 +35,8 @@ const MarkdownComponents = {
             sx={{
                 fontWeight: 700,
                 mb: 2,
-                color: "#60a5fa",
-                borderBottom: "2px solid rgba(96, 165, 250, 0.3)",
+                color: colors.lime.main,
+                borderBottom: `2px solid ${colors.lime.border}`,
                 pb: 1,
             }}
         >
@@ -45,7 +46,7 @@ const MarkdownComponents = {
     h2: ({ children }) => (
         <Typography
             variant="h5"
-            sx={{ fontWeight: 600, mb: 2, mt: 3, color: "#60a5fa" }}
+            sx={{ fontWeight: 600, mb: 2, mt: 3, color: colors.lime.main }}
         >
             {children}
         </Typography>
@@ -99,8 +100,8 @@ const MarkdownComponents = {
                 <Box
                     component="code"
                     sx={{
-                        bgcolor: "rgba(96, 165, 250, 0.1)",
-                        color: "#60a5fa",
+                        bgcolor: colors.lime.dim,
+                        color: colors.lime.main,
                         px: 1,
                         py: 0.5,
                         borderRadius: "4px",
@@ -118,7 +119,7 @@ const MarkdownComponents = {
                 elevation={0}
                 sx={{
                     bgcolor: "rgba(0,0,0,0.3)",
-                    border: "1px solid rgba(96, 165, 250, 0.2)",
+                    border: `1px solid ${colors.lime.border}`,
                     borderRadius: "8px",
                     overflow: "hidden",
                     mb: 2,
@@ -167,10 +168,10 @@ const MarkdownComponents = {
             target="_blank"
             rel="noopener noreferrer"
             sx={{
-                color: "#60a5fa",
+                color: colors.lime.main,
                 textDecoration: "underline",
                 "&:hover": {
-                    color: "#3b82f6",
+                    color: colors.lime.light,
                     textDecoration: "none",
                 },
             }}
@@ -195,7 +196,7 @@ const MarkdownComponents = {
         <Box
             sx={{
                 height: "1px",
-                bgcolor: "rgba(96, 165, 250, 0.3)",
+                bgcolor: colors.lime.border,
                 border: "none",
                 my: 3,
             }}
@@ -225,9 +226,9 @@ const MarkdownComponents = {
             component="th"
             sx={{
                 p: 1.5,
-                bgcolor: "rgba(96, 165, 250, 0.1)",
-                borderBottom: "1px solid rgba(96, 165, 250, 0.3)",
-                color: "#60a5fa",
+                bgcolor: colors.lime.dim,
+                borderBottom: `1px solid ${colors.lime.border}`,
+                color: colors.lime.main,
                 fontWeight: 600,
                 textAlign: "left",
             }}
@@ -270,14 +271,11 @@ const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
                         sx={{
                             width: 40,
                             height: 40,
-                            bgcolor: "rgba(122, 184, 255, 0.1)",
-                            border: "2px solid rgba(122, 184, 255, 0.3)",
+                            bgcolor: "transparent",
+                            border: `2px solid ${colors.border.light}`,
                             position: "relative",
                             px: 1,
                             py: 1,
-                            "& img": {
-                                filter: "brightness(0) saturate(100%) invert(68%) sepia(52%) saturate(497%) hue-rotate(182deg) brightness(103%) contrast(101%)",
-                            },
                         }}
                     />
                 </Box>
@@ -293,9 +291,9 @@ const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
                     sx={{
                         p: 2,
                         background: isBot
-                            ? "linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(96, 165, 250, 0.05) 100%)"
+                            ? "linear-gradient(135deg, rgba(163, 230, 53, 0.1) 0%, rgba(163, 230, 53, 0.05) 100%)"
                             : "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
-                        border: `1px solid ${isBot ? "rgba(96, 165, 250, 0.2)" : "rgba(255,255,255,0.2)"}`,
+                        border: `1px solid ${isBot ? colors.lime.dim : "rgba(255,255,255,0.2)"}`,
                         borderRadius: isBot
                             ? "20px 20px 20px 8px"
                             : "20px 20px 8px 20px",
@@ -313,8 +311,7 @@ const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
                                 left: 0,
                                 right: 0,
                                 height: "2px",
-                                background:
-                                    "linear-gradient(90deg, #60a5fa, #3b82f6)",
+                                background: `linear-gradient(90deg, ${colors.lime.main}, ${colors.lime.light})`,
                                 opacity: 0.6,
                             }}
                         />
@@ -329,13 +326,13 @@ const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
                         >
                             <CircularProgress
                                 size={16}
-                                sx={{ color: "#60a5fa" }}
+                                sx={{ color: colors.lime.main }}
                             />
                             <Typography
                                 variant="body2"
                                 sx={{ color: "rgba(255,255,255,0.8)" }}
                             >
-                                SocBot is thinking...
+                                Polly is thinking...
                             </Typography>
                         </Box>
                     ) : isBot ? (
@@ -406,16 +403,16 @@ const _SuggestedQuestion = ({ question, onClick, icon }) => (
                 borderRadius: "12px",
                 transition: "all 0.3s ease",
                 "&:hover": {
-                    borderColor: "rgba(96, 165, 250, 0.4)",
+                    borderColor: colors.lime.border,
                     background:
-                        "linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(96, 165, 250, 0.05) 100%)",
-                    boxShadow: "0 8px 32px rgba(96, 165, 250, 0.2)",
+                        "linear-gradient(135deg, rgba(163, 230, 53, 0.1) 0%, rgba(163, 230, 53, 0.05) 100%)",
+                    boxShadow: "0 8px 32px rgba(163, 230, 53, 0.2)",
                 },
             }}
         >
             <CardContent sx={{ p: 2 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box sx={{ color: "#60a5fa", fontSize: "1.2rem" }}>
+                    <Box sx={{ color: colors.lime.main, fontSize: "1.2rem" }}>
                         {icon}
                     </Box>
                     <Typography
@@ -434,14 +431,14 @@ const _SuggestedQuestion = ({ question, onClick, icon }) => (
     </motion.div>
 );
 
-const socBotChat = () => {
+const PollyChat = () => {
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [_expandedFaq, _setExpandedFaq] = useState(null);
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
-    const pollyAPI = useRef(new socBotAPI());
+    const pollyAPI = useRef(new socBotAPI()); // API class name unchanged
 
     // Group FAQ by category
     const _faqByCategory = faqData.reduce((acc, item) => {
@@ -458,7 +455,7 @@ const socBotChat = () => {
             {
                 id: 1,
                 content:
-                    "Hello! I'm socBot, your AI assistant for Google Summer of Code 2026 at pollinations.ai! 🚀\n\nI'm here to help you with everything related to GSoC - from understanding the program to choosing projects, application guidance, and technical support.\n\nWhat would you like to know about GSoC 2026?",
+                    "Hello! I'm Polly, your AI assistant for Google Summer of Code 2026 at pollinations.ai! 🌱\n\nI'm here to help you with everything related to GSoC - from understanding the program to choosing projects, application guidance, and technical support.\n\nWhat would you like to know about GSoC 2026?",
                 isBot: true,
                 timestamp: new Date().toISOString(),
             },
@@ -564,8 +561,8 @@ const socBotChat = () => {
     ];
 
     const categoryColors = {
-        "General": "#60a5fa",
-        "Application": "#3b82f6",
+        "General": colors.lime.main,
+        "Application": colors.lime.light,
         "Projects": "#10b981",
         "Timeline": "#f59e0b",
         "Mentorship": "#8b5cf6",
@@ -573,7 +570,7 @@ const socBotChat = () => {
         "Community": "#06b6d4",
         "Contribution": "#22c55e",
         "Selection": "#f59e0b",
-        "Support": "#60a5fa",
+        "Support": colors.lime.main,
         "Post-GSoC": "#a78bfa",
         "Troubleshooting": "#ef4444",
     };
@@ -582,7 +579,7 @@ const socBotChat = () => {
         <Box
             sx={{
                 minHeight: "100vh",
-                bgcolor: "#09090b",
+                bgcolor: colors.bg.deep,
                 position: "relative",
                 overflow: "hidden",
             }}
@@ -594,8 +591,7 @@ const socBotChat = () => {
                     right: "-5%",
                     width: "500px",
                     height: "500px",
-                    background:
-                        "radial-gradient(circle, rgba(96, 165, 250, 0.1) 0%, rgba(0,0,0,0) 70%)",
+                    background: `radial-gradient(circle, ${colors.lime.dim} 0%, rgba(0,0,0,0) 70%)`,
                     zIndex: 0,
                     pointerEvents: "none",
                 }}
@@ -635,7 +631,6 @@ const socBotChat = () => {
                         <Typography
                             variant="h2"
                             sx={{
-                                marginBottom: "1rem",
                                 fontWeight: 700,
                                 letterSpacing: "-0.02em",
                                 background:
@@ -644,19 +639,7 @@ const socBotChat = () => {
                                 WebkitTextFillColor: "transparent",
                             }}
                         >
-                            socBot
-                        </Typography>
-                        <Typography
-                            variant="h6"
-                            sx={{
-                                color: "rgba(255,255,255,0.7)",
-                                fontWeight: 400,
-                                maxWidth: "800px",
-                                margin: "0 auto",
-                                lineHeight: 1.6,
-                            }}
-                        >
-                            Your GSoC guide.
+                            Hello I am Polly, your GSoC guide.
                         </Typography>
                     </Box>
                 </motion.div>
@@ -677,11 +660,11 @@ const socBotChat = () => {
                             borderRadius: "10px",
                         },
                         "&::-webkit-scrollbar-thumb": {
-                            background: "rgba(96, 165, 250, 0.3)",
+                            background: colors.lime.border,
                             borderRadius: "10px",
                         },
                         "&::-webkit-scrollbar-thumb:hover": {
-                            background: "rgba(96, 165, 250, 0.5)",
+                            background: colors.lime.glow,
                         },
                     }}
                 >
@@ -750,12 +733,12 @@ const socBotChat = () => {
                                 disabled={isLoading || !inputValue.trim()}
                                 sx={{
                                     color: inputValue.trim()
-                                        ? "#60a5fa"
+                                        ? colors.lime.main
                                         : "rgba(255,255,255,0.3)",
                                     p: 1,
                                     transition: "all 0.2s ease",
                                     "&:hover": {
-                                        color: "#3b82f6",
+                                        color: colors.lime.light,
                                         bgcolor: "transparent",
                                     },
                                     "&:disabled": {
@@ -767,7 +750,7 @@ const socBotChat = () => {
                                     <CircularProgress
                                         size={20}
                                         sx={{
-                                            color: "rgba(96, 165, 250, 0.6)",
+                                            color: colors.lime.glow,
                                         }}
                                     />
                                 ) : (
@@ -782,9 +765,9 @@ const socBotChat = () => {
             {/* FAQ Section - Always Visible */}
             <Box
                 sx={{
-                    bgcolor: "#09090b",
+                    bgcolor: colors.bg.deep,
                     py: 3,
-                    borderTop: "1px solid rgba(255,255,255,0.1)",
+                    borderTop: `1px solid ${colors.border.light}`,
                 }}
             >
                 <Container
@@ -816,7 +799,8 @@ const socBotChat = () => {
                     >
                         {faqData.slice(0, 10).map((faq) => {
                             const categoryColor =
-                                categoryColors[faq.category] || "#60a5fa";
+                                categoryColors[faq.category] ||
+                                colors.lime.main;
 
                             return (
                                 <Box
@@ -876,4 +860,4 @@ const socBotChat = () => {
     );
 };
 
-export default socBotChat;
+export default PollyChat;

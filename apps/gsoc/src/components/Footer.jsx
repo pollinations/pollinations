@@ -19,7 +19,9 @@ import {
     Typography,
 } from "@mui/material";
 import { useState } from "react";
+import "../index.css";
 import { Link as RouterLink } from "react-router-dom";
+import { colors, gradients } from "../theme";
 
 export default function Footer() {
     const currentYear = new Date().getFullYear();
@@ -82,11 +84,10 @@ export default function Footer() {
         <Box
             component="footer"
             sx={{
-                background:
-                    "linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 100%)",
+                background: gradients.bgOverlay,
                 backdropFilter: "blur(20px)",
-                borderTop: "1px solid rgba(255,255,255,0.1)",
-                color: "#fff",
+                borderTop: `1px solid ${colors.border.light}`,
+                color: colors.text.primary,
                 mt: 8,
                 position: "relative",
                 overflow: "hidden",
@@ -116,7 +117,7 @@ export default function Footer() {
             >
                 <Grid container spacing={{ xs: 4, md: 6 }}>
                     {/* Brand Section */}
-                    <Grid item xs={12} md={4}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                         <Box sx={{ mb: 3 }}>
                             <Box
                                 sx={{
@@ -153,7 +154,7 @@ export default function Footer() {
                                     </Typography>
                                     <Typography
                                         sx={{
-                                            color: "rgba(255,255,255,0.5)",
+                                            color: colors.text.subtle,
                                             fontSize: "1.2rem",
                                         }}
                                     >
@@ -172,20 +173,20 @@ export default function Footer() {
                                     label="2026"
                                     size="small"
                                     sx={{
-                                        bgcolor: "rgba(122, 184, 255, 0.15)",
-                                        color: "#7AB8FF",
+                                        bgcolor: colors.lime.dim,
+                                        color: colors.lime.main,
                                         fontSize: "12px",
                                         height: "20px",
                                         fontFamily: "monospace",
                                         fontWeight: 500,
-                                        border: "1px solid rgba(122, 184, 255, 0.3)",
+                                        border: `1px solid ${colors.lime.border}`,
                                     }}
                                 />
                             </Box>
                             <Typography
                                 variant="body2"
                                 sx={{
-                                    color: "rgba(255,255,255,0.7)",
+                                    color: colors.text.muted,
                                     lineHeight: 1.6,
                                     mb: 2,
                                 }}
@@ -207,19 +208,18 @@ export default function Footer() {
                                     <IconButton
                                         onClick={handleCopyEmail}
                                         sx={{
-                                            color: "rgba(255,255,255,0.7)",
-                                            border: "1px solid rgba(255,255,255,0.1)",
+                                            color: colors.text.muted,
+                                            border: `1px solid ${colors.border.light}`,
                                             borderRadius: "8px",
                                             px: 1.5,
                                             py: 1,
                                             gap: 1,
                                             transition: "all 0.3s ease",
                                             "&:hover": {
-                                                color: "#7AB8FF",
-                                                borderColor:
-                                                    "rgba(122, 184, 255, 0.3)",
+                                                color: colors.lime.main,
+                                                borderColor: colors.lime.border,
                                                 backgroundColor:
-                                                    "rgba(122, 184, 255, 0.1)",
+                                                    colors.lime.dim,
                                                 transform: "translateY(-2px)",
                                             },
                                         }}
@@ -243,17 +243,17 @@ export default function Footer() {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         sx={{
-                                            color: "rgba(255,255,255,0.7)",
-                                            border: "1px solid rgba(255,255,255,0.1)",
+                                            color: colors.text.muted,
+                                            border: `1px solid ${colors.border.light}`,
                                             borderRadius: "8px",
                                             p: 1,
                                             transition: "all 0.3s ease",
                                             "&:hover": {
-                                                color: "#fff",
+                                                color: colors.text.primary,
                                                 borderColor:
-                                                    "rgba(255,255,255,0.3)",
+                                                    colors.border.hover,
                                                 backgroundColor:
-                                                    "rgba(255,255,255,0.05)",
+                                                    colors.bg.cardGlass,
                                                 transform: "translateY(-2px)",
                                             },
                                         }}
@@ -266,13 +266,13 @@ export default function Footer() {
                     </Grid>
 
                     {/* Resources Section */}
-                    <Grid item xs={12} sm={6} md={2.5}>
+                    <Grid size={{ xs: 12, sm: 6, md: 2.5 }}>
                         <Typography
                             variant="subtitle2"
                             sx={{
                                 fontWeight: 600,
                                 mb: 2,
-                                color: "#fff",
+                                color: colors.text.primary,
                                 textTransform: "uppercase",
                                 letterSpacing: "0.05em",
                                 fontSize: "0.75rem",
@@ -293,13 +293,13 @@ export default function Footer() {
                                     component={RouterLink}
                                     to={link.path}
                                     sx={{
-                                        color: "rgba(255,255,255,0.7)",
+                                        color: colors.text.muted,
                                         textDecoration: "none",
                                         fontSize: "0.875rem",
                                         transition: "all 0.3s ease",
                                         display: "inline-block",
                                         "&:hover": {
-                                            color: "#fff",
+                                            color: colors.text.primary,
                                             transform: "translateX(4px)",
                                         },
                                     }}
@@ -311,13 +311,13 @@ export default function Footer() {
                     </Grid>
 
                     {/* Legal Section */}
-                    <Grid item xs={12} sm={12} md={3}>
+                    <Grid size={{ xs: 12, sm: 12, md: 3 }}>
                         <Typography
                             variant="subtitle2"
                             sx={{
                                 fontWeight: 600,
                                 mb: 2,
-                                color: "#fff",
+                                color: colors.text.primary,
                                 textTransform: "uppercase",
                                 letterSpacing: "0.05em",
                                 fontSize: "0.75rem",
@@ -345,13 +345,13 @@ export default function Footer() {
                                             : undefined
                                     }
                                     sx={{
-                                        color: "rgba(255,255,255,0.7)",
+                                        color: colors.text.muted,
                                         textDecoration: "none",
                                         fontSize: "0.875rem",
                                         transition: "all 0.3s ease",
                                         display: "inline-block",
                                         "&:hover": {
-                                            color: "#fff",
+                                            color: colors.text.primary,
                                             transform: "translateX(4px)",
                                         },
                                     }}
@@ -367,7 +367,7 @@ export default function Footer() {
                 <Divider
                     sx={{
                         my: 4,
-                        borderColor: "rgba(255,255,255,0.1)",
+                        borderColor: colors.border.light,
                         background:
                             "linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)",
                     }}
@@ -386,7 +386,7 @@ export default function Footer() {
                     <Typography
                         variant="body2"
                         sx={{
-                            color: "rgba(255,255,255,0.6)",
+                            color: colors.text.subtle,
                             fontFamily: "monospace",
                             fontSize: "0.8rem",
                         }}

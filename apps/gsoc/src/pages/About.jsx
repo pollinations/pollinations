@@ -1,27 +1,29 @@
 import {
+    ArrowForward,
     Code,
-    EmojiEvents,
-    Gavel,
     GitHub,
     Groups,
     Language,
+    OpenInNew,
     Psychology,
+    RocketLaunch,
     School,
-    Timeline as TimelineIcon,
 } from "@mui/icons-material";
 import {
+    Avatar,
     Box,
     Button,
     Card,
     CardContent,
-    Chip,
-    Divider,
     Grid,
     Stack,
     Typography,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import mentorsData from "../info/mentors.json";
+import { colors, gradients } from "../theme";
 
 // Animation variants
 const cardVariants = {
@@ -42,37 +44,64 @@ const AboutPage = () => {
         document.title = "About | GSoC × pollinations.ai";
     }, []);
 
-    const stats = [
-        { number: "2026", label: "Program Year", icon: <EmojiEvents /> },
-        { number: "3", label: "Project Categories", icon: <Code /> },
-        { number: "50+", label: "Expected Contributors", icon: <Groups /> },
-        { number: "12", label: "Week Program", icon: <TimelineIcon /> },
-    ];
-
     const features = [
         {
             icon: <Psychology />,
-            title: "Open Source Transparency",
+            title: "Open-source by default",
             description:
-                "We believe in building in the open, setting up a strong community of developers across the world",
+                "All development happens in public. Issues, pull requests, design trade-offs, and roadmap discussions are open for anyone to see — and join.",
         },
         {
             icon: <Code />,
-            title: "Modular Code and Automation",
+            title: "Production-grade code",
             description:
-                "We put forward clean and understandable code that's easy to navigate and contribute to.",
+                "We focus on composable systems, clean APIs, and automation. Contributors work on code that is deployed and used, not throwaway demos.",
         },
         {
             icon: <Groups />,
-            title: "Expert Mentorship",
+            title: "Real mentorship",
             description:
-                "Learn and grow with developers of pollinations.ai, having knowledge and understanding of our codebase",
+                "Mentors are active maintainers of the pollinations.ai codebase. You'll get feedback on real PRs, architectural decisions, and long-term maintainability.",
         },
         {
             icon: <School />,
-            title: "Skill Development",
+            title: "Skills that compound",
             description:
-                "Enhance your technical skills while building real-world projects that matter to the community.",
+                "Build experience in distributed systems, AI model orchestration, APIs, and open-source collaboration — skills that carry well beyond GSoC.",
+        },
+    ];
+
+    const whatYouDo = [
+        "Work directly in the pollinations.ai open-source repositories",
+        "Design and ship features used by real users",
+        "Collaborate with mentors and the community in public",
+        "Deliver measurable outcomes, not just reports",
+    ];
+
+    const visionPoints = [
+        {
+            title: "Open & Accessible",
+            description:
+                "AI tools available to everyone — earn daily Pollen by contributing, no credit card required.",
+        },
+        {
+            title: "Transparent & Ethical",
+            description:
+                "Open code enables scrutiny, learning, and accountability.",
+        },
+        {
+            title: "Community-Driven",
+            description:
+                "Built by developers, creators, and researchers working together.",
+        },
+        {
+            title: "Composable by Design",
+            description:
+                "Services that interoperate instead of locking users in.",
+        },
+        {
+            title: "Continuously Evolving",
+            description: "We move fast while staying committed to openness.",
         },
     ];
 
@@ -80,7 +109,7 @@ const AboutPage = () => {
         <Box
             sx={{
                 minHeight: "100vh",
-                bgcolor: "#09090b",
+                bgcolor: colors.bg.deep,
                 padding: "2rem 2rem 4rem",
                 position: "relative",
                 overflow: "hidden",
@@ -94,25 +123,36 @@ const AboutPage = () => {
                     zIndex: 1,
                 }}
             >
+                {/* Hero Section */}
                 <Box sx={{ textAlign: "center", mb: 8 }}>
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
                     >
+                        <Box
+                            component="img"
+                            src="/logo-text.svg"
+                            alt="pollinations.ai"
+                            sx={{
+                                height: 48,
+                                mb: 3,
+                                filter: "brightness(0) invert(1)",
+                            }}
+                        />
+
                         <Typography
-                            variant="h2"
+                            variant="h3"
                             sx={{
                                 marginBottom: "1rem",
                                 fontWeight: 700,
                                 letterSpacing: "-0.02em",
-                                background:
-                                    "linear-gradient(to bottom right, #fff, #a1a1aa)",
+                                background: gradients.textHeading,
                                 WebkitBackgroundClip: "text",
                                 WebkitTextFillColor: "transparent",
                             }}
                         >
-                            About
+                            Open-source AI, built in public
                         </Typography>
 
                         <Typography
@@ -120,160 +160,76 @@ const AboutPage = () => {
                             sx={{
                                 color: "rgba(255,255,255,0.7)",
                                 fontWeight: 400,
-                                maxWidth: "800px",
+                                maxWidth: "700px",
                                 margin: "0 auto",
-                                lineHeight: 1.6,
+                                lineHeight: 1.7,
                                 mb: 4,
                             }}
                         >
-                            Open-source AI for everyone. 500+ projects and
-                            counting.
+                            A community-driven open-source AI project powering{" "}
+                            <strong style={{ color: colors.lime.main }}>
+                                500+ real projects
+                            </strong>{" "}
+                            across text, image, audio, and creative tooling.
+                            We're a <strong>GSoC 2026</strong> mentoring
+                            organization and an active open-source community
+                            year-round.
                         </Typography>
 
                         <Stack
                             direction={{ xs: "column", sm: "row" }}
-                            spacing={3}
+                            spacing={2}
                             justifyContent="center"
                             alignItems="center"
                         >
                             <Button
+                                component={Link}
+                                to="/projects"
                                 variant="contained"
                                 size="large"
-                                onClick={() =>
-                                    window.open(
-                                        "https://github.com/pollinations/pollinations",
-                                        "_blank",
-                                    )
-                                }
-                                startIcon={<GitHub />}
+                                endIcon={<ArrowForward />}
                                 sx={{
-                                    bgcolor: "rgba(255,255,255,0.15)",
-                                    color: "#fff",
+                                    bgcolor: colors.lime.main,
+                                    color: colors.bg.deep,
                                     textTransform: "none",
                                     fontSize: "1.1rem",
                                     fontWeight: 600,
                                     py: 1.5,
                                     px: 4,
                                     "&:hover": {
-                                        bgcolor: "rgba(255,255,255,0.25)",
+                                        bgcolor: colors.lime.light,
                                         transform: "translateY(-2px)",
-                                        boxShadow: "0 8px 25px rgba(0,0,0,0.3)",
+                                        boxShadow: `0 8px 25px ${colors.lime.glow}`,
                                     },
                                 }}
                             >
-                                View Repository
+                                View Project Ideas
                             </Button>
                             <Button
+                                component={Link}
+                                to="/timeline"
                                 variant="outlined"
                                 size="large"
-                                onClick={() => location.replace("/coc")}
-                                startIcon={<Gavel />}
                                 sx={{
-                                    borderColor: "rgba(255,255,255,0.3)",
+                                    borderColor: colors.border.light,
                                     color: "#fff",
                                     textTransform: "none",
                                     fontSize: "1.1rem",
                                     py: 1.5,
                                     px: 4,
                                     "&:hover": {
-                                        borderColor: "rgba(255,255,255,0.5)",
-                                        backgroundColor:
-                                            "rgba(255,255,255,0.05)",
+                                        borderColor: colors.lime.border,
+                                        backgroundColor: colors.lime.dim,
                                     },
                                 }}
                             >
-                                Code of Conduct
+                                How GSoC Works
                             </Button>
                         </Stack>
                     </motion.div>
                 </Box>
 
-                {/* Stats Section */}
-                <Box sx={{ mb: 8 }}>
-                    <Grid container spacing={4} justifyContent="center">
-                        {stats.map((stat, index) => (
-                            <Grid item xs={6} md={3} key={stat.label}>
-                                <motion.div
-                                    custom={index}
-                                    variants={cardVariants}
-                                    initial="hidden"
-                                    whileInView="visible"
-                                    viewport={{ once: true }}
-                                >
-                                    <Card
-                                        elevation={0}
-                                        sx={{
-                                            background:
-                                                "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-                                            backdropFilter: "blur(20px)",
-                                            border: "1px solid rgba(255,255,255,0.1)",
-                                            borderRadius: "16px",
-                                            color: "#fff",
-                                            textAlign: "center",
-                                            transition: "all 0.3s ease",
-                                            height: "100%",
-                                            "&:hover": {
-                                                transform: "translateY(-4px)",
-                                                borderColor:
-                                                    "rgba(255,255,255,0.3)",
-                                                boxShadow:
-                                                    "0 20px 40px -10px rgba(0,0,0,0.4)",
-                                            },
-                                        }}
-                                    >
-                                        <CardContent
-                                            sx={{
-                                                p: 3,
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                height: "100%",
-                                                textAlign: "center",
-                                            }}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    mb: 2,
-                                                    color: "#60a5fa",
-                                                    display: "flex",
-                                                    justifyContent: "center",
-                                                    fontSize: "2rem",
-                                                }}
-                                            >
-                                                {stat.icon}
-                                            </Box>
-                                            <Typography
-                                                variant="h3"
-                                                sx={{
-                                                    fontWeight: 700,
-                                                    mb: 1,
-                                                    color: "#fff",
-                                                    textAlign: "center",
-                                                }}
-                                            >
-                                                {stat.number}
-                                            </Typography>
-                                            <Typography
-                                                variant="caption"
-                                                sx={{
-                                                    color: "rgba(255,255,255,0.7)",
-                                                    textTransform: "uppercase",
-                                                    letterSpacing: "0.5px",
-                                                    textAlign: "center",
-                                                }}
-                                            >
-                                                {stat.label}
-                                            </Typography>
-                                        </CardContent>
-                                    </Card>
-                                </motion.div>
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Box>
-
-                {/* What Makes Us Special */}
+                {/* What Makes Us Different */}
                 <Box sx={{ mb: 8 }}>
                     <Typography
                         variant="h3"
@@ -284,12 +240,12 @@ const AboutPage = () => {
                             color: "#fff",
                         }}
                     >
-                        What Makes Us Special
+                        What Makes Us Different
                     </Typography>
 
                     <Grid container spacing={4} justifyContent="center">
                         {features.map((feature, index) => (
-                            <Grid item xs={12} md={6} key={feature.title}>
+                            <Grid size={{ xs: 12, md: 6 }} key={feature.title}>
                                 <motion.div
                                     custom={index}
                                     variants={cardVariants}
@@ -338,9 +294,9 @@ const AboutPage = () => {
                                                         p: 1.5,
                                                         borderRadius: "12px",
                                                         bgcolor:
-                                                            "rgba(96, 165, 250, 0.1)",
-                                                        border: "1px solid rgba(96, 165, 250, 0.2)",
-                                                        color: "#60a5fa",
+                                                            colors.lime.dim,
+                                                        border: `1px solid ${colors.lime.border}`,
+                                                        color: colors.lime.main,
                                                         display: "flex",
                                                         alignItems: "center",
                                                         justifyContent:
@@ -377,238 +333,381 @@ const AboutPage = () => {
                     </Grid>
                 </Box>
 
-                {/* Organization Info */}
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8 }}
-                >
+                {/* What You'll Actually Do */}
+                <Box sx={{ mb: 8 }}>
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8 }}
+                    >
+                        <Card
+                            elevation={0}
+                            sx={{
+                                background: `linear-gradient(135deg, ${colors.lime.dim} 0%, rgba(163, 230, 53, 0.05) 100%)`,
+                                border: `1px solid ${colors.lime.border}`,
+                                borderRadius: "20px",
+                                p: 4,
+                            }}
+                        >
+                            <Typography
+                                variant="h4"
+                                sx={{ fontWeight: 700, color: "#fff", mb: 3 }}
+                            >
+                                What GSoC contributors actually do
+                            </Typography>
+                            <Grid container spacing={2}>
+                                {whatYouDo.map((item) => (
+                                    <Grid size={{ xs: 12, md: 6 }} key={item}>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "flex-start",
+                                                gap: 2,
+                                            }}
+                                        >
+                                            <RocketLaunch
+                                                sx={{
+                                                    color: colors.lime.main,
+                                                    mt: 0.5,
+                                                }}
+                                            />
+                                            <Typography
+                                                variant="body1"
+                                                sx={{
+                                                    color: "rgba(255,255,255,0.9)",
+                                                    lineHeight: 1.6,
+                                                }}
+                                            >
+                                                {item}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                ))}
+                            </Grid>
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    color: "rgba(255,255,255,0.6)",
+                                    mt: 3,
+                                    fontStyle: "italic",
+                                }}
+                            >
+                                All work remains open source. Contributions may
+                                also be used commercially under the project's
+                                license.
+                            </Typography>
+                            <Box sx={{ mt: 4 }}>
+                                <Button
+                                    component={Link}
+                                    to="/projects"
+                                    variant="contained"
+                                    endIcon={<ArrowForward />}
+                                    sx={{
+                                        bgcolor: colors.lime.main,
+                                        color: colors.bg.deep,
+                                        textTransform: "none",
+                                        fontWeight: 600,
+                                        "&:hover": {
+                                            bgcolor: colors.lime.light,
+                                        },
+                                    }}
+                                >
+                                    View Project Ideas
+                                </Button>
+                            </Box>
+                        </Card>
+                    </motion.div>
+                </Box>
+
+                {/* Our Vision */}
+                <Box sx={{ mb: 8 }}>
+                    <Typography
+                        variant="h4"
+                        sx={{
+                            fontWeight: 700,
+                            color: "#fff",
+                            mb: 4,
+                            textAlign: "center",
+                        }}
+                    >
+                        Our Vision
+                    </Typography>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            justifyContent: "center",
+                            gap: 3,
+                        }}
+                    >
+                        {visionPoints.map((point) => (
+                            <Box
+                                key={point.title}
+                                sx={{
+                                    textAlign: "center",
+                                    p: 2,
+                                    width: { xs: "100%", sm: "45%", md: "18%" },
+                                    minWidth: "200px",
+                                }}
+                            >
+                                <Typography
+                                    variant="h6"
+                                    sx={{
+                                        color: colors.lime.main,
+                                        fontWeight: 600,
+                                        mb: 1,
+                                    }}
+                                >
+                                    {point.title}
+                                </Typography>
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        color: "rgba(255,255,255,0.7)",
+                                        lineHeight: 1.6,
+                                    }}
+                                >
+                                    {point.description}
+                                </Typography>
+                            </Box>
+                        ))}
+                    </Box>
+                </Box>
+
+                {/* Meet the Mentors */}
+                <Box sx={{ mb: 8 }}>
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8 }}
+                    >
+                        <Card
+                            elevation={0}
+                            sx={{
+                                background:
+                                    "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                                border: `1px solid ${colors.border.light}`,
+                                borderRadius: "20px",
+                                p: 4,
+                                textAlign: "center",
+                            }}
+                        >
+                            <Typography
+                                variant="h5"
+                                sx={{ fontWeight: 700, color: "#fff", mb: 3 }}
+                            >
+                                Meet the Mentors
+                            </Typography>
+                            <Stack
+                                direction="row"
+                                spacing={-1}
+                                justifyContent="center"
+                                sx={{ mb: 3 }}
+                            >
+                                {mentorsData
+                                    .slice(0, 4)
+                                    .map((mentor, index) => (
+                                        <Avatar
+                                            key={mentor.id}
+                                            src={mentor.imageUrl}
+                                            alt={mentor.name}
+                                            sx={{
+                                                width: 56,
+                                                height: 56,
+                                                border: `3px solid ${colors.bg.deep}`,
+                                                zIndex:
+                                                    mentorsData.length - index,
+                                            }}
+                                        />
+                                    ))}
+                            </Stack>
+                            <Typography
+                                variant="body2"
+                                sx={{ color: "rgba(255,255,255,0.7)", mb: 3 }}
+                            >
+                                Active maintainers ready to guide your
+                                contributions
+                            </Typography>
+                            <Button
+                                component={Link}
+                                to="/mentors"
+                                variant="outlined"
+                                endIcon={<ArrowForward />}
+                                sx={{
+                                    borderColor: colors.border.light,
+                                    color: "#fff",
+                                    textTransform: "none",
+                                    "&:hover": {
+                                        borderColor: colors.lime.border,
+                                        backgroundColor: colors.lime.dim,
+                                    },
+                                }}
+                            >
+                                View All Mentors
+                            </Button>
+                        </Card>
+                    </motion.div>
+                </Box>
+
+                {/* Quick Links */}
+                <Box sx={{ mb: 8 }}>
+                    <Typography
+                        variant="h5"
+                        sx={{
+                            fontWeight: 700,
+                            color: "#fff",
+                            mb: 3,
+                            textAlign: "center",
+                        }}
+                    >
+                        Quick Links
+                    </Typography>
+                    <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={2}
+                        justifyContent="center"
+                        alignItems="center"
+                        flexWrap="wrap"
+                    >
+                        <Button
+                            href="https://summerofcode.withgoogle.com/"
+                            target="_blank"
+                            startIcon={<School />}
+                            sx={{
+                                py: 1.5,
+                                px: 3,
+                                color: "#fff",
+                                border: `1px solid ${colors.border.light}`,
+                                borderRadius: "12px",
+                                textTransform: "none",
+                                fontSize: "1rem",
+                                "&:hover": {
+                                    borderColor: colors.lime.border,
+                                    backgroundColor: colors.lime.dim,
+                                },
+                            }}
+                        >
+                            GSoC 2026
+                        </Button>
+                        <Button
+                            href="https://discord.gg/pollinations-ai-885844321461485618"
+                            target="_blank"
+                            startIcon={
+                                <Box
+                                    component="img"
+                                    src="https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png"
+                                    alt="Discord"
+                                    sx={{
+                                        width: 20,
+                                        height: 20,
+                                        filter: "brightness(0) invert(1)",
+                                    }}
+                                />
+                            }
+                            sx={{
+                                py: 1.5,
+                                px: 3,
+                                color: "#fff",
+                                border: `1px solid ${colors.border.light}`,
+                                borderRadius: "12px",
+                                textTransform: "none",
+                                fontSize: "1rem",
+                                "&:hover": {
+                                    borderColor: colors.lime.border,
+                                    backgroundColor: colors.lime.dim,
+                                },
+                            }}
+                        >
+                            Discord
+                        </Button>
+                        <Button
+                            href="https://github.com/pollinations/pollinations"
+                            target="_blank"
+                            startIcon={<GitHub />}
+                            sx={{
+                                py: 1.5,
+                                px: 3,
+                                color: "#fff",
+                                border: `1px solid ${colors.border.light}`,
+                                borderRadius: "12px",
+                                textTransform: "none",
+                                fontSize: "1rem",
+                                "&:hover": {
+                                    borderColor: colors.lime.border,
+                                    backgroundColor: colors.lime.dim,
+                                },
+                            }}
+                        >
+                            GitHub
+                        </Button>
+                        <Button
+                            href="https://pollinations.ai"
+                            target="_blank"
+                            startIcon={<Language />}
+                            sx={{
+                                py: 1.5,
+                                px: 3,
+                                color: "#fff",
+                                border: `1px solid ${colors.border.light}`,
+                                borderRadius: "12px",
+                                textTransform: "none",
+                                fontSize: "1rem",
+                                "&:hover": {
+                                    borderColor: colors.lime.border,
+                                    backgroundColor: colors.lime.dim,
+                                },
+                            }}
+                        >
+                            pollinations.ai
+                        </Button>
+                    </Stack>
+                </Box>
+
+                {/* Contact */}
+                <Box sx={{ mb: 8, display: "flex", justifyContent: "center" }}>
                     <Card
                         elevation={0}
                         sx={{
                             background:
-                                "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)",
-                            backdropFilter: "blur(20px)",
-                            border: "1px solid rgba(255,255,255,0.15)",
-                            borderRadius: "20px",
-                            color: "#fff",
-                            mb: 6,
-                            position: "relative",
-                            overflow: "hidden",
-                            "&::before": {
-                                content: '""',
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                height: "4px",
-                                background:
-                                    "linear-gradient(90deg, #3b82f6, #06b6d4, #10b981)",
-                                borderRadius: "20px 20px 0 0",
-                            },
+                                "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                            border: `1px solid ${colors.border.light}`,
+                            borderRadius: "16px",
+                            p: 4,
+                            textAlign: "center",
+                            width: "fit-content",
                         }}
                     >
-                        <CardContent sx={{ p: 4 }}>
-                            <Grid container spacing={4} alignItems="center">
-                                <Grid item xs={12} md={4}>
-                                    <Box sx={{ textAlign: "center" }}>
-                                        <Box
-                                            component="img"
-                                            src="/polli_white.svg"
-                                            alt="pollinations.ai logo"
-                                            sx={{
-                                                width: 60,
-                                                height: 60,
-                                                mb: 2,
-                                                mx: "2px",
-                                                display: "block",
-                                                objectFit: "contain",
-                                                filter: "brightness(1.1)",
-                                                transition: "all 0.3s ease",
-                                                "&:hover": {
-                                                    transform: "scale(1.05)",
-                                                    filter: "brightness(1.3)",
-                                                },
-                                            }}
-                                        />
-                                        <Chip
-                                            label="GSoC Organization"
-                                            sx={{
-                                                bgcolor:
-                                                    "rgba(34, 197, 94, 0.2)",
-                                                color: "#4ade80",
-                                                border: "1px solid rgba(34, 197, 94, 0.3)",
-                                                fontWeight: 600,
-                                            }}
-                                        />
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={12} md={8}>
-                                    <Typography
-                                        variant="h4"
-                                        sx={{
-                                            fontWeight: 700,
-                                            mb: 2,
-                                            color: "#fff",
-                                        }}
-                                    >
-                                        pollinations.ai
-                                    </Typography>
-                                    <Typography
-                                        variant="h6"
-                                        sx={{ color: "#60a5fa", mb: 3 }}
-                                    >
-                                        Our Vision for the Future of AI
-                                    </Typography>
-                                    <Box
-                                        component="ul"
-                                        sx={{
-                                            color: "rgba(255,255,255,0.9)",
-                                            fontSize: "1.1rem",
-                                            pl: 3,
-                                            mb: 3,
-                                            lineHeight: 1.7,
-                                            "& li": { mb: 1.2 },
-                                        }}
-                                    >
-                                        <li>
-                                            <strong>Open & Accessible:</strong>{" "}
-                                            AI should be available to everyone —
-                                            earn daily Pollen by contributing,
-                                            no credit card required.
-                                        </li>
-                                        <li>
-                                            <strong>
-                                                Transparent & Ethical:
-                                            </strong>{" "}
-                                            Our open-source approach ensures
-                                            transparency in how our models work
-                                            and behave.
-                                        </li>
-                                        <li>
-                                            <strong>Community-Driven:</strong>{" "}
-                                            We're building a platform where
-                                            developers, creators, and AI
-                                            enthusiasts can collaborate and
-                                            innovate.
-                                        </li>
-                                        <li>
-                                            <strong>Interconnected:</strong>{" "}
-                                            We're creating an ecosystem where AI
-                                            services can seamlessly work
-                                            together, fostering innovation
-                                            through composability.
-                                        </li>
-                                        <li>
-                                            <strong>Evolving:</strong> We
-                                            embrace the rapid evolution of AI
-                                            technology while maintaining our
-                                            commitment to openness and
-                                            accessibility.
-                                        </li>
-                                    </Box>
-                                    <Typography
-                                        variant="body1"
-                                        sx={{
-                                            color: "rgba(255,255,255,0.9)",
-                                            lineHeight: 1.7,
-                                            mb: 3,
-                                        }}
-                                    >
-                                        We're committed to developing AI
-                                        technology that serves humanity while
-                                        respecting ethical boundaries and
-                                        promoting responsible innovation. Join
-                                        us in shaping the future of AI.
-                                    </Typography>
-                                    <Divider
-                                        sx={{
-                                            my: 3,
-                                            borderColor:
-                                                "rgba(255,255,255,0.1)",
-                                        }}
-                                    />
-                                    <Box>
-                                        <Typography
-                                            variant="h6"
-                                            sx={{
-                                                color: "#fff",
-                                                mb: 2,
-                                                fontWeight: 600,
-                                            }}
-                                        >
-                                            Get In Touch
-                                        </Typography>
-                                        <Stack spacing={2}>
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 1,
-                                                }}
-                                            >
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{
-                                                        color: "rgba(255,255,255,0.7)",
-                                                    }}
-                                                >
-                                                    Organization Admin:
-                                                </Typography>
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{
-                                                        color: "#60a5fa",
-                                                        fontFamily: "monospace",
-                                                        cursor: "pointer",
-                                                        "&:hover": {
-                                                            color: "#93c5fd",
-                                                        },
-                                                    }}
-                                                >
-                                                    elliot@pollinations.ai
-                                                </Typography>
-                                            </Box>
-
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 1,
-                                                }}
-                                            >
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{
-                                                        color: "rgba(255,255,255,0.7)",
-                                                    }}
-                                                >
-                                                    Organization Core Team:
-                                                </Typography>
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{
-                                                        color: "#60a5fa",
-                                                        fontFamily: "monospace",
-                                                        cursor: "pointer",
-                                                        "&:hover": {
-                                                            color: "#93c5fd",
-                                                        },
-                                                    }}
-                                                >
-                                                    gsoc@pollinations.ai
-                                                </Typography>
-                                            </Box>
-                                        </Stack>
-                                    </Box>
-                                </Grid>
-                            </Grid>
-                        </CardContent>
+                        <Typography
+                            variant="h6"
+                            sx={{ fontWeight: 600, color: "#fff", mb: 2 }}
+                        >
+                            Get in Touch
+                        </Typography>
+                        <Typography
+                            variant="body1"
+                            sx={{ color: "rgba(255,255,255,0.8)", mb: 1 }}
+                        >
+                            <strong>Elliot</strong> — Organization Admin
+                        </Typography>
+                        <Typography
+                            component="a"
+                            href="mailto:elliot@pollinations.ai"
+                            sx={{
+                                color: colors.lime.main,
+                                fontFamily: "monospace",
+                                fontSize: "1.1rem",
+                                textDecoration: "none",
+                                "&:hover": { color: colors.lime.light },
+                            }}
+                        >
+                            elliot@pollinations.ai
+                        </Typography>
                     </Card>
-                </motion.div>
+                </Box>
 
-                {/* Call to Action */}
+                {/* Final CTA */}
                 <Box sx={{ textAlign: "center" }}>
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -620,7 +719,7 @@ const AboutPage = () => {
                             variant="h4"
                             sx={{ color: "#fff", fontWeight: 700, mb: 2 }}
                         >
-                            Ready to Make an Impact?
+                            Ready to make an impact?
                         </Typography>
                         <Typography
                             variant="body1"
@@ -631,62 +730,90 @@ const AboutPage = () => {
                                 mx: "auto",
                             }}
                         >
-                            Join our community of innovators and help shape the
-                            future of AI technology through open source
-                            collaboration.
+                            Join a global open-source community and help shape
+                            the future of AI through real, production-grade
+                            contributions.
                         </Typography>
-                        <Stack
-                            direction={{ xs: "column", sm: "row" }}
-                            spacing={2}
-                            justifyContent="center"
-                        >
+                        <Stack spacing={2} alignItems="center">
                             <Button
+                                component={Link}
+                                to="/projects"
                                 variant="contained"
                                 size="large"
-                                onClick={() =>
-                                    window.open(
-                                        "https://pollinations.ai",
-                                        "_blank",
-                                    )
-                                }
-                                startIcon={<Language />}
+                                endIcon={<ArrowForward />}
                                 sx={{
-                                    bgcolor: "rgba(255,255,255,0.15)",
-                                    color: "#fff",
+                                    bgcolor: colors.lime.main,
+                                    color: colors.bg.deep,
                                     textTransform: "none",
-                                    fontSize: "1rem",
+                                    fontSize: "1.1rem",
                                     fontWeight: 600,
+                                    py: 1.5,
+                                    px: 5,
                                     "&:hover": {
-                                        bgcolor: "rgba(255,255,255,0.25)",
+                                        bgcolor: colors.lime.light,
+                                        transform: "translateY(-2px)",
+                                        boxShadow: `0 8px 25px ${colors.lime.glow}`,
                                     },
                                 }}
                             >
-                                Visit Our Website
+                                View Project Ideas
                             </Button>
-                            <Button
-                                variant="outlined"
-                                size="large"
-                                onClick={() =>
-                                    window.open(
-                                        "https://github.com/pollinations",
-                                        "_blank",
-                                    )
-                                }
-                                startIcon={<GitHub />}
-                                sx={{
-                                    borderColor: "rgba(255,255,255,0.3)",
-                                    color: "#fff",
-                                    textTransform: "none",
-                                    fontSize: "1rem",
-                                    "&:hover": {
-                                        borderColor: "rgba(255,255,255,0.5)",
-                                        backgroundColor:
-                                            "rgba(255,255,255,0.05)",
-                                    },
-                                }}
+                            <Stack
+                                direction={{ xs: "column", sm: "row" }}
+                                spacing={2}
                             >
-                                View Organization
-                            </Button>
+                                <Button
+                                    href="https://summerofcode.withgoogle.com/"
+                                    target="_blank"
+                                    variant="outlined"
+                                    endIcon={
+                                        <OpenInNew sx={{ fontSize: 14 }} />
+                                    }
+                                    sx={{
+                                        borderColor: colors.border.light,
+                                        color: "#fff",
+                                        textTransform: "none",
+                                        "&:hover": {
+                                            borderColor: colors.lime.border,
+                                            backgroundColor: colors.lime.dim,
+                                        },
+                                    }}
+                                >
+                                    How to Apply
+                                </Button>
+                                <Button
+                                    href="https://discord.gg/pollinations-ai-885844321461485618"
+                                    target="_blank"
+                                    variant="outlined"
+                                    sx={{
+                                        borderColor: colors.border.light,
+                                        color: "#fff",
+                                        textTransform: "none",
+                                        "&:hover": {
+                                            borderColor: colors.lime.border,
+                                            backgroundColor: colors.lime.dim,
+                                        },
+                                    }}
+                                >
+                                    Discord
+                                </Button>
+                                <Button
+                                    component={Link}
+                                    to="/contributing"
+                                    variant="outlined"
+                                    sx={{
+                                        borderColor: colors.border.light,
+                                        color: "#fff",
+                                        textTransform: "none",
+                                        "&:hover": {
+                                            borderColor: colors.lime.border,
+                                            backgroundColor: colors.lime.dim,
+                                        },
+                                    }}
+                                >
+                                    Contribution Guide
+                                </Button>
+                            </Stack>
                         </Stack>
                     </motion.div>
                 </Box>

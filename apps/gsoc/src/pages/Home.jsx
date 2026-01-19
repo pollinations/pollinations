@@ -6,7 +6,6 @@ import {
     MenuBook,
     Rocket,
     Star,
-    Timeline as TimelineIcon,
     VerifiedUser,
 } from "@mui/icons-material";
 import {
@@ -28,11 +27,12 @@ import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import useTopContributors from "../api/githubContri";
-import useGitHubStars from "../api/githubStars";
 import useContribCount from "../api/githubContribCount";
+import useGitHubStars from "../api/githubStars";
 import CountdownButton from "../components/CountdownButton";
 import EasterEggModal from "../components/EasterEggModal";
 import useEasterEgg from "../hooks/useEasterEgg";
+import { colors, gradients } from "../theme";
 
 const fadeInUp = {
     hidden: { opacity: 0, y: 30 },
@@ -66,7 +66,7 @@ const HomePage = () => {
     const stats = [
         { number: stars, label: "GitHub Stars", icon: <Star /> },
         { number: contribs, label: "Contributors", icon: <Group /> },
-        { number: "1st", label: "Year in GSoC", icon: <EmojiEvents /> }
+        { number: "1st", label: "Year in GSoC", icon: <EmojiEvents /> },
     ];
 
     const navigationItems = [
@@ -88,7 +88,7 @@ const HomePage = () => {
         <Box
             sx={{
                 minHeight: "100vh",
-                bgcolor: "#09090b",
+                bgcolor: colors.bg.deep,
                 position: "relative",
                 overflow: "hidden",
                 "@keyframes pulse": {
@@ -124,8 +124,7 @@ const HomePage = () => {
                     right: "-10%",
                     width: "400px",
                     height: "400px",
-                    background:
-                        "radial-gradient(circle, rgba(96, 165, 250, 0.1) 0%, rgba(0,0,0,0) 70%)",
+                    background: gradients.glowLime,
                     zIndex: 0,
                     pointerEvents: "none",
                 }}
@@ -154,7 +153,7 @@ const HomePage = () => {
                             alignItems="center"
                             justifyContent="center"
                         >
-                            <Grid item xs={12} lg={7}>
+                            <Grid size={{ xs: 12, lg: 7 }}>
                                 <motion.div
                                     variants={fadeInUp}
                                     initial="hidden"
@@ -279,7 +278,8 @@ const HomePage = () => {
                                                                     "translateX(-50%)",
                                                                 fontSize:
                                                                     "0.7rem",
-                                                                color: "#60a5fa",
+                                                                color: colors
+                                                                    .lime.main,
                                                                 whiteSpace:
                                                                     "nowrap",
                                                                 fontWeight: 600,
@@ -306,8 +306,7 @@ const HomePage = () => {
                                             sx={{
                                                 fontWeight: 800,
                                                 letterSpacing: "-0.03em",
-                                                background:
-                                                    "linear-gradient(135deg, #ffffff 0%, #60a5fa 30%, #e0e7ff 60%, #a1a1aa 100%)",
+                                                background: gradients.textHero,
                                                 backgroundClip: "text",
                                                 WebkitBackgroundClip: "text",
                                                 color: "transparent",
@@ -320,7 +319,7 @@ const HomePage = () => {
                                                 },
                                                 lineHeight: 1.05,
                                                 fontFamily:
-                                                    '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+                                                    '"Space Grotesk", "DM Sans", sans-serif',
                                                 position: "relative",
                                                 textAlign: "center",
                                             }}
@@ -331,7 +330,7 @@ const HomePage = () => {
                                                 sx={{
                                                     position: "relative",
                                                     background:
-                                                        "linear-gradient(135deg, #ffffff 0%, #60a5fa 50%, #e0e7ff 100%)",
+                                                        "linear-gradient(135deg, #a3e635 0%, #86efac 50%, #fbbf24 100%)",
                                                     backgroundClip: "text",
                                                     WebkitBackgroundClip:
                                                         "text",
@@ -354,7 +353,7 @@ const HomePage = () => {
                                                 width: "20px",
                                                 height: "20px",
                                                 background:
-                                                    "radial-gradient(circle, #60a5fa 0%, transparent 70%)",
+                                                    "radial-gradient(circle, #a3e635 0%, transparent 70%)",
                                                 borderRadius: "50%",
                                                 opacity: 0.4,
                                                 animation: "pulse 2s infinite",
@@ -382,7 +381,7 @@ const HomePage = () => {
                                                     lg: "1.6rem",
                                                 },
                                                 fontFamily:
-                                                    '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+                                                    '"Space Grotesk", "DM Sans", sans-serif',
                                                 position: "relative",
                                                 textAlign: "center",
                                                 margin: "0 auto",
@@ -397,9 +396,8 @@ const HomePage = () => {
                                                 }}
                                                 sx={{
                                                     fontWeight: 600,
-                                                    color: "#60a5fa",
-                                                    textShadow:
-                                                        "0 0 10px rgba(96, 165, 250, 0.3)",
+                                                    color: colors.lime.main,
+                                                    textShadow: `0 0 10px ${colors.lime.border}`,
                                                     userSelect: "none",
                                                     cursor: "pointer",
                                                 }}
@@ -430,7 +428,8 @@ const HomePage = () => {
                                                         width: "4px",
                                                         height: "4px",
                                                         borderRadius: "50%",
-                                                        bgcolor: "#60a5fa",
+                                                        bgcolor:
+                                                            colors.lime.main,
                                                         animation: `fadeInOut 3s infinite ${dot * 0.5}s`,
                                                     }}
                                                 />
@@ -503,9 +502,7 @@ const HomePage = () => {
                                         >
                                             {stats.map((stat, index) => (
                                                 <Grid
-                                                    item
-                                                    xs={6}
-                                                    sm={3}
+                                                    size={{ xs: 6, sm: 3 }}
                                                     key={stat.label}
                                                 >
                                                     <motion.div
@@ -554,11 +551,13 @@ const HomePage = () => {
                                         inset 0 1px 0 rgba(255, 255, 255, 0.08),
                                         inset 0 -1px 0 rgba(0, 0, 0, 0.3),
                                         0 8px 30px rgba(0, 0, 0, 0.2),
-                                        0 0 0 1px rgba(96, 165, 250, 0.1)
+                                        0 0 0 1px ${colors.lime.dim}
                                       `,
                                                                     "& .stat-icon":
                                                                         {
-                                                                            color: "#60a5fa",
+                                                                            color: colors
+                                                                                .lime
+                                                                                .main,
                                                                             transform:
                                                                                 "scale(1.1)",
                                                                         },
@@ -586,8 +585,7 @@ const HomePage = () => {
                                                                     height: "60px",
                                                                     transform:
                                                                         "translate(-50%, -50%)",
-                                                                    background:
-                                                                        "radial-gradient(circle, rgba(96, 165, 250, 0.03) 0%, transparent 70%)",
+                                                                    background: `radial-gradient(circle, ${colors.lime.dim} 0%, transparent 70%)`,
                                                                     borderRadius:
                                                                         "50%",
                                                                     zIndex: 0,
@@ -682,7 +680,7 @@ const HomePage = () => {
                                             position: "absolute",
                                             width: "30px",
                                             height: "30px",
-                                            border: "2px solid rgba(96, 165, 250, 0.3)",
+                                            border: `2px solid ${colors.lime.border}`,
                                             borderRadius: "4px",
                                             top: 0,
                                             left: 0,
@@ -694,7 +692,7 @@ const HomePage = () => {
                                             position: "absolute",
                                             width: "20px",
                                             height: "20px",
-                                            bgcolor: "rgba(96, 165, 250, 0.2)",
+                                            bgcolor: colors.lime.border,
                                             borderRadius: "50%",
                                             top: "40px",
                                             left: "50px",
@@ -707,7 +705,7 @@ const HomePage = () => {
                                             position: "absolute",
                                             width: "40px",
                                             height: "2px",
-                                            bgcolor: "rgba(96, 165, 250, 0.4)",
+                                            bgcolor: colors.lime.glow,
                                             top: "70px",
                                             left: "10px",
                                             borderRadius: "1px",
@@ -722,7 +720,7 @@ const HomePage = () => {
                                             sx={{
                                                 width: `${width}px`,
                                                 height: "2px",
-                                                bgcolor: "#60a5fa",
+                                                bgcolor: colors.lime.main,
                                                 mb: "6px",
                                                 borderRadius: "1px",
                                                 animation: `fadeInOut 2s infinite ${index * 0.3}s`,
@@ -753,7 +751,7 @@ const HomePage = () => {
                                             position: "absolute",
                                             width: "8px",
                                             height: "8px",
-                                            border: "2px solid rgba(96, 165, 250, 0.4)",
+                                            border: `2px solid ${colors.lime.glow}`,
                                             borderRadius: "50%",
                                             top: 0,
                                             left: 0,
@@ -764,7 +762,7 @@ const HomePage = () => {
                                             position: "absolute",
                                             width: "30px",
                                             height: "2px",
-                                            bgcolor: "rgba(96, 165, 250, 0.4)",
+                                            bgcolor: colors.lime.glow,
                                             top: "4px",
                                             left: "12px",
                                             borderRadius: "1px",
@@ -775,7 +773,7 @@ const HomePage = () => {
                                             position: "absolute",
                                             width: "2px",
                                             height: "20px",
-                                            bgcolor: "rgba(96, 165, 250, 0.4)",
+                                            bgcolor: colors.lime.glow,
                                             top: "15px",
                                             left: "40px",
                                             borderRadius: "1px",
@@ -786,7 +784,7 @@ const HomePage = () => {
                                             position: "absolute",
                                             width: "15px",
                                             height: "15px",
-                                            border: "2px solid rgba(96, 165, 250, 0.3)",
+                                            border: `2px solid ${colors.lime.border}`,
                                             top: "50px",
                                             left: "30px",
                                             transform: "rotate(45deg)",
@@ -804,8 +802,7 @@ const HomePage = () => {
                                                 width: "3px",
                                                 height: "3px",
                                                 borderRadius: "50%",
-                                                bgcolor:
-                                                    "rgba(96, 165, 250, 0.4)",
+                                                bgcolor: colors.lime.glow,
                                                 left: `${Math.random() * 60}px`,
                                                 top: `${Math.random() * 60}px`,
                                                 animation: `fadeInOut 3s infinite ${particle * 0.6}s`,
@@ -854,9 +851,9 @@ const HomePage = () => {
                                                     label="GSoC 2026"
                                                     sx={{
                                                         bgcolor:
-                                                            "rgba(96, 165, 250, 0.15)",
-                                                        color: "#60a5fa",
-                                                        border: "1px solid rgba(96, 165, 250, 0.25)",
+                                                            colors.lime.dim,
+                                                        color: colors.lime.main,
+                                                        border: `1px solid ${colors.lime.border}`,
                                                         fontWeight: 600,
                                                         fontSize: "0.9rem",
                                                     }}
@@ -905,9 +902,8 @@ const HomePage = () => {
                                                 sx={{
                                                     p: 3,
                                                     borderRadius: "12px",
-                                                    bgcolor:
-                                                        "rgba(96, 165, 250, 0.08)",
-                                                    border: "1px solid rgba(96, 165, 250, 0.15)",
+                                                    bgcolor: colors.lime.dim,
+                                                    border: `1px solid ${colors.lime.border}`,
                                                     mb: 4,
                                                     textAlign: "justify",
                                                 }}
@@ -933,7 +929,8 @@ const HomePage = () => {
                                                             transition:
                                                                 "all 0.3s ease",
                                                             "&:hover": {
-                                                                color: "#60a5fa",
+                                                                color: colors
+                                                                    .lime.main,
                                                             },
                                                         }}
                                                     >
@@ -962,8 +959,7 @@ const HomePage = () => {
                                                 {navigationItems.map(
                                                     (item, index) => (
                                                         <Grid
-                                                            item
-                                                            xs={6}
+                                                            size={{ xs: 6 }}
                                                             key={item.path}
                                                             sx={{
                                                                 display: "flex",
@@ -1003,7 +999,9 @@ const HomePage = () => {
                                                                             border: "1px solid rgba(255,255,255,0.15)",
                                                                             borderRadius:
                                                                                 "16px",
-                                                                            color: "#60a5fa",
+                                                                            color: colors
+                                                                                .lime
+                                                                                .main,
                                                                             fontSize:
                                                                                 "2rem",
                                                                             transition:
@@ -1013,11 +1011,14 @@ const HomePage = () => {
                                                                                     transform:
                                                                                         "translateY(-4px) scale(1.1)",
                                                                                     borderColor:
-                                                                                        "#60a5fa",
+                                                                                        colors
+                                                                                            .lime
+                                                                                            .main,
                                                                                     backgroundColor:
-                                                                                        "rgba(96, 165, 250, 0.15)",
-                                                                                    boxShadow:
-                                                                                        "0 8px 32px rgba(96, 165, 250, 0.25)",
+                                                                                        colors
+                                                                                            .lime
+                                                                                            .dim,
+                                                                                    boxShadow: `0 8px 32px ${colors.lime.border}`,
                                                                                 },
                                                                         }}
                                                                     >
@@ -1147,7 +1148,7 @@ const HomePage = () => {
                                                         transform:
                                                             "scale(1.15) translateY(-8px)",
                                                         zIndex: 100,
-                                                        filter: "drop-shadow(0 8px 16px rgba(96, 165, 250, 0.4))",
+                                                        filter: `drop-shadow(0 8px 16px ${colors.lime.glow})`,
                                                     },
                                                 }}
                                             >

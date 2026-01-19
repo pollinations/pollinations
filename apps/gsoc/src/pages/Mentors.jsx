@@ -24,6 +24,7 @@ import {
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import mentors from "../info/mentors.json";
+import { colors, gradients } from "../theme";
 
 const cardVariants = {
     hidden: { opacity: 0, y: 30 },
@@ -58,7 +59,7 @@ const MentorsPage = () => {
         <Box
             sx={{
                 minHeight: "100vh",
-                bgcolor: "#09090b",
+                bgcolor: colors.bg.deep,
                 padding: "2rem 2rem 4rem",
                 position: "relative",
                 overflow: "hidden",
@@ -95,8 +96,7 @@ const MentorsPage = () => {
                             marginBottom: "1rem",
                             fontWeight: 700,
                             letterSpacing: "-0.02em",
-                            background:
-                                "linear-gradient(to bottom right, #fff, #a1a1aa)",
+                            background: gradients.textHeading,
                             WebkitBackgroundClip: "text",
                             WebkitTextFillColor: "transparent",
                         }}
@@ -168,7 +168,7 @@ const MentorsPage = () => {
 
                 <Grid container spacing={4}>
                     {mentors.map((mentor, index) => (
-                        <Grid item xs={12} md={6} key={mentor.id}>
+                        <Grid size={{ xs: 12, md: 6 }} key={mentor.id}>
                             <motion.div
                                 custom={index}
                                 variants={cardVariants}
@@ -203,8 +203,7 @@ const MentorsPage = () => {
                                             left: 0,
                                             right: 0,
                                             height: "4px",
-                                            background:
-                                                "linear-gradient(90deg, #3b82f6, #06b6d4, #10b981)",
+                                            background: gradients.cardAccent,
                                             borderRadius: "20px 20px 0 0",
                                         },
                                     }}
@@ -293,7 +292,7 @@ const MentorsPage = () => {
                                                 <Typography
                                                     variant="subtitle1"
                                                     sx={{
-                                                        color: "#60a5fa",
+                                                        color: colors.lime.main,
                                                         fontWeight: 600,
                                                         mb: 1,
                                                     }}

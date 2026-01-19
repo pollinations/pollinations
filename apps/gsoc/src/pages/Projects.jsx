@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import mentors from "../info/mentors.json";
 import projects from "../info/projects.json";
+import { colors, getCategoryColor, gradients } from "../theme";
 
 const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -42,48 +43,13 @@ const ProjectsPage = () => {
         return sentences.slice(0, maxSentences).join(" ");
     };
 
-    const getCategoryColor = (category) => {
-        const colors = {
-            "AI/ML": {
-                bg: "rgba(245, 158, 11, 0.1)",
-                text: "#fbbf24",
-                border: "rgba(245, 158, 11, 0.3)",
-            },
-            Infrastructure: {
-                bg: "rgba(59, 130, 246, 0.1)",
-                text: "#60a5fa",
-                border: "rgba(59, 130, 246, 0.3)",
-            },
-            "Game Development": {
-                bg: "rgba(168, 85, 247, 0.1)",
-                text: "#d8b4fe",
-                border: "rgba(168, 85, 247, 0.3)",
-            },
-            "DevOps/Security": {
-                bg: "rgba(239, 68, 68, 0.1)",
-                text: "#f87171",
-                border: "rgba(239, 68, 68, 0.3)",
-            },
-            "Developer Tools": {
-                bg: "rgba(16, 185, 129, 0.1)",
-                text: "#34d399",
-                border: "rgba(16, 185, 129, 0.3)",
-            },
-        };
-        return (
-            colors[category] || {
-                bg: "rgba(156, 163, 175, 0.1)",
-                text: "#9ca3af",
-                border: "rgba(156, 163, 175, 0.3)",
-            }
-        );
-    };
+    // getCategoryColor and getDifficultyColor imported from theme.js
 
     return (
         <Box
             sx={{
                 minHeight: "100vh",
-                bgcolor: "#09090b",
+                bgcolor: colors.bg.deep,
                 padding: "2rem 2rem 4rem",
                 position: "relative",
                 overflow: "hidden",
@@ -105,8 +71,7 @@ const ProjectsPage = () => {
                             marginBottom: "0.5rem",
                             fontWeight: 700,
                             letterSpacing: "-0.02em",
-                            background:
-                                "linear-gradient(to bottom right, #fff, #a1a1aa)",
+                            background: gradients.textHeading,
                             WebkitBackgroundClip: "text",
                             WebkitTextFillColor: "transparent",
                         }}
@@ -138,7 +103,7 @@ const ProjectsPage = () => {
                         pollinations.ai is an open-source generative AI platform
                         powering 500+ community projects with text, image,
                         video, and audio generation APIs. For GSoC, you'll work
-                        on real product features inside the Pollinations
+                        on real product features inside the pollinations.ai
                         ecosystem.
                     </Typography>
                 </Box>
@@ -610,17 +575,20 @@ const ProjectsPage = () => {
                                                         }
                                                         sx={{
                                                             bgcolor:
-                                                                "rgba(59, 130, 246, 0.15)",
-                                                            color: "#60a5fa",
+                                                                colors.lime.dim,
+                                                            color: colors.lime
+                                                                .main,
                                                             textTransform:
                                                                 "none",
                                                             fontWeight: 600,
-                                                            border: "1px solid rgba(59, 130, 246, 0.3)",
+                                                            border: `1px solid ${colors.lime.border}`,
                                                             "&:hover": {
                                                                 bgcolor:
-                                                                    "rgba(59, 130, 246, 0.25)",
+                                                                    colors.lime
+                                                                        .border,
                                                                 borderColor:
-                                                                    "rgba(59, 130, 246, 0.5)",
+                                                                    colors.lime
+                                                                        .glow,
                                                             },
                                                         }}
                                                     >

@@ -8,7 +8,6 @@ export type {
     FilterState,
     Metric,
     ModelBreakdown,
-    SelectOption,
     TimeRange,
 } from "./types";
 export { UsageGraph } from "./UsageGraph";

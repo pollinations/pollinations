@@ -14,10 +14,7 @@ import { Header } from "../components/header.tsx";
 import { PollenBalance } from "../components/pollen-balance.tsx";
 import { Pricing } from "../components/pricing/index.ts";
 import { TierPanel } from "../components/tier-panel.tsx";
-import {
-    type DailyUsageRecord,
-    UsageGraph,
-} from "../components/usage-analytics";
+import { UsageGraph } from "../components/usage-analytics";
 import { User } from "../components/user.tsx";
 
 export const Route = createFileRoute("/")({
@@ -406,44 +403,15 @@ function RouteComponent() {
                                             type="button"
                                             onClick={async () => {
                                                 try {
-                                                    const res =
-                                                        await fetch(
-                                                            "/api/usage/daily",
-                                                        );
+                                                    const res = await fetch(
+                                                        "/api/account/usage/daily?format=csv",
+                                                    );
                                                     if (!res.ok)
                                                         throw new Error(
                                                             "Failed to fetch",
                                                         );
-                                                    const data =
-                                                        (await res.json()) as {
-                                                            usage: DailyUsageRecord[];
-                                                        };
-                                                    const headers = [
-                                                        "date",
-                                                        "model",
-                                                        "meter_source",
-                                                        "requests",
-                                                        "cost_usd",
-                                                    ];
-                                                    const rows = data.usage.map(
-                                                        (r) =>
-                                                            [
-                                                                r.date,
-                                                                r.model || "",
-                                                                r.meter_source ||
-                                                                    "",
-                                                                r.requests || 0,
-                                                                r.cost_usd || 0,
-                                                            ].join(","),
-                                                    );
-                                                    const csv = [
-                                                        headers.join(","),
-                                                        ...rows,
-                                                    ].join("\n");
-                                                    const blob = new Blob(
-                                                        [csv],
-                                                        { type: "text/csv" },
-                                                    );
+                                                    const blob =
+                                                        await res.blob();
                                                     const url =
                                                         URL.createObjectURL(
                                                             blob,

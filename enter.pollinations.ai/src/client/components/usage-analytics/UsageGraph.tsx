@@ -19,7 +19,6 @@ const TIER_EMOJIS: Record<TierStatus, string> = {
 export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
     const [filters, setFilters] = useState<FilterState>({
         timeRange: "7d",
-        customDays: 14,
         metric: "pollen",
         selectedKeys: [],
         selectedModels: [],

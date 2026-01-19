@@ -7,12 +7,11 @@ export type DailyUsageRecord = {
     api_key_names: string[];
 };
 
-export type TimeRange = "7d" | "30d" | "all" | "custom";
+export type TimeRange = "7d" | "30d" | "all";
 export type Metric = "requests" | "pollen";
 
 export type FilterState = {
     timeRange: TimeRange;
-    customDays: number;
     metric: Metric;
     selectedKeys: string[];
     selectedModels: string[];
@@ -34,5 +33,3 @@ export type DataPoint = {
     fullDate: string;
     modelBreakdown?: ModelBreakdown[];
 };
-
-export type SelectOption = { value: string | null; label: string };

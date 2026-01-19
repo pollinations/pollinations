@@ -43,7 +43,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         setLoading(true);
         setError(null);
 
-        fetch("/api/usage/daily")
+        fetch("/api/account/usage/daily")
             .then((r) => {
                 if (!r.ok)
                     throw new Error(`Failed to fetch usage data: ${r.status}`);
@@ -87,10 +87,8 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             ? new Date(now.getTime() - MS_PER_WEEK)
             : filters.timeRange === "30d"
               ? new Date(now.getTime() - MS_PER_30_DAYS)
-              : filters.timeRange === "custom"
-                ? new Date(now.getTime() - filters.customDays * MS_PER_DAY)
-                : new Date(0);
-    }, [filters.timeRange, filters.customDays]);
+              : new Date(0); // "all" - no cutoff
+    }, [filters.timeRange]);
 
     // Time-filtered data (without model/key filters)
     const timeFilteredData = useMemo(() => {

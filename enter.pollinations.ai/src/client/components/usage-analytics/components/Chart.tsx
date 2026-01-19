@@ -332,11 +332,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                         const allBreakdown = bar.modelBreakdown || [];
                         const breakdown = allBreakdown.filter((m) => {
                             const val =
-                                metric === "requests"
-                                    ? m.requests
-                                    : metric === "pollen"
-                                      ? m.pollen
-                                      : m.tokens;
+                                metric === "requests" ? m.requests : m.pollen;
                             return val > 0;
                         });
                         const hasBreakdown =
@@ -400,9 +396,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                 >
                                     {metric === "requests"
                                         ? "requests"
-                                        : metric === "pollen"
-                                          ? "pollen"
-                                          : "tokens"}{" "}
+                                        : "pollen"}{" "}
                                     {formatTooltipVal(bar.value)}
                                 </text>
                                 {hasBreakdown && (
@@ -423,7 +417,6 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                                 label: string;
                                                 requests: number;
                                                 pollen: number;
-                                                tokens: number;
                                             },
                                             i: number,
                                         ) => (
@@ -460,10 +453,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                                     {formatTooltipVal(
                                                         metric === "requests"
                                                             ? m.requests
-                                                            : metric ===
-                                                                "pollen"
-                                                              ? m.pollen
-                                                              : m.tokens,
+                                                            : m.pollen,
                                                     )}
                                                 </text>
                                             </g>

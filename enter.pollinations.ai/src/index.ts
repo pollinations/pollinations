@@ -15,7 +15,6 @@ import { nowpaymentsRoutes } from "./routes/nowpayments.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
-import { usageDailyRoutes, usageRoutes } from "./routes/usage.ts";
 import { webhooksRoutes } from "./routes/webhooks.ts";
 import { webhooksCryptoRoutes } from "./routes/webhooks-crypto.ts";
 
@@ -29,8 +28,6 @@ export const api = new Hono<Env>()
     .route("/nowpayments", nowpaymentsRoutes)
     .route("/tiers", tiersRoutes)
     .route("/api-keys", apiKeysRoutes)
-    .route("/usage", usageRoutes)
-    .route("/usage/daily", usageDailyRoutes)
     .route("/account", accountRoutes)
     .route("/webhooks", webhooksRoutes)
     .route("/webhooks", webhooksCryptoRoutes)

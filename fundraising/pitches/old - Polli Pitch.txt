@@ -1,0 +1,125 @@
+Polli Pitch
+
+What is Polli
+Our value: Open source / AI transparency & AI ethics / Creativity / Organic / Sharing / Community / Friendly / Youth empowerment and education / Global brain 
+
+Mission: make state‑of‑the‑art creation tools free and open so anyone can build, share and monetise AI‑powered experiences
+
+Vision: Our vision is a world in which human just give vocal instruction to informatic systems, coders doesn't type anymore, and finally, where AI powered machines are serving every one equally.
+   	
+
+Brief history of the project
+-   	Content creation evolution (curves)
+-   	Show 5 emblematic projects, especially number one: Roblox Canadian game
+
+
+What is Polli
+Brief history of the project
+
+Content creation evolution (curves)
+
+Present 3 emblematic projects, especially number one: Roblox Canadian game
+
+Present website
+
+
+
+Pollinations is now used by the entire world: in the last 90 days, the request came 30% from China, 13% from US, 13% from EU and 6% from India.
+
+Pollinations acts as an international AI incubator, accompanying independent developers from all around world in their AI integration journey.
+
+
+Polli
+An AI toolbox for developers
+ 
+Pollinations is an open-source AI service. It gives access to a Software Development Kits (SDK), a unique AI toolbox that facilitates the informatic integration of AI powered services. In majority, users mobilize Pollinations SDK for developing internet applications, websites or online video games (please review). It is based on GitHub (show images for making it simple to understand).
+ 
+It gathers a large AI enthusiast community, mainly organized through a Discord forum that currently gather 13734 members, organized in twenty different chat groups. The community nourish technical development, making the Pollinations SDK being a common and open-source creation.
+ 
+The SDK can be integrated to the informatician code editor, allowing a direct access to the AI toolbox. All developers using Pollinations SDK are called Creators.
+
+
+Explain every concept and tools
+GitHub is a proprietary developer platform that allows developers to create, store, manage, and share their code. It uses Git to provide distributed version control and GitHub itself provides access control, bug tracking, software feature requests, task management, continuous integration, and wikis for every project.
+Discord is an instant messaging and social platform which allows communication through voice calls, video calls, text messaging, and media. Communication can be private or take place in virtual communities called "servers".
+
+
+-> add the scheme
+
+Polli
+Pollinations is a “no‑keys, no‑friction” creation layer on top of cutting‑edge AI models. We give makers three things:
+
+Instant API Endpoints – copy‑paste a URL to generate text, images, audio (video next in line).  No log‑in required for the first call.
+One‑Command App Starter – run pollinations-init myapp.com in any text editor; we scaffold a GitHub repo, wire up hosting on GitHub Pages and hand back a personal token.
+Edge AI at Scale – every request transparently taps our global GPU fleet; the developer never touches infrastructure.
+
+Maybe merge with previous slide, that’s the most important slide. It has to be super pedagogical. Show the copy paste method. Show the launch of command starter. 
+
+Business models
+-   	Personalized ad system: Pollinations engine can generate ads contextualized with the User perspective. Such a technic is an innovation as prompting is new way to target clients, meanwhile poor actors are using such technics. A pilot phase is currently on-going on text generation media with two providers, with recent first result. (Show figures and example of media generated with ad link). Such a system applied to image generation remains to be developed.
+ 
+-   	Shared revenue system: Creators’ application can have various ways to monetize themselves. As the Pollinations engine is critical for their application, it is possible to build up a commonly profitable partnership relationship, formalized by a contact for sharing revenues. Example of Roblox game. Show the Game, show the contracts.
+Pollinations is considering developing an AI application creation platform which would allow all Creators to access to easy tools for monetization of their app. Such tools could be coupled with a more integrated support (technical and administrative) to create an incubator-style relationship (and generate an identification process of talents and future entrepreneurs).
+ 
+-   	Data selling: for only two months, Pollinations have started to archive all generated media. This already represents a database of 4 Terabytes, counting more than 25 million images and 72 million text generation/interaction. The monetization of such data base is still under study, knowing that for each media user information is also captured (including location and something else?).
+ 
+-   	Premium access: Pollinations can also opt for a more standard way of internet services monetization through premium plans for allowing higher limit rates, access to more AI models or higher resolutions image creation. Such plans will be developed with a double nature tariff system, coupling flat payment with a monthly variable payment depending on a pay-per use criteria.
+
+Basically, since its creation, Pollinations.ai has been an Artificial intelligence research lab. It is now adding to its organization a commercial entity (Pollinations OÜ) that will manage monetization of the system to ensure the entire economic sustainability.
+The challenge is to manage pollinations adoption utilizing the incentive of integrated and cheap services (based on free API access).
+
+→ show elements of financial projection, explain the current questions
+
+User pathway
+Creators
+The typical Pollinations user profile is a young/teen independent developer, usually vibe coder.
+The standard user comes to Pollination thanks to AI blogs (can we find a list of Reddit, Youtube and other blogs and show it?) and then reach the Pollinations website (show the Website).
+The Pollinations community has been drastically growing between X and X. Show the Discord extract.
+This growth is spontaneous and natural as founders have never done any communication/marketing campaigns, which means that Pollinations is in a passive state on user prospection aspects. This implies that Pollinations have a strong unexploited potential leverage for more massive adoption. It is chosen not doing any effort in that sense without a clear business model installed.
+ 
+Besides, for now, an application registration system has been launched and is being generalized. It allowed the capture of a database of 100 mails (Creators contact).
+
+Better to schemes to show the patyhway
+
+Pollinations KPIs
+
+KPIs
+Unity
+Ad revenue
+€
+Shared revenue
+€
+Registered users
+Nb
+Image creation
+Nb
+Text creation
+Nb
+GPUs consumption/month
+Nb
+GPUs consumption/request
+€
+Discord users
+Nb
+GitHub recognition
+Stars
+Antler affiliates partnering for Ad system
+Nb
+
+Risk analysis
+
+Identified risk
+Mitigation means
+No market need (biggest risk identified by Antler)
+ 
+Pollinations needs to prove that revenues from its ecosystems can cover all running cost. Develop revenue models.
+GPUs credits run out before being profitable
+Enhance GPUs consumption efficiency / Manage more credits / undertake revenue generation.
+The only dev (Thomas) is impeded
+Recruit a Dev ops and train him in the short term.
+Legal risk: Outlier
+Outlier liability: manage the formal close of previous Pollinations and end the business relationship with the venture.
+Legal risk: tax system alignment
+Review of company legal status and tax system alignment.
+…
+ 

@@ -60,9 +60,6 @@ function RouteComponent() {
         Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState<"fiat" | "crypto">(
-        "fiat",
-    );
     const [activeTab, setActiveTab] = useState<"balance" | "usage">("balance");
     const [downloadOpen, setDownloadOpen] = useState(false);
     const [downloadingDetailed, setDownloadingDetailed] = useState(false);
@@ -202,14 +199,8 @@ function RouteComponent() {
     };
 
     const handleBuyPollen = (slug: string) => {
-        if (paymentMethod === "crypto") {
-            // Extract pack name from slug (e.g., "v1:product:pack:5x2" -> "5x2")
-            const pack = slug.split(":").pop();
-            window.location.href = `/api/nowpayments/invoice/${pack}?redirect=true`;
-        } else {
-            // Navigate directly to Polar checkout endpoint - server will handle redirect
-            window.location.href = `/api/polar/checkout/${productSlugToUrlParam(slug)}?redirect=true`;
-        }
+        // Navigate directly to Polar checkout endpoint - server will handle redirect
+        window.location.href = `/api/polar/checkout/${productSlugToUrlParam(slug)}?redirect=true`;
     };
 
     return (
@@ -260,97 +251,47 @@ function RouteComponent() {
                             </button>
                         </h2>
                         {activeTab === "balance" && (
-                            <div className="flex flex-col sm:items-end gap-2">
-                                <div className="flex items-center gap-1 bg-violet-100/50 rounded-lg p-1 self-start sm:self-auto">
-                                    <button
-                                        type="button"
-                                        onClick={() => setPaymentMethod("fiat")}
-                                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                                            paymentMethod === "fiat"
-                                                ? "bg-white text-violet-700 shadow-sm"
-                                                : "text-violet-600 hover:text-violet-700"
-                                        }`}
-                                    >
-                                        💳 Fiat
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setPaymentMethod("crypto")
-                                        }
-                                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                                            paymentMethod === "crypto"
-                                                ? "bg-white text-violet-700 shadow-sm"
-                                                : "text-violet-600 hover:text-violet-700"
-                                        }`}
-                                    >
-                                        ₿ Crypto
-                                    </button>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {paymentMethod === "crypto" && (
-                                        <Button
-                                            as="button"
-                                            color="violet"
-                                            weight="light"
-                                            onClick={() =>
-                                                handleBuyPollen(
-                                                    "v1:product:pack:1x2",
-                                                )
-                                            }
-                                        >
-                                            + $1
-                                        </Button>
-                                    )}
-                                    <Button
-                                        as="button"
-                                        color="violet"
-                                        weight="light"
-                                        onClick={() =>
-                                            handleBuyPollen(
-                                                "v1:product:pack:5x2",
-                                            )
-                                        }
-                                    >
-                                        + $5
-                                    </Button>
-                                    <Button
-                                        as="button"
-                                        color="violet"
-                                        weight="light"
-                                        onClick={() =>
-                                            handleBuyPollen(
-                                                "v1:product:pack:10x2",
-                                            )
-                                        }
-                                    >
-                                        + $10
-                                    </Button>
-                                    <Button
-                                        as="button"
-                                        color="violet"
-                                        weight="light"
-                                        onClick={() =>
-                                            handleBuyPollen(
-                                                "v1:product:pack:20x2",
-                                            )
-                                        }
-                                    >
-                                        + $20
-                                    </Button>
-                                    <Button
-                                        as="button"
-                                        color="violet"
-                                        weight="light"
-                                        onClick={() =>
-                                            handleBuyPollen(
-                                                "v1:product:pack:50x2",
-                                            )
-                                        }
-                                    >
-                                        + $50
-                                    </Button>
-                                </div>
+                            <div className="flex flex-wrap gap-2">
+                                <Button
+                                    as="button"
+                                    color="violet"
+                                    weight="light"
+                                    onClick={() =>
+                                        handleBuyPollen("v1:product:pack:5x2")
+                                    }
+                                >
+                                    + $5
+                                </Button>
+                                <Button
+                                    as="button"
+                                    color="violet"
+                                    weight="light"
+                                    onClick={() =>
+                                        handleBuyPollen("v1:product:pack:10x2")
+                                    }
+                                >
+                                    + $10
+                                </Button>
+                                <Button
+                                    as="button"
+                                    color="violet"
+                                    weight="light"
+                                    onClick={() =>
+                                        handleBuyPollen("v1:product:pack:20x2")
+                                    }
+                                >
+                                    + $20
+                                </Button>
+                                <Button
+                                    as="button"
+                                    color="violet"
+                                    weight="light"
+                                    onClick={() =>
+                                        handleBuyPollen("v1:product:pack:50x2")
+                                    }
+                                >
+                                    + $50
+                                </Button>
                             </div>
                         )}
                         {activeTab === "usage" && (

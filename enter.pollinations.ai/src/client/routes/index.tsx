@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { productSlugToUrlParam } from "../../routes/polar.ts";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
@@ -14,6 +14,7 @@ import { Header } from "../components/header.tsx";
 import { PollenBalance } from "../components/pollen-balance.tsx";
 import { Pricing } from "../components/pricing/index.ts";
 import { TierPanel } from "../components/tier-panel.tsx";
+import { UsageGraph } from "../components/usage-analytics";
 import { User } from "../components/user.tsx";
 
 export const Route = createFileRoute("/")({
@@ -62,6 +63,24 @@ function RouteComponent() {
     const [paymentMethod, setPaymentMethod] = useState<"fiat" | "crypto">(
         "fiat",
     );
+    const [activeTab, setActiveTab] = useState<"balance" | "usage">("balance");
+    const [downloadOpen, setDownloadOpen] = useState(false);
+    const [downloadingDetailed, setDownloadingDetailed] = useState(false);
+    const downloadRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (
+                downloadRef.current &&
+                !downloadRef.current.contains(e.target as Node)
+            ) {
+                setDownloadOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     const handleSignOut = async () => {
         if (isSigningOut) return; // Prevent double-clicks
@@ -214,92 +233,278 @@ function RouteComponent() {
                     </Button>
                 </Header>
                 <div className="flex flex-col gap-2">
-                    <div className="flex flex-col sm:flex-row justify-between gap-3">
-                        <h2 className="font-bold flex-1">Balance</h2>
-                        <div className="flex flex-wrap gap-3 items-center">
-                            <div className="flex items-center gap-1 bg-violet-100/50 rounded-lg p-1 mr-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setPaymentMethod("fiat")}
-                                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                                        paymentMethod === "fiat"
-                                            ? "bg-white text-violet-700 shadow-sm"
-                                            : "text-violet-600 hover:text-violet-700"
-                                    }`}
-                                >
-                                    💳 Fiat
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setPaymentMethod("crypto")}
-                                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                                        paymentMethod === "crypto"
-                                            ? "bg-white text-violet-700 shadow-sm"
-                                            : "text-violet-600 hover:text-violet-700"
-                                    }`}
-                                >
-                                    ₿ Crypto
-                                </button>
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                        <h2 className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("balance")}
+                                className={`font-bold ${
+                                    activeTab === "balance"
+                                        ? "text-green-950"
+                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
+                                }`}
+                            >
+                                Balance
+                            </button>
+                            <span className="text-gray-300">·</span>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("usage")}
+                                className={`font-bold ${
+                                    activeTab === "usage"
+                                        ? "text-green-950"
+                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
+                                }`}
+                            >
+                                Usage
+                            </button>
+                        </h2>
+                        {activeTab === "balance" && (
+                            <div className="flex flex-col sm:items-end gap-2">
+                                <div className="flex items-center gap-1 bg-violet-100/50 rounded-lg p-1 self-start sm:self-auto">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaymentMethod("fiat")}
+                                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                                            paymentMethod === "fiat"
+                                                ? "bg-white text-violet-700 shadow-sm"
+                                                : "text-violet-600 hover:text-violet-700"
+                                        }`}
+                                    >
+                                        💳 Fiat
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setPaymentMethod("crypto")
+                                        }
+                                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                                            paymentMethod === "crypto"
+                                                ? "bg-white text-violet-700 shadow-sm"
+                                                : "text-violet-600 hover:text-violet-700"
+                                        }`}
+                                    >
+                                        ₿ Crypto
+                                    </button>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {paymentMethod === "crypto" && (
+                                        <Button
+                                            as="button"
+                                            color="violet"
+                                            weight="light"
+                                            onClick={() =>
+                                                handleBuyPollen(
+                                                    "v1:product:pack:1x2",
+                                                )
+                                            }
+                                        >
+                                            + $1
+                                        </Button>
+                                    )}
+                                    <Button
+                                        as="button"
+                                        color="violet"
+                                        weight="light"
+                                        onClick={() =>
+                                            handleBuyPollen(
+                                                "v1:product:pack:5x2",
+                                            )
+                                        }
+                                    >
+                                        + $5
+                                    </Button>
+                                    <Button
+                                        as="button"
+                                        color="violet"
+                                        weight="light"
+                                        onClick={() =>
+                                            handleBuyPollen(
+                                                "v1:product:pack:10x2",
+                                            )
+                                        }
+                                    >
+                                        + $10
+                                    </Button>
+                                    <Button
+                                        as="button"
+                                        color="violet"
+                                        weight="light"
+                                        onClick={() =>
+                                            handleBuyPollen(
+                                                "v1:product:pack:20x2",
+                                            )
+                                        }
+                                    >
+                                        + $20
+                                    </Button>
+                                    <Button
+                                        as="button"
+                                        color="violet"
+                                        weight="light"
+                                        onClick={() =>
+                                            handleBuyPollen(
+                                                "v1:product:pack:50x2",
+                                            )
+                                        }
+                                    >
+                                        + $50
+                                    </Button>
+                                </div>
                             </div>
-                            {paymentMethod === "crypto" && (
+                        )}
+                        {activeTab === "usage" && (
+                            <div ref={downloadRef} className="relative">
                                 <Button
                                     as="button"
-                                    color="purple"
+                                    color="violet"
                                     weight="light"
                                     onClick={() =>
-                                        handleBuyPollen("v1:product:pack:1x2")
+                                        setDownloadOpen(!downloadOpen)
                                     }
+                                    className="flex items-center gap-1.5"
                                 >
-                                    + $1
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="14"
+                                        height="14"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <title>Download</title>
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="7 10 12 15 17 10" />
+                                        <line x1="12" y1="15" x2="12" y2="3" />
+                                    </svg>
+                                    Download
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="12"
+                                        height="12"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className={`transition-transform ${downloadOpen ? "rotate-180" : ""}`}
+                                    >
+                                        <title>Toggle</title>
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
                                 </Button>
-                            )}
-                            <Button
-                                as="button"
-                                color="purple"
-                                weight="light"
-                                onClick={() =>
-                                    handleBuyPollen("v1:product:pack:5x2")
-                                }
-                            >
-                                + $5
-                            </Button>
-                            <Button
-                                as="button"
-                                color="purple"
-                                weight="light"
-                                onClick={() =>
-                                    handleBuyPollen("v1:product:pack:10x2")
-                                }
-                            >
-                                + $10
-                            </Button>
-                            <Button
-                                as="button"
-                                color="purple"
-                                weight="light"
-                                onClick={() =>
-                                    handleBuyPollen("v1:product:pack:20x2")
-                                }
-                            >
-                                + $20
-                            </Button>
-                            <Button
-                                as="button"
-                                color="purple"
-                                weight="light"
-                                onClick={() =>
-                                    handleBuyPollen("v1:product:pack:50x2")
-                                }
-                            >
-                                + $50
-                            </Button>
-                        </div>
+                                {downloadOpen && (
+                                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                try {
+                                                    const res = await fetch(
+                                                        "/api/account/usage/daily?format=csv",
+                                                    );
+                                                    if (!res.ok)
+                                                        throw new Error(
+                                                            "Failed to fetch",
+                                                        );
+                                                    const blob =
+                                                        await res.blob();
+                                                    const url =
+                                                        URL.createObjectURL(
+                                                            blob,
+                                                        );
+                                                    const a =
+                                                        document.createElement(
+                                                            "a",
+                                                        );
+                                                    a.href = url;
+                                                    a.download =
+                                                        "usage-daily.csv";
+                                                    a.click();
+                                                    URL.revokeObjectURL(url);
+                                                } catch (e) {
+                                                    console.error(
+                                                        "Download failed:",
+                                                        e,
+                                                    );
+                                                } finally {
+                                                    setDownloadOpen(false);
+                                                }
+                                            }}
+                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                        >
+                                            Daily Summary
+                                            <span className="block text-xs text-gray-400">
+                                                Aggregated by day
+                                            </span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                setDownloadingDetailed(true);
+                                                try {
+                                                    const res = await fetch(
+                                                        "/api/account/usage?format=csv&limit=50000",
+                                                    );
+                                                    if (!res.ok)
+                                                        throw new Error(
+                                                            "Failed to fetch",
+                                                        );
+                                                    const blob =
+                                                        await res.blob();
+                                                    const url =
+                                                        URL.createObjectURL(
+                                                            blob,
+                                                        );
+                                                    const a =
+                                                        document.createElement(
+                                                            "a",
+                                                        );
+                                                    a.href = url;
+                                                    a.download =
+                                                        "usage-detailed.csv";
+                                                    a.click();
+                                                    URL.revokeObjectURL(url);
+                                                } catch (e) {
+                                                    console.error(
+                                                        "Download failed:",
+                                                        e,
+                                                    );
+                                                } finally {
+                                                    setDownloadingDetailed(
+                                                        false,
+                                                    );
+                                                    setDownloadOpen(false);
+                                                }
+                                            }}
+                                            disabled={downloadingDetailed}
+                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                        >
+                                            {downloadingDetailed
+                                                ? "Downloading..."
+                                                : "Detailed Usage"}
+                                            <span className="block text-xs text-gray-400">
+                                                Per-request data
+                                            </span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
-                    <PollenBalance
-                        tierBalance={tierBalance}
-                        packBalance={packBalance}
-                        cryptoBalance={cryptoBalance}
-                    />
+                    {activeTab === "balance" && (
+                        <PollenBalance
+                            tierBalance={tierBalance}
+                            packBalance={packBalance}
+                            cryptoBalance={cryptoBalance}
+                        />
+                    )}
+                    {activeTab === "usage" && (
+                        <UsageGraph tier={tierData?.active?.tier} />
+                    )}
                 </div>
                 {tierData && (
                     <div className="flex flex-col gap-2">

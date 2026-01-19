@@ -13,6 +13,16 @@ import { validator } from "../middleware/validator.ts";
 // Cache TTL in seconds
 const CACHE_TTL = 60 * 60; // 1 hour
 
+// CSV escape helper
+const escapeCSV = (val: string | number | boolean | null) => {
+    if (val === null || val === undefined) return "";
+    const str = String(val);
+    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+        return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+};
+
 // Query params schema for usage
 const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
@@ -396,20 +406,6 @@ export const accountRoutes = new Hono<Env>()
 
                 // Return CSV if requested
                 if (format === "csv") {
-                    const escapeCSV = (
-                        val: string | number | boolean | null,
-                    ) => {
-                        if (val === null || val === undefined) return "";
-                        const str = String(val);
-                        if (
-                            str.includes(",") ||
-                            str.includes('"') ||
-                            str.includes("\n")
-                        ) {
-                            return `"${str.replace(/"/g, '""')}"`;
-                        }
-                        return str;
-                    };
                     const header =
                         "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
                     const rows = usage.map(
@@ -540,20 +536,6 @@ export const accountRoutes = new Hono<Env>()
                 const { format } = c.req.valid("query");
 
                 if (format === "csv") {
-                    const escapeCSV = (
-                        val: string | number | boolean | null,
-                    ) => {
-                        if (val === null || val === undefined) return "";
-                        const str = String(val);
-                        if (
-                            str.includes(",") ||
-                            str.includes('"') ||
-                            str.includes("\n")
-                        ) {
-                            return `"${str.replace(/"/g, '""')}"`;
-                        }
-                        return str;
-                    };
                     const header = "date,model,meter_source,requests,cost_usd";
                     const rows = usage.map(
                         (row) =>

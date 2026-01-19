@@ -150,57 +150,6 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                 aria-label="Usage chart"
             >
                 <title>Usage statistics chart</title>
-                <defs>
-                    <linearGradient
-                        id="usageAreaGradient"
-                        x1="0%"
-                        y1="0%"
-                        x2="0%"
-                        y2="100%"
-                    >
-                        <stop
-                            offset="0%"
-                            stopColor="#8b5cf6"
-                            stopOpacity="0.2"
-                        />
-                        <stop
-                            offset="50%"
-                            stopColor="#a78bfa"
-                            stopOpacity="0.1"
-                        />
-                        <stop
-                            offset="100%"
-                            stopColor="#c4b5fd"
-                            stopOpacity="0"
-                        />
-                    </linearGradient>
-                    <filter
-                        id="lineGlow"
-                        x="-20%"
-                        y="-20%"
-                        width="140%"
-                        height="140%"
-                    >
-                        <feGaussianBlur stdDeviation="2" result="blur" />
-                        <feMerge>
-                            <feMergeNode in="blur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                    </filter>
-                    <filter
-                        id="dotGlow"
-                        x="-100%"
-                        y="-100%"
-                        width="300%"
-                        height="300%"
-                    >
-                        <feGaussianBlur stdDeviation="3" result="blur" />
-                        <feMerge>
-                            <feMergeNode in="blur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                    </filter>
-                </defs>
 
                 {/* Grid lines */}
                 {yTicks.map((t) => (

@@ -3,6 +3,7 @@ import { Box, Button, Stack, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { colors, gradients } from "../theme";
 
 const fadeInUp = {
     hidden: { opacity: 0, y: 30 },
@@ -51,7 +52,7 @@ const NotFoundPage = () => {
         <Box
             sx={{
                 minHeight: "100vh",
-                bgcolor: "#09090b",
+                bgcolor: colors.bg.deep,
                 position: "relative",
                 overflow: "hidden",
                 display: "flex",
@@ -83,8 +84,7 @@ const NotFoundPage = () => {
                     right: "-5%",
                     width: "500px",
                     height: "500px",
-                    background:
-                        "radial-gradient(circle, rgba(96, 165, 250, 0.1) 0%, rgba(0,0,0,0) 70%)",
+                    background: gradients.glowLime,
                     zIndex: 0,
                     pointerEvents: "none",
                 }}
@@ -112,8 +112,7 @@ const NotFoundPage = () => {
                                 sx={{
                                     fontWeight: 900,
                                     letterSpacing: "-0.05em",
-                                    background:
-                                        "linear-gradient(135deg, #60a5fa 0%, #a1a1aa 50%, #ffffff 100%)",
+                                    background: gradients.textHero,
                                     backgroundClip: "text",
                                     WebkitBackgroundClip: "text",
                                     color: "transparent",
@@ -139,7 +138,7 @@ const NotFoundPage = () => {
                             variant="h3"
                             sx={{
                                 fontWeight: 700,
-                                color: "#ffffff",
+                                color: colors.text.primary,
                                 mb: 2,
                                 fontSize: { xs: "1.8rem", md: "2.2rem" },
                             }}
@@ -151,16 +150,15 @@ const NotFoundPage = () => {
                             sx={{
                                 p: 3,
                                 borderRadius: "16px",
-                                background:
-                                    "linear-gradient(135deg, rgba(96, 165, 250, 0.15) 0%, rgba(255,255,255,0.05) 100%)",
-                                border: "1px solid rgba(96, 165, 250, 0.25)",
+                                background: `linear-gradient(135deg, ${colors.lime.dim} 0%, rgba(255,255,255,0.05) 100%)`,
+                                border: `1px solid ${colors.lime.border}`,
                                 mb: 4,
                             }}
                         >
                             <Typography
                                 variant="h5"
                                 sx={{
-                                    color: "#60a5fa",
+                                    color: colors.lime.main,
                                     fontWeight: 600,
                                     fontSize: { xs: "1.1rem", md: "1.3rem" },
                                 }}
@@ -172,7 +170,7 @@ const NotFoundPage = () => {
                         <Typography
                             variant="body1"
                             sx={{
-                                color: "rgba(255,255,255,0.8)",
+                                color: colors.text.secondary,
                                 mb: 4,
                                 fontSize: "1.1rem",
                                 lineHeight: 1.6,
@@ -206,23 +204,22 @@ const NotFoundPage = () => {
                                 size="large"
                                 startIcon={<HomeIcon />}
                                 sx={{
-                                    bgcolor: "rgba(96, 165, 250, 0.2)",
-                                    color: "#60a5fa",
+                                    bgcolor: colors.lime.dim,
+                                    color: colors.lime.main,
                                     textTransform: "none",
                                     fontSize: "1rem",
                                     fontWeight: 600,
                                     py: 1.5,
                                     px: 4,
                                     borderRadius: "12px",
-                                    border: "1px solid rgba(96, 165, 250, 0.4)",
+                                    border: `1px solid ${colors.lime.border}`,
                                     backdropFilter: "blur(20px)",
                                     transition: "all 0.3s ease",
                                     "&:hover": {
-                                        bgcolor: "rgba(96, 165, 250, 0.3)",
-                                        borderColor: "#60a5fa",
+                                        bgcolor: colors.lime.glow,
+                                        borderColor: colors.lime.main,
                                         transform: "translateY(-2px)",
-                                        boxShadow:
-                                            "0 8px 24px rgba(96, 165, 250, 0.2)",
+                                        boxShadow: `0 8px 24px ${colors.lime.glow}`,
                                     },
                                 }}
                             >
@@ -264,21 +261,20 @@ const NotFoundPage = () => {
                         mt: 6,
                         p: 3,
                         borderRadius: "16px",
-                        background:
-                            "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)",
-                        border: "1px solid rgba(255,255,255,0.1)",
+                        background: `linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)`,
+                        border: `1px solid ${colors.border.medium}`,
                         textAlign: "center",
                     }}
                 >
                     <Typography
                         variant="body2"
-                        sx={{ color: "rgba(255,255,255,0.6)" }}
+                        sx={{ color: colors.text.muted }}
                     >
                         💡 Pro tip: Try exploring our{" "}
                         <Link
                             to="/projects"
                             style={{
-                                color: "#60a5fa",
+                                color: colors.lime.main,
                                 textDecoration: "none",
                                 fontWeight: 600,
                             }}
@@ -289,7 +285,7 @@ const NotFoundPage = () => {
                         <Link
                             to="/mentors"
                             style={{
-                                color: "#60a5fa",
+                                color: colors.lime.main,
                                 textDecoration: "none",
                                 fontWeight: 600,
                             }}

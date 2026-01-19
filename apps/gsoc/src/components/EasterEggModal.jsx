@@ -7,6 +7,7 @@ import {
     Typography,
 } from "@mui/material";
 import { motion } from "framer-motion";
+import { colors, gradients } from "../theme";
 
 const easterEggMessages = [
     {
@@ -27,12 +28,11 @@ const EasterEggModal = ({ open, onClose }) => {
             onClose={onClose}
             PaperProps={{
                 sx: {
-                    background:
-                        "linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%)",
+                    background: `linear-gradient(135deg, ${colors.lime.dim} 0%, ${colors.lavender.dim} 100%)`,
                     backdropFilter: "blur(20px)",
-                    border: "1px solid rgba(96, 165, 250, 0.3)",
+                    border: `1px solid ${colors.lime.border}`,
                     borderRadius: "20px",
-                    boxShadow: "0 8px 32px rgba(96, 165, 250, 0.3)",
+                    boxShadow: `0 8px 32px ${colors.lime.glow}`,
                     overflow: "hidden",
                 },
             }}
@@ -51,7 +51,7 @@ const EasterEggModal = ({ open, onClose }) => {
                             top: 12,
                             color: "rgba(255,255,255,0.6)",
                             "&:hover": {
-                                color: "#fff",
+                                color: colors.text.primary,
                                 backgroundColor: "rgba(255,255,255,0.1)",
                             },
                         }}
@@ -76,8 +76,7 @@ const EasterEggModal = ({ open, onClose }) => {
                             sx={{
                                 fontWeight: 700,
                                 mb: 2,
-                                background:
-                                    "linear-gradient(135deg, #60a5fa, #a78bfa)",
+                                background: gradients.textAccent,
                                 WebkitBackgroundClip: "text",
                                 WebkitTextFillColor: "transparent",
                                 fontSize: "1.8rem",
@@ -89,7 +88,7 @@ const EasterEggModal = ({ open, onClose }) => {
                         <Typography
                             variant="body1"
                             sx={{
-                                color: "rgba(255,255,255,0.85)",
+                                color: colors.text.secondary,
                                 lineHeight: 1.8,
                                 fontSize: "1.05rem",
                                 mb: 2,

@@ -40,13 +40,7 @@ Midterm evals: Jul 6 → Jul 10.
 Final submissions (standard): Aug 17 → Aug 24.
 Extended coding ends: Nov 2 (mentor evals by Nov 9).
 If asked about what pollinations.ai are accepting please ask them to visit the /coc for code of conduct and /contributing for the contribution guidelines
-We have 5 key project areas for GSoC 2026:
-1. Pollinations Gaming SDKs (Roblox/Godot/Unity) - Building plug-and-play tools for game engines.
-2. 'Pollen' Economy Dashboard & Wallet - Visualizing creator earnings and credit flow.
-3. Mycelial Network Visualizer - 3D interactive visualization of our app ecosystem.
-4. AI Content Safety & Moderation Suite - Python-based safety filters for gaming.
-5. Interactive 'Vibe Coding' Playground - Natural language to app generator.
-Encourage users to check the /projects page for full details on these.
+As of now the project list for pollinations hasn't been finalized yet, but once done we will provide the details to you 
 - Limit within 1000 tokens
 Always end responses with a helpful suggestion or question to keep the conversation engaging.`;
     }

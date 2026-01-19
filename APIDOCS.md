@@ -103,11 +103,11 @@ curl 'https://gen.pollinations.ai/account/usage' \
 - **Path:** `/account/profile`
 - **Tags:** gen.pollinations.ai
 
-Get user profile info (name, email, GitHub username, tier). Requires `account:profile` permission for API keys.
+Get user profile info (name, email, GitHub username, tier, createdAt, nextResetAt). Requires `account:profile` permission for API keys.
 
 #### Responses
 
-##### Status: 200 User profile with name, email, githubUsername, tier, createdAt
+##### Status: 200 User profile with name, email, githubUsername, tier, createdAt, nextResetAt
 
 ###### Content-Type: application/json
 
@@ -127,9 +127,13 @@ Get user profile info (name, email, GitHub username, tier). Requires `account:pr
 
   `object` — User's display name
 
+- **`nextResetAt` (required)**
+
+  `object` — Next daily pollen reset timestamp (ISO 8601)
+
 - **`tier` (required)**
 
-  `string`, possible values: `"anonymous", "seed", "flower", "nectar"` — User's current tier level
+  `string`, possible values: `"anonymous", "spore", "seed", "flower", "nectar", "router"` — User's current tier level
 
 **Example:**
 
@@ -139,7 +143,8 @@ Get user profile info (name, email, GitHub username, tier). Requires `account:pr
   "email": "",
   "githubUsername": "",
   "tier": "anonymous",
-  "createdAt": ""
+  "createdAt": "",
+  "nextResetAt": ""
 }
 ```
 
@@ -183,7 +188,7 @@ Get pollen balance. Returns the key's remaining budget if set, otherwise the use
 - **Path:** `/account/usage`
 - **Tags:** gen.pollinations.ai
 
-Get request history and spending data from Tinybird. Supports JSON and CSV formats. Requires `account:usage` permission for API keys.
+Get request history and spending data. Supports JSON and CSV formats. Requires `account:usage` permission for API keys.
 
 #### Responses
 
@@ -990,7 +995,7 @@ API keys can be created from your dashboard at enter.pollinations.ai. Both key t
 
 - **`model`**
 
-  `string`, possible values: `"openai", "openai-fast", "openai-large", "qwen-coder", "mistral", "openai-audio", "gemini", "gemini-fast", "deepseek", "grok", "gemini-search", "chickytutor", "midijourney", "claude-fast", "claude", "claude-large", "perplexity-fast", "perplexity-reasoning", "kimi", "gemini-large", "nova-fast", "glm", "minimax"`, default: `"openai"` — AI model for text generation. See /v1/models for full list.
+  `string`, possible values: `"openai", "openai-fast", "openai-large", "qwen-coder", "mistral", "openai-audio", "gemini", "gemini-fast", "deepseek", "grok", "gemini-search", "chickytutor", "midijourney", "claude-fast", "claude", "claude-large", "perplexity-fast", "perplexity-reasoning", "kimi", "gemini-large", "nova-fast", "glm", "minimax", "nomnom"`, default: `"openai"` — AI model for text generation. See /v1/models for full list.
 
 - **`parallel_tool_calls`**
 

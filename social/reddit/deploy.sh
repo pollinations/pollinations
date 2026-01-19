@@ -5,6 +5,11 @@ cleanup() {
   echo ""
   echo "🧹 Cleaning up processes..."
   
+  echo "📤 Committing and pushing changes to GitHub..."
+  git add .
+  git commit -m "Deploy updated link.ts and main.ts" 2>/dev/null || true
+  git push origin main 2>/dev/null || true
+  
   if [ ! -z "$PLAYTEST_PID" ] && kill -0 $PLAYTEST_PID 2>/dev/null; then
     kill -TERM $PLAYTEST_PID 2>/dev/null
     sleep 1
@@ -13,7 +18,7 @@ cleanup() {
   
   pkill -f "devvit playtest" 2>/dev/null || true
   pkill -f "node.*devvit" 2>/dev/null || true
-  pkill -f "node" 2>/dev/null || true
+  pkill -f "^node$" 2>/dev/null || true
   
   lsof -ti:5678 2>/dev/null | xargs kill -9 2>/dev/null || true
   
@@ -63,15 +68,10 @@ npx devvit playtest "$SUBREDDIT" &
 PLAYTEST_PID=$!
 sleep 3
 
-echo "📦 Step 3: Committing and pushing changes to GitHub..."
-git add .
-git commit -m "Deploy updated link.ts and main.ts"
-git push origin main
-
-echo "📝 Step 4: Triggering update (modify main.ts)..."
+echo "📝 Step 3: Triggering update (modify main.ts)..."
 echo "" >> src/main.ts
 
-echo "📊 Step 5: Watching for successful image post..."
+echo "📊 Step 4: Watching for successful image post..."
 echo ""
 
 echo "⏱️  Keeping process alive for 2 minutes..."

@@ -66,11 +66,14 @@ RUN pip3 install --no-cache-dir \
     pydantic
 
 # Clone and install nunchaku
+# Patch setup.py to hardcode SM 89 target since GPU detection doesn't work during Docker build
 WORKDIR /app
+ENV TORCH_CUDA_ARCH_LIST="8.9"
 RUN git clone https://github.com/mit-han-lab/nunchaku.git \
     && cd nunchaku \
     && git submodule init \
     && git submodule update \
+    && sed -i 's/sm_targets = get_sm_targets()/sm_targets = ["89"]/' setup.py \
     && python3 -m pip install -e .
 
 # Install hf_transfer separately to keep cache layers

@@ -10,7 +10,7 @@ test("sendToTinybird sends event to Tinybird API", async ({ log, mocks }) => {
     const event = {
         id: "test-event-id",
         requestId: "test-request-id",
-        requestPath: "/api/generate/openai",
+        requestPath: "/api/openai",
         startTime: new Date(),
         endTime: new Date(Date.now() + 100),
         responseTime: 100,
@@ -65,7 +65,7 @@ test("sendToTinybird handles API errors gracefully", async ({ log, mocks }) => {
     const event = {
         id: "simulate_tinybird_error:test-event-id",
         requestId: "test-request-id",
-        requestPath: "/api/generate/openai",
+        requestPath: "/api/openai",
         startTime: new Date(),
         endTime: new Date(Date.now() + 100),
         responseTime: 100,

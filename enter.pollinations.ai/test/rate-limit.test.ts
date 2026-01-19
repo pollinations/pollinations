@@ -3,7 +3,7 @@ import { test } from "./fixtures.ts";
 import { expect } from "vitest";
 import { getLogger } from "@logtape/logtape";
 
-const endpoint = "http://localhost:3000/api/generate/v1/chat/completions";
+const endpoint = "http://localhost:3000/api/v1/chat/completions";
 const log = getLogger(["test", "rate-limit"]);
 
 // Get capacity from environment (test env uses 0.002 for bucket exhaustion testing)

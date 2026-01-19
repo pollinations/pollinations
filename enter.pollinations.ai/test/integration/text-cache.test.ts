@@ -33,7 +33,7 @@ describe("Text Cache Integration Tests", () => {
 
             // First request - should be cache MISS
             const responseA = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -53,7 +53,7 @@ describe("Text Cache Integration Tests", () => {
 
             // Second identical request - should be cache HIT
             const responseB = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -81,7 +81,7 @@ describe("Text Cache Integration Tests", () => {
 
             // First request
             const responseA = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -106,7 +106,7 @@ describe("Text Cache Integration Tests", () => {
 
             // Different request body - should also be cache MISS
             const responseB = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -144,7 +144,7 @@ describe("Text Cache Integration Tests", () => {
 
             // First request with auth - populate cache
             const responseA = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -165,7 +165,7 @@ describe("Text Cache Integration Tests", () => {
             // Second request WITHOUT auth - should still get cache HIT
             // This proves cache runs BEFORE auth middleware
             const responseB = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -197,7 +197,7 @@ describe("Text Cache Integration Tests", () => {
 
             // First request with apiKey
             const responseA = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -218,7 +218,7 @@ describe("Text Cache Integration Tests", () => {
             // Second request with SAME apiKey - should hit cache
             // (proves auth header is excluded from cache key)
             const responseB = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -246,7 +246,7 @@ describe("Text Cache Integration Tests", () => {
 
             // First GET request - should be cache MISS
             const responseA = await SELF.fetch(
-                `http://localhost:3000/api/generate/text/cache-test-prompt?model=openai-fast`,
+                `http://localhost:3000/api/text/cache-test-prompt?model=openai-fast`,
                 {
                     method: "GET",
                     headers: {
@@ -264,7 +264,7 @@ describe("Text Cache Integration Tests", () => {
 
             // Second identical GET request - should be cache HIT
             const responseB = await SELF.fetch(
-                `http://localhost:3000/api/generate/text/cache-test-prompt?model=openai-fast`,
+                `http://localhost:3000/api/text/cache-test-prompt?model=openai-fast`,
                 {
                     method: "GET",
                     headers: {
@@ -307,7 +307,7 @@ describe("Text Cache Integration Tests", () => {
 
             // First non-streaming request (MISS - populates cache)
             const responseA1 = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -323,7 +323,7 @@ describe("Text Cache Integration Tests", () => {
 
             // Second non-streaming request (HIT - get cache key)
             const responseA2 = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -341,7 +341,7 @@ describe("Text Cache Integration Tests", () => {
 
             // First streaming request (MISS - populates cache)
             const responseB1 = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -357,7 +357,7 @@ describe("Text Cache Integration Tests", () => {
 
             // Second streaming request (HIT - get cache key)
             const responseB2 = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -384,7 +384,7 @@ describe("Text Cache Integration Tests", () => {
         async ({ apiKey }) => {
             // /v1/models doesn't use textCache middleware - no X-Cache header
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/models`,
+                `http://localhost:3000/api/v1/models`,
                 {
                     method: "GET",
                     headers: {
@@ -413,7 +413,7 @@ describe("Text Cache Integration Tests", () => {
 
             // First request - populate cache
             const responseA = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -429,7 +429,7 @@ describe("Text Cache Integration Tests", () => {
 
             // Second request - cache hit
             const responseB = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -462,7 +462,7 @@ describe("Text Cache Integration Tests", () => {
 
             // First request with seed=-1 - should bypass cache (no X-Cache header)
             const responseA = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -481,7 +481,7 @@ describe("Text Cache Integration Tests", () => {
 
             // Second identical request - should also bypass (not HIT)
             const responseB = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -513,7 +513,7 @@ describe("Text Cache Integration Tests", () => {
 
             // First request - MISS
             const responseA = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -532,7 +532,7 @@ describe("Text Cache Integration Tests", () => {
 
             // Second request - HIT
             const responseB = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {

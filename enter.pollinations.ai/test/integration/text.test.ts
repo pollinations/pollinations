@@ -50,7 +50,7 @@ describe("POST /generate/v1/chat/completions (unauthenticated)", async () => {
         async ([serviceId, expectedStatus], { mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -83,7 +83,7 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
             const ctx = createExecutionContext();
             const response = await worker.fetch(
                 new Request(
-                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    `http://localhost:3000/api/v1/chat/completions`,
                     {
                         method: "POST",
                         headers: {
@@ -138,7 +138,7 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
             const ctx = createExecutionContext();
             const response = await worker.fetch(
                 new Request(
-                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    `http://localhost:3000/api/v1/chat/completions`,
                     {
                         method: "POST",
                         headers: {
@@ -193,7 +193,7 @@ describe("GET /text/:prompt", async () => {
             const ctx = createExecutionContext();
             const response = await worker.fetch(
                 new Request(
-                    `http://localhost:3000/api/generate/text/${encodeURIComponent(TEST_MESSAGE_CONTENT)}?model=${serviceId}&seed=${testSeed()}`,
+                    `http://localhost:3000/api/text/${encodeURIComponent(TEST_MESSAGE_CONTENT)}?model=${serviceId}&seed=${testSeed()}`,
                     {
                         method: "GET",
                         headers: {
@@ -239,7 +239,7 @@ test("Session cookies should not authenticate API proxy routes", async ({
 }) => {
     await mocks.enable("polar", "tinybird", "vcr");
     const response = await SELF.fetch(
-        `http://localhost:3000/api/generate/text/test`,
+        `http://localhost:3000/api/text/test`,
         {
             method: "GET",
             headers: {
@@ -257,7 +257,7 @@ test(
     async ({ apiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
+            `http://localhost:3000/api/v1/chat/completions`,
             {
                 method: "POST",
                 headers: {
@@ -290,7 +290,7 @@ test(
     async ({ apiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
+            `http://localhost:3000/api/v1/chat/completions`,
             {
                 method: "POST",
                 headers: {
@@ -320,7 +320,7 @@ test.skip(
     async ({ apiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
+            `http://localhost:3000/api/v1/chat/completions`,
             {
                 method: "POST",
                 headers: {
@@ -363,7 +363,7 @@ test(
     async ({ apiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
+            `http://localhost:3000/api/v1/chat/completions`,
             {
                 method: "POST",
                 headers: {
@@ -405,7 +405,7 @@ test(
     async ({ apiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
+            `http://localhost:3000/api/v1/chat/completions`,
             {
                 method: "POST",
                 headers: {
@@ -512,7 +512,7 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
             const ctx1 = createExecutionContext();
             const response1 = await worker.fetch(
                 new Request(
-                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    `http://localhost:3000/api/v1/chat/completions`,
                     {
                         method: "POST",
                         headers: {
@@ -563,7 +563,7 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
             const ctx2 = createExecutionContext();
             const response2 = await worker.fetch(
                 new Request(
-                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    `http://localhost:3000/api/v1/chat/completions`,
                     {
                         method: "POST",
                         headers: {
@@ -632,7 +632,7 @@ test(
     async ({ apiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
+            `http://localhost:3000/api/v1/chat/completions`,
             {
                 method: "POST",
                 headers: {
@@ -666,7 +666,7 @@ describe("Video URL content type support", async () => {
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -709,7 +709,7 @@ describe("Video URL content type support", async () => {
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -753,7 +753,7 @@ describe("Video URL content type support", async () => {
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -800,7 +800,7 @@ describe("Model gating by API key permissions", async () => {
         async ({ restrictedApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -830,7 +830,7 @@ describe("Model gating by API key permissions", async () => {
         async ({ restrictedApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -864,7 +864,7 @@ describe("Model gating by API key permissions", async () => {
             await mocks.enable("polar", "tinybird", "vcr");
             // Test with a model that would be blocked for restricted keys
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -898,7 +898,7 @@ describe("Gemini thinking mode", async () => {
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -931,7 +931,7 @@ describe("Gemini thinking mode", async () => {
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -964,7 +964,7 @@ describe("Gemini thinking mode", async () => {
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -1001,7 +1001,7 @@ describe("Gemini native tools", async () => {
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -1036,7 +1036,7 @@ describe("Gemini native tools", async () => {
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -1071,7 +1071,7 @@ describe("Gemini native tools", async () => {
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -1115,7 +1115,7 @@ test(
     async ({ apiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
+            `http://localhost:3000/api/v1/chat/completions`,
             {
                 method: "POST",
                 headers: {
@@ -1174,7 +1174,7 @@ test(
     async ({ apiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
+            `http://localhost:3000/api/v1/chat/completions`,
             {
                 method: "POST",
                 headers: {
@@ -1213,7 +1213,7 @@ test(
     async ({ apiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
+            `http://localhost:3000/api/v1/chat/completions`,
             {
                 method: "POST",
                 headers: {
@@ -1254,7 +1254,7 @@ describe("API key pollen budget enforcement", async () => {
         async ({ exhaustedBudgetApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -1289,7 +1289,7 @@ describe("API key pollen budget enforcement", async () => {
             // Make a billed request
             const response = await worker.fetch(
                 new Request(
-                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    `http://localhost:3000/api/v1/chat/completions`,
                     {
                         method: "POST",
                         headers: {
@@ -1334,7 +1334,7 @@ describe("API key pollen budget enforcement", async () => {
             await mocks.enable("polar", "tinybird", "vcr");
             // apiKey fixture has no pollenBudget set (null) - should work
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -1363,7 +1363,7 @@ describe("API key pollen budget enforcement", async () => {
             const ctx1 = createExecutionContext();
             const response1 = await worker.fetch(
                 new Request(
-                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    `http://localhost:3000/api/v1/chat/completions`,
                     {
                         method: "POST",
                         headers: {
@@ -1404,7 +1404,7 @@ describe("API key pollen budget enforcement", async () => {
             const ctx2 = createExecutionContext();
             const response2 = await worker.fetch(
                 new Request(
-                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    `http://localhost:3000/api/v1/chat/completions`,
                     {
                         method: "POST",
                         headers: {

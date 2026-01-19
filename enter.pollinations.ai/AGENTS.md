@@ -4,7 +4,7 @@
 
 > Quick reference for testing image and text models via **enter.pollinations.ai**
 
-> ⚠️ **Note**: The current endpoint structure (`/api/generate/image/*`, `/api/generate/v1/*`, `/api/generate/text/*`) is transitional and will be simplified in future releases.
+> ⚠️ **Note**: The current endpoint structure (`/api/image/*`, `/api/v1/*`, `/api/text/*`) is transitional and will be simplified in future releases.
 
 ---
 
@@ -12,9 +12,9 @@
 
 ### Endpoints
 
-- **Image:** `GET /api/generate/image/{prompt}?model=flux`
-- **Text (OpenAI):** `POST /api/generate/v1/chat/completions` with JSON body
-- **Text (Simple):** `GET /api/generate/text/{prompt}?model=openai`
+- **Image:** `GET /api/image/{prompt}?model=flux`
+- **Text (OpenAI):** `POST /api/v1/chat/completions` with JSON body
+- **Text (Simple):** `GET /api/text/{prompt}?model=openai`
 
 ### Authentication
 
@@ -23,8 +23,8 @@
 
 ### Model Discovery
 
-- **Image models:** `/api/generate/image/models`
-- **Text models:** `/api/generate/v1/models`
+- **Image models:** `/api/image/models`
+- **Text models:** `/api/v1/models`
 
 ---
 

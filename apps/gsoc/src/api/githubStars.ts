@@ -23,9 +23,10 @@ const useGitHubStars = () => {
 
                 const data = await response.json();
                 const starCount = data.stargazers_count;
-                const formatted = starCount >= 1000
-                    ? `${(starCount / 1000).toFixed(1)}K`
-                    : starCount.toString();
+                const formatted =
+                    starCount >= 1000
+                        ? `${(starCount / 1000).toFixed(1)}K`
+                        : starCount.toString();
 
                 setStars(formatted);
                 setError(null);

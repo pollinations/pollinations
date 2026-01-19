@@ -25,7 +25,9 @@ const useContribCount = () => {
                 let totalCount = 0;
 
                 if (linkHeader) {
-                    const lastMatch = linkHeader.match(/page=(\d+)>;\s*rel="last"/);
+                    const lastMatch = linkHeader.match(
+                        /page=(\d+)>;\s*rel="last"/,
+                    );
                     if (lastMatch) {
                         totalCount = parseInt(lastMatch[1], 10);
                     }

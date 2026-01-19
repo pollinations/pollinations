@@ -794,18 +794,24 @@ const HomePage = () => {
                                 </Box>
 
                                 <Box sx={{ mt: 3 }}>
-                                    {[1, 2, 3, 4, 5].map((particle) => (
+                                    {[
+                                        { id: 1, left: 12, top: 45 },
+                                        { id: 2, left: 38, top: 18 },
+                                        { id: 3, left: 55, top: 32 },
+                                        { id: 4, left: 8, top: 28 },
+                                        { id: 5, left: 42, top: 52 },
+                                    ].map((particle) => (
                                         <Box
-                                            key={particle}
+                                            key={particle.id}
                                             sx={{
                                                 position: "absolute",
                                                 width: "3px",
                                                 height: "3px",
                                                 borderRadius: "50%",
                                                 bgcolor: colors.lime.glow,
-                                                left: `${Math.random() * 60}px`,
-                                                top: `${Math.random() * 60}px`,
-                                                animation: `fadeInOut 3s infinite ${particle * 0.6}s`,
+                                                left: `${particle.left}px`,
+                                                top: `${particle.top}px`,
+                                                animation: `fadeInOut 3s infinite ${particle.id * 0.6}s`,
                                             }}
                                         />
                                     ))}

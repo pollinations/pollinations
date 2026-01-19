@@ -1,0 +1,53 @@
+{
+  "date": "2026-01-18",
+  "generated_at": "2026-01-18T16:09:33.561777+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art_carousel",
+  "linked_images": false,
+  "strategy_reasoning": "Using a 'Digital Garden' theme in a cozy pixel art style perfectly bridges the gap between technical changes (endpoints, models) and our organic brand identity. The 'NomNom' model naturally lends itself to a cute character metaphor, while 'Klein' represents speed and precision. The retro game UI for the changelog taps into developer nostalgia.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%208-bit%20pixel%20art%20title%20screen.%20A%20wooden%20signpost%20in%20a%20lush%20digital%20garden%20that%20reads%20%27GARDEN%20UPDATE%27.%20Soft%20lime%20green%20%28%23ecf874%29%20grass%20and%20pastel%20lavender%20sky%20gradient.%20Chunky%20retro%20sprites%20of%20pixel%20flowers%20blooming.%20Warm%20sunlight%20rays.%20Lo-fi%20aesthetic%20like%20Stardew%20Valley.%20Nostalgic%20and%20welcoming.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=846378727",
+      "prompt": "Cozy 8-bit pixel art title screen. A wooden signpost in a lush digital garden that reads 'GARDEN UPDATE'. Soft lime green (#ecf874) grass and pastel lavender sky gradient. Chunky retro sprites of pixel flowers blooming. Warm sunlight rays. Lo-fi aesthetic like Stardew Valley. Nostalgic and welcoming.",
+      "description": "Title card establishing the cozy garden theme."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20cute%208-bit%20pixel%20art%20creature%20named%20%27NomNom%27%20%28looks%20like%20a%20small%20round%20robot%20with%20bunny%20ears%29%20eating%20a%20glowing%20data-leaf.%20Soft%20pastel%20background.%20The%20creature%20is%20sitting%20on%20a%20lime%20green%20%28%23ecf874%29%20pixel%20cushion.%20Text%20in%20pixel%20font%20above%3A%20%27NomNom%20Alpha%27.%20Cozy%2C%20warm%20lighting%2C%20chunky%20pixels.%20Represents%20the%20new%20web%20research%20model.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=460920500",
+      "prompt": "A cute 8-bit pixel art creature named 'NomNom' (looks like a small round robot with bunny ears) eating a glowing data-leaf. Soft pastel background. The creature is sitting on a lime green (#ecf874) pixel cushion. Text in pixel font above: 'NomNom Alpha'. Cozy, warm lighting, chunky pixels. Represents the new web research model.",
+      "description": "Introducing the NomNom web research model as a cute character."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%208-bit%20pixel%20art%20scene%20of%20a%20tiny%20artist%20bee%20painting%20a%20canvas%20very%20fast.%20The%20canvas%20shows%20a%20glowing%20blue%20abstract%20shape.%20Represents%20%27Klein%27%20fast%20image%20generation.%20Sparkles%20and%20speed%20lines%20in%20chunky%20pixels.%20Soft%20peach%20and%20mint%20gradient%20background.%20Lime%20green%20%28%23ecf874%29%20accents%20on%20the%20bee.%20Text%3A%20%27Klein%20is%20Live%27.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=2146558522",
+      "prompt": "Retro 8-bit pixel art scene of a tiny artist bee painting a canvas very fast. The canvas shows a glowing blue abstract shape. Represents 'Klein' fast image generation. Sparkles and speed lines in chunky pixels. Soft peach and mint gradient background. Lime green (#ecf874) accents on the bee. Text: 'Klein is Live'.",
+      "description": "Visualizing the Klein model update - fast and artistic."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%20RPG%20game%20inventory%20menu%20UI.%20Pixelated%20scroll%20graphic%20on%20a%20dark%20purple%20background.%20List%20of%20items%20in%20pixel%20font%3A%20%27NomNom%20Web%20Search%27%2C%20%27Klein%20Fast%20Gen%27%2C%20%27Bug%20Squashing%27.%20A%20lime%20green%20%28%23ecf874%29%20cursor%20selects%20the%20first%20item.%20Cozy%20lo-fi%20UI%20aesthetic.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1906882285",
+      "prompt": "Retro RPG game inventory menu UI. Pixelated scroll graphic on a dark purple background. List of items in pixel font: 'NomNom Web Search', 'Klein Fast Gen', 'Bug Squashing'. A lime green (#ecf874) cursor selects the first item. Cozy lo-fi UI aesthetic.",
+      "description": "A summary of the technical updates presented as a game inventory."
+    }
+  ],
+  "caption": "New species discovered in the Pollinations garden! 🌸👾\n\nWe've been doing some digital gardening and the harvest is looking ✨fresh✨.\n\nHere’s what’s blooming:\n🐰 NomNom Alpha: Our new web research model is hungry for knowledge (and data leaves).\n🎨 Klein: Now faster and smoother on Modal. Rename your 'flux-klein' to just 'klein' to keep it clean.\n🐛 Bugs: Squashed. Obviously.\n\nNo login. No subscription. Just pure open-source growth. 🌱\n\nLink in bio to start planting ideas!\n\n#pollinations #pixelart #opensource #aiart #indiedev #cozyvibes #generativeai #8bit #digitalgarden",
+  "hashtags": [
+    "#pollinations",
+    "#pixelart",
+    "#opensource",
+    "#aiart",
+    "#indiedev",
+    "#cozyvibes",
+    "#generativeai",
+    "#8bit",
+    "#digitalgarden"
+  ],
+  "alt_text": "A carousel of cozy 8-bit pixel art images. 1. A garden sign saying Garden Update. 2. A cute pixel robot named NomNom eating a leaf. 3. A pixel bee painting a canvas for the Klein update. 4. A retro game inventory screen listing the patch notes.",
+  "pr_references": [
+    "#7411",
+    "#7403",
+    "#7360",
+    "#7402",
+    "#7399",
+    "#7400",
+    "#7398"
+  ]
+}

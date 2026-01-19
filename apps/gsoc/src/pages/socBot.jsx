@@ -1,22 +1,21 @@
 import {
-    Clear,
+    ArrowUpwardRounded,
     CodeOutlined,
     LightbulbOutlined,
     RocketLaunchOutlined,
     SchoolOutlined,
-    Send,
 } from "@mui/icons-material";
 import {
     Avatar,
     Box,
     Card,
     CardContent,
+    Chip,
     CircularProgress,
     Container,
     IconButton,
     Paper,
     TextField,
-    Tooltip,
     Typography,
 } from "@mui/material";
 import { motion } from "framer-motion";
@@ -548,18 +547,6 @@ const socBotChat = () => {
         }
     };
 
-    const clearChat = () => {
-        setMessages([
-            {
-                id: 1,
-                content: "Chat cleared! How can I help you with GSoC 2026?",
-                isBot: true,
-                timestamp: new Date().toISOString(),
-            },
-        ]);
-        pollyAPI.current.clearHistory();
-    };
-
     const handleFaqClick = async (question) => {
         await handleSendMessage(question);
     };
@@ -729,7 +716,7 @@ const socBotChat = () => {
                         <Box
                             sx={{
                                 display: "flex",
-                                alignItems: "flex-end",
+                                alignItems: "center",
                                 gap: 1,
                             }}
                         >
@@ -740,7 +727,7 @@ const socBotChat = () => {
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
                                 onKeyPress={handleKeyPress}
-                                placeholder="Ask me anything about GSOC 2026..."
+                                placeholder="Ask me anything about GSoC 2026..."
                                 variant="standard"
                                 disabled={isLoading}
                                 InputProps={{
@@ -751,8 +738,6 @@ const socBotChat = () => {
                                         color: "#fff",
                                         fontSize: "1rem",
                                         px: 2,
-                                        justifyContent: "center",
-                                        alignItems: "center",
                                         py: 1.5,
                                         "&::placeholder": {
                                             color: "rgba(255,255,255,0.5)",
@@ -760,68 +745,45 @@ const socBotChat = () => {
                                     },
                                 }}
                             />
-                            <Box sx={{ display: "flex", gap: 1 }}>
-                                <Tooltip title="Clear Chat">
-                                    <IconButton
-                                        onClick={clearChat}
-                                        disabled={isLoading}
+                            <IconButton
+                                onClick={() => handleSendMessage()}
+                                disabled={isLoading || !inputValue.trim()}
+                                sx={{
+                                    color: inputValue.trim()
+                                        ? "#60a5fa"
+                                        : "rgba(255,255,255,0.3)",
+                                    p: 1,
+                                    transition: "all 0.2s ease",
+                                    "&:hover": {
+                                        color: "#3b82f6",
+                                        bgcolor: "transparent",
+                                    },
+                                    "&:disabled": {
+                                        color: "rgba(255,255,255,0.2)",
+                                    },
+                                }}
+                            >
+                                {isLoading ? (
+                                    <CircularProgress
+                                        size={20}
                                         sx={{
-                                            color: "rgba(255,255,255,0.6)",
-                                            "&:hover": {
-                                                color: "#ef4444",
-                                                bgcolor:
-                                                    "rgba(239, 68, 68, 0.1)",
-                                            },
+                                            color: "rgba(96, 165, 250, 0.6)",
                                         }}
-                                    >
-                                        <Clear />
-                                    </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Send Message">
-                                    <IconButton
-                                        onClick={() => handleSendMessage()}
-                                        disabled={
-                                            isLoading || !inputValue.trim()
-                                        }
-                                        sx={{
-                                            bgcolor: "rgba(96, 165, 250, 0.15)",
-                                            color: "#60a5fa",
-                                            border: "1px solid rgba(96, 165, 250, 0.3)",
-                                            "&:hover": {
-                                                bgcolor:
-                                                    "rgba(96, 165, 250, 0.25)",
-                                                transform: "scale(1.05)",
-                                            },
-                                            "&:disabled": {
-                                                bgcolor:
-                                                    "rgba(255,255,255,0.05)",
-                                                color: "rgba(255,255,255,0.3)",
-                                            },
-                                            transition: "all 0.2s ease",
-                                        }}
-                                    >
-                                        {isLoading ? (
-                                            <CircularProgress
-                                                size={20}
-                                                sx={{
-                                                    color: "rgba(96, 165, 250, 0.6)",
-                                                }}
-                                            />
-                                        ) : (
-                                            <Send />
-                                        )}
-                                    </IconButton>
-                                </Tooltip>
-                            </Box>
+                                    />
+                                ) : (
+                                    <ArrowUpwardRounded sx={{ fontSize: 26 }} />
+                                )}
+                            </IconButton>
                         </Box>
                     </Paper>
                 </motion.div>
             </Container>
 
+            {/* FAQ Section - Always Visible */}
             <Box
                 sx={{
                     bgcolor: "#09090b",
-                    py: 4,
+                    py: 3,
                     borderTop: "1px solid rgba(255,255,255,0.1)",
                 }}
             >
@@ -829,170 +791,85 @@ const socBotChat = () => {
                     maxWidth="md"
                     sx={{ position: "relative", zIndex: 1 }}
                 >
-                    {messages.length === 1 && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.5, delay: 0.5 }}
-                        >
-                            <Box>
-                                <Typography
-                                    variant="subtitle2"
-                                    sx={{
-                                        color: "rgba(255,255,255,0.6)",
-                                        mb: 3,
-                                        textTransform: "uppercase",
-                                        letterSpacing: "0.5px",
-                                        fontWeight: 600,
-                                    }}
-                                >
-                                    Frequently Asked Questions
-                                </Typography>
-                                <Box
-                                    sx={{
-                                        display: "grid",
-                                        gridTemplateColumns:
-                                            "repeat(auto-fit, minmax(300px, 1fr))",
-                                        gap: 2,
-                                        maxHeight: "700px",
-                                        overflowY: "auto",
-                                        px: 1,
-                                        "&::-webkit-scrollbar": {
-                                            width: "6px",
-                                        },
-                                        "&::-webkit-scrollbar-track": {
-                                            background:
-                                                "rgba(255,255,255,0.05)",
-                                            borderRadius: "10px",
-                                        },
-                                        "&::-webkit-scrollbar-thumb": {
-                                            background:
-                                                "rgba(96, 165, 250, 0.3)",
-                                            borderRadius: "10px",
-                                        },
-                                        "&::-webkit-scrollbar-thumb:hover": {
-                                            background:
-                                                "rgba(96, 165, 250, 0.5)",
-                                        },
-                                    }}
-                                >
-                                    {faqData.map((faq) => {
-                                        const categoryEmojis = {
-                                            "General": "❓",
-                                            "Application": "📝",
-                                            "Projects": "🚀",
-                                            "Timeline": "📅",
-                                            "Mentorship": "👨‍🏫",
-                                            "Technical": "💻",
-                                            "Support": "🤝",
-                                        };
-                                        const emoji =
-                                            categoryEmojis[faq.category] ||
-                                            "💡";
-                                        const categoryColor =
-                                            categoryColors[faq.category] ||
-                                            "#60a5fa";
+                    <Typography
+                        variant="subtitle2"
+                        sx={{
+                            color: "rgba(255,255,255,0.5)",
+                            mb: 2,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.5px",
+                            fontWeight: 600,
+                            fontSize: "0.7rem",
+                        }}
+                    >
+                        Frequently Asked Questions
+                    </Typography>
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gridTemplateColumns: {
+                                xs: "1fr",
+                                md: "1fr 1fr",
+                            },
+                            gap: 1,
+                        }}
+                    >
+                        {faqData.slice(0, 10).map((faq) => {
+                            const categoryColor =
+                                categoryColors[faq.category] || "#60a5fa";
 
-                                        return (
-                                            <motion.div
-                                                key={faq.id}
-                                                whileHover={{ y: -4 }}
-                                                whileTap={{ scale: 0.98 }}
-                                            >
-                                                <Card
-                                                    onClick={() =>
-                                                        handleFaqClick(
-                                                            faq.question,
-                                                        )
-                                                    }
-                                                    elevation={0}
-                                                    sx={{
-                                                        cursor: "pointer",
-                                                        background: `linear-gradient(135deg, ${categoryColor}15 0%, ${categoryColor}08 100%)`,
-                                                        border: `2px solid ${categoryColor}40`,
-                                                        borderRadius: "12px",
-                                                        transition:
-                                                            "all 0.3s ease",
-                                                        height: "100%",
-                                                        display: "flex",
-                                                        flexDirection: "column",
-                                                        "&:hover": {
-                                                            borderColor:
-                                                                categoryColor,
-                                                            background: `linear-gradient(135deg, ${categoryColor}25 0%, ${categoryColor}15 100%)`,
-                                                            boxShadow: `0 8px 24px ${categoryColor}30`,
-                                                            transform:
-                                                                "translateY(-4px)",
-                                                        },
-                                                    }}
-                                                >
-                                                    <CardContent
-                                                        sx={{
-                                                            p: 2,
-                                                            "&:last-child": {
-                                                                pb: 2,
-                                                            },
-                                                            flex: 1,
-                                                            display: "flex",
-                                                            flexDirection:
-                                                                "column",
-                                                            gap: 1,
-                                                        }}
-                                                    >
-                                                        <Box
-                                                            sx={{
-                                                                display: "flex",
-                                                                alignItems:
-                                                                    "center",
-                                                                gap: 1,
-                                                            }}
-                                                        >
-                                                            <Typography
-                                                                sx={{
-                                                                    fontSize:
-                                                                        "1.5rem",
-                                                                }}
-                                                            >
-                                                                {emoji}
-                                                            </Typography>
-                                                            <Typography
-                                                                variant="caption"
-                                                                sx={{
-                                                                    color: categoryColor,
-                                                                    textTransform:
-                                                                        "uppercase",
-                                                                    letterSpacing:
-                                                                        "0.5px",
-                                                                    fontWeight: 700,
-                                                                    fontSize:
-                                                                        "0.7rem",
-                                                                }}
-                                                            >
-                                                                {faq.category}
-                                                            </Typography>
-                                                        </Box>
-                                                        <Typography
-                                                            variant="body2"
-                                                            sx={{
-                                                                color: "#fff",
-                                                                fontWeight: 600,
-                                                                lineHeight: 1.4,
-                                                                fontSize:
-                                                                    "0.95rem",
-                                                            }}
-                                                        >
-                                                            {faq.question}
-                                                        </Typography>
-                                                    </CardContent>
-                                                </Card>
-                                            </motion.div>
-                                        );
-                                    })}
+                            return (
+                                <Box
+                                    key={faq.id}
+                                    onClick={() => handleFaqClick(faq.question)}
+                                    sx={{
+                                        cursor: "pointer",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        gap: 1,
+                                        px: 2,
+                                        py: 1.5,
+                                        borderRadius: "8px",
+                                        bgcolor: "rgba(255,255,255,0.03)",
+                                        border: "1px solid rgba(255,255,255,0.08)",
+                                        transition: "all 0.2s ease",
+                                        "&:hover": {
+                                            bgcolor: "rgba(255,255,255,0.06)",
+                                            borderColor: `${categoryColor}50`,
+                                            transform: "translateX(4px)",
+                                        },
+                                    }}
+                                >
+                                    <Typography
+                                        sx={{
+                                            color: "rgba(255,255,255,0.9)",
+                                            fontSize: "0.85rem",
+                                            fontWeight: 500,
+                                            whiteSpace: "nowrap",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                        }}
+                                    >
+                                        {faq.question}
+                                    </Typography>
+                                    <Chip
+                                        label={faq.category}
+                                        size="small"
+                                        sx={{
+                                            height: "20px",
+                                            fontSize: "0.65rem",
+                                            fontWeight: 600,
+                                            bgcolor: `${categoryColor}20`,
+                                            color: categoryColor,
+                                            border: `1px solid ${categoryColor}40`,
+                                            flexShrink: 0,
+                                        }}
+                                    />
                                 </Box>
-                            </Box>
-                        </motion.div>
-                    )}
+                            );
+                        })}
+                    </Box>
                 </Container>
             </Box>
         </Box>

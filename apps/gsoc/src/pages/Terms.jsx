@@ -16,7 +16,7 @@ const CodeOfConduct = () => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        document.title = "Terms of Service - GSoC 2026 | pollinations.ai";
+        document.title = "Terms | GSoC × pollinations.ai";
         fetch("/LEGAL/TERMS_OF_SERVICE.md")
             .then((response) => {
                 if (!response.ok) {

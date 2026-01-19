@@ -16,7 +16,7 @@ const CodeOfConduct = () => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        document.title = "Privacy Policy - GSOC 2026 | pollinations.ai";
+        document.title = "Privacy | GSoC × pollinations.ai";
         fetch("/LEGAL/PRIVACY_POLICY.md")
             .then((response) => {
                 if (!response.ok) {

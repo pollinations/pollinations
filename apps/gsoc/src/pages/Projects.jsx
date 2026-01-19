@@ -45,7 +45,7 @@ const ProjectsPage = () => {
     const [submitApplicationToast, submitApplication] = useState(false);
 
     useEffect(() => {
-        document.title = "Project Ideas - GSoC 2026 | pollinations.ai";
+        document.title = "Projects | GSoC × pollinations.ai";
     }, []);
 
     const handleExpandClick = (projectId) => {
@@ -90,7 +90,7 @@ const ProjectsPage = () => {
                             WebkitTextFillColor: "transparent",
                         }}
                     >
-                        GSoC 2026 Project Ideas
+                        Projects
                     </Typography>
 
                     <Typography
@@ -103,10 +103,7 @@ const ProjectsPage = () => {
                             lineHeight: 1.6,
                         }}
                     >
-                        Explore the ideas that we have penned for GSoC 2026.
-                        Each project is designed to challenge and inspire you,
-                        with mentorship from pollination developers to guide you
-                        every step of the way.
+                        Challenges designed to inspire. Mentorship to guide you.
                     </Typography>
 
                     <Stack

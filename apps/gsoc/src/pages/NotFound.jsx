@@ -30,7 +30,7 @@ const float = {
 
 const NotFoundPage = () => {
     useEffect(() => {
-        document.title = "404 - Page Not Found | GSoC 2026";
+        document.title = "404 | GSoC × pollinations.ai";
     }, []);
 
     const funnyMessages = [

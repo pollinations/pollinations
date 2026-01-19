@@ -16,7 +16,7 @@ const Contributing = () => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        document.title = "Contributing - GSoC 2026 | pollinations.ai";
+        document.title = "Contributing | GSoC × pollinations.ai";
         fetch("/GSOC/CONTRIBUTING.md")
             .then((response) => {
                 if (!response.ok) {

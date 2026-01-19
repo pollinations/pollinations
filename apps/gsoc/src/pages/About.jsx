@@ -39,7 +39,7 @@ const cardVariants = {
 
 const AboutPage = () => {
     useEffect(() => {
-        document.title = "About - GSoC 2026 | pollinations.ai";
+        document.title = "About | GSoC × pollinations.ai";
     }, []);
 
     const stats = [
@@ -101,7 +101,7 @@ const AboutPage = () => {
                         transition={{ duration: 0.8 }}
                     >
                         <Typography
-                            variant="h1"
+                            variant="h2"
                             sx={{
                                 marginBottom: "1rem",
                                 fontWeight: 700,
@@ -110,28 +110,15 @@ const AboutPage = () => {
                                     "linear-gradient(to bottom right, #fff, #a1a1aa)",
                                 WebkitBackgroundClip: "text",
                                 WebkitTextFillColor: "transparent",
-                                fontSize: { xs: "2.5rem", md: "3.5rem" },
                             }}
                         >
-                            About pollinations.ai
-                        </Typography>
-
-                        <Typography
-                            variant="h4"
-                            sx={{
-                                color: "#60a5fa",
-                                fontWeight: 600,
-                                mb: 2,
-                                fontSize: { xs: "1.5rem", md: "2rem" },
-                            }}
-                        >
-                            Open Source Mono Repo
+                            About
                         </Typography>
 
                         <Typography
                             variant="h6"
                             sx={{
-                                color: "rgba(255,255,255,0.8)",
+                                color: "rgba(255,255,255,0.7)",
                                 fontWeight: 400,
                                 maxWidth: "800px",
                                 margin: "0 auto",
@@ -139,11 +126,8 @@ const AboutPage = () => {
                                 mb: 4,
                             }}
                         >
-                            We are an open-source generative AI platform based
-                            in Berlin, powering 500+ community projects with
-                            accessible text, image, video, and audio generation
-                            APIs. We build in the open and keep AI accessible to
-                            everyone—thanks to our amazing supporters.
+                            Open-source AI for everyone. 500+ projects and
+                            counting.
                         </Typography>
 
                         <Stack

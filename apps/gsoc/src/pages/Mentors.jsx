@@ -43,7 +43,7 @@ const MentorsPage = () => {
     const [openToast, setOpenToast] = useState(false);
 
     useEffect(() => {
-        document.title = "Mentors - GSoC 2026 | pollinations.ai";
+        document.title = "Mentors | GSoC × pollinations.ai";
     }, []);
 
     const handleCloseToast = () => {
@@ -101,7 +101,7 @@ const MentorsPage = () => {
                             WebkitTextFillColor: "transparent",
                         }}
                     >
-                        Meet Our Mentors
+                        Mentors
                     </Typography>
 
                     <Typography
@@ -114,10 +114,7 @@ const MentorsPage = () => {
                             lineHeight: 1.6,
                         }}
                     >
-                        With guidance of the mentors selected by the
-                        pollinations.ai team, you will have the opportunity to
-                        learn gain insights into the world of generative AI and
-                        open-source development.
+                        Learn from the pollinations.ai team. Build in the open.
                     </Typography>
 
                     {/* Stats Section */}

@@ -454,7 +454,7 @@ const socBotChat = () => {
     }, {});
 
     useEffect(() => {
-        document.title = "socBot - AI Assistant | GSoC 2026 | pollinations.ai";
+        document.title = "AI Assistant | GSoC × pollinations.ai";
         setMessages([
             {
                 id: 1,
@@ -643,7 +643,36 @@ const socBotChat = () => {
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
-                ></motion.div>
+                >
+                    <Box sx={{ textAlign: "center", mb: 3 }}>
+                        <Typography
+                            variant="h2"
+                            sx={{
+                                marginBottom: "1rem",
+                                fontWeight: 700,
+                                letterSpacing: "-0.02em",
+                                background:
+                                    "linear-gradient(to bottom right, #fff, #a1a1aa)",
+                                WebkitBackgroundClip: "text",
+                                WebkitTextFillColor: "transparent",
+                            }}
+                        >
+                            socBot
+                        </Typography>
+                        <Typography
+                            variant="h6"
+                            sx={{
+                                color: "rgba(255,255,255,0.7)",
+                                fontWeight: 400,
+                                maxWidth: "800px",
+                                margin: "0 auto",
+                                lineHeight: 1.6,
+                            }}
+                        >
+                            Your GSoC guide.
+                        </Typography>
+                    </Box>
+                </motion.div>
                 <Box
                     ref={messagesContainerRef}
                     sx={{

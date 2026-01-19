@@ -20,7 +20,7 @@ const TimelinePage = () => {
     const currentPhaseRef = useRef(null);
 
     useEffect(() => {
-        document.title = "Timeline - GSoC 2026";
+        document.title = "Timeline | GSoC × pollinations.ai";
 
         // Auto-scroll to current phase
         if (currentPhaseRef.current) {
@@ -72,7 +72,25 @@ const TimelinePage = () => {
                     position: "relative",
                 }}
             >
-                GSoC 2026 Timeline
+                Timeline
+            </Typography>
+
+            <Typography
+                variant="h6"
+                align="center"
+                sx={{
+                    color: "rgba(255,255,255,0.7)",
+                    fontWeight: 400,
+                    maxWidth: "800px",
+                    margin: "0 auto",
+                    marginBottom: "3rem",
+                    marginTop: "-4rem",
+                    lineHeight: 1.6,
+                    zIndex: 1,
+                    position: "relative",
+                }}
+            >
+                Key dates for GSoC 2026.
             </Typography>
 
             <Box

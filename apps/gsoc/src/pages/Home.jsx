@@ -315,7 +315,7 @@ const HomePage = () => {
                                                 fontSize: {
                                                     xs: "2.8rem",
                                                     md: "3.2rem",
-                                                    lg: "3.5rem",
+                                                    lg: "3.3rem",
                                                 },
                                                 lineHeight: 1.05,
                                                 fontFamily:
@@ -496,7 +496,7 @@ const HomePage = () => {
                                     >
                                         <Grid
                                             container
-                                            spacing={3}
+                                            spacing={12}
                                             justifyContent="center"
                                             sx={{ maxWidth: "600px" }}
                                         >
@@ -823,7 +823,7 @@ const HomePage = () => {
                                     maxWidth: "650px",
                                     width: "100%",
                                     position: "relative",
-                                    zIndex: 2,
+                                    zIndex: 2
                                 }}
                             >
                                 <motion.div

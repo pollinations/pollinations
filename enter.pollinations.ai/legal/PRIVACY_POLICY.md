@@ -1,14 +1,14 @@
 # Privacy Policy
 
-**Updated: 2025-11-10**
+**Updated: 2026-01-19**
 
-### 1) scope & roles
+## 1) Scope & Roles
 
 This policy covers (a) the paid dashboard/API and (b) the pollinations.ai community website. For Discord/GitHub use, their policies also apply.
 
 **Roles:** For our websites and account/billing, we are controller. When processing Customer Data on your behalf via the API, we are processor under the DPA.
 
-### 2) data we process
+## 2) Data We Process
 
 * **Accounts & auth (commercial):** email, name/handle, org, password hash or SSO IDs, MFA status.
 * **Billing (commercial):** plan, invoices, payment status, VAT ID, company details. Card data is handled by our payment provider; we do not store full card numbers.
@@ -18,7 +18,7 @@ This policy covers (a) the paid dashboard/API and (b) the pollinations.ai commun
 * **Telemetry:** aggregated counters and performance metrics.
 * **Support:** emails, tickets, in-app chats.
 
-### 3) purposes & lawful bases (GDPR)
+## 3) Purposes & Lawful Bases (GDPR)
 
 * **Provide and improve services/sites** (contract; legitimate interests).
 * **Security & abuse prevention** (legitimate interests).
@@ -26,15 +26,15 @@ This policy covers (a) the paid dashboard/API and (b) the pollinations.ai commun
 * **Analytics & product research** using aggregated/pseudonymised data (legitimate interests).
 * **Marketing communications** (consent; opt-out anytime). All marketing emails include an unsubscribe link.
 
-### 4) model training & content use
+## 4) Model Training & Content Use
 
 We do not use your prompts/outputs to train or fine-tune models without your permission. Any training requires explicit opt-in.
 
-### 5) cookies & SDKs
+## 5) Cookies & SDKs
 
 Essential cookies for login/session. Any non-essential analytics cookies/SDKs are opt-in via the banner; you can withdraw consent anytime and change preferences in the cookie settings (accessible in the page footer).
 
-### 6) sharing & recipients
+## 6) Sharing & Recipients
 
 * **Service providers (sub-processors):** we use the **categories** described at /terms#dpa-subprocessors. **Full named list available on request; we give ≥14 days' prior notice of material changes.**
 
@@ -45,11 +45,11 @@ Essential cookies for login/session. Any non-essential analytics cookies/SDKs ar
 
 We do not sell personal data.
 
-### 7) international transfers
+## 7) International Transfers
 
 Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contractual Clauses) and appropriate supplementary measures.
 
-### 8) retention
+## 8) Retention
 
 * **Account & billing records:** account term + 7 years (accounting/tax).
 * **API usage metadata:** typically 24 months (billing, fraud, capacity).
@@ -59,25 +59,25 @@ Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contrac
 
 **Deletion rule:** deletion date = last activity + retention period. On account deletion, personal data is deleted within 30 days except where legal retention applies.
 
-### 9) your rights (GDPR)
+## 9) Your Rights (GDPR)
 
 Access, correction, deletion, restriction, portability, objection to legitimate-interest processing, and withdrawal of consent (cookies/marketing).
 
 You can complain to your local authority or the Estonian Data Protection Inspectorate (AKI). **Contact:** hi@myceli.ai.
 
-### 10) security
+## 10) Security
 
 TLS in transit; encryption at rest where stored; key management; least-privilege; admin 2FA; audit logs; vulnerability management; incident response.
 
-### 11) children
+## 11) Children
 
 Services are for users 16+. If under-16 data was provided, contact us for removal.
 
-### 12) automated decision-making
+## 12) Automated Decision-Making
 
 No decisions producing legal or similarly significant effects. Rate-limiting/abuse prevention may be automated.
 
-### 13) changes
+## 13) Changes
 
 We may update this policy; we'll post the new date and, for material changes, give reasonable in-app or email notice.
 

@@ -42,15 +42,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-01-19** – **🚀 New Model: NomNom** Added `nomnom` (alias `gemini-scrape`) for web research, scraping, and crawling capabilities. [API Docs](https://enter.pollinations.ai/api/docs)
+- **2026-01-19** – **🎨 Klein Image Model** Deployed FLUX.2 `klein` model for faster text-to-image and precise image editing. [Try it](https://hello.pollinations.ai)
+- **2026-01-19** – **🎵 Audio Generation** Text-to-speech with voice selection is now available directly on the Play page.
+- **2026-01-19** – **🔑 Bring Your Own Key** Connect your personal API key to [chat.pollinations.ai](https://chat.pollinations.ai) for custom usage limits and billing.
+- **2026-01-12** – **🚀 New Models** Added `glm` (GLM-4.7), `minimax` (MiniMax-M2.1), and Perplexity with citations. Check the [API Docs](https://enter.pollinations.ai/api/docs).
+- **2026-01-12** – **🎁 Free Tier Upgrades** Active users are now automatically upgraded to the Seed tier ($3/day) based on activity.
+- **2026-01-12** – **📱 New AI Apps** Try **Study Buzz** (study tools), **Onyx** (noir storyboards), and **Player or AI** (Roblox game).
+- **2026-01-12** – **🎥 Video Playback** Video generations now render with native players and improved tooltips.
+- **2026-01-05** – **🎵 React Audio Hook** New `usePollinationsAudio` hook for adding AI voice to your apps. [Docs](https://react-hooks.pollinations.ai)
 - **2026-01-05** – **🤖 Gemini Agent Tools** Enable `google_search`, `code_execution`, and `url_context` on Gemini models. [API Docs](https://enter.pollinations.ai/api/docs)
-- **2026-01-05** – **🚀 Qwen3-Coder** New `Qwen3-Coder-30B` model available for advanced code generation tasks.
-- **2026-01-05** – **🎨 Flux Returns** The popular `flux` model is back as a standalone option for image generation.
-- **2026-01-05** – **✨ High-Res Upscaling** Generate images larger than 1280x1280 using the new integrated SPAN 2x upscaler.
-- **2025-12-29** – **🚀 New Model: GPT Image Large** Access GPT Image 1.5 via the `gptimage-large` model ID for high-fidelity generations. [API Docs](https://enter.pollinations.ai/api/docs)
-- **2025-12-29** – **🤖 DeepSeek V3.2** Upgraded to the latest DeepSeek V3.2 for smarter, faster chat responses. [Try it](https://hello.pollinations.ai)
-- **2025-12-29** – **🎨 Image-to-Image Upgrades** Now supports multiple input images (pipe-separated) and automatic resizing for better results.
-- **2025-12-29** – **📱 New Community Apps** Try IDPhotoGen (ID photos), PromptPi (prompt engineering), and Nuvole AI Lite (iOS shortcut).
-
 ---
 
 ## 🌟 Introduction

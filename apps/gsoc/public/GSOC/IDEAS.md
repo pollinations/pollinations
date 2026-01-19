@@ -62,7 +62,7 @@ Our vision is a 'mycelial network' of millions of micro-apps. This project creat
 **Description:** Community-driven safety tools for gaming-friendly AI.
 
 **Long Description:**  
-To support our 'Roblox for AI' strategy, safety is paramount. This project involves researching and implementing lightweight, low-latency content safety filters that can sit between the Pollinations API and game clients. It ensures generated text/images are appropriate for younger audiences.
+To support our 'Roblox for AI' strategy, safety is paramount. This project involves researching and implementing lightweight, low-latency content safety filters that can sit between the pollinations.ai API and game clients. It ensures generated text/images are appropriate for younger audiences.
 
 **Technologies:** Python, TensorFlow/PyTorch, FastAPI
 

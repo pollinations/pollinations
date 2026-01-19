@@ -1,11 +1,4 @@
-import {
-    ArrowForward,
-    Assignment,
-    Email,
-    ExpandMore as ExpandMoreIcon,
-    Lightbulb,
-    Schedule,
-} from "@mui/icons-material";
+import { Email, Lightbulb, OpenInNew, Schedule } from "@mui/icons-material";
 import {
     Alert,
     Avatar,
@@ -14,8 +7,6 @@ import {
     Card,
     CardContent,
     Chip,
-    Collapse,
-    Divider,
     IconButton,
     Snackbar,
     Stack,
@@ -27,36 +18,65 @@ import mentors from "../info/mentors.json";
 import projects from "../info/projects.json";
 
 const cardVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: (i) => ({
+    hidden: { opacity: 0, y: 20 },
+    visible: {
         opacity: 1,
         y: 0,
         transition: {
-            delay: i * 0.1,
-            duration: 0.5,
+            duration: 0.3,
             ease: "easeOut",
         },
-    }),
+    },
 };
 
 const ProjectsPage = () => {
-    const [expanded, setExpanded] = useState(null);
-    const [copyEmailToast, copyEmailAddress] = useState(false);
-    const [submitApplicationToast, submitApplication] = useState(false);
+    const [copyEmailToast, setCopyEmailToast] = useState(false);
+    const [submitApplicationToast, setSubmitApplicationToast] = useState(false);
 
     useEffect(() => {
         document.title = "Projects | GSoC × pollinations.ai";
     }, []);
 
-    const handleExpandClick = (projectId) => {
-        setExpanded(expanded === projectId ? null : projectId);
+    const truncateDescription = (text, maxSentences = 3) => {
+        const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+        return sentences.slice(0, maxSentences).join(" ");
     };
 
-    const handleCopyEmail = () => {
-        copyEmailAddress(false);
-    };
-    const handleApplicationButton = () => {
-        submitApplication(false);
+    const getCategoryColor = (category) => {
+        const colors = {
+            "AI/ML": {
+                bg: "rgba(245, 158, 11, 0.1)",
+                text: "#fbbf24",
+                border: "rgba(245, 158, 11, 0.3)",
+            },
+            Infrastructure: {
+                bg: "rgba(59, 130, 246, 0.1)",
+                text: "#60a5fa",
+                border: "rgba(59, 130, 246, 0.3)",
+            },
+            "Game Development": {
+                bg: "rgba(168, 85, 247, 0.1)",
+                text: "#d8b4fe",
+                border: "rgba(168, 85, 247, 0.3)",
+            },
+            "DevOps/Security": {
+                bg: "rgba(239, 68, 68, 0.1)",
+                text: "#f87171",
+                border: "rgba(239, 68, 68, 0.3)",
+            },
+            "Developer Tools": {
+                bg: "rgba(16, 185, 129, 0.1)",
+                text: "#34d399",
+                border: "rgba(16, 185, 129, 0.3)",
+            },
+        };
+        return (
+            colors[category] || {
+                bg: "rgba(156, 163, 175, 0.1)",
+                text: "#9ca3af",
+                border: "rgba(156, 163, 175, 0.3)",
+            }
+        );
     };
 
     return (
@@ -71,17 +91,18 @@ const ProjectsPage = () => {
         >
             <Box
                 sx={{
-                    maxWidth: "1400px",
+                    maxWidth: "1200px",
                     margin: "0 auto",
                     position: "relative",
                     zIndex: 1,
                 }}
             >
-                <Box sx={{ textAlign: "center", mb: 6 }}>
+                {/* Header */}
+                <Box sx={{ textAlign: "center", mb: 4 }}>
                     <Typography
                         variant="h2"
                         sx={{
-                            marginBottom: "1rem",
+                            marginBottom: "0.5rem",
                             fontWeight: 700,
                             letterSpacing: "-0.02em",
                             background:
@@ -90,108 +111,275 @@ const ProjectsPage = () => {
                             WebkitTextFillColor: "transparent",
                         }}
                     >
-                        Projects
+                        GSoC 2026 Project Ideas
                     </Typography>
 
                     <Typography
-                        variant="h6"
+                        variant="caption"
                         sx={{
-                            color: "rgba(255,255,255,0.7)",
-                            fontWeight: 400,
-                            maxWidth: "800px",
-                            margin: "0 auto",
-                            lineHeight: 1.6,
+                            color: "rgba(255,255,255,0.4)",
+                            display: "block",
+                            mb: 2,
                         }}
                     >
-                        Challenges designed to inspire. Mentorship to guide you.
+                        Last updated: January 2025
                     </Typography>
 
-                    <Stack
-                        direction={{ xs: "column", md: "row" }}
-                        spacing={4}
+                    <Typography
+                        variant="body1"
                         sx={{
-                            mt: 4,
-                            justifyContent: "center",
-                            alignItems: "center",
+                            color: "rgba(255,255,255,0.7)",
+                            maxWidth: "800px",
+                            margin: "0 auto",
+                            lineHeight: 1.7,
+                            mb: 3,
                         }}
                     >
-                        <Box sx={{ textAlign: "center" }}>
-                            <Typography
-                                variant="h4"
-                                sx={{ color: "#fff", fontWeight: 700 }}
-                            >
-                                {projects.length}
-                            </Typography>
-                            <Typography
-                                variant="caption"
-                                sx={{
-                                    color: "rgba(255,255,255,0.6)",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.5px",
-                                }}
-                            >
-                                Active Projects
-                            </Typography>
-                        </Box>
-                        <Box sx={{ textAlign: "center" }}>
-                            <Typography
-                                variant="h4"
-                                sx={{ color: "#fff", fontWeight: 700 }}
-                            >
-                                3
-                            </Typography>
-                            <Typography
-                                variant="caption"
-                                sx={{
-                                    color: "rgba(255,255,255,0.6)",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.5px",
-                                }}
-                            >
-                                Categories
-                            </Typography>
-                        </Box>
-                        <Box sx={{ textAlign: "center" }}>
-                            <Typography
-                                variant="h4"
-                                sx={{ color: "#fff", fontWeight: 700 }}
-                            >
-                                20+
-                            </Typography>
-                            <Typography
-                                variant="caption"
-                                sx={{
-                                    color: "rgba(255,255,255,0.6)",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.5px",
-                                }}
-                            >
-                                Expected Applications
-                            </Typography>
-                        </Box>
-                    </Stack>
+                        pollinations.ai is an open-source generative AI platform
+                        powering 500+ community projects with text, image,
+                        video, and audio generation APIs. For GSoC, you'll work
+                        on real product features inside the Pollinations
+                        ecosystem.
+                    </Typography>
                 </Box>
 
+                {/* We're excited to work with you */}
                 <Box
                     sx={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(1, minmax(0, 2fr))",
-                        gap: 2,
-                        alignItems: "start",
+                        maxWidth: "800px",
+                        margin: "0 auto",
+                        mb: 4,
+                        p: 3,
+                        borderRadius: "12px",
+                        bgcolor: "rgba(255,255,255,0.03)",
+                        border: "1px solid rgba(255,255,255,0.08)",
                     }}
                 >
-                    {projects?.map((project, index) => {
+                    <Typography
+                        variant="h6"
+                        sx={{
+                            color: "#fff",
+                            fontWeight: 600,
+                            mb: 2,
+                        }}
+                    >
+                        We're excited to work with you! 🌱
+                    </Typography>
+                    <Box
+                        component="ul"
+                        sx={{
+                            color: "rgba(255,255,255,0.7)",
+                            pl: 2.5,
+                            m: 0,
+                            "& li": { mb: 1, lineHeight: 1.6 },
+                        }}
+                    >
+                        <li>
+                            <strong style={{ color: "#fff" }}>
+                                Say hi early
+                            </strong>{" "}
+                            — Join our Discord, introduce yourself, and share
+                            your ideas. We love helping you shape a great
+                            proposal.
+                        </li>
+                        <li>
+                            <strong style={{ color: "#fff" }}>
+                                Start small, dream big
+                            </strong>{" "}
+                            — Focus on a solid MVP first; stretch goals make the
+                            journey even better.
+                        </li>
+                        <li>
+                            <strong style={{ color: "#fff" }}>
+                                Stay in touch
+                            </strong>{" "}
+                            — Regular check-ins help us support you. We're a
+                            team!
+                        </li>
+                    </Box>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: "rgba(255,255,255,0.5)",
+                            mt: 2,
+                            fontSize: "0.85rem",
+                        }}
+                    >
+                        <strong>Project sizes:</strong> Small ≈ 90h • Medium ≈
+                        175h • Large ≈ 350h
+                    </Typography>
+                </Box>
+
+                {/* Essential Links */}
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        justifyContent: "center",
+                        gap: 1.5,
+                        mb: 5,
+                    }}
+                >
+                    <Button
+                        variant="contained"
+                        href="https://pollinations.ai"
+                        target="_blank"
+                        startIcon={
+                            <img
+                                src="/polli_white.svg"
+                                alt=""
+                                style={{ width: 18, height: 18 }}
+                            />
+                        }
+                        sx={{
+                            bgcolor: "rgba(255,255,255,0.1)",
+                            color: "#fff",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            border: "1px solid rgba(255,255,255,0.2)",
+                            "&:hover": {
+                                bgcolor: "rgba(255,255,255,0.15)",
+                            },
+                        }}
+                    >
+                        pollinations.ai
+                    </Button>
+                    <Button
+                        variant="contained"
+                        href="https://discord.gg/pollinations-ai-885844321461485618"
+                        target="_blank"
+                        startIcon={
+                            <img
+                                src="/discord.svg"
+                                alt=""
+                                style={{ width: 18, height: 18 }}
+                            />
+                        }
+                        sx={{
+                            bgcolor: "rgba(88, 101, 242, 0.15)",
+                            color: "#818cf8",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            border: "1px solid rgba(88, 101, 242, 0.3)",
+                            "&:hover": {
+                                bgcolor: "rgba(88, 101, 242, 0.25)",
+                            },
+                        }}
+                    >
+                        Join Discord
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        href="https://github.com/pollinations/pollinations"
+                        target="_blank"
+                        startIcon={
+                            <img
+                                src="/github.svg"
+                                alt=""
+                                style={{
+                                    width: 18,
+                                    height: 18,
+                                    filter: "invert(1)",
+                                }}
+                            />
+                        }
+                        sx={{
+                            borderColor: "rgba(255,255,255,0.2)",
+                            color: "rgba(255,255,255,0.8)",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            "&:hover": {
+                                borderColor: "rgba(255,255,255,0.4)",
+                                bgcolor: "rgba(255,255,255,0.05)",
+                            },
+                        }}
+                    >
+                        Our Repository
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        href="/contributing"
+                        startIcon={<OpenInNew sx={{ fontSize: 16 }} />}
+                        sx={{
+                            borderColor: "rgba(34, 197, 94, 0.3)",
+                            color: "#4ade80",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            "&:hover": {
+                                borderColor: "rgba(34, 197, 94, 0.5)",
+                                bgcolor: "rgba(34, 197, 94, 0.05)",
+                            },
+                        }}
+                    >
+                        Contributing Guide
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        href="https://developers.google.com/open-source/gsoc/faq"
+                        target="_blank"
+                        startIcon={
+                            <img
+                                src="/gsoc_logo.webp"
+                                alt=""
+                                style={{ width: 18, height: 18 }}
+                            />
+                        }
+                        sx={{
+                            borderColor: "rgba(251, 191, 36, 0.3)",
+                            color: "#fbbf24",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            "&:hover": {
+                                borderColor: "rgba(251, 191, 36, 0.5)",
+                                bgcolor: "rgba(251, 191, 36, 0.05)",
+                            },
+                        }}
+                    >
+                        GSoC FAQ
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        href="https://google.github.io/gsocguides/student/writing-a-proposal"
+                        target="_blank"
+                        startIcon={
+                            <img
+                                src="/gsoc_logo.webp"
+                                alt=""
+                                style={{ width: 18, height: 18 }}
+                            />
+                        }
+                        sx={{
+                            borderColor: "rgba(251, 191, 36, 0.3)",
+                            color: "#fbbf24",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            "&:hover": {
+                                borderColor: "rgba(251, 191, 36, 0.5)",
+                                bgcolor: "rgba(251, 191, 36, 0.05)",
+                            },
+                        }}
+                    >
+                        Writing a Proposal
+                    </Button>
+                </Box>
+
+                {/* Project Cards */}
+                <Stack spacing={3}>
+                    {projects?.map((project) => {
                         const mentor = mentors.find(
                             (m) => m.id === project.mentorID,
                         );
+                        const categoryColor = getCategoryColor(
+                            project.category,
+                        );
+
                         return (
                             <motion.div
                                 key={project.id}
-                                custom={index}
                                 variants={cardVariants}
                                 initial="hidden"
                                 whileInView="visible"
-                                viewport={{ once: true }}
+                                viewport={{ once: true, amount: 0.1 }}
                             >
                                 <Card
                                     elevation={0}
@@ -199,22 +387,18 @@ const ProjectsPage = () => {
                                         background:
                                             "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
                                         backdropFilter: "blur(20px)",
-                                        width: "100%",
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        height: "100%",
                                         border: "1px solid rgba(255,255,255,0.1)",
-                                        borderRadius: "20px",
+                                        borderRadius: "16px",
                                         color: "#fff",
-                                        transition: "all 0.4s ease",
+                                        transition: "all 0.3s ease",
                                         position: "relative",
-                                        marginBottom: "25px",
+                                        overflow: "hidden",
                                         "&:hover": {
-                                            transform: "translateY(-4px)",
+                                            transform: "translateY(-2px)",
                                             borderColor:
-                                                "rgba(255,255,255,0.3)",
+                                                "rgba(255,255,255,0.2)",
                                             boxShadow:
-                                                "0 25px 50px -10px rgba(0,0,0,0.5)",
+                                                "0 20px 40px -10px rgba(0,0,0,0.4)",
                                         },
                                         "&::before": {
                                             content: '""',
@@ -223,104 +407,88 @@ const ProjectsPage = () => {
                                             left: 0,
                                             right: 0,
                                             height: "4px",
-                                            borderRadius: "20px 20px 0 0",
-                                            background: `linear-gradient(90deg, ${project.category === "AI/ML" ? "#f59e0b, #d97706" : project.category === "Data Visualization" ? "#3b82f6, #1d4ed8" : project.category === "Web Development" ? "#ec4899, #be185d" : project.category === "Game Dev" ? "#a855f7, #7e22ce" : "#10b981, #059669"})`,
+                                            background: `linear-gradient(90deg, ${categoryColor.text}, ${categoryColor.border})`,
                                         },
                                     }}
                                 >
-                                    <CardContent
-                                        sx={{
-                                            padding: "2.5rem",
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            flex: 1,
-                                        }}
-                                    >
+                                    <CardContent sx={{ padding: "1.5rem" }}>
+                                        {/* Two-column layout */}
                                         <Box
                                             sx={{
                                                 display: "flex",
+                                                gap: 3,
                                                 flexDirection: {
                                                     xs: "column",
-                                                    lg: "row",
+                                                    md: "row",
                                                 },
-                                                gap: 3,
+                                                alignItems: {
+                                                    xs: "center",
+                                                    md: "flex-start",
+                                                },
                                             }}
                                         >
-                                            <Box sx={{ flex: 1 }}>
-                                                <Box
+                                            {/* Left: All content */}
+                                            <Box
+                                                sx={{
+                                                    flex: 1,
+                                                    minWidth: 0,
+                                                    textAlign: {
+                                                        xs: "center",
+                                                        md: "left",
+                                                    },
+                                                }}
+                                            >
+                                                <Typography
+                                                    variant="h5"
                                                     sx={{
-                                                        display: "flex",
-                                                        gap: 2,
-                                                        alignItems: "center",
-                                                        mb: 3,
+                                                        fontWeight: 700,
+                                                        lineHeight: 1.3,
+                                                        color: "#fff",
+                                                        mb: 1.5,
+                                                    }}
+                                                >
+                                                    {project.title}
+                                                </Typography>
+
+                                                {/* Chips */}
+                                                <Stack
+                                                    direction="row"
+                                                    spacing={1}
+                                                    flexWrap="wrap"
+                                                    sx={{
+                                                        mb: 1.5,
+                                                        gap: 1,
+                                                        justifyContent: {
+                                                            xs: "center",
+                                                            md: "flex-start",
+                                                        },
                                                     }}
                                                 >
                                                     <Chip
                                                         label={project.category}
-                                                        size="medium"
+                                                        size="small"
                                                         icon={
                                                             <Lightbulb
                                                                 sx={{
                                                                     fontSize:
-                                                                        "18px !important",
+                                                                        "14px !important",
                                                                 }}
                                                             />
                                                         }
                                                         sx={{
                                                             bgcolor:
-                                                                project.category ===
-                                                                "AI/ML"
-                                                                    ? "rgba(245, 158, 11, 0.1)"
-                                                                    : project.category ===
-                                                                        "Data Visualization"
-                                                                      ? "rgba(59, 130, 246, 0.1)"
-                                                                      : project.category ===
-                                                                          "Web Development"
-                                                                        ? "rgba(236, 72, 153, 0.1)"
-                                                                        : project.category ===
-                                                                            "Game Dev"
-                                                                          ? "rgba(168, 85, 247, 0.1)"
-                                                                          : "rgba(16, 185, 129, 0.1)",
-                                                            color:
-                                                                project.category ===
-                                                                "AI/ML"
-                                                                    ? "#fbbf24"
-                                                                    : project.category ===
-                                                                        "Data Visualization"
-                                                                      ? "#60a5fa"
-                                                                      : project.category ===
-                                                                          "Web Development"
-                                                                        ? "#ec4899"
-                                                                        : project.category ===
-                                                                            "Game Dev"
-                                                                          ? "#d8b4fe"
-                                                                          : "#34d399",
-                                                            border: `1px solid ${
-                                                                project.category ===
-                                                                "AI/ML"
-                                                                    ? "rgba(245, 158, 11, 0.3)"
-                                                                    : project.category ===
-                                                                        "Data Visualization"
-                                                                      ? "rgba(59, 130, 246, 0.3)"
-                                                                      : project.category ===
-                                                                          "Web Development"
-                                                                        ? "rgba(236, 72, 153, 0.3)"
-                                                                        : project.category ===
-                                                                            "Game Dev"
-                                                                          ? "rgba(168, 85, 247, 0.3)"
-                                                                          : "rgba(16, 185, 129, 0.3)"
-                                                            }`,
-                                                            fontWeight: 600,
-                                                            fontSize:
-                                                                "0.875rem",
-                                                            height: "32px",
+                                                                categoryColor.bg,
+                                                            color: categoryColor.text,
+                                                            border: `1px solid ${categoryColor.border}`,
+                                                            fontWeight: 500,
+                                                            fontSize: "0.75rem",
                                                         }}
                                                     />
                                                     <Chip
                                                         label={
                                                             project.difficulty
                                                         }
-                                                        size="medium"
+                                                        size="small"
                                                         sx={{
                                                             bgcolor:
                                                                 project.difficulty ===
@@ -338,21 +506,27 @@ const ProjectsPage = () => {
                                                                         "Intermediate"
                                                                       ? "#fbbf24"
                                                                       : "#f87171",
-                                                            border: `1px solid ${project.difficulty === "Beginner" ? "rgba(34, 197, 94, 0.3)" : project.difficulty === "Intermediate" ? "rgba(251, 191, 36, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
-                                                            fontWeight: 600,
-                                                            fontSize:
-                                                                "0.875rem",
-                                                            height: "32px",
+                                                            border: `1px solid ${
+                                                                project.difficulty ===
+                                                                "Beginner"
+                                                                    ? "rgba(34, 197, 94, 0.3)"
+                                                                    : project.difficulty ===
+                                                                        "Intermediate"
+                                                                      ? "rgba(251, 191, 36, 0.3)"
+                                                                      : "rgba(239, 68, 68, 0.3)"
+                                                            }`,
+                                                            fontWeight: 500,
+                                                            fontSize: "0.75rem",
                                                         }}
                                                     />
                                                     <Chip
                                                         label={project.duration}
-                                                        size="medium"
+                                                        size="small"
                                                         icon={
                                                             <Schedule
                                                                 sx={{
                                                                     fontSize:
-                                                                        "18px !important",
+                                                                        "14px !important",
                                                                 }}
                                                             />
                                                         }
@@ -361,505 +535,272 @@ const ProjectsPage = () => {
                                                                 "rgba(156, 163, 175, 0.1)",
                                                             color: "#d1d5db",
                                                             border: "1px solid rgba(156, 163, 175, 0.2)",
-                                                            fontWeight: 600,
-                                                            fontSize:
-                                                                "0.875rem",
-                                                            height: "32px",
+                                                            fontWeight: 500,
+                                                            fontSize: "0.75rem",
                                                         }}
                                                     />
-                                                </Box>
+                                                </Stack>
 
+                                                {/* Description */}
                                                 <Typography
-                                                    variant="h4"
-                                                    sx={{
-                                                        fontWeight: 700,
-                                                        mb: 2,
-                                                        lineHeight: 1.2,
-                                                        color: "#fff",
-                                                        fontSize: {
-                                                            xs: "1.75rem",
-                                                            md: "2rem",
-                                                        },
-                                                    }}
-                                                >
-                                                    {project.title}
-                                                </Typography>
-
-                                                <Typography
-                                                    variant="body1"
+                                                    variant="body2"
                                                     sx={{
                                                         color: "rgba(255,255,255,0.8)",
                                                         lineHeight: 1.7,
-                                                        mb: 3,
-                                                        fontSize: "1.1rem",
+                                                        mb: 1.5,
                                                     }}
                                                 >
-                                                    {project.description}
+                                                    {truncateDescription(
+                                                        project.longDescription,
+                                                    )}
                                                 </Typography>
 
-                                                <Box sx={{ mb: 3 }}>
-                                                    <Stack
-                                                        direction="row"
-                                                        flexWrap="wrap"
-                                                        gap={1.5}
-                                                    >
-                                                        {project.technologies.map(
-                                                            (tech) => (
-                                                                <Chip
-                                                                    label={tech}
-                                                                    key={tech}
-                                                                    size="medium"
-                                                                    sx={{
-                                                                        fontSize:
-                                                                            "0.85rem",
-                                                                        height: "28px",
-                                                                        background:
-                                                                            "rgba(255,255,255,0.1)",
-                                                                        color: "#f3f4f6",
-                                                                        border: "1px solid rgba(255,255,255,0.2)",
-                                                                        fontWeight: 500,
-                                                                        "&:hover":
-                                                                            {
-                                                                                background:
-                                                                                    "rgba(255,255,255,0.2)",
-                                                                                transform:
-                                                                                    "translateY(-1px)",
-                                                                                boxShadow:
-                                                                                    "0 4px 12px rgba(0,0,0,0.3)",
-                                                                            },
-                                                                    }}
-                                                                />
-                                                            ),
-                                                        )}
-                                                    </Stack>
-                                                </Box>
-                                            </Box>
-
-                                            <Box
-                                                sx={{
-                                                    display: {
-                                                        xs: "none",
-                                                        lg: "block",
-                                                    },
-                                                    position: "relative",
-                                                    width: "1px",
-                                                }}
-                                            >
-                                                <Box
+                                                {/* Technologies */}
+                                                <Stack
+                                                    direction="row"
+                                                    flexWrap="wrap"
+                                                    gap={0.75}
                                                     sx={{
-                                                        position: "absolute",
-                                                        left: "50%",
-                                                        top: 0,
-                                                        bottom: 0,
-                                                        width: "2px",
-                                                        background:
-                                                            "linear-gradient(90deg,  rgba(96, 165, 250, 0.1) 50%, rgba(96, 165, 250, 0.5) 0%,rgba(96, 165, 250, 0) 100%)",
-                                                        transform:
-                                                            "translateX(-50%)",
-                                                    }}
-                                                />
-                                            </Box>
-
-                                            <Box
-                                                sx={{
-                                                    flex: 1,
-                                                    display: "flex",
-                                                    flexDirection: "column",
-                                                    justifyContent: "center",
-                                                    alignItems: "center",
-                                                    textAlign: "center",
-                                                    paddingTop: {
-                                                        xs: 0,
-                                                        lg: 3,
-                                                    },
-                                                }}
-                                            >
-                                                <Typography
-                                                    variant="caption"
-                                                    sx={{
-                                                        color: "rgba(255,255,255,0.6)",
-                                                        textTransform:
-                                                            "uppercase",
-                                                        letterSpacing: "0.5px",
-                                                        fontWeight: 600,
                                                         mb: 2,
-                                                        display: "block",
-                                                    }}
-                                                >
-                                                    Project Mentor
-                                                </Typography>
-
-                                                <Box
-                                                    sx={{
-                                                        display: "flex",
-                                                        flexDirection: {
-                                                            xs: "row",
-                                                            lg: "column",
-                                                        },
-                                                        alignItems: {
+                                                        justifyContent: {
                                                             xs: "center",
-                                                            lg: "center",
+                                                            md: "flex-start",
                                                         },
-                                                        gap: 2,
-                                                        mb: 2,
                                                     }}
                                                 >
-                                                    <Avatar
-                                                        src={mentor?.imageUrl}
-                                                        sx={{
-                                                            width: {
-                                                                xs: 65,
-                                                                lg: 80,
-                                                            },
-                                                            height: {
-                                                                xs: 65,
-                                                                lg: 80,
-                                                            },
-                                                            border: "2px solid rgba(255,255,255,0.2)",
-                                                            flexShrink: 0,
-                                                        }}
-                                                    >
-                                                        {mentor?.name
-                                                            ?.split(" ")
-                                                            .map((n) => n[0])
-                                                            .join("") || "M"}
-                                                    </Avatar>
-                                                    <Box
-                                                        sx={{
-                                                            display: "flex",
-                                                            flexDirection:
-                                                                "column",
-                                                            gap: 1,
-                                                        }}
-                                                    >
-                                                        <Typography
-                                                            variant="h6"
-                                                            onClick={() =>
-                                                                location.replace(
-                                                                    "/mentors",
-                                                                )
-                                                            }
-                                                            sx={{
-                                                                color: "#fff",
-                                                                fontWeight: 600,
-                                                                textDecoration:
-                                                                    "underline",
-                                                                userSelect:
-                                                                    "none",
-                                                                cursor: "pointer",
-                                                                fontSize: {
-                                                                    xs: "0.9rem",
-                                                                    lg: "1.1rem",
-                                                                },
-                                                            }}
-                                                        >
-                                                            {mentor?.name ||
-                                                                "TBA"}
-                                                        </Typography>
-                                                        <Typography
-                                                            variant="caption"
-                                                            sx={{
-                                                                color: "rgba(255,255,255,0.7)",
-                                                            }}
-                                                        >
-                                                            {mentor?.email && (
-                                                                <IconButton
-                                                                    component="p"
-                                                                    onClick={async () => {
-                                                                        await navigator.clipboard.writeText(
-                                                                            mentor.email,
-                                                                        );
-                                                                        copyEmailAddress(
-                                                                            true,
-                                                                        );
-                                                                    }}
-                                                                    size="small"
-                                                                    sx={{
-                                                                        color: "rgba(255,255,255,0.7)",
-                                                                        display:
-                                                                            "flex",
-                                                                        width: "fit-content",
-                                                                        flexDirection:
-                                                                            "row",
-                                                                        alignItems:
-                                                                            "center",
-                                                                        gap: 0.5,
-                                                                        fontSize:
-                                                                            "0.75rem",
-                                                                        px: "12px",
-                                                                        py: "6px",
-                                                                        justifyContent:
-                                                                            "flex-start",
-                                                                        border: "1px solid rgba(255,255,255,0.15)",
-                                                                        borderRadius:
-                                                                            "25px",
-                                                                        "&:hover":
-                                                                            {
-                                                                                color: "#e9d5ff",
-                                                                                backgroundColor:
-                                                                                    "rgba(168, 85, 247, 0.15)",
-                                                                            },
-                                                                    }}
-                                                                >
-                                                                    <Email
-                                                                        sx={{
-                                                                            fontSize:
-                                                                                "16px",
-                                                                        }}
-                                                                    />{" "}
-                                                                    {
-                                                                        mentor?.email
-                                                                    }
-                                                                </IconButton>
-                                                            )}
-                                                        </Typography>
-                                                    </Box>
-                                                </Box>
-                                            </Box>
-                                        </Box>
-                                        <Collapse
-                                            in={expanded === project.id}
-                                            timeout={600}
-                                            sx={{
-                                                "& .MuiCollapse-wrapper": {
-                                                    transition:
-                                                        "all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important",
-                                                },
-                                            }}
-                                        >
-                                            <motion.div
-                                                initial={{
-                                                    opacity: 0,
-                                                    y: -20,
-                                                }}
-                                                animate={{
-                                                    opacity:
-                                                        expanded === project.id
-                                                            ? 1
-                                                            : 0,
-                                                    y:
-                                                        expanded === project.id
-                                                            ? 0
-                                                            : -20,
-                                                }}
-                                                transition={{
-                                                    duration: 0.4,
-                                                    delay: 0.1,
-                                                }}
-                                            >
-                                                <Divider
-                                                    sx={{
-                                                        my: 4,
-                                                        borderColor:
-                                                            "rgba(255,255,255,0.1)",
-                                                    }}
-                                                />
-
-                                                <div className="flex flex-col lg:flex-row gap-8">
-                                                    <div className="w-full lg:w-2/3">
-                                                        <Typography
-                                                            variant="h5"
-                                                            sx={{
-                                                                color: "#fff",
-                                                                fontWeight: 600,
-                                                                mb: 3,
-                                                                display: "flex",
-                                                                alignItems:
-                                                                    "center",
-                                                                gap: 1,
-                                                            }}
-                                                        >
-                                                            <Assignment
+                                                    {project.technologies.map(
+                                                        (tech) => (
+                                                            <Chip
+                                                                label={tech}
+                                                                key={tech}
+                                                                size="small"
                                                                 sx={{
                                                                     fontSize:
-                                                                        "24px",
+                                                                        "0.7rem",
+                                                                    height: "24px",
+                                                                    background:
+                                                                        "rgba(255,255,255,0.08)",
+                                                                    color: "#e5e7eb",
+                                                                    border: "1px solid rgba(255,255,255,0.1)",
+                                                                    fontWeight: 500,
                                                                 }}
                                                             />
-                                                            Detailed Project
-                                                            Description
-                                                        </Typography>
+                                                        ),
+                                                    )}
+                                                </Stack>
 
-                                                        <Typography
-                                                            variant="body1"
-                                                            sx={{
-                                                                color: "rgba(255,255,255,0.9)",
-                                                                lineHeight: 1.8,
-                                                                mb: 4,
-                                                                fontSize:
-                                                                    "1.1rem",
-                                                            }}
-                                                        >
-                                                            {
-                                                                project.longDescription
-                                                            }
-                                                        </Typography>
+                                                {/* Buttons */}
+                                                <Stack
+                                                    direction="row"
+                                                    spacing={1.5}
+                                                    sx={{
+                                                        justifyContent: {
+                                                            xs: "center",
+                                                            md: "flex-start",
+                                                        },
+                                                    }}
+                                                >
+                                                    <Button
+                                                        variant="contained"
+                                                        size="small"
+                                                        onClick={() =>
+                                                            setSubmitApplicationToast(
+                                                                true,
+                                                            )
+                                                        }
+                                                        sx={{
+                                                            bgcolor:
+                                                                "rgba(59, 130, 246, 0.15)",
+                                                            color: "#60a5fa",
+                                                            textTransform:
+                                                                "none",
+                                                            fontWeight: 600,
+                                                            border: "1px solid rgba(59, 130, 246, 0.3)",
+                                                            "&:hover": {
+                                                                bgcolor:
+                                                                    "rgba(59, 130, 246, 0.25)",
+                                                                borderColor:
+                                                                    "rgba(59, 130, 246, 0.5)",
+                                                            },
+                                                        }}
+                                                    >
+                                                        Apply to this project
+                                                    </Button>
+                                                    <Button
+                                                        variant="outlined"
+                                                        size="small"
+                                                        endIcon={
+                                                            <OpenInNew
+                                                                sx={{
+                                                                    fontSize:
+                                                                        "14px",
+                                                                }}
+                                                            />
+                                                        }
+                                                        href="https://github.com/pollinations/pollinations/blob/main/apps/gsoc/public/GSOC/IDEAS.md"
+                                                        target="_blank"
+                                                        sx={{
+                                                            borderColor:
+                                                                "rgba(255,255,255,0.2)",
+                                                            color: "rgba(255,255,255,0.7)",
+                                                            textTransform:
+                                                                "none",
+                                                            "&:hover": {
+                                                                borderColor:
+                                                                    "rgba(255,255,255,0.4)",
+                                                                color: "#fff",
+                                                                bgcolor:
+                                                                    "rgba(255,255,255,0.05)",
+                                                            },
+                                                        }}
+                                                    >
+                                                        Learn More
+                                                    </Button>
+                                                </Stack>
+                                            </Box>
 
-                                                        <Stack
-                                                            direction={{
-                                                                xs: "column",
-                                                                sm: "row",
-                                                            }}
-                                                            spacing={2}
-                                                        >
-                                                            <Button
-                                                                variant="outlined"
-                                                                endIcon={
-                                                                    <ArrowForward />
-                                                                }
-                                                                size="large"
-                                                                sx={{
-                                                                    borderColor:
-                                                                        "rgba(255,255,255,0.2)",
-                                                                    color: "rgba(255,255,255,0.8)",
-                                                                    textTransform:
-                                                                        "none",
-                                                                    py: 1.5,
-                                                                    px: 3,
-                                                                    "&:hover": {
-                                                                        borderColor:
-                                                                            "rgba(255,255,255,0.4)",
-                                                                        color: "#fff",
-                                                                        backgroundColor:
-                                                                            "rgba(255,255,255,0.05)",
-                                                                    },
-                                                                }}
-                                                            >
-                                                                Documentation
-                                                            </Button>
-                                                            <Button
-                                                                variant="outlined"
-                                                                endIcon={
-                                                                    <Assignment />
-                                                                }
-                                                                size="large"
-                                                                href="/contributing"
-                                                                target="_blank"
-                                                                sx={{
-                                                                    borderColor:
-                                                                        "rgba(34, 197, 94, 0.3)",
-                                                                    color: "#4ade80",
-                                                                    textTransform:
-                                                                        "none",
-                                                                    py: 1.5,
-                                                                    px: 3,
-                                                                    "&:hover": {
-                                                                        borderColor:
-                                                                            "rgba(34, 197, 94, 0.5)",
-                                                                        color: "#22c55e",
-                                                                        backgroundColor:
-                                                                            "rgba(34, 197, 94, 0.05)",
-                                                                    },
-                                                                }}
-                                                            >
-                                                                Contributing
-                                                                Guide
-                                                            </Button>
-                                                            <Button
-                                                                variant="outlined"
-                                                                size="large"
-                                                                onClick={() =>
-                                                                    submitApplication(
-                                                                        true,
-                                                                    )
-                                                                }
-                                                                sx={{
-                                                                    borderColor:
-                                                                        "rgba(59, 130, 246, 0.3)",
-                                                                    color: "#60a5fa",
-                                                                    textTransform:
-                                                                        "none",
-                                                                    py: 1.5,
-                                                                    px: 3,
-                                                                    fontWeight: 600,
-                                                                    "&:hover": {
-                                                                        borderColor:
-                                                                            "rgba(59, 130, 246, 0.5)",
-                                                                        color: "#3b82f6",
-                                                                        backgroundColor:
-                                                                            "rgba(59, 130, 246, 0.05)",
-                                                                    },
-                                                                }}
-                                                            >
-                                                                Apply for this
-                                                                Project
-                                                            </Button>
-                                                        </Stack>
-                                                    </div>
-                                                </div>
-                                            </motion.div>
-                                        </Collapse>
-
-                                        <IconButton
-                                            onClick={() =>
-                                                handleExpandClick(project.id)
-                                            }
-                                            sx={{
-                                                color: "rgba(255,255,255,0.8)",
-                                                border: "1px solid rgba(255,255,255,0.2)",
-                                                borderRadius: "15px",
-                                                margin: "2rem auto 0",
-                                                width: "100%",
-                                                height: "48px",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                bottom: "15px",
-                                                justifyContent: "center",
-                                                "&:hover": {
-                                                    borderColor:
-                                                        "rgba(255,255,255,0.4)",
-                                                    color: "#fff",
-                                                    backgroundColor:
-                                                        "rgba(255,255,255,0.05)",
-                                                },
-                                            }}
-                                        >
-                                            <Typography>
-                                                Interested? View Details
-                                            </Typography>
-                                            <ExpandMoreIcon
+                                            {/* Right: Mentor (fixed width) */}
+                                            <Box
                                                 sx={{
-                                                    transform:
-                                                        expanded === project.id
-                                                            ? "rotate(180deg)"
-                                                            : "rotate(0deg)",
-                                                    transition:
-                                                        "transform 0.3s ease",
+                                                    flexShrink: 0,
+                                                    width: "280px",
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    alignItems: "center",
+                                                    gap: 1.5,
+                                                    p: 2.5,
+                                                    borderRadius: "12px",
+                                                    bgcolor:
+                                                        "rgba(255,255,255,0.03)",
+                                                    border: "1px solid rgba(255,255,255,0.08)",
+                                                    alignSelf: {
+                                                        xs: "center",
+                                                        md: "flex-start",
+                                                    },
                                                 }}
-                                            />
-                                        </IconButton>
+                                            >
+                                                <Chip
+                                                    label="Mentor"
+                                                    size="small"
+                                                    sx={{
+                                                        bgcolor:
+                                                            "rgba(168, 85, 247, 0.15)",
+                                                        color: "#d8b4fe",
+                                                        border: "1px solid rgba(168, 85, 247, 0.3)",
+                                                        fontWeight: 600,
+                                                        fontSize: "0.75rem",
+                                                        height: "24px",
+                                                    }}
+                                                />
+                                                <Avatar
+                                                    src={mentor?.imageUrl}
+                                                    sx={{
+                                                        width: 72,
+                                                        height: 72,
+                                                        border: "2px solid rgba(168, 85, 247, 0.3)",
+                                                    }}
+                                                >
+                                                    {mentor?.name
+                                                        ?.split(" ")
+                                                        .map((n) => n[0])
+                                                        .join("") || "M"}
+                                                </Avatar>
+                                                <Typography
+                                                    variant="body1"
+                                                    sx={{
+                                                        color: "#fff",
+                                                        fontWeight: 600,
+                                                        fontSize: "1.05rem",
+                                                        textAlign: "center",
+                                                    }}
+                                                >
+                                                    {mentor?.name || "TBA"}
+                                                </Typography>
+                                                {mentor?.email && (
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={async () => {
+                                                            await navigator.clipboard.writeText(
+                                                                mentor.email,
+                                                            );
+                                                            setCopyEmailToast(
+                                                                true,
+                                                            );
+                                                        }}
+                                                        sx={{
+                                                            color: "rgba(255,255,255,0.5)",
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            gap: 0.75,
+                                                            px: 1.25,
+                                                            py: 0.75,
+                                                            borderRadius: "8px",
+                                                            border: "1px solid rgba(255,255,255,0.1)",
+                                                            "&:hover": {
+                                                                color: "#7AB8FF",
+                                                                borderColor:
+                                                                    "rgba(122, 184, 255, 0.3)",
+                                                                bgcolor:
+                                                                    "rgba(122, 184, 255, 0.1)",
+                                                            },
+                                                        }}
+                                                    >
+                                                        <Email
+                                                            sx={{
+                                                                fontSize:
+                                                                    "16px",
+                                                            }}
+                                                        />
+                                                        <Typography
+                                                            sx={{
+                                                                fontSize:
+                                                                    "0.75rem",
+                                                                fontFamily:
+                                                                    "monospace",
+                                                            }}
+                                                        >
+                                                            {mentor.email}
+                                                        </Typography>
+                                                    </IconButton>
+                                                )}
+                                            </Box>
+                                        </Box>
                                     </CardContent>
                                 </Card>
                             </motion.div>
                         );
                     })}
-                </Box>
+                </Stack>
             </Box>
+
+            {/* Snackbars */}
             <Snackbar
                 open={submitApplicationToast}
                 autoHideDuration={3000}
-                onClose={handleApplicationButton}
+                onClose={() => setSubmitApplicationToast(false)}
                 anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
             >
                 <Alert
-                    onClose={handleApplicationButton}
-                    severity="success"
+                    onClose={() => setSubmitApplicationToast(false)}
+                    severity="info"
                     sx={{ width: "100%" }}
                 >
-                    Contributor applications are yet to open. Check Timeline!
+                    Applications open soon! Check the Timeline for dates.
                 </Alert>
             </Snackbar>
             <Snackbar
                 open={copyEmailToast}
                 autoHideDuration={3000}
-                onClose={handleCopyEmail}
+                onClose={() => setCopyEmailToast(false)}
                 anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
             >
                 <Alert
-                    onClose={handleCopyEmail}
+                    onClose={() => setCopyEmailToast(false)}
                     severity="success"
                     sx={{ width: "100%" }}
                 >
-                    Email Address Copied to Clipboard!
+                    Email copied to clipboard!
                 </Alert>
             </Snackbar>
         </Box>

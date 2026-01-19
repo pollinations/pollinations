@@ -1,7 +1,6 @@
-[
-  {
+[{
     "name": "Thomash Haferlach",
-    "title": "CEO @Myceli.ai",
+    "title": "CEO @pollinations.ai",
     "bio": "Founder of pollinations.ai, with years of experience in generative AI and creative tooling.",
     "expertise": ["React", "Node.js", "GraphQL"],
     "skills": ["JavaScript", "TypeScript", "React", "Node.js", "GraphQL", "MongoDB", "Docker", "AWS"],
@@ -11,22 +10,22 @@
     "imageUrl": "/MENTORS/thom_pfp.jpg",
     "linkedin": "https://www.linkedin.com/in/thomashaferlach/",
     "github": "https://github.com/voodoohop",
-    "email": "thomas@myceli.ai",
-    "id" : "0xmnt01"
+    "email": "thomas@pollinations.ai",
+    "id": "0xmnt01"
   },
   {
     "name": "Ayushman Bhattacharya",
-    "title": "Developer @Myceli.ai",
+    "title": "Developer @pollinations.ai",
     "bio": "GDG on Campus Organizer India, Ex- OSCI, GSSOC Mentor 25' & 3x Olympiad NCO Awardee.",
     "expertise": ["Devops", "Gitops", "Backend Node/GraphQL"],
     "skills": ["Backend Development Node", "GraphQL", "Docker", "Kubernetes", "CI/CD", "Python", "Embedded Systems"],
     "yearsExperience": 6,
     "projects": 10,
-    "longDescription": "Ayushman is a GDG Campus Organizer and developer at Myceli AI, building real-world systems at the intersection of AI, community, and open source. National-level SOF NCO awardee, multi-time hackathon winner, and active mentor across OSCI and GSSoC, focused on scaling talent, research-driven engineering, and developer ecosystems.",
+    "longDescription": "Ayushman is a GDG Campus Organizer and developer at pollinations.ai, building real-world systems at the intersection of AI, community, and open source. National-level SOF NCO awardee, multi-time hackathon winner, and active mentor across OSCI and GSSoC, focused on scaling talent, research-driven engineering, and developer ecosystems.",
     "imageUrl": "/MENTORS/ayushman_pfp.jpg",
     "linkedin": "https://linkedin.com/in/elixpo",
     "github": "https://github.com/Circuit-Overtime",
-    "email": "ayushman@myceli.ai",
-    "id" : "0xmnt02"
+    "email": "ayushman@pollinations.ai",
+    "id": "0xmnt02"
   }
 ]

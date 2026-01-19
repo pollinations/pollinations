@@ -3,7 +3,7 @@
 ## Thomash Haferlach
 
 **ID:** 0xmnt01  
-**Title:** CEO @Myceli.ai
+**Title:** CEO @pollinations.ai
 
 **Bio:**  
 Founder of pollinations.ai, with years of experience in generative AI and creative tooling.
@@ -30,7 +30,7 @@ Computer Science and AI graduate from the University of Edinburgh with a backgro
 - AWS
 
 **Contact & Links:**
-- Email: thomas@myceli.ai
+- Email: thomas@pollinations.ai
 - LinkedIn: https://www.linkedin.com/in/thomashaferlach/
 - GitHub: https://github.com/voodoohop
 
@@ -39,13 +39,13 @@ Computer Science and AI graduate from the University of Edinburgh with a backgro
 ## Ayushman Bhattacharya
 
 **ID:** 0xmnt02  
-**Title:** Developer @Myceli.ai
+**Title:** Developer @pollinations.ai
 
 **Bio:**  
 GDG on Campus Organizer India, Ex- OSCI, GSSOC Mentor 25' & 3x Olympiad NCO Awardee.
 
 **About:**  
-Ayushman is a GDG Campus Organizer and developer at Myceli AI, building real-world systems at the intersection of AI, community, and open source. National-level SOF NCO awardee, multi-time hackathon winner, and active mentor across OSCI and GSSoC, focused on scaling talent, research-driven engineering, and developer ecosystems.
+Ayushman is a GDG Campus Organizer and developer at pollinations.ai, building real-world systems at the intersection of AI, community, and open source. National-level SOF NCO awardee, multi-time hackathon winner, and active mentor across OSCI and GSSoC, focused on scaling talent, research-driven engineering, and developer ecosystems.
 
 **Experience:** 6 years  
 **Projects Mentored:** 10
@@ -65,6 +65,6 @@ Ayushman is a GDG Campus Organizer and developer at Myceli AI, building real-wor
 - Embedded Systems
 
 **Contact & Links:**
-- Email: ayushman@myceli.ai
+- Email: ayushman@pollinations.ai
 - LinkedIn: https://linkedin.com/in/elixpo
 - GitHub: https://github.com/Circuit-Overtime

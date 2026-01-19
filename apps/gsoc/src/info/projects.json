@@ -1,5 +1,4 @@
-[
-  {
+[{
     "title": "Universal Semantic Cache",
     "description": "CLIP embeddings for images, text embeddings for prompts, cache hits before generation to save compute.",
     "technologies": ["CLIP", "Cloudflare Vectorize", "FAISS", "TypeScript"],
@@ -13,7 +12,7 @@
   {
     "title": "Roblox RP Character Framework",
     "description": "Abstraction layer for roleplay characters with personality, memory, actions, and dialogue.",
-    "technologies": ["Luau", "Roblox HttpService", "YAML", "Pollinations API"],
+    "technologies": ["Luau", "Roblox HttpService", "YAML", "pollinations.ai API"],
     "longDescription": "Create an abstraction layer for RP characters featuring personality, memory, actions, and dialogue systems. Uses YAML/JSON config for character traits and available actions. Natural language triggers actions like 'follow me' causing the character to follow. Built specifically for Roblox using Luau and HttpService. Extensions include a character template marketplace and visual editor plugin.",
     "mentorID": "0xmnt02",
     "category": "Game Development",

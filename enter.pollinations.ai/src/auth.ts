@@ -35,7 +35,7 @@ export function createAuth(env: Cloudflare.Env) {
         defaultPrefix: PUBLISHABLE_KEY_PREFIX,
         defaultKeyLength: 16, // Minimum key length for validation (matches custom generator)
         minimumNameLength: 1, // Allow short hostnames (e.g., "x.ai")
-        maximumNameLength: 128, // Allow long hostnames (domains can be up to 253 chars)
+        maximumNameLength: 253, // DNS hostname max length
         startingCharactersConfig: {
             charactersLength: 10, // Store more characters for display (pk_xxxxxxxxxx...)
         },

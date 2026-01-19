@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { productSlugToUrlParam } from "../../routes/polar.ts";
 import { apiClient } from "../api.ts";
@@ -10,6 +10,7 @@ import {
 } from "../components/api-key.tsx";
 import { Button } from "../components/button.tsx";
 import { FAQ } from "../components/faq.tsx";
+import { Footer } from "../components/footer.tsx";
 import { Header } from "../components/header.tsx";
 import { PollenBalance } from "../components/pollen-balance.tsx";
 import { Pricing } from "../components/pricing/index.ts";
@@ -462,18 +463,7 @@ function RouteComponent() {
                 />
                 <FAQ />
                 <Pricing />
-                <div className="bg-violet-50/20 border border-violet-200/50 rounded-xl px-6 py-4 mt-4 w-fit mx-auto">
-                    <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-3 text-sm text-gray-400">
-                        <span>© 2026 Myceli.AI</span>
-                        <span className="hidden sm:inline">·</span>
-                        <Link
-                            to="/terms"
-                            className="font-medium text-gray-500 hover:text-gray-700 hover:underline transition-colors"
-                        >
-                            Terms & Conditions
-                        </Link>
-                    </div>
-                </div>
+                <Footer />
             </div>
         </div>
     );

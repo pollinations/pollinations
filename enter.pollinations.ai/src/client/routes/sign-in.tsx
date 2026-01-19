@@ -3,6 +3,7 @@ import { useState } from "react";
 import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
 import { FAQ } from "../components/faq.tsx";
+import { Footer } from "../components/footer.tsx";
 import { Header } from "../components/header.tsx";
 import { NewsBanner } from "../components/news-banner.tsx";
 import { Pricing } from "../components/pricing/index.ts";
@@ -84,6 +85,7 @@ function RouteComponent() {
                 </Header>
                 <FAQ />
                 <Pricing />
+                <Footer />
             </div>
         </div>
     );

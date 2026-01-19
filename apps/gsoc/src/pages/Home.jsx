@@ -28,6 +28,8 @@ import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import useTopContributors from "../api/githubContri";
+import useGitHubStars from "../api/githubStars";
+import useContribCount from "../api/githubContribCount";
 import CountdownButton from "../components/CountdownButton";
 import EasterEggModal from "../components/EasterEggModal";
 import useEasterEgg from "../hooks/useEasterEgg";
@@ -58,10 +60,12 @@ const HomePage = () => {
         closeEasterEgg,
     } = useEasterEgg();
     const { contributors, loading, error } = useTopContributors();
+    const { stars } = useGitHubStars();
+    const { contribs } = useContribCount();
 
     const stats = [
-        { number: "3.8K", label: "GitHub Stars", icon: <Star /> },
-        { number: "250+", label: "Contributors", icon: <Group /> },
+        { number: stars, label: "GitHub Stars", icon: <Star /> },
+        { number: contribs, label: "Contributors", icon: <Group /> },
         { number: "1st", label: "Year in GSoC", icon: <EmojiEvents /> }
     ];
 

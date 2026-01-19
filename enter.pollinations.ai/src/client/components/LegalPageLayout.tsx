@@ -18,7 +18,10 @@ const NAV_ITEMS: { key: LegalPage; label: string; path: string }[] = [
     { key: "refunds", label: "Refunds", path: "/refunds" },
 ];
 
-export function LegalPageLayout({ markdown, currentPage }: LegalPageLayoutProps) {
+export function LegalPageLayout({
+    markdown,
+    currentPage,
+}: LegalPageLayoutProps) {
     return (
         <div className="min-h-screen py-12 px-4">
             {/* Header with logo left, nav right */}
@@ -49,7 +52,10 @@ export function LegalPageLayout({ markdown, currentPage }: LegalPageLayoutProps)
                 </Link>
                 <div className="flex items-center gap-2 text-sm">
                     {NAV_ITEMS.map((item, index) => (
-                        <span key={item.key} className="flex items-center gap-2">
+                        <span
+                            key={item.key}
+                            className="flex items-center gap-2"
+                        >
                             {index > 0 && (
                                 <span className="text-gray-400">·</span>
                             )}

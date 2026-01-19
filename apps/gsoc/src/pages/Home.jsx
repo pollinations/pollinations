@@ -62,8 +62,7 @@ const HomePage = () => {
     const stats = [
         { number: "3.8K", label: "GitHub Stars", icon: <Star /> },
         { number: "250+", label: "Contributors", icon: <Group /> },
-        { number: "1st", label: "Year in GSoC", icon: <EmojiEvents /> },
-        { number: "12", label: "Week Program", icon: <TimelineIcon /> },
+        { number: "1st", label: "Year in GSoC", icon: <EmojiEvents /> }
     ];
 
     const navigationItems = [

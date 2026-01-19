@@ -957,14 +957,18 @@ const HomePage = () => {
                                                 }}
                                             />
 
-                                            <Grid
+                                            <Box
                                                 container
-                                                spacing={2}
+                                                spacing={1}
+                                                sx={{
+                                                    display: "flex",
+                                                    gap: 3,
+                                                }}
                                                 justifyContent="center"
                                             >
                                                 {navigationItems.map(
                                                     (item, index) => (
-                                                        <Grid
+                                                        <Box
                                                             size={{ xs: 6 }}
                                                             key={item.path}
                                                             sx={{
@@ -1034,10 +1038,10 @@ const HomePage = () => {
                                                                     </IconButton>
                                                                 </Tooltip>
                                                             </motion.div>
-                                                        </Grid>
+                                                        </Box>
                                                     ),
                                                 )}
-                                            </Grid>
+                                            </Box>
                                         </CardContent>
                                     </Card>
                                 </motion.div>

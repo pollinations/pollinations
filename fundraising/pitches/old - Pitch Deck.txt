@@ -1,0 +1,148 @@
+﻿(Slide 1: Title Slide - Introduction)
+Headline: Pollinations.AI + Logo
+Subtext: World's Most Accessible Open GenAI Platform
+Footer: Date of Presentation
+
+
+________________
+
+
+
+
+(Slide 2: Problem - GenAI Access Bottleneck)
+Headline: GenAI Access Bottleneck: Developers & Creators Locked Out
+Visual: Image of a closed door with three clearly arranged icons:
+
+
+* Icon 1 (Dollar Sign with X):
+Label: COST
+Text: Expensive API Pricing Restricts Access.
+* Icon 2 (Complex Gears):
+Label: COMPLEXITY
+Text: Integration Hurdles Slow Adoption.
+* Icon 3 (Locked Padlock):
+Label: CLOSED ECOSYSTEMS
+Text: Proprietary Platforms Limit Innovation.
+Subtext: These Barriers Stifle Innovation in Generative AI.
+(Enhance the slide by mentioning how these issues impact developers and creators, possibly with a supporting statistic to underline the scale of the problem.)
+
+
+________________
+
+
+
+
+(Slide 3: Solution - "How it Works")
+Headline: Open GenAI - Simple URL Access
+
+
+   * Left Section: Code Snippets - "How it Works"
+   * 1. Free APIs: Developers integrate our text & image APIs (no signup)
+   * 2. AI-Powered Apps: Developers build chatbots, games, and creative tools. 
+   * 3. Contextual Ads: Relevant ads are displayed within generated text and images.
+   * 4. Revenue Sharing: Developers earn a share of ad revenue.
+   * Right Section: App Mockups - "Real-World Use"
+   * Headline: Integrate in Any App
+   * Visuals: App mockups showcasing apps using Pollinations.AI (animation)
+Subtext: Free API. Open-Source. Powerful. Zero-Friction Integration.
+
+
+________________
+
+
+
+
+(Slide 4: Business Model - Ad-Supported Revenue)
+Headline: Free APIs drive developer apps. User-generated media includes contextual ads, generating revenue shared with developers via affiliate links.
+
+
+      * Visual: Diagram showing the Ad-Supported revenue path
+      * Launch phases: 
+      * Now : 
+      * 50M media/mo
+      * 20% MoM growth
+      * [testing ads]
+      * 6 months
+      * 125M media/mo
+      * $250k* revenue/mo 
+      * [contextual ads]
+      * 24 months
+      * 4B media/mo
+      * $8M* revenue
+      * [revenue share]
+
+
+________________
+
+
+
+
+(Slide 5: Ad Integration - Text & Image)
+Headline: Contextual & User-Friendly Ad Integration
+Visuals: Split panels:
+      * Panel 1 (Text Ad):
+      * Visual: AI-generated text example with integrated text ad
+      * Label: "Contextual Relevance"
+      * Panel 2 (Image Ad):
+      * Visual: Generated image example in a container, showing ad options
+      * Label: "User Experience Focused"
+Subtext: Monetization without User Disruption. High Conversion Potential.
+(Ensure the examples clearly showcase how ads integrate seamlessly, enhancing the user experience rather than interrupting it.)
+
+
+________________
+
+
+
+
+(Slide 6: Market Opportunity & Traction - Growth)
+Headline: Rapid Developer Adoption
+Visual: Exponential growth chart displaying image/text generation over the last 6 months
+Text:
+         * 3M+ MAU (end users)
+         * 250+ Integrations (e.g. creative chatbots - digital art generators - video game)
+         * +20% MoM Media Generation (image and text) 
+         * 2+ New Community Apps per Day
+         * 12k+ Discord members
+
+
+________________
+
+
+
+
+(Slide 7: Traction - Real-World Impact)
+Headline: Powering Diverse Applications
+Visuals: App icons and logos representing successful integrations:
+         * Icon 1 (Roblox Logo): "AI Character RP" Roblox Game: 5M+ Likes, 2K Concurrent Users
+         * Icon 2 (Chat Bubble Icon): Pal Chat: iOS Chatbot for Power Users
+         * Icon 3 (Alibaba Cloud Logo): Alibaba Cloud Qwen Agent: Integrated for Enterprise Solutions
+Subtext: Reaching Millions of Users Across Platforms.
+(Consider adding brief context for each example to highlight how these integrations validate your platform's impact and innovation.)
+
+
+________________
+
+
+
+
+(Slide 8: Team - Founders)
+Headline: Experienced Founders in Generative AI
+Visuals: Headshots of Thomas and Elliot.
+Text:
+            * Thomas Haferlach (Lead): Built & scaled AI platforms. Ex-Amazon, €1.2M in EU funding for AI music tech. 8+ year expertise in Gen AI. (LinkedIn Icon Link)
+            * Elliot Fouchy - (Operations): 20+ yrs A/V tech, 6+ yrs AI project management & development. Scaled AI infrastructure & teams.
+
+
+________________
+
+
+
+
+(Slide 9: Vision/Contact - Investment Opportunity)
+Headline: Invest in Pollinations.AI: Open GenAI Platform
+Visual: Upward trending graph with Pollinations.AI logo overlay.
+Text: "High-Growth, Community-Driven GenAI Platform."
+Call to Action: "Seed Round: $2-3M | Contact Us to Discuss Investment"
+Contact Info: Website, Email, Social Media Icons.
+(Clarify the investment ask by briefly outlining how the funds will be used to accelerate growth, and include a strong, actionable call-to-action to engage potential investors.)

@@ -89,6 +89,7 @@ export const nowpaymentsRoutes = new Hono<Env>()
                 message: "Crypto payments are temporarily unavailable",
             });
 
+            // biome-ignore lint/correctness/noUnreachable: Code preserved for future re-enablement
             const user = c.var.auth.requireUser();
             const { pack } = c.req.valid("param");
             const { redirect } = c.req.valid("query");

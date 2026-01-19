@@ -34,12 +34,9 @@ export function useUsageData(filters: FilterState): UsageDataResult {
     const [dailyUsage, setDailyUsage] = useState<DailyUsageRecord[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const hasFetchedRef = useRef(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const fetchUsage = useCallback(() => {
-        if (hasFetchedRef.current) return;
-        hasFetchedRef.current = true;
         setLoading(true);
         setError(null);
 
@@ -56,7 +53,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 console.error("Usage fetch error:", err);
                 setError(err.message || "Failed to load usage data");
                 setDailyUsage([]);
-                hasFetchedRef.current = false; // Allow retry on error
             })
             .finally(() => setLoading(false));
     }, []);

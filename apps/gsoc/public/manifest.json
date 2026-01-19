@@ -1,0 +1,22 @@
+{
+    "name": "GSoC 2026 × pollinations.ai",
+    "short_name": "GSoC 2026",
+    "description": "Join Google Summer of Code 2026 with pollinations.ai! Work on cutting-edge open-source AI projects.",
+    "theme_color": "#7AB8FF",
+    "background_color": "#7AB8FF",
+    "display": "standalone",
+    "start_url": "/",
+    "icons": [{
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

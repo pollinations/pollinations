@@ -124,7 +124,7 @@ function AuthorizeComponent() {
         try {
             // Create a temporary API key using better-auth's built-in endpoint
             const result = await authClient.apiKey.create({
-                name: `${redirectHostname}`,
+                name: redirectHostname,
                 ...(keyPermissions.permissions.expiryDays !== null && {
                     expiresIn:
                         keyPermissions.permissions.expiryDays * SECONDS_PER_DAY,

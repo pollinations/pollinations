@@ -315,7 +315,7 @@ const HomePage = () => {
                                                 fontSize: {
                                                     xs: "2.8rem",
                                                     md: "3.2rem",
-                                                    lg: "3.3rem",
+                                                    lg: "3.2rem",
                                                 },
                                                 lineHeight: 1.05,
                                                 fontFamily:

@@ -40,7 +40,7 @@ Midterm evals: Jul 6 → Jul 10.
 Final submissions (standard): Aug 17 → Aug 24.
 Extended coding ends: Nov 2 (mentor evals by Nov 9).
 If asked about what pollinations.ai are accepting please ask them to visit the /coc for code of conduct and /contributing for the contribution guidelines
-As of now the project list for pollinations hasn't been finalized yet, but once done we will provide the details to you 
+As of now the project list for pollinations.ai hasn't been finalized yet, but once done we will provide the details to you 
 - Limit within 1000 tokens
 Always end responses with a helpful suggestion or question to keep the conversation engaging.`;
     }

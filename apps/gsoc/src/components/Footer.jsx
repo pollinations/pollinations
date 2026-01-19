@@ -1,4 +1,5 @@
 import {
+    Email,
     GitHub,
     Instagram,
     LinkedIn,
@@ -6,18 +7,28 @@ import {
     Twitter,
 } from "@mui/icons-material";
 import {
+    Alert,
     Box,
     Chip,
     Divider,
     Grid,
     IconButton,
     Link,
+    Snackbar,
+    Tooltip,
     Typography,
 } from "@mui/material";
+import { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
 export default function Footer() {
     const currentYear = new Date().getFullYear();
+    const [emailCopied, setEmailCopied] = useState(false);
+
+    const handleCopyEmail = async () => {
+        await navigator.clipboard.writeText("gsoc@pollinations.ai");
+        setEmailCopied(true);
+    };
 
     const resourceLinks = [
         { name: "Timeline", path: "/timeline" },
@@ -184,51 +195,47 @@ export default function Footer() {
                                 together through Google Summer of Code 2026.
                             </Typography>
 
-                            {/* Contact Email Section */}
+                            {/* Social Icons + Email */}
                             <Box
                                 sx={{
-                                    mb: 3,
-                                    p: 2,
-                                    borderRadius: "8px",
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    background: "rgba(255,255,255,0.02)",
                                     display: "flex",
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    gap: 2,
+                                    gap: 1,
+                                    flexWrap: "wrap",
                                 }}
                             >
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        color: "rgba(255,255,255,0.5)",
-                                        textTransform: "uppercase",
-                                        letterSpacing: "0.05em",
-                                        fontSize: "0.7rem",
-                                        fontWeight: 600,
-                                    }}
-                                >
-                                    Contact Us
-                                </Typography>
-                                <Typography
-                                    variant="body2"
-                                    sx={{
-                                        color: "rgba(190, 157, 157, 0.8)",
-                                        fontFamily: "monospace",
-                                        fontSize: "0.875rem",
-                                        mt: 0.5,
-                                        userSelect: "all",
-                                        cursor: "pointer",
-                                        textTransform: "none",
-                                    }}
-                                >
-                                    gsoc@pollinations.ai
-                                </Typography>
-                            </Box>
-
-                            {/* Social Icons */}
-                            <Box sx={{ display: "flex", gap: 1 }}>
+                                {/* Email Copy Button */}
+                                <Tooltip title="Copy email" placement="top">
+                                    <IconButton
+                                        onClick={handleCopyEmail}
+                                        sx={{
+                                            color: "rgba(255,255,255,0.7)",
+                                            border: "1px solid rgba(255,255,255,0.1)",
+                                            borderRadius: "8px",
+                                            px: 1.5,
+                                            py: 1,
+                                            gap: 1,
+                                            transition: "all 0.3s ease",
+                                            "&:hover": {
+                                                color: "#7AB8FF",
+                                                borderColor:
+                                                    "rgba(122, 184, 255, 0.3)",
+                                                backgroundColor:
+                                                    "rgba(122, 184, 255, 0.1)",
+                                                transform: "translateY(-2px)",
+                                            },
+                                        }}
+                                    >
+                                        <Email sx={{ fontSize: "20px" }} />
+                                        <Typography
+                                            sx={{
+                                                fontSize: "0.8rem",
+                                                fontFamily: "monospace",
+                                            }}
+                                        >
+                                            gsoc@pollinations.ai
+                                        </Typography>
+                                    </IconButton>
+                                </Tooltip>
                                 {communityLinks.map((social) => (
                                     <IconButton
                                         key={social.name}
@@ -286,52 +293,6 @@ export default function Footer() {
                                     key={link.name}
                                     component={RouterLink}
                                     to={link.path}
-                                    sx={{
-                                        color: "rgba(255,255,255,0.7)",
-                                        textDecoration: "none",
-                                        fontSize: "0.875rem",
-                                        transition: "all 0.3s ease",
-                                        display: "inline-block",
-                                        "&:hover": {
-                                            color: "#fff",
-                                            transform: "translateX(4px)",
-                                        },
-                                    }}
-                                >
-                                    {link.name}
-                                </Link>
-                            ))}
-                        </Box>
-                    </Grid>
-
-                    {/* Community Section */}
-                    <Grid item xs={12} sm={6} md={2.5}>
-                        <Typography
-                            variant="subtitle2"
-                            sx={{
-                                fontWeight: 600,
-                                mb: 2,
-                                color: "#fff",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.05em",
-                                fontSize: "0.75rem",
-                            }}
-                        >
-                            Community
-                        </Typography>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 1.5,
-                            }}
-                        >
-                            {communityLinks.map((link) => (
-                                <Link
-                                    key={link.name}
-                                    href={link.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
                                     sx={{
                                         color: "rgba(255,255,255,0.7)",
                                         textDecoration: "none",
@@ -431,11 +392,26 @@ export default function Footer() {
                             fontSize: "0.8rem",
                         }}
                     >
-                        Copyright © {currentYear} pollinations.ai. All rights
-                        reserved.
+                        © {currentYear} pollinations.ai · MIT License
                     </Typography>
                 </Box>
             </Box>
+
+            {/* Email Copied Snackbar */}
+            <Snackbar
+                open={emailCopied}
+                autoHideDuration={3000}
+                onClose={() => setEmailCopied(false)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+            >
+                <Alert
+                    onClose={() => setEmailCopied(false)}
+                    severity="success"
+                    sx={{ width: "100%" }}
+                >
+                    Email copied to clipboard!
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }

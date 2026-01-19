@@ -1053,7 +1053,16 @@ const HomePage = () => {
                                 color: "#fff",
                             }}
                         >
-                            Thanks to the Community Building Pollinations
+                            Thanks to the Community Building{" "}
+                            <Box
+                                component="span"
+                                sx={{
+                                    color: "#7AB8FF",
+                                    fontStyle: "italic",
+                                }}
+                            >
+                                pollinations.ai
+                            </Box>
                         </Typography>
 
                         {loading ? (

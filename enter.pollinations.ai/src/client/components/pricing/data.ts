@@ -63,7 +63,7 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
         const outputType = serviceConfig.outputModalities?.[0] || "image";
 
         if (outputType === "video") {
-            // Check if it's token-based (seedance) or second-based (veo)
+            // Check if it's token-based (seedance) or second-based (veo/wan)
             if (latestCost.completionVideoTokens) {
                 prices.push({
                     name: serviceName,
@@ -81,6 +81,10 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
                     perToken: false,
                     perSecondPrice: formatPrice(
                         latestCost.completionVideoSeconds,
+                        (v: number) => v.toFixed(3),
+                    ),
+                    perAudioSecondPrice: formatPrice(
+                        latestCost.completionAudioSeconds,
                         (v: number) => v.toFixed(3),
                     ),
                 });

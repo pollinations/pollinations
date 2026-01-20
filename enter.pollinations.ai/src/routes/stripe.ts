@@ -11,21 +11,32 @@ const getPackProducts = (env: CloudflareBindings) => {
     const isProduction = env.STRIPE_MODE === "live";
 
     if (isProduction) {
+        // USD prices (active)
         return {
-            "5x2": { priceId: "price_1SrYRT7rcjS3l7trZ4avkKfQ", units: 5 },
-            "10x2": { priceId: "price_1SrYQY7rcjS3l7trCwMCtXFC", units: 10 },
-            "20x2": { priceId: "price_1SrYQ57rcjS3l7trH9Zy11pe", units: 20 },
-            "50x2": { priceId: "price_1SrYP07rcjS3l7trmxevdD0N", units: 50 },
+            "5x2": { priceId: "price_1Srl1z7rcjS3l7tr0Y971QxA", units: 5 },
+            "10x2": { priceId: "price_1Srl5P7rcjS3l7treLbAZocj", units: 10 },
+            "20x2": { priceId: "price_1Srl667rcjS3l7trUByzhPHy", units: 20 },
+            "50x2": { priceId: "price_1Srl6e7rcjS3l7trBUDAOq1M", units: 50 },
         } as const;
+        // EUR prices (preserved for future use)
+        // "5x2": { priceId: "price_1SrYRT7rcjS3l7trZ4avkKfQ", units: 5 },
+        // "10x2": { priceId: "price_1SrYQY7rcjS3l7trCwMCtXFC", units: 10 },
+        // "20x2": { priceId: "price_1SrYQ57rcjS3l7trH9Zy11pe", units: 20 },
+        // "50x2": { priceId: "price_1SrYP07rcjS3l7trmxevdD0N", units: 50 },
     }
 
-    // Sandbox/test mode
+    // Sandbox/test mode - USD prices (active)
     return {
-        "5x2": { priceId: "price_1SrYXu6O03AauPe8hkg41tEu", units: 5 },
-        "10x2": { priceId: "price_1SrYXM6O03AauPe8VfRDtPtE", units: 10 },
-        "20x2": { priceId: "price_1SrYUL6O03AauPe8kJZG8Zdg", units: 20 },
-        "50x2": { priceId: "price_1SrYTz6O03AauPe8lFPr2fCS", units: 50 },
+        "5x2": { priceId: "price_1Srl9o6O03AauPe8Px6vwI7F", units: 5 },
+        "10x2": { priceId: "price_1SrlAS6O03AauPe8TxLBePFg", units: 10 },
+        "20x2": { priceId: "price_1SrlBH6O03AauPe8ynkEaJeH", units: 20 },
+        "50x2": { priceId: "price_1SrlBu6O03AauPe8KCklipVK", units: 50 },
     } as const;
+    // EUR prices (preserved for future use)
+    // "5x2": { priceId: "price_1SrYXu6O03AauPe8hkg41tEu", units: 5 },
+    // "10x2": { priceId: "price_1SrYXM6O03AauPe8VfRDtPtE", units: 10 },
+    // "20x2": { priceId: "price_1SrYUL6O03AauPe8kJZG8Zdg", units: 20 },
+    // "50x2": { priceId: "price_1SrYTz6O03AauPe8lFPr2fCS", units: 50 },
 };
 
 type PackSlug = "5x2" | "10x2" | "20x2" | "50x2";

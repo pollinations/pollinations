@@ -108,7 +108,7 @@ export const PollenExamples: FC = () => {
     return (
         <div className="mt-4 bg-green-50/50 rounded-xl p-4 border border-green-200 space-y-4">
             <div className="text-sm text-gray-600 mb-3">
-                <strong>€1 ≈ 1 Pollen</strong> — here's what you can create:
+                <strong>$1 ≈ 1 Pollen</strong> — here's what you can create:
             </div>
 
             <CategorySection emoji="🎬" title="Video" models={examples.video} />

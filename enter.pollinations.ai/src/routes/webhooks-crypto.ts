@@ -58,17 +58,17 @@ async function sendCryptoEventToTinybird(
     }
 }
 
-// Crypto-only pack names (includes €1 option not available via Polar)
+// Crypto-only pack names (includes $1 option not available via Polar)
 const cryptoPackNames = ["1x2", "5x2", "10x2", "20x2", "50x2"] as const;
 type CryptoPackName = (typeof cryptoPackNames)[number];
 
 // Pollen amounts per pack (with 2x beta bonus)
 const PACK_POLLEN: Record<CryptoPackName, number> = {
-    "1x2": 2, // €1 = 2 pollen (2x bonus)
-    "5x2": 10, // €5 = 10 pollen (2x bonus)
-    "10x2": 20, // €10 = 20 pollen (2x bonus)
-    "20x2": 40, // €20 = 40 pollen (2x bonus)
-    "50x2": 100, // €50 = 100 pollen (2x bonus)
+    "1x2": 2, // $1 = 2 pollen (2x bonus)
+    "5x2": 10, // $5 = 10 pollen (2x bonus)
+    "10x2": 20, // $10 = 20 pollen (2x bonus)
+    "20x2": 40, // $20 = 40 pollen (2x bonus)
+    "50x2": 100, // $50 = 100 pollen (2x bonus)
 };
 
 // NOWPayments IPN payload type

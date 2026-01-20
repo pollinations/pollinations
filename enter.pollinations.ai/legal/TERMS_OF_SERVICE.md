@@ -48,7 +48,7 @@ Don’t violate law; infringe IP/likeness/privacy; attack the Service; evade rat
 
 ## 6) Fees, Taxes & Billing
 
-Fees per plan/order/invoice; currency by default EUR.
+Fees per plan/order/invoice; currency by default USD.
 
 **Taxes.** Prices are net of VAT; we charge Estonian VAT (22%) where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules apply.
 **Check:** gross = net × 1.22.

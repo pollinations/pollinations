@@ -1,6 +1,6 @@
 # Bring Your Own Pollen (BYOP) 🌸
 
-Users pay for their own AI usage. You pay €0. Ship apps without API costs.
+Users pay for their own AI usage. You pay $0. Ship apps without API costs.
 
 ## The Flow
 
@@ -10,7 +10,7 @@ Users pay for their own AI usage. You pay €0. Ship apps without API costs.
 
 ## Why BYOP?
 
-- **€0 costs** — 1 user or 1000, same price: free
+- **$0 costs** — 1 user or 1000, same price: free
 - **No key drama** — auth flow handles it
 - **Self-regulating** — everyone pays for their own usage
 - **Frontend only** — no backend needed

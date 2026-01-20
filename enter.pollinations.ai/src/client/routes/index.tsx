@@ -262,7 +262,7 @@ function RouteComponent() {
                                         handleBuyPollen("v1:product:pack:5x2")
                                     }
                                 >
-                                    + €5
+                                    + $5
                                 </Button>
                                 <Button
                                     as="button"
@@ -272,7 +272,7 @@ function RouteComponent() {
                                         handleBuyPollen("v1:product:pack:10x2")
                                     }
                                 >
-                                    + €10
+                                    + $10
                                 </Button>
                                 <Button
                                     as="button"
@@ -282,7 +282,7 @@ function RouteComponent() {
                                         handleBuyPollen("v1:product:pack:20x2")
                                     }
                                 >
-                                    + €20
+                                    + $20
                                 </Button>
                                 <Button
                                     as="button"
@@ -292,7 +292,7 @@ function RouteComponent() {
                                         handleBuyPollen("v1:product:pack:50x2")
                                     }
                                 >
-                                    + €50
+                                    + $50
                                 </Button>
                             </div>
                         )}

@@ -15,11 +15,11 @@ const NOWPAYMENTS_API_URL = {
     production: "https://api.nowpayments.io/v1",
 };
 
-// Crypto-only pack names (includes €1 option not available via Polar)
+// Crypto-only pack names (includes $1 option not available via Polar)
 const cryptoPackNames = ["1x2", "5x2", "10x2", "20x2", "50x2"] as const;
 type CryptoPackName = (typeof cryptoPackNames)[number];
 
-// Map pack names to EUR amounts
+// Map pack names to USD amounts
 const PACK_AMOUNTS: Record<CryptoPackName, number> = {
     "1x2": 1,
     "5x2": 5,
@@ -30,11 +30,11 @@ const PACK_AMOUNTS: Record<CryptoPackName, number> = {
 
 // Pack descriptions for invoices
 const PACK_DESCRIPTIONS: Record<CryptoPackName, string> = {
-    "1x2": "2 Pollen Pack (€1)",
-    "5x2": "10 Pollen Pack (€5)",
-    "10x2": "20 Pollen Pack (€10)",
-    "20x2": "40 Pollen Pack (€20)",
-    "50x2": "100 Pollen Pack (€50)",
+    "1x2": "2 Pollen Pack ($1)",
+    "5x2": "10 Pollen Pack ($5)",
+    "10x2": "20 Pollen Pack ($10)",
+    "20x2": "40 Pollen Pack ($20)",
+    "50x2": "100 Pollen Pack ($50)",
 };
 
 const packParamSchema = z.enum(cryptoPackNames);
@@ -135,7 +135,7 @@ export const nowpaymentsRoutes = new Hono<Env>()
                     },
                     body: JSON.stringify({
                         price_amount: priceAmount,
-                        price_currency: "eur",
+                        price_currency: "usd",
                         order_id: `${user.id}:${pack}:${Date.now()}`,
                         order_description: description,
                         ipn_callback_url: webhookUrl,

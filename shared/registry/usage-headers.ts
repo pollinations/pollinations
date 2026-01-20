@@ -11,6 +11,7 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     completionTextTokens: "x-usage-completion-text-tokens",
     completionReasoningTokens: "x-usage-completion-reasoning-tokens",
     completionAudioTokens: "x-usage-completion-audio-tokens",
+    completionAudioSeconds: "x-usage-completion-audio-seconds",
     completionImageTokens: "x-usage-completion-image-tokens",
     completionVideoSeconds: "x-usage-completion-video-seconds",
     completionVideoTokens: "x-usage-completion-video-tokens",

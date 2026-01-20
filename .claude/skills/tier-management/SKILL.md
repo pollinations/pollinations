@@ -133,17 +133,19 @@ Thanks for being part of Pollinations! 🚀
 
 # Batch Processing
 
-## Find Users with Quota Issues
+## Find Users with Billing Issues
 
-Use the model-debugging skill to find users hitting 403 errors:
+Use the model-debugging skill to find users hitting 402 errors (billing/quota):
 
 ```bash
-# Find spore-tier users with >10 403 errors in last 24 hours
-.claude/skills/model-debugging/scripts/find-403-users.sh 24 10 spore
+# Find spore-tier users with >10 402 errors in last 24 hours
+.claude/skills/model-debugging/scripts/find-402-users.sh 24 10 spore
 
 # Save to file for batch processing
-.claude/skills/model-debugging/scripts/find-403-users.sh 24 10 spore | cut -f1 > /tmp/users.txt
+.claude/skills/model-debugging/scripts/find-402-users.sh 24 10 spore | cut -f1 > /tmp/users.txt
 ```
+
+> **Note**: 402 = billing issues (pollen balance, key budget). 403 = permission issues (model access denied).
 
 ## Check if User is a Developer
 

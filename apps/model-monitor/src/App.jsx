@@ -300,7 +300,7 @@ function GatewayHealth({ stats }) {
     const errors = [
         { code: "400", count: totals.err400, label: "Bad Request" },
         { code: "401", count: totals.err401, label: "No API Key" },
-        { code: "402", count: totals.err402, label: "Low Balance" },
+        { code: "402", count: totals.err402, label: "Billing" },
         { code: "403", count: totals.err403, label: "Access Denied" },
         { code: "429", count: totals.err429, label: "Rate Limited" },
         { code: "4xx", count: totals.err4xxOther, label: "Other" },

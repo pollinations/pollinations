@@ -1,6 +1,6 @@
 // Import transform functions
 
-import { type ModelId } from "../shared/registry/registry.js";
+import { type ModelId, resolveServiceId } from "../shared/registry/registry.js";
 // Import model configs
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import chickyTutorPrompt from "./personas/chickytutor.js";
@@ -182,11 +182,22 @@ export const availableModels = models;
 
 /**
  * Find a model definition by name or alias
- * For now, only supports direct name lookup (not aliases)
- * to avoid circular dependency issues
  * @param modelName - The name of the model to find
  * @returns The model definition or null if not found
  */
 export function findModelByName(modelName: string) {
-    return availableModels.find((model) => model.name === modelName) || null;
+    const directMatch = availableModels.find(
+        (model) => model.name === modelName,
+    );
+    if (directMatch) return directMatch;
+
+    try {
+        const resolvedServiceId = resolveServiceId(modelName);
+        return (
+            availableModels.find((model) => model.name === resolvedServiceId) ||
+            null
+        );
+    } catch {
+        return null;
+    }
 }

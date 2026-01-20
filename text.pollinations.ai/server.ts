@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import debug from "debug";
 import dotenv from "dotenv";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { stream } from "hono/streaming";
 import type { Context } from "hono";
@@ -12,10 +13,9 @@ import {
     buildUsageHeaders,
     openaiUsageToUsage,
 } from "../shared/registry/usage-headers.js";
-import { availableModels } from "./availableModels.js";
+import { availableModels, findModelByName } from "./availableModels.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { getRequestData } from "./requestUtils.js";
-
 dotenv.config({ path: ".env.local" });
 dotenv.config();
 
@@ -27,6 +27,13 @@ const authLog = debug("pollinations:auth");
 
 // CORS middleware
 app.use("*", cors());
+
+app.use(
+    "*",
+    bodyLimit({
+        maxSize: 20 * 1024 * 1024,
+    }),
+);
 
 app.use("*", async (c, next) => {
     const token = c.req.header("x-enter-token");
@@ -79,16 +86,18 @@ app.get("/models", (c) => {
 });
 
 async function handleRequest(c: Context, requestData: any): Promise<Response> {
-    log("Request: model=%s referrer=%s", requestData.model, requestData.referrer);
+    log(
+        "Request: model=%s referrer=%s",
+        requestData.model,
+        requestData.referrer,
+    );
     log("Request data: %O", requestData);
 
     try {
         const requestId = generatePollinationsId();
         const authResult = (c as any).authResult || {};
 
-        const model = availableModels.find(
-            (m: any) => m.name === requestData.model || m.aliases?.includes(requestData.model),
-        );
+        const model = findModelByName(requestData.model);
 
         log(`Model lookup: model=${requestData.model}, found=${!!model}`);
 
@@ -104,28 +113,51 @@ async function handleRequest(c: Context, requestData: any): Promise<Response> {
         const { messages: _, ...requestDataWithoutMessages } = requestData;
         const requestWithUserInfo = {
             ...requestDataWithoutMessages,
-            userInfo: { ...authResult, referrer: requestData.referrer || "unknown", cf_ray: c.req.header("cf-ray") || "" },
+            userInfo: {
+                ...authResult,
+                referrer: requestData.referrer || "unknown",
+                cf_ray: c.req.header("cf-ray") || "",
+            },
             userApiKey: c.req.header("x-user-api-key") || "",
         };
 
-        const completion = await generateTextBasedOnModel(requestData.messages, requestWithUserInfo);
+        const completion = await generateTextBasedOnModel(
+            requestData.messages,
+            requestWithUserInfo,
+        );
 
         completion.id = requestId;
 
         if (completion.error) {
-            errorLog("Completion error: %s", JSON.stringify(completion.error, null, 2));
+            errorLog(
+                "Completion error: %s",
+                JSON.stringify(completion.error, null, 2),
+            );
 
-            const errorObj = typeof completion.error === "string"
-                ? { message: completion.error }
-                : completion.error;
+            const errorObj =
+                typeof completion.error === "string"
+                    ? { message: completion.error }
+                    : completion.error;
 
-            const error: any = new Error(errorObj.message || "An error occurred");
+            const error: any = new Error(
+                errorObj.message || "An error occurred",
+            );
             if (errorObj.details) error.response = { data: errorObj.details };
 
-            return await sendErrorResponse(c, error, requestData, errorObj.status || 500);
+            return await sendErrorResponse(
+                c,
+                error,
+                requestData,
+                errorObj.status || 500,
+            );
         }
 
-        log("Generated response", completion.stream ? "Streaming" : completion.choices?.[0]?.message?.content || "");
+        log(
+            "Generated response",
+            completion.stream
+                ? "Streaming"
+                : completion.choices?.[0]?.message?.content || "",
+        );
 
         if (requestData.stream) {
             completion.requestData = requestData;
@@ -139,7 +171,12 @@ async function handleRequest(c: Context, requestData: any): Promise<Response> {
     } catch (error: any) {
         if (requestData.stream) {
             log("Error in streaming mode:", error.message);
-            return await sendErrorResponse(c, error, requestData, error.status || error.code || 500);
+            return await sendErrorResponse(
+                c,
+                error,
+                requestData,
+                error.status || error.code || 500,
+            );
         }
         return sendErrorResponse(c, error, requestData);
     }
@@ -205,7 +242,9 @@ export async function sendErrorResponse(
         : "no request data";
 
     const authResult = (c as any).authResult || {};
-    const userContext = authResult.username ? `${authResult.username} (${authResult.userId})` : "anonymous";
+    const userContext = authResult.username
+        ? `${authResult.username} (${authResult.userId})`
+        : "anonymous";
 
     errorLog("Error occurred:", {
         error: {
@@ -363,15 +402,24 @@ function prepareRequestParameters(requestParams: any): any {
     };
 
     if (isAudioModel) {
-        const voice = requestParams.voice || requestParams.audio?.voice || "amuch";
-        log("Adding audio parameters for model:", requestParams.model, "voice:", voice);
+        const voice =
+            requestParams.voice || requestParams.audio?.voice || "amuch";
+        log(
+            "Adding audio parameters for model:",
+            requestParams.model,
+            "voice:",
+            voice,
+        );
 
         if (!finalParams.modalities) {
             finalParams.modalities = ["text", "audio"];
         }
 
         if (!finalParams.audio) {
-            finalParams.audio = { voice, format: requestParams.stream ? "pcm16" : "mp3" };
+            finalParams.audio = {
+                voice,
+                format: requestParams.stream ? "pcm16" : "mp3",
+            };
         } else if (!finalParams.audio.format) {
             finalParams.audio.format = requestParams.stream ? "pcm16" : "mp3";
         }
@@ -386,7 +434,9 @@ function prepareRequestParameters(requestParams: any): any {
 function createExpressLikeRequest(c: Context, body: any = null): any {
     const url = new URL(c.req.url);
     const query: Record<string, string> = {};
-    url.searchParams.forEach((value, key) => { query[key] = value; });
+    url.searchParams.forEach((value, key) => {
+        query[key] = value;
+    });
 
     const params: any = { ...c.req.param() };
     const wildcardPath = c.req.param("*") || c.req.path.slice(1);
@@ -421,9 +471,6 @@ app.post("/", async (c) => {
 
 app.get("/openai/models", (c) => {
     const models = availableModels.map((model: any) => {
-        // Get provider from cost data using the model's config
-        const _config =
-            typeof model.config === "function" ? model.config() : model.config;
         return {
             id: model.name,
             object: "model",
@@ -469,8 +516,14 @@ app.post("/v1/chat/completions", async (c) => {
     }
 });
 
-async function sendAsOpenAIStream(c: Context, completion: any): Promise<Response> {
-    log("sendAsOpenAIStream:", { stream: completion.stream, hasResponseStream: !!completion.responseStream });
+async function sendAsOpenAIStream(
+    c: Context,
+    completion: any,
+): Promise<Response> {
+    log("sendAsOpenAIStream:", {
+        stream: completion.stream,
+        hasResponseStream: !!completion.responseStream,
+    });
 
     if (completion.error) {
         errorLog("Error detected in streaming request");
@@ -490,7 +543,9 @@ async function sendAsOpenAIStream(c: Context, completion: any): Promise<Response
             }
         } else {
             log("No responseStream available");
-            await stream.write(`data: ${JSON.stringify({ choices: [{ delta: { content: "Streaming response could not be processed." }, finish_reason: "stop", index: 0 }] })}\n\n`);
+            await stream.write(
+                `data: ${JSON.stringify({ choices: [{ delta: { content: "Streaming response could not be processed." }, finish_reason: "stop", index: 0 }] })}\n\n`,
+            );
             await stream.write("data: [DONE]\n\n");
         }
     });
@@ -597,8 +652,6 @@ async function generateTextBasedOnModel(messages: any[], options: any) {
     }
 }
 
-export default app;
-
 // GET request handler (catch-all)
 app.get("/*", async (c) => {
     const req = createExpressLikeRequest(c);
@@ -614,3 +667,5 @@ app.get("/*", async (c) => {
         return sendErrorResponse(c, error, requestData);
     }
 });
+
+export default app;

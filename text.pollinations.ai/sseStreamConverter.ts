@@ -2,10 +2,12 @@ import { Transform } from "stream";
 
 /**
  * Creates a Transform stream that converts SSE JSON events using a mapper function.
- * @param {function(object): object} mapper - Function to transform each parsed JSON event.
- * @returns {Transform} Transform stream that emits mapped SSE events.
+ * @param mapper - Function to transform each parsed JSON event.
+ * @returns Transform stream that emits mapped SSE events.
  */
-export function createSseStreamConverter(mapper) {
+export function createSseStreamConverter(
+    mapper: (json: any) => any,
+): Transform {
     let buffer = "";
 
     return new Transform({

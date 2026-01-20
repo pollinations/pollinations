@@ -43,8 +43,9 @@ export interface VideoGenerationResult {
     trackingData: {
         actualModel: string;
         usage: {
-            completionVideoSeconds?: number; // For Veo (billed by seconds)
+            completionVideoSeconds?: number; // For Veo, Wan (billed by seconds)
             completionVideoTokens?: number; // For Seedance (billed by tokens)
+            completionAudioSeconds?: number; // For Wan audio (billed by seconds)
             totalTokenCount?: number;
         };
     };

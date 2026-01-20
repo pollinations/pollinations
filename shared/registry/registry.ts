@@ -22,6 +22,7 @@ export type UsageType =
     | "completionTextTokens"
     | "completionReasoningTokens"
     | "completionAudioTokens"
+    | "completionAudioSeconds"
     | "completionImageTokens"
     | "completionVideoSeconds"
     | "completionVideoTokens";

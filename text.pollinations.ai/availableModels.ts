@@ -1,8 +1,6 @@
 // Import transform functions
 
-import { type ModelId, resolveServiceId } from "../shared/registry/registry.js";
-// Import registry for validation
-import type { TEXT_SERVICES } from "../shared/registry/text.js";
+import { type ModelId } from "../shared/registry/registry.js";
 // Import model configs
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import chickyTutorPrompt from "./personas/chickytutor.js";
@@ -18,8 +16,8 @@ import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 
-// Type constraint: model names must exist in registry
-type ValidServiceName = keyof typeof TEXT_SERVICES;
+// Type constraint: model names - using string for now to avoid circular dep
+type ValidServiceName = string;
 
 interface ModelDefinition {
     name: ValidServiceName;
@@ -184,25 +182,11 @@ export const availableModels = models;
 
 /**
  * Find a model definition by name or alias
- * Uses registry to resolve aliases to service names
- * @param modelName - The name or alias of the model to find
+ * For now, only supports direct name lookup (not aliases)
+ * to avoid circular dependency issues
+ * @param modelName - The name of the model to find
  * @returns The model definition or null if not found
  */
 export function findModelByName(modelName: string) {
-    // First try direct lookup
-    const directMatch = availableModels.find(
-        (model) => model.name === modelName,
-    );
-    if (directMatch) return directMatch;
-
-    // Try resolving via registry (handles aliases)
-    try {
-        const resolvedServiceId = resolveServiceId(modelName);
-        return (
-            availableModels.find((model) => model.name === resolvedServiceId) ||
-            null
-        );
-    } catch {
-        return null;
-    }
+    return availableModels.find((model) => model.name === modelName) || null;
 }

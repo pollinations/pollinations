@@ -22,7 +22,7 @@ export function resolveModelConfig(messages, options) {
     }
 
     // Get the model configuration object
-    const config =
+    const config: any =
         typeof modelDef.config === "function"
             ? modelDef.config()
             : modelDef.config;

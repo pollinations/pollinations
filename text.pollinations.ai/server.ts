@@ -1,9 +1,9 @@
 import crypto from "node:crypto";
-import bodyParser from "body-parser";
-import cors from "cors";
 import debug from "debug";
 import dotenv from "dotenv";
-import express from "express";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { stream } from "hono/streaming";
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
 import { getServiceDefinition } from "../shared/registry/registry.js";
@@ -14,77 +14,79 @@ import {
 import { availableModels } from "./availableModels.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { getRequestData } from "./requestUtils.js";
+import type { Context } from "hono";
 
 // Load environment variables including .env.local overrides
 // Load .env.local first (higher priority), then .env as fallback
 dotenv.config({ path: ".env.local" });
 dotenv.config();
 
-// Shared authentication and queue is initialized automatically in ipQueue.js
-
-const app = express();
+const app = new Hono();
 
 const log = debug("pollinations:server");
 const errorLog = debug("pollinations:error");
 const authLog = debug("pollinations:auth");
 
-// Remove the custom JSON parsing middleware and use the standard bodyParser
-app.use(bodyParser.json({ limit: "20mb" }));
-app.use(cors());
+// CORS middleware
+app.use("*", cors());
 
-// Middleware to verify PLN_ENTER_TOKEN (after CORS for consistency)
-app.use((req, res, next) => {
-    const token = req.headers["x-enter-token"];
+// Middleware to verify PLN_ENTER_TOKEN
+app.use("*", async (c, next) => {
+    const token = c.req.header("x-enter-token");
     const expectedToken = process.env.PLN_ENTER_TOKEN;
 
     if (!expectedToken) {
         // If PLN_ENTER_TOKEN is not configured, allow all requests (backward compatibility)
         authLog("!  PLN_ENTER_TOKEN not configured - allowing request");
-        return next();
+        return await next();
     }
 
     if (token !== expectedToken) {
-        authLog("❌ Invalid or missing PLN_ENTER_TOKEN from IP:", getIp(req));
-        return res.status(403).json({ error: "Unauthorized" });
+        authLog("❌ Invalid or missing PLN_ENTER_TOKEN from IP:", getIp(c.req.raw));
+        return c.json({ error: "Unauthorized" }, 403);
     }
 
-    authLog("✅ Valid PLN_ENTER_TOKEN from IP:", getIp(req));
-    next();
+    authLog("✅ Valid PLN_ENTER_TOKEN from IP:", getIp(c.req.raw));
+    await next();
 });
-// New route handler for root path
-app.get("/", (_req, res) => {
-    res.redirect(
-        301,
+
+// Root path - redirect to documentation
+app.get("/", (c) => {
+    return c.redirect(
         "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md",
+        301,
     );
 });
 
 // Serve crossdomain.xml for Flash connections
-app.get("/crossdomain.xml", (_req, res) => {
-    res.setHeader("Content-Type", "application/xml");
-    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+app.get("/crossdomain.xml", (c) => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
 <cross-domain-policy>
   <allow-access-from domain="*" secure="false"/>
-</cross-domain-policy>`);
+</cross-domain-policy>`;
+    c.header("Content-Type", "application/xml");
+    return c.text(xml);
 });
 
-app.set("trust proxy", true);
-
 // Deprecated /models endpoint - moved to gateway
-app.get("/models", (req, res) => {
-    res.status(410).json({
-        error: "Endpoint moved",
-        message:
-            "The /models endpoint has been moved to the API gateway. Please use: https://enter.pollinations.ai/api/generate/text/models",
-        deprecated_endpoint: `${req.protocol}://${req.get("host")}/models`,
-        new_endpoint: "https://enter.pollinations.ai/api/generate/text/models",
-        documentation: "https://enter.pollinations.ai/api/docs",
-    });
+app.get("/models", (c) => {
+    return c.json(
+        {
+            error: "Endpoint moved",
+            message:
+                "The /models endpoint has been moved to the API gateway. Please use: https://enter.pollinations.ai/api/generate/text/models",
+            deprecated_endpoint: `${c.req.url}`,
+            new_endpoint:
+                "https://enter.pollinations.ai/api/generate/text/models",
+            documentation: "https://enter.pollinations.ai/api/docs",
+        },
+        410,
+    );
 });
 
 // Helper function to handle both GET and POST requests
-async function handleRequest(req, res, requestData) {
+async function handleRequest(c: Context, requestData: any) {
     const _startTime = Date.now();
     log(
         "Request: model=%s referrer=%s",
@@ -93,19 +95,16 @@ async function handleRequest(req, res, requestData) {
     );
     log("Request data: %O", requestData);
 
-    // if (requestData.referrer === "Aiko_Roblox_Game")
-    //     throw new Error("blocked temporarily");
-
     try {
         // Generate a unique ID for this request
         const requestId = generatePollinationsId();
 
         // Get user info from authentication if available
-        const authResult = req.authResult || {};
+        const authResult = (c as any).authResult || {};
 
         // Model lookup
         const model = availableModels.find(
-            (m) =>
+            (m: any) =>
                 m.name === requestData.model ||
                 m.aliases?.includes(requestData.model),
         );
@@ -115,10 +114,11 @@ async function handleRequest(req, res, requestData) {
         // All requests from enter.pollinations.ai - tier checks bypassed
         if (!model) {
             log(`Model not found: ${requestData.model}`);
-            const error = new Error(`Model not found: ${requestData.model}`);
+            const error: any = new Error(
+                `Model not found: ${requestData.model}`,
+            );
             error.status = 404;
-            await sendErrorResponse(res, req, error, requestData, 404);
-            return;
+            return await sendErrorResponse(c, error, requestData, 404);
         }
 
         // Capture the originally requested model before any mapping/overrides
@@ -129,16 +129,17 @@ async function handleRequest(req, res, requestData) {
 
         // Add user info to request data - using authResult directly as a thin proxy
         // Exclude messages from options to prevent overwriting transformed messages
-        const { messages: _, ...requestDataWithoutMessages } = finalRequestData;
+        const { messages: _, ...requestDataWithoutMessages } =
+            finalRequestData;
         const requestWithUserInfo = {
             ...requestDataWithoutMessages,
             userInfo: {
                 ...authResult,
                 referrer: requestData.referrer || "unknown",
-                cf_ray: req.headers["cf-ray"] || "",
+                cf_ray: c.req.header("cf-ray") || "",
             },
             // Pass user's API key for community models that need billing passthrough (e.g., NomNom)
-            userApiKey: req.headers["x-user-api-key"] || "",
+            userApiKey: c.req.header("x-user-api-key") || "",
         };
 
         const completion = await generateTextBasedOnModel(
@@ -162,21 +163,21 @@ async function handleRequest(req, res, requestData) {
                     ? { message: completion.error }
                     : completion.error;
 
-            const error = new Error(errorObj.message || "An error occurred");
+            const error: any = new Error(
+                errorObj.message || "An error occurred",
+            );
 
             // Add the details if they exist
             if (errorObj.details) {
                 error.response = { data: errorObj.details };
             }
 
-            await sendErrorResponse(
-                res,
-                req,
+            return await sendErrorResponse(
+                c,
                 error,
                 requestData,
                 errorObj.status || 500,
             );
-            return;
         }
 
         const responseText = completion.stream
@@ -189,48 +190,45 @@ async function handleRequest(req, res, requestData) {
             log("Sending streaming response with sendAsOpenAIStream");
             // Add requestData to completion object for access in streaming ad wrapper
             completion.requestData = requestData;
-            await sendAsOpenAIStream(res, completion, req);
+            return await sendAsOpenAIStream(c, completion);
         } else {
-            if (req.method === "GET") {
-                sendContentResponse(res, completion);
-            } else if (req.path === "/") {
+            if (c.req.method === "GET") {
+                return sendContentResponse(c, completion);
+            } else if (c.req.path === "/") {
                 // For POST requests to the root path, also send plain text
-                sendContentResponse(res, completion);
+                return sendContentResponse(c, completion);
             } else {
-                sendOpenAIResponse(res, completion);
+                return sendOpenAIResponse(c, completion);
             }
         }
-    } catch (error) {
+    } catch (error: any) {
         // Handle errors in streaming mode differently
         if (requestData.stream) {
             log("Error in streaming mode:", error.message);
             errorLog("Error stack:", error.stack);
 
             // Simply pass through the error using sendErrorResponse
-            await sendErrorResponse(
-                res,
-                req,
+            return await sendErrorResponse(
+                c,
                 error,
                 requestData,
                 error.status || error.code || 500,
             );
-            return;
         }
 
-        sendErrorResponse(res, req, error, requestData);
+        return sendErrorResponse(c, error, requestData);
     }
 }
 
 // Helper function for consistent error responses
 export async function sendErrorResponse(
-    res,
-    req,
-    error,
-    requestData,
+    c: Context,
+    error: any,
+    requestData: any,
     statusCode = 500,
 ) {
     const responseStatus = error.status || statusCode;
-    const errorTypes = {
+    const errorTypes: Record<number, string> = {
         400: "Bad Request",
         401: "Unauthorized",
         403: "Forbidden",
@@ -252,11 +250,11 @@ export async function sendErrorResponse(
 
     // Extract client information (for logs only)
     const clientInfo = {
-        ip: getIp(req) || "unknown",
-        userAgent: req.headers["user-agent"] || "unknown",
-        referer: req.headers["referer"] || "unknown",
-        origin: req.headers["origin"] || "unknown",
-        cf_ray: req.headers["cf-ray"] || "",
+        ip: getIp(c.req.raw) || "unknown",
+        userAgent: c.req.header("user-agent") || "unknown",
+        referer: c.req.header("referer") || "unknown",
+        origin: c.req.header("origin") || "unknown",
+        cf_ray: c.req.header("cf-ray") || "",
     };
 
     // Extract request parameters (sanitized)
@@ -275,7 +273,7 @@ export async function sendErrorResponse(
                   : 0,
               totalMessageLength: requestData.messages
                   ? requestData.messages?.reduce?.(
-                        (total, msg) =>
+                        (total: number, msg: any) =>
                             total +
                             (typeof msg?.content === "string"
                                 ? msg.content.length
@@ -287,7 +285,7 @@ export async function sendErrorResponse(
         : "no request data";
 
     // Extract username from auth result if available
-    const authResult = req.authResult || {};
+    const authResult = (c as any).authResult || {};
     const userContext = authResult.username
         ? `${authResult.username} (${authResult.userId})`
         : "anonymous";
@@ -332,11 +330,7 @@ export async function sendErrorResponse(
         }
     }
 
-    try {
-        res.status(responseStatus).json(errorResponse);
-    } catch (error) {
-        console.error("Error sending error response:", error);
-    }
+    return c.json(errorResponse, responseStatus);
 }
 
 // Generate a unique ID with pllns_ prefix
@@ -346,15 +340,14 @@ function generatePollinationsId() {
 }
 
 // Helper function for consistent success responses
-export function sendOpenAIResponse(res, completion) {
+export function sendOpenAIResponse(c: Context, completion: any) {
     // If this is a test object (like {foo: 'bar'}), pass it through directly
     if (completion.foo) {
-        res.json(completion);
-        return;
+        return c.json(completion);
     }
 
     // Set appropriate headers
-    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    c.header("Content-Type", "application/json; charset=utf-8");
 
     // Add usage headers if available (GitHub issue #4638)
     if (completion.usage && completion.model) {
@@ -362,7 +355,7 @@ export function sendOpenAIResponse(res, completion) {
         const usageHeaders = buildUsageHeaders(completion.model, usage);
 
         for (const [key, value] of Object.entries(usageHeaders)) {
-            res.setHeader(key, value);
+            c.header(key, String(value));
         }
     }
 
@@ -375,10 +368,10 @@ export function sendOpenAIResponse(res, completion) {
         created: completion.created || Date.now(),
     };
 
-    res.json(response);
+    return c.json(response);
 }
 
-export function sendContentResponse(res, completion) {
+export function sendContentResponse(c: Context, completion: any) {
     // Add usage headers if available (GitHub issue #4638)
     if (
         completion &&
@@ -390,15 +383,15 @@ export function sendContentResponse(res, completion) {
         const usageHeaders = buildUsageHeaders(completion.model, usage);
 
         for (const [key, value] of Object.entries(usageHeaders)) {
-            res.setHeader(key, value);
+            c.header(key, String(value));
         }
     }
 
     // Handle the case where the completion is already a string or simple object
     if (typeof completion === "string") {
-        res.setHeader("Content-Type", "text/plain; charset=utf-8");
-        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-        return res.send(completion);
+        c.header("Content-Type", "text/plain; charset=utf-8");
+        c.header("Cache-Control", "public, max-age=31536000, immutable");
+        return c.text(completion);
     }
 
     // Only handle OpenAI-style responses (with choices array)
@@ -407,82 +400,67 @@ export function sendContentResponse(res, completion) {
 
         // If message is a string, send it directly
         if (typeof message === "string") {
-            res.setHeader("Content-Type", "text/plain; charset=utf-8");
-            res.setHeader(
-                "Cache-Control",
-                "public, max-age=31536000, immutable",
-            );
-            return res.send(message);
+            c.header("Content-Type", "text/plain; charset=utf-8");
+            c.header("Cache-Control", "public, max-age=31536000, immutable");
+            return c.text(message);
         }
 
         // If message is not an object, convert to string
         if (!message || typeof message !== "object") {
-            res.setHeader("Content-Type", "text/plain; charset=utf-8");
-            res.setHeader(
-                "Cache-Control",
-                "public, max-age=31536000, immutable",
-            );
-            return res.send(String(message));
+            c.header("Content-Type", "text/plain; charset=utf-8");
+            c.header("Cache-Control", "public, max-age=31536000, immutable");
+            return c.text(String(message));
         }
 
         // If the message contains audio, send the audio data as binary
         if (message.audio?.data) {
-            res.setHeader("Content-Type", "audio/mpeg");
-            res.setHeader(
-                "Cache-Control",
-                "public, max-age=31536000, immutable",
-            );
+            c.header("Content-Type", "audio/mpeg");
+            c.header("Cache-Control", "public, max-age=31536000, immutable");
 
             // Convert base64 data to binary
             const audioBuffer = Buffer.from(message.audio.data, "base64");
-            return res.send(audioBuffer);
+            return c.body(audioBuffer);
         }
         // For simple text responses, return just the content as plain text
         // This is the most common case and should be prioritized
         else if (message.content) {
-            res.setHeader("Content-Type", "text/plain; charset=utf-8");
-            res.setHeader(
-                "Cache-Control",
-                "public, max-age=31536000, immutable",
-            );
+            c.header("Content-Type", "text/plain; charset=utf-8");
+            c.header("Cache-Control", "public, max-age=31536000, immutable");
             // Append citations if present (e.g., from Perplexity)
             let content = message.content;
             if (completion.citations?.length > 0) {
                 content += "\n\n---\nSources:\n";
-                completion.citations.forEach((url, index) => {
+                completion.citations.forEach((url: string, index: number) => {
                     content += `[${index + 1}] ${url}\n`;
                 });
             }
-            return res.send(content);
+            return c.text(content);
         }
         // If there's other non-text content, return the message as JSON
         else if (Object.keys(message).length > 0) {
-            res.setHeader("Content-Type", "application/json; charset=utf-8");
-            res.setHeader(
-                "Cache-Control",
-                "public, max-age=31536000, immutable",
-            );
-            return res.json(message);
+            c.header("Content-Type", "application/json; charset=utf-8");
+            c.header("Cache-Control", "public, max-age=31536000, immutable");
+            return c.json(message);
         }
     }
     // Fallback for any other response structure
     else {
         errorLog("Unrecognized completion format:", JSON.stringify(completion));
-        const error = new Error("Unrecognized response format from model");
+        const error: any = new Error("Unrecognized response format from model");
         error.status = 500;
         throw error;
     }
 }
 
 // Helper function to process requests with queueing and caching logic
-async function processRequest(req, res, requestData) {
+async function processRequest(c: Context, requestData: any) {
     // Authentication and rate limiting is now handled by enter.pollinations.ai
     // Just call handleRequest directly
-    await handleRequest(req, res, requestData);
+    return await handleRequest(c, requestData);
 }
 
 // Helper function to check if a model is an audio model and add necessary parameters
-function prepareRequestParameters(requestParams) {
+function prepareRequestParameters(requestParams: any) {
     // Use registry to check if model supports audio output
     let isAudioModel = false;
     try {
@@ -532,28 +510,54 @@ function prepareRequestParameters(requestParams) {
         requestParams.modalities = finalParams.modalities;
         requestParams.audio = finalParams.audio;
     }
-    // finalParams.modalities = ["text", "image"]
 
     return finalParams;
 }
 
-app.post("/", async (req, res) => {
-    if (!req.body.messages || !Array.isArray(req.body.messages)) {
-        return res.status(400).json({ error: "Invalid messages array" });
+// Helper to create Express-like request object for getRequestData
+function createExpressLikeRequest(c: Context, body: any = null) {
+    const url = new URL(c.req.url);
+    const query: any = {};
+    url.searchParams.forEach((value, key) => {
+        query[key] = value;
+    });
+
+    // For catch-all routes, extract the path as params[0]
+    const params: any = { ...c.req.param() };
+    const wildcardPath = c.req.param("*") || c.req.path.slice(1); // Remove leading /
+    if (wildcardPath) {
+        params[0] = wildcardPath;
     }
 
-    const requestParams = getRequestData(req, true);
+    return {
+        query,
+        body: body || {},
+        path: c.req.path,
+        params,
+        method: c.req.method,
+        headers: Object.fromEntries(c.req.raw.headers.entries()),
+    };
+}
+
+app.post("/", async (c) => {
+    const body = await c.req.json();
+    if (!body.messages || !Array.isArray(body.messages)) {
+        return c.json({ error: "Invalid messages array" }, 400);
+    }
+
+    const req = createExpressLikeRequest(c, body);
+    const requestParams = getRequestData(req as any);
     const finalRequestParams = prepareRequestParameters(requestParams);
 
     try {
-        await processRequest(req, res, finalRequestParams);
-    } catch (error) {
-        sendErrorResponse(res, req, error, requestParams);
+        return await processRequest(c, finalRequestParams);
+    } catch (error: any) {
+        return sendErrorResponse(c, error, requestParams);
     }
 });
 
-app.get("/openai/models", (_req, res) => {
-    const models = availableModels.map((model) => {
+app.get("/openai/models", (c) => {
+    const models = availableModels.map((model: any) => {
         // Get provider from cost data using the model's config
         const _config =
             typeof model.config === "function" ? model.config() : model.config;
@@ -563,39 +567,46 @@ app.get("/openai/models", (_req, res) => {
             created: Date.now(),
         };
     });
-    res.json({
+    return c.json({
         object: "list",
         data: models,
     });
 });
 
 // POST /openai/* request handler
-app.post("/openai*", async (req, res) => {
+app.post("/openai*", async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const req = createExpressLikeRequest(c, body);
     const requestParams = {
-        ...getRequestData(req),
+        ...getRequestData(req as any),
         isPrivate: true,
         private: true,
-    }; // figure out later if it should be isPrivate or private
+    };
 
     try {
-        await processRequest(req, res, requestParams);
-    } catch (error) {
-        sendErrorResponse(res, req, error, requestParams);
+        return await processRequest(c, requestParams);
+    } catch (error: any) {
+        return sendErrorResponse(c, error, requestParams);
     }
 });
 
 // OpenAI-compatible v1 endpoint for chat completions
-app.post("/v1/chat/completions", async (req, res) => {
-    const requestParams = { ...getRequestData(req), isPrivate: true };
+app.post("/v1/chat/completions", async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const req = createExpressLikeRequest(c, body);
+    const requestParams = {
+        ...getRequestData(req as any),
+        isPrivate: true,
+    };
 
     try {
-        await processRequest(req, res, requestParams);
-    } catch (error) {
-        sendErrorResponse(res, req, error, requestParams);
+        return await processRequest(c, requestParams);
+    } catch (error: any) {
+        return sendErrorResponse(c, error, requestParams);
     }
 });
 
-async function sendAsOpenAIStream(res, completion, req = null) {
+async function sendAsOpenAIStream(c: Context, completion: any) {
     log("sendAsOpenAIStream called with completion type:", typeof completion);
     if (completion) {
         log("Completion properties:", {
@@ -604,11 +615,6 @@ async function sendAsOpenAIStream(res, completion, req = null) {
             errorPresent: !!completion.error,
         });
     }
-    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
-    // Set standard SSE headers
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-    res.flushHeaders();
 
     // Handle error responses in streaming mode
     if (completion.error) {
@@ -616,55 +622,53 @@ async function sendAsOpenAIStream(res, completion, req = null) {
             "Error detected in streaming request, this should not happen, errors should be handled before reaching here",
         );
         // Just return, as the error should have been handled already
-        return;
+        return c.text("");
     }
 
     // Handle streaming response from the API
     const responseStream = completion.responseStream;
-    // If we have a responseStream, try to proxy it
-    if (responseStream) {
-        log("Attempting to proxy stream to client");
 
-        // Pipe stream directly to response
-        responseStream.pipe(res);
+    return stream(c, async (stream) => {
+        c.header("Content-Type", "text/event-stream; charset=utf-8");
+        c.header("Cache-Control", "no-cache");
+        c.header("Connection", "keep-alive");
 
-        // Handle client disconnect
-        if (req)
-            req.on("close", () => {
-                log("Client disconnected");
-                if (responseStream.destroy) {
-                    responseStream.destroy();
-                }
-            });
+        // If we have a responseStream, try to proxy it
+        if (responseStream) {
+            log("Attempting to proxy stream to client");
 
-        return;
-    }
-
-    // If we get here, we couldn't handle the stream properly
-    log(
-        "Could not handle stream properly, falling back to default response. Stream type:",
-        typeof responseStream,
-        "Stream available:",
-        !!responseStream,
-    );
-    res.write(
-        `data: ${JSON.stringify({
-            choices: [
-                {
-                    delta: {
-                        content: "Streaming response could not be processed.",
-                    },
-                    finish_reason: "stop",
-                    index: 0,
-                },
-            ],
-        })}\n\n`,
-    );
-    res.write("data: [DONE]\n\n");
-    res.end();
+            // Pipe stream data to the client
+            for await (const chunk of responseStream) {
+                await stream.write(chunk);
+            }
+        } else {
+            // If we get here, we couldn't handle the stream properly
+            log(
+                "Could not handle stream properly, falling back to default response. Stream type:",
+                typeof responseStream,
+                "Stream available:",
+                !!responseStream,
+            );
+            await stream.write(
+                `data: ${JSON.stringify({
+                    choices: [
+                        {
+                            delta: {
+                                content:
+                                    "Streaming response could not be processed.",
+                            },
+                            finish_reason: "stop",
+                            index: 0,
+                        },
+                    ],
+                })}\n\n`,
+            );
+            await stream.write("data: [DONE]\n\n");
+        }
+    });
 }
 
-async function generateTextBasedOnModel(messages, options) {
+async function generateTextBasedOnModel(messages: any[], options: any) {
     // Gateway must provide a valid model - no fallback
     if (!options.model) {
         throw new Error("Model parameter is required");
@@ -690,7 +694,7 @@ async function generateTextBasedOnModel(messages, options) {
         log(
             "Sending messages to model handler:",
             JSON.stringify(
-                processedMessages.map((m) => ({
+                processedMessages.map((m: any) => ({
                     role: m.role,
                     content:
                         typeof m.content === "string"
@@ -709,7 +713,7 @@ async function generateTextBasedOnModel(messages, options) {
         }
 
         return response;
-    } catch (error) {
+    } catch (error: any) {
         errorLog(
             "Error in generateTextBasedOnModel:",
             JSON.stringify({
@@ -719,7 +723,7 @@ async function generateTextBasedOnModel(messages, options) {
                 requestParams: {
                     ...options,
                     messages: messages
-                        ? messages.map((m) => ({
+                        ? messages.map((m: any) => ({
                               role: m.role,
                               content:
                                   typeof m.content === "string"
@@ -768,16 +772,17 @@ async function generateTextBasedOnModel(messages, options) {
 export default app;
 
 // GET request handler (catch-all)
-app.get("/*", async (req, res) => {
-    const requestData = getRequestData(req);
+app.get("/*", async (c) => {
+    const req = createExpressLikeRequest(c);
+    const requestData = getRequestData(req as any);
     const finalRequestData = prepareRequestParameters(requestData);
 
     try {
         // For streaming requests, handle them with the same code paths as POST requests
         // This ensures consistent handling of streaming for both GET and POST
-        await processRequest(req, res, finalRequestData);
-    } catch (error) {
+        return await processRequest(c, finalRequestData);
+    } catch (error: any) {
         errorLog("Error in catch-all GET handler: %s", error.message);
-        sendErrorResponse(res, req, error, requestData);
+        return sendErrorResponse(c, error, requestData);
     }
 });

@@ -13,51 +13,22 @@ dotenv.config();
 export const log = debug("pollinations:portkey");
 const errorLog = debug("pollinations:portkey:error");
 
-// Model mapping is now handled via mappedModel field in availableModels.js
-
-// Default options
 const DEFAULT_OPTIONS = {
     model: "openai-fast",
     jsonMode: false,
 };
 
-/**
- * Generates text using a local Portkey gateway with OpenAI-compatible endpoints
- * @param {Array} messages - Array of message objects
- * @param {Object} options - Options for text generation
- * @returns {Object} - OpenAI-compatible response
- */
-
-/**
- * Configuration object for the Portkey client
- */
 const clientConfig = {
-    // Use Portkey API Gateway URL from .env with fallback to localhost
     endpoint: () =>
         `${process.env.PORTKEY_GATEWAY_URL || "http://localhost:8787"}/v1/chat/completions`,
-
-    // Auth header configuration
     authHeaderName: "Authorization",
-    authHeaderValue: () => {
-        // Use the actual Portkey API key from environment variables
-        return `Bearer ${process.env.PORTKEY_API_KEY}`;
-    },
-
-    // Additional headers will be dynamically set in transformRequest
+    authHeaderValue: () => `Bearer ${process.env.PORTKEY_API_KEY}`,
     additionalHeaders: {},
-
-    // Default options
     defaultOptions: DEFAULT_OPTIONS,
 };
 
-/**
- * Generates text using a local Portkey gateway with Azure OpenAI models
- */
-export async function generateTextPortkey(messages: any[], options: any = {}) {
-    // Create a copy of options to avoid mutating the original
+export async function generateTextPortkey(messages: any[], options: any = {}): Promise<any> {
     let processedOptions: any = { ...options };
-
-    // Apply model transform if it exists
     let processedMessages = messages;
 
     if (processedOptions.model) {
@@ -86,33 +57,21 @@ export async function generateTextPortkey(messages: any[], options: any = {}) {
         }
     }
 
-    // Apply transformations sequentially
     if (processedOptions.model) {
         try {
-            // 1. Resolve model configuration
             let result = resolveModelConfig(
                 processedMessages,
                 processedOptions,
             );
             processedMessages = result.messages;
             processedOptions = result.options;
-            log(
-                "After resolveModelConfig:",
-                !!processedOptions.modelDef,
-                !!processedOptions.modelConfig,
-            );
+            log("After resolveModelConfig:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
 
-            // 2. Generate headers
             result = await generateHeaders(processedMessages, processedOptions);
             processedMessages = result.messages;
             processedOptions = result.options;
-            log(
-                "After generateHeaders:",
-                !!processedOptions.modelDef,
-                !!processedOptions.modelConfig,
-            );
+            log("After generateHeaders:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
 
-            // 3. Convert image URLs to base64 for Vertex AI
             const imageUrlTransform = createImageUrlToBase64Transform();
             result = await imageUrlTransform(
                 processedMessages,
@@ -120,23 +79,13 @@ export async function generateTextPortkey(messages: any[], options: any = {}) {
             );
             processedMessages = result.messages;
             processedOptions = result.options;
-            log(
-                "After imageUrlTransform:",
-                !!processedOptions.modelDef,
-                !!processedOptions.modelConfig,
-            );
+            log("After imageUrlTransform:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
 
-            // 4. Sanitize messages
             result = sanitizeMessages(processedMessages, processedOptions);
             processedMessages = result.messages;
             processedOptions = result.options;
-            log(
-                "After sanitizeMessages:",
-                !!processedOptions.modelDef,
-                !!processedOptions.modelConfig,
-            );
+            log("After sanitizeMessages:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
 
-            // 5. Process parameters (limit checking removed - handled by enter.pollinations.ai)
             result = processParameters(processedMessages, processedOptions);
             processedMessages = result.messages;
             processedOptions = result.options;
@@ -146,22 +95,12 @@ export async function generateTextPortkey(messages: any[], options: any = {}) {
         }
     }
 
-    // Create a fresh config with clean headers for this request
     const requestConfig = {
         ...clientConfig,
         additionalHeaders: processedOptions.additionalHeaders || {},
     };
 
-    // Remove from options since it's now in config
-    if (processedOptions.additionalHeaders) {
-        delete processedOptions.additionalHeaders;
-    }
+    delete processedOptions.additionalHeaders;
 
-    const completion = await genericOpenAIClient(
-        processedMessages,
-        processedOptions,
-        requestConfig,
-    );
-
-    return completion;
+    return genericOpenAIClient(processedMessages, processedOptions, requestConfig);
 }

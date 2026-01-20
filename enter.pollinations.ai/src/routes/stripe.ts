@@ -1,7 +1,7 @@
 import { Hono } from "hono";
-import Stripe from "stripe";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
+import { createStripeClient } from "../utils/stripe.ts";
 
 /**
  * Stripe pack products configuration
@@ -32,15 +32,6 @@ type PackSlug = "5x2" | "10x2" | "20x2" | "50x2";
 
 const isValidPackSlug = (slug: string): slug is PackSlug => {
     return ["5x2", "10x2", "20x2", "50x2"].includes(slug);
-};
-
-/**
- * Create a Stripe client instance
- */
-const createStripeClient = (env: CloudflareBindings): Stripe => {
-    return new Stripe(env.STRIPE_SECRET_KEY, {
-        apiVersion: "2025-02-24.acacia",
-    });
 };
 
 export const stripeRoutes = new Hono<Env>()

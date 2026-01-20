@@ -1,30 +1,15 @@
 import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
-import Stripe from "stripe";
+import type Stripe from "stripe";
 import { user as userTable } from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
-
-/**
- * Create a Stripe client instance
- */
-const createStripeClient = (env: CloudflareBindings): Stripe => {
-    return new Stripe(env.STRIPE_SECRET_KEY, {
-        apiVersion: "2025-02-24.acacia",
-    });
-};
-
-/**
- * Verify Stripe webhook signature
- */
-const verifyWebhookSignature = async (
-    stripe: Stripe,
-    payload: string,
-    signature: string,
-    webhookSecret: string,
-): Promise<Stripe.Event> => {
-    return stripe.webhooks.constructEvent(payload, signature, webhookSecret);
-};
+import {
+    createStripeClient,
+    isSessionProcessed,
+    markSessionProcessed,
+    verifyWebhookSignature,
+} from "../utils/stripe.ts";
 
 /**
  * Handle successful checkout session completion
@@ -128,10 +113,30 @@ export const stripeWebhooksRoutes = new Hono<Env>()
 
                 // Only process completed payments (not pending async payments)
                 if (session.payment_status === "paid") {
+                    // Idempotency check - prevent duplicate credits on webhook retry
+                    if (await isSessionProcessed(c.env.KV, session.id)) {
+                        console.log(
+                            `Stripe: Session ${session.id} already processed, skipping`,
+                        );
+                        break;
+                    }
+
                     const result = await handleCheckoutSessionCompleted(
                         session,
                         c.env,
                     );
+
+                    // Mark as processed after successful credit
+                    if (result.success && session.metadata) {
+                        await markSessionProcessed(c.env.KV, session.id, {
+                            userId: session.metadata.userId || "",
+                            units: Number.parseInt(
+                                session.metadata.units || "0",
+                                10,
+                            ),
+                            packSlug: session.metadata.packSlug || "unknown",
+                        });
+                    }
 
                     if (!result.success) {
                         console.error(
@@ -152,10 +157,31 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "checkout.session.async_payment_succeeded": {
                 // Handle delayed payment methods (e.g., bank transfers)
                 const session = event.data.object as Stripe.Checkout.Session;
+
+                // Idempotency check
+                if (await isSessionProcessed(c.env.KV, session.id)) {
+                    console.log(
+                        `Stripe: Async session ${session.id} already processed, skipping`,
+                    );
+                    break;
+                }
+
                 const result = await handleCheckoutSessionCompleted(
                     session,
                     c.env,
                 );
+
+                // Mark as processed after successful credit
+                if (result.success && session.metadata) {
+                    await markSessionProcessed(c.env.KV, session.id, {
+                        userId: session.metadata.userId || "",
+                        units: Number.parseInt(
+                            session.metadata.units || "0",
+                            10,
+                        ),
+                        packSlug: session.metadata.packSlug || "unknown",
+                    });
+                }
 
                 if (!result.success) {
                     console.error(

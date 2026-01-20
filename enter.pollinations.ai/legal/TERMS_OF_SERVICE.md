@@ -50,8 +50,8 @@ Don’t violate law; infringe IP/likeness/privacy; attack the Service; evade rat
 
 Fees per plan/order/invoice; currency by default USD.
 
-**Taxes.** Prices are net of VAT; we charge Estonian VAT (22%) where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules apply.
-**Check:** gross = net × 1.22.
+**Taxes.** Prices are net of VAT; we charge Estonian VAT (24%) where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules apply.
+**Check:** gross = net × 1.24.
 
 **Merchant of Record.** Payments are processed by Polar acting as Merchant of Record where applicable.
 

@@ -348,3 +348,6 @@ debugsession_*/
 *.swp
 *.swo
 *~
+
+# CodeMap visualization tool
+.codemap/

@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeReadFile": [
+      {
+        "command": "/Users/thomash/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/file-activity-hook.sh read-start"
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": "/Users/thomash/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/file-activity-hook.sh write-end"
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "/Users/thomash/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/thinking-hook.sh thinking-end"
+      }
+    ],
+    "afterShellExecution": [
+      {
+        "command": "/Users/thomash/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/thinking-hook.sh thinking-start"
+      }
+    ],
+    "beforeMCPExecution": [
+      {
+        "command": "/Users/thomash/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/thinking-hook.sh thinking-end"
+      }
+    ],
+    "afterMCPExecution": [
+      {
+        "command": "/Users/thomash/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/thinking-hook.sh thinking-start"
+      }
+    ],
+    "afterAgentThought": [
+      {
+        "command": "/Users/thomash/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/thinking-hook.sh thinking-start"
+      }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": "/Users/thomash/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/thinking-hook.sh thinking-end"
+      }
+    ]
+  }
+}

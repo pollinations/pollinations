@@ -41,7 +41,7 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
     }
     // Filter out date, zero, and undefined values from price definition
     const { date: _date, ...priceFields } = priceDefinition;
-    const pricing: Record<string, number | "pollen"> = { currency: "pollen" };
+    const pricing: Record<string, number | "pollen"> & { currency: "pollen" } = { currency: "pollen" };
     for (const [key, value] of Object.entries(priceFields)) {
         if (typeof value === "number" && value > 0) {
             pricing[key] = value;

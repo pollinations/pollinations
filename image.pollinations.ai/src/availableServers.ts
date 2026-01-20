@@ -192,7 +192,7 @@ async function fetchServersFromMainServer() {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const servers = await response.json();
+        const servers = (await response.json()) as ServerInfo[];
 
         logServer(
             `[${new Date().toISOString()}] Received ${servers.length} servers from main server:`,

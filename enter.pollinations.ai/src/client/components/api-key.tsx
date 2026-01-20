@@ -41,9 +41,9 @@ type ApiKey = {
     id: string;
     name?: string | null;
     start?: string | null;
-    createdAt: Date;
-    lastRequest?: Date | null;
-    expiresAt?: Date | null;
+    createdAt: string;
+    lastRequest?: string | null;
+    expiresAt?: string | null;
     permissions: { [key: string]: string[] } | null;
     metadata: { [key: string]: unknown } | null;
     pollenBalance?: number | null;
@@ -97,7 +97,7 @@ const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
 };
 
 const LimitsBadge: FC<{
-    expiresAt: Date | null | undefined;
+    expiresAt: string | null | undefined;
     pollenBudget: number | null | undefined;
 }> = ({ expiresAt, pollenBudget }) => {
     const hasExpiry = expiresAt !== null && expiresAt !== undefined;

@@ -50,7 +50,7 @@ export interface TrackingData {
 export function buildTrackingHeaders(
     model: ValidServiceName,
     trackingData?: TrackingData,
-): Record<string, string> {
+): Readonly<Record<string, string>> {
     log(`=== TRACKING HEADERS FOR ${model} ===`);
     log(
         `Raw trackingData.usage:`,
@@ -98,15 +98,19 @@ export function extractTokenCount(usage?: TrackingUsageData): number {
     return usage?.completionImageTokens || 1;
 }
 
+export interface FormattedModerationData {
+    readonly categories?: string;
+    readonly severity?: string;
+}
+
 /**
  * Format moderation data for OpenAI-compatible headers
  * @param moderation - Content safety flags
  * @returns Formatted moderation data
  */
-export function formatModerationData(moderation?: ContentSafetyFlags): {
-    categories?: string;
-    severity?: string;
-} {
+export function formatModerationData(
+    moderation?: ContentSafetyFlags,
+): FormattedModerationData {
     if (!moderation) return {};
 
     return {

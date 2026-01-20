@@ -58,7 +58,7 @@ export async function translateIfNecessary(promptAnyLanguage: string) {
                     "translateResult",
                     result,
                 );
-                const translatedPrompt = result.translatedText;
+                const translatedPrompt = (result as any).translatedText;
                 const translateEnd = Date.now();
                 logPerf(
                     `Translation duration: ${translateEnd - translateStart}ms`,

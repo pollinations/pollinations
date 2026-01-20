@@ -1,7 +1,6 @@
 import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import type { StandardSchemaV1 } from "hono-openapi";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
@@ -14,10 +13,19 @@ import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import type { Env } from "../env.ts";
 
+// Define a minimal StandardSchemaV1-like interface for type safety
+interface SchemaLike {
+    "~standard"?: {
+        version: 1;
+        vendor: string;
+        validate: (value: unknown) => any;
+    };
+}
+
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
-const resolver = <T extends StandardSchemaV1>(schema: T) =>
-    baseResolver(schema, { reused: "ref" });
+const resolver = <T extends SchemaLike>(schema: T) =>
+    baseResolver(schema as any, { reused: "ref" });
 
 import {
     getImageModelsInfo,

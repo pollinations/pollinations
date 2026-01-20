@@ -69,6 +69,7 @@ declare namespace Cloudflare {
         NOWPAYMENTS_ENV: "sandbox" | "production";
         POLLEN_RATE_LIMITER: DurableObjectNamespace /* PollenRateLimiter from pollinations-enter */;
         IMAGE_BUCKET: R2Bucket;
+        TEXT_BUCKET: R2Bucket;
         DB: D1Database;
     }
 }

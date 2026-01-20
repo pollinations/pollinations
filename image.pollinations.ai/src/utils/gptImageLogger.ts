@@ -4,26 +4,56 @@
  */
 
 import { promises as fsPromises } from "node:fs";
-import path from "node:path";
+import * as path from "node:path";
 import debug from "debug";
 import type { ImageParams } from "../params.ts";
+import type { ContentSafetyResults } from "./azureContentSafety.ts";
 
 // Debug loggers
 const logOps = debug("pollinations:ops");
 const logError = debug("pollinations:error");
 
+export interface UserInfo {
+    readonly userId?: string;
+    readonly email?: string;
+    readonly isAuthenticated?: boolean;
+    readonly tier?: string;
+    readonly [key: string]: unknown;
+}
+
+export interface GptImageLogEntry {
+    readonly timestamp: string;
+    readonly prompt: string;
+    readonly model: string;
+    readonly size: string;
+    readonly image: string[] | null;
+    readonly contentSafety: ContentSafetyResults | null;
+    readonly userInfo: UserInfo;
+}
+
+export interface GptImageErrorLogEntry extends GptImageLogEntry {
+    readonly hasImageInput: boolean;
+    readonly imageUrls: string[];
+    readonly error: {
+        readonly message: string;
+        readonly name: string;
+        readonly stack?: string;
+        readonly isContentSafetyError: boolean;
+    };
+}
+
 /**
  * Logs prompts made to the gptimage model to a temporary file
- * @param {string} prompt - The prompt for image generation
- * @param {ImageParams} safeParams - Parameters for image generation
- * @param {Object} userInfo - User authentication information
- * @param {Object} contentSafetyResults - Results from Azure Content Safety analysis (optional)
+ * @param prompt - The prompt for image generation
+ * @param safeParams - Parameters for image generation
+ * @param userInfo - User authentication information
+ * @param contentSafetyResults - Results from Azure Content Safety analysis (optional)
  */
 export async function logGptImagePrompt(
     prompt: string,
     safeParams: ImageParams,
-    userInfo: object = {},
-    contentSafetyResults: object = null,
+    userInfo: UserInfo = {},
+    contentSafetyResults: ContentSafetyResults | null = null,
 ): Promise<void> {
     try {
         // Create temp directory if it doesn't exist
@@ -36,24 +66,22 @@ export async function logGptImagePrompt(
         const timestamp = new Date().toISOString();
         const logFile = path.join(logDir, "gptimage_prompts.log");
 
-        const logEntry = JSON.stringify(
-            {
-                timestamp,
-                prompt,
-                model: safeParams.model,
-                size: `${safeParams.width}x${safeParams.height}`,
-                image: safeParams.image,
-                // Include content safety analysis results if available
-                contentSafety: contentSafetyResults,
-                // Include complete user info for better diagnostics
-                userInfo,
-            },
-            null,
-            2,
-        );
+        const logEntry: GptImageLogEntry = {
+            timestamp,
+            prompt,
+            model: safeParams.model,
+            size: `${safeParams.width}x${safeParams.height}`,
+            image: safeParams.image,
+            // Include content safety analysis results if available
+            contentSafety: contentSafetyResults,
+            // Include complete user info for better diagnostics
+            userInfo,
+        };
+
+        const logEntryString = JSON.stringify(logEntry, null, 2);
 
         // Append to log file
-        await fsPromises.appendFile(logFile, `${logEntry}\n`);
+        await fsPromises.appendFile(logFile, `${logEntryString}\n`);
 
         logOps("Logged gptimage prompt to", logFile);
     } catch (error) {
@@ -64,19 +92,19 @@ export async function logGptImagePrompt(
 
 /**
  * Logs errors that occur during gptimage model generation
- * @param {string} prompt - The prompt for image generation
- * @param {ImageParams} safeParams - Parameters for image generation
- * @param {Object} userInfo - User authentication information
- * @param {Error} error - The error that occurred
- * @param {Object} contentSafetyResults - Results from Azure Content Safety analysis (optional)
+ * @param prompt - The prompt for image generation
+ * @param safeParams - Parameters for image generation
+ * @param userInfo - User authentication information
+ * @param error - The error that occurred
+ * @param contentSafetyResults - Results from Azure Content Safety analysis (optional)
  */
 export async function logGptImageError(
     prompt: string,
     safeParams: ImageParams,
-    userInfo = {},
+    userInfo: UserInfo = {},
     error: Error,
-    contentSafetyResults: any = null,
-) {
+    contentSafetyResults: ContentSafetyResults | null = null,
+): Promise<void> {
     try {
         // Create temp directory if it doesn't exist
         const tempDir = path.join(process.cwd(), "temp");
@@ -89,43 +117,35 @@ export async function logGptImageError(
         const logFile = path.join(logDir, "gptimage_errors.log");
 
         // Format the log entry with timestamp, prompt, error details and relevant parameters
-        const logEntry = JSON.stringify(
-            {
-                timestamp,
-                prompt,
-                model: safeParams.model,
-                size: `${safeParams.width}x${safeParams.height}`,
-                // Log if this is an image editing request
-                hasImageInput: !!safeParams.image,
-                imageUrls: safeParams.image ?? [],
-                // Include content safety analysis results if available
-                contentSafety: contentSafetyResults
-                    ? {
-                          safe: contentSafetyResults.safe,
-                          formattedViolations:
-                              contentSafetyResults.formattedViolations,
-                          violations: contentSafetyResults.violations,
-                      }
-                    : null,
-                // Include complete user info for better diagnostics
-                userInfo,
-                error: {
-                    message: error.message,
-                    name: error.name,
-                    stack: error.stack,
-                    // Flag if error is related to content safety
-                    isContentSafetyError:
-                        error.message?.includes("unsafe content") ||
-                        error.message?.includes("rejected prompt") ||
-                        error.message?.includes("rejected image"),
-                },
+        const logEntry: GptImageErrorLogEntry = {
+            timestamp,
+            prompt,
+            model: safeParams.model,
+            size: `${safeParams.width}x${safeParams.height}`,
+            image: safeParams.image,
+            // Log if this is an image editing request
+            hasImageInput: !!safeParams.image,
+            imageUrls: safeParams.image ?? [],
+            // Include content safety analysis results if available
+            contentSafety: contentSafetyResults,
+            // Include complete user info for better diagnostics
+            userInfo,
+            error: {
+                message: error.message,
+                name: error.name,
+                stack: error.stack,
+                // Flag if error is related to content safety
+                isContentSafetyError:
+                    error.message?.includes("unsafe content") ||
+                    error.message?.includes("rejected prompt") ||
+                    error.message?.includes("rejected image"),
             },
-            null,
-            2,
-        );
+        };
+
+        const logEntryString = JSON.stringify(logEntry, null, 2);
 
         // Append to log file
-        await fsPromises.appendFile(logFile, `${logEntry}\n`);
+        await fsPromises.appendFile(logFile, `${logEntryString}\n`);
 
         logOps("Logged gptimage error to", logFile);
     } catch (error) {

@@ -1,7 +1,7 @@
 import { writeFileSync } from "fs";
 import Table from "cli-table3";
 import debug from "debug";
-import { generalImageQueue } from "./generalImageQueue";
+import { currentJobs } from "./index";
 
 const logStats = debug("pollinations:stats");
 
@@ -50,8 +50,9 @@ export const printQueueStatus = () => {
         ]);
     });
 
-    const queueSize = generalImageQueue.size;
-    const queuePending = generalImageQueue.pending;
+    // TODO: generalImageQueue no longer exists - need to update this to use current queue implementation
+    const queueSize = 0; // generalImageQueue.size;
+    const queuePending = 0; // generalImageQueue.pending;
     // const queueUtilization = ((queueSize + queuePending) / (2 * generalImageQueue.concurrency) * 100).toFixed(2);
     imageTable.push([
         requestTimestamps.length,
@@ -65,10 +66,10 @@ export const printQueueStatus = () => {
     logStats(imageTable.toString());
 
     // construct simple string tables for file writing
-    const fileBatchTableHeaders = batchHead.join(",");
-    const fileBatchTable = batchTable.map((row) => row.join(",")).join("\n");
-    const fileImageTableHeaders = imageHead.join(",");
-    const fileImageTable = imageTable.map((row) => row.join(",")).join("\n");
+    // const fileBatchTableHeaders = batchHead.join(",");
+    // const fileBatchTable = batchTable.map((row) => row.join(",")).join("\n");
+    // const fileImageTableHeaders = imageHead.join(",");
+    // const fileImageTable = imageTable.map((row) => row.join(",")).join("\n");
 
     // Write tables to a file
     // writeFileSync('tableLogs.txt', `${fileBatchTableHeaders}\n${fileBatchTable}\n${fileImageTableHeaders}\n${fileImageTable}`);

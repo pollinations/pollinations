@@ -229,7 +229,7 @@ export const IMAGE_SERVICES = {
             // Audio add-on: $0.025/sec (when audio=true)
             // Total with audio: $0.05/sec
             {
-                date: COST_START_DATE,
+                date: new Date("2026-01-20").getTime(), // Launch date
                 completionVideoSeconds: 0.025, // $0.025 per second (video only)
                 completionAudioSeconds: 0.025, // $0.025 per second of audio
             },

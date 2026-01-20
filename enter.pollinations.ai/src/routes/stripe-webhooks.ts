@@ -35,6 +35,10 @@ const handleCheckoutSessionCompleted = async (
         return { success: false, message: "Invalid units value" };
     }
 
+    // BETA PROMOTION: Double all pack purchases (remove after beta)
+    const BETA_MULTIPLIER = 2;
+    const creditsToAdd = units * BETA_MULTIPLIER;
+
     const db = drizzle(env.DB);
 
     // Check if user exists
@@ -53,17 +57,17 @@ const handleCheckoutSessionCompleted = async (
     await db
         .update(userTable)
         .set({
-            packBalance: sql`COALESCE(${userTable.packBalance}, 0) + ${units}`,
+            packBalance: sql`COALESCE(${userTable.packBalance}, 0) + ${creditsToAdd}`,
         })
         .where(eq(userTable.id, userId));
 
     console.log(
-        `Stripe: Credited ${units} pollen to user ${userId} (pack: ${packSlug}, session: ${session.id})`,
+        `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: ${packSlug}, paid: ${units}, session: ${session.id})`,
     );
 
     return {
         success: true,
-        message: `Credited ${units} pollen to user ${userId}`,
+        message: `Credited ${creditsToAdd} pollen to user ${userId}`,
     };
 };
 

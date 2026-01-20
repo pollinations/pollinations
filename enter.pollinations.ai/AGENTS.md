@@ -359,6 +359,54 @@ curl "$BASE_URL/generate/image/test?model=flux" \
 
 ---
 
+## 💳 Local Stripe Webhook Testing
+
+To test Stripe pack purchases locally, you need to forward webhooks to your local dev server.
+
+### One-Time Setup
+
+1. **Install Stripe CLI**: https://stripe.com/docs/stripe-cli
+
+2. **Login to the correct Stripe account**:
+   ```bash
+   stripe login
+   ```
+   Authenticate with the **Myceli.AI OÜ** test account (`acct_1SrYSy6O03AauPe8`)
+
+3. **Decrypt secrets**:
+   ```bash
+   npm run decrypt-vars
+   ```
+
+### Running Local Webhook Testing
+
+```bash
+# Start webhook forwarding (uses permanent secret from Stripe Dashboard)
+stripe listen --forward-to localhost:3000 --load-from-webhooks-api
+```
+
+> **Note**: The Sandbox webhook URL must be `https://enter.pollinations.ai/api/webhooks/stripe` (with `/api` prefix) for this to work correctly.
+
+Then in another terminal:
+```bash
+npm run dev
+```
+
+### Testing a Purchase
+
+1. Go to `http://localhost:3000`
+2. Click a pack purchase button (e.g., "+ $10")
+3. Complete checkout with test card: `4242 4242 4242 4242`
+4. Watch terminal for: `Stripe: Credited X pollen to user...`
+
+### Troubleshooting
+
+- **Wrong account**: If `--load-from-webhooks-api` fails, run `stripe login` again
+- **Webhook secret mismatch**: Ensure `.dev.vars` has the correct `STRIPE_WEBHOOK_SECRET`
+- **Async crypto error**: The code uses `constructEventAsync` for Cloudflare Workers compatibility
+
+---
+
 ## Batch Testing
 
 ### Generate Multiple Images

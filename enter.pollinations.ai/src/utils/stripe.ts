@@ -18,7 +18,11 @@ export const verifyWebhookSignature = async (
     signature: string,
     webhookSecret: string,
 ): Promise<Stripe.Event> => {
-    return stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+    return stripe.webhooks.constructEventAsync(
+        payload,
+        signature,
+        webhookSecret,
+    );
 };
 
 /**

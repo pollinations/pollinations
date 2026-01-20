@@ -168,7 +168,7 @@ custom_domain = true
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
-database_id = "073195b4-d99e-4b67-9575-eb5efe6d3234"
+database_id = "bd0ef469-d727-4ff4-9118-bd7e6e7985ae"
 migrations_dir = "drizzle"
 
 [[env.staging.kv_namespaces]]

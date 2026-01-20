@@ -1,19 +1,19 @@
 Run tests for enter.pollinations.ai service.
 
-First decrypt the environment variables, then run vitest:
-
+Run all tests (includes decrypt-vars):
 ```bash
-cd enter.pollinations.ai && npm run test
+npm run test
+```
+(Run from enter.pollinations.ai directory)
+
+Run specific tests (preferred - saves time):
+```bash
+npx vitest run --testNamePattern="$ARGUMENTS"
 ```
 
-For running specific tests (preferred - saves time):
+Run specific test file:
 ```bash
-cd enter.pollinations.ai && npm run decrypt-vars && npx vitest run --testNamePattern="$ARGUMENTS"
-```
-
-Or run a specific test file:
-```bash
-cd enter.pollinations.ai && npm run decrypt-vars && npx vitest run test/specific-file.test.ts
+npx vitest run test/specific-file.test.ts
 ```
 
 **Before writing tests:**

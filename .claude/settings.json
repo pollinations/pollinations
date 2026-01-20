@@ -1,7 +1,4 @@
 {
-  "enabledPlugins": {
-    "code-simplifier@claude-plugins-official": true
-  },
   "permissions": {
     "allow": [
       "Edit",

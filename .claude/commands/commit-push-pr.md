@@ -1,25 +1,30 @@
 Commit changes, push to remote, and create a PR.
 
-1. First check git status and diff:
+1. Check git status and diff:
 ```bash
 git status
 git diff --stat
 ```
 
-2. Create a descriptive commit message using conventional commits format (feat:, fix:, refactor:, etc.)
+2. If on main, create a feature branch first:
+```bash
+git checkout -b feat/your-feature-name
+```
 
-3. Add and commit:
+3. Create a descriptive commit message using conventional commits format (feat:, fix:, refactor:, etc.)
+
+4. Add and commit:
 ```bash
 git add -A
 git commit -m "your commit message"
 ```
 
-4. Push to current branch:
+5. Push to current branch:
 ```bash
-git push origin HEAD
+git push -u origin HEAD
 ```
 
-5. Create PR with bullet-point description (<200 words, no fluff):
+6. Create PR with bullet-point description (<200 words, no fluff):
 ```bash
 gh pr create --title "your title" --body "your description"
 ```

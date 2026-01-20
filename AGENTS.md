@@ -105,6 +105,8 @@ TEXT_SERVICE_URL = "http://localhost:16385"
 ```
 Use `npm run dev` in each service directory to start them.
 
+**Note:** EC2 hostnames in wrangler.toml may change. Check the actual values in `enter.pollinations.ai/wrangler.toml`.
+
 ## Model Context Protocol (MCP)
 
 The `packages/mcp/` directory contains a Model Context Protocol server that allows AI agents to directly generate images, text, and audio using the pollinations.ai API.

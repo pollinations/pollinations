@@ -532,11 +532,12 @@ async function sendAsOpenAIStream(
 
     const responseStream = completion.responseStream;
 
-    return stream(c, async (stream) => {
-        c.header("Content-Type", "text/event-stream; charset=utf-8");
-        c.header("Cache-Control", "no-cache");
-        c.header("Connection", "keep-alive");
+    // Set headers BEFORE returning stream (headers set inside callback are ignored)
+    c.header("Content-Type", "text/event-stream; charset=utf-8");
+    c.header("Cache-Control", "no-cache");
+    c.header("Connection", "keep-alive");
 
+    return stream(c, async (stream) => {
         if (responseStream) {
             for await (const chunk of responseStream) {
                 await stream.write(chunk);

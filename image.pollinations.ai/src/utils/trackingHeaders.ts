@@ -21,9 +21,11 @@ type ValidServiceName = keyof typeof IMAGE_SERVICES;
 export interface TrackingUsageData {
     // Unified usage format for all image models
     completionImageTokens?: number;
-    // Video models - Veo uses seconds, Seedance uses tokens
+    // Video models - Veo/Wan uses seconds, Seedance uses tokens
     completionVideoSeconds?: number;
     completionVideoTokens?: number;
+    // Audio seconds for video models with audio (Wan)
+    completionAudioSeconds?: number;
     promptTokenCount?: number;
     totalTokenCount?: number;
 }
@@ -61,9 +63,11 @@ export function buildTrackingHeaders(
 
     // Determine usage type based on what's provided
     // Video models: Veo uses completionVideoSeconds, Seedance uses completionVideoTokens
+    // Wan uses completionVideoSeconds + completionAudioSeconds
     // Image models use completionImageTokens
     const videoTokens = trackingData?.usage?.completionVideoTokens;
     const videoSeconds = trackingData?.usage?.completionVideoSeconds;
+    const audioSeconds = trackingData?.usage?.completionAudioSeconds;
     const imageTokens = trackingData?.usage?.completionImageTokens;
 
     let usage: Usage;
@@ -72,9 +76,14 @@ export function buildTrackingHeaders(
         log(`Using video tokens: ${videoTokens}`);
         usage = createVideoTokensUsage(videoTokens);
     } else if (videoSeconds && videoSeconds > 0) {
-        // Veo video model - use video seconds
+        // Video model with seconds (Veo, Wan)
         log(`Using video seconds: ${videoSeconds}`);
         usage = createVideoSecondsUsage(videoSeconds);
+        // Add audio seconds if present (Wan with audio enabled)
+        if (audioSeconds && audioSeconds > 0) {
+            log(`Adding audio seconds: ${audioSeconds}`);
+            usage.completionAudioSeconds = audioSeconds;
+        }
     } else {
         // Image model - use image tokens (default to 1 for unit-based)
         const tokens = imageTokens || 1;

@@ -3,12 +3,12 @@ import sys
 import time
 import uuid
 from typing import List, Dict, Any
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Header, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import torch
 from diffusers import FluxPipeline
-from nunchaku.models import NunchakuFluxTransformer2dModel
+from nunchaku.models.transformer_flux import NunchakuFluxTransformer2dModel
 from safety_checker.censor import check_safety
 import requests
 import logging
@@ -57,7 +57,7 @@ async def send_heartbeat():
             if public_port:
                 port = int(public_port)
             else:
-                port = int(os.getenv("PORT", "10001"))
+                port = int(os.getenv("PORT", "8765"))
             url = f"http://{public_ip}:{port}"
             service_type = os.getenv("SERVICE_TYPE", "flux")  # Get service type from environment variable
             async with aiohttp.ClientSession() as session:
@@ -175,8 +175,19 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
 
 app = FastAPI(title="FLUX Image Generation API", lifespan=lifespan)
 
+# Auth verification
+def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token")):
+    expected_token = os.getenv("PLN_ENTER_TOKEN")
+    if not expected_token:
+        logger.warning("PLN_ENTER_TOKEN not configured - allowing request")
+        return True
+    if x_enter_token != expected_token:
+        logger.warning(f"Invalid or missing PLN_ENTER_TOKEN")
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    return True
+
 @app.post("/generate")
-async def generate(request: ImageRequest):
+async def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     print(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
@@ -231,5 +242,5 @@ async def generate(request: ImageRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", "10001"))
+    port = int(os.getenv("PORT", "8765"))
     uvicorn.run(app, host="0.0.0.0", port=port)

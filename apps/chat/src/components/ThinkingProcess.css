@@ -1,0 +1,100 @@
+.thinking-process {
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+}
+
+.thinking-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  cursor: pointer;
+  user-select: none;
+  color: var(--text-secondary);
+  transition: color 0.2s;
+}
+
+.thinking-header:hover {
+  color: var(--text-primary);
+}
+
+.thinking-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.thinking-icon {
+  width: 18px;
+  height: 18px;
+  animation: pulse 2s infinite ease-in-out;
+}
+
+.thinking-process.done .thinking-icon {
+  animation: none;
+}
+
+.thinking-label {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.thinking-time {
+  opacity: 0.8;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.thinking-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+  opacity: 0.6;
+  margin-left: 0.25rem;
+}
+
+.thinking-chevron svg {
+  width: 14px;
+  height: 14px;
+}
+
+.thinking-chevron.open {
+  transform: rotate(180deg);
+}
+
+.thinking-body {
+  padding-left: 28px; /* Align with text start (icon width + gap) */
+  margin-top: 0.25rem;
+  animation: slideDown 0.2s ease-out;
+}
+
+.thinking-content {
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  line-height: 1.5;
+  font-size: 0.85rem;
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--border-light);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}

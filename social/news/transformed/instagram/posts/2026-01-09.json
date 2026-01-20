@@ -1,0 +1,56 @@
+{
+  "date": "2026-01-09",
+  "generated_at": "2026-01-09T16:11:03.518648+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art",
+  "linked_images": false,
+  "strategy_reasoning": "Using the 'Cozy Pixel Art' aesthetic aligns perfectly with the brand's 'friendly, approachable, indie-dev' identity. By visualizing technical updates (like BYOP and architecture diagrams) as retro game items or cozy garden elements, we make complex dev-logs feel welcoming and nostalgic. The lime green and pastel palette ensures brand consistency while tapping into the popular 'cozy gaming' trend (Stardew Valley/Unpacking).",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%208-bit%20pixel%20art%20title%20screen.%20A%20cute%20chunky%20pixel%20bee%20character%20hovering%20over%20a%20wooden%20sign%20that%20says%20%27UPDATE%20LOG%27%20in%20pixel%20font.%20Background%20is%20a%20soft%20gradient%20of%20lime%20green%20%28%23ecf874%29%20to%20lavender.%20Floating%20pixel%20hearts%20and%20flowers.%20Warm%2C%20nostalgic%20lighting%20like%20Stardew%20Valley.%20High%20quality%2C%20detailed%20pixel%20art.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=2077087551",
+      "prompt": "Cozy 8-bit pixel art title screen. A cute chunky pixel bee character hovering over a wooden sign that says 'UPDATE LOG' in pixel font. Background is a soft gradient of lime green (#ecf874) to lavender. Floating pixel hearts and flowers. Warm, nostalgic lighting like Stardew Valley. High quality, detailed pixel art.",
+      "description": "Cover image introducing the update log in a friendly retro game style."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20scene%20of%20a%20tiny%20film%20director%27s%20chair%20and%20a%20clapperboard%20sitting%20in%20a%20digital%20garden.%20Dark%20purple%20and%20neon%20accents%20representing%20%27Onyx%20-%20AI%20Storyboard%20Engine%27.%20Soft%20glow%2C%208-bit%20aesthetic.%20Background%20is%20a%20cozy%20pixelated%20movie%20studio%20mixed%20with%20nature%20elements.%20Text%20%27ONYX%27%20in%20chunky%20pixel%20font.%20Lo-fi%20vibes.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=800330578",
+      "prompt": "Pixel art scene of a tiny film director's chair and a clapperboard sitting in a digital garden. Dark purple and neon accents representing 'Onyx - AI Storyboard Engine'. Soft glow, 8-bit aesthetic. Background is a cozy pixelated movie studio mixed with nature elements. Text 'ONYX' in chunky pixel font. Lo-fi vibes.",
+      "description": "Highlighting the new Onyx app with a cinematic yet cozy pixel theme."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20retro%20RPG%20inventory%20screen%20UI.%20One%20slot%20contains%20a%20glowing%20golden%20jar%20labeled%20%27BYOP%27%20%28Bring%20Your%20Own%20Pollen%29.%20Another%20slot%20contains%20a%20clean%20blue%20scroll%20labeled%20%27Mermaid%20Diagrams%27.%20Soft%20pastel%20background%2C%20lime%20green%20%28%23ecf874%29%20selection%20cursor.%20Cozy%20pixel%20art%20style%20like%20Unpacking.%20Warm%20and%20inviting.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=402958294",
+      "prompt": "A retro RPG inventory screen UI. One slot contains a glowing golden jar labeled 'BYOP' (Bring Your Own Pollen). Another slot contains a clean blue scroll labeled 'Mermaid Diagrams'. Soft pastel background, lime green (#ecf874) selection cursor. Cozy pixel art style like Unpacking. Warm and inviting.",
+      "description": "Visualizing the BYOP docs and Mermaid diagram updates as collectable RPG items."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20peaceful%20pixel%20art%20animation%20frame%20of%20a%20tiny%20gardener%20character%20tidying%20up%20a%20digital%20flower%20bed.%20Removing%20duplicate%20weeds%20%28representing%20the%20duplicate%20READMEs%29%20and%20organizing%20files.%20Soft%20mint%20and%20peach%20gradient%20sky.%20Cozy%2C%20wholesome%2C%20clean%20lines.%208-bit%20aesthetic%20with%20modern%20lighting.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=481865846",
+      "prompt": "A peaceful pixel art animation frame of a tiny gardener character tidying up a digital flower bed. Removing duplicate weeds (representing the duplicate READMEs) and organizing files. Soft mint and peach gradient sky. Cozy, wholesome, clean lines. 8-bit aesthetic with modern lighting.",
+      "description": "Representing the 'chore' and cleanup updates as gardening/tidying."
+    }
+  ],
+  "caption": "Pixel perfect updates just dropped! 👾✨ We've been tending the digital garden and things are looking cozy. \n\nHere’s what’s new in the patch notes:\n\n🎬 **New App Alert:** Say hello to **Onyx**, the AI Storyboard Engine! Turn your scripts into visual masterpieces. (Link in bio to try it!)\n\n🍯 **BYOP (Bring Your Own Pollen):** Added docs for the user-pays model. You bring the API keys, we bring the magic.\n\n🗺️ **Visual Upgrade:** Swapped those old ASCII charts for crisp Mermaid diagrams in our architecture docs. So much cleaner.\n\n🧹 **Housekeeping:** Tidied up the repo, removed duplicate READMEs, and consolidated TeleChars entries. Keeps the village clean!\n\nBuilding with heart (and pixels). 💚🌸\n\n#pollinations #opensource #pixelart #indiedev #aiart #retrogaming #cozyvibes #8bit #generativeai #buildinpublic",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#indiedev",
+    "#aiart",
+    "#retrogaming",
+    "#cozyvibes",
+    "#8bit",
+    "#generativeai",
+    "#buildinpublic"
+  ],
+  "alt_text": "A series of cozy 8-bit pixel art images. 1. A pixel bee with an Update Log sign. 2. A pixelated director's chair for Onyx app. 3. Retro game inventory showing a BYOP jar and diagram scroll. 4. A tiny pixel gardener tidying up a flower bed. All in soft pastels and lime green.",
+  "pr_references": [
+    "#6973",
+    "#6969",
+    "#6947",
+    "#6952",
+    "#6788",
+    "#6909",
+    "#6942",
+    "#6941",
+    "#6918"
+  ]
+}

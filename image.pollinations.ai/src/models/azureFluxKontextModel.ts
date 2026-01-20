@@ -1,10 +1,19 @@
 import debug from "debug";
+import type {
+    AuthResult,
+    ImageGenerationResult,
+} from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
-import { sanitizeString } from "../translateIfNecessary.ts";
-import { analyzeImageSafety, analyzeTextSafety } from "../utils/azureContentSafety.ts";
-import { logGptImageError, logGptImagePrompt } from "../utils/gptImageLogger.ts";
 import type { ImageParams } from "../params.ts";
-import type { ImageGenerationResult, AuthResult } from "../createAndReturnImages.ts";
+import { sanitizeString } from "../translateIfNecessary.ts";
+import {
+    analyzeImageSafety,
+    analyzeTextSafety,
+} from "../utils/azureContentSafety.ts";
+import {
+    logGptImageError,
+    logGptImagePrompt,
+} from "../utils/gptImageLogger.ts";
 
 const logError = debug("pollinations:error");
 const logCloudflare = debug("pollinations:cloudflare");
@@ -22,8 +31,8 @@ export async function callAzureFluxKontext(
     safeParams: ImageParams,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
-    const apiKey = process.env.AZURE_FLUX_KONTEXT_API_KEY;
-    let endpoint = process.env.AZURE_FLUX_KONTEXT_ENDPOINT;
+    const apiKey = process.env.AZURE_MYCELI_FLUX_KONTEXT_API_KEY;
+    let endpoint = process.env.AZURE_MYCELI_FLUX_KONTEXT_ENDPOINT;
 
     if (!apiKey || !endpoint) {
         throw new Error(
@@ -33,7 +42,7 @@ export async function callAzureFluxKontext(
 
     // Check if we need to use the edits endpoint instead of generations
     const isEditMode = safeParams.image && safeParams.image.length > 0;
-    
+
     // Add the appropriate endpoint path and API version
     if (isEditMode) {
         endpoint = `${endpoint}/images/edits?api-version=2025-04-01-preview`;
@@ -49,19 +58,21 @@ export async function callAzureFluxKontext(
     const safetyCheckPromise = analyzeTextSafety(prompt);
     const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
-            reject(new Error(`Azure Content Safety check timeout after ${SAFETY_CHECK_TIMEOUT_MS / 1000}s`));
+            reject(
+                new Error(
+                    `Azure Content Safety check timeout after ${SAFETY_CHECK_TIMEOUT_MS / 1000}s`,
+                ),
+            );
         }, SAFETY_CHECK_TIMEOUT_MS);
     });
-    
-    const promptSafetyResult = await Promise.race([safetyCheckPromise, timeoutPromise]);
+
+    const promptSafetyResult = await Promise.race([
+        safetyCheckPromise,
+        timeoutPromise,
+    ]);
 
     // Log the prompt with safety analysis results
-    await logGptImagePrompt(
-        prompt,
-        safeParams,
-        userInfo,
-        promptSafetyResult,
-    );
+    await logGptImagePrompt(prompt, safeParams, userInfo, promptSafetyResult);
 
     if (!promptSafetyResult.safe) {
         const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
@@ -121,9 +132,7 @@ export async function callAzureFluxKontext(
 
             const imageResponse = await fetch(imageUrl);
             if (!imageResponse.ok) {
-                throw new Error(
-                    `Failed to fetch image from URL: ${imageUrl}`,
-                );
+                throw new Error(`Failed to fetch image from URL: ${imageUrl}`);
             }
 
             const imageArrayBuffer = await imageResponse.arrayBuffer();
@@ -135,11 +144,18 @@ export async function callAzureFluxKontext(
             const imageSafetyCheckPromise = analyzeImageSafety(buffer);
             const imageTimeoutPromise = new Promise<never>((_, reject) => {
                 setTimeout(() => {
-                    reject(new Error(`Azure Image Safety check timeout after ${IMAGE_SAFETY_TIMEOUT_MS / 1000}s`));
+                    reject(
+                        new Error(
+                            `Azure Image Safety check timeout after ${IMAGE_SAFETY_TIMEOUT_MS / 1000}s`,
+                        ),
+                    );
                 }, IMAGE_SAFETY_TIMEOUT_MS);
             });
-            
-            const imageSafetyResult = await Promise.race([imageSafetyCheckPromise, imageTimeoutPromise]);
+
+            const imageSafetyResult = await Promise.race([
+                imageSafetyCheckPromise,
+                imageTimeoutPromise,
+            ]);
 
             if (!imageSafetyResult.safe) {
                 const errorMessage = `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`;
@@ -159,14 +175,14 @@ export async function callAzureFluxKontext(
             let extension = ".png"; // Default extension
 
             if (contentType.startsWith("image/")) {
-                const mimeExtension = contentType
-                    .split("/")[1]
-                    .split(";")[0];
+                const mimeExtension = contentType.split("/")[1].split(";")[0];
                 extension = `.${mimeExtension}`;
             }
 
             // Create a Blob and append to FormData
-            const imageBlob = new Blob([imageArrayBuffer], { type: contentType });
+            const imageBlob = new Blob([imageArrayBuffer], {
+                type: contentType,
+            });
             formData.append("image", imageBlob, `image${extension}`);
         } catch (error) {
             logError("Error processing image for editing:", error);
@@ -202,11 +218,8 @@ export async function callAzureFluxKontext(
     }
 
     if (!response.ok) {
-        const errorResponse = response.clone();
-        const errorText = await errorResponse.text();
-        throw new Error(
-            `Azure Flux Kontext API error: ${response.status} - ${errorText}`,
-        );
+        const errorText = await response.text();
+        throw new HttpError(errorText, response.status);
     }
 
     const data = await response.json();
@@ -221,14 +234,15 @@ export async function callAzureFluxKontext(
     // Return result with content safety flags from Azure response
     return {
         buffer: imageBuffer,
-        isMature: data.data[0].content_filter_results?.sexual?.filtered || false,
+        isMature:
+            data.data[0].content_filter_results?.sexual?.filtered || false,
         isChild: false, // Azure doesn't provide child detection
         trackingData: {
             actualModel: "kontext",
             usage: {
                 completionImageTokens: 1,
-                totalTokenCount: 1
-            }
-        }
+                totalTokenCount: 1,
+            },
+        },
     };
 }

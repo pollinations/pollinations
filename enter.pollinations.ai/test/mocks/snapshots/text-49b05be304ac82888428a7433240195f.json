@@ -1,0 +1,35 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/cache-test-prompt?model=openai-fast",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "public, max-age=31536000, immutable",
+      "connection": "keep-alive",
+      "content-length": "1966",
+      "content-type": "text/plain; charset=utf-8",
+      "date": "Wed, 24 Dec 2025 02:20:50 GMT",
+      "etag": "W/\"7ae-sx75dW9lnrpDnnRZFq+gSzMJedw\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-nano-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "2560",
+      "x-usage-completion-text-tokens": "443",
+      "x-usage-prompt-text-tokens": "251",
+      "x-usage-total-tokens": "3254"
+    },
+    "body": {
+      "type": "text",
+      "data": "Not sure what you want with \"cache-test-prompt.\" Do you want me to help craft a prompt for testing a prompt cache, or are you just looking to run a quick consistency test here?\n\nIf you’re testing prompt caching, here’s a compact, ready-to-use cache-test-prompt suite you can copy-paste into your tests. It’s designed to help you see when outputs are cached and when they’re recomputed by small prompt changes.\n\nBaseline prompts (to look for cache hits)\n1) Prompt A (exact same text each time)\n\"Cache-test-prompt: Please respond with exactly the string CACHE-BASELINE.\"\n\n2) Prompt B (extra whitespace after colon)\n\"Cache-test-prompt:  Please respond with exactly the string CACHE-BASELINE.\"\n\n3) Prompt C (different capitalization)\n\"Cache-test-prompt: please respond with exactly the string cache-baseline.\"\n\n4) Prompt D (punctuation change)\n\"Cache-test-prompt: Please respond with exactly the string CACHE BASELINE.\"\n\nContent-variation prompts (to check cache invalidation when content changes)\n5) Prompt E (different content)\n\"Cache-test-prompt: Describe the color of the sky on a clear day in one word.\"\n\n6) Prompt F (request for a different format)\n\"Cache-test-prompt: Provide the string CACHE-BASELINE in a JSON value, e.g., {\\\"answer\\\":\\\"CACHE-BASELINE\\\"}.\"\n\nHow to use\n- Run these prompts in quick succession.\n- Compare outputs for identical prompts (A–D). If outputs are identical across runs, you’re seeing a cache hit.\n- Compare outputs for prompts with different content (E–F). If outputs change accordingly, the cache isn’t forcing the same answer across content changes, or the cache key is sensitive to prompt punctuation/whitespace.\n- If you see non-deterministic variation in identical prompts, note whether temperature-like settings or session state might be involved.\n\nIf you want, I can run a quick consistency check here with a couple of the above prompts to illustrate how it behaves. Just tell me which prompts you want me to try."
+    }
+  }
+}

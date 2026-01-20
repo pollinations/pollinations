@@ -1,33 +1,31 @@
-# Service Setup Scripts
+# Scripts
 
-## Quick Start: Setup Services on New Machine
+## Single User Update
+
+Update one user's tier (used by GitHub Actions):
 
 ```bash
-cd /path/to/pollinations
+npx tsx scripts/tier-update-user.ts update-tier --github-username "john" --tier flower
+npx tsx scripts/tier-update-user.ts check-user --github-username "john"
+```
+
+## Polar Setup
+
+Create products, meters, benefits:
+
+```bash
+npx tsx scripts/manage-polar.ts --help
+```
+
+## Service Setup
+
+Setup systemd services on new machine:
+
+```bash
 bash enter.pollinations.ai/scripts/setup-services.sh
 ```
 
-Or specify a custom repo path:
-
-```bash
-bash enter.pollinations.ai/scripts/setup-services.sh /custom/path/to/pollinations
-```
-
-## What It Does
-
-1. Checks for Node.js v20 (installs if missing)
-2. Checks for pnpm (installs if missing)
-3. Installs dependencies for both services
-4. Creates systemd service files
-5. Enables and starts services
-6. Verifies both services are running
-
-## Services Created
-
-- **text-pollinations.service** → port 16385
-- **image-pollinations.service** → port 16384
-
-Both auto-restart on failure and auto-start on reboot.
+Creates: `text-pollinations.service` (port 16385), `image-pollinations.service` (port 16384)
 
 ## Service Management
 

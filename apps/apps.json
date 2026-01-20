@@ -1,0 +1,66 @@
+{
+    "catgpt": {
+        "subdomain": "catgpt",
+        "buildCommand": null,
+        "outputDir": ".",
+        "description": "Simple HTML/CSS/JS cat chatbot"
+    },
+    "ai-dungeon-master": {
+        "subdomain": "ai-dungeon-master",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "description": "React-based AI dungeon master game",
+        "notes": "Vite base path must be '/' for Cloudflare Pages (not '/pollinations/')"
+    },
+    "sirius-cybernetics-elevator-challenge": {
+        "subdomain": "sirius-cybernetics-elevator-challenge",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "description": "Sirius Cybernetics elevator personality challenge (React + TypeScript + Vite)",
+        "notes": "Uses base: './' in vite.config.ts"
+    },
+    "map-to-isometric": {
+        "subdomain": "map-to-isometric",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "description": "Map to isometric view converter (React + Vite)",
+        "notes": "Uses base: '' in vite.config.js"
+    },
+    "product-packaging-designer": {
+        "subdomain": "product-packaging-designer",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "description": "AI-powered product packaging designer (React + TypeScript + Vite + Supabase)"
+    },
+    "virtual-makeup": {
+        "subdomain": "virtual-makeup",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "description": "Virtual makeup studio with AI (React + Vite)"
+    },
+    "opposite-prompt-generator": {
+        "subdomain": "opposite-prompt-generator",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "description": "Transform prompts into semantic opposites and generate images (React + Vite)"
+    },
+    "chat": {
+        "subdomain": "chat",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "description": "Pollinations AI chat interface (React + Vite)",
+        "notes": "From PR #5144 - uses base: '/' for Cloudflare Pages"
+    },
+    "model-monitor": {
+        "subdomain": "model-monitor",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "description": "Real-time model health monitoring dashboard (React + Vite + Tinybird)"
+    },
+    "changelog-generator": {
+        "subdomain": "changelog-generator",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "description": "AI-powered changelog generator (React + Vite)"
+    }
+}

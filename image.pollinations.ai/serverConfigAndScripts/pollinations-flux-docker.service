@@ -7,7 +7,7 @@ Requires=docker.service
 User=ubuntu
 ExecStartPre=-/usr/bin/docker stop flux-svdquant
 ExecStartPre=-/usr/bin/docker rm flux-svdquant
-ExecStart=/usr/bin/docker run --name flux-svdquant --gpus all -p 8765:8765 -e PORT=8765 -e HF_HUB_ENABLE_HF_TRANSFER=1 voodoohop/flux-svdquant:latest
+ExecStart=/usr/bin/docker run --name flux-svdquant --gpus all -p 8765:8765 -e PORT=8765 -e HF_HUB_ENABLE_HF_TRANSFER=1 pollinations/flux-svdquant:latest
 ExecStop=/usr/bin/docker stop flux-svdquant
 Restart=always
 RestartSec=10

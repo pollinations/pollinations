@@ -29,22 +29,21 @@ mv /path/to/keys.txt $HOME/.config/sops/age/
 2. Create a new shell session
 3. Run `nix develop` to enter the development environment
 
-##### SOPS
-We use [sops](https://github.com/getsops/sops) with [age](https://github.com/FiloSottile/age) encryption for secrets management. When entering the development shell, the shell hook will try to decrypt the env variables stored in `**/.encrypted.env` files. By default, sops will look for your key file in `$HOME/.config/sops/age/keys.txt`, if you want to use a different location, set `SOPS_AGE_KEY_FILE` to your preferred path before entering the nix shell. 
+If you want to skip using `nix`, you can also install sops via another package manager, e.g. `brew install sops`. To run the image and text services, you will then need to decrypt the `.env` files manually by running `sops --output-type dotenv decrypt secrets/env.json > .env` in the folder of each service.
 
-The variables are kept encrypted in `**/.encrypted.env` files, and only decrypted when loaded into memory. If you need to edit them, run `sops edit path/.encrypted.env`. This will open an editor and when you save the file, write it to the encrypted file. (hint: set the editor env var: `export EDITOR=/path/to/your/editor` to open with your favorite editor)
+##### SOPS
+We use [sops](https://github.com/getsops/sops) with [age](https://github.com/FiloSottile/age) encryption for secrets management. When entering the development shell, the shell hook will try to decrypt the env variables stored in `**/secrets/*env.json` files. By default, sops will look for your key file in `$HOME/.config/sops/age/keys.txt`, if you want to use a different location, set `SOPS_AGE_KEY_FILE` to your preferred path before entering the nix shell. 
+
+The variables are kept encrypted in `**/secrets/*.json`. If you need to edit them, run `sops edit /secrets/file.json`. This will open an editor and when you save the file, write it to the encrypted file. (hint: set the editor env variable: `export EDITOR=/path/to/your/editor` to open with your favorite editor)
 
 
 ###### Common SOPS commands:
 | Command | Description |
 | :--- | :--- |
-| `sops -d .encrypted.env` | View decrypted content |
-| `sops edit .encrypted.env` | Edit encrypted file directly (set `EDITOR` env var) |
-| `sops -e .env > .encrypted.env` | Encrypt .env → .encrypted.env |
+| `sops -d secrets/dev.vars.json` | View decrypted content |
+| `sops edit secrets/dev.vars.json` | Edit encrypted file directly (set `EDITOR` env var) |
+| `sops -e .dev.vars > secrets/dev.vars.json` | Encrypt .env → .encrypted.env |
 
-**Workflow:** 
-- **With nix:** Variables auto-load via `nix develop` - edit with `sops edit .encrypted.env`
-- **Without nix:** Edit `.env` → Run `sops -e .env > .encrypted.env` → Commit `.encrypted.env`
 
 ##### Running Multiple Services
 

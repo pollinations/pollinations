@@ -1,0 +1,129 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Hi"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1472",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:42:39 GMT",
+      "etag": "W/\"5c0-QH9aEnTVPkXQnrdNeZrv44XutFc\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-nano-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "384",
+      "x-usage-completion-text-tokens": "74",
+      "x-usage-prompt-text-tokens": "248",
+      "x-usage-total-tokens": "706"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Hey! Nice to meet you. How’s your day going? What would you like to talk about—anything you’re curious about, a problem you want to solve, or just want to chat? We could brainstorm ideas, tackle a question, tell a story, or share a joke. What should we dive into?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1766245356,
+        "id": "pllns_9bab624609bf842516783504edfc24e0",
+        "model": "gpt-5-nano-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 458,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 384,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 248,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 706
+        }
+      }
+    }
+  }
+}

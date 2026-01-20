@@ -1,0 +1,76 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "kimi-k2-thinking",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1372",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:40:00 GMT",
+      "etag": "W/\"55c-Z8aWd4A6+0WAu88dbNnJEQfGn7w\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "moonshotai/kimi-k2-thinking-maas",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "189",
+      "x-usage-prompt-text-tokens": "262",
+      "x-usage-total-tokens": "451"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "matched_stop": 163586,
+            "message": {
+              "content": "yes",
+              "reasoning_content": "The user asks: \"Is Berlin the capital of Germany? Reply yes or no.\"\n\nThis is a straightforward factual question. The answer is yes. The user explicitly wants a yes/no answer.\n\nI need to:\n1. Answer directly: yes\n2. Not add fluff or moralizing language\n3. Avoid the forbidden phrases\n4. Keep it simple as requested\n\nI should just say \"yes\" and nothing more, since they asked for yes or no. Adding extra explanation would go against the \"reply yes or no\" instruction.\n\nLet me check the constraints:\n- Don't be overly helpful beyond what's asked: check, just answering yes/no\n- Avoid templated language: check, just a single word\n- Never lecture: not relevant here\n- No moral superiority phrases: not relevant, but I should avoid them anyway\n- The user wants a direct answer: yes\n\nSo my response should simply be: yes ",
+              "role": "assistant",
+              "tool_calls": null
+            }
+          }
+        ],
+        "created": 1766245200,
+        "id": "pllns_d7236716f96d68623f62976af7ecf1d0",
+        "metadata": {
+          "weight_version": "default"
+        },
+        "model": "moonshotai/kimi-k2-thinking-maas",
+        "object": "chat.completion",
+        "usage": {
+          "completion_tokens": 189,
+          "extra_properties": {
+            "google": {
+              "traffic_type": "ON_DEMAND"
+            }
+          },
+          "prompt_tokens": 262,
+          "prompt_tokens_details": null,
+          "reasoning_tokens": 0,
+          "total_tokens": 451
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Hide scrollbar but keep functionality */
+@layer utilities {
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* Hide number input spinners (brutalist design) */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* Hide select dropdown arrow (brutalist design) */
+select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: none;
+}
+
+/* Hide scrollbar utility class */
+.scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+/* Continuous scroll animation for image carousel */
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-33.33%);
+    }
+}
+
+.animate-scroll {
+    animation: scroll linear infinite;
+}
+
+/* Smooth scroll for infinite carousel - slides one image width over 4s */
+@keyframes scroll-smooth {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-33.33%);
+    }
+}
+
+.animate-scroll-smooth {
+    animation: scroll-smooth 4s linear infinite;
+}
+
+/* Infinite scroll with duplicated items - scrolls through half (50%) then resets seamlessly */
+@keyframes scroll-infinite {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.animate-scroll-infinite {
+    animation: scroll-infinite 24s linear infinite;
+}
+
+/* Fade in animation for new images */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.5s ease-out;
+}
+
+/* Smooth gliding carousel - scrolls through 50% (first set) then loops seamlessly */
+@keyframes glide-smooth {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.animate-glide-smooth {
+    animation: glide-smooth 24s linear infinite;
+}
+
+/* Style range slider thumb (brutalist) */
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--color-secondary);
+    cursor: pointer;
+    border: 2px solid var(--color-foreground);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: var(--color-secondary);
+    cursor: pointer;
+    border: 2px solid var(--color-foreground);
+    border-radius: 0;
+}
+
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body,
+html {
+    /* background-color: var(--surface-base);  <-- Removed to allow transparency */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
+
+#root {
+    min-height: 100vh;
+}
+
+/* Accessibility: Remove focus outline for mouse, keep for keyboard */
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}

@@ -1,29 +1,19 @@
-import express from "express";
+import crypto from "node:crypto";
 import bodyParser from "body-parser";
 import cors from "cors";
-import crypto from "crypto";
 import debug from "debug";
-import { promises as fs } from "fs";
-import path from "path";
 import dotenv from "dotenv";
-import { Transform } from "stream";
-import { availableModels } from "./availableModels.js";
-import { getProviderByModelId } from "../shared/registry/registry.js";
-import { generateTextPortkey } from "./generateTextPortkey.js";
-import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
-import { processRequestForAds } from "./ads/initRequestFilter.js";
-import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
-import {
-    getRequestData,
-    prepareModelsForOutput,
-} from "./requestUtils.js";
-
+import express from "express";
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
+import { getServiceDefinition } from "../shared/registry/registry.js";
 import {
     buildUsageHeaders,
     openaiUsageToTokenUsage,
 } from "../shared/registry/usage-headers.js";
+import { availableModels } from "./availableModels.js";
+import { generateTextPortkey } from "./generateTextPortkey.js";
+import { getRequestData } from "./requestUtils.js";
 
 // Load environment variables including .env.local overrides
 // Load .env.local first (higher priority), then .env as fallback
@@ -32,72 +22,37 @@ dotenv.config();
 
 // Shared authentication and queue is initialized automatically in ipQueue.js
 
-const BANNED_PHRASES = [];
-
-// const blockedIPs = new Set();
-const blockedIPs = new Set();
-
-async function blockIP(ip) {
-    // Only proceed if IP isn't already blocked
-    if (!blockedIPs.has(ip)) {
-        blockedIPs.add(ip);
-        log("IP blocked:", ip);
-
-        try {
-            // Append IP to log file with newline
-            await fs.appendFile(BLOCKED_IPS_LOG, `${ip}\n`, "utf8");
-        } catch (error) {
-            errorLog("Failed to write blocked IP to log file:", error);
-        }
-    }
-}
-
-function isIPBlocked(ip) {
-    return blockedIPs.has(ip);
-}
-
 const app = express();
 
 const log = debug("pollinations:server");
 const errorLog = debug("pollinations:error");
 const authLog = debug("pollinations:auth");
-const BLOCKED_IPS_LOG = path.join(process.cwd(), "blocked_ips.txt");
-
-// Load blocked IPs from file on startup
-async function loadBlockedIPs() {
-    try {
-        const data = await fs.readFile(BLOCKED_IPS_LOG, "utf8");
-        const ips = data.split("\n").filter((ip) => ip.trim());
-        for (const ip of ips) {
-            blockedIPs.add(ip.trim());
-        }
-        log(`Loaded ${blockedIPs.size} blocked IPs from file`);
-    } catch (error) {
-        if (error.code !== "ENOENT") {
-            errorLog("Error loading blocked IPs:", error);
-        }
-    }
-}
-
-// Load blocked IPs before starting server
-loadBlockedIPs().catch((error) => {
-    errorLog("Failed to load blocked IPs:", error);
-});
-
-// Middleware to block IPs
-app.use((req, res, next) => {
-    const ip = getIp(req);
-    if (isIPBlocked(ip)) {
-        return res.status(403).end();
-    }
-    next();
-});
 
 // Remove the custom JSON parsing middleware and use the standard bodyParser
 app.use(bodyParser.json({ limit: "20mb" }));
 app.use(cors());
+
+// Middleware to verify PLN_ENTER_TOKEN (after CORS for consistency)
+app.use((req, res, next) => {
+    const token = req.headers["x-enter-token"];
+    const expectedToken = process.env.PLN_ENTER_TOKEN;
+
+    if (!expectedToken) {
+        // If PLN_ENTER_TOKEN is not configured, allow all requests (backward compatibility)
+        authLog("!  PLN_ENTER_TOKEN not configured - allowing request");
+        return next();
+    }
+
+    if (token !== expectedToken) {
+        authLog("❌ Invalid or missing PLN_ENTER_TOKEN from IP:", getIp(req));
+        return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    authLog("✅ Valid PLN_ENTER_TOKEN from IP:", getIp(req));
+    next();
+});
 // New route handler for root path
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
     res.redirect(
         301,
         "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md",
@@ -105,7 +60,7 @@ app.get("/", (req, res) => {
 });
 
 // Serve crossdomain.xml for Flash connections
-app.get("/crossdomain.xml", (req, res) => {
+app.get("/crossdomain.xml", (_req, res) => {
     res.setHeader("Content-Type", "application/xml");
     res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
@@ -116,24 +71,21 @@ app.get("/crossdomain.xml", (req, res) => {
 
 app.set("trust proxy", true);
 
-// Queue configuration for text service
-const QUEUE_CONFIG = {
-    interval: 18000, // 18 seconds between requests per IP (no auth)
-};
-
-// Using getIp from shared auth-utils.js
-
-// GET /models request handler
+// Deprecated /models endpoint - moved to gateway
 app.get("/models", (req, res) => {
-    // Use prepareModelsForOutput to remove pricing information and apply sorting
-    res.json(prepareModelsForOutput(availableModels));
+    res.status(410).json({
+        error: "Endpoint moved",
+        message:
+            "The /models endpoint has been moved to the API gateway. Please use: https://enter.pollinations.ai/api/generate/text/models",
+        deprecated_endpoint: `${req.protocol}://${req.get("host")}/models`,
+        new_endpoint: "https://enter.pollinations.ai/api/generate/text/models",
+        documentation: "https://enter.pollinations.ai/api/docs",
+    });
 });
-
-setupFeedEndpoint(app);
 
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, requestData) {
-    const startTime = Date.now();
+    const _startTime = Date.now();
     log(
         "Request: model=%s referrer=%s",
         requestData.model,
@@ -158,9 +110,7 @@ async function handleRequest(req, res, requestData) {
                 m.aliases?.includes(requestData.model),
         );
 
-        log(
-            `Model lookup: model=${requestData.model}, found=${!!model}`,
-        );
+        log(`Model lookup: model=${requestData.model}, found=${!!model}`);
 
         // All requests from enter.pollinations.ai - tier checks bypassed
         if (!model) {
@@ -172,10 +122,10 @@ async function handleRequest(req, res, requestData) {
         }
 
         // Capture the originally requested model before any mapping/overrides
-        const requestedModel = requestData.model;
+        const _requestedModel = requestData.model;
 
         // Use request data as-is (no user-specific model mapping)
-        let finalRequestData = requestData;
+        const finalRequestData = requestData;
 
         // Add user info to request data - using authResult directly as a thin proxy
         // Exclude messages from options to prevent overwriting transformed messages
@@ -187,6 +137,8 @@ async function handleRequest(req, res, requestData) {
                 referrer: requestData.referrer || "unknown",
                 cf_ray: req.headers["cf-ray"] || "",
             },
+            // Pass user's API key for community models that need billing passthrough (e.g., NomNom)
+            userApiKey: req.headers["x-user-api-key"] || "",
         };
 
         const completion = await generateTextBasedOnModel(
@@ -227,54 +179,11 @@ async function handleRequest(req, res, requestData) {
             return;
         }
 
-        // Process referral links if there's content in the response
-        if (completion.choices?.[0]?.message?.content) {
-            // Check if this is an audio response - if so, skip content processing
-            const isAudioResponse =
-                completion.choices?.[0]?.message?.audio !== undefined;
-
-            // Skip ad processing for JSON mode responses
-            if (!isAudioResponse && !requestData.jsonMode) {
-                try {
-                    const content = completion.choices[0].message.content;
-
-                    // Then process regular referral links
-                    const adString = await processRequestForAds(
-                        req,
-                        content,
-                        requestData.messages,
-                    );
-
-                    // If an ad was generated, append it to the content
-                    if (adString) {
-                        completion.choices[0].message.content =
-                            content + "\n\n" + adString;
-                    }
-                } catch (error) {
-                    errorLog("Error processing content:", error);
-                }
-            }
-        }
-
         const responseText = completion.stream
             ? "Streaming response"
             : completion.choices?.[0]?.message?.content || "";
 
         log("Generated response", responseText);
-
-        // Extract token usage data
-        const tokenUsage = completion.usage || {};
-
-        // Send all requests to feed listeners, including private ones
-        // The feed.js implementation will handle filtering for non-authenticated clients
-        sendToFeedListeners(
-            responseText,
-            {
-                ...requestData,
-                ...tokenUsage,
-            },
-            getIp(req),
-        );
 
         if (requestData.stream) {
             log("Sending streaming response with sendAsOpenAIStream");
@@ -320,19 +229,26 @@ export async function sendErrorResponse(
     requestData,
     statusCode = 500,
 ) {
-    // Use error.status if available, otherwise use the provided statusCode
     const responseStatus = error.status || statusCode;
+    const errorTypes = {
+        400: "Bad Request",
+        401: "Unauthorized",
+        403: "Forbidden",
+        404: "Not Found",
+        429: "Too Many Requests",
+    };
+    const errorType = errorTypes[responseStatus] || "Internal Server Error";
 
-    // Create a simplified error response
     const errorResponse = {
-        error: error.message || "An error occurred",
-        status: responseStatus,
+        error: errorType,
+        message: error.message || "An error occurred",
+        requestId: Math.random().toString(36).substring(7),
+        requestParameters: requestData || {},
     };
 
-    // Include detailed error information if available, without wrapping
-    if (error.details) {
-        errorResponse.details = error.details;
-    }
+    // Include upstream error details if available
+    const errorDetails = error.details || error.response?.data;
+    if (errorDetails) errorResponse.details = errorDetails;
 
     // Extract client information (for logs only)
     const clientInfo = {
@@ -486,7 +402,7 @@ export function sendContentResponse(res, completion) {
     }
 
     // Only handle OpenAI-style responses (with choices array)
-    if (completion.choices && completion.choices[0]) {
+    if (completion.choices?.[0]) {
         const message = completion.choices[0].message;
 
         // If message is a string, send it directly
@@ -510,7 +426,7 @@ export function sendContentResponse(res, completion) {
         }
 
         // If the message contains audio, send the audio data as binary
-        if (message.audio && message.audio.data) {
+        if (message.audio?.data) {
             res.setHeader("Content-Type", "audio/mpeg");
             res.setHeader(
                 "Cache-Control",
@@ -529,7 +445,15 @@ export function sendContentResponse(res, completion) {
                 "Cache-Control",
                 "public, max-age=31536000, immutable",
             );
-            return res.send(message.content);
+            // Append citations if present (e.g., from Perplexity)
+            let content = message.content;
+            if (completion.citations?.length > 0) {
+                content += "\n\n---\nSources:\n";
+                completion.citations.forEach((url, index) => {
+                    content += `[${index + 1}] ${url}\n`;
+                });
+            }
+            return res.send(content);
         }
         // If there's other non-text content, return the message as JSON
         else if (Object.keys(message).length > 0) {
@@ -544,29 +468,14 @@ export function sendContentResponse(res, completion) {
     // Fallback for any other response structure
     else {
         errorLog("Unrecognized completion format:", JSON.stringify(completion));
-        return res.send("Response format not recognized");
+        const error = new Error("Unrecognized response format from model");
+        error.status = 500;
+        throw error;
     }
 }
 
 // Helper function to process requests with queueing and caching logic
 async function processRequest(req, res, requestData) {
-    const ip = getIp(req);
-
-    // Check for blocked IPs first
-    if (isIPBlocked(ip)) {
-        errorLog("Blocked IP:", ip);
-        const errorResponse = {
-            error: "Forbidden",
-            status: 403,
-            details: {
-                blockedIp: ip,
-                timestamp: new Date().toISOString(),
-            },
-        };
-
-        return res.status(403).json(errorResponse);
-    }
-
     // Authentication and rate limiting is now handled by enter.pollinations.ai
     // Just call handleRequest directly
     await handleRequest(req, res, requestData);
@@ -574,11 +483,14 @@ async function processRequest(req, res, requestData) {
 
 // Helper function to check if a model is an audio model and add necessary parameters
 function prepareRequestParameters(requestParams) {
-    const modelConfig = availableModels.find(
-        (m) =>
-            m.name === requestParams.model || m.model === requestParams.model,
-    );
-    const isAudioModel = modelConfig && modelConfig.audio === true;
+    // Use registry to check if model supports audio output
+    let isAudioModel = false;
+    try {
+        const serviceDef = getServiceDefinition(requestParams.model);
+        isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
+    } catch {
+        // Model not in registry, fall back to false
+    }
 
     log("Is audio model:", isAudioModel);
 
@@ -640,29 +552,17 @@ app.post("/", async (req, res) => {
     }
 });
 
-app.get("/openai/models", (req, res) => {
-    const models = availableModels
-        .filter((model) => !model.hidden)
-        .map((model) => {
-            // Get provider from cost data using the model's config
-            const config =
-                typeof model.config === "function"
-                    ? model.config()
-                    : model.config;
-            const actualModelName =
-                config?.model ||
-                config?.["azure-model-name"] ||
-                config?.["azure-deployment-id"] ||
-                model.name;
-            const provider = getProviderByModelId(actualModelName) || "unknown";
-
-            return {
-                id: model.name,
-                object: "model",
-                created: Date.now(),
-                owned_by: provider,
-            };
-        });
+app.get("/openai/models", (_req, res) => {
+    const models = availableModels.map((model) => {
+        // Get provider from cost data using the model's config
+        const _config =
+            typeof model.config === "function" ? model.config() : model.config;
+        return {
+            id: model.name,
+            object: "model",
+            created: Date.now(),
+        };
+    });
     res.json({
         object: "list",
         data: models,
@@ -695,52 +595,6 @@ app.post("/v1/chat/completions", async (req, res) => {
     }
 });
 
-/**
- * Create a transform stream that captures usage data from SSE chunks
- * and adds HTTP trailers at the end (GitHub issue #4638)
- */
-function createUsageCaptureTransform(res) {
-    let finalUsage = null;
-    let finalModel = null;
-
-    return new Transform({
-        objectMode: true,
-        transform(chunk, _encoding, callback) {
-            const chunkStr = chunk.toString();
-
-            // Try to extract usage from chunks
-            try {
-                const dataMatches = chunkStr.match(/data: (.*?)(?:\n\n|$)/g);
-                if (dataMatches) {
-                    for (const match of dataMatches) {
-                        const dataContent = match.replace(/^data: /, "").trim();
-                        if (dataContent && dataContent !== "[DONE]") {
-                            const data = JSON.parse(dataContent);
-                            if (data.usage) {
-                                finalUsage = data.usage;
-                            }
-                            if (data.model) {
-                                finalModel = data.model;
-                            }
-                        }
-                    }
-                }
-            } catch (err) {
-                // Ignore parse errors
-            }
-
-            // Pass through unchanged
-            this.push(chunk);
-            callback();
-        },
-        flush(callback) {
-            // Removed trailers as they were causing issues
-            // TODO: Check if this function is still needed at all
-            callback();
-        },
-    });
-}
-
 async function sendAsOpenAIStream(res, completion, req = null) {
     log("sendAsOpenAIStream called with completion type:", typeof completion);
     if (completion) {
@@ -771,62 +625,17 @@ async function sendAsOpenAIStream(res, completion, req = null) {
     if (responseStream) {
         log("Attempting to proxy stream to client");
 
-        // Get messages from the request data
-        // For GET requests, messages will be in the request path
-        // For POST requests, messages will be in the request body
-        const messages = req
-            ? // Try to get messages from different sources
-              (req.body && req.body.messages) ||
-              (req.requestData && req.requestData.messages) ||
-              (completion.requestData && completion.requestData.messages) ||
-              []
-            : [];
+        // Pipe stream directly to response
+        responseStream.pipe(res);
 
-        // Get jsonMode from request data
-        const jsonMode = completion.requestData?.jsonMode || false;
-
-        // Check if we have messages and should process the stream for ads
-        if (req && messages.length > 0 && !jsonMode) {
-            log("Processing stream for ads with", messages.length, "messages");
-
-            // Create a wrapped stream that will add ads at the end
-            const wrappedStream = await createStreamingAdWrapper(
-                responseStream,
-                req,
-                messages,
-            );
-
-            // Pipe through usage capture to add trailers
-            wrappedStream.pipe(res);
-
-            // Handle client disconnect
-            if (req)
-                req.on("close", () => {
-                    log("Client disconnected");
-                    if (wrappedStream.destroy) {
-                        wrappedStream.destroy();
-                    }
-                    if (responseStream.destroy) {
-                        responseStream.destroy();
-                    }
-                });
-        } else {
-            // If no messages, no request object, or JSON mode, just pipe the stream directly
-            log(
-                "Skipping ad processing for stream" +
-                    (jsonMode ? " (JSON mode)" : ""),
-            );
-            responseStream.pipe(res);
-
-            // Handle client disconnect
-            if (req)
-                req.on("close", () => {
-                    log("Client disconnected");
-                    if (responseStream.destroy) {
-                        responseStream.destroy();
-                    }
-                });
-        }
+        // Handle client disconnect
+        if (req)
+            req.on("close", () => {
+                log("Client disconnected");
+                if (responseStream.destroy) {
+                    responseStream.destroy();
+                }
+            });
 
         return;
     }
@@ -855,9 +664,13 @@ async function sendAsOpenAIStream(res, completion, req = null) {
     res.end();
 }
 
-
 async function generateTextBasedOnModel(messages, options) {
-    const model = options.model || "openai-fast";
+    // Gateway must provide a valid model - no fallback
+    if (!options.model) {
+        throw new Error("Model parameter is required");
+    }
+    const model = options.model;
+
     log("Using model:", model, "with options:", JSON.stringify(options));
 
     try {
@@ -881,7 +694,7 @@ async function generateTextBasedOnModel(messages, options) {
                     role: m.role,
                     content:
                         typeof m.content === "string"
-                            ? m.content.substring(0, 50) + "..."
+                            ? `${m.content.substring(0, 50)}...`
                             : "[non-string content]",
                 })),
             ),
@@ -923,18 +736,15 @@ async function generateTextBasedOnModel(messages, options) {
 
         // For streaming errors, return a special error response that can be streamed
         if (options.stream) {
-            // Create a detailed error response
-            let errorDetails = null;
-
-            if (error.response?.data) {
+            // Get error details from error.details or parse error.response.data
+            let errorDetails = error.details || null;
+            if (!errorDetails && error.response?.data) {
                 try {
-                    // Try to parse the data as JSON
                     errorDetails =
                         typeof error.response.data === "string"
                             ? JSON.parse(error.response.data)
                             : error.response.data;
-                } catch (e) {
-                    // If parsing fails, use the raw data
+                } catch {
                     errorDetails = error.response.data;
                 }
             }
@@ -945,7 +755,7 @@ async function generateTextBasedOnModel(messages, options) {
                     message:
                         error.message ||
                         "An error occurred during text generation",
-                    status: error.code || 500,
+                    status: error.status || error.code || 500,
                     details: errorDetails,
                 },
             };

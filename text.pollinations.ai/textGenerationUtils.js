@@ -190,6 +190,14 @@ export function normalizeOptions(options = {}, defaults = {}) {
         );
     }
 
+    if (normalized.repetition_penalty !== undefined) {
+        // Ensure repetition_penalty is within valid range (typically 1.0 to 2.0, but allow wider)
+        normalized.repetition_penalty = Math.max(
+            0,
+            Math.min(2, normalized.repetition_penalty),
+        );
+    }
+
     // // Handle maxTokens parameter
     // if (normalized.maxTokens === undefined) {
     //   // If not provided, use default value

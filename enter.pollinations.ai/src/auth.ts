@@ -11,6 +11,13 @@ import { APIError } from "better-auth/api";
 import { admin, apiKey, openAPI } from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
+import { getLogger } from "@logtape/logtape";
+
+const log = getLogger(["auth", "polar"]);
+
+function addKeyPrefix(key: string) {
+    return `auth:${key}`;
+}
 
 export function createAuth(env: Cloudflare.Env) {
     const polar = new Polar({
@@ -18,15 +25,23 @@ export function createAuth(env: Cloudflare.Env) {
         server: env.POLAR_SERVER,
     });
 
+    const defaultTierProductId = env.POLAR_PRODUCT_TIER_SPORE;
+
     const db = drizzle(env.DB);
 
     const PUBLISHABLE_KEY_PREFIX = "pk";
-    const SECRET_KEY_PREFIX = "sk";
 
     const apiKeyPlugin = apiKey({
+        storage: "secondary-storage",
+        fallbackToDatabase: true,
         enableMetadata: true,
         defaultPrefix: PUBLISHABLE_KEY_PREFIX,
         defaultKeyLength: 16, // Minimum key length for validation (matches custom generator)
+        minimumNameLength: 1, // Allow short hostnames (e.g., "x.ai")
+        maximumNameLength: 253, // DNS hostname max length
+        startingCharactersConfig: {
+            charactersLength: 10, // Store more characters for display (pk_xxxxxxxxxx...)
+        },
         customKeyGenerator: (options: {
             length: number;
             prefix: string | undefined;
@@ -44,6 +59,10 @@ export function createAuth(env: Cloudflare.Env) {
                 (byte) => chars[byte % chars.length],
             ).join("");
             return options.prefix ? `${options.prefix}_${key}` : key;
+        },
+        keyExpiration: {
+            minExpiresIn: 0, // No minimum - allow any positive expiry
+            maxExpiresIn: 365, // Max 1 year
         },
         rateLimit: {
             enabled: true,
@@ -66,6 +85,20 @@ export function createAuth(env: Cloudflare.Env) {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
+        secondaryStorage: {
+            get: async (key) => {
+                return await env.KV.get(addKeyPrefix(key));
+            },
+            set: async (key, value, ttl) => {
+                await env.KV.put(addKeyPrefix(key), value, {
+                    expirationTtl: ttl,
+                });
+            },
+            delete: async (key) => {
+                await env.KV.delete(addKeyPrefix(key));
+            },
+        },
+        trustedOrigins: ["https://enter.pollinations.ai", "http://localhost"],
         user: {
             additionalFields: {
                 githubId: {
@@ -78,7 +111,7 @@ export function createAuth(env: Cloudflare.Env) {
                 },
                 tier: {
                     type: "string",
-                    defaultValue: "seed",
+                    defaultValue: "spore",
                     input: false,
                 },
             },
@@ -93,7 +126,12 @@ export function createAuth(env: Cloudflare.Env) {
                 }),
             },
         },
-        plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), openAPIPlugin],
+        plugins: [
+            adminPlugin,
+            apiKeyPlugin,
+            polarPlugin(polar, defaultTierProductId),
+            openAPIPlugin,
+        ],
         telemetry: { enabled: false },
     });
 }
@@ -102,7 +140,10 @@ export type Auth = ReturnType<typeof createAuth>;
 export type Session = Auth["$Infer"]["Session"]["session"];
 export type User = Auth["$Infer"]["Session"]["user"];
 
-function polarPlugin(polar: Polar): BetterAuthPlugin {
+function polarPlugin(
+    polar: Polar,
+    defaultTierProductId?: string,
+): BetterAuthPlugin {
     return {
         id: "polar",
         init: () => ({
@@ -111,7 +152,10 @@ function polarPlugin(polar: Polar): BetterAuthPlugin {
                     user: {
                         create: {
                             before: onBeforeUserCreate(polar),
-                            after: onAfterUserCreate(polar),
+                            after: onAfterUserCreate(
+                                polar,
+                                defaultTierProductId,
+                            ),
                         },
                         update: {
                             after: onUserUpdate(polar),
@@ -125,6 +169,7 @@ function polarPlugin(polar: Polar): BetterAuthPlugin {
 
 function onBeforeUserCreate(polar: Polar) {
     return async (user: Partial<User>, ctx?: GenericEndpointContext) => {
+        const startTotal = Date.now();
         if (!ctx) return;
         try {
             if (!user.email) {
@@ -138,8 +183,12 @@ function onBeforeUserCreate(polar: Polar) {
             const { result } = await polar.customers.list({
                 email: user.email,
             });
+
             const existingCustomer = result.items[0];
             if (existingCustomer?.externalId) {
+                log.debug("onBeforeUserCreate linked existing - {duration}ms", {
+                    duration: Date.now() - startTotal,
+                });
                 return {
                     data: {
                         ...user,
@@ -151,13 +200,21 @@ function onBeforeUserCreate(polar: Polar) {
             await polar.customers.create({
                 email: user.email,
                 name: user.name,
+                externalId: user.id,
             });
 
+            log.debug("onBeforeUserCreate created new - {duration}ms", {
+                duration: Date.now() - startTotal,
+            });
             return {
                 data: user,
             };
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
+            log.error("onBeforeUserCreate ERROR {duration}ms: {error}", {
+                duration: Date.now() - startTotal,
+                error: messageOrError,
+            });
             throw new APIError("INTERNAL_SERVER_ERROR", {
                 message: `Polar customer creation failed. Error: ${messageOrError}`,
             });
@@ -165,13 +222,15 @@ function onBeforeUserCreate(polar: Polar) {
     };
 }
 
-function onAfterUserCreate(polar: Polar) {
+function onAfterUserCreate(polar: Polar, defaultTierProductId?: string) {
     return async (user: GenericUser, ctx?: GenericEndpointContext) => {
+        const startTotal = Date.now();
         if (!ctx) return;
         try {
             const { result } = await polar.customers.list({
                 email: user.email,
             });
+
             const existingCustomer = result.items[0];
 
             if (existingCustomer && existingCustomer.externalId !== user.id) {
@@ -182,8 +241,27 @@ function onAfterUserCreate(polar: Polar) {
                     },
                 });
             }
+
+            // Auto-create subscription for new user's default tier
+            if (existingCustomer && defaultTierProductId) {
+                await ensureDefaultSubscription(
+                    polar,
+                    existingCustomer.id,
+                    defaultTierProductId,
+                    user.id,
+                    ctx.context.logger,
+                );
+            }
+
+            log.debug("onAfterUserCreate - {duration}ms", {
+                duration: Date.now() - startTotal,
+            });
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
+            log.error("onAfterUserCreate ERROR {duration}ms: {error}", {
+                duration: Date.now() - startTotal,
+                error: messageOrError,
+            });
             throw new APIError("INTERNAL_SERVER_ERROR", {
                 message: `Polar customer update failed. Error: ${messageOrError}`,
             });
@@ -209,4 +287,30 @@ function onUserUpdate(polar: Polar) {
             );
         }
     };
+}
+
+async function ensureDefaultSubscription(
+    polar: Polar,
+    customerId: string,
+    productId: string,
+    userId: string,
+    logger: { info: (msg: string) => void; error: (msg: string) => void },
+): Promise<void> {
+    try {
+        const { result: subs } = await polar.subscriptions.list({
+            customerId,
+            active: true,
+            limit: 1,
+        });
+
+        if (subs.items.length === 0) {
+            await polar.subscriptions.create({
+                productId,
+                customerId,
+            });
+            logger.info(`Created default tier subscription for user ${userId}`);
+        }
+    } catch (error) {
+        logger.error(`Failed to create default subscription: ${error}`);
+    }
 }

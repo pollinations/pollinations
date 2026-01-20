@@ -68,6 +68,7 @@
 @layer base {
     html {
         color-scheme: light;
+        overflow-x: hidden;
     }
 
     * {
@@ -82,7 +83,7 @@
 
     body {
         max-width: 800px;
-        @apply mx-auto px-4 sm:px-6 md:px-8 pt-4;
+        @apply mx-auto px-4 sm:px-6 md:px-8 pt-4 overflow-x-hidden;
     }
 
     h1 {
@@ -111,5 +112,15 @@
 
     .scrollbar-hide::-webkit-scrollbar {
         display: none;  /* Chrome, Safari and Opera */
+    }
+}
+
+/* NEW badge glow animation */
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 4px rgba(34, 197, 94, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 12px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.4);
     }
 }

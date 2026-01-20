@@ -1,3 +1,4 @@
+import "dotenv/config";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import http from "node:http";
 import { parse } from "node:url";
@@ -7,7 +8,6 @@ import { HttpError } from "./httpError.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
-import { cacheImagePromise } from "./cacheGeneratedImages.js";
 import { getModelCounts } from "./modelCounter.js";
 import { IMAGE_CONFIG } from "./models.js";
 import {
@@ -15,8 +15,12 @@ import {
     createAndReturnImageCached,
     type ImageGenerationResult,
 } from "./createAndReturnImages.js";
+import {
+    createAndReturnVideo,
+    isVideoModel,
+    type VideoGenerationResult,
+} from "./createAndReturnVideos.js";
 import { registerFeedListener, sendToFeedListeners } from "./feedListeners.js";
-import { makeParamsSafe } from "./makeParamsSafe.js";
 import { MODELS } from "./models.js";
 import {
     normalizeAndTranslatePrompt,
@@ -48,22 +52,24 @@ const HOURLY_LIMIT = 10;
 const HOUR_MS = 60 * 60 * 1000;
 
 // Check and update hourly usage for an IP
-const checkHourlyLimit = (ip: string): { allowed: boolean; remaining: number; resetIn: number } => {
+const checkHourlyLimit = (
+    ip: string,
+): { allowed: boolean; remaining: number; resetIn: number } => {
     const now = Date.now();
     const usage = hourlyUsage.get(ip);
-    
+
     // No usage yet or hour has passed - reset
     if (!usage || now - usage.hourStart >= HOUR_MS) {
         hourlyUsage.set(ip, { count: 1, hourStart: now });
         return { allowed: true, remaining: HOURLY_LIMIT - 1, resetIn: HOUR_MS };
     }
-    
+
     // Within the same hour
     if (usage.count >= HOURLY_LIMIT) {
         const resetIn = HOUR_MS - (now - usage.hourStart);
         return { allowed: false, remaining: 0, resetIn };
     }
-    
+
     // Increment and allow
     usage.count++;
     const resetIn = HOUR_MS - (now - usage.hourStart);
@@ -78,9 +84,7 @@ const setCORSHeaders = (res: ServerResponse) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    res.setHeader("Access-Control-Expose-Headers", [
-        "Content-Length",
-    ]);
+    res.setHeader("Access-Control-Expose-Headers", ["Content-Length"]);
 };
 
 /**
@@ -147,7 +151,7 @@ const imageGen = async ({
     const ip = getIp(req);
 
     const startTime = Date.now();
-    
+
     try {
         timingInfo.push({ step: "Start processing", timestamp: Date.now() });
 
@@ -305,19 +309,28 @@ const checkCacheAndGenerate = async (
         pathname.split("/prompt/")[1] || "random_prompt",
     );
 
-    const safeParams = ImageParamsSchema.parse(query);
-
     const referrer = req.headers?.["referer"] || req.headers?.origin;
 
     const requestId = Math.random().toString(36).substring(7);
     const progress = createProgressTracker().startRequest(requestId);
     progress.updateBar(requestId, 0, "Starting", "Request received");
 
-    logApi("Request details:", { originalPrompt, safeParams, referrer });
-
     let timingInfo = [];
+    let safeParams;
 
     try {
+        // Validate parameters with proper error handling
+        const parseResult = ImageParamsSchema.safeParse(query);
+        if (!parseResult.success) {
+            throw new HttpError(
+                `Invalid parameters: ${parseResult.error.issues[0]?.message || "validation failed"}`,
+                400,
+                parseResult.error.issues,
+            );
+        }
+        safeParams = parseResult.data;
+
+        logApi("Request details:", { originalPrompt, safeParams, referrer });
         // Authentication and rate limiting is now handled by enter.pollinations.ai
         // Create a minimal authResult for compatibility
         const authResult: AuthResult = {
@@ -331,46 +344,96 @@ const checkCacheAndGenerate = async (
             debugInfo: {},
         };
 
-        // Cache the generated image
-        const bufferAndMaturity = await cacheImagePromise(
+        // Check if this is a video model
+        const isVideo = isVideoModel(safeParams.model);
+
+        // Handle video generation separately (with caching)
+        if (isVideo) {
+            progress.updateBar(requestId, 10, "Processing", "Generating video");
+            timingInfo = [{ step: "Request received.", timestamp: Date.now() }];
+            progress.setProcessing(requestId);
+
+            // Generate video directly (no caching)
+            const videoResult = await createAndReturnVideo(
+                originalPrompt,
+                safeParams,
+                progress,
+                requestId,
+            );
+
+            timingInfo.push({ step: "Video generated", timestamp: Date.now() });
+
+            // Build headers for video response
+            const headers = {
+                "Content-Type": "video/mp4",
+                "Cache-Control": "public, max-age=31536000, immutable",
+            };
+
+            // Add Content-Disposition with .mp4 extension
+            if (originalPrompt) {
+                const baseFilename = originalPrompt
+                    .slice(0, 100)
+                    .replace(/[^a-z0-9\s-]/gi, "")
+                    .replace(/\s+/g, "-")
+                    .replace(/-+/g, "-")
+                    .replace(/^-|-$/g, "")
+                    .toLowerCase();
+                const filename = `${baseFilename || "generated-video"}.mp4`;
+                headers["Content-Disposition"] =
+                    `inline; filename="${filename}"`;
+            }
+
+            // Add tracking headers
+            const trackingHeaders = buildTrackingHeaders(
+                safeParams.model,
+                videoResult.trackingData,
+            );
+            Object.assign(headers, trackingHeaders);
+
+            res.writeHead(200, headers);
+            res.write(videoResult.buffer);
+            res.end();
+
+            logApi("Video generation complete:", {
+                originalPrompt,
+                safeParams,
+                referrer,
+            });
+            return;
+        }
+
+        // Generate image directly (no caching)
+        progress.updateBar(requestId, 10, "Processing", "Generating image");
+        timingInfo = [
+            {
+                step: "Request received.",
+                timestamp: Date.now(),
+            },
+        ];
+
+        // Generate image directly without queue
+        timingInfo.push({
+            step: "Start generating job",
+            timestamp: Date.now(),
+        });
+
+        progress.setProcessing(requestId);
+
+        const bufferAndMaturity = await imageGen({
+            req,
+            timingInfo,
             originalPrompt,
             safeParams,
-            async () => {
-                progress.updateBar(requestId, 10, "Processing", "Generating image");
-                timingInfo = [
-                    {
-                        step: "Request received.",
-                        timestamp: Date.now(),
-                    },
-                ];
+            referrer,
+            progress,
+            requestId,
+            authResult,
+        });
 
-                // Generate image directly without queue
-                timingInfo.push({
-                    step: "Start generating job",
-                    timestamp: Date.now(),
-                });
-                
-                progress.setProcessing(requestId);
-                
-                const result = await imageGen({
-                    req,
-                    timingInfo,
-                    originalPrompt,
-                    safeParams,
-                    referrer,
-                    progress,
-                    requestId,
-                    authResult,
-                });
-                
-                timingInfo.push({
-                    step: "End generating job",
-                    timestamp: Date.now(),
-                });
-                
-                return result;
-            },
-        );
+        timingInfo.push({
+            step: "End generating job",
+            timestamp: Date.now(),
+        });
 
         // Add headers for response
         const headers = {
@@ -395,13 +458,16 @@ const checkCacheAndGenerate = async (
 
         // Debug: Log trackingData before building headers
         logApi("=== TRACKING DATA BEFORE HEADERS ===");
-        logApi("bufferAndMaturity.trackingData:", JSON.stringify(bufferAndMaturity.trackingData, null, 2));
+        logApi(
+            "bufferAndMaturity.trackingData:",
+            JSON.stringify(bufferAndMaturity.trackingData, null, 2),
+        );
         logApi("====================================");
 
         // Add tracking headers for enter service (GitHub issue #4170)
         const trackingHeaders = buildTrackingHeaders(
             safeParams.model,
-            bufferAndMaturity.trackingData
+            bufferAndMaturity.trackingData,
         );
         logApi("=== BUILT TRACKING HEADERS ===");
         logApi("trackingHeaders:", JSON.stringify(trackingHeaders, null, 2));
@@ -428,12 +494,12 @@ const checkCacheAndGenerate = async (
             statusCode === 400
                 ? "Bad Request"
                 : statusCode === 401
-                ? "Unauthorized"
-                : statusCode === 403
-                  ? "Forbidden"
-                  : statusCode === 429
-                    ? "Too Many Requests"
-                    : "Internal Server Error";
+                  ? "Unauthorized"
+                  : statusCode === 403
+                    ? "Forbidden"
+                    : statusCode === 429
+                      ? "Too Many Requests"
+                      : "Internal Server Error";
 
         // Log the error response using debug
         logError("Error response:", {
@@ -447,7 +513,7 @@ const checkCacheAndGenerate = async (
             "Content-Type": "application/json",
             "X-Error-Type": errorType,
         });
-        
+
         // Create a response object with error information
         const responseObj = {
             error: errorType,
@@ -479,6 +545,46 @@ const server = http.createServer((req, res) => {
     const parsedUrl = parse(req.url, true);
     const pathname = parsedUrl.pathname;
 
+    // Handle deprecated /models endpoint BEFORE auth check
+    if (pathname === "/models") {
+        res.writeHead(410, {
+            "Content-Type": "application/json",
+            "Cache-Control":
+                "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+        });
+        res.end(
+            JSON.stringify({
+                error: "Endpoint moved",
+                message:
+                    "The /models endpoint has been moved to the API gateway. Please use: https://enter.pollinations.ai/api/generate/image/models",
+                deprecated_endpoint: `${req.headers["x-forwarded-proto"] || "http"}://${req.headers.host}/models`,
+                new_endpoint:
+                    "https://enter.pollinations.ai/api/generate/image/models",
+                documentation: "https://enter.pollinations.ai/api/docs",
+            }),
+        );
+        return;
+    }
+
+    // Verify PLN_ENTER_TOKEN
+    const token = req.headers["x-enter-token"];
+    const expectedToken = process.env.PLN_ENTER_TOKEN;
+
+    if (expectedToken && token !== expectedToken) {
+        logAuth("❌ Invalid or missing PLN_ENTER_TOKEN from IP:", getIp(req));
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Unauthorized" }));
+        return;
+    }
+
+    if (expectedToken) {
+        logAuth("✅ Valid PLN_ENTER_TOKEN from IP:", getIp(req));
+    } else {
+        logAuth("!  PLN_ENTER_TOKEN not configured - allowing request");
+    }
+
     if (
         pathname ===
         "/.well-known/acme-challenge/w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G"
@@ -500,22 +606,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    if (pathname === "/models") {
-        res.writeHead(200, {
-            "Content-Type": "application/json",
-            "Cache-Control":
-                "no-store, no-cache, must-revalidate, proxy-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-        });
-        
-        // Return all available models - enter.pollinations.ai handles access control
-        const publicModels = Object.keys(MODELS);
-        
-        res.end(JSON.stringify(publicModels));
-        return;
-    }
-
     if (pathname === "/about") {
         res.writeHead(200, {
             "Content-Type": "application/json",
@@ -526,7 +616,7 @@ const server = http.createServer((req, res) => {
         });
         const modelDetails = Object.entries(MODELS).map(([name, config]) => ({
             name,
-            enhance : config.enhance || false,
+            enhance: config.enhance || false,
             defaultSideLength: config.defaultSideLength ?? 1024,
         }));
         res.end(JSON.stringify(modelDetails));
@@ -541,11 +631,13 @@ const server = http.createServer((req, res) => {
             Pragma: "no-cache",
             Expires: "0",
         });
-        getModelCounts().then(counts => {
-            res.end(JSON.stringify(counts));
-        }).catch(() => {
-            res.end(JSON.stringify({}));
-        });
+        getModelCounts()
+            .then((counts) => {
+                res.end(JSON.stringify(counts));
+            })
+            .catch(() => {
+                res.end(JSON.stringify({}));
+            });
         return;
     }
 
@@ -584,13 +676,15 @@ server.listen(port, () => {
     console.log(`🌸 Image server listening on port ${port}`);
     console.log(`🔗 Test URL: http://localhost:${port}/prompt/pollinations`);
     console.log(`✨ All requests assumed to come from enter.pollinations.ai`);
-    
+
     // Debug environment info
     const debugEnv = process.env.DEBUG;
     if (debugEnv) {
         console.log(`🐛 Debug mode: ${debugEnv}`);
     } else {
-        console.log(`💡 Pro tip: Want debug logs? Run with DEBUG=* for all the deets! ✨`);
+        console.log(
+            `💡 Pro tip: Want debug logs? Run with DEBUG=* for all the deets! ✨`,
+        );
     }
 });
 

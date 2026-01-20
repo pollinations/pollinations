@@ -1,0 +1,78 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "claude",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Describe this image in one word."
+              },
+              {
+                "type": "image_url",
+                "image_url": {
+                  "url": "https://picsum.photos/id/237/200/300"
+                }
+              }
+            ]
+          }
+        ],
+        "max_tokens": 50
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "385",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 07 Jan 2026 04:24:54 GMT",
+      "etag": "W/\"181-NyuUY625HYt4YoKZYbKxN5qLZ20\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "claude-sonnet-4-5-20250929",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "6",
+      "x-usage-prompt-text-tokens": "376",
+      "x-usage-total-tokens": "382"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_d6a0ea47befa5dc50bc12127b8313c2c",
+        "object": "chat.completion",
+        "created": 1767759894,
+        "model": "claude-sonnet-4-5-20250929",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "Adorable"
+            },
+            "index": 0,
+            "logprobs": null,
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 376,
+          "completion_tokens": 6,
+          "total_tokens": 382,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

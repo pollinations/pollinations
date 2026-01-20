@@ -1,0 +1,91 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "What is in this image? One word."
+              },
+              {
+                "type": "image_url",
+                "image_url": {
+                  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/320px-Camponotus_flavomarginatus_ant.jpg",
+                  "mime_type": "image/jpeg"
+                }
+              }
+            ]
+          }
+        ],
+        "max_tokens": 2048,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "497",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 19 Dec 2025 09:14:19 GMT",
+      "etag": "W/\"1f1-MhVfEpHmZ6HGrdKIomLHXYQyT1g\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-3-flash-preview",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "30",
+      "x-usage-completion-text-tokens": "1",
+      "x-usage-prompt-text-tokens": "1369",
+      "x-usage-total-tokens": "1400"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_a8199e31f4e9c743b8cf2ee8fc5f94f6",
+        "object": "chat.completion",
+        "created": 1766135659,
+        "model": "gemini-3-flash-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "Ant",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "Ant"
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1369,
+          "completion_tokens": 31,
+          "total_tokens": 1400,
+          "completion_tokens_details": {
+            "reasoning_tokens": 30,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

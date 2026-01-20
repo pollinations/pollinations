@@ -1,0 +1,67 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "claude",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "381",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 07 Jan 2026 04:24:00 GMT",
+      "etag": "W/\"17d-0zzgp/NKyWaoUWo7exIMFeP7u7Y\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "claude-sonnet-4-5-20250929",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "5",
+      "x-usage-prompt-text-tokens": "289",
+      "x-usage-total-tokens": "294"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_6ca62e47a435156f585b75c8c16b51c5",
+        "object": "chat.completion",
+        "created": 1767759840,
+        "model": "claude-sonnet-4-5-20250929",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "Yes."
+            },
+            "index": 0,
+            "logprobs": null,
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 289,
+          "completion_tokens": 5,
+          "total_tokens": 294,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

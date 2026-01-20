@@ -6,17 +6,19 @@ import { polar } from "../middleware/polar.ts";
 import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
 import { describeRoute } from "hono-openapi";
+import { drizzle } from "drizzle-orm/d1";
+import { eq } from "drizzle-orm";
+import {
+    getPackProductMapCached,
+    PackProductSlug,
+    packProductSlugs,
+} from "@/utils/polar.ts";
+import { user as userTable } from "@/db/schema/better-auth.ts";
 
-export const productSlugs = [
-    "pollen-pack-small",
-    "pollen-pack-medium",
-    "pollen-pack-large",
-] as const;
-const productSlugSchema = z.literal(productSlugs);
-type ProductSlug = z.infer<typeof productSlugSchema>;
+const productParamSchema = z.enum(packProductSlugs.map(productSlugToUrlParam));
 
 const checkoutParamsSchema = z.object({
-    slug: productSlugSchema,
+    slug: productParamSchema,
 });
 
 const redirectQuerySchema = z.object({
@@ -26,7 +28,13 @@ const redirectQuerySchema = z.object({
         .default(true),
 });
 
-type ProductMap = { [key in ProductSlug]: string };
+export function productSlugToUrlParam(slug: string): string {
+    return slug.split(":").join("-");
+}
+
+export function productUrlParamToSlug(slug: string): string {
+    return slug.split("-").join(":");
+}
 
 export const polarRoutes = new Hono<Env>()
     .use("*", auth({ allowApiKey: false, allowSessionCookie: true }))
@@ -40,10 +48,7 @@ export const polarRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            const polar = c.var.polar.client;
-            const result = await polar.customers.getStateExternal({
-                externalId: user.id,
-            });
+            const result = await c.var.polar.getCustomerState(user.id);
             return c.json(result);
         },
     )
@@ -61,6 +66,35 @@ export const polarRoutes = new Hono<Env>()
                 externalCustomerId: user.id,
             });
             return c.json(result);
+        },
+    )
+    .get(
+        "/customer/d1-balance",
+        describeRoute({
+            tags: ["Auth"],
+            description:
+                "Get the local D1 pollen balance for the current user (with lazy init from Polar).",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            // Use getBalance which includes lazy init from Polar if not set
+            const { tierBalance, packBalance, cryptoBalance } =
+                await c.var.polar.getBalance(user.id);
+            const db = drizzle(c.env.DB);
+            const users = await db
+                .select({ lastTierGrant: userTable.lastTierGrant })
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .limit(1);
+            const lastTierGrant = users[0]?.lastTierGrant ?? null;
+
+            return c.json({
+                tierBalance,
+                packBalance,
+                cryptoBalance,
+                lastTierGrant,
+            });
         },
     )
     .get(
@@ -104,18 +138,18 @@ export const polarRoutes = new Hono<Env>()
         validator("query", redirectQuerySchema),
         async (c) => {
             const user = c.var.auth.requireUser();
-            const { slug } = c.req.valid("param");
+            const { slug: slugParam } = c.req.valid("param");
+            const slug = productUrlParamToSlug(slugParam);
             const { redirect } = c.req.valid("query");
-            const products: ProductMap = {
-                "pollen-pack-small": c.env.POLAR_PRODUCT_PACK_SMALL,
-                "pollen-pack-medium": c.env.POLAR_PRODUCT_PACK_MEDIUM,
-                "pollen-pack-large": c.env.POLAR_PRODUCT_PACK_LARGE,
-            };
             try {
                 const polar = c.var.polar.client;
+                const packProducts = await getPackProductMapCached(
+                    polar,
+                    c.env.KV,
+                );
                 const response = await polar.checkouts.create({
                     externalCustomerId: user.id,
-                    products: [products[slug]],
+                    products: [packProducts[slug as PackProductSlug].id],
                     successUrl: c.env.POLAR_SUCCESS_URL,
                 });
                 if (redirect) return c.redirect(response.url);

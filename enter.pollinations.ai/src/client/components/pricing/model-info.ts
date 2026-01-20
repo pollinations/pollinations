@@ -2,67 +2,88 @@
  * Model metadata and information utilities
  */
 
-import { TEXT_SERVICES } from "../../../../../shared/registry/text.ts";
-import { IMAGE_SERVICES } from "../../../../../shared/registry/image.ts";
+import {
+    getServiceDefinition,
+    type ServiceId,
+} from "@shared/registry/registry.ts";
 import type { Modalities } from "./types.ts";
 
-// Helper types for cleaner service lookups
-type TextServiceName = keyof typeof TEXT_SERVICES;
-type ImageServiceName = keyof typeof IMAGE_SERVICES;
-
-export const getModalities = (modelName: string, modelType: string): Modalities => {
-    if (modelType === "text") {
-        const service = TEXT_SERVICES[modelName as TextServiceName] as any;
-        return {
-            input: service?.input_modalities || ["text"],
-            output: service?.output_modalities || ["text"]
-        };
-    } else {
-        const service = IMAGE_SERVICES[modelName as ImageServiceName] as any;
-        return {
-            input: service?.input_modalities || ["text"],
-            output: service?.output_modalities || ["image"]
-        };
-    }
+export const getModalities = (modelName: string): Modalities => {
+    const service = getServiceDefinition(modelName as ServiceId);
+    return {
+        input: service?.inputModalities || ["text"],
+        output: service?.outputModalities || ["text"],
+    };
 };
 
-export const getModelDescription = (modelName: string, modelType: string): string | undefined => {
-    if (modelType === "image") {
-        const service = IMAGE_SERVICES[modelName as ImageServiceName] as any;
-        return service?.description;
-    } else {
-        const service = TEXT_SERVICES[modelName as TextServiceName] as any;
-        return service?.description;
-    }
+export const getModelDescription = (modelName: string): string | undefined => {
+    const service = getServiceDefinition(modelName as ServiceId);
+    return service?.description;
 };
 
-export const hasReasoning = (modelName: string, modelType: string): boolean => {
-    if (modelType !== "text") return false;
-    const service = TEXT_SERVICES[modelName as TextServiceName] as any;
+/**
+ * Get a human-readable display name for a model (e.g., "OpenAI GPT-5 Mini")
+ * Extracts the first part of the description before " - "
+ */
+export const getModelDisplayName = (modelName: string): string | undefined => {
+    const service = getServiceDefinition(modelName as ServiceId);
+    const description = service?.description;
+    if (!description) return undefined;
+    // Extract first part before " - " (e.g., "OpenAI GPT-5 Mini" from "OpenAI GPT-5 Mini - Fast & Balanced")
+    return description.split(" - ")[0];
+};
+
+export const hasReasoning = (modelName: string): boolean => {
+    const service = getServiceDefinition(modelName as ServiceId);
     return service?.reasoning === true;
 };
 
-export const hasVision = (modelName: string, modelType: string): boolean => {
-    const modalities = getModalities(modelName, modelType);
+export const hasSearch = (modelName: string): boolean => {
+    const service = getServiceDefinition(modelName as ServiceId);
+    return service?.search === true;
+};
+
+export const hasCodeExecution = (modelName: string): boolean => {
+    const service = getServiceDefinition(modelName as ServiceId);
+    return service?.codeExecution === true;
+};
+
+export const hasVision = (modelName: string): boolean => {
+    const modalities = getModalities(modelName);
     return modalities.input.includes("image");
 };
 
-export const hasAudioInput = (modelName: string, modelType: string): boolean => {
-    const modalities = getModalities(modelName, modelType);
+export const hasAudioInput = (modelName: string): boolean => {
+    const modalities = getModalities(modelName);
     return modalities.input.includes("audio");
 };
 
+export const hasAudioOutput = (modelName: string): boolean => {
+    const modalities = getModalities(modelName);
+    return modalities.output.includes("audio");
+};
+
 export const isPersona = (modelName: string): boolean => {
-    const service = TEXT_SERVICES[modelName as TextServiceName] as any;
+    const service = getServiceDefinition(modelName as ServiceId);
     return service?.persona === true;
 };
 
-export const getTextModelId = (modelName: TextServiceName): string | undefined => {
-    const service = TEXT_SERVICES[modelName];
+/**
+ * Check if a model is "new" (added within the last 30 days)
+ */
+export const isNewModel = (modelName: string): boolean => {
+    const service = getServiceDefinition(modelName as ServiceId);
+    if (!service?.cost?.[0]?.date) return false;
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    return service.cost[0].date > thirtyDaysAgo;
+};
+
+export const getTextModelId = (modelName: string): string | undefined => {
+    const service = getServiceDefinition(modelName as ServiceId);
     return service?.modelId as string | undefined;
 };
 
-export const getImageModelId = (modelName: ImageServiceName): string | undefined => {
-    const service = IMAGE_SERVICES[modelName];
+export const getImageModelId = (modelName: string): string | undefined => {
+    const service = getServiceDefinition(modelName as ServiceId);
     return service?.modelId as string | undefined;
 };

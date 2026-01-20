@@ -1,0 +1,14 @@
+{
+  "name": "polli-ai",
+  "permissions": {
+    "media": true,
+    "reddit": true
+  },
+  "blocks": {
+    "entry": "src/main.ts",
+    "triggers" : ["onAppUpgrade"]
+  },
+  "dev": {
+    "subreddit": "pollinations_ai"
+  }
+}

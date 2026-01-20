@@ -1,0 +1,68 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "perplexity-reasoning",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 400,
+    "statusText": "Bad Request",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "617",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:40:31 GMT",
+      "etag": "W/\"269-yl8c+uUjoLfTlMeQtxtV7vpv7yM\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "error": "Bad Request",
+        "message": "400 Bad Request",
+        "requestId": "7itjx8",
+        "requestParameters": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "Is Berlin the capital of Germany? Reply yes or no."
+            }
+          ],
+          "jsonMode": false,
+          "seed": 42,
+          "model": "perplexity-reasoning",
+          "referrer": null,
+          "stream": true,
+          "isPrivate": true,
+          "voice": "alloy",
+          "private": true
+        },
+        "details": {
+          "error": {
+            "message": "perplexity-ai error: The 'sonar-reasoning' model has been deprecated and is no longer available. Please refer to https://docs.perplexity.ai/getting-started/models for supported models.",
+            "type": "invalid_model",
+            "param": null,
+            "code": "400"
+          },
+          "provider": "perplexity-ai"
+        }
+      }
+    }
+  }
+}

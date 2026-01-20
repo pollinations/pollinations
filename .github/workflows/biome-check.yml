@@ -1,0 +1,59 @@
+name: Biome Check
+
+"on":
+  pull_request:
+    branches: [main]
+
+jobs:
+  biome:
+    name: Check formatting and linting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Get changed files
+        id: changed-files
+        run: |
+          # Get only added/modified files (exclude deleted files)
+          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(js|ts|jsx|tsx|json|jsonc)$' || true)
+          echo "Changed files:"
+          echo "$FILES"
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          if [ -n "$FILES" ]; then
+            echo "any_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "any_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Biome on changed files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Running Biome on changed files:"
+          echo "${{ steps.changed-files.outputs.files }}"
+          echo "${{ steps.changed-files.outputs.files }}" | xargs npx biome check --write
+
+      - name: Check for formatting changes
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "❌ Biome found formatting issues. Run 'npm run format' locally."
+            git diff
+            exit 1
+          else
+            echo "✅ All files are properly formatted"
+          fi

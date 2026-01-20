@@ -1,60 +1,63 @@
-import { processEvents, storeEvents } from "@/events.ts";
+import { getLogger } from "@logtape/logtape";
+import type { TokenUsage } from "@shared/registry/registry.ts";
 import {
-    resolveServiceId,
-    isFreeService,
-    getActivePriceDefinition,
     calculateCost,
     calculatePrice,
-    ServiceId,
-    ModelId,
-    UsageCost,
-    UsagePrice,
-    PriceDefinition,
+    getActivePriceDefinition,
     getServiceDefinition,
+    type ModelId,
+    type PriceDefinition,
+    type ServiceId,
+    type UsageCost,
+    type UsagePrice,
 } from "@shared/registry/registry.ts";
 import {
     openaiUsageToTokenUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
-import { routePath, baseRoutePath } from "hono/route";
-import {
-    CompletionUsage,
-    CompletionUsageSchema,
-    ContentFilterResult,
-    ContentFilterResultSchema,
-    ContentFilterSeveritySchema,
-} from "@/schemas/openai.ts";
-import { generateRandomId } from "@/util.ts";
-import { createMiddleware } from "hono/factory";
-import {
-    contentFilterResultsToEventParams,
-    priceToEventParams,
-    usageToEventParams,
-} from "@/db/schema/event.ts";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { HonoRequest } from "hono";
+import { EventSourceParserStream } from "eventsource-parser/stream";
+import type { HonoRequest } from "hono";
+import { createMiddleware } from "hono/factory";
+import { routePath } from "hono/route";
+import { z } from "zod";
+import { mergeContentFilterResults } from "@/content-filter.ts";
+import {
+    apikey as apikeyTable,
+    user as userTable,
+} from "@/db/schema/better-auth.ts";
 import type {
     ApiKeyType,
     EventType,
     GenerationEventContentFilterParams,
     InsertGenerationEvent,
 } from "@/db/schema/event.ts";
-import type { AuthVariables } from "@/middleware/auth.ts";
-import { PolarVariables } from "./polar.ts";
-import { z } from "zod";
-import { TokenUsage } from "../../../shared/registry/registry.js";
-import { removeUnset } from "@/util.ts";
-import { EventSourceParserStream } from "eventsource-parser/stream";
-import { mergeContentFilterResults } from "@/content-filter.ts";
+import {
+    contentFilterResultsToEventParams,
+    priceToEventParams,
+    usageToEventParams,
+} from "@/db/schema/event.ts";
+import type { ErrorVariables } from "@/env.ts";
 import {
     getDefaultErrorMessage,
     getErrorCode,
     UpstreamError,
 } from "@/error.ts";
-import { ValidationError } from "@/middleware/validator.ts";
+import { sendToTinybird } from "@/events.ts";
+import type { AuthVariables } from "@/middleware/auth.ts";
+import {
+    type CompletionUsage,
+    CompletionUsageSchema,
+    type ContentFilterResult,
+    ContentFilterResultSchema,
+    ContentFilterSeveritySchema,
+} from "@/schemas/openai.ts";
+import { generateRandomId, removeUnset } from "@/util.ts";
 import type { LoggerVariables } from "./logger.ts";
-import type { ErrorVariables } from "@/env.ts";
-import type { FrontendKeyRateLimitVariables } from "./rateLimit.durable.ts";
+import type { ModelVariables } from "./model.ts";
+import type { PolarVariables } from "./polar.ts";
+import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
 
 export type ModelUsage = {
     model: ModelId;
@@ -65,7 +68,6 @@ type RequestTrackingData = {
     modelRequested: string | null;
     resolvedModelRequested: string;
     modelProvider?: string;
-    freeModelRequested: boolean;
     modelPriceDefinition: PriceDefinition;
     streamRequested: boolean;
     referrerData: ReferrerData;
@@ -87,7 +89,6 @@ export type TrackVariables = {
     track: {
         modelRequested: string | null;
         resolvedModelRequested: string;
-        freeModelRequested: boolean;
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
     };
@@ -100,21 +101,35 @@ export type TrackEnv = {
         AuthVariables &
         PolarVariables &
         FrontendKeyRateLimitVariables &
-        TrackVariables;
+        TrackVariables &
+        ModelVariables;
 };
 
 export const track = (eventType: EventType) =>
     createMiddleware<TrackEnv>(async (c, next) => {
-        const log = c.get("log");
+        const log = getLogger(["hono", "track"]);
         const startTime = new Date();
+        const db = drizzle(c.env.DB);
 
-        const requestTracking = await trackRequest(eventType, c.req);
+        // Get model from resolveModel middleware
+        const modelInfo = c.var.model;
+        const requestTracking = await trackRequest(modelInfo, c.req);
+
+        const userTracking: UserData = {
+            userId: c.var.auth.user?.id,
+            userTier: c.var.auth.user?.tier,
+            userGithubId: `${c.var.auth.user?.githubId}`,
+            userGithubUsername: c.var.auth.user?.githubUsername,
+            apiKeyId: c.var.auth.apiKey?.id,
+            apiKeyType: c.var.auth.apiKey?.metadata?.keyType as ApiKeyType,
+            apiKeyName: c.var.auth.apiKey?.name,
+        } satisfies UserData;
+
         let responseOverride = null;
 
         c.set("track", {
             modelRequested: requestTracking.modelRequested,
             resolvedModelRequested: requestTracking.resolvedModelRequested,
-            freeModelRequested: requestTracking.freeModelRequested,
             streamRequested: requestTracking.streamRequested,
             overrideResponseTracking: (response: Response) => {
                 responseOverride = response;
@@ -127,7 +142,7 @@ export const track = (eventType: EventType) =>
 
         c.executionCtx.waitUntil(
             (async () => {
-                const response = responseOverride || c.res;
+                const response = responseOverride || c.res.clone();
                 const responseTracking = await trackResponse(
                     eventType,
                     requestTracking,
@@ -139,17 +154,7 @@ export const track = (eventType: EventType) =>
                     responseTracking.price?.totalPrice || 0,
                 );
 
-                const userTracking: UserData = {
-                    userId: c.var.auth.user?.id,
-                    userTier: c.var.auth.user?.tier,
-                    userGithubId: `${c.var.auth.user?.githubId}`,
-                    userGithubUsername: c.var.auth.user?.githubUsername,
-                    apiKeyId: c.var.auth.apiKey?.id,
-                    apiKeyType: c.var.auth.apiKey?.metadata
-                        ?.keyType as ApiKeyType,
-                    apiKeyName: c.var.auth.apiKey?.name,
-                } satisfies UserData;
-
+                // Capture balance tracking AFTER next() so balanceCheckResult is set
                 const balanceTracking = {
                     selectedMeterId:
                         c.var.polar.balanceCheckResult?.selectedMeterId,
@@ -163,9 +168,10 @@ export const track = (eventType: EventType) =>
                     ),
                 } satisfies BalanceData;
 
-                const event = createTrackingEvent({
+                const finalEvent = createTrackingEvent({
+                    id: generateRandomId(),
                     requestId: c.get("requestId"),
-                    requestPath: `${baseRoutePath(c)}${routePath(c)}`,
+                    requestPath: `${routePath(c)}`,
                     startTime,
                     endTime,
                     environment: c.env.ENVIRONMENT,
@@ -177,35 +183,151 @@ export const track = (eventType: EventType) =>
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
 
-                log.trace("Event: {event}", { event });
-                const db = drizzle(c.env.DB);
-                await storeEvents(db, c.var.log, [event]);
+                log.trace(
+                    [
+                        "Tracking event:",
+                        "  isBilledUsage={event.isBilledUsage}",
+                        "  balances[v1:meter:tier]={event.balances[v1:meter:tier]}",
+                        "  balances[v1:meter:pack]={event.balances[v1:meter:pack]}",
+                        '  selectedMeterSlug="{event.selectedMeterSlug}"',
+                        "  totalCost={event.totalCost}",
+                        "  totalPrice={event.totalPrice}",
+                    ].join("\n"),
+                    { event: finalEvent },
+                );
 
-                // process events immediately in development/testing
-                // Don't await to prevent test hangs on external API failures
-                if (["test", "development"].includes(c.env.ENVIRONMENT)) {
-                    await processEvents(db, c.var.log, {
-                        polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
-                        polarServer: c.env.POLAR_SERVER,
-                        tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
-                        tinybirdAccessToken: c.env.TINYBIRD_ACCESS_TOKEN,
-                    });
+                await sendToTinybird(
+                    finalEvent,
+                    c.env.TINYBIRD_INGEST_URL,
+                    c.env.TINYBIRD_INGEST_TOKEN,
+                    log,
+                );
+
+                // Decrement per-key pollen budget after billable requests
+                // Only deduct if key has a budget set (pollenBalance is not null)
+                const apiKeyId = c.var.auth?.apiKey?.id;
+                const apiKeyPollenBalance = c.var.auth?.apiKey?.pollenBalance;
+                if (
+                    responseTracking.isBilledUsage &&
+                    responseTracking.price?.totalPrice &&
+                    apiKeyId &&
+                    apiKeyPollenBalance !== null &&
+                    apiKeyPollenBalance !== undefined
+                ) {
+                    const priceToDeduct = responseTracking.price.totalPrice;
+
+                    try {
+                        // Use D1 column for atomic decrement
+                        await db
+                            .update(apikeyTable)
+                            .set({
+                                pollenBalance: sql`${apikeyTable.pollenBalance} - ${priceToDeduct}`,
+                            })
+                            .where(eq(apikeyTable.id, apiKeyId));
+
+                        log.debug(
+                            "Decremented {price} pollen from API key {keyId} budget",
+                            {
+                                price: priceToDeduct,
+                                keyId: apiKeyId,
+                            },
+                        );
+                    } catch (error) {
+                        log.error(
+                            "Failed to decrement API key budget for {keyId}: {error}",
+                            {
+                                keyId: apiKeyId,
+                                error:
+                                    error instanceof Error
+                                        ? error.message
+                                        : error,
+                            },
+                        );
+                    }
+                }
+
+                // Decrement user pollen balance after billable requests
+                // Strategy: decrement from tier_balance first, then crypto_balance, then pack_balance
+                if (
+                    responseTracking.isBilledUsage &&
+                    responseTracking.price?.totalPrice &&
+                    userTracking.userId
+                ) {
+                    const priceToDeduct = responseTracking.price.totalPrice;
+
+                    try {
+                        // Get current balances to determine how to split the deduction
+                        const currentUser = await db
+                            .select({
+                                tierBalance: userTable.tierBalance,
+                                cryptoBalance: userTable.cryptoBalance,
+                                packBalance: userTable.packBalance,
+                            })
+                            .from(userTable)
+                            .where(eq(userTable.id, userTracking.userId))
+                            .limit(1);
+
+                        const tierBalance = currentUser[0]?.tierBalance ?? 0;
+                        const cryptoBalance =
+                            currentUser[0]?.cryptoBalance ?? 0;
+
+                        // Decrement in order: tier (free) → crypto → pack
+                        const fromTier = Math.min(
+                            priceToDeduct,
+                            Math.max(0, tierBalance),
+                        );
+                        const remainingAfterTier = priceToDeduct - fromTier;
+                        const fromCrypto = Math.min(
+                            remainingAfterTier,
+                            Math.max(0, cryptoBalance),
+                        );
+                        const fromPack = remainingAfterTier - fromCrypto;
+
+                        await db
+                            .update(userTable)
+                            .set({
+                                tierBalance: sql`${userTable.tierBalance} - ${fromTier}`,
+                                cryptoBalance: sql`${userTable.cryptoBalance} - ${fromCrypto}`,
+                                packBalance: sql`${userTable.packBalance} - ${fromPack}`,
+                            })
+                            .where(eq(userTable.id, userTracking.userId));
+
+                        log.debug(
+                            "Decremented {price} pollen from user {userId} (tier: -{fromTier}, crypto: -{fromCrypto}, pack: -{fromPack})",
+                            {
+                                price: priceToDeduct,
+                                userId: userTracking.userId,
+                                fromTier,
+                                fromCrypto,
+                                fromPack,
+                            },
+                        );
+                    } catch (error) {
+                        log.error(
+                            "Failed to decrement user balance for {userId}: {error}",
+                            {
+                                userId: userTracking.userId,
+                                error:
+                                    error instanceof Error
+                                        ? error.message
+                                        : error,
+                            },
+                        );
+                    }
                 }
             })(),
         );
     });
 
 async function trackRequest(
-    eventType: EventType,
+    modelInfo: ModelVariables["model"],
     request: HonoRequest,
 ): Promise<RequestTrackingData> {
-    const modelRequested = await extractModelRequested(request);
-    const resolvedModelRequested = resolveServiceId(
-        modelRequested,
-        eventType,
-    ) as ServiceId;
+    // Model is already resolved by the resolveModel middleware
+    const modelRequested = modelInfo.requested;
+    const resolvedModelRequested = modelInfo.resolved;
+
     const modelProvider = getServiceDefinition(resolvedModelRequested).provider;
-    const freeModelRequested = isFreeService(resolvedModelRequested);
     const modelPriceDefinition = getActivePriceDefinition(
         resolvedModelRequested,
     );
@@ -222,7 +344,6 @@ async function trackRequest(
         resolvedModelRequested,
         modelProvider,
         modelPriceDefinition,
-        freeModelRequested,
         streamRequested,
         referrerData,
     };
@@ -233,6 +354,7 @@ async function trackResponse(
     requestTracking: RequestTrackingData,
     response: Response,
 ): Promise<ResponseTrackingData> {
+    const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const cacheInfo = extractCacheHeaders(response);
     if (!response.ok || cacheInfo.cacheHit) {
@@ -243,13 +365,48 @@ async function trackResponse(
             isBilledUsage: false,
         };
     }
+
+    // For image generation, verify the response is actually an image
+    // Don't bill if the response is JSON/text (error response with HTTP 200)
+    if (eventType === "generate.image") {
+        const contentType = response.headers.get("content-type") || "";
+        if (
+            !contentType.startsWith("image/") &&
+            !contentType.startsWith("video/")
+        ) {
+            log.warn(
+                "Image generation returned non-image content-type: {contentType}",
+                { contentType },
+            );
+            return {
+                responseOk: response.ok,
+                responseStatus: response.status,
+                cacheData: cacheInfo,
+                isBilledUsage: false,
+            };
+        }
+    }
     const { modelUsage, contentFilterResults } =
         await extractUsageAndContentFilterResults(
             eventType,
             requestTracking,
             response,
         );
-    const cost = calculateCost(modelUsage.model as ModelId, modelUsage.usage);
+    if (!modelUsage) {
+        log.error("Failed to extract model usage");
+        return {
+            responseOk: response.ok,
+            responseStatus: response.status,
+            cacheData: cacheInfo,
+            isBilledUsage: false,
+            contentFilterResults,
+        };
+    }
+    // Use service's canonical modelId for cost (not the provider's model ID from response)
+    const serviceModelId = getServiceDefinition(
+        resolvedModelRequested as ServiceId,
+    ).modelId;
+    const cost = calculateCost(serviceModelId as ModelId, modelUsage.usage);
     const price = calculatePrice(
         resolvedModelRequested as ServiceId,
         modelUsage.usage,
@@ -258,7 +415,7 @@ async function trackResponse(
         responseOk: response.ok,
         responseStatus: response.status,
         cacheData: cacheInfo,
-        isBilledUsage: !requestTracking.freeModelRequested,
+        isBilledUsage: true,
         cost,
         price,
         modelUsed: modelUsage.model,
@@ -273,10 +430,10 @@ async function* extractResponseStream(
     if (!response.body) return;
 
     const textDecoder = new TextDecoderStream();
-    const parser = new EventSourceParserStream();
+    const sseParser = new EventSourceParserStream();
     const eventStream = response.body
         .pipeThrough(textDecoder)
-        .pipeThrough(parser);
+        .pipeThrough(sseParser);
 
     for await (const event of asyncIteratorStream(eventStream)) {
         if (event.data === "[DONE]") return;
@@ -316,6 +473,7 @@ type BalanceData = {
 };
 
 type TrackingEventInput = {
+    id: string;
     requestId: string;
     requestPath: string;
     startTime: Date;
@@ -330,6 +488,7 @@ type TrackingEventInput = {
 };
 
 function createTrackingEvent({
+    id,
     requestId,
     requestPath,
     startTime,
@@ -343,7 +502,7 @@ function createTrackingEvent({
     errorTracking,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
-        id: generateRandomId(),
+        id,
         requestId,
         requestPath,
         startTime,
@@ -359,13 +518,10 @@ function createTrackingEvent({
 
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
-        freeModelRequested: requestTracking.freeModelRequested,
         modelUsed: responseTracking.modelUsed,
+        modelProviderUsed: requestTracking.modelProvider,
 
-        isBilledUsage:
-            responseTracking.responseOk &&
-            !requestTracking.freeModelRequested &&
-            !responseTracking.cacheData.cacheHit,
+        isBilledUsage: responseTracking.isBilledUsage,
 
         ...balanceTracking,
 
@@ -378,19 +534,6 @@ function createTrackingEvent({
         ...responseTracking.contentFilterResults,
         ...errorTracking,
     };
-}
-
-async function extractModelRequested(
-    request: HonoRequest,
-): Promise<string | null> {
-    if (request.method === "GET") {
-        return request.query("model") || null;
-    }
-    if (request.method === "POST") {
-        const body = await request.json();
-        return body.model || null;
-    }
-    return null;
 }
 
 async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
@@ -441,9 +584,10 @@ function extractUsageAndContentFilterResultsHeaders(response: Response): {
 async function extractUsageAndContentFilterResultsStream(
     events: AsyncIterable<unknown>,
 ): Promise<{
-    modelUsage: ModelUsage;
+    modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
+    const log = getLogger(["hono", "track", "stream"]);
     const EventSchema = z.object({
         model: z.string(),
         usage: CompletionUsageSchema.nullish(),
@@ -461,8 +605,8 @@ async function extractUsageAndContentFilterResultsStream(
             .nullish(),
     });
 
-    let model = undefined;
-    let usage: CompletionUsage | undefined = undefined;
+    let model: string | undefined;
+    let usage: CompletionUsage | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
 
@@ -489,15 +633,24 @@ async function extractUsageAndContentFilterResultsStream(
 
         if (parseResult.data?.usage) {
             if (usage) {
-                throw new Error("Multiple usage objects found in event stream");
+                log.warn("Multiple usage objects found in event stream");
             }
             usage = parseResult.data?.usage;
             model = parseResult.data?.model;
         }
     }
 
-    if (!usage) {
-        throw new Error("No usage object found in event stream");
+    const contentFilterResults = contentFilterResultsToEventParams({
+        promptFilterResults,
+        completionFilterResults,
+    });
+
+    if (!model || !usage) {
+        log.error("No usage object found in event stream");
+        return {
+            modelUsage: null,
+            contentFilterResults,
+        };
     }
 
     return {
@@ -505,10 +658,7 @@ async function extractUsageAndContentFilterResultsStream(
             model: model as ModelId,
             usage: openaiUsageToTokenUsage(usage),
         },
-        contentFilterResults: contentFilterResultsToEventParams({
-            promptFilterResults,
-            completionFilterResults,
-        }),
+        contentFilterResults,
     };
 }
 
@@ -517,7 +667,7 @@ async function extractUsageAndContentFilterResults(
     requestTracking: RequestTrackingData,
     response: Response,
 ): Promise<{
-    modelUsage: ModelUsage;
+    modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     if (
@@ -525,17 +675,10 @@ async function extractUsageAndContentFilterResults(
         requestTracking.streamRequested &&
         response.body instanceof ReadableStream
     ) {
-        const eventStream = extractResponseStream(response.clone());
+        const eventStream = extractResponseStream(response);
         return await extractUsageAndContentFilterResultsStream(eventStream);
     }
     return extractUsageAndContentFilterResultsHeaders(response);
-}
-
-function validateUsage(usage: ModelUsage, freeModelRequested: boolean) {
-    const includedUsageTypes = Object.keys(usage.usage);
-    if (!freeModelRequested && includedUsageTypes.length === 0) {
-        throw new Error("No usage information found for a non-free model");
-    }
 }
 
 type CacheData = {
@@ -637,28 +780,20 @@ type ErrorData = {
     errorResponseCode?: string;
     errorSource?: string;
     errorMessage?: string;
-    errorStack?: string;
-    errorDetails?: string;
+    // errorStack and errorDetails removed to reduce D1 memory usage
 };
 
 function collectErrorData(response: Response, error?: Error): ErrorData {
     if (response.ok && !error) return {};
-    let status, source, details;
-    if (error instanceof ValidationError) {
-        details = JSON.stringify(z.flattenError(error.zodError));
-    } else if (error instanceof UpstreamError) {
+    let source: string | undefined;
+    if (error instanceof UpstreamError) {
         source = error.requestUrl?.hostname;
-        details = JSON.stringify({
-            requestUrl: error.requestUrl,
-            requestBody: error.requestBody,
-        });
     }
+    // Note: errorStack and errorDetails removed to reduce D1 memory usage
+    // Stack traces and details are still logged but not stored in the database
     return {
-        errorResponseCode: getErrorCode(status || response.status),
+        errorResponseCode: getErrorCode(response.status),
         errorSource: source,
-        errorMessage:
-            error?.message || getDefaultErrorMessage(status || response.status),
-        errorStack: error?.stack,
-        errorDetails: details,
+        errorMessage: error?.message || getDefaultErrorMessage(response.status),
     };
 }

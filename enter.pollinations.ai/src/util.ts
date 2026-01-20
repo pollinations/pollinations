@@ -103,6 +103,10 @@ export function lines(...lines: string[]): string {
     return lines.join("\n");
 }
 
+export function capitalize(str: string) {
+    return `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
+}
+
 export function safeRound(amount: number, precision: number = 6): number {
     if (!isFinite(amount) || isNaN(amount)) {
         return 0;
@@ -113,4 +117,94 @@ export function safeRound(amount: number, precision: number = 6): number {
     }
     const factor = Math.pow(10, precision);
     return Math.round(amount * factor) / factor;
+}
+
+export type ExponentialBackoffOptions = {
+    maxAttempts?: number;
+    minDelay?: number;
+    maxDelay?: number;
+    jitter?: number; // 0 to 1 (e.g., 0.25 = ±25%)
+};
+
+export function exponentialBackoffDelay(
+    attempt: number,
+    options: ExponentialBackoffOptions = {},
+): number {
+    const {
+        minDelay = 100,
+        maxDelay = 10000,
+        maxAttempts = 5,
+        jitter = 0.25,
+    } = options;
+
+    if (attempt === 0) return 0;
+
+    const base = Math.pow(maxDelay / minDelay, 1 / (maxAttempts - 1));
+    const delay = minDelay * Math.pow(base, attempt - 1);
+
+    if (jitter > 0) {
+        const jitterRange = delay * jitter;
+        const jitterOffset = jitterRange * (Math.random() * 2 - 1);
+        return delay + jitterOffset;
+    }
+
+    // return clamped delay
+    return Math.max(minDelay, Math.min(maxDelay, delay));
+}
+
+export type RetryOptions = {
+    maxAttempts?: number;
+    minDelay?: number;
+    maxDelay?: number;
+    jitter?: number;
+    onRetry?: (
+        error: Error,
+        attempt: number,
+        delay: number,
+    ) => void | Promise<void>;
+    shouldRetry?: (error: Error, attempt: number) => boolean;
+};
+
+export async function withRetry<T extends (...args: any[]) => any>(
+    fn: T,
+    options: RetryOptions = {},
+): Promise<Awaited<ReturnType<T>>> {
+    const {
+        maxAttempts = 5,
+        minDelay = 100,
+        maxDelay = 10000,
+        jitter = 0.25,
+        onRetry,
+        shouldRetry = () => true,
+    } = options;
+
+    let attempt = 0;
+    let lastError: Error | undefined;
+
+    while (attempt < maxAttempts) {
+        try {
+            attempt += 1;
+            return await fn();
+        } catch (error) {
+            lastError =
+                error instanceof Error ? error : new Error(String(error));
+
+            if (attempt >= maxAttempts || !shouldRetry(lastError, attempt)) {
+                // This was the last attempt or the error was deemed unretryable
+                break;
+            }
+
+            const delay = exponentialBackoffDelay(attempt, {
+                minDelay,
+                maxDelay,
+                maxAttempts,
+                jitter,
+            });
+
+            await onRetry?.(lastError, attempt, delay);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+    }
+    // All attempts failed
+    throw lastError;
 }

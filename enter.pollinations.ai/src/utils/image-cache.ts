@@ -6,30 +6,7 @@
 
 import type { Context } from "hono";
 import { removeUnset } from "@/util.ts";
-
-/**
- * Apply model-specific caching rules to the URL
- * @param {URL} url - The URL object to transform
- * @returns {URL} - The transformed URL object
- */
-function applyModelSpecificRules(url: URL): URL {
-    // Get the model parameter
-    const model = url.searchParams.get("model");
-
-    // Define model-specific rules that return new URL parameters
-    const modelRules: Record<string, (currentUrl: URL) => URL> = {
-        gptimage: (currentUrl: URL) => {
-            // For gptimage, always use the same seed for consistent caching
-            const newUrl = new URL(currentUrl);
-            newUrl.searchParams.set("seed", "42");
-            return newUrl;
-        },
-        // Add more model rules here as needed
-    };
-
-    // Apply the rule if it exists for this model, otherwise return original
-    return model && modelRules[model] ? modelRules[model](url) : url;
-}
+import { Logger } from "@logtape/logtape";
 
 /**
  * Generate a consistent cache key from URL
@@ -37,11 +14,8 @@ function applyModelSpecificRules(url: URL): URL {
  * @returns {string} - The cache key
  */
 export function generateCacheKey(url: URL): string {
-    // Apply model-specific rules first
-    const transformedUrl = applyModelSpecificRules(url);
-
     // Normalize the URL by sorting query parameters
-    const normalizedUrl = new URL(transformedUrl);
+    const normalizedUrl = new URL(url);
     const params = Array.from(normalizedUrl.searchParams.entries()).sort(
         ([keyA], [keyB]) => keyA.localeCompare(keyB),
     );
@@ -90,7 +64,6 @@ function createHash(str: string): string {
     return Math.abs(hash).toString(16).substring(0, 8);
 }
 
-
 /**
  * Helper function to set HTTP metadata headers from R2 object
  */
@@ -107,18 +80,19 @@ export function setHttpMetadataHeaders(
             c.header(headerName, value);
         }
     } else {
-        // Fallback to default content type
+        // Fallback to default content type (image/jpeg for images, leave unset for videos)
+        // Video content types should be preserved from origin response
         c.header("Content-Type", "image/jpeg");
     }
 }
 
-type CacheContext = Context<{
+type ImageCacheEnv = {
     Bindings: CloudflareBindings;
     Variables: {
         requestId: string;
-        log?: any;
+        log: Logger;
     };
-}>;
+};
 
 /**
  * Store a response in R2
@@ -126,54 +100,24 @@ type CacheContext = Context<{
  * @param {Context} c - Hono context
  * @returns {Promise<boolean>} - Whether the caching was successful
  */
-export async function cacheResponse(
+export async function cacheResponse<TEnv extends ImageCacheEnv>(
     cacheKey: string,
-    c: CacheContext,
+    c: Context<TEnv>,
 ): Promise<boolean> {
     try {
         // Store the image in R2 using the cache key directly
         const imageBuffer = await c.res.clone().arrayBuffer();
 
-        // Get client information from request
-        const clientIp = c.req.header("cf-connecting-ip") || "";
-
-        // Get additional client information
-        const userAgent = c.req.header("user-agent") || "";
-        const referer = c.req.header("referer") || c.req.header("referrer") || "";
-        const acceptLanguage = c.req.header("accept-language") || "";
-        const requestId = c.get("requestId");
-
-        // Get request-specific information
-        const method = c.req.method || "GET";
-        const requestTime = new Date().toISOString();
-
-        // Create metadata object with content type and original URL
+        // Create minimal metadata - only what's needed to serve the cached response
         const httpMetadata: R2HTTPMetadata = {
             contentType: c.res.headers.get("content-type") || "image/jpeg",
-            contentEncoding: c.res.headers.get("content-encoding") || undefined,
-            contentDisposition: c.res.headers.get("content-disposition") || undefined,
-            contentLanguage: c.res.headers.get("content-language") || undefined,
-            cacheControl: c.res.headers.get("cache-control") || undefined,
         };
 
         const metadata = {
             httpMetadata: removeUnset(httpMetadata),
-            customMetadata: removeUnset({
-                // Essential metadata
-                originalUrl: (c.req.url || "").substring(0, 2048),
+            customMetadata: {
                 cachedAt: new Date().toISOString(),
-                clientIp: clientIp,
-
-                // Client information (with length limits)
-                userAgent: userAgent.substring(0, 256),
-                referer: referer.substring(0, 256),
-                acceptLanguage: acceptLanguage.substring(0, 64),
-
-                // Request-specific information
-                method,
-                requestTime,
-                requestId,
-            }),
+            },
         };
 
         // Store the object with metadata
@@ -181,7 +125,10 @@ export async function cacheResponse(
 
         return true;
     } catch (error) {
-        c.get("log")?.error("[CACHE] Error caching response: {error}", { error });
+        const log = c.get("log");
+        log.error("Error caching response: {error}", {
+            error,
+        });
         return false;
     }
 }

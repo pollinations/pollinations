@@ -1,69 +1,108 @@
 import { type FC, useState } from "react";
-import type { ModelPrice } from "./types.ts";
-import { hasReasoning, hasVision, hasAudioInput, getModelDescription, getTextModelId, getImageModelId } from "./model-info.ts";
 import { calculatePerPollen } from "./calculations.ts";
+import {
+    getModelDisplayName,
+    hasAudioInput,
+    hasAudioOutput,
+    hasCodeExecution,
+    hasReasoning,
+    hasSearch,
+    hasVision,
+    isNewModel,
+} from "./model-info.ts";
 import { PriceBadge } from "./PriceBadge.tsx";
+import { Tooltip } from "./Tooltip.tsx";
+import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
     model: ModelPrice;
 };
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
-    const description = getModelDescription(model.name, model.type);
-    const realModelId = model.type === "text" 
-        ? getTextModelId(model.name as any) 
-        : getImageModelId(model.name as any);
+    const modelDisplayName = getModelDisplayName(model.name);
     const genPerPollen = calculatePerPollen(model);
-    const [showTooltip, setShowTooltip] = useState(false);
-    
-    // Get model capabilities
-    const showReasoning = hasReasoning(model.name, model.type);
-    const showVision = hasVision(model.name, model.type);
-    const showAudioInput = hasAudioInput(model.name, model.type);
+    const [copied, setCopied] = useState(false);
 
-    // Only show info icon if real modelId is different from service name
-    const showModelIdInfo = realModelId && realModelId !== model.name;
+    const copyModelName = async () => {
+        await navigator.clipboard.writeText(model.name);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+    };
+
+    // Get model capabilities
+    const showReasoning = hasReasoning(model.name);
+    const showVision = hasVision(model.name);
+    const showAudioInput = hasAudioInput(model.name);
+    const showAudioOutput = hasAudioOutput(model.name);
+    const showSearch = hasSearch(model.name);
+    const showCodeExecution = hasCodeExecution(model.name);
+    const showNew = isNewModel(model.name);
 
     return (
         <tr className="border-b border-gray-200">
-            <td className="py-2 px-2 text-sm font-mono text-gray-700 whitespace-nowrap relative group">
+            <td className="py-2 px-2 text-sm text-gray-700 whitespace-nowrap relative group">
                 <div className="flex items-center gap-2">
-                    {model.name}
-                    {showModelIdInfo && (
-                        <span className="relative inline-flex items-center group/info" onClick={() => setShowTooltip(!showTooltip)}>
-                            <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold cursor-pointer">
-                                i
-                            </span>
-                            <span className={`${showTooltip ? 'visible' : 'invisible'} group-hover/info:visible absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none font-mono`}>
-                                {realModelId}
-                            </span>
+                    <div className="flex flex-col">
+                        <span className={showNew ? "font-bold" : "font-medium"}>
+                            {modelDisplayName || model.name}
                         </span>
-                    )}
+                        <button
+                            type="button"
+                            onClick={copyModelName}
+                            className="text-xs text-gray-500 font-mono hover:text-gray-700 cursor-pointer text-left"
+                            title="Click to copy"
+                        >
+                            {copied ? "✓ copied" : model.name}
+                        </button>
+                    </div>
                     {showVision && (
-                        <span className="text-base" title={model.type === "image" ? "Vision - supports image input (image-to-image)" : "Vision - supports image input"}>
-                            👁️
-                        </span>
+                        <Tooltip
+                            content={
+                                model.type === "image"
+                                    ? "Vision (image-to-image)"
+                                    : "Vision input"
+                            }
+                        >
+                            <span className="text-base">👁️</span>
+                        </Tooltip>
                     )}
                     {showAudioInput && (
-                        <span className="text-base" title="Audio input support">
-                            👂
-                        </span>
+                        <Tooltip content="Audio input">
+                            <span className="text-base">🎙️</span>
+                        </Tooltip>
+                    )}
+                    {showAudioOutput && (
+                        <Tooltip content="Audio output">
+                            <span className="text-base">🔊</span>
+                        </Tooltip>
                     )}
                     {showReasoning && (
-                        <span className="text-base" title="Advanced reasoning capabilities">
-                            🧠
+                        <Tooltip content="Reasoning">
+                            <span className="text-base">🧠</span>
+                        </Tooltip>
+                    )}
+                    {showSearch && (
+                        <Tooltip content="Web search">
+                            <span className="text-base">🔍</span>
+                        </Tooltip>
+                    )}
+                    {showCodeExecution && (
+                        <Tooltip content="Code execution">
+                            <span className="text-base">💻</span>
+                        </Tooltip>
+                    )}
+                    {showNew && (
+                        <span className="text-[10px] text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full font-semibold border border-green-400 shadow-[0_0_6px_rgba(34,197,94,0.5)] animate-[glow_2s_ease-in-out_infinite]">
+                            NEW
                         </span>
                     )}
                 </div>
-                {description && (
-                    <span className="invisible group-hover:visible absolute left-0 top-full mt-1 px-3 py-2 bg-white text-gray-700 text-xs rounded-lg shadow-lg border border-gray-200 whitespace-nowrap z-50 pointer-events-none">
-                        {description}
-                    </span>
-                )}
             </td>
             <td className="py-2 px-2 text-sm">
                 <div className="flex justify-center">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-yellow-100 to-orange-100 text-orange-900 border border-orange-200 ${model.type === 'image' ? 'uppercase' : ''}`}>
+                    <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-yellow-100 to-orange-100 text-orange-900 border border-orange-200 ${model.type === "image" ? "uppercase" : ""}`}
+                    >
                         {genPerPollen}
                     </span>
                 </div>
@@ -73,9 +112,27 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     <span className="text-gray-400">—</span>
                 ) : (
                     <div className="flex flex-wrap gap-1 justify-center">
-                        <PriceBadge prices={[model.promptTextPrice, model.promptCachedPrice]} emoji="💬" subEmojis={["💬", "💾"]} perToken={model.perToken} />
-                        <PriceBadge prices={[model.promptAudioPrice]} emoji="🔊" subEmojis={["🔊"]} perToken={model.perToken} />
-                        <PriceBadge prices={[model.promptImagePrice]} emoji="🖼️" subEmojis={["🖼️"]} perToken={model.perToken} />
+                        <PriceBadge
+                            prices={[
+                                model.promptTextPrice,
+                                model.promptCachedPrice,
+                            ]}
+                            emoji="💬"
+                            subEmojis={["💬", "💾"]}
+                            perToken={model.perToken}
+                        />
+                        <PriceBadge
+                            prices={[model.promptAudioPrice]}
+                            emoji="🔊"
+                            subEmojis={["🔊"]}
+                            perToken={model.perToken}
+                        />
+                        <PriceBadge
+                            prices={[model.promptImagePrice]}
+                            emoji="🖼️"
+                            subEmojis={["🖼️"]}
+                            perToken={model.perToken}
+                        />
                     </div>
                 )}
             </td>
@@ -84,12 +141,46 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     <span className="text-gray-400">—</span>
                 ) : (
                     <div className="flex flex-wrap gap-1 justify-center">
-                        <PriceBadge prices={[model.completionTextPrice]} emoji="💬" subEmojis={["💬"]} perToken={model.perToken} />
-                        <PriceBadge prices={[model.completionAudioPrice]} emoji="🔊" subEmojis={["🔊"]} perToken={model.perToken} />
-                        {model.perImagePrice ? (
-                            <PriceBadge prices={[model.perImagePrice]} emoji="🖼️" subEmojis={["🖼️"]} perImage />
+                        <PriceBadge
+                            prices={[model.completionTextPrice]}
+                            emoji="💬"
+                            subEmojis={["💬"]}
+                            perToken={model.perToken}
+                        />
+                        <PriceBadge
+                            prices={[model.completionAudioPrice]}
+                            emoji="🔊"
+                            subEmojis={["🔊"]}
+                            perToken={model.perToken}
+                        />
+                        {model.perSecondPrice ? (
+                            <PriceBadge
+                                prices={[model.perSecondPrice]}
+                                emoji="🎬"
+                                subEmojis={["🎬"]}
+                                perSecond
+                            />
+                        ) : model.perTokenPrice ? (
+                            <PriceBadge
+                                prices={[model.perTokenPrice]}
+                                emoji="🎬"
+                                subEmojis={["🎬"]}
+                                perToken
+                            />
+                        ) : model.perImagePrice ? (
+                            <PriceBadge
+                                prices={[model.perImagePrice]}
+                                emoji="🖼️"
+                                subEmojis={["🖼️"]}
+                                perImage
+                            />
                         ) : (
-                            <PriceBadge prices={[model.completionImagePrice]} emoji="🖼️" subEmojis={["🖼️"]} perToken={model.perToken} />
+                            <PriceBadge
+                                prices={[model.completionImagePrice]}
+                                emoji="🖼️"
+                                subEmojis={["🖼️"]}
+                                perToken={model.perToken}
+                            />
                         )}
                     </div>
                 )}

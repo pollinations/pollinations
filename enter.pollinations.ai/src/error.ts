@@ -1,10 +1,10 @@
+import { APIError } from "better-auth";
 import type { ErrorHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
-import { Env } from "./env.ts";
-import { APIError } from "better-auth";
-import { ContentfulStatusCode } from "hono/utils/http-status";
 import { ValidationError } from "@/middleware/validator";
+import type { Env } from "./env.ts";
 
 type UpstreamErrorOptions = {
     res?: Response;
@@ -26,22 +26,26 @@ export class UpstreamError extends HTTPException {
     }
 }
 
-const GenericErrorDetailsSchema = z.object({
-    name: z.string(),
-    stack: z.string().optional(),
-});
+const GenericErrorDetailsSchema = z
+    .object({
+        name: z.string(),
+        stack: z.string().optional(),
+    })
+    .meta({ $id: "ErrorDetails" });
 
-const ValidationErrorDetailsSchema = z.object({
-    name: z.string(),
-    stack: z.string().optional(),
-    formErrors: z.array(z.string()),
-    fieldErrors: z.record(z.string(), z.array(z.string())),
-});
+const ValidationErrorDetailsSchema = z
+    .object({
+        name: z.string(),
+        stack: z.string().optional(),
+        formErrors: z.array(z.string()),
+        fieldErrors: z.record(z.string(), z.array(z.string())),
+    })
+    .meta({ $id: "ValidationErrorDetails" });
 
 export function createErrorResponseSchema(
     status: ContentfulStatusCode,
 ): z.ZodObject {
-    let errorDetailsSchema =
+    const errorDetailsSchema =
         status === 400
             ? ValidationErrorDetailsSchema
             : GenericErrorDetailsSchema;
@@ -82,12 +86,23 @@ const ErrorResponseSchema = z.discriminatedUnion("status", [
 
 type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 
-export const handleError: ErrorHandler<Env> = (err, c) => {
+export const handleError: ErrorHandler<Env> = async (err, c) => {
     const log = c.get("log");
     const timestamp = new Date().toISOString();
 
     // Set the error on the context for it to be tracked
     c.set("error", err);
+
+    // Check for UpstreamError first (more specific than HTTPException)
+    // Use name check as fallback for bundling/prototype chain issues
+    if (err instanceof UpstreamError || err.name === "UpstreamError") {
+        const status = (err as UpstreamError).status;
+        const response = createBaseErrorResponse(err, status, timestamp);
+        log.trace("UpstreamError: {message}", {
+            message: err.message || getDefaultErrorMessage(status),
+        });
+        return c.json(response, status);
+    }
 
     if (err instanceof HTTPException) {
         const status = err.status;
@@ -209,7 +224,7 @@ export function getErrorCode(status: number): string {
 }
 
 export const KNOWN_ERROR_STATUS_CODES = [
-    400, 401, 403, 405, 409, 422, 429, 500, 502, 503,
+    400, 401, 402, 403, 405, 409, 422, 429, 500, 502, 503,
 ] as const;
 
 export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
@@ -218,8 +233,8 @@ export function getDefaultErrorMessage(status: number): string {
     const messages: Record<number, string> = {
         400: "Something was wrong with the input data, check the details for more info.",
         401: "You need to authenticate by providing a session cookie or Authorization header (Bearer token).",
-        402: "Your pollen balance is too low.",
-        403: "Access denied! You don't have the required permissions.",
+        402: "Insufficient pollen balance or API key budget exhausted.",
+        403: "Access denied! You don't have the required permissions for this resource or model.",
         404: "Oh no, there's nothing here.",
         405: "That HTTP method isn't supported here. Please check the API docs.",
         409: "Something with these details already exists. Maybe update it instead?",

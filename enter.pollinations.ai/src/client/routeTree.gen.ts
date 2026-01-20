@@ -11,6 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as RefundsRouteImport } from './routes/refunds'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as AuthorizeRouteImport } from './routes/authorize'
 import { Route as IndexRouteImport } from './routes/index'
 
 const TermsRoute = TermsRouteImport.update({
@@ -23,6 +26,21 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RefundsRoute = RefundsRouteImport.update({
+  id: '/refunds',
+  path: '/refunds',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthorizeRoute = AuthorizeRouteImport.update({
+  id: '/authorize',
+  path: '/authorize',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -31,30 +49,55 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/authorize': typeof AuthorizeRoute
+  '/privacy': typeof PrivacyRoute
+  '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/authorize': typeof AuthorizeRoute
+  '/privacy': typeof PrivacyRoute
+  '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/authorize': typeof AuthorizeRoute
+  '/privacy': typeof PrivacyRoute
+  '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sign-in' | '/terms'
+  fullPaths:
+    | '/'
+    | '/authorize'
+    | '/privacy'
+    | '/refunds'
+    | '/sign-in'
+    | '/terms'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sign-in' | '/terms'
-  id: '__root__' | '/' | '/sign-in' | '/terms'
+  to: '/' | '/authorize' | '/privacy' | '/refunds' | '/sign-in' | '/terms'
+  id:
+    | '__root__'
+    | '/'
+    | '/authorize'
+    | '/privacy'
+    | '/refunds'
+    | '/sign-in'
+    | '/terms'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthorizeRoute: typeof AuthorizeRoute
+  PrivacyRoute: typeof PrivacyRoute
+  RefundsRoute: typeof RefundsRoute
   SignInRoute: typeof SignInRoute
   TermsRoute: typeof TermsRoute
 }
@@ -75,6 +118,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/refunds': {
+      id: '/refunds'
+      path: '/refunds'
+      fullPath: '/refunds'
+      preLoaderRoute: typeof RefundsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/authorize': {
+      id: '/authorize'
+      path: '/authorize'
+      fullPath: '/authorize'
+      preLoaderRoute: typeof AuthorizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -87,6 +151,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthorizeRoute: AuthorizeRoute,
+  PrivacyRoute: PrivacyRoute,
+  RefundsRoute: RefundsRoute,
   SignInRoute: SignInRoute,
   TermsRoute: TermsRoute,
 }

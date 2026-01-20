@@ -35,9 +35,9 @@ export const registerFeedListener = async (
         Connection: "keep-alive",
     });
 
-    // Check if the password query parameter matches the FEED_PASSWORD
+    // Check if the password query parameter matches the PLN_FEED_PASSWORD
     const isAuthenticated =
-        parsedUrl.searchParams.get("password") === process.env.FEED_PASSWORD;
+        parsedUrl.searchParams.get("password") === process.env.PLN_FEED_PASSWORD;
 
     if (isAuthenticated) {
         logAuth("Authenticated feed access granted");

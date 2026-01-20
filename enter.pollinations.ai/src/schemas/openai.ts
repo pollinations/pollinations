@@ -1,7 +1,17 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import { getTextServices } from "../../../shared/registry/registry.ts";
+import {
+    DEFAULT_TEXT_MODEL,
+    AUDIO_VOICES,
+    TEXT_SERVICES,
+} from "../../../shared/registry/text.ts";
+
+// Build list of valid model names: service IDs + all aliases
+const VALID_TEXT_MODELS = [
+    ...Object.keys(TEXT_SERVICES),
+    ...Object.values(TEXT_SERVICES).flatMap((service) => service.aliases),
+] as const;
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
 
@@ -24,10 +34,29 @@ const ChatCompletionFunctionCallOptionSchema = z.object({
     name: z.string(),
 });
 
-const ChatCompletionToolSchema = z.object({
+// Standard OpenAI function tool
+const FunctionToolSchema = z.object({
     type: z.literal("function"),
     function: FunctionObjectSchema,
 });
+
+// Gemini-specific built-in tools (no additional config needed)
+// See: https://ai.google.dev/gemini-api/docs/tools
+const GeminiBuiltInToolSchema = z.object({
+    type: z.enum([
+        "code_execution", // Run Python code in sandbox
+        "google_search", // Real-time web search grounding
+        "google_maps", // Location/maps grounding
+        "url_context", // Read/ground on specific URLs
+        "computer_use", // Browser automation (Preview)
+        "file_search", // Search uploaded files
+    ]),
+});
+
+const ChatCompletionToolSchema = z.union([
+    FunctionToolSchema,
+    GeminiBuiltInToolSchema,
+]);
 
 const ChatCompletionNamedToolChoiceSchema = z.object({
     type: z.literal("function"),
@@ -44,18 +73,69 @@ const ChatCompletionRequestMessageContentPartImageSchema = z.object({
     image_url: z.object({
         url: z.string(),
         detail: z.enum(["auto", "low", "high"]).optional(),
+        mime_type: z.string().optional(), // For explicit MIME type (e.g., "image/jpeg")
     }),
 });
+
+// Video URL content type - currently supported by Gemini models only
+// Enables native YouTube video analysis (visual frames + audio) without manual extraction
+const ChatCompletionRequestMessageContentPartVideoSchema = z.object({
+    type: z.literal("video_url"),
+    video_url: z.object({
+        url: z.string(), // Supports YouTube URLs, gs://, https://, or data: URLs
+        mime_type: z.string().optional(), // Auto-detected for YouTube URLs as "video/mp4"
+    }),
+});
+
+// Anthropic prompt caching support
+const CacheControlSchema = z
+    .object({
+        type: z.enum(["ephemeral"]),
+    })
+    .optional()
+    .meta({ $id: "CacheControl" });
 
 const ChatCompletionRequestMessageContentPartTextSchema = z.object({
     type: z.literal("text"),
     text: z.string(),
+    cache_control: CacheControlSchema,
 });
 
-const ChatCompletionRequestMessageContentPartSchema = z.union([
-    ChatCompletionRequestMessageContentPartTextSchema,
-    ChatCompletionRequestMessageContentPartImageSchema,
-]);
+const ChatCompletionRequestMessageContentPartAudioSchema = z.object({
+    type: z.literal("input_audio"),
+    input_audio: z.object({
+        data: z.string(), // base64 encoded audio
+        format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
+    }),
+    cache_control: CacheControlSchema,
+});
+
+// File content for document/file uploads
+const ChatCompletionRequestMessageContentPartFileSchema = z.object({
+    type: z.literal("file"),
+    file: z.object({
+        file_data: z.string().optional(),
+        file_id: z.string().optional(),
+        file_name: z.string().optional(),
+        file_url: z.string().optional(),
+        mime_type: z.string().optional(),
+    }),
+    cache_control: CacheControlSchema,
+});
+
+const ChatCompletionRequestMessageContentPartSchema = z
+    .union([
+        ChatCompletionRequestMessageContentPartTextSchema,
+        ChatCompletionRequestMessageContentPartImageSchema,
+        ChatCompletionRequestMessageContentPartVideoSchema,
+        ChatCompletionRequestMessageContentPartAudioSchema,
+        ChatCompletionRequestMessageContentPartFileSchema,
+        // Allow any other content types for provider-specific extensions
+        z
+            .object({ type: z.string() })
+            .passthrough(),
+    ])
+    .meta({ $id: "MessageContentPart" });
 
 // Thinking (provider-specific; requires strict_openai_compliance=false)
 const ChatCompletionMessageContentPartThinkingSchema = z.object({
@@ -69,15 +149,23 @@ const ChatCompletionMessageContentPartRedactedThinkingSchema = z.object({
 });
 
 const ChatCompletionRequestSystemMessageSchema = z.object({
-    content: z.string(),
+    content: z.union([
+        z.string(),
+        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+    ]),
     role: z.literal("system"),
     name: z.string().optional(),
+    cache_control: CacheControlSchema,
 });
 
 const ChatCompletionRequestDeveloperMessageSchema = z.object({
-    content: z.string(),
+    content: z.union([
+        z.string(),
+        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+    ]),
     role: z.literal("developer"),
     name: z.string().optional(),
+    cache_control: CacheControlSchema,
 });
 
 const ChatCompletionRequestUserMessageSchema = z.object({
@@ -103,7 +191,13 @@ const ChatCompletionMessageToolCallsSchema = z.array(
 );
 
 const ChatCompletionRequestAssistantMessageSchema = z.object({
-    content: z.string().nullable().optional(),
+    content: z
+        .union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ])
+        .nullable()
+        .optional(),
     role: z.literal("assistant"),
     name: z.string().optional(),
     tool_calls: ChatCompletionMessageToolCallsSchema.optional(),
@@ -114,12 +208,19 @@ const ChatCompletionRequestAssistantMessageSchema = z.object({
         })
         .nullable()
         .optional(),
+    cache_control: CacheControlSchema,
 });
 
 const ChatCompletionRequestToolMessageSchema = z.object({
     role: z.literal("tool"),
-    content: z.string(),
+    content: z
+        .union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ])
+        .nullable(),
     tool_call_id: z.string(),
+    cache_control: CacheControlSchema,
 });
 
 const ChatCompletionRequestFunctionMessageSchema = z.object({
@@ -178,7 +279,21 @@ const ThinkingSchema = z
 
 export const CreateChatCompletionRequestSchema = z.object({
     messages: z.array(ChatCompletionRequestMessageSchema),
-    model: z.enum(getTextServices()).optional(),
+    model: z
+        .literal(VALID_TEXT_MODELS)
+        .optional()
+        .default(DEFAULT_TEXT_MODEL)
+        .meta({
+            description:
+                "AI model for text generation. See /v1/models for full list.",
+        }),
+    modalities: z.array(z.enum(["text", "audio"])).optional(),
+    audio: z
+        .object({
+            voice: z.enum(AUDIO_VOICES),
+            format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
+        })
+        .optional(),
     frequency_penalty: z
         .number()
         .min(-2)
@@ -186,6 +301,7 @@ export const CreateChatCompletionRequestSchema = z.object({
         .nullable()
         .optional()
         .default(0),
+    repetition_penalty: z.number().min(0).max(2).nullable().optional(),
     logit_bias: z
         .record(z.string(), z.number().int())
         .nullable()
@@ -194,7 +310,6 @@ export const CreateChatCompletionRequestSchema = z.object({
     logprobs: z.boolean().nullable().optional().default(false),
     top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
     max_tokens: z.number().int().min(0).nullable().optional(),
-    n: z.number().int().min(1).max(128).nullable().optional().default(1),
     presence_penalty: z
         .number()
         .min(-2)
@@ -206,7 +321,7 @@ export const CreateChatCompletionRequestSchema = z.object({
     seed: z
         .number()
         .int()
-        .min(0)
+        .min(-1)
         .max(Number.MAX_SAFE_INTEGER)
         .nullable()
         .optional(),
@@ -216,7 +331,9 @@ export const CreateChatCompletionRequestSchema = z.object({
     stream: z.boolean().nullable().optional().default(false),
     stream_options: ChatCompletionStreamOptionsSchema,
     thinking: ThinkingSchema,
-    reasoning_effort: z.enum(["low", "medium", "high"]).optional(),
+    reasoning_effort: z
+        .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+        .optional(),
     thinking_budget: z.number().int().min(0).optional(),
     temperature: z.number().min(0).max(2).nullable().optional().default(1),
     top_p: z.number().min(0).max(1).nullable().optional().default(1),
@@ -239,12 +356,17 @@ export const CreateChatCompletionRequestSchema = z.object({
 
 const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionRequestMessageContentPartTextSchema,
+    ChatCompletionRequestMessageContentPartImageSchema,
     ChatCompletionMessageContentPartThinkingSchema,
     ChatCompletionMessageContentPartRedactedThinkingSchema,
+    // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
+    z
+        .object({ type: z.string() })
+        .passthrough(),
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({
-    content: z.string().nullable(),
+    content: z.string().nullish(),
     tool_calls: ChatCompletionMessageToolCallsSchema.nullish(),
     role: z.literal("assistant"),
     function_call: z
@@ -285,42 +407,41 @@ const ChatCompletionChoiceLogprobsSchema = z
     })
     .nullable();
 
-export const CompletionUsageSchema = z.object({
-    completion_tokens: z.number().int().nonnegative(),
-    completion_tokens_details: z
-        .object({
-            accepted_prediction_tokens: z
-                .number()
-                .int()
-                .nonnegative()
-                .optional(),
-            audio_tokens: z.number().int().nonnegative().optional(),
-            reasoning_tokens: z.number().int().nonnegative().optional(),
-            rejected_prediction_tokens: z
-                .number()
-                .int()
-                .nonnegative()
-                .optional(),
-        })
-        .nullish(),
-    prompt_tokens: z.number().int().nonnegative(),
-    prompt_tokens_details: z
-        .object({
-            audio_tokens: z.number().int().nonnegative().optional(),
-            cached_tokens: z.number().int().nonnegative().optional(),
-        })
-        .nullish(),
-    total_tokens: z.number().int().nonnegative(),
-});
+export const CompletionUsageSchema = z
+    .object({
+        completion_tokens: z.number().int().nonnegative(),
+        completion_tokens_details: z
+            .object({
+                accepted_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .optional(),
+                audio_tokens: z.number().int().nonnegative().optional(),
+                reasoning_tokens: z.number().int().nonnegative().optional(),
+                rejected_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .optional(),
+            })
+            .nullish(),
+        prompt_tokens: z.number().int().nonnegative(),
+        prompt_tokens_details: z
+            .object({
+                audio_tokens: z.number().int().nonnegative().optional(),
+                cached_tokens: z.number().int().nonnegative().optional(),
+            })
+            .nullish(),
+        total_tokens: z.number().int().nonnegative(),
+    })
+    .meta({ $id: "CompletionUsage" });
 
 export type CompletionUsage = z.infer<typeof CompletionUsageSchema>;
 
-export const ContentFilterSeveritySchema = z.enum([
-    "safe",
-    "low",
-    "medium",
-    "high",
-]);
+export const ContentFilterSeveritySchema = z
+    .enum(["safe", "low", "medium", "high"])
+    .meta({ $id: "ContentFilterSeverity" });
 
 export type ContentFilterSeverity = z.infer<typeof ContentFilterSeveritySchema>;
 
@@ -355,7 +476,8 @@ export const ContentFilterResultSchema = z
             detected: z.boolean(),
         }),
     })
-    .partial();
+    .partial()
+    .meta({ $id: "ContentFilterResult" });
 
 export type ContentFilterResult = z.infer<typeof ContentFilterResultSchema>;
 
@@ -370,19 +492,10 @@ const UserTierSchema = z.literal(["anonymous", "seed", "flower", "nectar"]);
 export type UserTier = z.infer<typeof UserTierSchema>;
 
 const CompletionChoiceSchema = z.object({
-    finish_reason: z
-        .enum([
-            "stop",
-            "length",
-            "tool_calls",
-            "content_filter",
-            "function_call",
-            "", // Perplexity returns empty string
-        ])
-        .nullable()
-        .optional(),
-    index: z.number().int().nonnegative(),
-    message: ChatCompletionResponseMessageSchema,
+    // Accept any string - backends may return various values (stop, length, error, max_tokens, etc.)
+    finish_reason: z.string().nullable().optional(),
+    index: z.number().int().nonnegative().optional(), // Optional for non-OpenAI providers
+    message: ChatCompletionResponseMessageSchema.optional(), // Optional for non-OpenAI providers
     logprobs: ChatCompletionChoiceLogprobsSchema.nullish(),
     content_filter_results: ContentFilterResultSchema.nullish(),
 });
@@ -437,17 +550,8 @@ export const CreateChatCompletionStreamResponseSchema = z.object({
         z.object({
             delta: ChatCompletionStreamResponseDeltaSchema,
             logprobs: ChatCompletionChoiceLogprobsSchema.optional(),
-            finish_reason: z
-                .enum([
-                    "stop",
-                    "length",
-                    "tool_calls",
-                    "content_filter",
-                    "function_call",
-                    "", // Perplexity returns empty string
-                ])
-                .nullable()
-                .optional(),
+            // Accept any string - backends may return various values
+            finish_reason: z.string().nullable().optional(),
             index: z.number().int().nonnegative(),
         }),
     ),
@@ -464,26 +568,19 @@ export const CreateChatCompletionStreamResponseSchema = z.object({
         .optional(),
 });
 
-const ModelDescriptionSchema = z
+const OpenAIModelSchema = z
     .object({
-        name: z.string(),
-        description: z.string(),
-        tier: z.enum(["anonymous", "seed", "flower", "nectar"]),
-        community: z.boolean(),
-        aliases: z.array(z.string()).optional(),
-        input_modalities: z.array(z.enum(["text", "image", "audio"])),
-        output_modalities: z.array(z.enum(["text", "image", "audio"])),
-        tools: z.boolean(),
-        vision: z.boolean(),
-        audio: z.boolean(),
-        maxInputChars: z.number().optional(),
-        reasoning: z.boolean().optional(),
-        voices: z.array(z.string()).optional(),
-        uncensored: z.boolean().optional(),
-        supportsSystemMessages: z.boolean().optional(),
+        id: z.string(),
+        object: z.literal("model"),
+        created: z.number(),
     })
-    .meta({ description: "Model description and capabilities" });
+    .meta({ description: "OpenAI-compatible model object" });
 
-export const GetModelsResponseSchema = z.array(ModelDescriptionSchema).meta({
-    description: "Array of model descriptions for each available model.",
-});
+export const GetModelsResponseSchema = z
+    .object({
+        object: z.literal("list"),
+        data: z.array(OpenAIModelSchema),
+    })
+    .meta({
+        description: "OpenAI-compatible list of available models.",
+    });

@@ -88,7 +88,7 @@ export /**
  * @param {Object} requestOptions - Request options (optional, for user API key passthrough)
  * @returns {Object} - Headers object with x-portkey prefixes
  */
-async function generatePortkeyHeaders(config, requestOptions = {}) {
+async function generatePortkeyHeaders(config: any, requestOptions: any = {}) {
     if (!config) {
         errorLog("No configuration provided for header generation");
         throw new Error("No configuration provided for header generation");

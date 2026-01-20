@@ -14,6 +14,13 @@ import { createSseStreamConverter } from "./sseStreamConverter.js";
 const log = debug(`pollinations:genericopenai`);
 const errorLog = debug(`pollinations:error`);
 
+// Extended error interface for API errors
+interface ApiError extends Error {
+    status?: number;
+    details?: any;
+    model?: string;
+}
+
 /**
  * Generic OpenAI-compatible API client function
  * @param {Array} messages - Array of messages for the conversation
@@ -27,7 +34,7 @@ const errorLog = debug(`pollinations:error`);
  * @param {Object} config.additionalHeaders - Optional additional headers to include in requests
  * @returns {Object} - API response object
  */
-export async function genericOpenAIClient(messages, options = {}, config) {
+export async function genericOpenAIClient(messages: any[], options: any = {}, config: any) {
     const {
         endpoint,
         authHeaderName = "Authorization",
@@ -148,10 +155,9 @@ export async function genericOpenAIClient(messages, options = {}, config) {
                 // Build a cleaner error message
                 const errorMessage = `${response.status} ${response.statusText}`;
 
-                const error = new Error(errorMessage);
+                const error: ApiError = new Error(errorMessage);
                 error.status = response.status;
                 error.details = errorDetails;
-
                 error.model = modelName;
 
                 throw error;
@@ -228,10 +234,9 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             // Build a cleaner error message
             const errorMessage = `${response.status} ${response.statusText}`;
 
-            const error = new Error(errorMessage);
+            const error: ApiError = new Error(errorMessage);
             error.status = response.status;
             error.details = errorDetails;
-
             error.model = modelName;
             errorLog(
                 `[${requestId}] Error from Generic OpenAI API:`,
@@ -245,7 +250,7 @@ export async function genericOpenAIClient(messages, options = {}, config) {
         }
 
         // Parse response
-        const data = await response.json();
+        const data: any = await response.json();
         log(
             `[${requestId}] Parsed JSON response:`,
             JSON.stringify(data).substring(0, 500) + "...",

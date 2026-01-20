@@ -53,9 +53,9 @@ const clientConfig = {
 /**
  * Generates text using a local Portkey gateway with Azure OpenAI models
  */
-export async function generateTextPortkey(messages, options = {}) {
+export async function generateTextPortkey(messages: any[], options: any = {}) {
     // Create a copy of options to avoid mutating the original
-    let processedOptions = { ...options };
+    let processedOptions: any = { ...options };
 
     // Apply model transform if it exists
     let processedMessages = messages;

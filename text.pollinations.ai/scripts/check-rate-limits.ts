@@ -17,7 +17,7 @@ const hours = parseInt(process.argv[2]) || 1;
 
 console.log(`\n🔍 Rate Limit Analysis - Last ${hours} hour(s)\n`);
 
-const stats = getRateLimitStats(hours);
+const stats: any = getRateLimitStats(hours);
 
 if (stats.error) {
     console.log(`❌ Error: ${stats.error}`);
@@ -34,14 +34,14 @@ if (stats.total_errors === 0) {
 
 console.log("🎯 Errors by Tier:");
 Object.entries(stats.by_tier)
-    .sort(([, a], [, b]) => b - a)
+    .sort(([, a], [, b]) => (b as number) - (a as number))
     .forEach(([tier, count]) => {
         console.log(`  ${tier}: ${count} errors`);
     });
 
 console.log("\n🤖 Errors by Model:");
 Object.entries(stats.by_model)
-    .sort(([, a], [, b]) => b - a)
+    .sort(([, a], [, b]) => (b as number) - (a as number))
     .slice(0, 10) // Top 10 models
     .forEach(([model, count]) => {
         console.log(`  ${model}: ${count} errors`);
@@ -49,7 +49,7 @@ Object.entries(stats.by_model)
 
 console.log("\n👥 Top Users with Errors:");
 Object.entries(stats.by_user)
-    .sort(([, a], [, b]) => b - a)
+    .sort(([, a], [, b]) => (b as number) - (a as number))
     .slice(0, 10) // Top 10 users
     .forEach(([user, count]) => {
         console.log(`  ${user}: ${count} errors`);

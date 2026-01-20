@@ -1,7 +1,9 @@
 import debug from "debug";
 import dotenv from "dotenv";
 // Import shared utilities for authentication and environment handling
-import { extractReferrer } from "../shared/extractFromRequest.js";
+// Note: Using namespace import due to tsx/Node ESM interop with parent package lacking "type": "module"
+import * as sharedUtils from "../shared/extractFromRequest.js";
+const { extractReferrer } = sharedUtils as any;
 // Import parameter validators
 import {
     validateTextGenerationParams,

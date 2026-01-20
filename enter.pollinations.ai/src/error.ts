@@ -213,7 +213,7 @@ export function getErrorCode(status: number): string {
 }
 
 export const KNOWN_ERROR_STATUS_CODES = [
-    400, 401, 403, 405, 409, 422, 429, 500, 502, 503,
+    400, 401, 402, 403, 405, 409, 422, 429, 500, 502, 503,
 ] as const;
 
 export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];

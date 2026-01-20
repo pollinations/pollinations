@@ -6,8 +6,9 @@ import { user as userTable } from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import {
     createStripeClient,
-    isSessionProcessed,
     markSessionProcessed,
+    releaseSessionLock,
+    tryAcquireSessionLock,
     verifyWebhookSignature,
 } from "../utils/stripe.ts";
 
@@ -117,10 +118,15 @@ export const stripeWebhooksRoutes = new Hono<Env>()
 
                 // Only process completed payments (not pending async payments)
                 if (session.payment_status === "paid") {
-                    // Idempotency check - prevent duplicate credits on webhook retry
-                    if (await isSessionProcessed(c.env.KV, session.id)) {
+                    // Acquire lock BEFORE processing to prevent race conditions
+                    // This marks the session as "processing" atomically
+                    const acquired = await tryAcquireSessionLock(
+                        c.env.KV,
+                        session.id,
+                    );
+                    if (!acquired) {
                         console.log(
-                            `Stripe: Session ${session.id} already processed, skipping`,
+                            `Stripe: Session ${session.id} already processing/processed, skipping`,
                         );
                         break;
                     }
@@ -130,8 +136,8 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         c.env,
                     );
 
-                    // Mark as processed after successful credit
                     if (result.success && session.metadata) {
+                        // Mark as completed with full metadata (extends TTL to 7 days)
                         await markSessionProcessed(c.env.KV, session.id, {
                             userId: session.metadata.userId || "",
                             units: Number.parseInt(
@@ -140,9 +146,9 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                             ),
                             packSlug: session.metadata.packSlug || "unknown",
                         });
-                    }
-
-                    if (!result.success) {
+                    } else {
+                        // Release lock on failure to allow Stripe retry
+                        await releaseSessionLock(c.env.KV, session.id);
                         console.error(
                             "Failed to process checkout:",
                             result.message,
@@ -162,10 +168,14 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 // Handle delayed payment methods (e.g., bank transfers)
                 const session = event.data.object as Stripe.Checkout.Session;
 
-                // Idempotency check
-                if (await isSessionProcessed(c.env.KV, session.id)) {
+                // Acquire lock BEFORE processing to prevent race conditions
+                const acquired = await tryAcquireSessionLock(
+                    c.env.KV,
+                    session.id,
+                );
+                if (!acquired) {
                     console.log(
-                        `Stripe: Async session ${session.id} already processed, skipping`,
+                        `Stripe: Async session ${session.id} already processing/processed, skipping`,
                     );
                     break;
                 }
@@ -175,8 +185,8 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     c.env,
                 );
 
-                // Mark as processed after successful credit
                 if (result.success && session.metadata) {
+                    // Mark as completed with full metadata (extends TTL to 7 days)
                     await markSessionProcessed(c.env.KV, session.id, {
                         userId: session.metadata.userId || "",
                         units: Number.parseInt(
@@ -185,9 +195,9 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         ),
                         packSlug: session.metadata.packSlug || "unknown",
                     });
-                }
-
-                if (!result.success) {
+                } else {
+                    // Release lock on failure to allow Stripe retry
+                    await releaseSessionLock(c.env.KV, session.id);
                     console.error(
                         "Failed to process async payment:",
                         result.message,

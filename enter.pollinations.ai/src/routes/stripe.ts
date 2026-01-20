@@ -126,17 +126,10 @@ export const stripeRoutes = new Hono<Env>()
 
             return c.json({ error: "Failed to create checkout session" }, 500);
         } catch (error) {
+            // Log full error server-side for debugging
             console.error("Stripe checkout error:", error);
-            return c.json(
-                {
-                    error: "Failed to create checkout session",
-                    details:
-                        error instanceof Error
-                            ? error.message
-                            : "Unknown error",
-                },
-                500,
-            );
+            // Return generic message to client - don't expose internal error details
+            return c.json({ error: "Failed to create checkout session" }, 500);
         }
     })
 

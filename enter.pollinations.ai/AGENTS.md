@@ -385,7 +385,7 @@ To test Stripe pack purchases locally, you need to forward webhooks to your loca
 stripe listen --forward-to localhost:3000 --load-from-webhooks-api
 ```
 
-> **Note**: The Sandbox webhook URL must be `https://enter.pollinations.ai/api/webhooks/stripe` (with `/api` prefix) for this to work correctly.
+> **CRITICAL**: Do NOT add `/api/webhooks/stripe` to the `--forward-to` URL! The `--load-from-webhooks-api` flag already includes the path from Stripe Dashboard. Adding it manually causes path duplication (`/api/webhooks/stripe/api/webhooks/stripe`) and 404 errors.
 
 Then in another terminal:
 ```bash

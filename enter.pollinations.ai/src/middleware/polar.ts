@@ -1,14 +1,14 @@
-import { cached } from "@/cache";
 import { Polar } from "@polar-sh/sdk";
-import { createMiddleware } from "hono/factory";
-import { LoggerVariables } from "@/middleware/logger.ts";
-import type { AuthVariables } from "@/middleware/auth.ts";
-import { CustomerState } from "@polar-sh/sdk/models/components/customerstate.js";
-import { HTTPException } from "hono/http-exception";
-import { CustomerMeter } from "@polar-sh/sdk/models/components/customermeter.js";
-import { drizzle } from "drizzle-orm/d1";
-import { user as userTable } from "@/db/schema/better-auth.ts";
+import type { CustomerMeter } from "@polar-sh/sdk/models/components/customermeter.js";
+import type { CustomerState } from "@polar-sh/sdk/models/components/customerstate.js";
 import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
+import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
+import { cached } from "@/cache";
+import { user as userTable } from "@/db/schema/better-auth.ts";
+import type { AuthVariables } from "@/middleware/auth.ts";
+import type { LoggerVariables } from "@/middleware/logger.ts";
 
 type BalanceCheckResult = {
     selectedMeterId: string;
@@ -255,8 +255,8 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
             return;
         }
 
-        // no positive balance
-        throw new HTTPException(403, {
+        // no positive balance - 402 for all billing/payment issues
+        throw new HTTPException(402, {
             message: message || "Your pollen balance is too low.",
         });
     };

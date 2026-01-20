@@ -344,9 +344,7 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 
 ## 💚 Support Us
 
-- ☕ **[Ko-fi](https://ko-fi.com/pollinationsai)** — One-time donations
-- 💖 **[GitHub Sponsors](https://github.com/sponsors/pollinations)** — Monthly support
-- 🌐 **[Open Collective](https://opencollective.com/pollinationsai)** — Transparent funding
+The best way to support pollinations.ai is by using our product! Get your API key and start building at **[enter.pollinations.ai](https://enter.pollinations.ai)**.
 
 ## 📣 Stay Connected
 

@@ -11,7 +11,9 @@
  * node scripts/check-rate-limits.js 24  # Last 24 hours
  */
 
-import { getRateLimitStats } from "../logging/rateLimitLogger.js";
+// import { getRateLimitStats } from "../logging/rateLimitLogger.js";
+// TODO: Fix this import - logging directory doesn't exist
+const getRateLimitStats = (hours: number) => ({ error: "Rate limit logging not configured" });
 
 const hours = parseInt(process.argv[2]) || 1;
 

@@ -28,7 +28,8 @@
         "jsonwebtoken": "^9.0.2",
         "node-fetch": "^3.3.2",
         "tsx": "^4.20.3",
-        "typescript": "^5.8.3"
+        "typescript": "^5.8.3",
+        "zod": "^4.3.5"
     },
     "devDependencies": {
         "@istanbuljs/nyc-config-babel": "^3.0.0",

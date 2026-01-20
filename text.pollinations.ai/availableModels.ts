@@ -1,6 +1,6 @@
 // Import transform functions
 
-import { type ModelId, resolveServiceId } from "../shared/registry/registry.js";
+import { type ModelId, resolveServiceId } from "../shared/registry/registry.ts";
 // Import model configs
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import chickyTutorPrompt from "./personas/chickytutor.js";

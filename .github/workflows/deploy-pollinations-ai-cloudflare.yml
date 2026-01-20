@@ -1,0 +1,32 @@
+name: Deploy pollinations.ai
+
+on:
+  push:
+    branches:
+      - production
+    paths:
+      - 'pollinations.ai/**'
+      - '.github/workflows/deploy-pollinations-ai-cloudflare.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./pollinations.ai
+
+      - name: Build and deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run deploy:production
+        working-directory: ./pollinations.ai

@@ -1,7 +1,7 @@
 // ai.js - AI-related functionality for CatGPT
 
 // Constants for AI image generation
-const POLLINATIONS_API = 'https://enter.pollinations.ai/api/generate/image';
+const POLLINATIONS_API = 'https://gen.pollinations.ai/image';
 const PLN_APPS_KEY = 'plln_pk_2EZZcdEns9swqfIJ2yaoyJYWiSsTx38qcIFzCASqDjg96x2qfRvWkz9Qo3vDT66A';
 const ORIGINAL_CATGPT_IMAGE = 'https://raw.githubusercontent.com/pollinations/catgpt/refs/heads/main/images/original-catgpt.png';
 

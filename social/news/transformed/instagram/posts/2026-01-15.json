@@ -1,0 +1,53 @@
+{
+  "date": "2026-01-15",
+  "generated_at": "2026-01-15T16:15:32.478226+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art_carousel",
+  "linked_images": false,
+  "strategy_reasoning": "Using a 'Cozy Dev Log' carousel format transforms dry technical updates into a narrative of growth and care. The retro RPG/Stardew Valley aesthetic makes infrastructure changes feel like upgrading a home or garden, which fits the Pollinations brand of 'soft tools'.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Title%20screen%20text%20%27DEV%20LOG%27%20in%20chunky%208-bit%20font.%20A%20cozy%20pixel%20art%20wooden%20desk%20with%20a%20vintage%20computer%20monitor%20glowing%20softly.%20Outside%20the%20window%20is%20a%20pixelated%20garden%20with%20lime%20green%20%28%23ecf874%29%20plants.%20Warm%20sunset%20lighting%2C%20lo-fi%20aesthetic%2C%20Stardew%20Valley%20vibes.%20A%20tiny%20pixel%20bee%20rests%20on%20the%20monitor.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=33750877",
+      "prompt": "Title screen text 'DEV LOG' in chunky 8-bit font. A cozy pixel art wooden desk with a vintage computer monitor glowing softly. Outside the window is a pixelated garden with lime green (#ecf874) plants. Warm sunset lighting, lo-fi aesthetic, Stardew Valley vibes. A tiny pixel bee rests on the monitor.",
+      "description": "Cover slide establishing the cozy dev log theme"
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%20RPG%20style%20inventory%20screen%20showing%20a%20glowing%20pixel%20art%20treasure%20chest.%20Golden%20pixel%20coins%20spilling%20out%20softly.%20Text%20%27NOWPayments%27%20in%208-bit%20font.%20Soft%20pastel%20background%20%28lavender%20to%20peach%20gradient%29.%20Clean%2C%20chunky%20pixel%20art%20style%20like%20Unpacking.%20Warm%2C%20inviting%20atmosphere.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=726630005",
+      "prompt": "Retro RPG style inventory screen showing a glowing pixel art treasure chest. Golden pixel coins spilling out softly. Text 'NOWPayments' in 8-bit font. Soft pastel background (lavender to peach gradient). Clean, chunky pixel art style like Unpacking. Warm, inviting atmosphere.",
+      "description": "Announcing the new crypto payment integration"
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20cozy%20pixel%20art%20night%20scene.%20Soft%20pastel%20fireworks%20blooming%20in%20the%20sky%20like%20digital%20flowers.%20A%20tiny%208-bit%20wizard%20character%20watching.%20Lime%20green%20and%20dark%20purple%20sky%20gradient.%20Text%20%27DeepSeek%20x%20Fireworks%27%20in%20pixel%20font.%20Magical%2C%20nostalgic%2C%20warm%20glow%20effects.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=892556223",
+      "prompt": "A cozy pixel art night scene. Soft pastel fireworks blooming in the sky like digital flowers. A tiny 8-bit wizard character watching. Lime green and dark purple sky gradient. Text 'DeepSeek x Fireworks' in pixel font. Magical, nostalgic, warm glow effects.",
+      "description": "Visualizing the migration to Fireworks AI for DeepSeek"
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20gardening%20scene.%20A%20tiny%208-bit%20character%20watering%20a%20tidy%20row%20of%20blue%20and%20lime%20green%20UI%20windows%20growing%20like%20plants.%20Represents%20%27UI%20Polish%27%20and%20%27Bug%20Fixes%27.%20Soft%20sunlight%2C%20clean%20lines%2C%20wholesome%20vibes%20like%20A%20Short%20Hike.%20Text%20%27Fresh%20UI%20%26%20Fixes%27.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1580145601",
+      "prompt": "Pixel art gardening scene. A tiny 8-bit character watering a tidy row of blue and lime green UI windows growing like plants. Represents 'UI Polish' and 'Bug Fixes'. Soft sunlight, clean lines, wholesome vibes like A Short Hike. Text 'Fresh UI & Fixes'.",
+      "description": "Grouping the UI updates, Reddit patches, and CI fixes"
+    }
+  ],
+  "caption": "Dev Log: Cozy Edition 🪵✨\n\nWe’ve been tending to the digital garden and things are blooming! 🌸 Here’s what’s new in the patch:\n\n🪙 New Ways to Pay: Added NOWPayments crypto integration (shiny!)\n🎆 Faster Magic: DeepSeek model migrated to Fireworks AI for that speed boost\n🎨 Fresh Paint: The Authorize page got a glow-up (blue is the new amber)\n🐛 Tidy Garden: Fixed up Reddit workflows & Biome CI checks\n\nBuilding soft tools for you, always. 🐝\n\n#pollinations #opensource #pixelart #indiedev #cozyvibes #aiart #devlog #8bit",
+  "hashtags": [
+    "#pollinations",
+    "#aiart",
+    "#opensource",
+    "#pixelart",
+    "#retrogaming",
+    "#indiedev",
+    "#8bit",
+    "#cozygames"
+  ],
+  "alt_text": "A carousel of cozy 8-bit pixel art images. 1. A vintage computer on a desk with text DEV LOG. 2. A pixel treasure chest representing crypto payments. 3. Pastel fireworks in a night sky. 4. A tiny character gardening UI windows.",
+  "pr_references": [
+    "#7308",
+    "#7309",
+    "#6733",
+    "#7287",
+    "#7270",
+    "#7283",
+    "#7284",
+    "#7275"
+  ]
+}

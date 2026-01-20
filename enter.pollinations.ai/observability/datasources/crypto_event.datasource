@@ -1,0 +1,19 @@
+TOKEN crypto_event_append APPEND
+TOKEN crypto_event_read READ
+
+DESCRIPTION >
+NOWPayments crypto webhook events (payments) with full JSON payload
+
+SCHEMA >
+`timestamp` DateTime `json:$.timestamp` DEFAULT now(),
+`event_type` LowCardinality(String) `json:$.event_type` DEFAULT '',
+`user_id` String `json:$.user_id` DEFAULT '',
+`payment_id` String `json:$.payment_id` DEFAULT '',
+`order_id` String `json:$.order_id` DEFAULT '',
+`pay_currency` LowCardinality(String) `json:$.pay_currency` DEFAULT '',
+`payload` String `json:$.payload`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
+ENGINE_SORTING_KEY "timestamp, event_type, user_id"
+ENGINE_PRIMARY_KEY "timestamp, event_type"

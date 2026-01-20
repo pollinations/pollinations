@@ -22,20 +22,20 @@ App submissions are now **fully automated** via the `app-review-submission.yml` 
 **Table format in APPS.md:**
 
 ```markdown
-| Emoji | Name            | Description                   | Language | Category | GitHub  | Repo                   | Stars | Discord | Other | Submitted  |
-| ----- | --------------- | ----------------------------- | -------- | -------- | ------- | ---------------------- | ----- | ------- | ----- | ---------- |
-| 🎨    | [App Name](url) | Brief description (~80 chars) |          | creative | @github | https://github.com/... | ⭐123 |         |       | 2025-01-01 |
+| Emoji | Name     | Web_URL | Description                   | Language | Category | GitHub  | GitHub_ID | Repo                   | Stars | Discord | Other | Submitted  |
+| ----- | -------- | ------- | ----------------------------- | -------- | -------- | ------- | --------- | ---------------------- | ----- | ------- | ----- | ---------- |
+| 🎨    | App Name | url     | Brief description (~80 chars) |          | creative | @github | 12345678  | https://github.com/... | ⭐123 |         |       | 2025-01-01 |
 ```
 
 **Categories:**
 
-- Vibe Coding ✨ (`vibeCoding`): No-code / describe-to-code playgrounds and builders
-- Creative 🎨 (`creative`): Turn prompts into images, video, music, design, slides
-- Games 🎲 (`games`): AI-powered play, interactive fiction, puzzle & agent worlds
-- Hack-&-Build 🛠️ (`hackAndBuild`): SDKs, integration libs, extensions, dashboards, MCP servers
-- Chat 💬 (`chat`): Standalone chat UIs / multi-model playgrounds
-- Social Bots 🤖 (`socialBots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
-- Learn 📚 (`learn`): Tutorials, guides, style books & educational demos
+- Vibes ✨ (`Vibes`): No-code / describe-to-code playgrounds and builders
+- Creative 🎨 (`Creative`): Turn prompts into images, video, music, design, slides
+- Games 🎲 (`Games`): AI-powered play, interactive fiction, puzzle & agent worlds
+- Dev_Tools 🛠️ (`Dev_Tools`): SDKs, integration libs, extensions, dashboards, MCP servers
+- Chat 💬 (`Chat`): Standalone chat UIs / multi-model playgrounds
+- Social_Bots 🤖 (`Social_Bots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
+- Learn 📚 (`Learn`): Tutorials, guides, style books & educational demos
 
 ## Non-English Apps
 

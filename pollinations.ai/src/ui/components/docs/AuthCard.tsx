@@ -96,7 +96,7 @@ export function AuthCard() {
                 </a>
                 <span className="text-xs text-text-body-secondary">
                     Building an app? Let users pay for their own AI usage — you
-                    pay $0. No backend needed.
+                    pay €0. No backend needed.
                 </span>
             </div>
 

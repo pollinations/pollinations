@@ -74,7 +74,7 @@ pollinations/
 All API requests go through `gen.pollinations.ai`, which routes to the `enter.pollinations.ai` gateway for authentication and billing.
 
 - **Authentication**: Publishable keys (`pk_`) for frontend, Secret keys (`sk_`) for backend
-- **Billing**: Pollen credits ($1 ≈ 1 Pollen)
+- **Billing**: Pollen credits (€1 ≈ 1 Pollen)
 - **Get API keys**: [enter.pollinations.ai](https://enter.pollinations.ai)
 - **Full API docs**: [APIDOCS.md](./APIDOCS.md)
 

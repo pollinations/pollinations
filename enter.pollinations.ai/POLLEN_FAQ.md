@@ -2,7 +2,7 @@
 
 ## What is Pollen?
 
-Pollen is our prepaid credit system. **$1 ≈ 1 Pollen** (pricing may evolve). You spend it to make API calls.
+Pollen is our prepaid credit system. **€1 ≈ 1 Pollen** (pricing may evolve). You spend it to make API calls.
 
 ## How do I get Pollen?
 

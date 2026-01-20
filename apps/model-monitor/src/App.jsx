@@ -39,6 +39,7 @@ function computeHealthStatus(stats) {
     const userErrors =
         (stats.errors_400 || 0) +
         (stats.errors_401 || 0) +
+        (stats.errors_402 || 0) +
         (stats.errors_403 || 0) +
         (stats.errors_429 || 0);
     const adjustedTotal = total - userErrors;
@@ -87,6 +88,7 @@ function GlobalHealthSummary({ models }) {
             const userErrors =
                 (stats.errors_400 || 0) +
                 (stats.errors_401 || 0) +
+                (stats.errors_402 || 0) +
                 (stats.errors_403 || 0) +
                 (stats.errors_429 || 0);
             const adjusted = total - userErrors;
@@ -258,18 +260,33 @@ function GatewayHealth({ stats }) {
     const totals = stats.reduce(
         (acc, s) => ({
             requests: acc.requests + (s.total_requests || 0),
+            err400: acc.err400 + (s.errors_400 || 0),
             err401: acc.err401 + (s.errors_401 || 0),
+            err402: acc.err402 + (s.errors_402 || 0),
             err403: acc.err403 + (s.errors_403 || 0),
             err429: acc.err429 + (s.errors_429 || 0),
             err4xxOther: acc.err4xxOther + (s.errors_4xx_other || 0),
         }),
-        { requests: 0, err401: 0, err403: 0, err429: 0, err4xxOther: 0 },
+        {
+            requests: 0,
+            err400: 0,
+            err401: 0,
+            err402: 0,
+            err403: 0,
+            err429: 0,
+            err4xxOther: 0,
+        },
     );
 
     if (totals.requests === 0) return null;
 
     const total4xx =
-        totals.err401 + totals.err403 + totals.err429 + totals.err4xxOther;
+        totals.err400 +
+        totals.err401 +
+        totals.err402 +
+        totals.err403 +
+        totals.err429 +
+        totals.err4xxOther;
     if (total4xx === 0) return null;
 
     const pct = (n) => (totals.requests > 0 ? (n / totals.requests) * 100 : 0);
@@ -279,12 +296,14 @@ function GatewayHealth({ stats }) {
         return p < 1 ? `${p.toFixed(1)}%` : `${Math.round(p)}%`;
     };
 
-    // Only 4xx errors - these are auth/validation failures
+    // Only 4xx errors - these are auth/billing/validation failures
     const errors = [
+        { code: "400", count: totals.err400, label: "Bad Request" },
         { code: "401", count: totals.err401, label: "No API Key" },
-        { code: "403", count: totals.err403, label: "No Pollen" },
+        { code: "402", count: totals.err402, label: "Low Balance" },
+        { code: "403", count: totals.err403, label: "Access Denied" },
         { code: "429", count: totals.err429, label: "Rate Limited" },
-        { code: "4xx", count: totals.err4xxOther, label: "Bad Request" },
+        { code: "4xx", count: totals.err4xxOther, label: "Other" },
     ].filter((e) => e.count > 0);
 
     return (
@@ -619,6 +638,7 @@ function App() {
                                     const userErrors =
                                         (stats?.errors_400 || 0) +
                                         (stats?.errors_401 || 0) +
+                                        (stats?.errors_402 || 0) +
                                         (stats?.errors_403 || 0) +
                                         (stats?.errors_429 || 0);
                                     const adjustedTotal = total - userErrors;

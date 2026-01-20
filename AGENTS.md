@@ -297,6 +297,13 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 - Link to relevant code/files
 - No "I think" or "maybe" - be direct
 
+**Code Reviews:**
+- Focus on parts that need improving, not what's already good
+- Be concise and information-dense
+- Link to specific lines/files
+- Don't praise code that's fine
+- Don't repeat obvious things
+
 ## GitHub Labels
 
 - Only use established labels (check with `mcp1_list_issues`)

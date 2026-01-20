@@ -1,16 +1,16 @@
 import { omit, safeRound } from "../utils";
 import {
-    TEXT_SERVICES,
-    DEFAULT_TEXT_MODEL,
-    TextServiceId,
-    TextModelId,
-} from "./text";
-import {
-    IMAGE_SERVICES,
     DEFAULT_IMAGE_MODEL,
-    ImageServiceId,
-    ImageModelId,
+    IMAGE_SERVICES,
+    type ImageModelId,
+    type ImageServiceId,
 } from "./image";
+import {
+    DEFAULT_TEXT_MODEL,
+    TEXT_SERVICES,
+    type TextModelId,
+    type TextServiceId,
+} from "./text";
 
 const PRECISION = 8;
 

@@ -1,10 +1,10 @@
-import debug from "debug";
 import sleep from "await-sleep";
+import debug from "debug";
 import googleCloudAuth from "../../auth/googleCloudAuth.ts";
 import { HttpError } from "../httpError.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 
 // Logger
 const logOps = debug("pollinations:veo:ops");
@@ -288,7 +288,7 @@ async function pollVeoOperation(
     const PROJECT_ID = process.env.GOOGLE_PROJECT_ID;
 
     // Extract model from operation name
-    const modelMatch = operationName.match(/models\/([^\/]+)\/operations/);
+    const modelMatch = operationName.match(/models\/([^/]+)\/operations/);
     const model = modelMatch ? modelMatch[1] : MODEL_ID;
 
     const pollUrl = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${model}:fetchPredictOperation`;

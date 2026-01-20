@@ -1,10 +1,10 @@
-import debug from "debug";
 import sleep from "await-sleep";
+import debug from "debug";
+import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 
 // Logger
 const logOps = debug("pollinations:wan:ops");

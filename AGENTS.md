@@ -169,6 +169,11 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 - Check related PRs including comments, description, and history
 - If in the middle of a feature/fix, identify clear next steps before proceeding
 
+**Before implementing:**
+- **Verify assumptions on the web** - APIs, libraries, and patterns change frequently
+- **Read related files into context** - Get the full picture before making changes
+- **Check existing implementations** - Don't reinvent what already exists in the codebase
+
 ## Common Mistakes to Avoid
 
 **IMPORTANT - Claude often makes these mistakes:**

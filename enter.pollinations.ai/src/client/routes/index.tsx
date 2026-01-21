@@ -199,6 +199,29 @@ function RouteComponent() {
         router.invalidate();
     };
 
+    const handleUpdateApiKey = async (
+        id: string,
+        updates: {
+            allowedModels?: string[] | null;
+            pollenBudget?: number | null;
+            enabled?: boolean;
+        },
+    ) => {
+        const response = await fetch(`/api/api-keys/${id}/update`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(updates),
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+                (errorData as { message?: string }).message || "Update failed",
+            );
+        }
+        router.invalidate();
+    };
+
     const handleBuyPollen = (slug: string) => {
         // Navigate directly to Polar checkout endpoint - server will handle redirect
         window.location.href = `/api/polar/checkout/${productSlugToUrlParam(slug)}?redirect=true`;
@@ -459,6 +482,7 @@ function RouteComponent() {
                 <ApiKeyList
                     apiKeys={apiKeys}
                     onCreate={handleCreateApiKey}
+                    onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
                 />
                 <FAQ />

@@ -1,6 +1,7 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import { type FormatDistanceToken, formatDistanceToNowStrict } from "date-fns";
+import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 
 const shortFormatDistance: Record<FormatDistanceToken, string> = {
@@ -47,11 +48,17 @@ type ApiKey = {
     permissions: { [key: string]: string[] } | null;
     metadata: { [key: string]: unknown } | null;
     pollenBalance?: number | null;
+    enabled?: boolean;
 };
 
 type ApiKeyManagerProps = {
     apiKeys: ApiKey[];
     onCreate: (formData: CreateApiKey) => Promise<CreateApiKeyResponse>;
+    onUpdate: (id: string, updates: {
+        allowedModels?: string[] | null;
+        pollenBudget?: number | null;
+        enabled?: boolean;
+    }) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
 };
 
@@ -227,9 +234,11 @@ const ModelsBadge: FC<{
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     apiKeys,
     onCreate,
+    onUpdate,
     onDelete,
 }) => {
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
 
     const handleDelete = async () => {
         if (deleteId) {
@@ -291,10 +300,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                         const plaintextKey = apiKey.metadata?.[
                                             "plaintextKey"
                                         ] as string | undefined;
+                                        const isDisabled = apiKey.enabled === false;
 
                                         return (
                                             <Fragment key={apiKey.id}>
-                                                <Cell>
+                                                <Cell className={isDisabled ? "opacity-50" : ""}>
                                                     <span
                                                         className={cn(
                                                             "px-2 py-1 rounded text-xs font-medium",
@@ -308,7 +318,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                             : "🔒 Secret"}
                                                     </span>
                                                 </Cell>
-                                                <Cell>
+                                                <Cell className={isDisabled ? "opacity-50" : ""}>
                                                     <span
                                                         className="text-xs truncate block"
                                                         title={
@@ -317,6 +327,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                         }
                                                     >
                                                         {apiKey.name}
+                                                        {isDisabled && <span className="ml-1 text-red-500">(disabled)</span>}
                                                     </span>
                                                 </Cell>
                                                 <Cell>
@@ -383,7 +394,15 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                         }
                                                     />
                                                 </Cell>
-                                                <Cell>
+                                                <Cell className="flex gap-1">
+                                                    <button
+                                                        type="button"
+                                                        className="w-6 h-6 flex items-center justify-center rounded hover:bg-blue-100 text-gray-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                                        onClick={() => setEditingKey(apiKey)}
+                                                        title="Manage key"
+                                                    >
+                                                        ⚙
+                                                    </button>
                                                     <button
                                                         type="button"
                                                         className="w-6 h-6 flex items-center justify-center rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
@@ -450,6 +469,14 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </Dialog.Content>
                 </Dialog.Positioner>
             </Dialog.Root>
+            {editingKey && (
+                <EditApiKeyDialog
+                    apiKey={editingKey}
+                    onUpdate={onUpdate}
+                    onDelete={onDelete}
+                    onClose={() => setEditingKey(null)}
+                />
+            )}
         </>
     );
 };

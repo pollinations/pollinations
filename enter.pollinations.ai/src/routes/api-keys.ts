@@ -49,6 +49,10 @@ const UpdateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe('Account permissions: ["balance", "usage"]. null = none'),
+    enabled: z
+        .boolean()
+        .optional()
+        .describe("Whether the key is enabled. false = disabled"),
 });
 
 /**
@@ -92,6 +96,7 @@ export const apiKeysRoutes = new Hono<Env>()
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
+                    enabled: key.enabled ?? true,
                 })),
             });
         },
@@ -112,7 +117,7 @@ export const apiKeysRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const authClient = c.var.auth.client;
             const { id } = c.req.param();
-            const { allowedModels, pollenBudget, accountPermissions } =
+            const { allowedModels, pollenBudget, accountPermissions, enabled } =
                 c.req.valid("json");
 
             // Verify ownership before updating
@@ -167,14 +172,15 @@ export const apiKeysRoutes = new Hono<Env>()
                 });
             }
 
-            // Update pollenBalance directly in D1 if provided
-            // null = remove budget (unlimited), number = set budget
-            if (pollenBudget !== undefined) {
+            // Update D1 columns directly if provided
+            const d1Updates: { pollenBalance?: number | null; enabled?: boolean } = {};
+            if (pollenBudget !== undefined) d1Updates.pollenBalance = pollenBudget;
+            if (enabled !== undefined) d1Updates.enabled = enabled;
+
+            if (Object.keys(d1Updates).length > 0) {
                 await db
                     .update(schema.apikey)
-                    .set({
-                        pollenBalance: pollenBudget,
-                    })
+                    .set(d1Updates)
                     .where(eq(schema.apikey.id, id));
             }
 
@@ -188,6 +194,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 name: finalKey?.name,
                 permissions: finalKey?.permissions,
                 pollenBalance: finalKey?.pollenBalance ?? null,
+                enabled: finalKey?.enabled ?? true,
             });
         },
     );

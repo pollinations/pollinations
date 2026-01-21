@@ -68,8 +68,9 @@ export async function callWanAPI(
         "Starting video generation with Wan 2.6...",
     );
 
-    // Video parameters
-    const durationSeconds = safeParams.duration || 5;
+    // Video parameters - clamp duration to valid range (2-15 seconds per API docs)
+    const rawDuration = safeParams.duration || 5;
+    const durationSeconds = Math.max(2, Math.min(15, rawDuration));
     // Resolution: 480P, 720P, or 1080P
     const resolution = "720P";
     // Audio: true by default for Wan 2.6 (auto-dubbing)
@@ -127,9 +128,11 @@ export async function callWanAPI(
                     await downloadImageAsBase64(imageUrl);
                 input.img_url = `data:${mimeType};base64,${base64}`;
             } catch (error) {
-                logError("Error processing reference image:", error.message);
+                const errorMessage =
+                    error instanceof Error ? error.message : String(error);
+                logError("Error processing reference image:", errorMessage);
                 throw new HttpError(
-                    `Failed to process reference image: ${error.message}`,
+                    `Failed to process reference image: ${errorMessage}`,
                     400,
                 );
             }
@@ -248,7 +251,7 @@ async function pollWanTask(
     logOps("Poll URL:", pollUrl);
 
     const maxAttempts = 60; // 5 minutes max (5 second intervals)
-    let delayMs = 5000; // Start with 5 seconds as recommended
+    const delayMs = 5000; // Fixed 5 second intervals as recommended by API docs
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         logOps(`Poll attempt ${attempt}/${maxAttempts}...`);
@@ -340,8 +343,6 @@ async function pollWanTask(
 
         // Status is PENDING or RUNNING - wait and try again
         await sleep(delayMs);
-        // Slight increase in delay, cap at 15 seconds
-        delayMs = Math.min(delayMs * 1.1, 15000);
     }
 
     throw new HttpError("Video generation timed out after 5 minutes", 504);

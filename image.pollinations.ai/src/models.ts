@@ -141,6 +141,13 @@ export const IMAGE_CONFIG = {
         enhance: false,
         defaultSideLength: 1024,
     },
+
+    // Klein Large - Higher quality 9B parameter model on Modal (text-to-image + image editing)
+    "klein-large": {
+        type: "modal-klein-large",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
 } as const satisfies ImageModelsConfig;
 
 /**

@@ -38,10 +38,19 @@ function parseAppsMarkdown() {
         process.exit(1);
     }
 
-    // Column indices (0-indexed after split)
-    // Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord | Other | Submitted
-    const REPO_URL_COL = 8;
-    const STARS_COL = 9;
+    // Dynamic column lookup to be robust against header changes
+    const headers = lines[headerIdx].split("|").map((h) => h.trim());
+    const REPO_URL_COL = headers.findIndex((h) =>
+        h.toLowerCase().includes("repository_url"),
+    );
+    const STARS_COL = headers.findIndex((h) =>
+        h.toLowerCase().includes("repository_stars"),
+    );
+
+    if (REPO_URL_COL === -1 || STARS_COL === -1) {
+        console.error("Error: Could not find repository URL or stars columns");
+        process.exit(1);
+    }
 
     const apps = [];
     const dataStartIdx = headerIdx + 2;
@@ -50,11 +59,11 @@ function parseAppsMarkdown() {
         const line = lines[i];
         if (!line.startsWith("|")) continue;
 
-        const cols = line.split("|").slice(1, -1);
-        if (cols.length < 13) continue;
+        const cols = line.split("|").map((c) => c.trim());
+        if (cols.length <= Math.max(REPO_URL_COL, STARS_COL)) continue;
 
-        const repoUrl = cols[REPO_URL_COL]?.trim() || "";
-        const starsCell = cols[STARS_COL]?.trim() || "";
+        const repoUrl = cols[REPO_URL_COL] || "";
+        const starsCell = cols[STARS_COL] || "";
 
         if (!repoUrl.includes("github.com")) continue;
 

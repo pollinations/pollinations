@@ -213,6 +213,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "vertex-model-id": "gemini-3-pro-preview",
         "strict-openai-compliance": "false",
     }),
+    "gemini-2.5-pro": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
+        "vertex-region": "us-central1",
+        "vertex-model-id": "gemini-2.5-pro",
+        "strict-openai-compliance": "false",
+    }),
     "kimi-k2-thinking-maas": () => ({
         provider: "openai",
         authKey: googleCloudAuth.getAccessToken,

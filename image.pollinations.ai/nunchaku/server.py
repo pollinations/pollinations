@@ -138,16 +138,6 @@ async def lifespan(app: FastAPI):
 def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int]:
     """Find the nearest dimensions that are multiples of 8 and their product is divisible by 65536.
     Also enforces a maximum total pixel count to prevent CUDA OOM errors."""
-    # Validate input dimensions to prevent CUDA kernel crashes from malformed requests
-    # Max reasonable dimension is 8192 (8K resolution)
-    MAX_DIMENSION = 8192
-    MIN_DIMENSION = 64
-    
-    if width > MAX_DIMENSION or height > MAX_DIMENSION:
-        raise ValueError(f"Dimensions too large: {width}x{height}. Maximum allowed is {MAX_DIMENSION}x{MAX_DIMENSION}")
-    if width < MIN_DIMENSION or height < MIN_DIMENSION:
-        raise ValueError(f"Dimensions too small: {width}x{height}. Minimum allowed is {MIN_DIMENSION}x{MIN_DIMENSION}")
-    
     # Cap total pixels to prevent CUDA OOM with quantized models (1024x1024 = 1,048,576)
     MAX_PIXELS = 768 * 768
     start_w = round(width)
@@ -207,13 +197,8 @@ async def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_tok
 
     generator = torch.Generator("cuda").manual_seed(seed)
     
-    # Find nearest valid dimensions (with input validation)
-    try:
-        width, height = find_nearest_valid_dimensions(request.width, request.height)
-    except ValueError as e:
-        logger.error(f"Invalid dimensions: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-    
+    # Find nearest valid dimensions
+    width, height = find_nearest_valid_dimensions(request.width, request.height)
     print(f"Original dimensions: {request.width}x{request.height}")
     print(f"Adjusted dimensions: {width}x{height}")
 
@@ -254,11 +239,6 @@ async def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_tok
         logger.error(f"CUDA OOM Error: {str(e)} - Exiting to trigger systemd restart")
         # Exit with non-zero status to trigger systemd restart
         sys.exit(1)
-    except Exception as e:
-        # Catch any other unexpected errors (like CUDA kernel assertions) and return 500
-        # instead of crashing the entire server
-        logger.error(f"Unexpected error during generation: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

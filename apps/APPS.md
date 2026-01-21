@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted |
 | ----- | ---- | ------- | ----------- | -------- | -------- | --------------- | ------------- | --------------------- | ----------------------- | ---------------- | ----- | --------- |
+| 🎨 | DreamCanvas AI | https://ethun01.github.io/image_gen/ | Simple web-based image generator that creates art via the Pollinations API. | en | Creative | @ethun01 | 197406375 | https://github.com/ethun01/image_gen |  |  | | 2026-01-21 |
 | 📖 | Fable Friend | https://huggingface.co/spaces/Shreemahor/Fable-Friend | Interactive AI story adventure with selectable role, genre, and image style. | en | Games | @Shreemahor | 176168773 | https://github.com/Shreemahor/Fable-Friend |  | shreemahor_51417 | | 2026-01-20 |
 | 🛠️ | PolliDev | https://fabioarieira.com/pollidev/ | Developer-focused tool for managing generative image assets and prompts. | en | Dev_Tools | @FabioArieiraBaia | 104397473 | https://github.com/FabioArieiraBaia/pollidev |  | fabioarieira8850 | | 2026-01-13 |
 | 🎮 | Lapse Game 2075 | https://makeypocket.github.io/LapseGame/ | AI-powered game where decisions shape a country's future over four pillars | en, ru | Games | @makeypocket | 108882883 | https://github.com/makeypocket/LapseGame | ⭐1 | termuxt | | 2026-01-12 |

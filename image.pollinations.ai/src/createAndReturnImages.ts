@@ -1144,6 +1144,23 @@ const generateImage = async (
         }
     }
 
+    if (safeParams.model === "klein-large") {
+        // Klein Large - Higher quality 9B model on Modal (text-to-image + image editing)
+        try {
+            return await callFluxKleinAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+                "klein-large",
+            );
+        } catch (error) {
+            logError("Flux Klein Large generation failed:", error.message);
+            progress.updateBar(requestId, 100, "Error", error.message);
+            throw error;
+        }
+    }
+
     if (safeParams.model === "flux") {
         progress.updateBar(
             requestId,

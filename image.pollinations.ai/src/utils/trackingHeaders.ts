@@ -5,12 +5,12 @@
 
 import debug from "debug";
 import type { IMAGE_SERVICES } from "../../../shared/registry/image.ts";
-import type { TokenUsage } from "../../../shared/registry/registry.ts";
+import type { Usage } from "../../../shared/registry/registry.ts";
 import {
     buildUsageHeaders,
-    createImageTokenUsage,
+    createImageUsage,
     createVideoSecondsUsage,
-    createVideoTokenUsage,
+    createVideoTokensUsage,
 } from "../../../shared/registry/usage-headers.ts";
 
 const log = debug("pollinations:tracking-headers");
@@ -66,11 +66,11 @@ export function buildTrackingHeaders(
     const videoSeconds = trackingData?.usage?.completionVideoSeconds;
     const imageTokens = trackingData?.usage?.completionImageTokens;
 
-    let usage: TokenUsage;
+    let usage: Usage;
     if (videoTokens && videoTokens > 0) {
         // Seedance video model - use video tokens (from API response)
         log(`Using video tokens: ${videoTokens}`);
-        usage = createVideoTokenUsage(videoTokens);
+        usage = createVideoTokensUsage(videoTokens);
     } else if (videoSeconds && videoSeconds > 0) {
         // Veo video model - use video seconds
         log(`Using video seconds: ${videoSeconds}`);
@@ -79,7 +79,7 @@ export function buildTrackingHeaders(
         // Image model - use image tokens (default to 1 for unit-based)
         const tokens = imageTokens || 1;
         log(`Using image tokens: ${tokens}`);
-        usage = createImageTokenUsage(tokens);
+        usage = createImageUsage(tokens);
     }
 
     const headers = buildUsageHeaders(modelUsed, usage);

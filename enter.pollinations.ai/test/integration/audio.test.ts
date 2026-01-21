@@ -9,7 +9,7 @@ describe("GET /text/:prompt (audio)", () => {
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/text/hi?model=openai-audio`,
+                `http://localhost:3000/api/text/hi?model=openai-audio`,
                 {
                     method: "GET",
                     headers: {
@@ -35,7 +35,7 @@ describe("GET /text/:prompt (audio)", () => {
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {
@@ -100,7 +100,7 @@ describe("GET /text/:prompt (audio)", () => {
                 Buffer.from(audioBuffer).toString("base64");
 
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
+                `http://localhost:3000/api/v1/chat/completions`,
                 {
                     method: "POST",
                     headers: {

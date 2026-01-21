@@ -33,7 +33,7 @@ export const api = new Hono<Env>()
     .route("/webhooks", webhooksCryptoRoutes)
     .route("/admin", adminRoutes)
     .route("/model-stats", modelStatsRoutes)
-    .route("/generate", proxyRoutes);
+    .route("/", proxyRoutes);
 
 export type ApiRoutes = typeof api;
 

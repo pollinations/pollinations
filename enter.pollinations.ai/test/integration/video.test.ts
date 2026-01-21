@@ -28,7 +28,7 @@ describe("Video Generation Integration Tests", () => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/image/a%20cat%20waving?model=seedance&duration=2`,
+                `http://localhost:3000/api/image/a%20cat%20waving?model=seedance&duration=2`,
                 {
                     method: "GET",
                     headers: {
@@ -66,7 +66,7 @@ describe("Video Generation Integration Tests", () => {
                 "https://image.pollinations.ai/prompt/pure%20white%20background?width=512&height=512&nologo=true&seed=42";
 
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/image/animate%20this%20image?model=seedance&duration=2&image=${encodeURIComponent(imageUrl)}`,
+                `http://localhost:3000/api/image/animate%20this%20image?model=seedance&duration=2&image=${encodeURIComponent(imageUrl)}`,
                 {
                     method: "GET",
                     headers: {
@@ -116,7 +116,7 @@ describe("Video Generation Integration Tests", () => {
             const encodedImage = encodeURIComponent(imageUrl);
 
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/image/${encodedPrompt}?model=seedance&duration=2&image=${encodedImage}`,
+                `http://localhost:3000/api/image/${encodedPrompt}?model=seedance&duration=2&image=${encodedImage}`,
                 {
                     method: "GET",
                     headers: {
@@ -150,7 +150,7 @@ describe("Video Generation Integration Tests", () => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/image/test%20video?model=seedance&duration=5&aspectRatio=16:9`,
+                `http://localhost:3000/api/image/test%20video?model=seedance&duration=5&aspectRatio=16:9`,
                 {
                     method: "GET",
                     headers: {
@@ -171,7 +171,7 @@ describe("Video Generation Integration Tests", () => {
         await mocks.enable("polar", "tinybird");
 
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/image/test?model=seedance`,
+            `http://localhost:3000/api/image/test?model=seedance`,
             {
                 method: "GET",
                 // No authorization header
@@ -307,7 +307,7 @@ describe("Veo Video Generation", () => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/image/a%20sunset%20timelapse?model=veo&duration=4`,
+                `http://localhost:3000/api/image/a%20sunset%20timelapse?model=veo&duration=4`,
                 {
                     method: "GET",
                     headers: {
@@ -341,7 +341,7 @@ describe("Veo Video Generation", () => {
                 "https://image.pollinations.ai/prompt/pure%20white%20background?width=512&height=512&nologo=true&seed=42";
 
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/image/animate%20this%20image?model=veo&duration=4&image=${encodeURIComponent(imageUrl)}`,
+                `http://localhost:3000/api/image/animate%20this%20image?model=veo&duration=4&image=${encodeURIComponent(imageUrl)}`,
                 {
                     method: "GET",
                     headers: {
@@ -387,7 +387,7 @@ describe("Veo Video Generation", () => {
             const imageParam = `${firstFrame}|${lastFrame}`;
 
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/image/transition%20between%20frames?model=veo&duration=4&image=${encodeURIComponent(imageParam)}`,
+                `http://localhost:3000/api/image/transition%20between%20frames?model=veo&duration=4&image=${encodeURIComponent(imageParam)}`,
                 {
                     method: "GET",
                     headers: {

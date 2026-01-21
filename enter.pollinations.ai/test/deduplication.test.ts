@@ -3,7 +3,7 @@ import { test } from "./fixtures.ts";
 import { expect } from "vitest";
 import { getLogger } from "@logtape/logtape";
 
-const textEndpoint = "http://localhost:3000/api/generate/v1/chat/completions";
+const textEndpoint = "http://localhost:3000/api/v1/chat/completions";
 const log = getLogger(["test", "deduplication"]);
 
 type TestRequestOptions = {

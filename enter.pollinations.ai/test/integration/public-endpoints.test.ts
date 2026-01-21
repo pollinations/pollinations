@@ -7,7 +7,7 @@ import { test as fixtureTest } from "../fixtures.ts";
 
 test("GET /v1/models returns 200 without auth", async () => {
     const response = await SELF.fetch(
-        `http://localhost:3000/api/generate/v1/models`,
+        `http://localhost:3000/api/v1/models`,
         {
             method: "GET",
         },
@@ -23,7 +23,7 @@ test("GET /v1/models returns 200 without auth", async () => {
 
 test("GET /image/models returns 200 without auth", async () => {
     const response = await SELF.fetch(
-        `http://localhost:3000/api/generate/image/models`,
+        `http://localhost:3000/api/image/models`,
         {
             method: "GET",
         },
@@ -37,7 +37,7 @@ test("GET /image/models returns 200 without auth", async () => {
 
 test("GET /v1/models has CORS headers for cross-origin requests", async () => {
     const response = await SELF.fetch(
-        `http://localhost:3000/api/generate/v1/models`,
+        `http://localhost:3000/api/v1/models`,
         {
             method: "GET",
             headers: {
@@ -56,7 +56,7 @@ test("GET /v1/models has CORS headers for cross-origin requests", async () => {
 
 test("GET /image/models has CORS headers for cross-origin requests", async () => {
     const response = await SELF.fetch(
-        `http://localhost:3000/api/generate/image/models`,
+        `http://localhost:3000/api/image/models`,
         {
             method: "GET",
             headers: {
@@ -75,7 +75,7 @@ test("GET /image/models has CORS headers for cross-origin requests", async () =>
 
 test("OPTIONS preflight request works for /image/models", async () => {
     const response = await SELF.fetch(
-        `http://localhost:3000/api/generate/image/models`,
+        `http://localhost:3000/api/image/models`,
         {
             method: "OPTIONS",
             headers: {
@@ -95,7 +95,7 @@ fixtureTest(
     "GET /v1/models with restricted API key returns only allowed models",
     async ({ restrictedApiKey }) => {
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/models`,
+            `http://localhost:3000/api/v1/models`,
             {
                 method: "GET",
                 headers: {
@@ -120,7 +120,7 @@ fixtureTest(
     "GET /image/models with restricted API key returns only allowed models",
     async ({ restrictedApiKey }) => {
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/image/models`,
+            `http://localhost:3000/api/image/models`,
             {
                 method: "GET",
                 headers: {

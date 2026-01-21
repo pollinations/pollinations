@@ -20,11 +20,11 @@ Simplified API gateway for pollinations.ai, providing clean URLs via Cloudflare 
 | ------------------- | ----------------------------- |
 | `/`                 | redirect → `/api/docs`        |
 | `/docs`             | redirect → `/api/docs`        |
-| `/models`           | → `/api/generate/text/models` |
-| `/image/*`          | → `/api/generate/image/*`     |
-| `/text/*`           | → `/api/generate/text/*`      |
-| `/v1/*`             | → `/api/generate/v1/*`        |
-| `/openai`           | → `/api/generate/openai`      |
+| `/models`           | → `/api/text/models` |
+| `/image/*`          | → `/api/image/*`     |
+| `/text/*`           | → `/api/text/*`      |
+| `/v1/*`             | → `/api/v1/*`        |
+| `/openai`           | → `/api/openai`      |
 
 ## Development
 

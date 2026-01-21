@@ -7,10 +7,10 @@
  * URL Mapping:
  *   gen.pollinations.ai/              → redirect to /api/docs
  *   gen.pollinations.ai/docs          → redirect to /api/docs
- *   gen.pollinations.ai/models        → /api/generate/text/models
- *   gen.pollinations.ai/image/*       → /api/generate/image/*
- *   gen.pollinations.ai/text/*        → /api/generate/text/*
- *   gen.pollinations.ai/v1/*          → /api/generate/v1/*
+ *   gen.pollinations.ai/models        → /api/text/models
+ *   gen.pollinations.ai/image/*       → /api/image/*
+ *   gen.pollinations.ai/text/*        → /api/text/*
+ *   gen.pollinations.ai/v1/*          → /api/v1/*
  *   gen.pollinations.ai/account/*     → /api/account/*
  */
 
@@ -28,9 +28,9 @@ export default {
             return Response.redirect(`${url.origin}/api/docs`, 302);
         }
 
-        // Convenience: /models → /api/generate/text/models (most common use case)
+        // Convenience: /models → /api/text/models (most common use case)
         if (path === "/models") {
-            url.pathname = "/api/generate/text/models";
+            url.pathname = "/api/text/models";
             return env.ENTER.fetch(url, request);
         }
 
@@ -39,14 +39,9 @@ export default {
             return env.ENTER.fetch(request);
         }
 
-        // Account routes: /account/* → /api/account/*
-        if (path.startsWith("/account")) {
-            url.pathname = "/api" + path;
-            return env.ENTER.fetch(url, request);
-        }
-
-        // Rewrite API paths: /image/*, /text/*, /v1/* → /api/generate/*
-        url.pathname = "/api/generate" + path;
+        // All other paths: prepend /api
+        // /image/*, /text/*, /v1/*, /account/* → /api/*
+        url.pathname = "/api" + path;
 
         // Forward via service binding (zero latency - same V8 isolate)
         return env.ENTER.fetch(url, request);

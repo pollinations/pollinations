@@ -219,6 +219,26 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
+    "wan": {
+        aliases: ["wan2.6", "wan-i2v"],
+        modelId: "wan",
+        provider: "alibaba",
+        cost: [
+            // Wan 2.6 I2V Flash (Singapore/International region)
+            // Video base: 720P $0.025/sec (without audio)
+            // Audio add-on: $0.025/sec (when audio=true)
+            // Total with audio: $0.05/sec
+            {
+                date: new Date("2026-01-20").getTime(), // Launch date
+                completionVideoSeconds: 0.025, // $0.025 per second (video only)
+                completionAudioSeconds: 0.025, // $0.025 per second of audio
+            },
+        ],
+        description:
+            "Wan 2.6 - Alibaba image-to-video with audio (2-15s, up to 1080P)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+    },
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",

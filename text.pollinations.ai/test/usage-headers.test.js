@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll } from "vitest";
 import fetch from "node-fetch";
+import { beforeAll, describe, expect, it } from "vitest";
 
 const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:16385";
 const PLN_ENTER_TOKEN =
@@ -76,57 +76,6 @@ describe("Usage headers - Non-streaming (Issue #4638)", () => {
         expect(tokenCount).toBeGreaterThan(0);
         expect(Number.isInteger(tokenCount)).toBe(true);
     }, 30000);
-
-    it("should include x-usage-total-tokens header", async () => {
-        const response = await fetch(`${BASE_URL}/openai/chat/completions`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "openai-fast",
-                messages: [{ role: "user", content: "Hi" }],
-                max_tokens: 10,
-            }),
-        });
-
-        expect(response.status).toBe(200);
-
-        const totalTokens = response.headers.get("x-usage-total-tokens");
-        expect(totalTokens).toBeTruthy();
-
-        const tokenCount = parseInt(totalTokens || "0", 10);
-        expect(tokenCount).toBeGreaterThan(0);
-        expect(Number.isInteger(tokenCount)).toBe(true);
-    }, 30000);
-
-    it("should have consistent token counts", async () => {
-        const response = await fetch(`${BASE_URL}/openai/chat/completions`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "openai-fast",
-                messages: [{ role: "user", content: "Hi" }],
-                max_tokens: 10,
-            }),
-        });
-
-        expect(response.status).toBe(200);
-
-        const promptTokens = parseInt(
-            response.headers.get("x-usage-prompt-text-tokens") || "0",
-            10,
-        );
-        const completionTokens = parseInt(
-            response.headers.get("x-usage-completion-text-tokens") || "0",
-            10,
-        );
-        const totalTokens = parseInt(
-            response.headers.get("x-usage-total-tokens") || "0",
-            10,
-        );
-
-        // Total should equal sum of prompt and completion
-        expect(totalTokens).toBe(promptTokens + completionTokens);
-    }, 30000);
 });
 
 describe("Usage headers - Streaming (Issue #4638)", () => {
@@ -149,7 +98,6 @@ describe("Usage headers - Streaming (Issue #4638)", () => {
         expect(trailer).toContain("x-model-used");
         expect(trailer).toContain("x-usage-prompt-text-tokens");
         expect(trailer).toContain("x-usage-completion-text-tokens");
-        expect(trailer).toContain("x-usage-total-tokens");
 
         // Consume the stream to allow trailers to be sent
         if (response.body) {

@@ -247,12 +247,28 @@ export const IMAGE_SERVICES = {
             // Flux Klein on Modal L40S GPU
             // L40S: $0.000542/sec × 15s avg (including cold starts) = $0.008/image
             {
-                date: new Date("2026-01-17").getTime(), // Launch date
+                date: new Date("2026-01-21").getTime(), // Launch date
                 completionImageTokens: 0.008, // ~$0.008 per image (L40S @ 15s avg)
             },
         ],
         description:
             "FLUX.2 Klein 4B - Fast image generation & editing on Modal",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
+    "klein-large": {
+        aliases: ["flux-klein-9b", "klein-9b"],
+        modelId: "klein-large",
+        provider: "modal",
+        cost: [
+            // Flux Klein 9B on Modal L40S GPU (~$0.012/image with cold starts)
+            {
+                date: new Date("2026-01-21").getTime(),
+                completionImageTokens: 0.012,
+            },
+        ],
+        description:
+            "FLUX.2 Klein 9B - Higher quality image generation & editing on Modal",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },

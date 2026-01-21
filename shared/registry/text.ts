@@ -408,6 +408,28 @@ export const TEXT_SERVICES = {
         codeExecution: false, // Disabled - was breaking gemini-large
         isSpecialized: false,
     },
+    "gemini-legacy": {
+        aliases: ["gemini-2.5-pro"],
+        modelId: "gemini-2.5-pro",
+        provider: "google",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(1.25),
+                promptCachedTokens: perMillion(0.31), // ~25% of input price
+                completionTextTokens: perMillion(10.0),
+            },
+        ],
+        description:
+            "Google Gemini 2.5 Pro - Stable Reasoning Model with 1M Context",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        search: true,
+        codeExecution: true,
+        isSpecialized: false,
+    },
     "nova-fast": {
         aliases: ["amazon-nova-micro", "nova", "nova-micro"],
         modelId: "amazon.nova-micro-v1:0",

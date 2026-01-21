@@ -148,6 +148,17 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "gemini-legacy",
+        config: portkeyConfig["gemini-2.5-pro"],
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
+            createGeminiThinkingTransform("v2.5"),
+        ),
+    },
+    {
         name: "nova-fast",
         config: portkeyConfig["amazon.nova-micro-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),

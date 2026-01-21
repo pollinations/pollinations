@@ -1,0 +1,56 @@
+{
+  "date": "2026-01-21",
+  "generated_at": "2026-01-21T16:15:29.043161+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art_carousel",
+  "linked_images": false,
+  "strategy_reasoning": "A carousel format allows us to break down technical updates into bite-sized 'game mechanics' visual metaphors. Using the 'Retro RPG' aesthetic aligns perfectly with the brand's cozy, nostalgic vibe. We treat new models as 'New Items/Loot', bug fixes as 'Stat Buffs', and the new game as a 'Side Quest'. This makes dry technical data feel rewarding and fun.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20title%20screen.%20A%20wooden%20signpost%20in%20a%20lush%208-bit%20garden%20that%20reads%20%27WEEKLY%20QUESTS%27.%20Tiny%20round%20pixel%20bees%20buzzing%20around.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20gradient%20sky.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20aesthetic%20like%20A%20Short%20Hike.%20Emotionally%20warm%20and%20inviting.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=652962586",
+      "prompt": "Cozy pixel art title screen. A wooden signpost in a lush 8-bit garden that reads 'WEEKLY QUESTS'. Tiny round pixel bees buzzing around. Soft lime green (#ecf874) and lavender gradient sky. Chunky retro sprites, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm and inviting.",
+      "description": "Title card setting the cozy gaming vibe."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%20RPG%20inventory%20screen%20in%20pixel%20art%20style.%20Two%20new%20item%20slots%20highlighted.%20Slot%201%3A%20A%20glowing%20blue%20crystal%20labeled%20%27Gemini%202.5%27.%20Slot%202%3A%20A%20large%20golden%20paintbrush%20labeled%20%27Klein%209B%27.%20Background%20is%20a%20soft%20pastel%20purple%20grid.%20UI%20elements%20are%20chunky%20and%20cute.%20Lime%20green%20%28%23ecf874%29%20selection%20cursor.%208-bit%20aesthetic%2C%20warm%20vibes.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=493911426",
+      "prompt": "Retro RPG inventory screen in pixel art style. Two new item slots highlighted. Slot 1: A glowing blue crystal labeled 'Gemini 2.5'. Slot 2: A large golden paintbrush labeled 'Klein 9B'. Background is a soft pastel purple grid. UI elements are chunky and cute. Lime green (#ecf874) selection cursor. 8-bit aesthetic, warm vibes.",
+      "description": "Visualizing the new models (Gemini & Klein) as collectible RPG items."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20status%20monitor%20screen.%20A%20retro%20health%20bar%20labeled%20%27Success%20Rate%27%20filling%20up%20to%20green.%20Below%20it%2C%20a%20pixelated%20scroll%20labeled%20%27APPS.md%27%20with%20a%20quill%20pen%20updating%20it.%20Soft%20CRT%20glow%20effect.%20Pastel%20colors%2C%20lime%20green%20%28%23ecf874%29%20text.%20Cozy%20workspace%20vibe%2C%20like%20a%20tiny%20developer%27s%20desk%20in%20a%20game.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=45422294",
+      "prompt": "Pixel art status monitor screen. A retro health bar labeled 'Success Rate' filling up to green. Below it, a pixelated scroll labeled 'APPS.md' with a quill pen updating it. Soft CRT glow effect. Pastel colors, lime green (#ecf874) text. Cozy workspace vibe, like a tiny developer's desk in a game.",
+      "description": "Visualizing the reliability fixes and issue tracking as 'stat buffs' and record keeping."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20magical%20open%20storybook%20in%208-bit%20pixel%20art%20style%20sitting%20on%20a%20grassy%20hill.%20A%20tiny%20pixel%20sword%20and%20shield%20pop%20out%20of%20the%20pages%20%28representing%20Fable%20Friend%29.%20Soft%20sunset%20gradient%20background%20%28peach%20to%20mint%29.%20Chunky%20pixels%2C%20warm%20nostalgia.%20Text%20floating%20above%3A%20%27FABLE%20FRIEND%27.%20Wholesome%20gaming%20vibe.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1077296059",
+      "prompt": "A magical open storybook in 8-bit pixel art style sitting on a grassy hill. A tiny pixel sword and shield pop out of the pages (representing Fable Friend). Soft sunset gradient background (peach to mint). Chunky pixels, warm nostalgia. Text floating above: 'FABLE FRIEND'. Wholesome gaming vibe.",
+      "description": "Announcing the new 'Fable Friend' game integration."
+    }
+  ],
+  "caption": "New loot dropped in the garden! ⚔️🌸 We've been grinding XP to bring you some cozy updates this week.\n\n✨ **New Items Equipped:**\n💎 **Gemini 2.5 Pro** is here for big brain energy (reasoning + code!)\n🖌️ **Klein-Large (9B)** for those high-res masterpieces\n\n📊 **Stat Buffs:**\nBetter success rate tracking (bye bye 4xx errors!) & the APPS.md library is fully organized.\n\n🛡️ **New Side Quest:**\nCheck out **Fable Friend** in the Games section—choose your role and start your own AI adventure!\n\nBuild something wholesome today. Link in bio to start creating! 🌿\n\n#pollinations #pixelart #indiedev #opensource #cozygames #aiart #8bit #retrogaming #generativeai",
+  "hashtags": [
+    "#pollinations",
+    "#pixelart",
+    "#indiedev",
+    "#opensource",
+    "#cozygames",
+    "#aiart",
+    "#8bit",
+    "#retrogaming",
+    "#generativeai"
+  ],
+  "alt_text": "A carousel of 4 cozy pixel art images. 1: A garden sign saying Weekly Quests. 2: An RPG inventory screen showing Gemini and Klein crystals. 3: A retro status monitor showing success rates. 4: A magical open book on a hill for Fable Friend.",
+  "pr_references": [
+    "#7533",
+    "#7538",
+    "#7518",
+    "#7523",
+    "#7484",
+    "#7522",
+    "#7513",
+    "#7517",
+    "#7054",
+    "#7505"
+  ]
+}

@@ -58,7 +58,7 @@ function parseAppsMarkdown() {
 
         if (!repoUrl.includes("github.com")) continue;
 
-        const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/\s]+)/);
+        const match = repoUrl.match(/github\.com\/([^/]+)\/([^/\s]+)/);
         if (!match) continue;
 
         apps.push({
@@ -100,14 +100,25 @@ function fetchRepoStars(owner, repo) {
                 } else if (res.statusCode === 200) {
                     try {
                         const json = JSON.parse(data);
-                        resolve({ exists: true, stars: json.stargazers_count || 0 });
+                        resolve({
+                            exists: true,
+                            stars: json.stargazers_count || 0,
+                        });
                     } catch {
-                        resolve({ exists: true, stars: 0, error: "parse error" });
+                        resolve({
+                            exists: true,
+                            stars: 0,
+                            error: "parse error",
+                        });
                     }
                 } else if (res.statusCode === 403) {
                     resolve({ exists: true, stars: 0, error: "rate limited" });
                 } else {
-                    resolve({ exists: true, stars: 0, error: `status ${res.statusCode}` });
+                    resolve({
+                        exists: true,
+                        stars: 0,
+                        error: `status ${res.statusCode}`,
+                    });
                 }
             });
         });
@@ -134,7 +145,9 @@ async function main() {
     console.log(`${colors.bold}⭐ Apps Star Updater${colors.reset}\n`);
 
     if (dryRun) {
-        console.log(`${colors.yellow}[DRY RUN] No files will be modified${colors.reset}\n`);
+        console.log(
+            `${colors.yellow}[DRY RUN] No files will be modified${colors.reset}\n`,
+        );
     }
 
     const { lines, apps } = parseAppsMarkdown();
@@ -155,7 +168,9 @@ async function main() {
 
         if (result.error) {
             if (verbose) {
-                console.log(`${colors.yellow}⚠ ${app.owner}/${app.repo}: ${result.error}${colors.reset}`);
+                console.log(
+                    `${colors.yellow}⚠ ${app.owner}/${app.repo}: ${result.error}${colors.reset}`,
+                );
             }
             stats.errors++;
             continue;
@@ -163,7 +178,9 @@ async function main() {
 
         if (!result.exists) {
             if (verbose) {
-                console.log(`${colors.red}❌ ${app.owner}/${app.repo}: repo deleted${colors.reset}`);
+                console.log(
+                    `${colors.red}❌ ${app.owner}/${app.repo}: repo deleted${colors.reset}`,
+                );
             }
             stats.deleted++;
             changes.push({ app, newStars: "❌ deleted", type: "deleted" });
@@ -173,7 +190,9 @@ async function main() {
         const newStarsStr = formatStars(result.stars);
         if (newStarsStr !== app.currentStars) {
             if (verbose) {
-                console.log(`${colors.green}✓ ${app.owner}/${app.repo}: ${app.currentStars || "(none)"} → ${newStarsStr || "(none)"}${colors.reset}`);
+                console.log(
+                    `${colors.green}✓ ${app.owner}/${app.repo}: ${app.currentStars || "(none)"} → ${newStarsStr || "(none)"}${colors.reset}`,
+                );
             }
             stats.updated++;
             changes.push({ app, newStars: newStarsStr, type: "updated" });
@@ -202,7 +221,9 @@ async function main() {
     // summary
     console.log(`${colors.bold}📊 Summary${colors.reset}`);
     console.log(`${colors.green}✓ Updated: ${stats.updated}${colors.reset}`);
-    console.log(`${colors.red}✗ Deleted repos: ${stats.deleted}${colors.reset}`);
+    console.log(
+        `${colors.red}✗ Deleted repos: ${stats.deleted}${colors.reset}`,
+    );
     console.log(`${colors.cyan}- Unchanged: ${stats.unchanged}${colors.reset}`);
     console.log(`${colors.yellow}⚠ Errors: ${stats.errors}${colors.reset}`);
 
@@ -210,7 +231,9 @@ async function main() {
         console.log(`\n${colors.bold}Changes:${colors.reset}`);
         for (const c of changes.slice(0, 20)) {
             const icon = c.type === "deleted" ? "❌" : "⭐";
-            console.log(`  ${icon} ${c.app.owner}/${c.app.repo}: ${c.app.currentStars || "(none)"} → ${c.newStars || "(none)"}`);
+            console.log(
+                `  ${icon} ${c.app.owner}/${c.app.repo}: ${c.app.currentStars || "(none)"} → ${c.newStars || "(none)"}`,
+            );
         }
         if (changes.length > 20) {
             console.log(`  ... and ${changes.length - 20} more`);
@@ -223,6 +246,8 @@ async function main() {
 main()
     .then((code) => process.exit(code))
     .catch((err) => {
-        console.error(`${colors.red}Fatal error: ${err.message}${colors.reset}`);
+        console.error(
+            `${colors.red}Fatal error: ${err.message}${colors.reset}`,
+        );
         process.exit(1);
     });

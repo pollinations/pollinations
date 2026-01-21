@@ -148,8 +148,8 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
     if width < MIN_DIMENSION or height < MIN_DIMENSION:
         raise ValueError(f"Dimensions too small: {width}x{height}. Minimum allowed is {MIN_DIMENSION}x{MIN_DIMENSION}")
     
-    # Cap total pixels to prevent CUDA OOM with quantized models (1024x1024 = 1,048,576)
-    MAX_PIXELS = 768 * 768
+    # Cap total pixels to prevent CUDA OOM with quantized models
+    MAX_PIXELS = 1024 * 1024  # 1,048,576 pixels
     start_w = round(width)
     start_h = round(height)
     

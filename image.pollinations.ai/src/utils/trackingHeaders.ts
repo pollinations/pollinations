@@ -6,12 +6,7 @@
 import debug from "debug";
 import type { IMAGE_SERVICES } from "../../../shared/registry/image.ts";
 import type { Usage } from "../../../shared/registry/registry.ts";
-import {
-    buildUsageHeaders,
-    createImageUsage,
-    createVideoSecondsUsage,
-    createVideoTokensUsage,
-} from "../../../shared/registry/usage-headers.ts";
+import { buildUsageHeaders } from "../../../shared/registry/usage-headers.ts";
 
 const log = debug("pollinations:tracking-headers");
 
@@ -45,57 +40,35 @@ export interface TrackingData {
 
 /**
  * Build tracking headers for the enter service
- * @param model - The requested model name (must be a valid service from registry)
- * @param trackingData - Usage and moderation data from generation
- * @returns Headers object for HTTP response
+ * Simply passes through usage data - each field is handled independently.
  */
 export function buildTrackingHeaders(
     model: ValidServiceName,
     trackingData?: TrackingData,
 ): Record<string, string> {
-    log(`=== TRACKING HEADERS FOR ${model} ===`);
-    log(
-        `Raw trackingData.usage:`,
-        JSON.stringify(trackingData?.usage, null, 2),
-    );
-
     const modelUsed = trackingData?.actualModel || model;
 
-    // Determine usage type based on what's provided
-    // Video models: Veo uses completionVideoSeconds, Seedance uses completionVideoTokens
-    // Wan uses completionVideoSeconds + completionAudioSeconds
-    // Image models use completionImageTokens
-    const videoTokens = trackingData?.usage?.completionVideoTokens;
-    const videoSeconds = trackingData?.usage?.completionVideoSeconds;
-    const audioSeconds = trackingData?.usage?.completionAudioSeconds;
-    const imageTokens = trackingData?.usage?.completionImageTokens;
+    // Build usage object from whatever fields are provided
+    // Each field is independent - no conditionals needed
+    const usage: Usage = {
+        completionImageTokens: trackingData?.usage?.completionImageTokens,
+        completionVideoSeconds: trackingData?.usage?.completionVideoSeconds,
+        completionVideoTokens: trackingData?.usage?.completionVideoTokens,
+        completionAudioSeconds: trackingData?.usage?.completionAudioSeconds,
+    };
 
-    let usage: Usage;
-    if (videoTokens && videoTokens > 0) {
-        // Seedance video model - use video tokens (from API response)
-        log(`Using video tokens: ${videoTokens}`);
-        usage = createVideoTokensUsage(videoTokens);
-    } else if (videoSeconds && videoSeconds > 0) {
-        // Video model with seconds (Veo, Wan)
-        log(`Using video seconds: ${videoSeconds}`);
-        usage = createVideoSecondsUsage(videoSeconds);
-        // Add audio seconds if present (Wan with audio enabled)
-        if (audioSeconds && audioSeconds > 0) {
-            log(`Adding audio seconds: ${audioSeconds}`);
-            usage.completionAudioSeconds = audioSeconds;
-        }
-    } else {
-        // Image model - use image tokens (default to 1 for unit-based)
-        const tokens = imageTokens || 1;
-        log(`Using image tokens: ${tokens}`);
-        usage = createImageUsage(tokens);
+    // Default to 1 image token if nothing provided (for unit-based billing)
+    if (
+        !usage.completionImageTokens &&
+        !usage.completionVideoSeconds &&
+        !usage.completionVideoTokens &&
+        !usage.completionAudioSeconds
+    ) {
+        usage.completionImageTokens = 1;
     }
 
-    const headers = buildUsageHeaders(modelUsed, usage);
-
-    log("Built tracking headers:", headers);
-    log(`===================================`);
-    return headers;
+    log(`Tracking: model=${modelUsed}, usage=${JSON.stringify(usage)}`);
+    return buildUsageHeaders(modelUsed, usage);
 }
 
 /**

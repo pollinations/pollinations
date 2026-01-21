@@ -115,24 +115,3 @@ export function parseUsageHeaders(
 
     return usage;
 }
-
-/**
- * Helper for image services: create Usage with only image tokens
- */
-export function createImageUsage(completionImageTokens: number): Usage {
-    return { completionImageTokens };
-}
-
-/**
- * Helper for video services: create Usage with video seconds (Veo)
- */
-export function createVideoSecondsUsage(completionVideoSeconds: number): Usage {
-    return { completionVideoSeconds };
-}
-
-/**
- * Helper for video services: create Usage with video tokens (Seedance)
- */
-export function createVideoTokensUsage(completionVideoTokens: number): Usage {
-    return { completionVideoTokens };
-}

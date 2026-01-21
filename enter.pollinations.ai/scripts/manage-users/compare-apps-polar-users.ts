@@ -23,8 +23,8 @@
  */
 
 import { exec } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { promisify } from "node:util";
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 
 const execAsync = promisify(exec);
 

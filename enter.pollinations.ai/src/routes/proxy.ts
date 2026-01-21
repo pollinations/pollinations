@@ -263,7 +263,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
         ...chatCompletionHandlers,
@@ -293,7 +293,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
         validator(
@@ -407,7 +407,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
         validator(

@@ -54,11 +54,14 @@ type ApiKey = {
 type ApiKeyManagerProps = {
     apiKeys: ApiKey[];
     onCreate: (formData: CreateApiKey) => Promise<CreateApiKeyResponse>;
-    onUpdate: (id: string, updates: {
-        allowedModels?: string[] | null;
-        pollenBudget?: number | null;
-        enabled?: boolean;
-    }) => Promise<void>;
+    onUpdate: (
+        id: string,
+        updates: {
+            allowedModels?: string[] | null;
+            pollenBudget?: number | null;
+            enabled?: boolean;
+        },
+    ) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
 };
 
@@ -300,11 +303,18 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                         const plaintextKey = apiKey.metadata?.[
                                             "plaintextKey"
                                         ] as string | undefined;
-                                        const isDisabled = apiKey.enabled === false;
+                                        const isDisabled =
+                                            apiKey.enabled === false;
 
                                         return (
                                             <Fragment key={apiKey.id}>
-                                                <Cell className={isDisabled ? "opacity-50" : ""}>
+                                                <Cell
+                                                    className={
+                                                        isDisabled
+                                                            ? "opacity-50"
+                                                            : ""
+                                                    }
+                                                >
                                                     <span
                                                         className={cn(
                                                             "px-2 py-1 rounded text-xs font-medium",
@@ -318,7 +328,13 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                             : "🔒 Secret"}
                                                     </span>
                                                 </Cell>
-                                                <Cell className={isDisabled ? "opacity-50" : ""}>
+                                                <Cell
+                                                    className={
+                                                        isDisabled
+                                                            ? "opacity-50"
+                                                            : ""
+                                                    }
+                                                >
                                                     <span
                                                         className="text-xs truncate block"
                                                         title={
@@ -327,7 +343,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                         }
                                                     >
                                                         {apiKey.name}
-                                                        {isDisabled && <span className="ml-1 text-red-500">(disabled)</span>}
+                                                        {isDisabled && (
+                                                            <span className="ml-1 text-red-500">
+                                                                (disabled)
+                                                            </span>
+                                                        )}
                                                     </span>
                                                 </Cell>
                                                 <Cell>
@@ -398,7 +418,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                     <button
                                                         type="button"
                                                         className="w-6 h-6 flex items-center justify-center rounded hover:bg-blue-100 text-gray-400 hover:text-blue-600 transition-colors cursor-pointer"
-                                                        onClick={() => setEditingKey(apiKey)}
+                                                        onClick={() =>
+                                                            setEditingKey(
+                                                                apiKey,
+                                                            )
+                                                        }
                                                         title="Manage key"
                                                     >
                                                         ⚙

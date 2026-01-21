@@ -173,8 +173,12 @@ export const apiKeysRoutes = new Hono<Env>()
             }
 
             // Update D1 columns directly if provided
-            const d1Updates: { pollenBalance?: number | null; enabled?: boolean } = {};
-            if (pollenBudget !== undefined) d1Updates.pollenBalance = pollenBudget;
+            const d1Updates: {
+                pollenBalance?: number | null;
+                enabled?: boolean;
+            } = {};
+            if (pollenBudget !== undefined)
+                d1Updates.pollenBalance = pollenBudget;
             if (enabled !== undefined) d1Updates.enabled = enabled;
 
             if (Object.keys(d1Updates).length > 0) {

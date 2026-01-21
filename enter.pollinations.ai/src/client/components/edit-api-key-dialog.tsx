@@ -16,11 +16,14 @@ type ApiKey = {
 
 type EditApiKeyDialogProps = {
     apiKey: ApiKey;
-    onUpdate: (id: string, updates: {
-        allowedModels?: string[] | null;
-        pollenBudget?: number | null;
-        enabled?: boolean;
-    }) => Promise<void>;
+    onUpdate: (
+        id: string,
+        updates: {
+            allowedModels?: string[] | null;
+            pollenBudget?: number | null;
+            enabled?: boolean;
+        },
+    ) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
     onClose: () => void;
 };
@@ -102,18 +105,26 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         {/* Enabled Toggle */}
                         <div className="flex items-center justify-between">
                             <div>
-                                <div className="text-sm font-semibold">Enabled</div>
+                                <div className="text-sm font-semibold">
+                                    Enabled
+                                </div>
                                 <div className="text-xs text-gray-500">
                                     Disabled keys cannot make API calls
                                 </div>
                             </div>
                             <Switch.Root
                                 checked={enabled}
-                                onCheckedChange={({ checked }) => setEnabled(checked)}
+                                onCheckedChange={({ checked }) =>
+                                    setEnabled(checked)
+                                }
                                 className="flex items-center"
                             >
-                                <Switch.Control className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${enabled ? "bg-green-500" : "bg-gray-300"}`}>
-                                    <Switch.Thumb className={`block w-5 h-5 bg-white rounded-full shadow transition-transform ${enabled ? "translate-x-5" : "translate-x-0.5"}`} />
+                                <Switch.Control
+                                    className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${enabled ? "bg-green-500" : "bg-gray-300"}`}
+                                >
+                                    <Switch.Thumb
+                                        className={`block w-5 h-5 bg-white rounded-full shadow transition-transform ${enabled ? "translate-x-5" : "translate-x-0.5"}`}
+                                    />
                                 </Switch.Control>
                             </Switch.Root>
                         </div>
@@ -133,7 +144,9 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                         type="button"
                                         color="red"
                                         weight="outline"
-                                        onClick={() => setShowDeleteConfirm(true)}
+                                        onClick={() =>
+                                            setShowDeleteConfirm(true)
+                                        }
                                         className="disabled:opacity-50"
                                         disabled={isSubmitting}
                                     >
@@ -153,7 +166,9 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                             onClick={handleSave}
                                             disabled={isSubmitting}
                                         >
-                                            {isSubmitting ? "Saving..." : "Save"}
+                                            {isSubmitting
+                                                ? "Saving..."
+                                                : "Save"}
                                         </Button>
                                     </div>
                                 </>
@@ -166,7 +181,9 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                         <Button
                                             type="button"
                                             weight="outline"
-                                            onClick={() => setShowDeleteConfirm(false)}
+                                            onClick={() =>
+                                                setShowDeleteConfirm(false)
+                                            }
                                             disabled={isSubmitting}
                                         >
                                             Cancel
@@ -178,7 +195,9 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                             onClick={handleDelete}
                                             disabled={isSubmitting}
                                         >
-                                            {isSubmitting ? "Deleting..." : "Confirm Delete"}
+                                            {isSubmitting
+                                                ? "Deleting..."
+                                                : "Confirm Delete"}
                                         </Button>
                                     </div>
                                 </>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Tinybird config
 // Note: This is a READ-ONLY public token, safe to expose in client code
@@ -27,15 +27,44 @@ const SPARKLINE_POINTS = 20; // Keep 20 data points for sparklines (~5 min at 15
 const TREND_SAMPLES = 8; // Compare current to 8 samples ago (~2 min baseline)
 const MIN_TREND_SAMPLES = 4; // Need at least 1 min of data before showing trends
 
+// Calculate total 4xx errors (user errors)
+function calcTotal4xx(stats) {
+    return (
+        (stats.errors_400 || 0) +
+        (stats.errors_401 || 0) +
+        (stats.errors_402 || 0) +
+        (stats.errors_403 || 0) +
+        (stats.errors_429 || 0) +
+        (stats.errors_4xx_other || 0)
+    );
+}
+
+// Calculate total 5xx errors (model/server errors)
+function calcTotal5xx(stats) {
+    return (
+        (stats.errors_500 || 0) +
+        (stats.errors_502 || 0) +
+        (stats.errors_503 || 0) +
+        (stats.errors_504 || 0) +
+        (stats.errors_5xx_other || 0)
+    );
+}
+
+// Enrich stats with computed totals
+function enrichStats(stats) {
+    if (!stats) return null;
+    return {
+        ...stats,
+        total_4xx: calcTotal4xx(stats),
+        total_5xx: calcTotal5xx(stats),
+    };
+}
+
 // Helper to extract metrics from stats
 function extractMetrics(stats) {
     if (!stats) return null;
     const total = stats.total_requests || 0;
-    const err5xx =
-        (stats.errors_500 || 0) +
-        (stats.errors_502 || 0) +
-        (stats.errors_503 || 0) +
-        (stats.errors_504 || 0);
+    const err5xx = calcTotal5xx(stats);
     return {
         p95: stats.latency_p95_ms || 0,
         err5xxPct: total > 0 ? (err5xx / total) * 100 : 0,
@@ -207,13 +236,14 @@ export function useModelMonitor(aggregationWindow = "60m") {
     // Merge models with health stats, trends, and sparklines
     const mergedModels = models.map((model) => {
         const modelKey = `${model.type}-${model.name}`;
-        const stats = modelStats.find(
+        const rawStats = modelStats.find(
             (s) =>
                 s.model === model.name &&
                 s.event_type === `generate.${model.type}`,
         );
+        const stats = enrichStats(rawStats);
         const { trend, sparkline } = getModelTrend(modelKey, stats);
-        return { ...model, stats: stats || null, trend, sparkline };
+        return { ...model, stats, trend, sparkline };
     });
 
     // Add models from health stats that aren't in the registered model list (but not "undefined")
@@ -226,12 +256,13 @@ export function useModelMonitor(aggregationWindow = "60m") {
     );
     const extraModels = unmatchedStats.map((s) => {
         const modelKey = `${s.event_type?.replace("generate.", "") || "unknown"}-${s.model}`;
-        const { trend, sparkline } = getModelTrend(modelKey, s);
+        const stats = enrichStats(s);
+        const { trend, sparkline } = getModelTrend(modelKey, stats);
         return {
             name: s.model || "(unknown)",
             type: s.event_type?.replace("generate.", "") || "unknown",
             description: "Unregistered model",
-            stats: s,
+            stats,
             trend,
             sparkline,
         };

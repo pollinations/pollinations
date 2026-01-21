@@ -1,5 +1,5 @@
 import { getLogger } from "@logtape/logtape";
-import type { TokenUsage } from "@shared/registry/registry.ts";
+import type { Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
     calculatePrice,
@@ -12,7 +12,7 @@ import {
     type UsagePrice,
 } from "@shared/registry/registry.ts";
 import {
-    openaiUsageToTokenUsage,
+    openaiUsageToUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
 import { eq, sql } from "drizzle-orm";
@@ -61,7 +61,7 @@ import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
 
 export type ModelUsage = {
     model: ModelId;
-    usage: TokenUsage;
+    usage: Usage;
 };
 
 type RequestTrackingData = {
@@ -79,7 +79,7 @@ type ResponseTrackingData = {
     cacheData: CacheData;
     isBilledUsage: boolean;
     modelUsed?: string;
-    usage?: TokenUsage;
+    usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
     contentFilterResults?: GenerationEventContentFilterParams;
@@ -656,7 +656,7 @@ async function extractUsageAndContentFilterResultsStream(
     return {
         modelUsage: {
             model: model as ModelId,
-            usage: openaiUsageToTokenUsage(usage),
+            usage: openaiUsageToUsage(usage),
         },
         contentFilterResults,
     };

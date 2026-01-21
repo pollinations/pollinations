@@ -9,7 +9,7 @@ import { getIp } from "../shared/extractFromRequest.js";
 import { getServiceDefinition } from "../shared/registry/registry.js";
 import {
     buildUsageHeaders,
-    openaiUsageToTokenUsage,
+    openaiUsageToUsage,
 } from "../shared/registry/usage-headers.js";
 import { availableModels } from "./availableModels.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
@@ -358,8 +358,8 @@ export function sendOpenAIResponse(res, completion) {
 
     // Add usage headers if available (GitHub issue #4638)
     if (completion.usage && completion.model) {
-        const tokenUsage = openaiUsageToTokenUsage(completion.usage);
-        const usageHeaders = buildUsageHeaders(completion.model, tokenUsage);
+        const usage = openaiUsageToUsage(completion.usage);
+        const usageHeaders = buildUsageHeaders(completion.model, usage);
 
         for (const [key, value] of Object.entries(usageHeaders)) {
             res.setHeader(key, value);
@@ -386,8 +386,8 @@ export function sendContentResponse(res, completion) {
         completion.usage &&
         completion.model
     ) {
-        const tokenUsage = openaiUsageToTokenUsage(completion.usage);
-        const usageHeaders = buildUsageHeaders(completion.model, tokenUsage);
+        const usage = openaiUsageToUsage(completion.usage);
+        const usageHeaders = buildUsageHeaders(completion.model, usage);
 
         for (const [key, value] of Object.entries(usageHeaders)) {
             res.setHeader(key, value);

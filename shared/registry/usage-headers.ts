@@ -76,19 +76,11 @@ export function buildUsageHeaders(
         "x-model-used": modelUsed,
     };
 
-    let totalTokens = 0;
-
-    // Iterate over all usage types
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {
         const value = usage[usageType as UsageType];
         if (value && value > 0) {
             headers[headerName] = String(value);
-            totalTokens += value;
         }
-    }
-
-    if (totalTokens > 0) {
-        headers["x-usage-total-tokens"] = String(totalTokens);
     }
 
     return headers;

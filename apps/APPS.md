@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted |
 | ----- | ---- | ------- | ----------- | -------- | -------- | --------------- | ------------- | --------------------- | ----------------------- | ---------------- | ----- | --------- |
+| 🦬 | ZubrMax AI | https://zubrmax.site/ | AI assistant for students and teachers: Q&A and image generation. | ru | Learn | @Techvision2025qwerty | 215987815 |  |  |  | | 2026-01-21 |
 | 📖 | Fable Friend | https://huggingface.co/spaces/Shreemahor/Fable-Friend | Interactive AI story adventure with selectable role, genre, and image style. | en | Games | @Shreemahor | 176168773 | https://github.com/Shreemahor/Fable-Friend |  | shreemahor_51417 | | 2026-01-20 |
 | 🛠️ | PolliDev | https://fabioarieira.com/pollidev/ | Developer-focused tool for managing generative image assets and prompts. | en | Dev_Tools | @FabioArieiraBaia | 104397473 | https://github.com/FabioArieiraBaia/pollidev |  | fabioarieira8850 | | 2026-01-13 |
 | 🎮 | Lapse Game 2075 | https://makeypocket.github.io/LapseGame/ | AI-powered game where decisions shape a country's future over four pillars | en, ru | Games | @makeypocket | 108882883 | https://github.com/makeypocket/LapseGame | ⭐1 | termuxt | | 2026-01-12 |

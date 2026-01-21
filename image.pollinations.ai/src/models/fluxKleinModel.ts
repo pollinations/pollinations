@@ -233,18 +233,20 @@ async function generateWithEditing(
 
     logOps("Image editing mode with", base64Images.length, "processed images");
 
-    // Build EditRequest body (matches Python EditRequest model)
-    const editRequest = {
+    // Build query parameters for edit endpoint (prompt + dimensions in URL)
+    const params = new URLSearchParams({
         prompt: prompt,
-        images: base64Images,
-        width: safeParams.width || 1024,
-        height: safeParams.height || 1024,
-        seed: safeParams.seed ?? null,
-    };
+        width: String(safeParams.width || 1024),
+        height: String(safeParams.height || 1024),
+    });
 
-    const editUrl = KLEIN_ENDPOINTS[variant].edit;
+    if (safeParams.seed !== undefined) {
+        params.append("seed", String(safeParams.seed));
+    }
+
+    const editUrl = `${KLEIN_ENDPOINTS[variant].edit}?${params.toString()}`;
     logOps("Flux Klein POST URL:", editUrl);
-    logOps("Sending EditRequest with", base64Images.length, "images");
+    logOps("Sending", base64Images.length, "images in body");
 
     progress.updateBar(
         requestId,
@@ -261,7 +263,7 @@ async function generateWithEditing(
                     "Content-Type": "application/json",
                     "x-enter-token": enterToken,
                 },
-                body: JSON.stringify(editRequest),
+                body: JSON.stringify(base64Images),
                 signal,
             }),
         120000, // 2 minute timeout for cold starts

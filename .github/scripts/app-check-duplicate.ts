@@ -39,6 +39,9 @@ interface App {
     discord: string;
     other: string;
     submitted: string;
+    submittedDate: string;
+    issueUrl: string;
+    approvedDate: string;
 }
 
 let project: Project;
@@ -83,9 +86,9 @@ function parseAppsMarkdown(filePath: string): App[] {
         cols.shift();
         cols.pop();
 
-        if (cols.length < 13) continue;
+        if (cols.length < 15) continue;
 
-        // cols: [emoji, name, web_url, desc, language, category, github, github_id, repo, stars, discord, other, submitted]
+        // cols: [emoji, name, web_url, desc, language, category, github, github_id, repo, stars, discord, other, submitted_date, issue_url, approved_date]
         const [
             emoji,
             name,
@@ -99,7 +102,9 @@ function parseAppsMarkdown(filePath: string): App[] {
             stars,
             discord,
             other,
-            submitted,
+            submittedDate,
+            issueUrl,
+            approvedDate,
         ] = cols;
 
         // Extract clean name and URL from markdown link format: [Name](url)
@@ -126,7 +131,10 @@ function parseAppsMarkdown(filePath: string): App[] {
             stars,
             discord,
             other,
-            submitted,
+            submitted: submittedDate,
+            submittedDate,
+            issueUrl,
+            approvedDate,
         });
     }
 

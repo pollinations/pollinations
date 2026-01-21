@@ -12,6 +12,72 @@ import {
     verifyWebhookSignature,
 } from "../utils/stripe.ts";
 
+// BETA PROMOTION: Double all pack purchases (remove after beta)
+const BETA_MULTIPLIER = 2;
+
+interface StripeEventData {
+    eventType: string;
+    eventId: string;
+    sessionId: string;
+    userId: string;
+    amountCents: number;
+    currency: string;
+    paymentStatus: string;
+    paymentMethod: string;
+    customerEmail: string;
+    livemode: boolean;
+    payload: Stripe.Event;
+}
+
+async function sendStripeEventToTinybird(
+    env: CloudflareBindings,
+    data: StripeEventData,
+): Promise<void> {
+    const e = env as unknown as Record<string, string>;
+    const tinybirdUrl = e.TINYBIRD_STRIPE_INGEST_URL;
+    const tinybirdToken = e.TINYBIRD_STRIPE_INGEST_TOKEN;
+
+    if (!tinybirdUrl || !tinybirdToken) {
+        console.log("Tinybird Stripe ingest not configured, skipping");
+        return;
+    }
+
+    const event = {
+        timestamp: new Date().toISOString(),
+        event_type: data.eventType,
+        event_id: data.eventId,
+        session_id: data.sessionId,
+        user_id: data.userId,
+        amount_cents: data.amountCents,
+        currency: data.currency,
+        payment_status: data.paymentStatus,
+        payment_method: data.paymentMethod,
+        customer_email: data.customerEmail,
+        livemode: data.livemode ? 1 : 0,
+        payload: JSON.stringify(data.payload),
+    };
+
+    try {
+        const response = await fetch(tinybirdUrl, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${tinybirdToken}`,
+                "Content-Type": "application/x-ndjson",
+            },
+            body: JSON.stringify(event),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(
+                `Failed to send Stripe event to Tinybird: ${response.status} ${errorText}`,
+            );
+        }
+    } catch (error) {
+        console.error("Error sending Stripe event to Tinybird:", error);
+    }
+}
+
 /**
  * Handle successful checkout session completion
  * Credits pollen to user's packBalance
@@ -36,8 +102,6 @@ const handleCheckoutSessionCompleted = async (
         return { success: false, message: "Invalid units value" };
     }
 
-    // BETA PROMOTION: Double all pack purchases (remove after beta)
-    const BETA_MULTIPLIER = 2;
     const creditsToAdd = units * BETA_MULTIPLIER;
 
     const db = drizzle(env.DB);
@@ -137,15 +201,41 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     );
 
                     if (result.success && session.metadata) {
+                        const pollenPaid = Number.parseInt(
+                            session.metadata.units || "0",
+                            10,
+                        );
                         // Mark as completed with full metadata (extends TTL to 7 days)
                         await markSessionProcessed(c.env.KV, session.id, {
                             userId: session.metadata.userId || "",
-                            units: Number.parseInt(
-                                session.metadata.units || "0",
-                                10,
-                            ),
+                            units: pollenPaid,
                             packSlug: session.metadata.packSlug || "unknown",
                         });
+
+                        // Send to TinyBird in background using waitUntil
+                        c.executionCtx.waitUntil(
+                            sendStripeEventToTinybird(c.env, {
+                                eventType: event.type,
+                                eventId: event.id,
+                                sessionId: session.id,
+                                userId: session.metadata.userId || "",
+                                amountCents: session.amount_total || 0,
+                                currency: session.currency || "usd",
+                                paymentStatus:
+                                    session.payment_status || "unknown",
+                                paymentMethod:
+                                    session.payment_method_types?.[0] ||
+                                    "unknown",
+                                customerEmail: session.customer_email || "",
+                                livemode: event.livemode,
+                                payload: event,
+                            }).catch((err) =>
+                                console.error(
+                                    "TinyBird Stripe send failed:",
+                                    err,
+                                ),
+                            ),
+                        );
                     } else {
                         // Release lock on failure to allow Stripe retry
                         await releaseSessionLock(c.env.KV, session.id);
@@ -186,15 +276,36 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 );
 
                 if (result.success && session.metadata) {
+                    const pollenPaid = Number.parseInt(
+                        session.metadata.units || "0",
+                        10,
+                    );
                     // Mark as completed with full metadata (extends TTL to 7 days)
                     await markSessionProcessed(c.env.KV, session.id, {
                         userId: session.metadata.userId || "",
-                        units: Number.parseInt(
-                            session.metadata.units || "0",
-                            10,
-                        ),
+                        units: pollenPaid,
                         packSlug: session.metadata.packSlug || "unknown",
                     });
+
+                    // Send to TinyBird in background using waitUntil
+                    c.executionCtx.waitUntil(
+                        sendStripeEventToTinybird(c.env, {
+                            eventType: event.type,
+                            eventId: event.id,
+                            sessionId: session.id,
+                            userId: session.metadata.userId || "",
+                            amountCents: session.amount_total || 0,
+                            currency: session.currency || "usd",
+                            paymentStatus: session.payment_status || "unknown",
+                            paymentMethod:
+                                session.payment_method_types?.[0] || "unknown",
+                            customerEmail: session.customer_email || "",
+                            livemode: event.livemode,
+                            payload: event,
+                        }).catch((err) =>
+                            console.error("TinyBird Stripe send failed:", err),
+                        ),
+                    );
                 } else {
                     // Release lock on failure to allow Stripe retry
                     await releaseSessionLock(c.env.KV, session.id);
@@ -216,7 +327,108 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "checkout.session.expired": {
                 const session = event.data.object as Stripe.Checkout.Session;
                 console.log(`Checkout session expired: ${session.id}`);
-                // No action needed - session was not completed
+                // Log to TinyBird for analytics
+                c.executionCtx.waitUntil(
+                    sendStripeEventToTinybird(c.env, {
+                        eventType: event.type,
+                        eventId: event.id,
+                        sessionId: session.id,
+                        userId: session.metadata?.userId || "",
+                        amountCents: session.amount_total || 0,
+                        currency: session.currency || "usd",
+                        paymentStatus: "expired",
+                        paymentMethod: "unknown",
+                        customerEmail: session.customer_email || "",
+                        livemode: event.livemode,
+                        payload: event,
+                    }).catch((err) =>
+                        console.error("TinyBird Stripe send failed:", err),
+                    ),
+                );
+                break;
+            }
+
+            case "payment_intent.succeeded": {
+                const paymentIntent = event.data.object as Stripe.PaymentIntent;
+                console.log(`Payment intent succeeded: ${paymentIntent.id}`);
+                // This event contains the ACTUAL payment method used
+                const actualPaymentMethod =
+                    paymentIntent.payment_method_types?.[0] || "unknown";
+                c.executionCtx.waitUntil(
+                    sendStripeEventToTinybird(c.env, {
+                        eventType: event.type,
+                        eventId: event.id,
+                        sessionId: paymentIntent.id, // payment_intent ID
+                        userId: paymentIntent.metadata?.userId || "",
+                        amountCents: paymentIntent.amount || 0,
+                        currency: paymentIntent.currency || "usd",
+                        paymentStatus: paymentIntent.status || "succeeded",
+                        paymentMethod: actualPaymentMethod,
+                        customerEmail:
+                            paymentIntent.receipt_email ||
+                            (
+                                paymentIntent as unknown as {
+                                    customer_email?: string;
+                                }
+                            ).customer_email ||
+                            "",
+                        livemode: event.livemode,
+                        payload: event,
+                    }).catch((err) =>
+                        console.error("TinyBird Stripe send failed:", err),
+                    ),
+                );
+                break;
+            }
+
+            case "payment_intent.payment_failed": {
+                const paymentIntent = event.data.object as Stripe.PaymentIntent;
+                console.log(`Payment intent failed: ${paymentIntent.id}`);
+                c.executionCtx.waitUntil(
+                    sendStripeEventToTinybird(c.env, {
+                        eventType: event.type,
+                        eventId: event.id,
+                        sessionId: paymentIntent.id,
+                        userId: paymentIntent.metadata?.userId || "",
+                        amountCents: paymentIntent.amount || 0,
+                        currency: paymentIntent.currency || "usd",
+                        paymentStatus: "failed",
+                        paymentMethod:
+                            paymentIntent.payment_method_types?.[0] ||
+                            "unknown",
+                        customerEmail: paymentIntent.receipt_email || "",
+                        livemode: event.livemode,
+                        payload: event,
+                    }).catch((err) =>
+                        console.error("TinyBird Stripe send failed:", err),
+                    ),
+                );
+                break;
+            }
+
+            case "refund.created":
+            case "refund.updated":
+            case "refund.failed": {
+                const refund = event.data.object as Stripe.Refund;
+                console.log(`Refund ${event.type}: ${refund.id}`);
+                c.executionCtx.waitUntil(
+                    sendStripeEventToTinybird(c.env, {
+                        eventType: event.type,
+                        eventId: event.id,
+                        sessionId:
+                            refund.payment_intent?.toString() || refund.id,
+                        userId: refund.metadata?.userId || "",
+                        amountCents: refund.amount || 0,
+                        currency: refund.currency || "usd",
+                        paymentStatus: refund.status || "unknown",
+                        paymentMethod: "refund",
+                        customerEmail: "",
+                        livemode: event.livemode,
+                        payload: event,
+                    }).catch((err) =>
+                        console.error("TinyBird Stripe send failed:", err),
+                    ),
+                );
                 break;
             }
 

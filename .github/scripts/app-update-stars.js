@@ -93,7 +93,9 @@ function fetchRepoStars(owner, repo) {
 
         const req = https.request(options, (res) => {
             let data = "";
-            res.on("data", (chunk) => (data += chunk));
+            res.on("data", (chunk) => {
+                data += chunk;
+            });
             res.on("end", () => {
                 if (res.statusCode === 404) {
                     resolve({ exists: false, stars: 0 });

@@ -11,6 +11,7 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     completionTextTokens: "x-usage-completion-text-tokens",
     completionReasoningTokens: "x-usage-completion-reasoning-tokens",
     completionAudioTokens: "x-usage-completion-audio-tokens",
+    completionAudioSeconds: "x-usage-completion-audio-seconds",
     completionImageTokens: "x-usage-completion-image-tokens",
     completionVideoSeconds: "x-usage-completion-video-seconds",
     completionVideoTokens: "x-usage-completion-video-tokens",
@@ -75,19 +76,11 @@ export function buildUsageHeaders(
         "x-model-used": modelUsed,
     };
 
-    let totalTokens = 0;
-
-    // Iterate over all usage types
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {
         const value = usage[usageType as UsageType];
         if (value && value > 0) {
             headers[headerName] = String(value);
-            totalTokens += value;
         }
-    }
-
-    if (totalTokens > 0) {
-        headers["x-usage-total-tokens"] = String(totalTokens);
     }
 
     return headers;
@@ -113,25 +106,4 @@ export function parseUsageHeaders(
     }
 
     return usage;
-}
-
-/**
- * Helper for image services: create Usage with only image tokens
- */
-export function createImageUsage(completionImageTokens: number): Usage {
-    return { completionImageTokens };
-}
-
-/**
- * Helper for video services: create Usage with video seconds (Veo)
- */
-export function createVideoSecondsUsage(completionVideoSeconds: number): Usage {
-    return { completionVideoSeconds };
-}
-
-/**
- * Helper for video services: create Usage with video tokens (Seedance)
- */
-export function createVideoTokensUsage(completionVideoTokens: number): Usage {
-    return { completionVideoTokens };
 }

@@ -1,7 +1,7 @@
-import type { ModelId, TokenUsage } from "@shared/registry/registry.ts";
+import type { ModelId, Usage } from "@shared/registry/registry.ts";
 import type { CompletionUsage } from "@/schemas/openai.ts";
 
-export function transformOpenAIUsage(usage: CompletionUsage): TokenUsage {
+export function transformOpenAIUsage(usage: CompletionUsage): Usage {
     const promptDetailTokens =
         (usage.prompt_tokens_details?.cached_tokens || 0) +
         (usage.prompt_tokens_details?.audio_tokens || 0);
@@ -24,5 +24,5 @@ export function transformOpenAIUsage(usage: CompletionUsage): TokenUsage {
 
 export type ModelUsage = {
     model: ModelId;
-    usage: TokenUsage;
+    usage: Usage;
 };

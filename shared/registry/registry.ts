@@ -20,24 +20,26 @@ export type UsageType =
     | "completionVideoSeconds"
     | "completionVideoTokens";
 
-export type TokenUsage = { [K in UsageType]?: number };
+// Usage represents raw usage metrics (tokens, seconds, etc.)
+export type Usage = { [K in UsageType]?: number };
 
-export type DollarConvertedUsage = { [K in UsageType]?: number };
-
-export type UsageCost = DollarConvertedUsage & {
+// UsageCost is Usage with dollar amounts and a total
+export type UsageCost = Usage & {
     totalCost: number;
 };
 
-export type UsagePrice = DollarConvertedUsage & {
+// UsagePrice is Usage with dollar amounts and a total (currently same as cost)
+export type UsagePrice = Usage & {
     totalPrice: number;
 };
 
-export type UsageConversionDefinition = {
+// CostDefinition defines conversion rates from usage to dollars
+export type CostDefinition = {
     date: number;
 } & { [K in UsageType]?: number };
 
-export type CostDefinition = UsageConversionDefinition;
-export type PriceDefinition = UsageConversionDefinition;
+// PriceDefinition defines conversion rates for pricing (currently same as cost)
+export type PriceDefinition = CostDefinition;
 
 export type ModelDefinition = CostDefinition[];
 
@@ -73,20 +75,17 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
 };
 
 /** Sorts the cost and price definitions by date, in descending order */
-function sortDefinitions<T extends UsageConversionDefinition>(
-    definitions: T[],
-): T[] {
+function sortDefinitions<T extends CostDefinition>(definitions: T[]): T[] {
     return definitions.sort((a, b) => b.date - a.date);
 }
 
-// Helper: Convert token usage to dollar amounts
+// Helper: Convert usage to dollar amounts
 function convertUsage(
-    usage: TokenUsage,
-    conversionDefinition: UsageConversionDefinition,
-): DollarConvertedUsage {
-    const amounts = usage;
+    usage: Usage,
+    conversionDefinition: CostDefinition,
+): Usage {
     const convertedUsage = Object.fromEntries(
-        Object.entries(amounts).map(([usageType, amount]) => {
+        Object.entries(usage).map(([usageType, amount]) => {
             if (amount === 0) return [usageType, 0];
             const usageTypeWithFallback =
                 usageType === "completionReasoningTokens"
@@ -103,7 +102,7 @@ function convertUsage(
             return [usageType, usageTypeCost];
         }),
     );
-    return convertedUsage as DollarConvertedUsage;
+    return convertedUsage as Usage;
 }
 
 // Generate SERVICE_REGISTRY with computed prices from costs
@@ -239,9 +238,9 @@ export function getActivePriceDefinition(
 }
 
 /**
- * Calculate cost for a model based on token usage
+ * Calculate cost for a model based on usage
  */
-export function calculateCost(modelId: ModelId, usage: TokenUsage): UsageCost {
+export function calculateCost(modelId: ModelId, usage: Usage): UsageCost {
     const costDefinition = getActiveCostDefinition(modelId);
     if (!costDefinition)
         throw new Error(
@@ -259,12 +258,9 @@ export function calculateCost(modelId: ModelId, usage: TokenUsage): UsageCost {
 }
 
 /**
- * Calculate price for a service based on token usage
+ * Calculate price for a service based on usage
  */
-export function calculatePrice(
-    serviceId: ServiceId,
-    usage: TokenUsage,
-): UsagePrice {
+export function calculatePrice(serviceId: ServiceId, usage: Usage): UsagePrice {
     const priceDefinition = getActivePriceDefinition(serviceId);
     if (!priceDefinition)
         throw new Error(

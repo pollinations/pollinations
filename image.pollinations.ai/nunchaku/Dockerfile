@@ -53,11 +53,10 @@ RUN pip install -r requirements.txt
 # Force SM targets since Docker build doesn't have GPU access
 ENV TORCH_CUDA_ARCH_LIST="8.9"
 ENV NUNCHAKU_INSTALL_SM="89"
-RUN git clone --recursive https://github.com/mit-han-lab/nunchaku.git /app/nunchaku && \
+RUN git clone --recurse-submodules https://github.com/nunchaku-tech/nunchaku.git /app/nunchaku && \
     cd /app/nunchaku && \
     pip install ninja && \
-    sed -i 's/sm_targets = get_sm_targets()/sm_targets = ["89"]/' setup.py && \
-    pip install --no-build-isolation -e .
+    pip install -e .
 
 # Copy application code
 COPY server.py .

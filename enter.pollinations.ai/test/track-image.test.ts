@@ -1,10 +1,6 @@
+import type { ModelId, TokenUsage } from "@shared/registry/registry.ts";
+import { calculateCost } from "@shared/registry/registry.ts";
 import { expect, test } from "vitest";
-import { calculateCost, calculatePrice } from "@shared/registry/registry.ts";
-import type {
-    TokenUsage,
-    ModelId,
-    ServiceId,
-} from "@shared/registry/registry.ts";
 
 // Test image model cost tracking
 // Tests cost calculation properties without hardcoding specific values
@@ -20,11 +16,9 @@ test("Image models should calculate costs proportionally to token count", () => 
 
     for (const model of models) {
         const usage1: TokenUsage = {
-            unit: "TOKENS",
             completionImageTokens: 1,
         };
         const usage10: TokenUsage = {
-            unit: "TOKENS",
             completionImageTokens: 10,
         };
 
@@ -42,7 +36,6 @@ test("Image models should calculate costs proportionally to token count", () => 
 
 test("Models with API costs should have non-zero operational costs", () => {
     const usage: TokenUsage = {
-        unit: "TOKENS",
         completionImageTokens: 1,
     };
 
@@ -64,7 +57,6 @@ test("Cost should be non-negative for all models", () => {
         "seedream",
     ];
     const usage: TokenUsage = {
-        unit: "TOKENS",
         completionImageTokens: 1,
     };
 
@@ -78,7 +70,6 @@ test("Cost should be non-negative for all models", () => {
 
 test("gptimage-large should calculate costs for image output tokens", () => {
     const usage: TokenUsage = {
-        unit: "TOKENS",
         completionImageTokens: 1000,
     };
     const cost = calculateCost("gptimage-large", usage);
@@ -89,7 +80,6 @@ test("gptimage-large should calculate costs for image output tokens", () => {
 
 test("gptimage-large should calculate costs for text input tokens", () => {
     const usage: TokenUsage = {
-        unit: "TOKENS",
         promptTextTokens: 1000,
     };
     const cost = calculateCost("gptimage-large", usage);
@@ -100,7 +90,6 @@ test("gptimage-large should calculate costs for text input tokens", () => {
 
 test("gptimage-large should calculate costs for image input tokens", () => {
     const usage: TokenUsage = {
-        unit: "TOKENS",
         promptImageTokens: 1000,
     };
     const cost = calculateCost("gptimage-large", usage);
@@ -111,7 +100,6 @@ test("gptimage-large should calculate costs for image input tokens", () => {
 
 test("gptimage-large combined input + output costs", () => {
     const usage: TokenUsage = {
-        unit: "TOKENS",
         promptTextTokens: 500,
         promptImageTokens: 3000, // Typical resized input ~3K tokens
         completionImageTokens: 1000,

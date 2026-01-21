@@ -1,16 +1,10 @@
-import { omit, safeRound } from "../utils";
-import {
-    TEXT_SERVICES,
-    DEFAULT_TEXT_MODEL,
-    TextServiceId,
-    TextModelId,
-} from "./text";
+import { safeRound } from "../utils";
 import {
     IMAGE_SERVICES,
-    DEFAULT_IMAGE_MODEL,
-    ImageServiceId,
-    ImageModelId,
+    type ImageModelId,
+    type ImageServiceId,
 } from "./image";
+import { TEXT_SERVICES, type TextModelId, type TextServiceId } from "./text";
 
 const PRECISION = 8;
 
@@ -26,13 +20,9 @@ export type UsageType =
     | "completionVideoSeconds"
     | "completionVideoTokens";
 
-export type TokenUsage = {
-    unit: "TOKENS";
-} & { [K in UsageType]?: number };
+export type TokenUsage = { [K in UsageType]?: number };
 
-export type DollarConvertedUsage = {
-    unit: "USD";
-} & { [K in UsageType]?: number };
+export type DollarConvertedUsage = { [K in UsageType]?: number };
 
 export type UsageCost = DollarConvertedUsage & {
     totalCost: number;
@@ -94,7 +84,7 @@ function convertUsage(
     usage: TokenUsage,
     conversionDefinition: UsageConversionDefinition,
 ): DollarConvertedUsage {
-    const amounts = omit(usage, "unit");
+    const amounts = usage;
     const convertedUsage = Object.fromEntries(
         Object.entries(amounts).map(([usageType, amount]) => {
             if (amount === 0) return [usageType, 0];
@@ -113,10 +103,7 @@ function convertUsage(
             return [usageType, usageTypeCost];
         }),
     );
-    return {
-        unit: "USD",
-        ...convertedUsage,
-    };
+    return convertedUsage as DollarConvertedUsage;
 }
 
 // Generate SERVICE_REGISTRY with computed prices from costs
@@ -262,9 +249,7 @@ export function calculateCost(modelId: ModelId, usage: TokenUsage): UsageCost {
         );
     const usageCost = convertUsage(usage, costDefinition);
     const totalCost = safeRound(
-        Object.values(omit(usageCost, "unit")).reduce(
-            (total, cost) => total + cost,
-        ),
+        Object.values(usageCost).reduce((total, cost) => total + cost),
         PRECISION,
     );
     return {
@@ -287,9 +272,7 @@ export function calculatePrice(
         );
     const usagePrice = convertUsage(usage, priceDefinition);
     const totalPrice = safeRound(
-        Object.values(omit(usagePrice, "unit")).reduce(
-            (total, price) => total + price,
-        ),
+        Object.values(usagePrice).reduce((total, price) => total + price),
         PRECISION,
     );
     return {

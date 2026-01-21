@@ -48,7 +48,6 @@ export function openaiUsageToTokenUsage(openaiUsage: {
 
     // biome-ignore format: custom formatting
     return {
-        unit: "TOKENS",
         promptTextTokens: 
             openaiUsage.prompt_tokens - promptDetailTokens,
         promptCachedTokens:
@@ -100,7 +99,7 @@ export function buildUsageHeaders(
 export function parseUsageHeaders(
     headers: Headers | Record<string, string>,
 ): TokenUsage {
-    const usage: TokenUsage = { unit: "TOKENS" };
+    const usage: TokenUsage = {};
 
     const getHeader = (name: string) =>
         headers instanceof Headers ? headers.get(name) : headers[name];
@@ -122,10 +121,7 @@ export function parseUsageHeaders(
 export function createImageTokenUsage(
     completionImageTokens: number,
 ): TokenUsage {
-    return {
-        unit: "TOKENS",
-        completionImageTokens,
-    };
+    return { completionImageTokens };
 }
 
 /**
@@ -134,10 +130,7 @@ export function createImageTokenUsage(
 export function createVideoSecondsUsage(
     completionVideoSeconds: number,
 ): TokenUsage {
-    return {
-        unit: "TOKENS",
-        completionVideoSeconds,
-    };
+    return { completionVideoSeconds };
 }
 
 /**
@@ -146,8 +139,5 @@ export function createVideoSecondsUsage(
 export function createVideoTokenUsage(
     completionVideoTokens: number,
 ): TokenUsage {
-    return {
-        unit: "TOKENS",
-        completionVideoTokens,
-    };
+    return { completionVideoTokens };
 }

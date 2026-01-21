@@ -1,4 +1,4 @@
-import { ModelId, TokenUsage } from "@shared/registry/registry.ts";
+import type { ModelId, TokenUsage } from "@shared/registry/registry.ts";
 import type { CompletionUsage } from "@/schemas/openai.ts";
 
 export function transformOpenAIUsage(usage: CompletionUsage): TokenUsage {
@@ -11,7 +11,6 @@ export function transformOpenAIUsage(usage: CompletionUsage): TokenUsage {
         (usage.completion_tokens_details?.audio_tokens || 0) +
         (usage.completion_tokens_details?.reasoning_tokens || 0);
     return {
-        unit: "TOKENS",
         promptTextTokens: usage.prompt_tokens - promptDetailTokens,
         promptCachedTokens: usage.prompt_tokens_details?.cached_tokens || 0,
         promptAudioTokens: usage.prompt_tokens_details?.audio_tokens || 0,

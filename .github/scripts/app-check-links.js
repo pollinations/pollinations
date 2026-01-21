@@ -90,7 +90,9 @@ function parseAppsMarkdown() {
             stars: cols[9],
             discord: cols[10],
             other: cols[11],
-            submitted: cols[12],
+            submittedDate: cols[12],
+            issueUrl: cols[13],
+            approvedDate: cols[14],
             rawLine: row,
         });
     }

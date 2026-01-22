@@ -129,7 +129,8 @@ def web():
     def root():
         return {
             "endpoints": {
-                "/generate": "Generate image from text prompt (POST with JSON)",
+                "/generate (GET)": "Generate image with query params: ?prompt=...&width=1024&height=576&seed=42",
+                "/generate (POST)": "Generate image with JSON body: {prompt, width, height, seed}",
                 "/health": "Health check",
             }
         }
@@ -138,8 +139,29 @@ def web():
     def health():
         return {"status": "healthy"}
 
+    @web_app.get("/generate")
+    async def generate_get(
+        prompt: str = "a cute bear",
+        width: int = 1024,
+        height: int = 576,
+        seed: int | None = None
+    ):
+        from fastapi.responses import JSONResponse
+        try:
+            img_request = ImageRequest(prompt=prompt, width=width, height=height, seed=seed)
+            
+            img_bytes = LongCatInference().generate.remote(
+                img_request.prompt,
+                img_request.width,
+                img_request.height,
+                img_request.seed
+            )
+            return Response(img_bytes, media_type="image/jpeg")
+        except Exception as e:
+            return JSONResponse({"error": str(e)}, status_code=400)
+
     @web_app.post("/generate")
-    async def generate_endpoint(request: Request):
+    async def generate_post(request: Request):
         from fastapi.responses import JSONResponse
         try:
             data = await request.json()

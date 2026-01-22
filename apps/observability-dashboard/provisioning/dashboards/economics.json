@@ -1284,7 +1284,8 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "palette-classic"
+                        "mode": "fixed",
+                        "fixedColor": "green"
                     },
                     "custom": {
                         "hideFrom": {
@@ -1314,35 +1315,6 @@
                             "id": "displayName",
                             "value": "Pack ρ"
                         }]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "pack_share"
-                        },
-                        "properties": [{
-                                "id": "displayName",
-                                "value": "Pack %"
-                            },
-                            {
-                                "id": "unit",
-                                "value": "percentunit"
-                            },
-                            {
-                                "id": "color",
-                                "value": {
-                                    "mode": "continuous-GrYlRd"
-                                }
-                            },
-                            {
-                                "id": "min",
-                                "value": 0
-                            },
-                            {
-                                "id": "max",
-                                "value": 1
-                            }
-                        ]
                     }
                 ]
             },
@@ -1356,8 +1328,7 @@
             "options": {
                 "dims": {
                     "x": "free_cost",
-                    "y": "paid_cost",
-                    "color": "pack_share"
+                    "y": "paid_cost"
                 },
                 "legend": {
                     "calcs": [],
@@ -1379,7 +1350,7 @@
                     "uid": "PAD1A0A25CD30D456"
                 },
                 "format": 1,
-                "rawSql": "SELECT user_github_username as developer, sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as free_cost, sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as paid_cost, if((free_cost + paid_cost) > 0, paid_cost / (free_cost + paid_cost), 0) as pack_share FROM generation_event WHERE $__timeFilter(start_time) AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND user_github_username != '' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58')) GROUP BY user_github_username HAVING (free_cost + paid_cost) >= 10 ORDER BY (free_cost + paid_cost) DESC LIMIT 100",
+                "rawSql": "SELECT user_github_username as developer, sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as free_cost, sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as paid_cost FROM generation_event WHERE $__timeFilter(start_time) AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND user_github_username != '' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58')) GROUP BY user_github_username HAVING (free_cost + paid_cost) >= 10 ORDER BY (free_cost + paid_cost) DESC LIMIT 100",
                 "refId": "A"
             }],
             "title": "Developer Economics Scatter",
@@ -1416,17 +1387,17 @@
                         },
                         "properties": [{
                             "id": "custom.width",
-                            "value": 200
+                            "value": 150
                         }]
                     },
                     {
                         "matcher": {
                             "id": "byName",
-                            "options": "total_cost"
+                            "options": "paid_cost"
                         },
                         "properties": [{
                                 "id": "displayName",
-                                "value": "Total ρ"
+                                "value": "Pack ρ"
                             },
                             {
                                 "id": "unit",
@@ -1441,11 +1412,11 @@
                     {
                         "matcher": {
                             "id": "byName",
-                            "options": "paid_cost"
+                            "options": "total_cost"
                         },
                         "properties": [{
                                 "id": "displayName",
-                                "value": "Pack ρ"
+                                "value": "Total ρ"
                             },
                             {
                                 "id": "unit",
@@ -1558,13 +1529,12 @@
                     "uid": "PAD1A0A25CD30D456"
                 },
                 "format": 1,
-                "rawSql": "SELECT api_key_name as app, sum(total_price) as total_cost, sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as paid_cost, sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as free_cost, if(total_cost > 0, paid_cost / total_cost, 0) as paid_share, count() as requests FROM generation_event WHERE $__timeFilter(start_time) AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND api_key_name != '' AND api_key_name != 'undefined' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58')) GROUP BY api_key_name HAVING total_cost >= 100 ORDER BY paid_share DESC LIMIT 30",
+                "rawSql": "SELECT api_key_name as app, any(user_github_username) as developer, if((sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) + sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier'))) > 0, sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) / (sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) + sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier'))), 0) as paid_share, sum(total_price) as total_cost, sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as paid_cost, sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as free_cost, count() as requests FROM generation_event WHERE $__timeFilter(start_time) AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND api_key_name != '' AND api_key_name != 'undefined' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58')) GROUP BY api_key_name HAVING total_cost >= 100 ORDER BY paid_share DESC LIMIT 30",
                 "refId": "A"
             }],
             "title": "App Economy Leaderboard",
             "type": "table"
-        },
-        {
+        }, {
             "collapsed": false,
             "gridPos": {
                 "h": 1,
@@ -1576,8 +1546,7 @@
             "panels": [],
             "title": "Diagnostics",
             "type": "row"
-        },
-        {
+        }, {
             "datasource": {
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"

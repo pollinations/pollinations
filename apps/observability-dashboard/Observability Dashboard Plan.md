@@ -201,29 +201,29 @@ All panels use these **cost-weighted** definitions:
 
 ---
 
-### 7. Developer Economics Scatter
+### 7. Developer Economics Scatter ✅
 
 | | |
 |---|---|
-| **Type** | Scatter plot (bubble) |
-| **Description** | **X** = `paid_cost`, **Y** = `free_cost`, **Bubble size** = `total_cost`. Each dot = one user. Include hover labels showing `user_github_username` for top outliers. |
-| **Why** | Instantly see "who costs us money vs who funds themselves." Upper-left = subsidy risk, lower-right = valuable. |
-| **Variables** | timeRange, model, tier |
-| **Metrics** | `paid_cost`, `free_cost`, `total_cost` per user |
-| **Note** | Replaces old "Developer Value Quadrant" with more interpretable axes. Hover labels make outliers actionable. |
+| **Type** | XY Scatter plot |
+| **Description** | **X** = `tier_cost` (Tier ρ), **Y** = `pack_cost` (Pack ρ). Each dot = one developer. Green color, hover shows developer name. |
+| **Why** | Instantly see "who costs us money vs who funds themselves." Bottom-right = tier-heavy (subsidy risk), top-left = pack-efficient (valuable). |
+| **Variables** | timeRange |
+| **Metrics** | `tier_cost`, `pack_cost` per developer |
+| **Note** | Color gradient by pack_share was attempted but Grafana XY charts create extra axes for color dimensions. Simplified to single green color. |
 
 ---
 
-### 8. App Economy Leaderboard
+### 8. App Economy Leaderboard ✅
 
 | | |
 |---|---|
 | **Type** | Table |
-| **Description** | Per `api_key_name` (+ owner `user_github_username`): `total_cost`, `paid_cost`, `free_cost`, `paid_share`, `top_model`, `end_user_share` (% from temporary keys). Sorted by `paid_cost`. |
+| **Description** | Columns: app → developer → Pack % → Total ρ → Pack ρ → Tier ρ → Requests. Sorted by Pack % descending. |
 | **Why** | Finds which apps deserve promotion, support, or constraints. Economics-first, not volume. |
-| **Variables** | timeRange, user, model, topN |
-| **Metrics** | All core metrics + `end_user_share = temporary_cost / total_cost` |
-| **Note** | App identity via `api_key_name` is noisy; always show owner user as stabilizer. |
+| **Variables** | timeRange |
+| **Metrics** | `pack_share`, `total_cost`, `pack_cost`, `tier_cost`, `requests` per app |
+| **Note** | Developer column shows app owner for context. Minimum threshold: 100 Pollen total. |
 
 ---
 
@@ -257,16 +257,16 @@ All panels use these **cost-weighted** definitions:
 
 | # | Panel | Core Question | Change from v1 |
 |---|-------|---------------|----------------|
-| 1 | Paid vs Free Consumption Over Time | How much is paid vs subsidized? | Merged with old #8 |
-| 2 | BYOP Split | Is usage developer-driven or end-user-driven? | **NEW** |
-| 3 | Free→Paid Cohort Conversion | What % of users convert within 7D/30D? | **NEW** (redesigned from proxy) |
-| 4 | Model Economics Leaderboard | Which models are economically healthy? | Expanded from old #2 |
-| 5 | Top Models by Paid Consumption | Where does money come from? | Renamed, cost-weighted |
-| 6 | Top Models by Subsidy Burn | Where do free credits go? | Added % of total |
-| 7 | Developer Economics Scatter | Who's valuable vs subsidy risk? | New axes (paid vs free cost) |
-| 8 | App Economy Leaderboard | Which apps matter economically? | Ranked by economics, not volume |
-| 9 | Developer Economics & Momentum | Who should we fund? Who's rising? | Added end-user share + momentum |
-| 10 | Tier Overlay Diagnostic | Does our tier system make sense? | Labeled as diagnostic |
+| 1 | Pack vs Tier Consumption Over Time | How much is pack vs tier? | ✅ Done |
+| 2 | BYOP Split | Is usage developer-driven or end-user-driven? | ✅ Done |
+| 3 | Tier→Pack Cohort Conversion | What % of users convert within 7D/30D? | ✅ Done |
+| 4 | Model Economics Leaderboard | Which models are economically healthy? | ✅ Done |
+| 5 | Top Models by Pack Usage | Where does pack consumption come from? | ✅ Done |
+| 6 | Top Models by Tier Usage | Where does tier consumption go? | ✅ Done |
+| 7 | Developer Economics Scatter | Who's valuable vs tier-heavy? | ✅ Done |
+| 8 | App Economy Leaderboard | Which apps matter economically? | ✅ Done |
+| 9 | Developer Economics & Momentum | Who should we fund? Who's rising? | ⏳ Pending |
+| 10 | Tier Overlay Diagnostic | Does our tier system make sense? | ⏳ Pending |
 
 ---
 
@@ -275,10 +275,17 @@ All panels use these **cost-weighted** definitions:
 1. [x] Confirm Tinybird `generation_event` schema field names
 2. [x] Set up Grafana datasource (Tinybird UID: `PAD1A0A25CD30D456`)
 3. [x] Build dashboard with variables (`$model`, `$tier`, `$keyType`, `$topN`)
-4. [x] **Panel #1**: Paid vs Free Consumption — timeseries with stacked areas + subsidy % line
+4. [x] **Panel #1**: Pack vs Tier Consumption Over Time — timeseries with stacked areas + Tier % line
 5. [x] **Panel #2**: BYOP Split — combo chart (bars + line) showing developer vs end-user economics
-6. [x] **Panel #3**: Free→Paid Cohort Conversion — stat panels with true 7D/30D conversion tracking
-7. [ ] Add remaining panels (#4-#10)
+6. [x] **Panel #3**: Tier→Pack Cohort Conversion — stat panels with true 7D/30D conversion tracking
+7. [x] **Panel #4**: Model Economics Leaderboard — table with pack/tier split per model
+8. [x] **Panel #5**: Top Models by Pack Usage — table ranked by pack consumption
+9. [x] **Panel #6**: Top Models by Tier Usage — table ranked by tier consumption
+10. [x] **Panel #7**: Developer Economics Scatter — XY scatter (tier vs pack)
+11. [x] **Panel #8**: App Economy Leaderboard — table with developer, pack %, economics
+12. [x] **Diagnostics**: ROUTER Usage % Over Time — monitors internal service account
+13. [ ] **Panel #9**: Developer Economics & Momentum
+14. [ ] **Panel #10**: Tier Overlay Diagnostic
 
 ## Learnings & Decisions
 

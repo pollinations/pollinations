@@ -254,6 +254,43 @@ Variables go in `templating.list`:
 
 ---
 
+## XY Scatter Charts
+
+### ❌ Don't: Use color dimension for continuous gradients
+Grafana XY charts create a **separate Y-axis** for any field used as the color dimension, even if you only want it for coloring dots.
+
+### ✅ Do: Use fixed colors for scatter plots
+```json
+{
+  "fieldConfig": {
+    "defaults": {
+      "color": { "mode": "fixed", "fixedColor": "green" }
+    }
+  },
+  "options": {
+    "dims": { "x": "tier_cost", "y": "pack_cost" }
+  }
+}
+```
+
+If you need color gradients, consider using a table with color-coded cells instead.
+
+---
+
+## Terminology: Pack vs Tier
+
+Use consistent terminology across all panels:
+
+| Internal Field | Display Name | Meaning |
+|----------------|--------------|---------|
+| `paid_cost` | **Pack ρ** | Pollen from purchased packs |
+| `free_cost` | **Tier ρ** | Pollen from tier allocation |
+| `paid_share` | **Pack %** | % of consumption from packs |
+
+**Never use:** "paid/free", "revenue/subsidy" in user-facing labels.
+
+---
+
 ## Quick Reference: Common Override Properties
 
 | Property | Values | Use case |

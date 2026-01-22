@@ -5,10 +5,18 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-def generate_image(prompt: str, output_path: str = "output.jpg") -> str:
+def generate_image(
+    prompt: str,
+    width: int = 1024,
+    height: int = 576,
+    output_path: str = "output.jpg"
+) -> str:
     url = os.getenv("MODAL_ENDPOINT")
-    
-    payload = {"prompt": prompt}
+    payload = {
+        "prompt": prompt,
+        "width": width,
+        "height": height
+    }
     
     try:
         response = requests.post(url, json=payload, timeout=300)
@@ -27,5 +35,6 @@ def generate_image(prompt: str, output_path: str = "output.jpg") -> str:
         raise
 
 if __name__ == "__main__":
-    prompt = "_A young Asian woman, wearing a yellow knitted sweater and a white necklace, sits with her hands resting on her knees, her expression serene.  Behind her is a rough brick wall, and the warm afternoon sunlight falls gently upon her, creating a peaceful and inviting atmosphere. The camera uses a medium shot, highlighting her expression and the details of her clothing. Soft light illuminates her face, emphasizing her features and the texture of her accessories, adding depth and warmth to the image. The overall composition is simple, with the texture of the brick wall and the interplay of light and shadow complementing each other, emphasizing the woman's elegance and composure."
-    generate_image(prompt)
+    prompt = "A young Asian woman, wearing a yellow knitted sweater and a white necklace, sits with her hands resting on her knees, her expression serene. Behind her is a rough brick wall, and the warm afternoon sunlight falls gently upon her, creating a peaceful and inviting atmosphere. The camera uses a medium shot, highlighting her expression and the details of her clothing. Soft light illuminates her face, emphasizing her features and the texture of her accessories, adding depth and warmth to the image. The overall composition is simple, with the texture of the brick wall and the interplay of light and shadow complementing each other, emphasizing the woman's elegance and composure."
+    # 16:9 aspect ratio (1024x576)
+    generate_image(prompt, width=1024, height=576)

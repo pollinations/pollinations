@@ -27,11 +27,13 @@ service = "pollinations-enter-production"
 
 # Staging routes
 [env.staging]
+workers_dev = true  # Enable workers.dev URL for testing
 
-[[env.staging.routes]]
-pattern = "staging.gen.pollinations.ai"
-zone_name = "pollinations.ai"
-custom_domain = true
+# Route disabled until domain is transferred to new account (Phase C)
+# [[env.staging.routes]]
+# pattern = "staging.gen.pollinations.ai"
+# zone_name = "pollinations.ai"
+# custom_domain = true
 
 [[env.staging.services]]
 binding = "ENTER"

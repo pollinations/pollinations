@@ -4,13 +4,10 @@ from diffusers import LongCatImagePipeline
 from fastapi import FastAPI, Response, Request
 import io
 
-# ---- Modal App ----
 app = modal.App("longcat_t2i")
 
-# ---- Volume with model ----
 vol = modal.Volume.from_name("longcat_t2i_volume")
 
-# ---- Container image with dependencies ----
 image = (
     modal.Image.debian_slim(python_version="3.10")
     .pip_install(
@@ -23,10 +20,10 @@ image = (
         "uvicorn",
         "diffusers",
         "Pillow",
+        "git+https://github.com/huggingface/diffusers"
     )
 )
 
-# ---- Initialize GPU container ----
 @app.cls(
     gpu="H100",
     volumes={"/models": vol},
@@ -38,7 +35,6 @@ class LongCatInference:
     model_path: str = modal.parameter(default="/models")
     
     def setup(self):
-        """Initialize the model on container startup."""
         device = "cuda"
         self.pipeline = LongCatImagePipeline.from_pretrained(
             self.model_path,
@@ -49,7 +45,6 @@ class LongCatInference:
 
     @modal.method()
     def generate(self, prompt: str) -> bytes:
-        """Generate an image from a text prompt and return as JPEG bytes."""
         with torch.inference_mode():
             img = self.pipeline(
                 prompt=prompt,
@@ -66,7 +61,6 @@ class LongCatInference:
         img.save(buf, format="JPEG", quality=95)
         return buf.getvalue()
 
-# ---- FastAPI web endpoint ----
 web_app = FastAPI(title="LongCat T2I API")
 
 @web_app.get("/")
@@ -85,7 +79,6 @@ def health():
 
 @web_app.post("/generate")
 async def generate_endpoint(request: Request):
-    """Generate endpoint that accepts JSON payload."""
     try:
         data = await request.json()
         prompt = data.get("prompt")
@@ -100,13 +93,11 @@ async def generate_endpoint(request: Request):
 
 @app.function()
 def web():
-    """Run the FastAPI server."""
     import uvicorn
     uvicorn.run(web_app, host="0.0.0.0", port=8000)
 
 @app.local_entrypoint()
 def main(prompt: str = "a cute bear"):
-    """Local entrypoint for testing inference."""
     model = LongCatInference()
     img_bytes = model.generate.remote(prompt)
     print(f"✓ Generated image for prompt: '{prompt}'")

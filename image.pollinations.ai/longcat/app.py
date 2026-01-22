@@ -75,7 +75,7 @@ image = (
         "uvicorn",
         "Pillow",
         "requests",
-        "urllib",
+        "urllib3",
         "pydantic",
         "git+https://github.com/huggingface/diffusers@main",
     )

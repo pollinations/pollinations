@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 def generate_image(prompt: str, output_path: str = "output.jpg") -> str:
-    url = "https://pollinations--longcat-t2i-web.modal.run/generate"
+    url = ""
     
     payload = {"prompt": prompt}
     

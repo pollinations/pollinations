@@ -5,19 +5,17 @@ from fastapi import FastAPI, Response, Request
 import io
 
 app = modal.App("longcat_t2i")
-
 vol = modal.Volume.from_name("longcat_t2i_volume")
 
 image = (
     modal.Image.debian_slim(python_version="3.10")
     .run_commands("apt-get update && apt-get install -y git")
+    .run_commands("pip install --upgrade pip")
     .pip_install(
-        # I have regulated the version numbers from https://download.pytorch.org/whl/cu121
-        "--no-cache-dir",
-        "--index-url=https://download.pytorch.org/whl/cu121",
-        "torch==2.5.1+cu121",
-        "torchvision==0.20.1+cu121",
-        "torchaudio==2.5.1+cu121"
+        "torch==2.5.1",
+        "torchvision==0.20.1", 
+        "torchaudio==2.5.1",
+        index_url="https://download.pytorch.org/whl/cu121" 
     )
     .pip_install(
         "transformers==4.57.1",
@@ -28,7 +26,7 @@ image = (
         "fastapi",
         "uvicorn",
         "Pillow",
-        "git+https://github.com/huggingface/diffusers"
+        "git+https://github.com/huggingface/diffusers@main",
     )
 )
 

@@ -59,7 +59,7 @@ class LongCatInference:
                 height=768,
                 width=768,
                 guidance_scale=4.0,
-                num_inference_steps=10,
+                num_inference_steps=30,
                 num_images_per_prompt=1,
                 generator=torch.Generator("cuda").manual_seed(42),
                 enable_cfg_renorm=True,

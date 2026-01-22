@@ -1,8 +1,4 @@
 import modal
-import torch
-from diffusers import LongCatImagePipeline
-from fastapi import FastAPI, Response, Request
-import io
 
 app = modal.App("longcat_t2i")
 vol = modal.Volume.from_name("longcat_t2i_volume")
@@ -41,6 +37,9 @@ class LongCatInference:
 
     @modal.enter()
     def setup(self):
+        import torch
+        from diffusers import LongCatImagePipeline
+        
         device = "cuda"
         self.pipe = LongCatImagePipeline.from_pretrained(
             self.model_path,
@@ -51,6 +50,9 @@ class LongCatInference:
 
     @modal.method()
     def generate(self, prompt: str) -> bytes:
+        import torch
+        import io
+        
         with torch.inference_mode():
             img = self.pipe(
                 prompt=prompt,
@@ -68,34 +70,36 @@ class LongCatInference:
         img.save(buf, format="JPEG", quality=95)
         return buf.getvalue()
 
-web_app = FastAPI(title="LongCat T2I API")
-
-@web_app.get("/")
-def root():
-    return {
-        "endpoints": {
-            "/generate": "Generate image from text prompt (POST with JSON)",
-            "/health": "Health check",
-        }
-    }
-
-@web_app.get("/health")
-def health():
-    return {"status": "healthy"}
-
-@web_app.post("/generate")
-async def generate_endpoint(request: Request):
-    data = await request.json()
-    prompt = data.get("prompt")
-    if not prompt:
-        return {"error": "Missing 'prompt' field in request body"}
-
-    img_bytes = LongCatInference().generate.remote(prompt)
-    return Response(img_bytes, media_type="image/jpeg")
-
-@app.function()
+@app.function(image=image)
 @modal.asgi_app()
 def web():
+    from fastapi import FastAPI, Response, Request
+    
+    web_app = FastAPI(title="LongCat T2I API")
+
+    @web_app.get("/")
+    def root():
+        return {
+            "endpoints": {
+                "/generate": "Generate image from text prompt (POST with JSON)",
+                "/health": "Health check",
+            }
+        }
+
+    @web_app.get("/health")
+    def health():
+        return {"status": "healthy"}
+
+    @web_app.post("/generate")
+    async def generate_endpoint(request: Request):
+        data = await request.json()
+        prompt = data.get("prompt")
+        if not prompt:
+            return {"error": "Missing 'prompt' field in request body"}
+
+        img_bytes = LongCatInference().generate.remote(prompt)
+        return Response(img_bytes, media_type="image/jpeg")
+
     return web_app
 
 @app.local_entrypoint()

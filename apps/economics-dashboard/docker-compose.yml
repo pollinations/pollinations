@@ -1,6 +1,6 @@
 services:
   grafana:
-    image: grafana/grafana-oss
+    image: grafana/grafana:11.4.0
     container_name: grafana
     ports:
       - "3000:3000"
@@ -17,18 +17,6 @@ services:
       - grafana-storage:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning
     restart: unless-stopped
-
-  mcp-grafana:
-    image: mcp/grafana
-    container_name: mcp-grafana
-    environment:
-      - GRAFANA_URL=http://grafana:3000
-      - GRAFANA_SERVICE_ACCOUNT_TOKEN=${GRAFANA_SERVICE_ACCOUNT_TOKEN}
-    depends_on:
-      - grafana
-    command: ["-t", "stdio"]
-    stdin_open: true
-    tty: true
 
 volumes:
   grafana-storage:

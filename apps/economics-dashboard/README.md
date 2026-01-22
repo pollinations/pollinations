@@ -36,7 +36,7 @@ docker compose up -d
 
 # 3. Access Grafana
 open http://localhost:3000
-# Login: admin / pollinations2026
+# Login: see secrets/secrets.vars.json (decrypt with sops)
 ```
 
 ## Directory Structure
@@ -202,10 +202,10 @@ docker compose down
 docker compose down -v
 
 # Test Tinybird connection
-curl -s -u admin:pollinations2026 'http://localhost:3000/api/datasources/uid/PAD1A0A25CD30D456/health'
+curl -s -u admin:$GF_ADMIN_PASSWORD 'http://localhost:3000/api/datasources/uid/PAD1A0A25CD30D456/health'
 
 # Test D1 connection
-curl -s -u admin:pollinations2026 'http://localhost:3000/api/datasources/uid/P33A123E5D474E8F3/health'
+curl -s -u admin:$GF_ADMIN_PASSWORD 'http://localhost:3000/api/datasources/uid/P33A123E5D474E8F3/health'
 ```
 
 ## Troubleshooting

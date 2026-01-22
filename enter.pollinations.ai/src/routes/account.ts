@@ -93,7 +93,7 @@ const balanceResponseSchema = z.object({
         .number()
         .nullable()
         .describe(
-            "Unix timestamp (seconds) when balance will be refilled (null if never refilled)",
+            "Unix timestamp (seconds) when the balance will be refilled next (null if never refilled)",
         ),
 });
 
@@ -278,7 +278,9 @@ export const accountRoutes = new Hono<Env>()
             const tierBalance = users[0]?.tierBalance ?? 0;
             const packBalance = users[0]?.packBalance ?? 0;
             const cryptoBalance = users[0]?.cryptoBalance ?? 0;
-            const refill = users[0]?.lastTierGrant ?? null;
+            const lastTierGrant = users[0]?.lastTierGrant ?? null;
+
+            const refill = lastTierGrant ? lastTierGrant + 24 * 60 * 60 : null;
 
             return c.json({
                 balance: tierBalance + packBalance + cryptoBalance,

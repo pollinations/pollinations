@@ -13,10 +13,11 @@ image = (
     .run_commands("apt-get update && apt-get install -y git")
     .pip_install(
         # I have regulated the version numbers from https://download.pytorch.org/whl/cu121
+        "--no-cache-dir",
+        "--index-url=https://download.pytorch.org/whl/cu121",
         "torch==2.5.1+cu121",
         "torchvision==0.20.1+cu121",
-        "torchaudio==2.5.1+cu121",
-        extra_index_url="https://download.pytorch.org/whl/cu121",
+        "torchaudio==2.5.1+cu121"
     )
     .pip_install(
         "transformers==4.57.1",
@@ -27,7 +28,7 @@ image = (
         "fastapi",
         "uvicorn",
         "Pillow",
-        "git+https://github.com/huggingface/diffusers@main"
+        "git+https://github.com/huggingface/diffusers"
     )
 )
 

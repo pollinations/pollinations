@@ -21,7 +21,8 @@ image = (
         "xformers",
         "fastapi",
         "uvicorn",
-        "git+https://github.com/huggingface/diffusers",
+        "diffusers",
+        "Pillow",
     )
 )
 
@@ -33,54 +34,83 @@ image = (
     scaledown_window=300,
     timeout=1800,
 )
-class Container:
-    # This runs once per container
-    @modal.enter()
+class LongCatInference:
+    model_path: str = modal.parameter(default="/models/diffusion_models/Longcat")
+    
     def setup(self):
-        global infer
+        """Initialize the model on container startup."""
         device = "cuda"
-        infer = LongCatImagePipeline.from_pretrained(
-            "/models/diffusion_models/Longcat",
+        self.pipeline = LongCatImagePipeline.from_pretrained(
+            self.model_path,
             torch_dtype=torch.bfloat16
         ).to(device)
-        infer.enable_xformers_memory_efficient_attention()
-        infer.set_progress_bar_config(disable=True)
+        self.pipeline.enable_xformers_memory_efficient_attention()
+        self.pipeline.set_progress_bar_config(disable=True)
 
-        # FastAPI app at container level
-        global fastapi_app
-        fastapi_app = FastAPI(title="LongCat T2I API")
+    @modal.method()
+    def generate(self, prompt: str) -> bytes:
+        """Generate an image from a text prompt and return as JPEG bytes."""
+        with torch.inference_mode():
+            img = self.pipeline(
+                prompt=prompt,
+                height=768,
+                width=768,
+                guidance_scale=4.0,
+                num_inference_steps=10,
+                num_images_per_prompt=1,
+                generator=torch.Generator("cuda").manual_seed(42),
+                enable_cfg_renorm=True,
+                enable_prompt_rewrite=True,
+            ).images[0]
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=95)
+        return buf.getvalue()
 
-        @fastapi_app.get("/")
-        def root():
-            return {
-                "endpoints": {
-                    "/generate?prompt=...": "Generate image from text prompt",
-                    "/health": "Health check"
-                },
-                "example": "/generate?prompt=a cute bear"
-            }
+# ---- FastAPI web endpoint ----
+web_app = FastAPI(title="LongCat T2I API")
 
-        @fastapi_app.get("/health")
-        def health():
-            return {"status": "healthy"}
+@web_app.get("/")
+def root():
+    return {
+        "endpoints": {
+            "/generate": "Generate image from text prompt (POST with JSON)",
+            "/health": "Health check"
+        },
+        "example": {"prompt": "a cute bear"}
+    }
 
-        @fastapi_app.get("/generate")
-        def generate(request: Request):
-            prompt = request.query_params.get("prompt")
-            if not prompt:
-                return {"error": "Missing query parameter 'prompt'"}
-            with torch.inference_mode():
-                img = infer(
-                    prompt=prompt,
-                    height=768,
-                    width=768,
-                    guidance_scale=4.0,
-                    num_inference_steps=10,
-                    num_images_per_prompt=1,
-                    generator=torch.Generator("cuda").manual_seed(42),
-                    enable_cfg_renorm=True,
-                    enable_prompt_rewrite=True,
-                ).images[0]
-            buf = io.BytesIO()
-            img.save(buf, format="JPEG", quality=95)
-            return Response(buf.getvalue(), media_type="image/jpeg")
+@web_app.get("/health")
+def health():
+    return {"status": "healthy"}
+
+@web_app.post("/generate")
+async def generate_endpoint(request: Request):
+    """Generate endpoint that accepts JSON payload."""
+    try:
+        data = await request.json()
+        prompt = data.get("prompt")
+        if not prompt:
+            return {"error": "Missing 'prompt' field in request body"}
+        
+        model = LongCatInference()
+        img_bytes = await model.generate.aio(prompt)
+        return Response(img_bytes, media_type="image/jpeg")
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.function()
+def web():
+    """Run the FastAPI server."""
+    import uvicorn
+    uvicorn.run(web_app, host="0.0.0.0", port=8000)
+
+@app.local_entrypoint()
+def main(prompt: str = "a cute bear"):
+    """Local entrypoint for testing inference."""
+    model = LongCatInference()
+    img_bytes = model.generate.remote(prompt)
+    print(f"✓ Generated image for prompt: '{prompt}'")
+    print(f"✓ Image size: {len(img_bytes)} bytes")
+    with open("/tmp/output.jpg", "wb") as f:
+        f.write(img_bytes)
+    print(f"✓ Image saved to /tmp/output.jpg")

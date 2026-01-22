@@ -23,8 +23,8 @@
  */
 
 import { exec } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { promisify } from "node:util";
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 
 const execAsync = promisify(exec);
 
@@ -120,8 +120,8 @@ function parseAppsMd(): AppEntry[] {
         if (!line.startsWith("|")) continue;
 
         const cols = line.split("|").map((c) => c.trim());
-        // Columns: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted |
-        // Index:     0       1      2         3             4          5          6                 7               8                       9                         10                 11      12
+        // Columns: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date |
+        // Index:   0  1       2      3         4             5          6          7                 8               9                       10                        11                 12      13               14          15
 
         const name = cols[2] || "";
         const category = cols[6] || "";

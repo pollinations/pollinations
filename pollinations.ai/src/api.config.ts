@@ -21,7 +21,7 @@ export const API = {
 
 export const DEFAULTS = {
     IMAGE_MODEL: "flux",
-    TEXT_MODEL: "gemini",
+    TEXT_MODEL: "gemini-fast",
     IMAGE_WIDTH: 400,
     IMAGE_HEIGHT: 400,
     SEED: 42,

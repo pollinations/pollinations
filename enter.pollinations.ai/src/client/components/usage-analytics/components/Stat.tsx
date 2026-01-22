@@ -1,0 +1,17 @@
+import type { FC, ReactNode } from "react";
+
+type StatProps = {
+    label: string;
+    value: ReactNode;
+};
+
+export const Stat: FC<StatProps> = ({ label, value }) => (
+    <div className="flex flex-col">
+        <span className="text-[10px] uppercase tracking-wide text-pink-400 font-bold">
+            {label}
+        </span>
+        <span className="text-lg font-bold text-green-950 tabular-nums">
+            {value}
+        </span>
+    </div>
+);

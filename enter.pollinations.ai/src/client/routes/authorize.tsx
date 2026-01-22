@@ -1,22 +1,69 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { Button } from "../components/button.tsx";
-import { ModelPermissions } from "../components/model-permissions.tsx";
+import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
+import { Button } from "../components/button.tsx";
+import {
+    KeyPermissionsInputs,
+    useKeyPermissions,
+} from "../components/key-permissions.tsx";
 
-// 30 days in seconds
-const DEFAULT_EXPIRY_SECONDS = 30 * 24 * 60 * 60;
+const SECONDS_PER_DAY = 24 * 60 * 60;
+
+// Parse comma-separated string to array, or null if empty
+const parseList = (val: unknown): string[] | null => {
+    if (!val || typeof val !== "string") return null;
+    const items = val
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    return items.length ? items : null;
+};
+
+const parseNumber = (val: unknown): number | null => {
+    if (!val) return null;
+    const n = Number(val);
+    return Number.isFinite(n) ? n : null;
+};
 
 export const Route = createFileRoute("/authorize")({
     component: AuthorizeComponent,
-    validateSearch: (search: Record<string, unknown>) => ({
-        redirect_url: (search.redirect_url as string) || "",
-    }),
+    validateSearch: (search: Record<string, unknown>) => {
+        const result: {
+            redirect_url: string;
+            models?: string[] | null;
+            budget?: number | null;
+            expiry?: number | null;
+            permissions?: string[] | null;
+        } = {
+            redirect_url: (search.redirect_url as string) || "",
+        };
+
+        // Only include optional params if they're present
+        const models = parseList(search.models);
+        if (models !== null) result.models = models;
+
+        const budget = parseNumber(search.budget);
+        if (budget !== null) result.budget = budget;
+
+        const expiry = parseNumber(search.expiry);
+        if (expiry !== null) result.expiry = expiry;
+
+        const permissions = parseList(search.permissions);
+        if (permissions !== null) result.permissions = permissions;
+
+        return result;
+    },
     // No beforeLoad redirect - handle auth state in component for better UX
 });
 
 function AuthorizeComponent() {
-    const { redirect_url } = Route.useSearch();
+    const {
+        redirect_url,
+        models,
+        budget,
+        expiry,
+        permissions: urlPermissions,
+    } = Route.useSearch();
     const navigate = useNavigate();
 
     // Fetch session directly using authClient
@@ -28,8 +75,14 @@ function AuthorizeComponent() {
     const [error, setError] = useState<string | null>(null);
     const [redirectHostname, setRedirectHostname] = useState<string>("");
     const [isValidUrl, setIsValidUrl] = useState(false);
-    // null = all models allowed, [] = restricted but none selected, [...] = specific models
-    const [allowedModels, setAllowedModels] = useState<string[] | null>(null);
+
+    // Use shared hook for key permissions, pre-populated from URL params
+    const keyPermissions = useKeyPermissions({
+        allowedModels: models,
+        pollenBudget: budget,
+        expiryDays: expiry ?? 30, // Default 30 days for authorize flow
+        accountPermissions: urlPermissions,
+    });
 
     // Parse and validate the redirect URL
     useEffect(() => {
@@ -69,10 +122,13 @@ function AuthorizeComponent() {
         setError(null);
 
         try {
-            // Create a temporary API key with 30-day expiry using better-auth's built-in endpoint
+            // Create a temporary API key using better-auth's built-in endpoint
             const result = await authClient.apiKey.create({
-                name: `${redirectHostname}`,
-                expiresIn: DEFAULT_EXPIRY_SECONDS,
+                name: redirectHostname,
+                ...(keyPermissions.permissions.expiryDays !== null && {
+                    expiresIn:
+                        keyPermissions.permissions.expiryDays * SECONDS_PER_DAY,
+                }),
                 prefix: "sk",
                 metadata: {
                     keyType: "temporary",
@@ -88,22 +144,8 @@ function AuthorizeComponent() {
 
             const data = result.data;
 
-            // Set permissions if restricted (allowedModels is not null)
-            if (allowedModels !== null) {
-                const updateResponse = await fetch(
-                    `/api/api-keys/${data.id}/update`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        credentials: "include",
-                        body: JSON.stringify({ allowedModels }),
-                    },
-                );
-
-                if (!updateResponse.ok) {
-                    console.error("Failed to set API key permissions");
-                }
-            }
+            // Set permissions using hook's method
+            await keyPermissions.updatePermissions(data.id);
 
             // Redirect back to the app with the key in URL fragment (not query param)
             // Using fragment prevents key from leaking to server logs/Referer headers
@@ -152,9 +194,9 @@ function AuthorizeComponent() {
                 </div>
 
                 <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 shadow-lg text-center">
-                    <h1 className="text-2xl font-bold mb-4">
+                    <h2 className="font-bold mb-4 text-center">
                         Connect to pollinations.ai
-                    </h1>
+                    </h2>
 
                     {error ? (
                         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -202,9 +244,9 @@ function AuthorizeComponent() {
             </div>
 
             <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 shadow-lg">
-                <h1 className="text-2xl font-bold mb-6 text-center">
+                <h2 className="font-bold mb-4 text-center">
                     Authorize Application
-                </h1>
+                </h2>
 
                 {error ? (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -212,47 +254,60 @@ function AuthorizeComponent() {
                     </div>
                 ) : (
                     <>
-                        {/* Security warning - short & sweet */}
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-                            <p className="font-semibold text-amber-900 mb-1">
-                                🔑 Sharing API key with:
+                        {/* Security info - short & sweet */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                            <p className="font-semibold text-blue-900 mb-1">
+                                🔑 Sharing my API key with{" "}
+                                <span className="font-mono bg-blue-100 rounded px-1.5 py-0.5 text-blue-800">
+                                    {redirectHostname}
+                                </span>
                             </p>
-                            <p className="font-mono text-amber-800 bg-amber-100 rounded px-2 py-1 break-all text-sm mb-2">
-                                {redirectHostname}
-                            </p>
-                            <p className="text-xs text-amber-700">
-                                same as copy-pasting your key into their app ✨
+                            <p className="text-xs text-blue-600 mt-2">
+                                Same as copy-pasting your key into their app 💙
+                                Only you can use it
                             </p>
                         </div>
 
-                        {/* What this allows - compact */}
-                        <div className="mb-4 text-sm text-gray-600">
-                            <span className="text-green-500">✓</span> Generate
-                            images & text
-                            <span className="mx-2">·</span>
-                            <span className="text-green-500">✓</span> Use your
-                            pollen
-                        </div>
+                        {/* What this key allows */}
+                        <ul className="mb-6 text-sm text-gray-600 space-y-2">
+                            <li className="flex items-start gap-2">
+                                <span className="text-green-500">✓</span>
+                                <span>
+                                    Generate text, images, audio & video
+                                </span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-green-500">✓</span>
+                                <span>Use your pollen balance</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-gray-400">⏱</span>
+                                <span>
+                                    Revoke anytime from{" "}
+                                    <a
+                                        href="/"
+                                        className="text-blue-600 hover:underline"
+                                    >
+                                        dashboard
+                                    </a>
+                                </span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-gray-400">🔧</span>
+                                <span>Model access:</span>
+                            </li>
+                        </ul>
 
-                        {/* Expiry - inline */}
-                        <p className="text-xs text-gray-500 mb-6">
-                            ⏱️ Expires in 30 days · revoke anytime from dashboard
-                        </p>
-
-                        {/* Model permissions */}
-                        <div className="mb-6">
-                            <h3 className="font-semibold text-sm text-gray-700 mb-2">
-                                Model Access
-                            </h3>
-                            <ModelPermissions
-                                value={allowedModels}
-                                onChange={setAllowedModels}
+                        {/* Key permissions inputs */}
+                        <div className="mb-6 -mt-2">
+                            <KeyPermissionsInputs
+                                value={keyPermissions}
                                 compact
                             />
                         </div>
 
                         {/* Redirect URL display */}
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-6">
                             <p className="text-blue-800 text-xs mb-1 font-medium">
                                 You will be redirected to:
                             </p>
@@ -263,10 +318,19 @@ function AuthorizeComponent() {
                     </>
                 )}
 
-                <div className="text-center text-sm text-gray-500 mb-6">
+                <div className="text-center text-sm text-gray-500 mb-4">
                     Signed in as{" "}
                     <strong>{user?.githubUsername || user?.email}</strong>
                 </div>
+                <p className="text-center text-xs text-gray-400 mb-4">
+                    By authorizing, you agree to the{" "}
+                    <a
+                        href="/terms"
+                        className="text-gray-500 hover:text-gray-700 hover:underline"
+                    >
+                        Terms & Conditions
+                    </a>
+                </p>
                 <div className="flex gap-3">
                     <Button
                         as="button"

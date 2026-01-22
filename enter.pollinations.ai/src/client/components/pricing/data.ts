@@ -83,6 +83,10 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
                         latestCost.completionVideoSeconds,
                         (v: number) => v.toFixed(3),
                     ),
+                    perAudioSecondPrice: formatPrice(
+                        latestCost.completionAudioSeconds,
+                        (v: number) => v.toFixed(3),
+                    ),
                 });
             }
         } else if (

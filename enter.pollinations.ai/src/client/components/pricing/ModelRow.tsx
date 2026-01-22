@@ -1,18 +1,18 @@
 import { type FC, useState } from "react";
-import type { ModelPrice } from "./types.ts";
+import { calculatePerPollen } from "./calculations.ts";
 import {
-    hasReasoning,
-    hasVision,
+    getModelDisplayName,
     hasAudioInput,
     hasAudioOutput,
-    hasSearch,
     hasCodeExecution,
-    getModelDisplayName,
+    hasReasoning,
+    hasSearch,
+    hasVision,
     isNewModel,
 } from "./model-info.ts";
-import { calculatePerPollen } from "./calculations.ts";
 import { PriceBadge } from "./PriceBadge.tsx";
 import { Tooltip } from "./Tooltip.tsx";
+import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
     model: ModelPrice;
@@ -43,7 +43,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             <td className="py-2 px-2 text-sm text-gray-700 whitespace-nowrap relative group">
                 <div className="flex items-center gap-2">
                     <div className="flex flex-col">
-                        <span className="font-medium">
+                        <span className={showNew ? "font-bold" : "font-medium"}>
                             {modelDisplayName || model.name}
                         </span>
                         <button
@@ -154,12 +154,20 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             perToken={model.perToken}
                         />
                         {model.perSecondPrice ? (
-                            <PriceBadge
-                                prices={[model.perSecondPrice]}
-                                emoji="🎬"
-                                subEmojis={["🎬"]}
-                                perSecond
-                            />
+                            <>
+                                <PriceBadge
+                                    prices={[model.perSecondPrice]}
+                                    emoji="🎬"
+                                    subEmojis={["🎬"]}
+                                    perSecond
+                                />
+                                <PriceBadge
+                                    prices={[model.perAudioSecondPrice]}
+                                    emoji="🔊"
+                                    subEmojis={["🔊"]}
+                                    perSecond
+                                />
+                            </>
                         ) : model.perTokenPrice ? (
                             <PriceBadge
                                 prices={[model.perTokenPrice]}

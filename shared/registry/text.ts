@@ -408,6 +408,28 @@ export const TEXT_SERVICES = {
         codeExecution: false, // Disabled - was breaking gemini-large
         isSpecialized: false,
     },
+    "gemini-legacy": {
+        aliases: ["gemini-2.5-pro"],
+        modelId: "gemini-2.5-pro",
+        provider: "google",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(1.25),
+                promptCachedTokens: perMillion(0.31), // ~25% of input price
+                completionTextTokens: perMillion(10.0),
+            },
+        ],
+        description:
+            "Google Gemini 2.5 Pro - Stable Reasoning Model with 1M Context",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        search: true,
+        codeExecution: true,
+        isSpecialized: false,
+    },
     "nova-fast": {
         aliases: ["amazon-nova-micro", "nova", "nova-micro"],
         modelId: "amazon.nova-micro-v1:0",
@@ -463,6 +485,25 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextWindow: 200000,
+        isSpecialized: false,
+    },
+    "nomnom": {
+        aliases: ["gemini-scrape", "web-research"],
+        modelId: "nomnom",
+        provider: "community",
+        cost: [
+            {
+                date: new Date("2026-01-17").getTime(),
+                promptTextTokens: perMillion(0.0), // Free - uses Pollinations under the hood
+                completionTextTokens: perMillion(0.0),
+            },
+        ],
+        description:
+            "NomNom by @Itachi-1824 - Web Research with Search, Scrape & Crawl (Alpha)",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        search: true,
         isSpecialized: false,
     },
 } as const satisfies Record<string, ServiceDefinition<string>>;

@@ -1,42 +1,43 @@
 import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { auth, AuthVariables } from "@/middleware/auth.ts";
-import { polar, PolarVariables } from "@/middleware/polar.ts";
-import type { Env } from "../env.ts";
-import { track, type TrackEnv } from "@/middleware/track.ts";
-import { resolveModel } from "@/middleware/model.ts";
-import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
+import type { StandardSchemaV1 } from "hono-openapi";
+import { resolver as baseResolver, describeRoute } from "hono-openapi";
+import { type AuthVariables, auth } from "@/middleware/auth.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
-import { textCache } from "@/middleware/text-cache.ts";
+import { resolveModel } from "@/middleware/model.ts";
+import { type PolarVariables, polar } from "@/middleware/polar.ts";
+import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
-import { describeRoute, resolver as baseResolver } from "hono-openapi";
-import type { StandardSchemaV1 } from "hono-openapi";
+import { textCache } from "@/middleware/text-cache.ts";
+import { track } from "@/middleware/track.ts";
+import type { Env } from "../env.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
 const resolver = <T extends StandardSchemaV1>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
-import { validator } from "@/middleware/validator.ts";
+
 import {
-    CreateChatCompletionResponseSchema,
-    CreateChatCompletionRequestSchema,
-    type CreateChatCompletionResponse,
-    GetModelsResponseSchema,
-} from "@/schemas/openai.ts";
-import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
-import { errorResponseDescriptions } from "@/utils/api-docs.ts";
-import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
-import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
-import { z } from "zod";
-import { HTTPException } from "hono/http-exception";
-import {
-    ModelInfoSchema,
     getImageModelsInfo,
     getTextModelsInfo,
+    ModelInfoSchema,
 } from "@shared/registry/model-info.ts";
 import { createFactory } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
+import { z } from "zod";
+import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
+import { validator } from "@/middleware/validator.ts";
+import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
+import {
+    CreateChatCompletionRequestSchema,
+    type CreateChatCompletionResponse,
+    CreateChatCompletionResponseSchema,
+    GetModelsResponseSchema,
+} from "@/schemas/openai.ts";
+import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 
 const factory = createFactory<Env>();
 
@@ -49,6 +50,7 @@ const chatCompletionHandlers = factory.createHandlers(
         const log = c.get("log").getChild("generate");
         await c.var.auth.requireAuthorization();
         c.var.auth.requireModelAccess();
+        c.var.auth.requireKeyBudget();
 
         // Use resolved model from middleware for the backend request
         const requestBody = await c.req.json();
@@ -261,7 +263,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
         ...chatCompletionHandlers,
@@ -291,7 +293,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
         validator(
@@ -310,6 +312,7 @@ export const proxyRoutes = new Hono<Env>()
             const log = c.get("log").getChild("generate");
             await c.var.auth.requireAuthorization();
             c.var.auth.requireModelAccess();
+            c.var.auth.requireKeyBudget();
             await checkBalance(c.var);
 
             // Use resolved model from middleware
@@ -404,7 +407,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
         validator(
@@ -424,6 +427,7 @@ export const proxyRoutes = new Hono<Env>()
             const log = c.get("log").getChild("generate");
             await c.var.auth.requireAuthorization();
             c.var.auth.requireModelAccess();
+            c.var.auth.requireKeyBudget();
             await checkBalance(c.var);
 
             // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
@@ -475,6 +479,10 @@ function proxyHeaders(c: Context): Record<string, string> {
     const clientHost = c.req.header("host") || "";
     const headers = { ...c.req.header() };
 
+    // Get user's raw API key from auth context (already extracted by auth middleware)
+    // This allows community models (like NomNom) to receive the user's key for billing passthrough
+    const userApiKey = c.var.auth?.apiKey?.rawKey || "";
+
     // Remove Authorization header - we use x-enter-token for backend auth instead
     delete headers.authorization;
     delete headers.Authorization;
@@ -486,6 +494,8 @@ function proxyHeaders(c: Context): Record<string, string> {
         "x-forwarded-for": clientIP,
         "x-real-ip": clientIP,
         "x-enter-token": c.env.PLN_ENTER_TOKEN,
+        // Forward user's API key for community models that need billing passthrough
+        "x-user-api-key": userApiKey,
     };
 }
 

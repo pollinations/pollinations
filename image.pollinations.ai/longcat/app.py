@@ -75,6 +75,8 @@ image = (
         "uvicorn",
         "Pillow",
         "requests",
+        "urllib",
+        "pydantic",
         "git+https://github.com/huggingface/diffusers@main",
     )
     .pip_install(

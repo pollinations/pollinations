@@ -11,19 +11,29 @@ vol = modal.Volume.from_name("longcat_t2i_volume")
 image = (
     modal.Image.debian_slim(python_version="3.10")
     .run_commands("apt-get update && apt-get install -y git")
-    .pip_install("torch==2.5.1", "torchvision==0.20.1")
     .pip_install(
-        "transformers",
-        "accelerate",
-        "safetensors",
+        # HARD PIN: coherent CUDA 12.1 stack
+        "torch==2.6.0+cu121",
+        "torchvision==0.21.0+cu121",
+        "torchaudio==2.6.0+cu121",
+        extra_index_url="https://download.pytorch.org/whl/cu121",
+    )
+    .pip_install(
+        # Transformers/Qwen compatibility window
+        "transformers==4.57.1",
+        "accelerate==1.11.0",
+        "safetensors==0.6.2",
+        "openai==2.8.1",
+        # Must come AFTER torch
         "xformers",
         "fastapi",
         "uvicorn",
         "Pillow",
-        "qwen-vl-utils",
-        "git+https://github.com/huggingface/diffusers"
+        # Diffusers with LongCat pipeline
+        "git+https://github.com/huggingface/diffusers@main"
     )
 )
+
 
 @app.cls(
     gpu="H100",
@@ -34,14 +44,15 @@ image = (
 )
 class LongCatInference:
     model_path: str = modal.parameter(default="/models")
-    
+
     @modal.enter()
     def setup(self):
         device = "cuda"
         self.pipe = LongCatImagePipeline.from_pretrained(
             self.model_path,
-            torch_dtype=torch.bfloat16
+            torch_dtype=torch.bfloat16,
         ).to(device)
+
         self.pipe.enable_xformers_memory_efficient_attention()
         self.pipe.set_progress_bar_config(disable=True)
 
@@ -59,6 +70,7 @@ class LongCatInference:
                 enable_cfg_renorm=True,
                 enable_prompt_rewrite=True,
             ).images[0]
+
         buf = io.BytesIO()
         img.save(buf, format="JPEG", quality=95)
         return buf.getvalue()
@@ -70,9 +82,8 @@ def root():
     return {
         "endpoints": {
             "/generate": "Generate image from text prompt (POST with JSON)",
-            "/health": "Health check"
-        },
-        "example": {"prompt": "a cute bear"}
+            "/health": "Health check",
+        }
     }
 
 @web_app.get("/health")
@@ -81,16 +92,13 @@ def health():
 
 @web_app.post("/generate")
 async def generate_endpoint(request: Request):
-    try:
-        data = await request.json()
-        prompt = data.get("prompt")
-        if not prompt:
-            return {"error": "Missing 'prompt' field in request body"}
-        
-        img_bytes = LongCatInference().generate.remote(prompt)
-        return Response(img_bytes, media_type="image/jpeg")
-    except Exception as e:
-        return {"error": str(e)}
+    data = await request.json()
+    prompt = data.get("prompt")
+    if not prompt:
+        return {"error": "Missing 'prompt' field in request body"}
+
+    img_bytes = LongCatInference().generate.remote(prompt)
+    return Response(img_bytes, media_type="image/jpeg")
 
 @app.function()
 @modal.asgi_app()
@@ -100,8 +108,5 @@ def web():
 @app.local_entrypoint()
 def main(prompt: str = "a cute bear"):
     img_bytes = LongCatInference().generate.remote(prompt)
-    print(f"✓ Generated image for prompt: '{prompt}'")
-    print(f"✓ Image size: {len(img_bytes)} bytes")
     with open("/tmp/output.jpg", "wb") as f:
         f.write(img_bytes)
-    print(f"✓ Image saved to /tmp/output.jpg")

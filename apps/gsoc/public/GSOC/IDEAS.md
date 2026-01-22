@@ -82,3 +82,33 @@ To support our 'Roblox for AI' strategy, safety is paramount. This project invol
 Lower the barrier to entry even further. Build a web-based playground where users can type natural language instructions ('Make a bouncing ball game') and see the code/app generated instantly using Pollinations' underlying models. It's about the 'teenage hacker spirit'—instant feedback, zero setup.
 
 **Technologies:** React, Monaco Editor, WebContainers
+
+
+## 6. Pollinations CLI Tool 
+**ID:** 0xprj06
+**Category:** Developer Tools
+**Difficulty:** Intermediate
+**Duration:** 175 hours
+**Mentor:** 0xmnt02
+
+**Description:** A command-line interface for interacting with Pollinations APIs.
+
+**Long Description:**
+Full platform management from terminal: polli auth (login/sessions), polli keys (create/revoke API keys), polli apps (register, set tier, domains), polli deploy (deploy to hosting), polli usage (balance, stats), polli test (API tests), polli ai (conversational assistant), polli skills (install/manage tools), polli generate (quick image/text/audio).
+Extensions: --ui browser mode, GitHub Action for pollinations ai. 
+
+**Technologies:** Node.js, TypeScript, Commander.js, Pollinations REST API.
+
+
+## 7. Semantic Stegnography for AI Generated Synthetic Media 
+**ID:** 0xprj07
+**Category:** AI/ML
+**Difficulty:** Advanced
+**Duration:** 350 hours
+**Mentor:** 0xmnt01
+
+**Description:** Embedding metadata in AI-generated media for provenance and authenticity.
+**Long Description:**
+Develop techniques to embed semantic metadata (like creator info, generation parameters) into AI-generated images, audio, or video files without affecting perceptual quality. This helps in tracking the origin and authenticity of synthetic media, addressing concerns around deepfakes and misinformation.
+
+**Technologies:** Python, TensorFlow/PyTorch, Steganography Techniques.

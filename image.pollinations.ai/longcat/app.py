@@ -34,19 +34,20 @@ image = (
 class LongCatInference:
     model_path: str = modal.parameter(default="/models")
     
+    @modal.enter()
     def setup(self):
         device = "cuda"
-        self.pipeline = LongCatImagePipeline.from_pretrained(
+        self.pipe = LongCatImagePipeline.from_pretrained(
             self.model_path,
             torch_dtype=torch.bfloat16
         ).to(device)
-        self.pipeline.enable_xformers_memory_efficient_attention()
-        self.pipeline.set_progress_bar_config(disable=True)
+        self.pipe.enable_xformers_memory_efficient_attention()
+        self.pipe.set_progress_bar_config(disable=True)
 
     @modal.method()
     def generate(self, prompt: str) -> bytes:
         with torch.inference_mode():
-            img = self.pipeline(
+            img = self.pipe(
                 prompt=prompt,
                 height=768,
                 width=768,
@@ -85,21 +86,19 @@ async def generate_endpoint(request: Request):
         if not prompt:
             return {"error": "Missing 'prompt' field in request body"}
         
-        model = LongCatInference()
-        img_bytes = await model.generate.aio(prompt)
+        img_bytes = LongCatInference().generate.remote(prompt)
         return Response(img_bytes, media_type="image/jpeg")
     except Exception as e:
         return {"error": str(e)}
 
 @app.function()
+@modal.asgi_app()
 def web():
-    import uvicorn
-    uvicorn.run(web_app, host="0.0.0.0", port=8000)
+    return web_app
 
 @app.local_entrypoint()
 def main(prompt: str = "a cute bear"):
-    model = LongCatInference()
-    img_bytes = model.generate.remote(prompt)
+    img_bytes = LongCatInference().generate.remote(prompt)
     print(f"✓ Generated image for prompt: '{prompt}'")
     print(f"✓ Image size: {len(img_bytes)} bytes")
     with open("/tmp/output.jpg", "wb") as f:

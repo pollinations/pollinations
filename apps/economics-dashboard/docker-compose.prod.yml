@@ -1,8 +1,6 @@
-version: "3.8"
-
 services:
   grafana:
-    image: grafana/grafana:12.4.0
+    image: grafana/grafana:latest
     container_name: economics-grafana
     restart: unless-stopped
     environment:

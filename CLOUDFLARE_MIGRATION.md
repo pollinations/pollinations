@@ -59,6 +59,12 @@
 - Gen: https://pollinations-gen-production.elliot-b6e.workers.dev
 - Frontend: https://pollinations-ai.elliot-b6e.workers.dev
 
+**GitHub OAuth App (for workers.dev testing):**
+Add callback URL to GitHub OAuth App settings:
+- https://pollinations-enter-production.elliot-b6e.workers.dev/api/auth/callback/github
+
+GitHub OAuth App: https://github.com/organizations/pollinations/settings/applications
+
 **NEW account resource IDs:**
 - D1: `fc771b05-4e24-48bf-980c-d09f21279bd1`
 - KV: `a621f17ad3e34000971cffa616675c5b`

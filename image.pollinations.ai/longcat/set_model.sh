@@ -19,3 +19,5 @@ hf download meituan-longcat/LongCat-Image --local-dir models/
 modal volume put <name-of-your-volume> models/ longcat-model/
 # Remove the local model
 rm -rf models/
+
+# Prepared with <3 by Circuit-Overtime

@@ -52,7 +52,7 @@
 - [x] **B8.** Deploy `pollinations-gen` production to NEW account
 - [x] **B9.** Deploy `pollinations-ai` production to NEW account (frontend + PLN_APPS_KEY secret)
 - [x] **B10.** Test workers via `.workers.dev` URLs
-- [ ] **B11.** Lower DNS TTLs to 1 minute (wait 24-48h before cutover)
+- [x] **B11.** ~~Lower DNS TTLs~~ → Just wait 24-48h for global DNS cache expiry (no action needed)
 
 **Production workers.dev URLs (NEW account):**
 - Enter: https://pollinations-enter-production.elliot-b6e.workers.dev

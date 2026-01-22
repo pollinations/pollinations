@@ -80,8 +80,12 @@ GitHub OAuth App: https://github.com/organizations/pollinations/settings/applica
   - `enter.pollinations.ai/wrangler.toml` (production + staging routes)
   - `gen.pollinations.ai/wrangler.toml` (production route)
   - `pollinations.ai/wrangler.toml` (both routes)
-- [ ] **C8.** Verify services on custom domains
-- [ ] **C9.** Announce migration complete
+- [ ] **C8.** Update GitHub OAuth App callback URLs:
+  - Production: Add `https://enter.pollinations.ai/api/auth/callback/github`
+  - Staging: Add `https://staging.enter.pollinations.ai/api/auth/callback/github`
+  - (Can keep workers.dev URLs as backup)
+- [ ] **C9.** Verify services on custom domains
+- [ ] **C10.** Announce migration complete
 
 ### Phase D: Post-Migration
 - [ ] **D1.** Monitor for 24-48 hours

@@ -13,6 +13,7 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
       - GF_AUTH_DISABLE_LOGIN_FORM=true
       - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/economics.json
+      - GF_KIOSK_MODE=true
       - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource
     volumes:
       - grafana-data:/var/lib/grafana

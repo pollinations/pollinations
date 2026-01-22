@@ -3,8 +3,14 @@ import torch
 from diffusers import LongCatImagePipeline
 from fastapi import FastAPI, Response, Request
 import io
+
+# ---- Modal App ----
 app = modal.App("longcat_t2i")
+
+# ---- Volume with model ----
 vol = modal.Volume.from_name("longcat_t2i_volume")
+
+# ---- Container image with dependencies ----
 image = (
     modal.Image.debian_slim(python_version="3.10")
     .pip_install(
@@ -19,73 +25,62 @@ image = (
     )
 )
 
-class LongCatInfer:
-    def __init__(self, model_path="/models/diffusion_models/Longcat"):
-        self.device = "cuda"
-        self.pipe = LongCatImagePipeline.from_pretrained(
-            model_path,
-            torch_dtype=torch.bfloat16
-        ).to(self.device)
-        self.pipe.enable_xformers_memory_efficient_attention()
-        self.pipe.set_progress_bar_config(disable=True)
-
-    def generate_image(self, prompt: str, height=768, width=768, steps=10, seed=42):
-        with torch.inference_mode():  
-            image = self.pipe(
-                prompt=prompt,
-                height=height,
-                width=width,
-                guidance_scale=4.0,
-                num_inference_steps=steps,
-                num_images_per_prompt=1,
-                generator=torch.Generator("cuda").manual_seed(seed),
-                enable_cfg_renorm=True,
-                enable_prompt_rewrite=True,
-            ).images[0]
-        return image
-
-
+# ---- Initialize GPU container ----
 @app.cls(
-    gpu=modal.gpu.H100(count=1),
+    gpu="H100",
     volumes={"/models": vol},
     image=image,
-    container_idle_timeout=300,
+    scaledown_window=300,
     timeout=1800,
 )
-class LongCatServer:
-
+class Container:
+    # This runs once per container
     @modal.enter()
-    def load(self):
-        # Load model once per container
-        self.infer = LongCatInfer()
+    def setup(self):
+        global infer
+        device = "cuda"
+        infer = LongCatImagePipeline.from_pretrained(
+            "/models/diffusion_models/Longcat",
+            torch_dtype=torch.bfloat16
+        ).to(device)
+        infer.enable_xformers_memory_efficient_attention()
+        infer.set_progress_bar_config(disable=True)
 
-        # Initialize FastAPI app
-        self.fastapi_app = FastAPI(title="LongCat T2I API")
+        # FastAPI app at container level
+        global fastapi_app
+        fastapi_app = FastAPI(title="LongCat T2I API")
 
-        @self.fastapi_app.get("/")
+        @fastapi_app.get("/")
         def root():
             return {
                 "endpoints": {
-                    "/generate?prompt=...": "Generate an image from a text prompt (GET)",
-                    "/health": "Health check endpoint"
+                    "/generate?prompt=...": "Generate image from text prompt",
+                    "/health": "Health check"
                 },
                 "example": "/generate?prompt=a cute bear"
             }
 
-        @self.fastapi_app.get("/health")
+        @fastapi_app.get("/health")
         def health():
             return {"status": "healthy"}
 
-        @self.fastapi_app.get("/generate")
+        @fastapi_app.get("/generate")
         def generate(request: Request):
             prompt = request.query_params.get("prompt")
             if not prompt:
                 return {"error": "Missing query parameter 'prompt'"}
-            img = self.infer.generate_image(prompt, height=768, width=768, steps=15)
+            with torch.inference_mode():
+                img = infer(
+                    prompt=prompt,
+                    height=768,
+                    width=768,
+                    guidance_scale=4.0,
+                    num_inference_steps=10,
+                    num_images_per_prompt=1,
+                    generator=torch.Generator("cuda").manual_seed(42),
+                    enable_cfg_renorm=True,
+                    enable_prompt_rewrite=True,
+                ).images[0]
             buf = io.BytesIO()
             img.save(buf, format="JPEG", quality=95)
             return Response(buf.getvalue(), media_type="image/jpeg")
-
-
-server = LongCatServer()
-public_endpoint = modal.Network.from_cls(server, port=5000)

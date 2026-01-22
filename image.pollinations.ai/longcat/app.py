@@ -46,7 +46,7 @@ class LongCatInfer:
 
 
 @app.cls(
-    gpu=modal.gpu.H100(memory=80),
+    gpu=modal.gpu.H100(count=1),
     volumes={"/models": vol},
     image=image,
     container_idle_timeout=300,

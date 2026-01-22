@@ -74,18 +74,23 @@ GitHub OAuth App: https://github.com/organizations/pollinations/settings/applica
 - [ ] **C2.** Disable OLD service (brief full outage)
 - [ ] **C3.** Re-export production D1 from OLD account (snapshot 2 - final)
 - [ ] **C4.** Re-import production D1 to NEW account
-- [ ] **C5.** Switch nameservers at Namecheap to NEW Cloudflare account
-- [ ] **C6.** Add domain to NEW Cloudflare account (verify ownership)
-- [ ] **C7.** Uncomment routes in wrangler.toml files and redeploy:
+- [ ] **C5.** Add `pollinations.ai` domain to NEW Cloudflare account
+  - Go to Myceli.AI Cloudflare dashboard → Add a site → `pollinations.ai`
+  - Note the NEW nameservers (e.g., `xxx.ns.cloudflare.com`, `yyy.ns.cloudflare.com`)
+- [ ] **C6.** Switch nameservers at Namecheap to NEW Cloudflare nameservers
+  - Namecheap → Domain List → pollinations.ai → Nameservers → Custom DNS
+  - Enter the nameservers from C5
+- [ ] **C7.** Wait for DNS propagation (check with `dig pollinations.ai NS`)
+- [ ] **C8.** Uncomment routes in wrangler.toml files and redeploy:
   - `enter.pollinations.ai/wrangler.toml` (production + staging routes)
   - `gen.pollinations.ai/wrangler.toml` (production route)
   - `pollinations.ai/wrangler.toml` (both routes)
-- [ ] **C8.** Update GitHub OAuth App callback URLs:
-  - Production: Add `https://enter.pollinations.ai/api/auth/callback/github`
-  - Staging: Add `https://staging.enter.pollinations.ai/api/auth/callback/github`
-  - (Can keep workers.dev URLs as backup)
-- [ ] **C9.** Verify services on custom domains
-- [ ] **C10.** Announce migration complete
+- [ ] **C9.** Update OAuth App callback URLs:
+  - **GitHub:** Add `https://enter.pollinations.ai/api/auth/callback/github`
+  - **Discord:** Add `https://enter.pollinations.ai/api/auth/callback/discord`
+  - (Keep workers.dev URLs as backup)
+- [ ] **C10.** Verify services on custom domains
+- [ ] **C11.** Announce migration complete
 
 ### Phase D: Post-Migration
 - [ ] **D1.** Monitor for 24-48 hours

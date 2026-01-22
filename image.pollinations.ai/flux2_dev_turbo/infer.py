@@ -26,8 +26,8 @@ image = pipe(
     prompt=prompt,
     sigmas=TURBO_SIGMAS,
     guidance_scale=2.5,
-    height=1024,
-    width=1024,
+    height=768,
+    width=768,
     num_inference_steps=8,
 ).images[0]
 

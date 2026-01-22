@@ -81,7 +81,7 @@ class LongCatInference:
     @modal.enter()
     def setup(self):
         import torch
-        from diffusers import LongCatImagePipeline
+        from diffusers import LongCatImagePipeline, LongCatImageEditPipeline
         
         device = "cuda"
         self.pipe = LongCatImagePipeline.from_pretrained(

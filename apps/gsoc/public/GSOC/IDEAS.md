@@ -1,6 +1,6 @@
 # Project Ideas GSOC 26'
 
-## 1. Pollinations Gaming SDKs (Roblox/Godot/Unity)
+## 1. Pollinations Gaming SDKs (Roblox/Godot/Unity) [MARKED]
 
 **ID:** 0xprj01  
 **Category:** Game Dev  
@@ -17,74 +17,8 @@ The 'Roblox for AI' vision needs concrete tools. This project involves building 
 
 ---
 
-## 2. 'Pollen' Economy Dashboard & Wallet
 
-**ID:** 0xprj02  
-**Category:** Web Development  
-**Difficulty:** Intermediate  
-**Duration:** 175 hours  
-**Mentor:** 0xmnt02
-
-**Description:** A visual dashboard for the Pollen credit system and creator earnings.
-
-**Long Description:**  
-Pollinations is building a circular economy where developers earn 'Pollen' credits when people use their apps. This project involves building the user-facing 'Wallet' and 'Dashboard' that visualizes earnings, usage stats, and the flow of value. It should be gamified, 'crunchy', and satisfying to use.
-
-**Technologies:** React, TypeScript, Recharts/D3, Web3 (Concepts)
-
----
-
-## 3. Mycelial Network Visualizer
-
-**ID:** 0xprj03  
-**Category:** Data Visualization  
-**Difficulty:** Advanced  
-**Duration:** 350 hours  
-**Mentor:** 0xmnt01
-
-**Description:** Interactive 3D visualization of the Pollinations app ecosystem.
-
-**Long Description:**  
-Our vision is a 'mycelial network' of millions of micro-apps. This project creates a stunning, interactive 3D visualization of this network. Nodes represent apps/models, edges represent API calls/value flow. It will serve as the centerpiece of our homepage to show the scale and liveness of the ecosystem.
-
-**Technologies:** Three.js, React Three Fiber, Graph Theory
-
----
-
-## 4. AI Content Safety & Moderation Suite
-
-**ID:** 0xprj04  
-**Category:** AI/ML  
-**Difficulty:** Advanced  
-**Duration:** 350 hours  
-**Mentor:** 0xmnt02
-
-**Description:** Community-driven safety tools for gaming-friendly AI.
-
-**Long Description:**  
-To support our 'Roblox for AI' strategy, safety is paramount. This project involves researching and implementing lightweight, low-latency content safety filters that can sit between the pollinations.ai API and game clients. It ensures generated text/images are appropriate for younger audiences.
-
-**Technologies:** Python, TensorFlow/PyTorch, FastAPI
-
----
-
-## 5. Interactive 'Vibe Coding' Playground
-
-**ID:** 0xprj05  
-**Category:** Web Development  
-**Difficulty:** Advanced  
-**Duration:** 350 hours  
-**Mentor:** 0xmnt01
-
-**Description:** A web-based IDE for generating mini-apps from natural language.
-
-**Long Description:**  
-Lower the barrier to entry even further. Build a web-based playground where users can type natural language instructions ('Make a bouncing ball game') and see the code/app generated instantly using Pollinations' underlying models. It's about the 'teenage hacker spirit'—instant feedback, zero setup.
-
-**Technologies:** React, Monaco Editor, WebContainers
-
-
-## 6. Pollinations CLI Tool 
+## 2. Pollinations CLI Tool [MARKED]
 **ID:** 0xprj06
 **Category:** Developer Tools
 **Difficulty:** Intermediate
@@ -99,8 +33,48 @@ Extensions: --ui browser mode, GitHub Action for pollinations ai.
 
 **Technologies:** Node.js, TypeScript, Commander.js, Pollinations REST API.
 
+--- 
 
-## 7. Semantic Stegnography for AI Generated Synthetic Media 
+
+
+## 3. Autonomous Platform Health Agent
+
+**ID:** 0xprj04  
+**Category:** DevOps/Security  
+**Difficulty:** Advanced  
+**Duration:** 350 hours  
+**Mentor:** 0xmnt02
+
+**Description:** 24/7 multi-agent system monitoring infrastructure, self-maintaining tests, auto-creating issues.
+
+**Long Description:**  
+Create a 24/7 multi-agent system that monitors Pollinations infrastructure. Tests API reliability, security, rate limiting, and model quality. Self-maintains test suites and auto-creates GitHub issues/PRs for findings. Extensions include chaos engineering (intentionally breaking things to test resilience) and a living health dashboard with historical trends.
+
+**Technologies:** TypeScript, Docker, GitHub Actions, Claude/GPT Agents
+
+---
+
+
+## 3. Universal Semantic Cache
+
+**ID:** 0xprj01  
+**Category:** Infrastructure  
+**Difficulty:** Advanced  
+**Duration:** 350 hours  
+**Mentor:** 0xmnt01
+
+**Description:** CLIP embeddings for images, text embeddings for prompts, cache hits before generation to save compute.
+
+**Long Description:**  
+Build a semantic caching layer that uses CLIP embeddings for images and text embeddings for prompts to enable cache hits before generation, significantly reducing compute costs. The system will support configurable similarity thresholds per model, with extensions for cache analytics dashboards and per-user/per-app isolation.
+
+**Technologies:** CLIP, Cloudflare Vectorize, FAISS, TypeScript 
+
+---
+
+
+
+## 4. Semantic Stegnography for AI Generated Synthetic Media 
 **ID:** 0xprj07
 **Category:** AI/ML
 **Difficulty:** Advanced
@@ -112,3 +86,40 @@ Extensions: --ui browser mode, GitHub Action for pollinations ai.
 Develop techniques to embed semantic metadata (like creator info, generation parameters) into AI-generated images, audio, or video files without affecting perceptual quality. This helps in tracking the origin and authenticity of synthetic media, addressing concerns around deepfakes and misinformation.
 
 **Technologies:** Python, TensorFlow/PyTorch, Steganography Techniques.
+
+---
+
+
+---
+
+## 6. Pollinations Assistant
+
+**ID:** 0xprj05  
+**Category:** AI/ML  
+**Difficulty:** Advanced  
+**Duration:** 350 hours  
+**Mentor:** 0xmnt01
+
+**Description:** Multi-modal orchestrator routing to all Pollinations models with streaming support.
+
+**Long Description:**  
+Build a single chat endpoint that routes to all Pollinations models. Supports true multi-modal responses combining text, images, and audio in one response. Features auto model selection based on intent and streaming with interleaved content. Markdown responses with embedded media. Extensions include real-time streaming canvas via WebSocket and voice-first mode with duplex audio.
+
+**Technologies:** TypeScript, Streaming SSE, Semantic Routing, Markdown
+
+## 7. Pluggable Memory Layer
+
+**ID:** 0xprj03  
+**Category:** AI/ML  
+**Difficulty:** Advanced  
+**Duration:** 350 hours  
+**Mentor:** 0xmnt01
+
+**Description:** Memory-as-tools with remember(), recall(), forget() and pluggable backends.
+
+**Long Description:**  
+Build a memory-as-a-service system exposing remember(), recall(), and forget() as tools. Supports pluggable backends including Cloudflare KV (hosted), GitHub repos, local SQLite, or custom adapters (MCP supported). Features auto-extraction of memories from conversations. Extensions include 'Connect your GitHub' for coding context and cross-app sharing with OAuth-like scopes.
+
+**Technologies:** TypeScript, Cloudflare KV, GitHub API, SQLite, MCP
+
+---

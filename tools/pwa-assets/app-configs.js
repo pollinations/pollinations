@@ -9,12 +9,12 @@ export const APP_CONFIGS = {
         outputDir: "enter.pollinations.ai/public",
         sourceSvg: "../../assets/logo.svg",
         ogSourceSvg: "../../assets/logo-text.svg",
-        themeColor: "#D1FAE4",
+        themeColor: "#5b2dd8",
         backgroundColor: "#110518",
         iconBackground: "transparent",
         seo: {
             title: "pollinations.ai - beta",
-            description: "authentication and API gateway for pollinations.ai",
+            description: "Developer console for APIs, pollen grants, and usage",
             url: "https://enter.pollinations.ai",
         },
     },
@@ -24,30 +24,30 @@ export const APP_CONFIGS = {
         outputDir: "pollinations.ai/public",
         sourceSvg: "../../assets/logo.svg",
         ogSourceSvg: "../../assets/logo-text.svg",
-        themeColor: "#F9FF7B",
+        themeColor: "#ff6b35",
         backgroundColor: "#110518",
         iconBackground: "transparent",
         seo: {
             title: "pollinations.ai",
             description:
-                "Generative AI APIs for developers. Integrate AI models via one simple API. Built for app creators, with sponsorship programs available.",
+                "Build AI apps with easy APIs, daily grants, and community support",
             url: "https://pollinations.ai",
         },
     },
 
-    hello: {
-        name: "hello.pollinations.ai",
-        outputDir: "hello.pollinations.ai/public",
+    chat: {
+        name: "chat.pollinations.ai",
+        outputDir: "apps/chat/public",
         sourceSvg: "../../assets/logo.svg",
         ogSourceSvg: "../../assets/logo-text.svg",
-        themeColor: "#C7D4D6",
+        themeColor: "#e7faec",
         backgroundColor: "#110518",
         iconBackground: "transparent",
         seo: {
-            title: "pollinations.ai - hello",
+            title: "chat.pollinations.ai",
             description:
-                "AI creation playground - Generate images, text & audio with open source models",
-            url: "https://hello.pollinations.ai",
+                "AI chat interface powered by pollinations.ai - Multi-model conversations with open source AI",
+            url: "https://chat.pollinations.ai",
         },
     },
 };

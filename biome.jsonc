@@ -22,6 +22,7 @@
         "includes": [
             "**",
             // exclude dependencies
+            ".github/**",
             "!**/node_modules/**",
             // exclude build outputs (force-ignore with !!)
             "!**/dist/**",
@@ -33,7 +34,8 @@
             "!**/worker-configuration.d.ts",
             "!**/worker-runtime.d.ts",
             "!**/worker-bindins.d.ts",
-            "!**/better-auth.ts"
+            "!**/better-auth.ts",
+            "!**/routeTree.gen.ts"
         ]
     },
     "json": {

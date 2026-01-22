@@ -163,22 +163,25 @@ POLLEN_REFILL_PER_HOUR = 1
 NOWPAYMENTS_ENV = "production"
 
 [env.staging]
+workers_dev = true  # Enable workers.dev URL for testing
 
-[[env.staging.routes]]
-pattern = "staging.enter.pollinations.ai"
-zone_name = "pollinations.ai"
-custom_domain = true
+# Route disabled until domain is transferred to new account (Phase C)
+# [[env.staging.routes]]
+# pattern = "staging.enter.pollinations.ai"
+# zone_name = "pollinations.ai"
+# custom_domain = true
 
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
-database_id = "073195b4-d99e-4b67-9575-eb5efe6d3234"
+# NEW Myceli.AI account D1 (was: 073195b4-d99e-4b67-9575-eb5efe6d3234)
+database_id = "63da5347-3fa8-4410-a68f-c9e83956f76a"
 migrations_dir = "drizzle"
 
 [[env.staging.kv_namespaces]]
-# staging-pollinations-enter-kv
 binding = "KV"
-id = "eb4ea5149a5a413db53902bf2b8c1d95"
+# NEW Myceli.AI account KV (was: eb4ea5149a5a413db53902bf2b8c1d95)
+id = "ba22195551794751b9792e4e67eb074a"
 
 [[env.staging.r2_buckets]]
 binding = "IMAGE_BUCKET"
@@ -198,8 +201,8 @@ name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
 [[env.staging.migrations]]
-tag = "v2"
-new_classes = ["PollenRateLimiter"]
+tag = "v3"
+new_sqlite_classes = ["PollenRateLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"

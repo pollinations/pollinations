@@ -182,7 +182,7 @@ class LongCatInference:
                 img = self.pipe_i2i(
                     img_input,
                     prompt,
-                    negative_prompt="blurry, low resolution, distorted, deformed, disfigured, ugly, tiling, poorly drawn, mutation, mutated, extra limbs, cloned face, big head, malformed limbs, missing arms",
+                    negative_prompt="",
                     guidance_scale=4.5,
                     num_inference_steps=30,
                     num_images_per_prompt=1,

@@ -10,6 +10,7 @@ vol = modal.Volume.from_name("longcat_t2i_volume")
 
 image = (
     modal.Image.debian_slim(python_version="3.10")
+    .run_commands("apt-get update && apt-get install -y git")
     .pip_install(
         "torch",
         "transformers",
@@ -18,7 +19,6 @@ image = (
         "xformers",
         "fastapi",
         "uvicorn",
-        "diffusers",
         "Pillow",
         "git+https://github.com/huggingface/diffusers"
     )

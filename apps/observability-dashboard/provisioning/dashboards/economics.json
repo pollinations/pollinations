@@ -1534,13 +1534,396 @@
             }],
             "title": "App Economy Leaderboard",
             "type": "table"
-        }, {
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Developer economics with momentum: who's rising? Pack % shows economic health, momentum shows 7D/30D trend. Minimum 10 Pollen threshold.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{
+                            "color": "green",
+                            "value": null
+                        }]
+                    }
+                },
+                "overrides": [{
+                        "matcher": {
+                            "id": "byName",
+                            "options": "developer"
+                        },
+                        "properties": [{
+                            "id": "custom.width",
+                            "value": 150
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_cost"
+                        },
+                        "properties": [{
+                                "id": "displayName",
+                                "value": "Pack ρ (30D)"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "short"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 0
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "tier_cost"
+                        },
+                        "properties": [{
+                                "id": "displayName",
+                                "value": "Tier ρ (30D)"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "short"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 0
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_share"
+                        },
+                        "properties": [{
+                                "id": "displayName",
+                                "value": "Pack %"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "percentunit"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "active_days"
+                        },
+                        "properties": [{
+                                "id": "displayName",
+                                "value": "Active Days"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "short"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 0
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "momentum"
+                        },
+                        "properties": [{
+                                "id": "displayName",
+                                "value": "Momentum"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "percentunit"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 0
+                            },
+                            {
+                                "id": "thresholds",
+                                "value": {
+                                    "mode": "absolute",
+                                    "steps": [{
+                                            "color": "red",
+                                            "value": null
+                                        },
+                                        {
+                                            "color": "yellow",
+                                            "value": 0.2
+                                        },
+                                        {
+                                            "color": "green",
+                                            "value": 0.4
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "type": "color-background"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 24,
+                "x": 0,
+                "y": 53
+            },
+            "id": 20,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": false,
+                    "fields": "",
+                    "reducer": ["sum"],
+                    "show": false
+                },
+                "showHeader": true,
+                "sortBy": [{
+                    "desc": true,
+                    "displayName": "Momentum"
+                }]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": {
+                    "type": "grafana-clickhouse-datasource",
+                    "uid": "PAD1A0A25CD30D456"
+                },
+                "format": 1,
+                "rawSql": "SELECT user_github_username as developer, sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_cost, sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_cost, if((pack_cost + tier_cost) > 0, pack_cost / (pack_cost + tier_cost), 0) as pack_share, uniqExact(toDate(start_time)) as active_days, sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack') AND start_time >= now() - INTERVAL 7 DAY) as pack_7d, if(pack_cost > 0, pack_7d / pack_cost, 0) as momentum FROM generation_event WHERE start_time >= now() - INTERVAL 30 DAY AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND user_github_username != '' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58')) GROUP BY user_github_username HAVING pack_cost >= 10 ORDER BY momentum DESC LIMIT 50",
+                "refId": "A"
+            }],
+            "title": "Developer Economics & Momentum",
+            "type": "table"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "⚠️ DIAGNOSTIC: Pack % distribution by user tier. Heavy overlap between tiers = tier system needs redesign. Tiers are NOT ground truth.",
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{
+                            "color": "green",
+                            "value": null
+                        }]
+                    }
+                },
+                "overrides": [{
+                        "matcher": {
+                            "id": "byName",
+                            "options": "tier"
+                        },
+                        "properties": [{
+                            "id": "custom.width",
+                            "value": 100
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "users"
+                        },
+                        "properties": [{
+                                "id": "displayName",
+                                "value": "Users"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "short"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 0
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "avg_pack_share"
+                        },
+                        "properties": [{
+                                "id": "displayName",
+                                "value": "Avg Pack %"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "percentunit"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 1
+                            },
+                            {
+                                "id": "thresholds",
+                                "value": {
+                                    "mode": "absolute",
+                                    "steps": [{
+                                            "color": "red",
+                                            "value": null
+                                        },
+                                        {
+                                            "color": "yellow",
+                                            "value": 0.1
+                                        },
+                                        {
+                                            "color": "green",
+                                            "value": 0.3
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "type": "color-background"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "median_pack_share"
+                        },
+                        "properties": [{
+                                "id": "displayName",
+                                "value": "Median Pack %"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "percentunit"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "total_pack"
+                        },
+                        "properties": [{
+                                "id": "displayName",
+                                "value": "Total Pack ρ"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "short"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 0
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "total_tier"
+                        },
+                        "properties": [{
+                                "id": "displayName",
+                                "value": "Total Tier ρ"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "short"
+                            },
+                            {
+                                "id": "decimals",
+                                "value": 0
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 63
+            },
+            "id": 21,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": false,
+                    "fields": "",
+                    "reducer": ["sum"],
+                    "show": false
+                },
+                "showHeader": true,
+                "sortBy": [{
+                    "desc": true,
+                    "displayName": "Avg Pack %"
+                }]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": {
+                    "type": "grafana-clickhouse-datasource",
+                    "uid": "PAD1A0A25CD30D456"
+                },
+                "format": 1,
+                "rawSql": "SELECT user_tier as tier, count(DISTINCT user_github_id) as users, avg(pack_share) as avg_pack_share, median(pack_share) as median_pack_share, sum(pack_cost) as total_pack, sum(tier_cost) as total_tier FROM (SELECT user_github_id, user_tier, sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_cost, sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_cost, if((pack_cost + tier_cost) > 0, pack_cost / (pack_cost + tier_cost), 0) as pack_share FROM generation_event WHERE $__timeFilter(start_time) AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND user_tier != '' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58')) GROUP BY user_github_id, user_tier HAVING (pack_cost + tier_cost) >= 10) GROUP BY user_tier ORDER BY avg_pack_share DESC",
+                "refId": "A"
+            }],
+            "title": "Tier Overlay Diagnostic",
+            "type": "table"
+        },
+        {
             "collapsed": false,
             "gridPos": {
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 53
+                "y": 71
             },
             "id": 12,
             "panels": [],

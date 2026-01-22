@@ -108,16 +108,9 @@ All panels use these **cost-weighted** definitions:
 ---
  
 ## Variables
- 
-| Variable | Source | Type | Purpose |
-|----------|--------|------|---------|
-| `$timeRange` | (built-in) | Time picker | Default: 1d, 7d, 30d, 90d |
-| `$model` | `resolved_model_requested` | Multi-select | Filter by model(s) |
-| `$user` | `user_github_username` | Searchable | Drill into specific developer |
-| `$tier` | `user_tier` | Multi-select | Compare tiers |
-| `$keyType` | `api_key_type` | Toggle | All / Developer / End-user (BYOP) |
-| `$topN` | (static) | Number | Control ranking limits (5, 10, 20, 50) |
- 
+
+The dashboard uses only the built-in **time range picker** (default: 30 days). All other variables were removed to keep the dashboard simple and focused on answering strategic questions rather than ad-hoc filtering.
+
 ---
  
 ## Panels (Revised)
@@ -133,7 +126,6 @@ All panels use these **cost-weighted** definitions:
 | **Type** | Stacked area chart + overlaid line |
 | **Description** | `paid_cost` (green) vs `free_cost` (orange) stacked over time, with `subsidy_intensity` (free%) as an overlaid line. Switchable windows: 24h, 7D, 30D, 90D. |
 | **Why** | **North star panel.** Single view of paid vs subsidized dynamics. Replaces old panels 1 + 8. |
-| **Variables** | timeRange, tier, keyType |
 | **Metrics** | `paid_cost`, `free_cost`, `subsidy_intensity` |
 
 ---
@@ -145,7 +137,6 @@ All panels use these **cost-weighted** definitions:
 | **Type** | Grouped bar chart or stacked series |
 | **Description** | Two series: **Developer keys** (`secret` + `publishable`) vs **End-user keys** (`temporary`). Each split into `paid_cost` and `free_cost`. |
 | **Why** | Answers: "Is paid usage coming from developers themselves or their end users?" Critical for funding decisions. |
-| **Variables** | timeRange, model |
 | **Metrics** | `paid_cost`, `free_cost` grouped by `api_key_type` |
 | **Note** | ⚠️ Limited data (~3 weeks). Label as "Early signal" until more data accumulates. |
 
@@ -158,7 +149,6 @@ All panels use these **cost-weighted** definitions:
 | **Type** | Stat panels (4 stats in a row) |
 | **Description** | True cohort conversion tracking: measures days between first tier use (≈ signup) → first pack use (≈ conversion). Shows Active Users, Converted within 7D, Converted within 30D, and Conversion Rate (7D). |
 | **Why** | Answers "what % of users who start using the platform end up paying?" — core for dynamic tier allocation and growth analysis. |
-| **Variables** | None (all-time metrics) |
 | **Metrics** | `active_users`, `converted_7d`, `converted_30d`, `conversion_rate_7d` |
 | **Implementation Notes** | Uses first tier event as signup proxy (if a user signs up but never uses the product, they're not counted). Avoids the flawed "paid-only users" metric which is structurally always 0 since tier is consumed before pack. |
 
@@ -171,7 +161,6 @@ All panels use these **cost-weighted** definitions:
 | **Type** | Table |
 | **Description** | Per `resolved_model_requested`: `total_cost`, `paid_cost`, `free_cost`, `paid_share`, `avg_cost_per_request`, `request_count` (secondary). **Default sort: `paid_share` descending** (most economically healthy first). |
 | **Why** | One panel answers "which models are profitable" AND "which are subsidy sinks" + unit economics. |
-| **Variables** | timeRange, tier, keyType, topN |
 | **Metrics** | All core metrics + `avg_cost_per_request = total_cost / request_count` |
 
 ---
@@ -183,7 +172,6 @@ All panels use these **cost-weighted** definitions:
 | **Type** | Horizontal bar chart |
 | **Description** | Top N models ranked by `paid_cost`. Shows where the money signal actually is. |
 | **Why** | Quick visual of paying model distribution. |
-| **Variables** | timeRange, tier, topN |
 | **Metrics** | `paid_cost` |
 | **Note** | "Paid consumption" = pack-funded usage, not literal cash-in. Users buy packs separately from spending them. |
 
@@ -196,7 +184,6 @@ All panels use these **cost-weighted** definitions:
 | **Type** | Horizontal bar chart |
 | **Description** | Top N models by `free_cost`. Includes % of total platform subsidy per model. |
 | **Why** | Identifies candidates for throttling, pricing, or promotion to paid. |
-| **Variables** | timeRange, tier, topN |
 | **Metrics** | `free_cost`, `free_cost / total_platform_free_cost` |
 
 ---
@@ -208,7 +195,6 @@ All panels use these **cost-weighted** definitions:
 | **Type** | XY Scatter plot |
 | **Description** | **X** = `tier_cost` (Tier ρ), **Y** = `pack_cost` (Pack ρ). Each dot = one developer. Green color, hover shows developer name. |
 | **Why** | Instantly see "who costs us money vs who funds themselves." Bottom-right = tier-heavy (subsidy risk), top-left = pack-efficient (valuable). |
-| **Variables** | timeRange |
 | **Metrics** | `tier_cost`, `pack_cost` per developer |
 | **Note** | Color gradient by pack_share was attempted but Grafana XY charts create extra axes for color dimensions. Simplified to single green color. |
 
@@ -221,7 +207,6 @@ All panels use these **cost-weighted** definitions:
 | **Type** | Table |
 | **Description** | Columns: app → developer → Pack % → Total ρ → Pack ρ → Tier ρ → Requests. Sorted by Pack % descending. |
 | **Why** | Finds which apps deserve promotion, support, or constraints. Economics-first, not volume. |
-| **Variables** | timeRange |
 | **Metrics** | `pack_share`, `total_cost`, `pack_cost`, `tier_cost`, `requests` per app |
 | **Note** | Developer column shows app owner for context. Minimum threshold: 100 Pollen total. |
 
@@ -234,7 +219,6 @@ All panels use these **cost-weighted** definitions:
 | **Type** | Table |
 | **Description** | Per user: `paid_cost`, `free_cost`, `paid_share`, `active_days_30D`, `momentum` (7D paid / 30D paid), `end_user_share`. |
 | **Why** | Direct input to "fund the right developers" + tier redesign. Momentum identifies rising stars. |
-| **Variables** | timeRange, model, topN |
 | **Metrics** | All core metrics + `momentum = paid_cost_7D / paid_cost_30D`, `active_days_30D` |
 | **Note** | ⚠️ **Minimum volume threshold required** (e.g., `paid_cost_30D > 10 Pollen`) to avoid ratio noise from tiny users. |
 
@@ -247,7 +231,6 @@ All panels use these **cost-weighted** definitions:
 | **Type** | Box plot or violin plot |
 | **Description** | Distribution of `paid_share` within each tier (SPORE, Seed, Flower, Nectar). Shows overlap between tiers. |
 | **Why** | Tests if current tiers reflect economic reality. Heavy overlap = tiers need redesign. |
-| **Variables** | timeRange, model |
 | **Metrics** | `paid_share` distribution per `user_tier` |
 | **Note** | ⚠️ **Diagnostic only.** Tiers are not ground truth — this panel validates or invalidates them. |
 
@@ -274,7 +257,7 @@ All panels use these **cost-weighted** definitions:
 
 1. [x] Confirm Tinybird `generation_event` schema field names
 2. [x] Set up Grafana datasource (Tinybird UID: `PAD1A0A25CD30D456`)
-3. [x] Build dashboard with variables (`$model`, `$tier`, `$keyType`, `$topN`)
+3. [x] Set up time range picker (default: 30 days)
 4. [x] **Panel #1**: Pack vs Tier Consumption Over Time — timeseries with stacked areas + Tier % line
 5. [x] **Panel #2**: BYOP Split — combo chart (bars + line) showing developer vs end-user economics
 6. [x] **Panel #3**: Tier→Pack Cohort Conversion — stat panels with true 7D/30D conversion tracking

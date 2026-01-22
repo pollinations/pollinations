@@ -222,26 +222,9 @@ WHERE $__timeFilter(start_time)
 
 ## Dashboard Variables
 
-### ❌ Don't: Assume MCP can write to provisioned dashboards
-Provisioned dashboards from JSON files are read-only via API.
+This dashboard uses only the **built-in time range picker** (default: 30 days). Custom filter variables were intentionally removed to keep the dashboard simple and focused on answering strategic questions rather than ad-hoc filtering.
 
-### ✅ Do: Edit JSON files directly for provisioned dashboards
-Variables go in `templating.list`:
-```json
-"templating": {
-  "list": [
-    {
-      "name": "model",
-      "type": "query",
-      "datasource": { "uid": "YOUR_DATASOURCE_UID" },
-      "query": "SELECT DISTINCT model FROM events",
-      "refresh": 2,
-      "includeAll": true,
-      "multi": true
-    }
-  ]
-}
-```
+If you need to add variables in the future, edit the `templating.list` array in the dashboard JSON file directly (provisioned dashboards are read-only via API).
 
 ---
 

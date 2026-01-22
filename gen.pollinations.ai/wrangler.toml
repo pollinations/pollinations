@@ -13,11 +13,13 @@ port = 8788
 
 # Production routes
 [env.production]
+workers_dev = true  # Enable workers.dev URL for testing before domain cutover
 
-[[env.production.routes]]
-pattern = "gen.pollinations.ai"
-zone_name = "pollinations.ai"
-custom_domain = true
+# Route disabled until domain is transferred to new account (Phase C)
+# [[env.production.routes]]
+# pattern = "gen.pollinations.ai"
+# zone_name = "pollinations.ai"
+# custom_domain = true
 
 [[env.production.services]]
 binding = "ENTER"

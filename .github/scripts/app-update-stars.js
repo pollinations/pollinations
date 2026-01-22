@@ -251,7 +251,7 @@ async function main() {
         }
     }
 
-    return stats.deleted > 0 ? 1 : 0;
+    return 0;
 }
 
 main()

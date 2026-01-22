@@ -20,6 +20,7 @@ image = (
         "fastapi",
         "uvicorn",
         "Pillow",
+        "torchvision",
         "git+https://github.com/huggingface/diffusers"
     )
 )

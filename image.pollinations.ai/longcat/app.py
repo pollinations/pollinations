@@ -12,24 +12,21 @@ image = (
     modal.Image.debian_slim(python_version="3.10")
     .run_commands("apt-get update && apt-get install -y git")
     .pip_install(
-        # HARD PIN: coherent CUDA 12.1 stack
-        "torch==2.6.0+cu121",
-        "torchvision==0.21.0+cu121",
-        "torchaudio==2.6.0+cu121",
+        # I have regulated the version numbers from https://download.pytorch.org/whl/cu121
+        "torch==2.5.1+cu121",
+        "torchvision==0.20.1+cu121",
+        "torchaudio==2.5.1+cu121",
         extra_index_url="https://download.pytorch.org/whl/cu121",
     )
     .pip_install(
-        # Transformers/Qwen compatibility window
         "transformers==4.57.1",
         "accelerate==1.11.0",
         "safetensors==0.6.2",
         "openai==2.8.1",
-        # Must come AFTER torch
         "xformers",
         "fastapi",
         "uvicorn",
         "Pillow",
-        # Diffusers with LongCat pipeline
         "git+https://github.com/huggingface/diffusers@main"
     )
 )

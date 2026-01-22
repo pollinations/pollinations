@@ -1,0 +1,3 @@
+venv/
+.env4
+models_cache/

@@ -24,7 +24,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Daily Pollen consumption: Pack (green) vs Tier (orange). Tier % (red) = tier share of total. Excludes Dec 30–Jan 8 bug window. Affected by: $timeRange.",
+            "description": "Daily Pollen consumption: Pack (green) vs Tier (orange). Tier % (red) = tier share of total. Excludes Dec 30–Jan 8 bug window.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -201,7 +201,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Developer (secret/publishable) vs End-user (temporary) key usage. Early signal — only ~3 weeks of data. Affected by: $timeRange.",
+            "description": "Developer (secret/publishable) vs End-user (temporary) key usage. Early signal — only ~3 weeks of data.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -2086,118 +2086,7 @@
     "schemaVersion": 40,
     "tags": ["economics", "pollen"],
     "templating": {
-        "list": [{
-                "current": {
-                    "selected": true,
-                    "text": "All",
-                    "value": "$__all"
-                },
-                "datasource": {
-                    "type": "grafana-clickhouse-datasource",
-                    "uid": "PAD1A0A25CD30D456"
-                },
-                "definition": "SELECT DISTINCT resolved_model_requested FROM generation_event WHERE start_time > now() - INTERVAL 30 DAY AND resolved_model_requested != '' ORDER BY resolved_model_requested",
-                "hide": 0,
-                "includeAll": true,
-                "multi": true,
-                "name": "model",
-                "options": [],
-                "query": "SELECT DISTINCT resolved_model_requested FROM generation_event WHERE start_time > now() - INTERVAL 30 DAY AND resolved_model_requested != '' ORDER BY resolved_model_requested",
-                "refresh": 2,
-                "regex": "",
-                "skipUrlSync": false,
-                "sort": 1,
-                "type": "query"
-            },
-            {
-                "current": {
-                    "selected": true,
-                    "text": "All",
-                    "value": "$__all"
-                },
-                "datasource": {
-                    "type": "grafana-clickhouse-datasource",
-                    "uid": "PAD1A0A25CD30D456"
-                },
-                "definition": "SELECT DISTINCT user_tier FROM generation_event WHERE start_time > now() - INTERVAL 30 DAY AND user_tier != '' ORDER BY user_tier",
-                "hide": 0,
-                "includeAll": true,
-                "multi": true,
-                "name": "tier",
-                "options": [],
-                "query": "SELECT DISTINCT user_tier FROM generation_event WHERE start_time > now() - INTERVAL 30 DAY AND user_tier != '' ORDER BY user_tier",
-                "refresh": 2,
-                "regex": "",
-                "skipUrlSync": false,
-                "sort": 1,
-                "type": "query"
-            },
-            {
-                "current": {
-                    "selected": true,
-                    "text": "All",
-                    "value": ""
-                },
-                "hide": 0,
-                "includeAll": false,
-                "multi": false,
-                "name": "keyType",
-                "options": [{
-                        "selected": true,
-                        "text": "All",
-                        "value": ""
-                    },
-                    {
-                        "selected": false,
-                        "text": "Developer",
-                        "value": "developer"
-                    },
-                    {
-                        "selected": false,
-                        "text": "End-user (BYOP)",
-                        "value": "temporary"
-                    }
-                ],
-                "query": "All : , Developer : developer, End-user (BYOP) : temporary",
-                "skipUrlSync": false,
-                "type": "custom"
-            },
-            {
-                "current": {
-                    "selected": true,
-                    "text": "10",
-                    "value": "10"
-                },
-                "hide": 0,
-                "includeAll": false,
-                "multi": false,
-                "name": "topN",
-                "options": [{
-                        "selected": false,
-                        "text": "5",
-                        "value": "5"
-                    },
-                    {
-                        "selected": true,
-                        "text": "10",
-                        "value": "10"
-                    },
-                    {
-                        "selected": false,
-                        "text": "20",
-                        "value": "20"
-                    },
-                    {
-                        "selected": false,
-                        "text": "50",
-                        "value": "50"
-                    }
-                ],
-                "query": "5,10,20,50",
-                "skipUrlSync": false,
-                "type": "custom"
-            }
-        ]
+        "list": []
     },
     "time": {
         "from": "now-30d",

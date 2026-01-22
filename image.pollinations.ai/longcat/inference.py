@@ -35,6 +35,6 @@ def generate_image(
         raise
 
 if __name__ == "__main__":
-    prompt = "A young Asian woman, wearing a yellow knitted sweater and a white necklace, sits with her hands resting on her knees, her expression serene. Behind her is a rough brick wall, and the warm afternoon sunlight falls gently upon her, creating a peaceful and inviting atmosphere. The camera uses a medium shot, highlighting her expression and the details of her clothing. Soft light illuminates her face, emphasizing her features and the texture of her accessories, adding depth and warmth to the image. The overall composition is simple, with the texture of the brick wall and the interplay of light and shadow complementing each other, emphasizing the woman's elegance and composure."
+    prompt = "An elderly Japanese man wearing a traditional indigo noragi jacket sits at a wooden table, hands folded around a ceramic teacup. Behind him, a shoji screen diffuses pale daylight into the room. The camera frames him in a centered medium shot, symmetrical and restrained. Soft, even lighting reveals fine wrinkles and wood grain details, lending a tactile realism. The restrained composition conveys quiet dignity and ritual."
     # 16:9 aspect ratio (1024x576)
     generate_image(prompt, width=1024, height=576)

@@ -68,9 +68,14 @@
 - [ ] **C2.** Disable OLD service (brief full outage)
 - [ ] **C3.** Re-export production D1 from OLD account (snapshot 2 - final)
 - [ ] **C4.** Re-import production D1 to NEW account
-- [ ] **C5.** Switch DNS to point to NEW workers
-- [ ] **C6.** Verify services on NEW account
-- [ ] **C7.** Announce migration complete
+- [ ] **C5.** Switch nameservers at Namecheap to NEW Cloudflare account
+- [ ] **C6.** Add domain to NEW Cloudflare account (verify ownership)
+- [ ] **C7.** Uncomment routes in wrangler.toml files and redeploy:
+  - `enter.pollinations.ai/wrangler.toml` (production + staging routes)
+  - `gen.pollinations.ai/wrangler.toml` (production route)
+  - `pollinations.ai/wrangler.toml` (both routes)
+- [ ] **C8.** Verify services on custom domains
+- [ ] **C9.** Announce migration complete
 
 ### Phase D: Post-Migration
 - [ ] **D1.** Monitor for 24-48 hours

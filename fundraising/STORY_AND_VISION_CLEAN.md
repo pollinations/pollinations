@@ -25,7 +25,6 @@
 
 **Part 4: Proof - It's Working (~10 sec)**
 - 600+ developers signing up daily
-- 20 apps published per day
 - 1,000+ apps in the ecosystem
 - **Best example**: Teenager built Roblox game → 51M visits, $12K first month
 

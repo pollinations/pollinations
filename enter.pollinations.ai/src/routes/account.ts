@@ -280,7 +280,26 @@ export const accountRoutes = new Hono<Env>()
             const cryptoBalance = users[0]?.cryptoBalance ?? 0;
             const lastTierGrant = users[0]?.lastTierGrant ?? null;
 
-            const refill = lastTierGrant ? lastTierGrant + 24 * 60 * 60 : null;
+            // lastTierGrant is Unix timestamp in seconds from the database
+            let refill = null;
+
+            if (lastTierGrant) {
+                const now = Math.floor(Date.now() / 1000);
+                const dayInSeconds = 24 * 60 * 60;
+                let nextRefill = lastTierGrant + dayInSeconds;
+
+                // If nextRefill is in the past, calculate how many 24-hour periods
+                // have passed and return the next upcoming refill time
+                if (nextRefill <= now) {
+                    const periodsPassed = Math.floor(
+                        (now - lastTierGrant) / dayInSeconds,
+                    );
+                    nextRefill =
+                        lastTierGrant + (periodsPassed + 1) * dayInSeconds;
+                }
+
+                refill = nextRefill;
+            }
 
             return c.json({
                 balance: tierBalance + packBalance + cryptoBalance,

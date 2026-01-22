@@ -3,16 +3,16 @@ import torch
 from diffusers import LongCatImagePipeline
 from fastapi import FastAPI, Response, Request
 import io
+import time 
 
+t0 = time.perf_counter()
 app = modal.App("longcat_t2i")
-
 vol = modal.Volume.from_name("longcat_t2i_volume")
-
 image = (
     modal.Image.debian_slim(python_version="3.10")
     .run_commands("apt-get update && apt-get install -y git")
+    .pip_install("torch", "torchvision")
     .pip_install(
-        "torch",
         "transformers",
         "accelerate",
         "safetensors",
@@ -20,11 +20,12 @@ image = (
         "fastapi",
         "uvicorn",
         "Pillow",
-        "torchvision",
         "git+https://github.com/huggingface/diffusers"
     )
 )
-
+t1 = time.perf_counter()
+print(f"✓ Built image in {t1 - t0:.2f} seconds")
+t2 = time.perf_counter()
 @app.cls(
     gpu="H100",
     volumes={"/models": vol},
@@ -63,6 +64,7 @@ class LongCatInference:
         img.save(buf, format="JPEG", quality=95)
         return buf.getvalue()
 
+print(f"✓ Model loaded in {time.perf_counter() - t2:.2f} seconds")
 web_app = FastAPI(title="LongCat T2I API")
 
 @web_app.get("/")
@@ -80,7 +82,9 @@ def health():
     return {"status": "healthy"}
 
 @web_app.post("/generate")
+
 async def generate_endpoint(request: Request):
+    t3 = time.perf_counter()
     try:
         data = await request.json()
         prompt = data.get("prompt")
@@ -88,6 +92,7 @@ async def generate_endpoint(request: Request):
             return {"error": "Missing 'prompt' field in request body"}
         
         img_bytes = LongCatInference().generate.remote(prompt)
+        print(f"✓ Generated image for prompt: '{prompt[:20]}...' in {time.perf_counter() - t3:.2f} seconds")
         return Response(img_bytes, media_type="image/jpeg")
     except Exception as e:
         return {"error": str(e)}

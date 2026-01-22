@@ -89,6 +89,12 @@ const balanceResponseSchema = z.object({
         .describe(
             "Remaining pollen balance (combines tier, pack, and crypto balances)",
         ),
+    refill: z
+        .number()
+        .nullable()
+        .describe(
+            "Unix timestamp (seconds) when balance will be refilled (null if never refilled)",
+        ),
 });
 
 const usageRecordSchema = z.object({
@@ -253,7 +259,7 @@ export const accountRoutes = new Hono<Env>()
                 apiKey?.pollenBalance !== null &&
                 apiKey?.pollenBalance !== undefined
             ) {
-                return c.json({ balance: apiKey.pollenBalance });
+                return c.json({ balance: apiKey.pollenBalance, refill: null });
             }
 
             // Otherwise return user's total balance
@@ -263,6 +269,7 @@ export const accountRoutes = new Hono<Env>()
                     tierBalance: userTable.tierBalance,
                     packBalance: userTable.packBalance,
                     cryptoBalance: userTable.cryptoBalance,
+                    lastTierGrant: userTable.lastTierGrant,
                 })
                 .from(userTable)
                 .where(eq(userTable.id, user.id))
@@ -271,9 +278,11 @@ export const accountRoutes = new Hono<Env>()
             const tierBalance = users[0]?.tierBalance ?? 0;
             const packBalance = users[0]?.packBalance ?? 0;
             const cryptoBalance = users[0]?.cryptoBalance ?? 0;
+            const refill = users[0]?.lastTierGrant ?? null;
 
             return c.json({
                 balance: tierBalance + packBalance + cryptoBalance,
+                refill,
             });
         },
     )

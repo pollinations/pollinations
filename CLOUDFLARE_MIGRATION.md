@@ -86,8 +86,12 @@ GitHub OAuth App: https://github.com/organizations/pollinations/settings/applica
   - `gen.pollinations.ai/wrangler.toml` (production route)
   - `pollinations.ai/wrangler.toml` (both routes)
 - [ ] **C9.** Update OAuth App callback URLs:
-  - **GitHub:** Add `https://enter.pollinations.ai/api/auth/callback/github`
-  - **Discord:** Add `https://enter.pollinations.ai/api/auth/callback/discord`
+  - **GitHub** (https://github.com/organizations/pollinations/settings/applications/3352144):
+    - Add `https://enter.pollinations.ai/api/auth/callback/github`
+    - Add `https://staging.enter.pollinations.ai/api/auth/callback/github`
+  - **Discord** (Discord Developer Portal):
+    - Add `https://enter.pollinations.ai/api/auth/callback/discord`
+    - Add `https://staging.enter.pollinations.ai/api/auth/callback/discord`
   - (Keep workers.dev URLs as backup)
 - [ ] **C10.** Verify services on custom domains
 - [ ] **C11.** Announce migration complete

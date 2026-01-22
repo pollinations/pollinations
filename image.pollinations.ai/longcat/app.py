@@ -12,24 +12,22 @@ image = (
     .run_commands("apt-get update && apt-get install -y git")
     .run_commands("pip install --upgrade pip")
     .pip_install(
-        "torch==2.5.1",
-        "torchvision==0.20.1", 
-        "torchaudio==2.5.1",
-        index_url="https://download.pytorch.org/whl/cu121" 
-    )
-    .pip_install(
         "transformers==4.57.1",
         "accelerate==1.11.0",
         "safetensors==0.6.2",
         "openai==2.8.1",
-        "xformers",
         "fastapi",
         "uvicorn",
         "Pillow",
         "git+https://github.com/huggingface/diffusers@main",
     )
+    .pip_install(
+        "torch==2.5.1",
+        "torchvision==0.20.1", 
+        "torchaudio==2.5.1",
+        index_url="https://download.pytorch.org/whl/cu121"
+    )
 )
-
 
 @app.cls(
     gpu="H100",
@@ -49,7 +47,6 @@ class LongCatInference:
             torch_dtype=torch.bfloat16,
         ).to(device)
 
-        self.pipe.enable_xformers_memory_efficient_attention()
         self.pipe.set_progress_bar_config(disable=True)
 
     @modal.method()

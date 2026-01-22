@@ -35,7 +35,7 @@ image = (
     timeout=1800,
 )
 class LongCatInference:
-    model_path: str = modal.parameter(default="/models/diffusion_models/Longcat")
+    model_path: str = modal.parameter(default="/models")
     
     def setup(self):
         """Initialize the model on container startup."""

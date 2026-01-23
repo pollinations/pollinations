@@ -1,6 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { productSlugToUrlParam } from "../../routes/polar.ts";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
@@ -200,8 +199,10 @@ function RouteComponent() {
     };
 
     const handleBuyPollen = (slug: string) => {
-        // Navigate directly to Polar checkout endpoint - server will handle redirect
-        window.location.href = `/api/polar/checkout/${productSlugToUrlParam(slug)}?redirect=true`;
+        // Extract pack size from slug (e.g., "v1:product:pack:5x2" -> "5x2")
+        const packSize = slug.split(":").pop() || slug;
+        // Navigate to Stripe checkout endpoint
+        window.location.href = `/api/stripe/checkout/${packSize}`;
     };
 
     return (

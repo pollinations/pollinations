@@ -42,7 +42,6 @@ class ImageRequest(BaseModel):
         return image
 
 
-
 def calculate_generation_dimensions(requested_width: int, requested_height: int) -> tuple[int, int]:
     final_w, final_h = requested_width, requested_height
     total_pixels = final_w * final_h
@@ -60,6 +59,35 @@ def calculate_generation_dimensions(requested_width: int, requested_height: int)
 
     return final_w, final_h
 
+
+def resize_image_to_fit(img, max_pixels=MAX_GEN_PIXELS):
+    """Resize image to fit within max_pixels while maintaining aspect ratio and ensuring divisible by 16"""
+    from PIL import Image
+    
+    width, height = img.size
+    total_pixels = width * height
+    
+    if total_pixels > max_pixels:
+        scale = math.sqrt(max_pixels / total_pixels)
+        new_width = round(width * scale)
+        new_height = round(height * scale)
+    else:
+        new_width = width
+        new_height = height
+    
+    # Round to nearest 16
+    new_width = round(new_width / 16) * 16
+    new_height = round(new_height / 16) * 16
+    
+    # Ensure minimum dimensions
+    new_width = max(new_width, 256)
+    new_height = max(new_height, 256)
+    
+    # Resize using high-quality resampling
+    if (new_width, new_height) != (width, height):
+        img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+    
+    return img
 
 
 image = (
@@ -86,7 +114,6 @@ image = (
         index_url="https://download.pytorch.org/whl/cu121",
     )
 )
-
 
 
 @app.cls(
@@ -146,7 +173,7 @@ class LongCatInference:
                 height=final_h,
                 width=final_w,
                 guidance_scale=4.0,
-                num_inference_steps=30,
+                num_inference_steps=50,
                 generator=gen,
                 enable_cfg_renorm=True,
                 enable_prompt_rewrite=True,
@@ -174,6 +201,12 @@ class LongCatInference:
 
         try:
             img_input = Image.open(image_path).convert("RGB")
+            
+            # Resize image to fit within 768x768 while maintaining aspect ratio
+            img_input = resize_image_to_fit(img_input, MAX_GEN_PIXELS)
+            
+            # Get output dimensions (same as input after resize)
+            output_width, output_height = img_input.size
 
             with torch.inference_mode():
                 img = self.pipe_i2i(
@@ -181,7 +214,7 @@ class LongCatInference:
                     prompt,
                     negative_prompt="",
                     guidance_scale=4.5,
-                    num_inference_steps=40,
+                    num_inference_steps=50,
                     num_images_per_prompt=1,
                     generator=gen,
                 ).images[0]
@@ -192,6 +225,7 @@ class LongCatInference:
         finally:
             if os.path.exists(image_path):
                 os.remove(image_path)
+
 
 @app.function(image=image)
 @modal.asgi_app()
@@ -250,7 +284,7 @@ def main(
 ):
     if image:
         img_bytes = LongCatInference().generate_i2i.remote(image, prompt)
-        print(f"✓ I2I generated {width}x{height}")
+        print(f"✓ I2I generated (auto-sized from input)")
     else:
         img_bytes = LongCatInference().generate_t2i.remote(prompt, width, height)
         print(f"✓ T2I generated {width}x{height}")

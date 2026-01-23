@@ -198,11 +198,9 @@ function RouteComponent() {
         router.invalidate();
     };
 
-    const handleBuyPollen = (slug: string) => {
-        // Extract pack size from slug (e.g., "v1:product:pack:5x2" -> "5x2")
-        const packSize = slug.split(":").pop() || slug;
-        // Navigate to Stripe checkout endpoint
-        window.location.href = `/api/stripe/checkout/${packSize}`;
+    const handleBuyPollen = (amount: number) => {
+        // Navigate to Stripe checkout endpoint with amount in USD
+        window.location.href = `/api/stripe/checkout/${amount}`;
     };
 
     return (
@@ -258,9 +256,7 @@ function RouteComponent() {
                                     as="button"
                                     color="violet"
                                     weight="light"
-                                    onClick={() =>
-                                        handleBuyPollen("v1:product:pack:5x2")
-                                    }
+                                    onClick={() => handleBuyPollen(5)}
                                 >
                                     + $5
                                 </Button>
@@ -268,9 +264,7 @@ function RouteComponent() {
                                     as="button"
                                     color="violet"
                                     weight="light"
-                                    onClick={() =>
-                                        handleBuyPollen("v1:product:pack:10x2")
-                                    }
+                                    onClick={() => handleBuyPollen(10)}
                                 >
                                     + $10
                                 </Button>
@@ -278,9 +272,7 @@ function RouteComponent() {
                                     as="button"
                                     color="violet"
                                     weight="light"
-                                    onClick={() =>
-                                        handleBuyPollen("v1:product:pack:20x2")
-                                    }
+                                    onClick={() => handleBuyPollen(20)}
                                 >
                                     + $20
                                 </Button>
@@ -288,9 +280,7 @@ function RouteComponent() {
                                     as="button"
                                     color="violet"
                                     weight="light"
-                                    onClick={() =>
-                                        handleBuyPollen("v1:product:pack:50x2")
-                                    }
+                                    onClick={() => handleBuyPollen(50)}
                                 >
                                     + $50
                                 </Button>

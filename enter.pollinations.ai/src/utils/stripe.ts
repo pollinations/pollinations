@@ -74,7 +74,7 @@ export const tryAcquireSessionLock = async (
 export const markSessionProcessed = async (
     kv: KVNamespace,
     sessionId: string,
-    metadata: { userId: string; units: number; packSlug: string },
+    metadata: { userId: string; amountPaid: number; pollenCredited: number },
 ): Promise<void> => {
     const key = `stripe:session:${sessionId}`;
     await kv.put(

@@ -81,28 +81,32 @@ async function sendStripeEventToTinybird(
 /**
  * Handle successful checkout session completion
  * Credits pollen to user's packBalance
+ * Pollen amount is derived from payment amount ($1 = 1 pollen)
  */
 const handleCheckoutSessionCompleted = async (
     session: Stripe.Checkout.Session,
     env: CloudflareBindings,
-): Promise<{ success: boolean; message: string }> => {
+): Promise<{ success: boolean; message: string; pollenCredited?: number }> => {
     const metadata = session.metadata;
 
-    if (!metadata?.userId || !metadata?.units) {
-        console.error("Missing metadata in checkout session:", session.id);
+    if (!metadata?.userId) {
+        console.error("Missing userId in checkout session:", session.id);
         return { success: false, message: "Missing required metadata" };
     }
 
     const userId = metadata.userId;
-    const units = Number.parseInt(metadata.units, 10);
-    const packSlug = metadata.packSlug || "unknown";
 
-    if (Number.isNaN(units) || units <= 0) {
-        console.error("Invalid units in metadata:", metadata.units);
-        return { success: false, message: "Invalid units value" };
+    // Derive pollen from product price ($1 = 1 pollen)
+    // Use amount_subtotal (before tax) not amount_total (includes tax)
+    // This ensures customers get pollen based on product price, not tax
+    const amountPaid = Math.round((session.amount_subtotal || 0) / 100);
+
+    if (amountPaid <= 0) {
+        console.error("Invalid payment amount:", session.amount_total);
+        return { success: false, message: "Invalid payment amount" };
     }
 
-    const creditsToAdd = units * BETA_MULTIPLIER;
+    const creditsToAdd = amountPaid * BETA_MULTIPLIER;
 
     const db = drizzle(env.DB);
 
@@ -127,12 +131,13 @@ const handleCheckoutSessionCompleted = async (
         .where(eq(userTable.id, userId));
 
     console.log(
-        `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: ${packSlug}, paid: ${units}, session: ${session.id})`,
+        `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (paid: $${amountPaid}, session: ${session.id})`,
     );
 
     return {
         success: true,
         message: `Credited ${creditsToAdd} pollen to user ${userId}`,
+        pollenCredited: creditsToAdd,
     };
 };
 
@@ -201,15 +206,13 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     );
 
                     if (result.success && session.metadata) {
-                        const pollenPaid = Number.parseInt(
-                            session.metadata.units || "0",
-                            10,
-                        );
-                        // Mark as completed with full metadata (extends TTL to 7 days)
+                        // Mark as completed with metadata (extends TTL to 7 days)
                         await markSessionProcessed(c.env.KV, session.id, {
                             userId: session.metadata.userId || "",
-                            units: pollenPaid,
-                            packSlug: session.metadata.packSlug || "unknown",
+                            amountPaid: Math.round(
+                                (session.amount_subtotal || 0) / 100,
+                            ),
+                            pollenCredited: result.pollenCredited || 0,
                         });
 
                         // Send to TinyBird in background using waitUntil
@@ -276,15 +279,13 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 );
 
                 if (result.success && session.metadata) {
-                    const pollenPaid = Number.parseInt(
-                        session.metadata.units || "0",
-                        10,
-                    );
-                    // Mark as completed with full metadata (extends TTL to 7 days)
+                    // Mark as completed with metadata (extends TTL to 7 days)
                     await markSessionProcessed(c.env.KV, session.id, {
                         userId: session.metadata.userId || "",
-                        units: pollenPaid,
-                        packSlug: session.metadata.packSlug || "unknown",
+                        amountPaid: Math.round(
+                            (session.amount_subtotal || 0) / 100,
+                        ),
+                        pollenCredited: result.pollenCredited || 0,
                     });
 
                     // Send to TinyBird in background using waitUntil

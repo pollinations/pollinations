@@ -8,8 +8,8 @@ from pydantic import BaseModel, Field, field_validator, ValidationInfo
 app = modal.App("longcat_i2i_t2i")
 vol = modal.Volume.from_name("longcat_t2i_volume")
 
-MAX_GEN_PIXELS = 1024 * 1024
-MAX_FINAL_PIXELS = 1024 * 1024
+MAX_GEN_PIXELS = 2048 * 2048
+MAX_FINAL_PIXELS = 2048 * 2048
 
 
 class ImageRequest(BaseModel):
@@ -28,7 +28,7 @@ class ImageRequest(BaseModel):
             if total_pixels > MAX_FINAL_PIXELS:
                 raise ValueError(
                     f"Requested {width}x{height} = {total_pixels:,} pixels exceeds limit "
-                    f"of {MAX_FINAL_PIXELS:,} pixels (max 1024x1024 area)."
+                    f"of {MAX_FINAL_PIXELS:,} pixels (max 2048x2048 area)."
                 )
         return height
 
@@ -158,7 +158,7 @@ class LongCatInference:
             return f.name
 
     @modal.method()
-    def generate_t2i(self, prompt: str, width: int = 1024, height: int = 1024, seed: int | None = None) -> bytes:
+    def generate_t2i(self, prompt: str, width: int = 2048, height: int = 2048, seed: int | None = None) -> bytes:
         import torch, io
 
         final_w, final_h = calculate_generation_dimensions(width, height)
@@ -173,14 +173,14 @@ class LongCatInference:
                 height=final_h,
                 width=final_w,
                 guidance_scale=4.0,
-                num_inference_steps=50,
+                num_inference_steps=40,
                 generator=gen,
-                enable_cfg_renorm=True,
-                enable_prompt_rewrite=True,
+                enable_cfg_renorm=False,
+                enable_prompt_rewrite=False,
             ).images[0]
 
         buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=95)
+        img.save(buf, format="JPEG", quality=100)
         return buf.getvalue()
 
     @modal.method()
@@ -202,7 +202,7 @@ class LongCatInference:
         try:
             img_input = Image.open(image_path).convert("RGB")
             
-            # Resize image to fit within 1024x1024 while maintaining aspect ratio
+            # Resize image to fit within 2048x2048 while maintaining aspect ratio
             img_input = resize_image_to_fit(img_input, MAX_GEN_PIXELS)
             
             # Get output dimensions (same as input after resize)
@@ -252,8 +252,8 @@ def web():
     async def generate(
         prompt: str,
         image: str | None = None,
-        width: int = 1024,
-        height: int = 576,
+        width: int = 2048,
+        height: int = 2048,
         seed: int | None = None,
     ):
         try:
@@ -278,8 +278,8 @@ def web():
 @app.local_entrypoint()
 def main(
     prompt: str = "a cute bear",
-    width: int = 1024,
-    height: int = 576,
+    width: int = 2048,
+    height: int = 2048,
     image: str | None = None,
 ):
     if image:

@@ -39,8 +39,8 @@ def generate_image(
         raise
 
 if __name__ == "__main__":
-    prompt = "Couple hugging on a beach at sunset, realistic, high detail"
-    generate_image(prompt, width=1024, height=576)
+    prompt = "A young woman with straight chestnut hair tucked behind one ear stands in a narrow art studio, wearing an oversized ivory knit sweater and dark jeans. Late afternoon light enters through a high industrial window, grazing the walls and illuminating suspended dust particles. The camera holds a tight medium shot, emphasizing her calm gaze and relaxed shoulders. Warm highlights contrast with cool concrete shadows, creating a restrained cinematic palette. Shallow depth of field isolates her against blurred canvases and paint-stained surfaces, suggesting quiet creative absorption."
+    generate_image(prompt, width=2048, height=1152)
     
     # # # I2I with image
     # prompt = "Make the cat wear a red hat and a blue scarf, in the style of a children's book illustration."

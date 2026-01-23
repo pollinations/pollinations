@@ -26,19 +26,6 @@ export const verifyWebhookSignature = async (
 };
 
 /**
- * Check if a Stripe session has already been processed (idempotency)
- * Uses KV storage to track processed session IDs
- */
-export const isSessionProcessed = async (
-    kv: KVNamespace,
-    sessionId: string,
-): Promise<boolean> => {
-    const key = `stripe:session:${sessionId}`;
-    const existing = await kv.get(key);
-    return existing !== null;
-};
-
-/**
  * Atomically try to mark a session as processing to prevent race conditions.
  * Returns true if we acquired the lock (should process), false if already processing/processed.
  * Uses a short TTL for the "processing" state that gets extended on success.

@@ -70,9 +70,7 @@ export const stripeRoutes = new Hono<Env>()
 
         // Determine success URL based on environment
         const successUrl =
-            c.env.STRIPE_SUCCESS_URL ||
-            c.env.POLAR_SUCCESS_URL ||
-            "https://enter.pollinations.ai";
+            c.env.STRIPE_SUCCESS_URL || "https://enter.pollinations.ai";
         const cancelUrl = successUrl;
 
         try {

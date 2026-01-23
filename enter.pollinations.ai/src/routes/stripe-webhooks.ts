@@ -122,7 +122,7 @@ const handleCheckoutSessionCompleted = async (
         return { success: false, message: "User not found" };
     }
 
-    // Credit pollen to packBalance (cumulative, like Polar)
+    // Credit pollen to packBalance (cumulative)
     await db
         .update(userTable)
         .set({

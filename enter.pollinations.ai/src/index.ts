@@ -14,6 +14,8 @@ import { modelStatsRoutes } from "./routes/model-stats.ts";
 import { nowpaymentsRoutes } from "./routes/nowpayments.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
+import { stripeRoutes } from "./routes/stripe.ts";
+import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
 import { webhooksRoutes } from "./routes/webhooks.ts";
 import { webhooksCryptoRoutes } from "./routes/webhooks-crypto.ts";
@@ -25,12 +27,14 @@ const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
 export const api = new Hono<Env>()
     .route("/auth", authRoutes)
     .route("/polar", polarRoutes)
+    .route("/stripe", stripeRoutes)
     .route("/nowpayments", nowpaymentsRoutes)
     .route("/tiers", tiersRoutes)
     .route("/api-keys", apiKeysRoutes)
     .route("/account", accountRoutes)
     .route("/webhooks", webhooksRoutes)
     .route("/webhooks", webhooksCryptoRoutes)
+    .route("/webhooks", stripeWebhooksRoutes)
     .route("/admin", adminRoutes)
     .route("/model-stats", modelStatsRoutes)
     .route("/generate", proxyRoutes);

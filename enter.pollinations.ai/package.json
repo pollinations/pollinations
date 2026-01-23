@@ -54,6 +54,7 @@
         "react-dom": "^19.2.0",
         "react-markdown": "^10.1.0",
         "remark-gfm": "^4.0.1",
+        "stripe": "^20.2.0",
         "tailwind-merge": "^3.4.0",
         "tailwindcss": "^4.1.12",
         "unique-names-generator": "^4.7.1",

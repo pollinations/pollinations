@@ -19,6 +19,7 @@
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.25.0",
+    "front-matter": "^4.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",

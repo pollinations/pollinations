@@ -14,8 +14,9 @@ import {
 } from "@mui/material";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import mentors from "../info/mentors.json";
-import projects from "../info/projects.json";
+import { parseProjects } from "../utils/parseProjects";
 import { colors, getCategoryColor, gradients } from "../theme";
 
 const cardVariants = {
@@ -31,19 +32,16 @@ const cardVariants = {
 };
 
 const ProjectsPage = () => {
+    const [projects, setProjects] = useState([]);
     const [copyEmailToast, setCopyEmailToast] = useState(false);
     const [submitApplicationToast, setSubmitApplicationToast] = useState(false);
 
     useEffect(() => {
         document.title = "Projects | GSoC × pollinations.ai";
+        parseProjects().then(setProjects);
     }, []);
 
-    const truncateDescription = (text, maxSentences = 3) => {
-        const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-        return sentences.slice(0, maxSentences).join(" ");
-    };
-
-    // getCategoryColor and getDifficultyColor imported from theme.js
+    // getCategoryColor imported from theme.js
 
     return (
         <Box
@@ -332,7 +330,7 @@ const ProjectsPage = () => {
                 <Stack spacing={3}>
                     {projects?.map((project) => {
                         const mentor = mentors.find(
-                            (m) => m.id === project.mentorID,
+                            (m) => m.id === project.mentor,
                         );
                         const categoryColor = getCategoryColor(
                             project.category,
@@ -507,18 +505,20 @@ const ProjectsPage = () => {
                                                 </Stack>
 
                                                 {/* Description */}
-                                                <Typography
-                                                    variant="body2"
+                                                <Box
                                                     sx={{
                                                         color: "rgba(255,255,255,0.8)",
                                                         lineHeight: 1.7,
                                                         mb: 1.5,
+                                                        "& p": { margin: 0 },
                                                     }}
                                                 >
-                                                    {truncateDescription(
-                                                        project.longDescription,
-                                                    )}
-                                                </Typography>
+                                                    <ReactMarkdown>
+                                                        {
+                                                            project.longDescription
+                                                        }
+                                                    </ReactMarkdown>
+                                                </Box>
 
                                                 {/* Technologies */}
                                                 <Stack
@@ -593,36 +593,6 @@ const ProjectsPage = () => {
                                                         }}
                                                     >
                                                         Apply to this project
-                                                    </Button>
-                                                    <Button
-                                                        variant="outlined"
-                                                        size="small"
-                                                        endIcon={
-                                                            <OpenInNew
-                                                                sx={{
-                                                                    fontSize:
-                                                                        "14px",
-                                                                }}
-                                                            />
-                                                        }
-                                                        href="https://github.com/pollinations/pollinations/blob/main/apps/gsoc/public/GSOC/IDEAS.md"
-                                                        target="_blank"
-                                                        sx={{
-                                                            borderColor:
-                                                                "rgba(255,255,255,0.2)",
-                                                            color: "rgba(255,255,255,0.7)",
-                                                            textTransform:
-                                                                "none",
-                                                            "&:hover": {
-                                                                borderColor:
-                                                                    "rgba(255,255,255,0.4)",
-                                                                color: "#fff",
-                                                                bgcolor:
-                                                                    "rgba(255,255,255,0.05)",
-                                                            },
-                                                        }}
-                                                    >
-                                                        Learn More
                                                     </Button>
                                                 </Stack>
                                             </Box>

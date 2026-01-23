@@ -219,6 +219,26 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
+    "wan": {
+        aliases: ["wan2.6", "wan-i2v"],
+        modelId: "wan",
+        provider: "alibaba",
+        cost: [
+            // Wan 2.6 I2V Flash (Singapore/International region)
+            // Video base: 720P $0.025/sec (without audio)
+            // Audio add-on: $0.025/sec (when audio=true)
+            // Total with audio: $0.05/sec
+            {
+                date: new Date("2026-01-20").getTime(), // Launch date
+                completionVideoSeconds: 0.025, // $0.025 per second (video only)
+                completionAudioSeconds: 0.025, // $0.025 per second of audio
+            },
+        ],
+        description:
+            "Wan 2.6 - Alibaba image-to-video with audio (2-15s, up to 1080P)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+    },
     "klein": {
         aliases: ["flux-klein"],
         modelId: "klein",
@@ -227,12 +247,28 @@ export const IMAGE_SERVICES = {
             // Flux Klein on Modal L40S GPU
             // L40S: $0.000542/sec × 15s avg (including cold starts) = $0.008/image
             {
-                date: new Date("2026-01-17").getTime(), // Launch date
+                date: new Date("2026-01-21").getTime(), // Launch date
                 completionImageTokens: 0.008, // ~$0.008 per image (L40S @ 15s avg)
             },
         ],
         description:
             "FLUX.2 Klein 4B - Fast image generation & editing on Modal",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
+    "klein-large": {
+        aliases: ["flux-klein-9b", "klein-9b"],
+        modelId: "klein-large",
+        provider: "modal",
+        cost: [
+            // Flux Klein 9B on Modal L40S GPU (~$0.012/image with cold starts)
+            {
+                date: new Date("2026-01-21").getTime(),
+                completionImageTokens: 0.012,
+            },
+        ],
+        description:
+            "FLUX.2 Klein 9B - Higher quality image generation & editing on Modal",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },

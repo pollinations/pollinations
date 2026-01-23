@@ -1,0 +1,57 @@
+{
+  "date": "2026-01-20",
+  "generated_at": "2026-01-20T16:14:14.799169+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art_carousel",
+  "linked_images": false,
+  "strategy_reasoning": "Since these updates are mostly 'chores' and 'fixes' (billing codes, legal docs, migrations), the 'Cozy Garden Maintenance' metaphor works perfectly. It translates dry technical debt into a wholesome narrative of tidying up our digital space, fitting the 'Unpacking' or 'Stardew Valley' aesthetic. It makes maintenance feel satisfying rather than boring.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20scene%20of%20a%20cute%208-bit%20bee%20character%20holding%20a%20pixelated%20wrench%20and%20a%20flower%20in%20a%20sunny%20digital%20garden.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20pastel%20blue%20gradient%20background.%20Chunky%20pixels%2C%20warm%20lighting%2C%20lo-fi%20aesthetic.%20Text%20in%20pixel%20font%3A%20%27GARDEN%20UPDATE%27.%20Like%20Stardew%20Valley%20meets%20coding.%20Emotionally%20warm%2C%20nostalgic%20but%20beautiful.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=475969113",
+      "prompt": "Cozy pixel art scene of a cute 8-bit bee character holding a pixelated wrench and a flower in a sunny digital garden. Soft lime green (#ecf874) and pastel blue gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Text in pixel font: 'GARDEN UPDATE'. Like Stardew Valley meets coding. Emotionally warm, nostalgic but beautiful.",
+      "description": "Cover image introducing the 'maintenance' theme with our mascot."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%208-bit%20pixel%20art%20inventory%20screen%20UI%20showing%20sorted%20items.%20One%20slot%20has%20a%20gold%20coin%20icon%20labeled%20%27402%27%2C%20another%20has%20a%20silver%20key%20icon%20labeled%20%27403%27.%20Soft%20pastel%20background.%20Clean%20pixel%20UI%2C%20cozy%20vibes%20like%20Unpacking%20game.%20Warm%2C%20inviting.%20Text%20in%20pixel%20font%3A%20%27SORTED%20%26%20FIXED%27.%20Lime%20green%20accents.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=700587006",
+      "prompt": "Retro 8-bit pixel art inventory screen UI showing sorted items. One slot has a gold coin icon labeled '402', another has a silver key icon labeled '403'. Soft pastel background. Clean pixel UI, cozy vibes like Unpacking game. Warm, inviting. Text in pixel font: 'SORTED & FIXED'. Lime green accents.",
+      "description": "Visualizing the 402/403 error code consolidation as organizing an RPG inventory."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20library%20scene%20with%20soft%20window%20light.%20A%20tiny%208-bit%20character%20is%20straightening%20books%20on%20a%20shelf%20%28Legal%20Docs%29%20and%20gently%20removing%20a%20clutter%20item.%20Soft%20pastel%20colors%2C%20lime%20green%20%28%23ecf874%29%20highlights.%20Peaceful%20atmosphere%2C%20clean%20lines.%20Text%20in%20pixel%20font%3A%20%27POLISHED%27.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1774364572",
+      "prompt": "Pixel art library scene with soft window light. A tiny 8-bit character is straightening books on a shelf (Legal Docs) and gently removing a clutter item. Soft pastel colors, lime green (#ecf874) highlights. Peaceful atmosphere, clean lines. Text in pixel font: 'POLISHED'.",
+      "description": "Representing the legal page styling and removal of donation links as tidying up a room."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20workshop%20scene.%20A%20tiny%20mechanic%20bee%20is%20tuning%20up%20a%20small%20cute%20robot%20labeled%20%27Klein%27%20and%20moving%20a%20shipping%20crate%20labeled%20%27Flux%27.%20Warm%20lamp%20lighting%2C%20soft%20shadows.%20Chunky%20retro%20sprites.%20Nostalgic%20gaming%20vibes.%20Text%20in%20pixel%20font%3A%20%27UNDER%20THE%20HOOD%27.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=2141464423",
+      "prompt": "Cozy pixel art workshop scene. A tiny mechanic bee is tuning up a small cute robot labeled 'Klein' and moving a shipping crate labeled 'Flux'. Warm lamp lighting, soft shadows. Chunky retro sprites. Nostalgic gaming vibes. Text in pixel font: 'UNDER THE HOOD'.",
+      "description": "Illustrating the technical fixes for Klein model tracking and Flux docker migration."
+    }
+  ],
+  "caption": "Spring cleaning came early to the code garden! 🧹✨ We've been busy tidying up the backend to make everything bloom brighter. \n\nHere's what we unpacked:\n🪙 Sorted our inventory: Billing errors are now 402, Permissions are 403. Neat & tidy!\n📜 Polished the scrolls: Legal pages got a glow-up and we simplified our funding links.\n🔧 Under the hood: Fixed tracking for the Klein model & migrated Flux to its new home.\n\nJust keeping things cozy and functional for you all. Keep creating! 🌸🐝\n\n#pollinations #opensource #pixelart #gamedev #indiedev #cozyvibes #buildinpublic #8bit",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#gamedev",
+    "#indiedev",
+    "#cozyvibes",
+    "#buildinpublic",
+    "#8bit"
+  ],
+  "alt_text": "A carousel of cozy 8-bit pixel art images. 1. A pixel bee gardener. 2. A retro game inventory screen sorting coins and keys. 3. A pixel character tidying a library. 4. A mechanic bee fixing a robot. All in soft pastels and lime green.",
+  "pr_references": [
+    "#7499",
+    "#7478",
+    "#7475",
+    "#7474",
+    "#7473",
+    "#7468",
+    "#7469",
+    "#7467",
+    "#7459",
+    "#7462",
+    "#7062",
+    "#7460"
+  ]
+}

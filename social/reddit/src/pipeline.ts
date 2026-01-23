@@ -36,7 +36,7 @@ function getTodayDate() {
     return `${year}-${month}-${day}`;
 }
 
-async function getMergedPRsFromPreviousDay(owner : any = 'pollinations', repo : any = 'pollinations', githubToken : string) {
+async function getMergedPRsFromPreviousDay(owner : string = 'pollinations', repo : string = 'pollinations', githubToken : string) {
     if (!githubToken) {
         throw new Error('GitHub token is required');
     }
@@ -241,9 +241,10 @@ ${highlights.map(h => `• ${h}`).join('\n')}
             prs: prs.map(p => ({ number: p.number, title: p.title, url: p.url })),
             dateString,
         };
+        
     } catch (error) {
-        console.warn(`Prompt generation failed: ${(error as any).message}`);
-        console.log('Falling back to local prompt generation...\n');
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`Prompt generation failed: ${message}`);
 
         const comicPrompt = `Flat vector editorial infographic celebrating ${prs.length} Pollinations updates. Headline: 'POLLINATIONS - WEEKLY UPDATES'. Content includes: ${prs.slice(0, 5).map(p => p.title).join(', ')}. Style: minimal tech infographic. Color palette: cream background, navy text, lime green (#ecf874) accents. No decorative elements.`;
 
@@ -311,7 +312,8 @@ async function generateTitleFromPRs(prs : any[],  pollinationsToken : string, da
 
         return title;
     } catch (error) {
-        console.error('PR title generation failed:', (error as any).message);
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`Prompt generation failed: ${message}`);
         return `You're gonna want to see what Pollinations shipped`;
     }
 }
@@ -343,7 +345,8 @@ async function generateImage(prompt : string, pollinationsToken : string, attemp
         }
     } catch (error) {
         if (attempt < MAX_RETRIES - 1) {
-            console.log(`  ✗ Attempt ${attempt + 1} failed: ${(error as any).message}`);
+            const message = error instanceof Error ? error.message : String(error);
+            console.log(`  ✗ Attempt ${attempt + 1} failed: ${message}`);
             return generateImage(prompt, pollinationsToken, attempt + 1);
         }
         throw error;

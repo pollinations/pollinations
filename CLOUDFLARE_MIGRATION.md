@@ -53,11 +53,20 @@
 - [x] **B9.** Deploy `pollinations-ai` production to NEW account (frontend + PLN_APPS_KEY secret)
 - [x] **B10.** Test workers via `.workers.dev` URLs
 - [x] **B11.** ~~Lower DNS TTLs~~ → Just wait 24-48h for global DNS cache expiry (no action needed)
+- [x] **B12.** Deploy `rubeus` (Portkey gateway) to NEW account
+- [x] **B13.** Update EC2 text.pollinations.ai `.env` with new rubeus URL
 
 **Production workers.dev URLs (NEW account):**
 - Enter: https://pollinations-enter-production.elliot-b6e.workers.dev
 - Gen: https://pollinations-gen-production.elliot-b6e.workers.dev
 - Frontend: https://pollinations-ai.elliot-b6e.workers.dev
+- Rubeus (Portkey): https://rubeus.elliot-b6e.workers.dev
+
+**EC2 Update Required (B13):**
+Update `text.pollinations.ai/.env` on EC2:
+```
+PORTKEY_GATEWAY_URL=https://rubeus.elliot-b6e.workers.dev
+```
 
 **GitHub OAuth App (for workers.dev testing):**
 Add callback URL to GitHub OAuth App settings:

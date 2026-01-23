@@ -22,7 +22,7 @@ GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 MODEL = "openai-large"  # GPT-4o for professional tone
-IMAGE_MODEL = "nanobanana"  # Same as Instagram
+IMAGE_MODEL = "nanobanana-pro"  # Pro version for better text rendering
 MAX_SEED = 2147483647
 MAX_RETRIES = 3
 INITIAL_RETRY_DELAY = 2
@@ -332,26 +332,42 @@ DON'T:
 - Use too many emojis (1-2 max, professional ones)
 - Write walls of text
 
-=== IMAGE STYLE (CRITICAL - for nanobanana model) ===
-LinkedIn images should be:
-- INFORMATIVE: Include text overlays with key stats/metrics
-- PROFESSIONAL but FRIENDLY: Clean design, not corporate boring
-- HAPPY/POSITIVE vibes: Celebrating wins, growth, community
-- MEME-INSPIRED but TASTEFUL: Can reference tech memes subtly
-- Colors: Lime green (#ecf874) as accent, soft pastels, clean whites
+=== IMAGE GENERATION (CRITICAL - Gemini/nanobanana-pro prompting 2026) ===
 
-Image ideas:
-- Infographic style with key numbers (e.g., "49 PRs shipped this week")
-- Happy illustrated characters celebrating milestones
-- Clean dashboard/metrics visualization
-- Growth charts with friendly illustrations
-- Developer community celebration scenes
+LinkedIn 2026 visual style - SAME AS INSTAGRAM but MORE TEXT:
+- PIXEL ART / ILLUSTRATION style (NOT realistic photos!)
+- TEXT-HEAVY: Stats, headlines, bullet points visible IN the image
+- SELF-EXPLANATORY: Viewer should understand the message WITHOUT reading caption
+- INFOGRAPHIC ENERGY: Clean layouts with clear information hierarchy
+- PLAYFUL PROFESSIONAL: Fun illustrations but informative content
 
-AVOID in images:
-- Dark/dramatic imagery
-- Corporate stock photo vibes
-- Overly complex designs
-- Pure meme formats (save those for Twitter)
+KEY DIFFERENCE FROM INSTAGRAM:
+Instagram = pure vibes, caption tells the story
+LinkedIn = IMAGE tells the story with text/stats, caption adds context
+
+What to include in LinkedIn images:
+- Big headline text (e.g., "51 PRs Shipped This Week")
+- Key stats/metrics as visual elements
+- Bullet points or numbered lists
+- Icons representing features
+- The Pollinations bee mascot
+- Lime green (#ecf874) brand color prominently
+
+Prompt structure for Gemini (NARRATIVE, not keywords):
+Write prompts as flowing scene descriptions with emphasis on readable text elements.
+
+Template:
+"[Illustration style] infographic showing [topic]. Large headline text reads '[HEADLINE]'.
+[Layout of text elements and stats]. Cute pixel bee mascot [doing action].
+Style: [artistic reference]. Color palette: lime green (#ecf874) dominant.
+Composition: [layout for readability]. Text must be: [legibility requirements].
+Avoid: [what NOT to include]."
+
+Color palette for Pollinations brand:
+- PRIMARY: Lime green (#ecf874) - use BOLDLY
+- SECONDARY: Soft pastels, cream whites, muted navy for text
+- ACCENT: Warm coral, soft purple
+- STYLE: Cozy pixel art meets clean infographic
 
 === POST TYPES (pick the best fit) ===
 1. MILESTONE: Celebrating achievements (X apps built, Y users, new feature)
@@ -366,15 +382,18 @@ AVOID in images:
     "body": "Main content - insights, learnings, details. Use line breaks.",
     "cta": "Call to action or closing thought",
     "hashtags": ["#OpenSource", "#AI", "#DevTools", "#BuildInPublic", "#TechStartup"],
-    "image_prompt": "Detailed prompt for LinkedIn image. Professional infographic style with text overlays. Include specific text to show in image. Lime green (#ecf874) accents, clean modern design, friendly and informative.",
-    "image_text": "Key text/stats to display in the image",
+    "image_prompt": "NARRATIVE description of pixel art infographic. Must include: headline text to display, key stats/bullets, bee mascot, lime green (#ecf874). Image should be SELF-EXPLANATORY without caption.",
+    "image_text": "The exact headline and key stats to show in the image",
     "reasoning": "Why this angle works for LinkedIn audience"
 }}
 
-=== EXAMPLE IMAGE PROMPTS ===
-- "Professional infographic showing '49 PRs Merged This Week' with happy cartoon developers celebrating. Clean white background, lime green (#ecf874) accent colors, modern sans-serif typography. Growth chart trending up. Friendly tech illustration style."
-- "Clean dashboard visualization showing developer metrics. Text overlay: '500+ Apps Built'. Soft gradients, lime green highlights, minimalist design. Happy bee mascot in corner. Professional but warm."
-- "Illustrated celebration scene of diverse developers high-fiving. Banner text: 'Open Source Wins'. Confetti, lime green (#ecf874) color scheme, modern flat illustration style. Informative and joyful."
+=== EXAMPLE IMAGE PROMPTS (pixel art infographic style) ===
+
+1. "A clean pixel art infographic with large bold headline '51 PRs SHIPPED THIS WEEK' at the top in chunky retro font. Below, four icon cards in a 2x2 grid showing: payment icon with 'Stripe USD', dashboard icon with 'Economics Live', star icon with 'Auto Star Updates', plug icon with 'Vercel SDK'. A happy pixel bee mascot celebrates in the corner with confetti. Style: cozy 8-bit pixel art meets modern infographic, like Stardew Valley UI. Color palette: lime green (#ecf874) background sections, soft cream, muted navy text, pixel-perfect typography. Composition: centered layout, generous spacing, all text large and readable. Text must be: crisp, high contrast, no blur or distortion. Avoid: realistic photos, tiny text, cluttered layout, corporate stock vibes."
+
+2. "A pixel art weekly recap card design with headline 'POLLINATIONS WEEKLY' in bold pixel font at top. Main stat '500+ Apps Built' displayed huge in center with lime green (#ecf874) glow effect. Below: three bullet points with pixel icons - 'New payment flow', 'Dashboard deployed', 'SDK provider added'. Cute pixel bee mascot giving thumbs up in bottom corner. Small 'Open Source AI' badge. Style: retro game UI meets tech newsletter, chunky readable pixels. Color palette: cream background, lime green (#ecf874) accents, navy text, coral highlights. Composition: vertical card layout, clear hierarchy, scannable in 2 seconds. Text must be: perfectly legible, bold weights, pixel-aligned. Avoid: photos, gradients, tiny fonts, visual clutter."
+
+3. "A pixel art 'achievement unlocked' style infographic. Banner at top reads 'THIS WEEK IN OPEN SOURCE'. Center shows a pixel art dashboard mockup with visible stats: '51 PRs', '4 Features', '1 Dashboard'. Happy pixel bee dev character pointing at the dashboard. Bottom text: 'Pollinations.ai - Free AI Generation'. Style: retro RPG achievement screen meets startup metrics. Color palette: lime green (#ecf874) dominant with soft purple accents, cream background, dark text for contrast. Composition: game UI layout, centered focal point, readable at thumbnail size. Text must be: chunky pixel font, high contrast, no anti-aliasing blur. Avoid: realistic rendering, stock imagery, illegible small text."
 """
 
     if prs:

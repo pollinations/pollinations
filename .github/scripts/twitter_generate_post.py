@@ -21,7 +21,7 @@ GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 MODEL = "openai-large"
-IMAGE_MODEL = "nanobanana"  # Same as Instagram
+IMAGE_MODEL = "nanobanana-pro"  # Pro version for better text/meme rendering
 MAX_SEED = 2147483647
 MAX_RETRIES = 3
 INITIAL_RETRY_DELAY = 2
@@ -335,27 +335,37 @@ DON'T:
 - Use more than 1-2 hashtags (Twitter users hate hashtag spam)
 - Exceed 280 characters (CRITICAL)
 
-=== IMAGE STYLE (CRITICAL - for nanobanana model) ===
-Twitter images should be MEME-FRIENDLY:
-- PIXEL ART style like Instagram (cozy, retro, 8-bit vibes)
-- MEME FORMATS: reaction images, "this is fine" energy, wojaks-inspired
-- FUNNY/CHAOTIC: Can be slightly unhinged, absurdist humor
-- RELATABLE: Dev life, coding struggles, AI shenanigans
-- Colors: Lime green (#ecf874) accent, soft pastels, pixel aesthetic
+=== IMAGE GENERATION (CRITICAL - Gemini/nanobanana prompting 2026) ===
 
-Image ideas:
-- Pixel art bee character celebrating/coding/being chaotic
-- Meme-style reaction to shipping features
-- "POV" style pixel scenes
-- Retro game achievement unlocked moments
-- Cozy pixel dev workspace with chaos elements
-- Pixel art version of popular meme formats
+Twitter/X 2026 visual trends:
+- MOTION-FIRST AESTHETIC: Dynamic, energetic, feels like it could be animated
+- BOLD HIGH CONTRAST: Colors that pop and stop the scroll
+- MEME-NATIVE: References internet culture, reaction formats, viral aesthetics
+- RAW AUTHENTICITY: Unpolished > corporate, feels user-generated
+- PIXEL ART + RETRO: Nostalgic gaming vibes are HUGE in 2026
 
-AVOID in images:
-- Corporate/professional vibes (save for LinkedIn)
-- Overly polished graphics
-- Stock photo energy
-- Anything that looks like an ad
+Prompt structure for Gemini (NARRATIVE scene-painting):
+Write prompts as vivid scene descriptions, not keyword lists.
+Describe the emotion, action, humor, and visual impact.
+
+Template:
+"[Dynamic scene description with action/emotion]. [Visual style and aesthetic].
+[Character details - expression, pose, energy]. [Color palette with lime green #ecf874].
+[Composition for maximum scroll-stopping impact]. Avoid: [what kills the vibe]."
+
+Meme format references that work:
+- Split panel before/after or expectation/reality
+- Achievement unlocked retro gaming screens
+- "POV:" first-person scenes
+- Reaction characters (expressive pixel bee)
+- "This is fine" energy but make it dev life
+- Wholesome chaos
+
+Color palette for Twitter:
+- PRIMARY: Lime green (#ecf874) - BOLD usage, not subtle
+- HIGH CONTRAST: Deep purples, hot pinks, electric blues against pastels
+- PIXEL PALETTE: Classic 8-bit color limitations but modern
+- ENERGY: Vibrant, attention-grabbing, dopamine-inducing
 
 === TWEET TYPES ===
 1. SHIPPED: We built something, here it is
@@ -370,16 +380,20 @@ AVOID in images:
     "tweet": "The actual tweet text (MUST be under 280 chars)",
     "alt_tweet": "Alternative version if first one doesn't hit",
     "hashtags": ["#OpenSource", "#AI"],
-    "image_prompt": "Pixel art meme style image. Describe the scene, characters, humor. Include 'cozy pixel art, 8-bit aesthetic, lime green (#ecf874)' in prompt. Make it funny/relatable.",
+    "image_prompt": "NARRATIVE scene description for Gemini. Paint a vivid, dynamic scene with emotion and humor. Include cozy pixel art style, 8-bit aesthetic, lime green (#ecf874). Describe the meme format, character expressions, and scroll-stopping composition. State what to avoid.",
     "reasoning": "Why this tweet should work",
     "char_count": 123
 }}
 
-=== EXAMPLE IMAGE PROMPTS ===
-- "Cozy pixel art scene of a tiny bee character at a computer with coffee, code on screen showing 'git push'. Speech bubble: 'we ship'. Lime green (#ecf874) glow, retro 8-bit style, meme energy. Stardew Valley vibes but chaotic."
-- "Pixel art 'this is fine' meme but it's a happy bee surrounded by pull requests. Everything is lime green (#ecf874) fire. 8-bit aesthetic, cozy but chaotic, funny dev humor."
-- "Retro pixel art achievement unlocked screen: 'NEW FEATURE DROPPED'. Happy pixel bee celebrating with confetti. Lime green (#ecf874) and soft pastels. Gaming nostalgia meets dev life."
-- "POV pixel art: you just mass-merged PRs at 2am. Pixel bee character with tired eyes but thumbs up. Soft lime green glow, cozy 8-bit aesthetic, relatable dev energy."
+=== EXAMPLE IMAGE PROMPTS (Gemini narrative style for memes) ===
+
+1. "A dynamic pixel art split-panel meme showing developer emotional journey. Left panel: exhausted pixel bee character at 2am, red tired eyes, surrounded by floating error messages and a sad coffee cup, dark blue moody lighting. Right panel: the same bee now triumphant, arms raised in victory, code screen showing green checkmarks, lime green (#ecf874) confetti explosion, warm golden glow. Style: cozy 8-bit pixel art like Stardew Valley but with meme energy. Composition: clean split down middle, high contrast between panels, expressive character faces. Avoid: corporate polish, realistic style, cluttered details."
+
+2. "An energetic pixel art achievement unlocked screen bursting with retro gaming nostalgia. Large text banner reads 'NEW FEATURE DROPPED' in chunky pixel font. A tiny excited bee character does a victory dance below, pixel confetti and sparkles everywhere. Style: classic 8-bit RPG achievement screen meets modern meme. Color palette: lime green (#ecf874) dominates with electric purple accents and soft pink sparkles. Composition: centered text, character below, explosive energy radiating outward. Avoid: minimalism, corporate colors, boring static composition."
+
+3. "A chaotic but wholesome pixel art scene of a bee developer's desk at shipping time. Multiple browser tabs visible, one showing 'MERGED', coffee cups multiplying in the background, a tiny plant thriving despite the chaos. The bee character has determined but slightly unhinged happy expression. Style: cozy pixel art with internet chaos energy, like if Unpacking game had meme humor. Color palette: warm wood tones, screen glow in lime green (#ecf874), soft ambient purple. Composition: slight dutch angle for dynamic feel, cluttered but readable. Avoid: clean corporate aesthetic, stock photo vibes, boring straight-on angle."
+
+4. "A POV-style pixel art scene showing what the developer sees: hands on keyboard (pixel style), code editor filling the screen with a successful git push message. Tiny celebratory elements float around - pixel hearts, stars, a small bee giving thumbs up in corner. Style: first-person cozy gaming aesthetic, intimate and relatable. Color palette: dark code editor background, lime green (#ecf874) success messages, warm ambient lighting from monitor glow. Composition: immersive POV angle, screen dominant, small joyful details reward close viewing. Avoid: third-person view, corporate presentation style, cluttered UI."
 
 CRITICAL: Tweet MUST be under 280 characters. Count carefully.
 """

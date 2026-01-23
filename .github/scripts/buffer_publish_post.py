@@ -101,10 +101,18 @@ def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
     print(f"Post preview ({len(text)} chars):")
     print(f"---\n{text[:500]}{'...' if len(text) > 500 else ''}\n---")
 
+    # Get image URL if available
+    media = None
+    image_data = post_data.get("image")
+    if image_data and image_data.get("url"):
+        media = {"photo": image_data["url"]}
+        print(f"Including image: {image_data['url'][:100]}...")
+
     result = create_buffer_update(
         access_token=access_token,
         profile_id=profile["id"],
         text=text,
+        media=media,
         now=True
     )
 
@@ -118,7 +126,10 @@ def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
 
 def publish_twitter_post(post_data: dict, access_token: str) -> bool:
     """Publish a Twitter/X post via Buffer"""
+    # Try both "twitter" and "x" service names (Buffer may use either)
     profile = get_buffer_profile(access_token, "twitter")
+    if not profile:
+        profile = get_buffer_profile(access_token, "x")
     if not profile:
         return False
 
@@ -134,10 +145,18 @@ def publish_twitter_post(post_data: dict, access_token: str) -> bool:
     print(f"Tweet ({len(text)} chars):")
     print(f"---\n{text}\n---")
 
+    # Get image URL if available
+    media = None
+    image_data = post_data.get("image")
+    if image_data and image_data.get("url"):
+        media = {"photo": image_data["url"]}
+        print(f"Including image: {image_data['url'][:100]}...")
+
     result = create_buffer_update(
         access_token=access_token,
         profile_id=profile["id"],
         text=text,
+        media=media,
         now=True
     )
 
@@ -178,6 +197,12 @@ def main():
     post_file_path = get_env("POST_FILE_PATH")
     pr_number_str = get_env("PR_NUMBER", required=False)
     pr_number = int(pr_number_str) if pr_number_str else None
+
+    # These are guaranteed non-None by get_env with required=True
+    assert buffer_token is not None
+    assert github_token is not None
+    assert repo is not None
+    assert post_file_path is not None
 
     # Read the post file
     print(f"\n=== Reading post file: {post_file_path} ===")

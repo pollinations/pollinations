@@ -35,6 +35,6 @@ def generate_image(
         raise
 
 if __name__ == "__main__":
-    prompt = "A young woman with straight chestnut hair tucked behind one ear stands in a narrow art studio, wearing an oversized ivory knit sweater and dark jeans. Late afternoon light enters through a high industrial window, grazing the walls and illuminating suspended dust particles. The camera holds a tight medium shot, emphasizing her calm gaze and relaxed shoulders. Warm highlights contrast with cool concrete shadows, creating a restrained cinematic palette. Shallow depth of field isolates her against blurred canvases and paint-stained surfaces, suggesting quiet creative absorption."
+    prompt = "A young Asian woman, wearing a yellow cardigan and a white necklace, rests her hands on her knees, her expression serene. The background is a rough brick wall, bathed in the warm afternoon sun, creating a tranquil and inviting atmosphere. The mid-distance shot emphasizes her expression and the details of her clothing. Soft light falls on her face, highlighting her features and the texture of her accessories, adding depth and approachability to the image. The overall composition is simple; the texture of the brick wall and the interplay of sunlight complement each other, highlighting the woman's elegance and composure."
     generate_image(prompt, width=2048, height=1152)
     

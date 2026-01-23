@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Twitter/X Post Generator - Creates engaging tweets from PR updates
+Twitter/X Post Generator - Creates engaging tweets with images from PR updates
 Designed for community engagement with meme-friendly, punchy content
 """
 
@@ -13,18 +13,25 @@ import base64
 import requests
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta, timezone
+from urllib.parse import quote
 
 # Constants
 GITHUB_API_BASE = "https://api.github.com"
 GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
+POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 MODEL = "openai-large"
+IMAGE_MODEL = "nanobanana"  # Same as Instagram
 MAX_SEED = 2147483647
 MAX_RETRIES = 3
 INITIAL_RETRY_DELAY = 2
 
 # Twitter limits
 TWITTER_CHAR_LIMIT = 280
+
+# Twitter image settings (1200x675 is optimal 16:9 for Twitter)
+IMAGE_WIDTH = 1200
+IMAGE_HEIGHT = 675
 
 
 def get_env(key: str, required: bool = True) -> Optional[str]:
@@ -200,8 +207,86 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, temp
     return None
 
 
+def generate_image(prompt: str, token: str, index: int = 0) -> tuple[Optional[bytes], Optional[str]]:
+    """Generate a single image using Pollinations nanobanana"""
+
+    encoded_prompt = quote(prompt)
+    base_url = f"{POLLINATIONS_IMAGE_BASE}/{encoded_prompt}"
+
+    print(f"\n  Generating image {index + 1}: {prompt[:80]}...")
+
+    last_error = None
+
+    for attempt in range(MAX_RETRIES):
+        seed = random.randint(0, MAX_SEED)
+
+        params = {
+            "model": IMAGE_MODEL,
+            "width": IMAGE_WIDTH,
+            "height": IMAGE_HEIGHT,
+            "quality": "hd",
+            "nologo": "true",
+            "private": "true",
+            "nofeed": "true",
+            "seed": seed,
+            "key": token
+        }
+
+        if attempt == 0:
+            print(f"  Using seed: {seed}")
+        else:
+            backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
+            print(f"  Retry {attempt}/{MAX_RETRIES - 1} with new seed: {seed} (waiting {backoff_delay}s)")
+            time.sleep(backoff_delay)
+
+        try:
+            response = requests.get(base_url, params=params, timeout=300)
+
+            if response.status_code == 200:
+                content_type = response.headers.get('content-type', '')
+                if 'image' in content_type:
+                    image_bytes = response.content
+
+                    if len(image_bytes) < 1000:
+                        last_error = f"Image too small ({len(image_bytes)} bytes)"
+                        print(f"  {last_error}")
+                        continue
+
+                    # Check valid image format
+                    is_jpeg = image_bytes[:2] == b'\xff\xd8'
+                    is_png = image_bytes[:8] == b'\x89PNG\r\n\x1a\n'
+                    is_webp = image_bytes[:4] == b'RIFF' and image_bytes[8:12] == b'WEBP'
+
+                    if not (is_jpeg or is_png or is_webp):
+                        last_error = f"Invalid image format"
+                        print(f"  {last_error}")
+                        continue
+
+                    img_format = "JPEG" if is_jpeg else ("PNG" if is_png else "WebP")
+                    print(f"  Image generated successfully ({img_format}, {len(image_bytes):,} bytes)")
+
+                    # Build public URL without key
+                    public_params = {k: v for k, v in params.items() if k != "key"}
+                    public_url = base_url + "?" + "&".join(f"{k}={v}" for k, v in public_params.items())
+
+                    return image_bytes, public_url
+                else:
+                    last_error = f"Unexpected content type: {content_type}"
+                    print(f"  {last_error}")
+            else:
+                last_error = f"HTTP error: {response.status_code}"
+                print(f"  {last_error}")
+
+        except requests.exceptions.RequestException as e:
+            last_error = f"Request error: {e}"
+            print(f"  {last_error}")
+
+    print(f"  Failed to generate image after {MAX_RETRIES} attempts")
+    return None, None
+
+
 def generate_twitter_post(prs: List[Dict], token: str) -> Optional[Dict]:
-    """Generate a punchy Twitter/X post from PR updates"""
+    """Generate a punchy Twitter/X post with meme image from PR updates"""
 
     # Format PRs for context
     pr_summary = ""
@@ -214,7 +299,7 @@ def generate_twitter_post(prs: List[Dict], token: str) -> Optional[Dict]:
         pr_summary = "NO UPDATES TODAY"
 
     system_prompt = f"""You are the extremely online social media person for Pollinations.ai.
-Your job is to write BANGER tweets that get engagement - funny, punchy, meme-aware.
+Your job is to write BANGER tweets with meme images that get engagement.
 
 {pr_summary}
 
@@ -250,6 +335,28 @@ DON'T:
 - Use more than 1-2 hashtags (Twitter users hate hashtag spam)
 - Exceed 280 characters (CRITICAL)
 
+=== IMAGE STYLE (CRITICAL - for nanobanana model) ===
+Twitter images should be MEME-FRIENDLY:
+- PIXEL ART style like Instagram (cozy, retro, 8-bit vibes)
+- MEME FORMATS: reaction images, "this is fine" energy, wojaks-inspired
+- FUNNY/CHAOTIC: Can be slightly unhinged, absurdist humor
+- RELATABLE: Dev life, coding struggles, AI shenanigans
+- Colors: Lime green (#ecf874) accent, soft pastels, pixel aesthetic
+
+Image ideas:
+- Pixel art bee character celebrating/coding/being chaotic
+- Meme-style reaction to shipping features
+- "POV" style pixel scenes
+- Retro game achievement unlocked moments
+- Cozy pixel dev workspace with chaos elements
+- Pixel art version of popular meme formats
+
+AVOID in images:
+- Corporate/professional vibes (save for LinkedIn)
+- Overly polished graphics
+- Stock photo energy
+- Anything that looks like an ad
+
 === TWEET TYPES ===
 1. SHIPPED: We built something, here it is
 2. MEME: Relatable dev/AI humor
@@ -263,32 +370,30 @@ DON'T:
     "tweet": "The actual tweet text (MUST be under 280 chars)",
     "alt_tweet": "Alternative version if first one doesn't hit",
     "hashtags": ["#OpenSource", "#AI"],
+    "image_prompt": "Pixel art meme style image. Describe the scene, characters, humor. Include 'cozy pixel art, 8-bit aesthetic, lime green (#ecf874)' in prompt. Make it funny/relatable.",
     "reasoning": "Why this tweet should work",
     "char_count": 123
 }}
 
-=== EXAMPLE TWEETS (for the vibes) ===
-- "just added video generation. we're so back 🎬"
-- "open source AI tools built different. no login, no bs, just vibes"
-- "pov: you tell your boss the AI is 'learning' but really you're just fixing bugs"
-- "500 apps built on pollinations. y'all are actually insane (affectionate) 🌸"
-- "how it started: 'let's make a simple API' / how it's going: *gestures at everything*"
-- "new model dropped. it generates images AND my will to live"
-- "normalize shipping features at 2am because you got nerd sniped"
+=== EXAMPLE IMAGE PROMPTS ===
+- "Cozy pixel art scene of a tiny bee character at a computer with coffee, code on screen showing 'git push'. Speech bubble: 'we ship'. Lime green (#ecf874) glow, retro 8-bit style, meme energy. Stardew Valley vibes but chaotic."
+- "Pixel art 'this is fine' meme but it's a happy bee surrounded by pull requests. Everything is lime green (#ecf874) fire. 8-bit aesthetic, cozy but chaotic, funny dev humor."
+- "Retro pixel art achievement unlocked screen: 'NEW FEATURE DROPPED'. Happy pixel bee celebrating with confetti. Lime green (#ecf874) and soft pastels. Gaming nostalgia meets dev life."
+- "POV pixel art: you just mass-merged PRs at 2am. Pixel bee character with tired eyes but thumbs up. Soft lime green glow, cozy 8-bit aesthetic, relatable dev energy."
 
 CRITICAL: Tweet MUST be under 280 characters. Count carefully.
 """
 
     if prs:
-        # Pick the most interesting PR titles
         titles = [pr['title'] for pr in prs[:5]]
-        user_prompt = f"""Write a tweet about today's updates.
+        user_prompt = f"""Write a tweet with meme image about today's updates.
 Most interesting stuff: {titles}
 
 Make it punchy, make it fun, make it under 280 chars.
+Include a meme-style pixel art image prompt.
 Output valid JSON only."""
     else:
-        user_prompt = """No code updates today - create engagement content.
+        user_prompt = """No code updates today - create engagement content with meme image.
 
 Options:
 - Relatable dev meme
@@ -296,7 +401,7 @@ Options:
 - Celebrate community/open source
 - Mild chaos posting
 
-Make it good. Under 280 chars.
+Make it good. Under 280 chars. Include meme image prompt.
 Output valid JSON only."""
 
     print("Generating Twitter post...")
@@ -349,7 +454,7 @@ def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branc
     return ""
 
 
-def create_post_pr(post_data: Dict, prs: List[Dict], github_token: str, owner: str, repo: str):
+def create_post_pr(post_data: Dict, image_url: Optional[str], prs: List[Dict], github_token: str, owner: str, repo: str):
     """Create a PR with the Twitter post JSON"""
 
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -407,6 +512,10 @@ def create_post_pr(post_data: Dict, prs: List[Dict], github_token: str, owner: s
         "full_tweet": full_tweet,
         "alt_tweet": post_data.get('alt_tweet', ''),
         "hashtags": hashtags,
+        "image": {
+            "url": image_url,
+            "prompt": post_data.get('image_prompt', '')
+        } if image_url else None,
         "reasoning": post_data.get('reasoning', ''),
         "pr_references": [f"#{pr['number']}" for pr in prs] if prs else [],
         "char_count": len(full_tweet)
@@ -445,6 +554,16 @@ def create_post_pr(post_data: Dict, prs: List[Dict], github_token: str, owner: s
     # Create PR
     pr_title = f"Twitter Post - {today}"
 
+    # Image preview in PR body
+    image_preview = ""
+    if image_url:
+        image_preview = f"""
+### Image
+**Prompt:** {post_data.get('image_prompt', 'N/A')[:200]}...
+
+![Preview]({image_url})
+"""
+
     pr_body = f"""## Twitter/X Post for {today}
 
 **Tweet Type:** {output_data['tweet_type']}
@@ -462,7 +581,7 @@ def create_post_pr(post_data: Dict, prs: List[Dict], github_token: str, owner: s
 
 ### Hashtags
 {' '.join(output_data['hashtags'])}
-
+{image_preview}
 ---
 
 **Reasoning:** {output_data['reasoning']}
@@ -550,9 +669,17 @@ def main():
         print("Failed to generate post. Exiting.")
         sys.exit(1)
 
+    # Generate image
+    print(f"\n=== Generating Image ===")
+    image_url = None
+    if post_data.get('image_prompt'):
+        _, image_url = generate_image(post_data['image_prompt'], pollinations_token)
+        if not image_url:
+            print("Warning: Failed to generate image, continuing without it")
+
     # Create PR
     print(f"\n=== Creating PR ===")
-    create_post_pr(post_data, merged_prs, github_token, owner_name, repo_name)
+    create_post_pr(post_data, image_url, merged_prs, github_token, owner_name, repo_name)
 
     print("\n=== Done! ===")
 

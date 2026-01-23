@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LinkedIn Post Generator - Creates professional LinkedIn posts from PR updates
+LinkedIn Post Generator - Creates professional LinkedIn posts with images from PR updates
 Designed for thought leadership and industry credibility
 """
 
@@ -9,19 +9,27 @@ import sys
 import json
 import time
 import random
+import re
 import base64
 import requests
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta, timezone
+from urllib.parse import quote
 
 # Constants
 GITHUB_API_BASE = "https://api.github.com"
 GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
+POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 MODEL = "openai-large"  # GPT-4o for professional tone
+IMAGE_MODEL = "nanobanana"  # Same as Instagram
 MAX_SEED = 2147483647
 MAX_RETRIES = 3
 INITIAL_RETRY_DELAY = 2
+
+# LinkedIn image settings (1200x627 is optimal for LinkedIn)
+IMAGE_WIDTH = 1200
+IMAGE_HEIGHT = 627
 
 
 def get_env(key: str, required: bool = True) -> Optional[str]:
@@ -197,8 +205,86 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, temp
     return None
 
 
+def generate_image(prompt: str, token: str, index: int = 0) -> tuple[Optional[bytes], Optional[str]]:
+    """Generate a single image using Pollinations nanobanana"""
+
+    encoded_prompt = quote(prompt)
+    base_url = f"{POLLINATIONS_IMAGE_BASE}/{encoded_prompt}"
+
+    print(f"\n  Generating image {index + 1}: {prompt[:80]}...")
+
+    last_error = None
+
+    for attempt in range(MAX_RETRIES):
+        seed = random.randint(0, MAX_SEED)
+
+        params = {
+            "model": IMAGE_MODEL,
+            "width": IMAGE_WIDTH,
+            "height": IMAGE_HEIGHT,
+            "quality": "hd",
+            "nologo": "true",
+            "private": "true",
+            "nofeed": "true",
+            "seed": seed,
+            "key": token
+        }
+
+        if attempt == 0:
+            print(f"  Using seed: {seed}")
+        else:
+            backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
+            print(f"  Retry {attempt}/{MAX_RETRIES - 1} with new seed: {seed} (waiting {backoff_delay}s)")
+            time.sleep(backoff_delay)
+
+        try:
+            response = requests.get(base_url, params=params, timeout=300)
+
+            if response.status_code == 200:
+                content_type = response.headers.get('content-type', '')
+                if 'image' in content_type:
+                    image_bytes = response.content
+
+                    if len(image_bytes) < 1000:
+                        last_error = f"Image too small ({len(image_bytes)} bytes)"
+                        print(f"  {last_error}")
+                        continue
+
+                    # Check valid image format
+                    is_jpeg = image_bytes[:2] == b'\xff\xd8'
+                    is_png = image_bytes[:8] == b'\x89PNG\r\n\x1a\n'
+                    is_webp = image_bytes[:4] == b'RIFF' and image_bytes[8:12] == b'WEBP'
+
+                    if not (is_jpeg or is_png or is_webp):
+                        last_error = f"Invalid image format"
+                        print(f"  {last_error}")
+                        continue
+
+                    img_format = "JPEG" if is_jpeg else ("PNG" if is_png else "WebP")
+                    print(f"  Image generated successfully ({img_format}, {len(image_bytes):,} bytes)")
+
+                    # Build public URL without key
+                    public_params = {k: v for k, v in params.items() if k != "key"}
+                    public_url = base_url + "?" + "&".join(f"{k}={v}" for k, v in public_params.items())
+
+                    return image_bytes, public_url
+                else:
+                    last_error = f"Unexpected content type: {content_type}"
+                    print(f"  {last_error}")
+            else:
+                last_error = f"HTTP error: {response.status_code}"
+                print(f"  {last_error}")
+
+        except requests.exceptions.RequestException as e:
+            last_error = f"Request error: {e}"
+            print(f"  {last_error}")
+
+    print(f"  Failed to generate image after {MAX_RETRIES} attempts")
+    return None, None
+
+
 def generate_linkedin_post(prs: List[Dict], token: str) -> Optional[Dict]:
-    """Generate a professional LinkedIn post from PR updates"""
+    """Generate a professional LinkedIn post with image from PR updates"""
 
     # Format PRs for context
     pr_summary = ""
@@ -213,7 +299,7 @@ def generate_linkedin_post(prs: List[Dict], token: str) -> Optional[Dict]:
         pr_summary = "NO UPDATES THIS WEEK"
 
     system_prompt = f"""You are a senior tech communications strategist for Pollinations.ai.
-Your job is to write PROFESSIONAL LinkedIn posts that establish thought leadership.
+Your job is to write PROFESSIONAL LinkedIn posts with accompanying images.
 
 {pr_summary}
 
@@ -246,6 +332,27 @@ DON'T:
 - Use too many emojis (1-2 max, professional ones)
 - Write walls of text
 
+=== IMAGE STYLE (CRITICAL - for nanobanana model) ===
+LinkedIn images should be:
+- INFORMATIVE: Include text overlays with key stats/metrics
+- PROFESSIONAL but FRIENDLY: Clean design, not corporate boring
+- HAPPY/POSITIVE vibes: Celebrating wins, growth, community
+- MEME-INSPIRED but TASTEFUL: Can reference tech memes subtly
+- Colors: Lime green (#ecf874) as accent, soft pastels, clean whites
+
+Image ideas:
+- Infographic style with key numbers (e.g., "49 PRs shipped this week")
+- Happy illustrated characters celebrating milestones
+- Clean dashboard/metrics visualization
+- Growth charts with friendly illustrations
+- Developer community celebration scenes
+
+AVOID in images:
+- Dark/dramatic imagery
+- Corporate stock photo vibes
+- Overly complex designs
+- Pure meme formats (save those for Twitter)
+
 === POST TYPES (pick the best fit) ===
 1. MILESTONE: Celebrating achievements (X apps built, Y users, new feature)
 2. INSIGHT: Industry observation tied to our work
@@ -259,21 +366,24 @@ DON'T:
     "body": "Main content - insights, learnings, details. Use line breaks.",
     "cta": "Call to action or closing thought",
     "hashtags": ["#OpenSource", "#AI", "#DevTools", "#BuildInPublic", "#TechStartup"],
+    "image_prompt": "Detailed prompt for LinkedIn image. Professional infographic style with text overlays. Include specific text to show in image. Lime green (#ecf874) accents, clean modern design, friendly and informative.",
+    "image_text": "Key text/stats to display in the image",
     "reasoning": "Why this angle works for LinkedIn audience"
 }}
 
-=== EXAMPLE HOOKS (for inspiration) ===
-- "We just hit 500 apps built on our platform. Here's what surprised us most."
-- "Open source isn't a business model. It's a distribution strategy. Let me explain."
-- "This week we shipped 12 PRs. One of them taught us something unexpected about AI."
-- "The best developer tools feel invisible. That's what we're building toward."
+=== EXAMPLE IMAGE PROMPTS ===
+- "Professional infographic showing '49 PRs Merged This Week' with happy cartoon developers celebrating. Clean white background, lime green (#ecf874) accent colors, modern sans-serif typography. Growth chart trending up. Friendly tech illustration style."
+- "Clean dashboard visualization showing developer metrics. Text overlay: '500+ Apps Built'. Soft gradients, lime green highlights, minimalist design. Happy bee mascot in corner. Professional but warm."
+- "Illustrated celebration scene of diverse developers high-fiving. Banner text: 'Open Source Wins'. Confetti, lime green (#ecf874) color scheme, modern flat illustration style. Informative and joyful."
 """
 
     if prs:
-        user_prompt = f"""Create a LinkedIn post about this week's development work.
+        user_prompt = f"""Create a LinkedIn post with image about this week's development work.
 Focus on the most interesting/impactful updates: {[pr['title'] for pr in prs[:5]]}
+Total PRs merged: {len(prs)}
 
 Make it professional, insightful, and worth engaging with.
+Include an image prompt that's informative with text/stats overlay.
 Output valid JSON only."""
     else:
         user_prompt = """No code updates this week - create thought leadership content.
@@ -285,6 +395,7 @@ Pick ONE angle:
 - Building in public philosophy
 
 Make it professional, insightful, and worth engaging with.
+Include an image prompt that's informative with text/stats overlay.
 Output valid JSON only."""
 
     print("Generating LinkedIn post...")
@@ -328,7 +439,7 @@ def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branc
     return ""
 
 
-def create_post_pr(post_data: Dict, prs: List[Dict], github_token: str, owner: str, repo: str):
+def create_post_pr(post_data: Dict, image_url: Optional[str], prs: List[Dict], github_token: str, owner: str, repo: str):
     """Create a PR with the LinkedIn post JSON"""
 
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -385,6 +496,11 @@ def create_post_pr(post_data: Dict, prs: List[Dict], github_token: str, owner: s
         "cta": post_data.get('cta', ''),
         "full_post": full_post,
         "hashtags": post_data.get('hashtags', []),
+        "image": {
+            "url": image_url,
+            "prompt": post_data.get('image_prompt', ''),
+            "text": post_data.get('image_text', '')
+        } if image_url else None,
         "reasoning": post_data.get('reasoning', ''),
         "pr_references": [f"#{pr['number']}" for pr in prs] if prs else [],
         "char_count": len(full_post)
@@ -423,6 +539,17 @@ def create_post_pr(post_data: Dict, prs: List[Dict], github_token: str, owner: s
     # Create PR
     pr_title = f"LinkedIn Post - {today}"
 
+    # Image preview in PR body
+    image_preview = ""
+    if image_url:
+        image_preview = f"""
+### Image
+**Prompt:** {post_data.get('image_prompt', 'N/A')[:200]}...
+**Text in image:** {post_data.get('image_text', 'N/A')}
+
+![Preview]({image_url})
+"""
+
     pr_body = f"""## LinkedIn Post for {today}
 
 **Post Type:** {output_data['post_type']}
@@ -439,7 +566,7 @@ def create_post_pr(post_data: Dict, prs: List[Dict], github_token: str, owner: s
 
 ### Hashtags
 {' '.join(output_data['hashtags'])}
-
+{image_preview}
 ---
 
 **Reasoning:** {output_data['reasoning']}
@@ -527,9 +654,17 @@ def main():
         print("Failed to generate post. Exiting.")
         sys.exit(1)
 
+    # Generate image
+    print(f"\n=== Generating Image ===")
+    image_url = None
+    if post_data.get('image_prompt'):
+        _, image_url = generate_image(post_data['image_prompt'], pollinations_token)
+        if not image_url:
+            print("Warning: Failed to generate image, continuing without it")
+
     # Create PR
     print(f"\n=== Creating PR ===")
-    create_post_pr(post_data, merged_prs, github_token, owner_name, repo_name)
+    create_post_pr(post_data, image_url, merged_prs, github_token, owner_name, repo_name)
 
     print("\n=== Done! ===")
 

@@ -54,7 +54,7 @@
 - [x] **B10.** Test workers via `.workers.dev` URLs
 - [x] **B11.** ~~Lower DNS TTLs~~ → Just wait 24-48h for global DNS cache expiry (no action needed)
 - [x] **B12.** Deploy `rubeus` (Portkey gateway) to NEW account
-- [x] **B13.** Update EC2 text.pollinations.ai `.env` with new rubeus URL
+- [ ] **B13.** Update EC2 text.pollinations.ai `.env` with new rubeus URL (Phase C)
 
 **Production workers.dev URLs (NEW account):**
 - Enter: https://pollinations-enter-production.elliot-b6e.workers.dev

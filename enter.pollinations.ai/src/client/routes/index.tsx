@@ -1,6 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { productSlugToUrlParam } from "../../routes/polar.ts";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
@@ -199,9 +198,9 @@ function RouteComponent() {
         router.invalidate();
     };
 
-    const handleBuyPollen = (slug: string) => {
-        // Navigate directly to Polar checkout endpoint - server will handle redirect
-        window.location.href = `/api/polar/checkout/${productSlugToUrlParam(slug)}?redirect=true`;
+    const handleBuyPollen = (amount: number) => {
+        // Navigate to Stripe checkout endpoint with amount in USD
+        window.location.href = `/api/stripe/checkout/${amount}`;
     };
 
     return (
@@ -212,9 +211,6 @@ function RouteComponent() {
                         githubUsername={user?.githubUsername || ""}
                         githubAvatarUrl={user?.image || ""}
                         onSignOut={handleSignOut}
-                        onUserPortal={() => {
-                            window.location.href = "/api/polar/customer/portal";
-                        }}
                     />
                     <Button
                         as="a"
@@ -257,9 +253,7 @@ function RouteComponent() {
                                     as="button"
                                     color="violet"
                                     weight="light"
-                                    onClick={() =>
-                                        handleBuyPollen("v1:product:pack:5x2")
-                                    }
+                                    onClick={() => handleBuyPollen(5)}
                                 >
                                     + $5
                                 </Button>
@@ -267,9 +261,7 @@ function RouteComponent() {
                                     as="button"
                                     color="violet"
                                     weight="light"
-                                    onClick={() =>
-                                        handleBuyPollen("v1:product:pack:10x2")
-                                    }
+                                    onClick={() => handleBuyPollen(10)}
                                 >
                                     + $10
                                 </Button>
@@ -277,9 +269,7 @@ function RouteComponent() {
                                     as="button"
                                     color="violet"
                                     weight="light"
-                                    onClick={() =>
-                                        handleBuyPollen("v1:product:pack:20x2")
-                                    }
+                                    onClick={() => handleBuyPollen(20)}
                                 >
                                     + $20
                                 </Button>
@@ -287,9 +277,7 @@ function RouteComponent() {
                                     as="button"
                                     color="violet"
                                     weight="light"
-                                    onClick={() =>
-                                        handleBuyPollen("v1:product:pack:50x2")
-                                    }
+                                    onClick={() => handleBuyPollen(50)}
                                 >
                                     + $50
                                 </Button>

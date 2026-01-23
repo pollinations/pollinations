@@ -46,11 +46,13 @@
 | Worker/Project | Type | Notes |
 |----------------|------|-------|
 | `github-auth-simple` | Worker | Legacy auth, replaced by enter.pollinations.ai |
+| `pollinations-image-cache` | Worker | Legacy cache worker, caching now in enter.pollinations.ai |
 
 **To transfer (pending):**
 - `pollinations-shot` - screenshot service
 - `pollinations-model-monitor` - model monitoring
 - `pollinations-chat` (chat.pollinations.ai)
+- `grafana-discord-proxy` - Discord notifications for Grafana
 
 **To be determined (evaluate later):**
 - `html-wrapper` (websim.pollinations.ai)

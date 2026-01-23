@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Use the same npx and node from the user's environment
+NPX="/usr/bin/npx"
+NODE="/usr/bin/node"
+TSX="$NODE $($NPX which tsx)"
+
 cleanup() {
   local exit_code=$?
   echo ""
@@ -43,7 +48,7 @@ interval=2
 
 echo "🚀 Starting Pollinations deployment pipeline..."
 echo "📝 Step 1: Generating image prompt and updating link.ts..."
-npx tsx src/pipeline.ts
+$NPX tsx src/pipeline.ts 2>&1
 PIPELINE_EXIT_CODE=$?
 if [ $PIPELINE_EXIT_CODE -eq 0 ]; then
   echo "✓ Pipeline completed successfully"
@@ -64,7 +69,7 @@ pkill -f "node.*devvit" 2>/dev/null || true
 sleep 2
 
 echo "📤 Step 2: Starting playtest mode..."
-npx devvit playtest "$SUBREDDIT" &
+$NPX devvit playtest "$SUBREDDIT" &
 PLAYTEST_PID=$!
 sleep 3
 

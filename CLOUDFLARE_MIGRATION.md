@@ -30,37 +30,48 @@
 
 **Staging URL**: https://pollinations-enter-staging.elliot-b6e.workers.dev
 
-### Phase B: Production Preparation (No Downtime) ✅ COMPLETE
+### Phase B: Asset Review & Transfer (In Progress)
 
-**Minimal scope - 3 workers only:**
-| Worker | Domain | Resources |
-|--------|--------|-----------|
-| `pollinations-enter` | enter.pollinations.ai | D1, KV, R2, Durable Objects |
-| `pollinations-gen` | gen.pollinations.ai | Service binding to enter |
-| `pollinations-ai` | pollinations.ai, hello.pollinations.ai | Assets, 1 secret |
+#### Infrastructure Workers (Core)
+| Worker | Domain | Status |
+|--------|--------|--------|
+| `pollinations-enter-production` | enter.pollinations.ai | ✅ Transferred |
+| `pollinations-gen-production` | gen.pollinations.ai | ✅ Transferred |
+| `pollinations-ai` | pollinations.ai, hello.pollinations.ai | ✅ Transferred |
+| `rubeus` | (Portkey gateway) | ✅ Transferred |
 
-**Already on Myceli.AI:** `myceli-kpi` (kpi.myceli.ai)
-**Not CF workers:** image/text services (EC2), economics-dashboard (Docker/Grafana)
+#### Apps (Developer/Utility)
+*Rename to `app-*` prefix on transfer*
 
-**Staying on OLD account (NOT transferring - archive/legacy):**
-| Worker/Project | Type | Notes |
-|----------------|------|-------|
-| `github-auth-simple` | Worker | Legacy auth, replaced by enter.pollinations.ai |
-| `pollinations-image-cache` | Worker | Legacy cache worker, caching now in enter.pollinations.ai |
-| `pollinations-enter` | Worker | Accidental deployment on wrong account - DELETE |
+| Old Name | New Name | Domain | Status |
+|----------|----------|--------|--------|
+| `myceli-kpi` | `app-kpi` | kpi.myceli.ai | ✅ Transferred |
+| `pollinations-shot` | `app-shot` | screenshot service | ⏳ Pending |
+| `pollinations-model-monitor` | `app-model-monitor` | model monitoring | ⏳ Pending |
+| `pollinations-chat` | `app-chat` | chat.pollinations.ai | ⏳ Pending |
+| `grafana-discord-proxy` | `app-grafana-discord-proxy` | Discord notifications | ⏳ Pending |
+| `pollinations-catgpt` | `app-catgpt` | - | ⏳ Pending |
+| `pollinations-ai-dungeon-master` | `app-ai-dungeon-master` | - | ⏳ Pending |
 
-**To transfer (pending):**
-- `pollinations-shot` - screenshot service
-- `pollinations-model-monitor` - model monitoring
-- `pollinations-chat` (chat.pollinations.ai)
-- `grafana-discord-proxy` - Discord notifications for Grafana
-- `pollinations-catgpt`
-- `pollinations-ai-dungeon-master`
+#### Pages Projects
+| Project | Domain | Status |
+|---------|--------|--------|
+| `html-wrapper` | websim.pollinations.ai | ❓ TBD |
+| `hacktoberfest-*` | - | ❓ TBD |
 
-**To be determined (evaluate later):**
-- `html-wrapper` (websim.pollinations.ai)
-- `hacktoberfest-*` Pages projects
-- `pollinations-map-to-isometric`
+#### To Be Determined
+| Worker | Notes | Status |
+|--------|-------|--------|
+| `pollinations-map-to-isometric` | - | ❓ TBD |
+| `nyege-nyege-portal` | - | ❓ TBD |
+| `portkey-gateway-new` | Old Portkey, rubeus is current | ❓ TBD |
+
+#### Archive (Staying on OLD account - NOT transferring)
+- `github-auth-simple` - legacy auth, replaced by enter
+- `pollinations-image-cache` - legacy cache, now in enter
+- `pollinations-enter-image-cache` - legacy cache, now in enter
+
+---
 
 - [x] **B1.** Export production D1 database from OLD account (snapshot 1)
 - [x] **B2.** Create production D1 database in NEW account

@@ -126,7 +126,7 @@ class LongCatInference:
         r = requests.get(image_url, timeout=30)
         r.raise_for_status()
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as f:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpeg") as f:
             f.write(r.content)
             return f.name
 
@@ -161,14 +161,11 @@ class LongCatInference:
         self,
         image_url: str,
         prompt: str,
-        width: int = 768,
-        height: int = 768,
         seed: int | None = None,
     ) -> bytes:
         import torch, io
         from PIL import Image
 
-        final_w, final_h = calculate_generation_dimensions(width, height)
         if seed is None:
             seed = int.from_bytes(os.urandom(8), "big")
 
@@ -184,7 +181,7 @@ class LongCatInference:
                     prompt,
                     negative_prompt="",
                     guidance_scale=4.5,
-                    num_inference_steps=30,
+                    num_inference_steps=40,
                     num_images_per_prompt=1,
                     generator=gen,
                 ).images[0]
@@ -230,7 +227,7 @@ def web():
 
             if req.image:
                 img_bytes = LongCatInference().generate_i2i.remote(
-                    req.image, req.prompt, req.width, req.height, req.seed
+                    req.image, req.prompt, req.seed
                 )
             else:
                 img_bytes = LongCatInference().generate_t2i.remote(
@@ -252,7 +249,7 @@ def main(
     image: str | None = None,
 ):
     if image:
-        img_bytes = LongCatInference().generate_i2i.remote(image, prompt, width, height)
+        img_bytes = LongCatInference().generate_i2i.remote(image, prompt)
         print(f"✓ I2I generated {width}x{height}")
     else:
         img_bytes = LongCatInference().generate_t2i.remote(prompt, width, height)

@@ -88,18 +88,28 @@ export const DOCS_PAGE = {
 
     // AuthCard
     authenticationTitle: "Authentication",
+    authIntro:
+        "API keys authenticate your requests. Create multiple keys for different apps and track usage separately.",
+    modelScopingLabel: "🎯 Per-Model Access",
+    modelScopingDescription:
+        "Restrict each key to specific models — e.g., allow only flux + openai, or just gptimage.",
     keyTypesLabel: "Key Types",
-    publishableLabel: "Publishable (Alpha)",
-    publishableFeature1: "⚠️ Alpha – not production-ready",
-    publishableFeature2: "Rate limited: 1 pollen/hour per IP+key",
-    publishableFeature3: "Best for: demos, prototypes, public tools",
+    publishableLabel: "Publishable",
+    publishableFeature1: "Client-side demos & prototypes",
+    publishableFeature2: "Rate limited: 1 pollen per IP per hour",
+    publishableBetaWarning:
+        "⚠️ Beta — Turnstile protection coming soon. Not recommended for production yet.",
     secretLabel: "Secret",
     secretFeature1: "Server-side only",
-    secretFeature2: "Never expose publicly",
-    secretFeature3: "No rate limits, can spend Pollen",
+    secretFeature2: "No rate limits",
+    secretWarning:
+        "⚠️ Never expose in client-side code, git repos, or public URLs",
+
+    // Shared example section
+    usageExampleTitle: "Usage",
     getYourKeyLabel: "Get Your Key",
-    usageExamplesLabel: "Usage Examples",
-    serverSideDescription:
-        "Server-side (Recommended): Use secret key in Authorization header",
-    clientSideDescription: "Query parameter: Add key to URL",
+
+    // Call to Action
+    ctaLabel: "Ready to build?",
+    ctaDocsLabel: "View API Docs",
 };

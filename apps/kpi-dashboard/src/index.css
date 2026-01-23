@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+.card {
+  @apply bg-gray-900 border border-gray-800 rounded-xl p-6;
+}
+
+.stat-card {
+  @apply bg-gray-900/50 border border-gray-800 rounded-lg p-4;
+}
+
+.trend-up {
+  @apply text-green-400;
+}
+
+.trend-down {
+  @apply text-red-400;
+}

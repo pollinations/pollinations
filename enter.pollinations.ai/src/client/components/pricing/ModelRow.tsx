@@ -1,18 +1,18 @@
 import { type FC, useState } from "react";
-import type { ModelPrice } from "./types.ts";
+import { calculatePerPollen } from "./calculations.ts";
 import {
-    hasReasoning,
-    hasVision,
+    getModelDisplayName,
     hasAudioInput,
     hasAudioOutput,
-    hasSearch,
     hasCodeExecution,
-    getModelDisplayName,
+    hasReasoning,
+    hasSearch,
+    hasVision,
     isNewModel,
 } from "./model-info.ts";
-import { calculatePerPollen } from "./calculations.ts";
 import { PriceBadge } from "./PriceBadge.tsx";
 import { Tooltip } from "./Tooltip.tsx";
+import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
     model: ModelPrice;
@@ -43,7 +43,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             <td className="py-2 px-2 text-sm text-gray-700 whitespace-nowrap relative group">
                 <div className="flex items-center gap-2">
                     <div className="flex flex-col">
-                        <span className="font-medium">
+                        <span className={showNew ? "font-bold" : "font-medium"}>
                             {modelDisplayName || model.name}
                         </span>
                         <button
@@ -57,7 +57,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     </div>
                     {showVision && (
                         <Tooltip
-                            text={
+                            content={
                                 model.type === "image"
                                     ? "Vision (image-to-image)"
                                     : "Vision input"
@@ -67,32 +67,32 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         </Tooltip>
                     )}
                     {showAudioInput && (
-                        <Tooltip text="Audio input">
+                        <Tooltip content="Audio input">
                             <span className="text-base">🎙️</span>
                         </Tooltip>
                     )}
                     {showAudioOutput && (
-                        <Tooltip text="Audio output">
+                        <Tooltip content="Audio output">
                             <span className="text-base">🔊</span>
                         </Tooltip>
                     )}
                     {showReasoning && (
-                        <Tooltip text="Reasoning">
+                        <Tooltip content="Reasoning">
                             <span className="text-base">🧠</span>
                         </Tooltip>
                     )}
                     {showSearch && (
-                        <Tooltip text="Web search">
+                        <Tooltip content="Web search">
                             <span className="text-base">🔍</span>
                         </Tooltip>
                     )}
                     {showCodeExecution && (
-                        <Tooltip text="Code execution">
+                        <Tooltip content="Code execution">
                             <span className="text-base">💻</span>
                         </Tooltip>
                     )}
                     {showNew && (
-                        <span className="text-[10px] text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full font-medium">
+                        <span className="text-[10px] text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full font-semibold border border-green-400 shadow-[0_0_6px_rgba(34,197,94,0.5)] animate-[glow_2s_ease-in-out_infinite]">
                             NEW
                         </span>
                     )}
@@ -154,12 +154,20 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             perToken={model.perToken}
                         />
                         {model.perSecondPrice ? (
-                            <PriceBadge
-                                prices={[model.perSecondPrice]}
-                                emoji="🎬"
-                                subEmojis={["🎬"]}
-                                perSecond
-                            />
+                            <>
+                                <PriceBadge
+                                    prices={[model.perSecondPrice]}
+                                    emoji="🎬"
+                                    subEmojis={["🎬"]}
+                                    perSecond
+                                />
+                                <PriceBadge
+                                    prices={[model.perAudioSecondPrice]}
+                                    emoji="🔊"
+                                    subEmojis={["🔊"]}
+                                    perSecond
+                                />
+                            </>
                         ) : model.perTokenPrice ? (
                             <PriceBadge
                                 prices={[model.perTokenPrice]}

@@ -34,6 +34,8 @@ export function createAuth(env: Cloudflare.Env) {
         enableMetadata: true,
         defaultPrefix: PUBLISHABLE_KEY_PREFIX,
         defaultKeyLength: 16, // Minimum key length for validation (matches custom generator)
+        minimumNameLength: 1, // Allow short hostnames (e.g., "x.ai")
+        maximumNameLength: 253, // DNS hostname max length
         startingCharactersConfig: {
             charactersLength: 10, // Store more characters for display (pk_xxxxxxxxxx...)
         },
@@ -56,7 +58,7 @@ export function createAuth(env: Cloudflare.Env) {
             return options.prefix ? `${options.prefix}_${key}` : key;
         },
         keyExpiration: {
-            minExpiresIn: 1 / 24, // Allow keys as short as 1 hour (value is in DAYS)
+            minExpiresIn: 0, // No minimum - allow any positive expiry
             maxExpiresIn: 365, // Max 1 year
         },
         rateLimit: {

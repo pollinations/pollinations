@@ -32,19 +32,20 @@ export const HELLO_PAGE = {
         "Ship an app, help in Discord, fix bugs, improve docs — every contribution earns you Pollen. We notice and we share.",
 
     // Earn Pollen: Sponsorship Tiers
-    tiersSubtitle: "Grow",
-    tiersDescription: "Start small, contribute, watch your Pollen grow:",
-    tierSporeTitle: "Spore — Just arrived",
-    tierSporeDescription: "Welcome! Here's some Pollen to play with.",
-    tierSeedTitle: "Seed — Part of the community",
+    tiersSubtitle: "Grow Through Our Tier System",
+    tiersBetaNote:
+        "⚠️ We're in beta — tiers, rewards, and values may change as we fine-tune the ecosystem.",
+    tierSporeTitle: "Spore — 1 pollen/day",
+    tierSporeDescription: "You just signed up. Welcome to the community!",
+    tierSeedTitle: "Seed — 3 pollen/day",
     tierSeedDescription:
-        "You're on GitHub or Discord, you've said hi. More Pollen for you.",
-    tierFlowerTitle: "Flower — You shipped something",
+        "Auto-upgraded daily based on your GitHub activity (account age, commits, repos, stars).",
+    tierFlowerTitle: "Flower — 10 pollen/day",
     tierFlowerDescription:
-        "You built an app with pollinations.ai. Nice! Even more Pollen.",
-    tierNectarTitle: "Nectar — Community pillar",
+        "Submit an app to our showcase. Requires Seed tier first.",
+    tierNectarTitle: "Nectar — 20 pollen/day",
     tierNectarDescription:
-        "Your work helps others. You're part of what makes this place good.",
+        "Reserved for maintainers and major contributors. Coming soon.",
 
     // Earn Pollen: Quests
     questsSubtitle: "Ways to Contribute",
@@ -107,6 +108,8 @@ export const HELLO_PAGE = {
     viewPricingButton: "View Pricing",
     exploreTiersButton: "Learn More About Tiers",
     seeAppsButton: "See Featured Apps",
+    contributeOnGitHubButton: "Contribute on GitHub",
+    submitYourAppButton: "Submit Your App",
 
     // Badges
     newBadge: "New",

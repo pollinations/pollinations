@@ -103,7 +103,6 @@ Legend: █ = Skill Level (1-5)
 
 ## Reference Files
 
-- `pollinator-agent/CONTRIBUTORS.md` - Current contributor analysis
 - `AGENTS.md` - Project guidelines and contributor attribution
 
 ## Example Queries

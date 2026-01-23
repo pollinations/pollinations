@@ -1,6 +1,9 @@
 {
     "name": "text.pollinations.ai",
     "version": "1.0.0",
+    "engines": {
+        "node": ">=20.0.0 <22.0.0"
+    },
     "scripts": {
         "decrypt-vars": "sops decrypt secrets/env.json --output-type dotenv > .env",
         "start": "npx tsx startServer.js",
@@ -16,24 +19,14 @@
     "license": "ISC",
     "type": "module",
     "dependencies": {
-        "@azure/identity": "^4.4.1",
-        "@huggingface/inference": "^2.8.1",
-        "await-sleep": "^0.0.1",
         "axios": "^1.7.7",
-        "commander": "^13.1.0",
         "cors": "^2.8.5",
         "debug": "^4.4.1",
         "dotenv": "^16.0.3",
-        "eventsource": "^3.0.2",
         "eventsource-parser": "^3.0.2",
         "express": "^4.20.0",
-        "express-rate-limit": "^7.5.0",
         "jsonwebtoken": "^9.0.2",
         "node-fetch": "^3.3.2",
-        "openai": "^4.58.2",
-        "p-queue": "^8.0.1",
-        "puppeteer": "^23.6.0",
-        "turndown": "^7.2.0",
         "tsx": "^4.20.3",
         "typescript": "^5.8.3"
     },

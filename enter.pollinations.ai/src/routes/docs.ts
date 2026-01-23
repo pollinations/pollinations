@@ -1,11 +1,42 @@
-import { Hono } from "hono";
 import { Scalar } from "@scalar/hono-api-reference";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { Hono } from "hono";
 import { openAPIRouteHandler } from "hono-openapi";
 import type { Env } from "@/env.ts";
+// @ts-expect-error - raw import
+import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
+
+// Use markdown as-is (just trim whitespace)
+const BYOP_DOCS = BYOP_MD.trim();
+
+// Get all model aliases (values we want to hide from docs)
+const IMAGE_ALIASES: Set<string> = new Set(
+    Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
+);
+const TEXT_ALIASES: Set<string> = new Set(
+    Object.values(TEXT_SERVICES).flatMap((service) => service.aliases),
+);
+const ALL_ALIASES: Set<string> = new Set([...IMAGE_ALIASES, ...TEXT_ALIASES]);
+
+// Filter model aliases from enum arrays in schema
+function filterAliases(
+    schema: Record<string, unknown>,
+): Record<string, unknown> {
+    return JSON.parse(
+        JSON.stringify(schema, (key, value) => {
+            if (key === "enum" && Array.isArray(value)) {
+                const filtered = value.filter((v) => !ALL_ALIASES.has(v));
+                return filtered.length !== value.length ? filtered : value;
+            }
+            return value;
+        }),
+    );
+}
 
 // Transform OpenAPI schema for gen.pollinations.ai:
 // 1. Remove /generate/ prefix from paths
-// 2. Add x-tagGroups for Scalar sidebar organization
+// 2. Filter out model aliases from enums (show only primary model names)
 function transformOpenAPISchema(
     schema: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -13,16 +44,17 @@ function transformOpenAPISchema(
     if (!paths) return schema;
 
     const newPaths: Record<string, unknown> = {};
+
     for (const [path, value] of Object.entries(paths)) {
-        // Strip /generate prefix: /generate/v1/models → /v1/models
         const cleanPath = path.replace(/^\/generate/, "");
         newPaths[cleanPath] = value;
     }
 
-    return {
+    // Filter aliases from the entire schema
+    return filterAliases({
         ...schema,
         paths: newPaths,
-    };
+    });
 }
 
 export const createDocsRoutes = (apiRouter: Hono<Env>) => {
@@ -117,13 +149,31 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "",
                             "## Authentication",
                             "",
-                            "**Two key types:**",
-                            "- **Publishable Keys (`pk_`):** Client-side safe, IP rate-limited (1 pollen/hour per IP+key)",
-                            "- **Secret Keys (`sk_`):** Server-side only, no rate limits, can spend Pollen",
+                            "**Two key types (both consume Pollen from your balance):**",
+                            "- **Publishable Keys (`pk_`):** ⚠️ **Beta - not yet ready for production use.** For client-side apps, IP rate-limited (1 pollen per IP per hour). **Warning:** Exposing in public code will consume your Pollen if your app gets traffic.",
+                            "- **Secret Keys (`sk_`):** Server-side only, no rate limits. Keep secret - never expose publicly.",
                             "",
                             "**Auth methods:**",
                             "1. Header: `Authorization: Bearer YOUR_API_KEY`",
                             "2. Query param: `?key=YOUR_API_KEY`",
+                            "",
+                            "## Account Management",
+                            "",
+                            "Check your balance and usage:",
+                            "",
+                            "```bash",
+                            "# Check pollen balance",
+                            "curl 'https://gen.pollinations.ai/account/balance' \\",
+                            "  -H 'Authorization: Bearer YOUR_API_KEY'",
+                            "",
+                            "# Get profile info",
+                            "curl 'https://gen.pollinations.ai/account/profile' \\",
+                            "  -H 'Authorization: Bearer YOUR_API_KEY'",
+                            "",
+                            "# View usage history",
+                            "curl 'https://gen.pollinations.ai/account/usage' \\",
+                            "  -H 'Authorization: Bearer YOUR_API_KEY'",
+                            "```",
                         ].join("\n"),
                     },
                     components: {
@@ -142,12 +192,16 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             bearerAuth: [],
                         },
                     ],
-                    // Single tag for all generation endpoints
+                    // Tags for sidebar navigation
                     tags: [
                         {
                             name: "gen.pollinations.ai",
                             description:
                                 "Generate text, images, and videos using AI models",
+                        },
+                        {
+                            name: "Bring Your Own Pollen 🌸",
+                            description: BYOP_DOCS,
                         },
                     ],
                 },

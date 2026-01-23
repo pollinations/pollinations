@@ -8,8 +8,8 @@ from pydantic import BaseModel, Field, field_validator, ValidationInfo
 app = modal.App("longcat_i2i_t2i")
 vol = modal.Volume.from_name("longcat_t2i_volume")
 
-MAX_GEN_PIXELS = 768 * 768
-MAX_FINAL_PIXELS = 768 * 768
+MAX_GEN_PIXELS = 1024 * 1024
+MAX_FINAL_PIXELS = 1024 * 1024
 
 
 class ImageRequest(BaseModel):
@@ -28,7 +28,7 @@ class ImageRequest(BaseModel):
             if total_pixels > MAX_FINAL_PIXELS:
                 raise ValueError(
                     f"Requested {width}x{height} = {total_pixels:,} pixels exceeds limit "
-                    f"of {MAX_FINAL_PIXELS:,} pixels (max 768x768 area)."
+                    f"of {MAX_FINAL_PIXELS:,} pixels (max 1024x1024 area)."
                 )
         return height
 
@@ -158,7 +158,7 @@ class LongCatInference:
             return f.name
 
     @modal.method()
-    def generate_t2i(self, prompt: str, width: int = 768, height: int = 768, seed: int | None = None) -> bytes:
+    def generate_t2i(self, prompt: str, width: int = 1024, height: int = 1024, seed: int | None = None) -> bytes:
         import torch, io
 
         final_w, final_h = calculate_generation_dimensions(width, height)
@@ -202,7 +202,7 @@ class LongCatInference:
         try:
             img_input = Image.open(image_path).convert("RGB")
             
-            # Resize image to fit within 768x768 while maintaining aspect ratio
+            # Resize image to fit within 1024x1024 while maintaining aspect ratio
             img_input = resize_image_to_fit(img_input, MAX_GEN_PIXELS)
             
             # Get output dimensions (same as input after resize)

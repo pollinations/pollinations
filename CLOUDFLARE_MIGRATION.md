@@ -46,11 +46,12 @@
 | Worker/Project | Type | Notes |
 |----------------|------|-------|
 | `github-auth-simple` | Worker | Legacy auth, replaced by enter.pollinations.ai |
-| `rubeus` | Worker | Old Portkey gateway (new one deployed to Myceli.AI) |
-| `html-wrapper` | Worker | websim.pollinations.ai - evaluate later |
-| `pollinations-chat` | Pages | chat.pollinations.ai - evaluate later |
-| `pollinations-model-monitor` | Pages | model-monitor.pollinations.ai - evaluate later |
-| `hacktoberfest-*` | Pages | Hacktoberfest projects - archive |
+
+**To be determined (evaluate later):**
+- `html-wrapper` (websim.pollinations.ai)
+- `pollinations-chat` (chat.pollinations.ai)
+- `pollinations-model-monitor` (model-monitor.pollinations.ai)
+- `hacktoberfest-*` Pages projects
 
 - [x] **B1.** Export production D1 database from OLD account (snapshot 1)
 - [x] **B2.** Create production D1 database in NEW account

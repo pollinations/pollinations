@@ -47,10 +47,13 @@
 |----------------|------|-------|
 | `github-auth-simple` | Worker | Legacy auth, replaced by enter.pollinations.ai |
 
+**To transfer (pending):**
+- `pollinations-shot` - screenshot service
+- `pollinations-model-monitor` - model monitoring
+
 **To be determined (evaluate later):**
 - `html-wrapper` (websim.pollinations.ai)
 - `pollinations-chat` (chat.pollinations.ai)
-- `pollinations-model-monitor` (model-monitor.pollinations.ai)
 - `hacktoberfest-*` Pages projects
 
 - [x] **B1.** Export production D1 database from OLD account (snapshot 1)

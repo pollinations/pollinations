@@ -14,7 +14,7 @@ const VALID_IMAGE_MODELS = [
 export const GenerateImageRequestQueryParamsSchema = z.object({
     // Image model params
     model: z
-        .literal(VALID_IMAGE_MODELS)
+        .enum(VALID_IMAGE_MODELS as unknown as [string, ...string[]])
         .optional()
         .default(DEFAULT_IMAGE_MODEL)
         .meta({

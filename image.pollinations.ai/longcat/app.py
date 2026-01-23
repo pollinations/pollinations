@@ -17,7 +17,6 @@ class ImageRequest(BaseModel):
     width: int = Field(default=1024, ge=256, le=2048)
     height: int = Field(default=576, ge=256, le=2048)
     seed: int | None = None
-    image: str | None = None
 
     @field_validator("height")
     @classmethod
@@ -31,15 +30,6 @@ class ImageRequest(BaseModel):
                     f"of {MAX_FINAL_PIXELS:,} pixels (max 2048x2048 area)."
                 )
         return height
-
-    @field_validator("image")
-    @classmethod
-    def validate_image_url(cls, image: str | None) -> str | None:
-        if image:
-            parsed = urllib.parse.urlparse(image)
-            if parsed.scheme not in ("http", "https"):
-                raise ValueError("Image URL must start with http:// or https://")
-        return image
 
 
 def calculate_generation_dimensions(requested_width: int, requested_height: int) -> tuple[int, int]:
@@ -58,36 +48,6 @@ def calculate_generation_dimensions(requested_width: int, requested_height: int)
     final_h = max(final_h, 256)
 
     return final_w, final_h
-
-
-def resize_image_to_fit(img, max_pixels=MAX_GEN_PIXELS):
-    """Resize image to fit within max_pixels while maintaining aspect ratio and ensuring divisible by 16"""
-    from PIL import Image
-    
-    width, height = img.size
-    total_pixels = width * height
-    
-    if total_pixels > max_pixels:
-        scale = math.sqrt(max_pixels / total_pixels)
-        new_width = round(width * scale)
-        new_height = round(height * scale)
-    else:
-        new_width = width
-        new_height = height
-    
-    # Round to nearest 16
-    new_width = round(new_width / 16) * 16
-    new_height = round(new_height / 16) * 16
-    
-    # Ensure minimum dimensions
-    new_width = max(new_width, 256)
-    new_height = max(new_height, 256)
-    
-    # Resize using high-quality resampling
-    if (new_width, new_height) != (width, height):
-        img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-    
-    return img
 
 
 image = (
@@ -117,7 +77,7 @@ image = (
 
 
 @app.cls(
-    gpu="H100:2",
+    gpu="H100",
     volumes={"/models": vol},
     image=image,
     scaledown_window=300,
@@ -129,23 +89,16 @@ class LongCatInference:
     @modal.enter()
     def setup(self):
         import torch
-        from diffusers import LongCatImagePipeline, LongCatImageEditPipeline
+        from diffusers import LongCatImagePipeline
 
-        self.device_t2i = torch.device("cuda:0")
-        self.device_i2i = torch.device("cuda:1")
+        self.device_t2i = torch.device("cuda")
 
         self.pipe_t2i = LongCatImagePipeline.from_pretrained(
             self.model_path,
             torch_dtype=torch.bfloat16,
         ).to(self.device_t2i)
 
-        self.pipe_i2i = LongCatImageEditPipeline.from_pretrained(
-            self.model_path,
-            torch_dtype=torch.bfloat16,
-        ).to(self.device_i2i)
-
         self.pipe_t2i.set_progress_bar_config(disable=True)
-        self.pipe_i2i.set_progress_bar_config(disable=True)
 
     def download_image(self, image_url: str) -> str:
         import requests
@@ -158,7 +111,7 @@ class LongCatInference:
             return f.name
 
     @modal.method()
-    def generate_t2i(self, prompt: str, width: int = 2048, height: int = 2048, seed: int | None = None) -> bytes:
+    def generate_t2i(self, prompt: str, width: int = 1024, height: int = 1024, seed: int | None = None) -> bytes:
         import torch, io
 
         final_w, final_h = calculate_generation_dimensions(width, height)
@@ -183,49 +136,6 @@ class LongCatInference:
         img.save(buf, format="JPEG", quality=100)
         return buf.getvalue()
 
-    @modal.method()
-    def generate_i2i(
-        self,
-        image_url: str,
-        prompt: str,
-        seed: int | None = None,
-    ) -> bytes:
-        import torch, io
-        from PIL import Image
-
-        if seed is None:
-            seed = int.from_bytes(os.urandom(8), "big")
-
-        gen = torch.Generator(device=self.device_i2i).manual_seed(seed)
-        image_path = self.download_image(image_url)
-
-        try:
-            img_input = Image.open(image_path).convert("RGB")
-            
-            # Resize image to fit within 2048x2048 while maintaining aspect ratio
-            img_input = resize_image_to_fit(img_input, MAX_GEN_PIXELS)
-            
-            # Get output dimensions (same as input after resize)
-            output_width, output_height = img_input.size
-
-            with torch.inference_mode():
-                img = self.pipe_i2i(
-                    img_input,
-                    prompt,
-                    negative_prompt="",
-                    guidance_scale=4.5,
-                    num_inference_steps=50,
-                    num_images_per_prompt=1,
-                    generator=gen,
-                ).images[0]
-
-            buf = io.BytesIO()
-            img.save(buf, format="JPEG", quality=95)
-            return buf.getvalue()
-        finally:
-            if os.path.exists(image_path):
-                os.remove(image_path)
-
 
 @app.function(image=image)
 @modal.asgi_app()
@@ -233,13 +143,13 @@ def web():
     from fastapi import FastAPI, Response
     from fastapi.responses import JSONResponse
 
-    web_app = FastAPI(title="LongCat I2I/T2I API")
+    web_app = FastAPI(title="LongCat T2I API")
 
     @web_app.get("/")
     def root():
         return {
             "endpoints": {
-                "/generate": "GET ?prompt=... [&image=https://...] [&width=...] [&height=...] [&seed=...]",
+                "/generate": "GET ?prompt=... [&width=...] [&height=...] [&seed=...]",
                 "/health": "Health check",
             }
         }
@@ -251,22 +161,16 @@ def web():
     @web_app.get("/generate")
     async def generate(
         prompt: str,
-        image: str | None = None,
         width: int = 2048,
         height: int = 2048,
         seed: int | None = None,
     ):
         try:
-            req = ImageRequest(prompt=prompt, width=width, height=height, seed=seed, image=image)
+            req = ImageRequest(prompt=prompt, width=width, height=height, seed=seed)
 
-            if req.image:
-                img_bytes = LongCatInference().generate_i2i.remote(
-                    req.image, req.prompt, req.seed
-                )
-            else:
-                img_bytes = LongCatInference().generate_t2i.remote(
-                    req.prompt, req.width, req.height, req.seed
-                )
+            img_bytes = LongCatInference().generate_t2i.remote(
+                req.prompt, req.width, req.height, req.seed
+            )
 
             return Response(img_bytes, media_type="image/jpeg")
         except Exception as e:
@@ -280,14 +184,9 @@ def main(
     prompt: str = "a cute bear",
     width: int = 2048,
     height: int = 2048,
-    image: str | None = None,
 ):
-    if image:
-        img_bytes = LongCatInference().generate_i2i.remote(image, prompt)
-        print(f"✓ I2I generated (auto-sized from input)")
-    else:
-        img_bytes = LongCatInference().generate_t2i.remote(prompt, width, height)
-        print(f"✓ T2I generated {width}x{height}")
+    img_bytes = LongCatInference().generate_t2i.remote(prompt, width, height)
+    print(f"✓ T2I generated {width}x{height}")
 
     with open("/tmp/output.jpg", "wb") as f:
         f.write(img_bytes)

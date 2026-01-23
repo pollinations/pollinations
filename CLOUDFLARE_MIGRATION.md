@@ -47,6 +47,7 @@
 |----------------|------|-------|
 | `github-auth-simple` | Worker | Legacy auth, replaced by enter.pollinations.ai |
 | `pollinations-image-cache` | Worker | Legacy cache worker, caching now in enter.pollinations.ai |
+| `pollinations-enter` | Worker | Accidental deployment on wrong account - DELETE |
 
 **To transfer (pending):**
 - `pollinations-shot` - screenshot service

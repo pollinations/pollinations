@@ -4,13 +4,7 @@ import { Hono } from "hono";
 import type Stripe from "stripe";
 import { user as userTable } from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
-import {
-    createStripeClient,
-    markSessionProcessed,
-    releaseSessionLock,
-    tryAcquireSessionLock,
-    verifyWebhookSignature,
-} from "../utils/stripe.ts";
+import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 
 // BETA PROMOTION: Double all pack purchases (remove after beta)
 const BETA_MULTIPLIER = 2;
@@ -187,34 +181,12 @@ export const stripeWebhooksRoutes = new Hono<Env>()
 
                 // Only process completed payments (not pending async payments)
                 if (session.payment_status === "paid") {
-                    // Acquire lock BEFORE processing to prevent race conditions
-                    // This marks the session as "processing" atomically
-                    const acquired = await tryAcquireSessionLock(
-                        c.env.KV,
-                        session.id,
-                    );
-                    if (!acquired) {
-                        console.log(
-                            `Stripe: Session ${session.id} already processing/processed, skipping`,
-                        );
-                        break;
-                    }
-
                     const result = await handleCheckoutSessionCompleted(
                         session,
                         c.env,
                     );
 
                     if (result.success && session.metadata) {
-                        // Mark as completed with metadata (extends TTL to 7 days)
-                        await markSessionProcessed(c.env.KV, session.id, {
-                            userId: session.metadata.userId || "",
-                            amountPaid: Math.round(
-                                (session.amount_subtotal || 0) / 100,
-                            ),
-                            pollenCredited: result.pollenCredited || 0,
-                        });
-
                         // Send to TinyBird in background using waitUntil
                         c.executionCtx.waitUntil(
                             sendStripeEventToTinybird(c.env, {
@@ -240,14 +212,10 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                             ),
                         );
                     } else {
-                        // Release lock on failure to allow Stripe retry
-                        await releaseSessionLock(c.env.KV, session.id);
                         console.error(
                             "Failed to process checkout:",
                             result.message,
                         );
-                        // Still return 200 to acknowledge receipt
-                        // Stripe will show the error in dashboard
                     }
                 } else {
                     console.log(
@@ -261,33 +229,12 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 // Handle delayed payment methods (e.g., bank transfers)
                 const session = event.data.object as Stripe.Checkout.Session;
 
-                // Acquire lock BEFORE processing to prevent race conditions
-                const acquired = await tryAcquireSessionLock(
-                    c.env.KV,
-                    session.id,
-                );
-                if (!acquired) {
-                    console.log(
-                        `Stripe: Async session ${session.id} already processing/processed, skipping`,
-                    );
-                    break;
-                }
-
                 const result = await handleCheckoutSessionCompleted(
                     session,
                     c.env,
                 );
 
                 if (result.success && session.metadata) {
-                    // Mark as completed with metadata (extends TTL to 7 days)
-                    await markSessionProcessed(c.env.KV, session.id, {
-                        userId: session.metadata.userId || "",
-                        amountPaid: Math.round(
-                            (session.amount_subtotal || 0) / 100,
-                        ),
-                        pollenCredited: result.pollenCredited || 0,
-                    });
-
                     // Send to TinyBird in background using waitUntil
                     c.executionCtx.waitUntil(
                         sendStripeEventToTinybird(c.env, {
@@ -308,8 +255,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         ),
                     );
                 } else {
-                    // Release lock on failure to allow Stripe retry
-                    await releaseSessionLock(c.env.KV, session.id);
                     console.error(
                         "Failed to process async payment:",
                         result.message,

@@ -57,6 +57,7 @@
 **To be determined (evaluate later):**
 - `html-wrapper` (websim.pollinations.ai)
 - `hacktoberfest-*` Pages projects
+- `pollinations-map-to-isometric`
 
 - [x] **B1.** Export production D1 database from OLD account (snapshot 1)
 - [x] **B2.** Create production D1 database in NEW account

@@ -1,16 +1,18 @@
 name = "pollinations-ai"
 compatibility_date = "2025-11-01"
 main = "src/worker.ts"
+workers_dev = true  # Enable workers.dev URL for testing before domain cutover
 
-[[routes]]
-pattern = "pollinations.ai"
-zone_name = "pollinations.ai"
-custom_domain = true
+# Routes disabled until domain is transferred to new account (Phase C)
+# [[routes]]
+# pattern = "pollinations.ai"
+# zone_name = "pollinations.ai"
+# custom_domain = true
 
-[[routes]]
-pattern = "hello.pollinations.ai"
-zone_name = "pollinations.ai"
-custom_domain = true
+# [[routes]]
+# pattern = "hello.pollinations.ai"
+# zone_name = "pollinations.ai"
+# custom_domain = true
 
 [assets]
 directory = "dist"

@@ -442,6 +442,7 @@ function RouteComponent() {
                             tierBalance={tierBalance}
                             packBalance={packBalance}
                             cryptoBalance={cryptoBalance}
+                            tier={tierData?.active?.tier}
                         />
                     )}
                     {activeTab === "usage" && (

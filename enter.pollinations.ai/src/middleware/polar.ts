@@ -136,55 +136,40 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
             .where(eq(userTable.id, userId))
             .limit(1);
 
-        let tierBalance = users[0]?.tierBalance;
+        const tierBalance = users[0]?.tierBalance;
         let packBalance = users[0]?.packBalance;
         const cryptoBalance = users[0]?.cryptoBalance ?? 0;
 
-        // Lazy init: check Polar if either balance is null OR both are zero
-        // This handles: new users (both null), users with only tier set (pack null),
-        // and users who got 0 written before fix
-        const hasNullBalance = tierBalance == null || packBalance == null;
-        const hasBothZero = tierBalance === 0 && packBalance === 0;
-        const needsInit = hasNullBalance || hasBothZero;
+        // Lazy init: only check Polar for PACK balance (tier is now D1-only via cron)
+        // Pack purchases still go through Polar webhooks
+        const needsPackInit = packBalance == null;
 
-        if (needsInit) {
+        if (needsPackInit) {
             log.info(
-                "Checking Polar balances for user {userId} (D1: tier={tierBalance}, pack={packBalance})",
-                { userId, tierBalance, packBalance },
+                "Checking Polar pack balance for user {userId} (D1 pack={packBalance})",
+                { userId, packBalance },
             );
             const customerMeters = await getCustomerMeters(userId);
-            const tierMeter = customerMeters.find((m) =>
-                m.meter.name.toLowerCase().includes("tier"),
-            );
             const packMeter = customerMeters.find((m) =>
                 m.meter.name.toLowerCase().includes("pack"),
             );
-            const polarTier = tierMeter?.balance ?? 0;
             const polarPack = packMeter?.balance ?? 0;
 
-            // Only update D1 if Polar has positive balance
-            // Don't write 0 to D1 for new users (NULL) - let webhooks handle initial grant
-            if (polarTier + polarPack > 0) {
-                tierBalance = polarTier;
+            // Only update D1 packBalance if Polar has positive balance
+            if (polarPack > 0) {
                 packBalance = polarPack;
                 await db
                     .update(userTable)
-                    .set({ tierBalance, packBalance })
+                    .set({ packBalance })
                     .where(eq(userTable.id, userId));
                 log.info(
-                    "Synced balances from Polar for user {userId}: tier={tierBalance}, pack={packBalance}",
-                    { userId, tierBalance, packBalance },
+                    "Synced pack balance from Polar for user {userId}: pack={packBalance}",
+                    { userId, packBalance },
                 );
-            } else if (hasNullBalance) {
-                // User has NULL balance(s) but Polar also has 0 - keep NULL, let webhooks handle initial grant
+            } else {
+                // User has NULL packBalance but Polar also has 0 - keep NULL, let webhooks handle
                 log.debug(
-                    "User {userId} has no Polar balance yet, keeping D1 as-is",
-                    { userId },
-                );
-            } else if (hasBothZero) {
-                // User has 0/0 in D1 and Polar also has 0 - genuine zero balance
-                log.debug(
-                    "User {userId} has zero balance in both D1 and Polar",
+                    "User {userId} has no Polar pack balance yet, keeping D1 as-is",
                     { userId },
                 );
             }

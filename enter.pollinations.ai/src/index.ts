@@ -17,6 +17,7 @@ import { proxyRoutes } from "./routes/proxy.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
 import { webhooksRoutes } from "./routes/webhooks.ts";
 import { webhooksCryptoRoutes } from "./routes/webhooks-crypto.ts";
+import { handleScheduled } from "./scheduled.ts";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
     return await createAuth(c.env).handler(c.req.raw);
@@ -69,4 +70,5 @@ export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 export default {
     fetch: app.fetch,
+    scheduled: handleScheduled,
 } satisfies ExportedHandler<CloudflareBindings>;

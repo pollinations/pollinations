@@ -24,6 +24,9 @@ declare namespace Cloudflare {
         TINYBIRD_INGEST_URL:
             | "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
             | "http://localhost:7181/v0/events?name=generation_event";
+        TINYBIRD_TIER_INGEST_URL:
+            | "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+            | "http://localhost:7181/v0/events?name=tier_event";
         POLAR_PRODUCT_TIER_SEED:
             | "c6f94c1b-c119-4e59-9f18-59391c8afee3"
             | "fe32ee28-c7c4-4e7a-87fa-6ffc062e3658"

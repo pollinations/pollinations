@@ -18,7 +18,7 @@ import { execSync, spawn } from "child_process";
 // Error codes for structured error handling
 type RegistrationErrorCode =
     | "NOT_REGISTERED" // User not found in Enter
-    | "TIER_NOT_SET" // User exists but tier is null (Polar sync bug)
+    | "TIER_NOT_SET" // User exists but tier is null (system bug)
     | "SPORE_TIER"; // User has SPORE tier, needs SEED+
 
 interface RegistrationCheck {
@@ -102,7 +102,7 @@ async function main(): Promise<void> {
                 `User @${ISSUE_AUTHOR} is not registered at enter.pollinations.ai`,
             );
         } else if (tier === null || tier === undefined) {
-            // User exists but tier not set - this is a bug (Polar webhook didn't fire)
+            // User exists but tier not set - this is a system bug
             result.valid = false;
             result.checks.registration!.error_code = "TIER_NOT_SET";
             result.errors.push(

@@ -11,6 +11,7 @@ import { APIError } from "better-auth/api";
 import { admin, apiKey, openAPI } from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
+import { DEFAULT_TIER, getTierPollen } from "./tier-config.ts";
 
 function addKeyPrefix(key: string) {
     return `auth:${key}`;
@@ -170,10 +171,13 @@ function onBeforeUserCreate(polar: Polar) {
         try {
             if (!user.email) {
                 throw new APIError("BAD_REQUEST", {
-                    message:
-                        "Polar customer creation failed: missing email address",
+                    message: "User creation failed: missing email address",
                 });
             }
+
+            // Set initial tier balance for new users
+            const tierBalance = getTierPollen(DEFAULT_TIER);
+            const lastTierGrant = new Date();
 
             // if the customer already exists, link the new account
             const { result } = await polar.customers.list({
@@ -185,6 +189,8 @@ function onBeforeUserCreate(polar: Polar) {
                     data: {
                         ...user,
                         id: existingCustomer.externalId,
+                        tierBalance,
+                        lastTierGrant,
                     },
                 };
             }
@@ -196,18 +202,22 @@ function onBeforeUserCreate(polar: Polar) {
             });
 
             return {
-                data: user,
+                data: {
+                    ...user,
+                    tierBalance,
+                    lastTierGrant,
+                },
             };
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
             throw new APIError("INTERNAL_SERVER_ERROR", {
-                message: `Polar customer creation failed. Error: ${messageOrError}`,
+                message: `User creation failed. Error: ${messageOrError}`,
             });
         }
     };
 }
 
-function onAfterUserCreate(polar: Polar, defaultTierProductId?: string) {
+function onAfterUserCreate(polar: Polar, _defaultTierProductId?: string) {
     return async (user: GenericUser, ctx?: GenericEndpointContext) => {
         if (!ctx) return;
         try {
@@ -216,6 +226,7 @@ function onAfterUserCreate(polar: Polar, defaultTierProductId?: string) {
             });
             const existingCustomer = result.items[0];
 
+            // Link Polar customer to user ID (needed for pack purchases)
             if (existingCustomer && existingCustomer.externalId !== user.id) {
                 await polar.customers.update({
                     id: existingCustomer.id,
@@ -224,17 +235,8 @@ function onAfterUserCreate(polar: Polar, defaultTierProductId?: string) {
                     },
                 });
             }
-
-            // Auto-create subscription for new user's default tier
-            if (existingCustomer && defaultTierProductId) {
-                await ensureDefaultSubscription(
-                    polar,
-                    existingCustomer.id,
-                    defaultTierProductId,
-                    user.id,
-                    ctx.context.logger,
-                );
-            }
+            // Note: Tier subscription is NO LONGER created in Polar
+            // Tier is managed entirely in D1 (set on registration, refilled by cron)
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
             throw new APIError("INTERNAL_SERVER_ERROR", {
@@ -264,28 +266,4 @@ function onUserUpdate(polar: Polar) {
     };
 }
 
-async function ensureDefaultSubscription(
-    polar: Polar,
-    customerId: string,
-    productId: string,
-    userId: string,
-    logger: { info: (msg: string) => void; error: (msg: string) => void },
-): Promise<void> {
-    try {
-        const { result: subs } = await polar.subscriptions.list({
-            customerId,
-            active: true,
-            limit: 1,
-        });
-
-        if (subs.items.length === 0) {
-            await polar.subscriptions.create({
-                productId,
-                customerId,
-            });
-            logger.info(`Created default tier subscription for user ${userId}`);
-        }
-    } catch (error) {
-        logger.error(`Failed to create default subscription: ${error}`);
-    }
-}
+// Note: ensureDefaultSubscription removed - tier is now D1-only (no Polar subscriptions)

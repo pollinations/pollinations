@@ -51,6 +51,7 @@ POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
 TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 # Polar Sandbox product IDs for tier subscriptions
 POLAR_PRODUCT_TIER_SPORE = "19fa1660-a90c-453d-8132-4d228cc7db39"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
@@ -151,12 +152,16 @@ POLAR_SERVER = "production"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
 TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 POLAR_PRODUCT_TIER_SPORE = "01a31c1a-7af7-4958-9b73-c10e2fac5f70"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 POLLEN_REFILL_PER_HOUR = 1
 # NOWPayments crypto payments (production)
 NOWPAYMENTS_ENV = "production"
+
+[env.production.triggers]
+crons = ["0 0 * * *"]
 
 [env.staging]
 
@@ -207,9 +212,13 @@ POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
 TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 POLAR_PRODUCT_TIER_SPORE = "19fa1660-a90c-453d-8132-4d228cc7db39"
 IMAGE_SERVICE_URL = "http://ec2-44-222-254-250.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-44-222-254-250.compute-1.amazonaws.com:16385"
+
+[env.staging.triggers]
+crons = ["0 0 * * *"]
 
 [env.test]
 
@@ -254,6 +263,7 @@ POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
 TINYBIRD_POLAR_INGEST_URL = "http://localhost:7181/v0/events?name=polar_event"
 TINYBIRD_CRYPTO_INGEST_URL = "http://localhost:7181/v0/events?name=crypto_event"
+TINYBIRD_TIER_INGEST_URL = "http://localhost:7181/v0/events?name=tier_event"
 TINYBIRD_INGEST_TOKEN = "test_tinybird_ingest_token"
 TINYBIRD_POLAR_INGEST_TOKEN = "test_tinybird_polar_ingest_token"
 TINYBIRD_READ_TOKEN = "test_tinybird_read_token"

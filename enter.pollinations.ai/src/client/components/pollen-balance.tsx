@@ -1,16 +1,20 @@
 import type { FC } from "react";
+import { getTierEmoji } from "@/tier-config.ts";
 
 type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
     cryptoBalance: number;
+    tier?: string;
 };
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
     cryptoBalance,
+    tier = "spore",
 }) => {
+    const tierEmoji = getTierEmoji(tier);
     const paidBalance = packBalance + cryptoBalance;
     const totalPollen = Math.max(0, tierBalance + paidBalance);
     const freePercentage =
@@ -52,14 +56,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                     width: `${freePercentage}%`,
                                 }}
                             >
-                                {/* Free label inside */}
+                                {/* Tier label inside */}
                                 {freePercentage > 15 && (
                                     <div className="absolute inset-0 flex items-center justify-center gap-1">
-                                        <span className="text-gray-900 font-extrabold text-sm">
-                                            FREE
-                                        </span>
                                         <span className="text-gray-900 font-bold text-sm">
-                                            {tierBalance.toFixed(1)}
+                                            {tierEmoji} {tierBalance.toFixed(1)}
                                         </span>
                                     </div>
                                 )}

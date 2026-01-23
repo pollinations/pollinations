@@ -53,6 +53,8 @@
 - `pollinations-model-monitor` - model monitoring
 - `pollinations-chat` (chat.pollinations.ai)
 - `grafana-discord-proxy` - Discord notifications for Grafana
+- `pollinations-catgpt`
+- `pollinations-ai-dungeon-master`
 
 **To be determined (evaluate later):**
 - `html-wrapper` (websim.pollinations.ai)

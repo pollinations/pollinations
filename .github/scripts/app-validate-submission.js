@@ -92,7 +92,7 @@ async function main() {
         const body = issueData.body || "";
 
         // Extract repo URL if present
-        const repoMatch = body.match(/https?:\/\/github\.com\/[^\s\)]+/i);
+        const repoMatch = body.match(/https?:\/\/github\.com\/[^\s)]+/i);
         if (repoMatch) {
             result.repo_url = repoMatch[0]
                 .replace(/\.git$/, "")
@@ -100,12 +100,12 @@ async function main() {
         }
 
         // Extract app URL
-        const urlMatch = body.match(/https?:\/\/[^\s\)]+/i);
+        const urlMatch = body.match(/https?:\/\/[^\s)]+/i);
         const appUrl = urlMatch ? urlMatch[0] : "";
 
         // Extract name (first line or "Name:" field)
         const nameMatch =
-            body.match(/(?:name|app\s*name)\s*[:\-]?\s*(.+)/i) ||
+            body.match(/(?:name|app\s*name)\s*[:-]?\s*(.+)/i) ||
             body.match(/^(.+)$/m);
         const appName = nameMatch ? nameMatch[1].trim().substring(0, 50) : "";
 

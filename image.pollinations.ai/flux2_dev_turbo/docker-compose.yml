@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  flux2-dev-turbo:
+    image: flux2-dev-turbo:latest
+    container_name: flux2-dev-turbo
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "10003:10003"
+    environment:
+      - PORT=10003
+      - SERVICE_TYPE=flux2-dev-turbo
+      - PLN_ENTER_TOKEN=${PLN_ENTER_TOKEN:-your-secret-token}
+      - CUDA_VISIBLE_DEVICES=0
+      - HF_HOME=/app/model_cache
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./model_cache:/app/model_cache
+      - ./logs:/app/logs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"

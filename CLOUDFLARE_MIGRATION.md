@@ -50,10 +50,10 @@
 **To transfer (pending):**
 - `pollinations-shot` - screenshot service
 - `pollinations-model-monitor` - model monitoring
+- `pollinations-chat` (chat.pollinations.ai)
 
 **To be determined (evaluate later):**
 - `html-wrapper` (websim.pollinations.ai)
-- `pollinations-chat` (chat.pollinations.ai)
 - `hacktoberfest-*` Pages projects
 
 - [x] **B1.** Export production D1 database from OLD account (snapshot 1)
@@ -114,8 +114,13 @@ GitHub OAuth App: https://github.com/organizations/pollinations/settings/applica
     - Add `https://enter.pollinations.ai/api/auth/callback/discord`
     - Add `https://staging.enter.pollinations.ai/api/auth/callback/discord`
   - (Keep workers.dev URLs as backup)
-- [ ] **C11.** Verify services on custom domains
-- [ ] **C12.** Announce migration complete
+- [ ] **C11.** Update `myceli-kpi` worker to use NEW D1 database ID:
+  - Edit `apps/kpi-dashboard/wrangler.toml`:
+    - `D1_ACCOUNT_ID` → `b6ec751c0862027ba269faf7029b2501` (Myceli.AI)
+    - `D1_DATABASE_ID` → `fc771b05-4e24-48bf-980c-d09f21278bd1` (NEW production)
+  - Redeploy: `cd apps/kpi-dashboard && npx wrangler deploy`
+- [ ] **C12.** Verify services on custom domains
+- [ ] **C13.** Announce migration complete
 
 ### Phase D: Post-Migration
 - [ ] **D1.** Monitor for 24-48 hours

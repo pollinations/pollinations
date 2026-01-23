@@ -54,19 +54,12 @@
 - [x] **B10.** Test workers via `.workers.dev` URLs
 - [x] **B11.** ~~Lower DNS TTLs~~ → Just wait 24-48h for global DNS cache expiry (no action needed)
 - [x] **B12.** Deploy `rubeus` (Portkey gateway) to NEW account
-- [ ] **B13.** Update EC2 text.pollinations.ai `.env` with new rubeus URL (Phase C)
 
 **Production workers.dev URLs (NEW account):**
 - Enter: https://pollinations-enter-production.elliot-b6e.workers.dev
 - Gen: https://pollinations-gen-production.elliot-b6e.workers.dev
 - Frontend: https://pollinations-ai.elliot-b6e.workers.dev
 - Rubeus (Portkey): https://rubeus.elliot-b6e.workers.dev
-
-**EC2 Update Required (B13):**
-Update `text.pollinations.ai/.env` on EC2:
-```
-PORTKEY_GATEWAY_URL=https://rubeus.elliot-b6e.workers.dev
-```
 
 **GitHub OAuth App (for workers.dev testing):**
 Add callback URL to GitHub OAuth App settings:
@@ -94,7 +87,12 @@ GitHub OAuth App: https://github.com/organizations/pollinations/settings/applica
   - `enter.pollinations.ai/wrangler.toml` (production + staging routes)
   - `gen.pollinations.ai/wrangler.toml` (production route)
   - `pollinations.ai/wrangler.toml` (both routes)
-- [ ] **C9.** Update OAuth App callback URLs:
+- [ ] **C9.** Update EC2 text.pollinations.ai `.env` with new rubeus URL:
+  ```
+  PORTKEY_GATEWAY_URL=https://rubeus.elliot-b6e.workers.dev
+  ```
+  Then restart: `ssh enter-services "sudo systemctl restart text-pollinations.service"`
+- [ ] **C10.** Update OAuth App callback URLs:
   - **GitHub** (https://github.com/organizations/pollinations/settings/applications/3352144):
     - Add `https://enter.pollinations.ai/api/auth/callback/github`
     - Add `https://staging.enter.pollinations.ai/api/auth/callback/github`
@@ -102,8 +100,8 @@ GitHub OAuth App: https://github.com/organizations/pollinations/settings/applica
     - Add `https://enter.pollinations.ai/api/auth/callback/discord`
     - Add `https://staging.enter.pollinations.ai/api/auth/callback/discord`
   - (Keep workers.dev URLs as backup)
-- [ ] **C10.** Verify services on custom domains
-- [ ] **C11.** Announce migration complete
+- [ ] **C11.** Verify services on custom domains
+- [ ] **C12.** Announce migration complete
 
 ### Phase D: Post-Migration
 - [ ] **D1.** Monitor for 24-48 hours

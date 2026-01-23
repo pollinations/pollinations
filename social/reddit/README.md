@@ -13,7 +13,7 @@ graph TD
     D -.-> C
     
     B -->|Process Content| E[Generate Posts]
-    C -->|Reddit Integration| F[Post to Subregddit]
+    C -->|Reddit Integration| F[Post to Subreddit]
 ```
 
 > Created with 💖 by [Ayushman Bhattacharya](https://github.com/Circuit-Overtime)

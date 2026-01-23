@@ -1,5 +1,5 @@
-import { privateEncrypt } from 'crypto';
 import dotenv from 'dotenv';
+import { getSystemPromptTemplate } from './system_prompt.js';
 dotenv.config();
 
 const POLLINATIONS_IMAGE_API = 'https://gen.pollinations.ai/image';
@@ -28,7 +28,15 @@ function getPreviousDayRange() {
     };
 }
 
-async function getMergedPRsFromPreviousDay(owner : any = 'pollinations', repo : any = 'pollinations', githubToken : string) {
+function getTodayDate() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+async function getMergedPRsFromPreviousDay(owner : string = 'pollinations', repo : string = 'pollinations', githubToken : string) {
     if (!githubToken) {
         throw new Error('GitHub token is required');
     }
@@ -152,21 +160,20 @@ async function getMergedPRsFromPreviousDay(owner : any = 'pollinations', repo : 
     return { prs: allPRs, dateString };
 }
 
-async function createImagePrompt(prs : any[], dateString: string, pollactionsToken : string) {
+async function createImagePrompt(prs : any[], dateString: string, pollinationsToken : string) {
     if (!prs || prs.length === 0) {
         return {
-            prompt: 'Pollinations: A free, open-source AI image generation platform with community updates',
+            prompt: 'Flat vector editorial infographic: Pollinations: A free, open-source AI image generation platform with community updates',
             summary: 'No specific updates from previous day',
             prCount: 0,
             highlights: [],
         };
     }
 
-    const prList = prs.slice(0, 10).map(pr => pr.title).join(', ');
-
-    const systemPrompt = `Output SHORT image prompt (2-3 sentences). Create nature-themed comic flowchart with updates as distinct natural elements (flowers, trees, creatures, vines). Bug fixes=pruned branches, Features=blooming flowers, Refactors=reorganized paths, Infrastructure=nesting animals. Bright comic style: emerald, golden, sky blue, orange, purple. Dynamic energy: wind, pollen, water, bee flight paths. Strip all dates, counts, metrics. ONLY output the image prompt.`
-    const userPrompt = `Nature-themed comic flowchart: ${prList}
-    Short prompt only. No dates, counts, metadata.`
+    const prSummary = prs.slice(0, 10).map(pr => `- ${pr.title}`).join('\n');
+    const systemPrompt = getSystemPromptTemplate(prSummary);
+    
+    const userPrompt = `Generate an image prompt for a flat vector editorial infographic for Reddit based on these PRs:\n${prSummary}`;
 
     try {
         console.log('Generating merged prompt using Pollinations API...');
@@ -175,17 +182,16 @@ async function createImagePrompt(prs : any[], dateString: string, pollactionsTok
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${pollactionsToken}`,
+                'Authorization': `Bearer ${pollinationsToken}`,
             },
             body: JSON.stringify({
-                model: 'gemini-fast',
+                model: 'openai-large',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: userPrompt },
                 ],
                 temperature: 0.7,
-                max_tokens: 250,
-                seed: 42,
+                max_tokens: 500,
             }),
         });
 
@@ -235,14 +241,12 @@ ${highlights.map(h => `• ${h}`).join('\n')}
             prs: prs.map(p => ({ number: p.number, title: p.title, url: p.url })),
             dateString,
         };
+        
     } catch (error) {
-        console.warn(`Prompt generation failed: ${(error as any).message}`);
-        console.log('Falling back to local prompt generation...\n');
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`Prompt generation failed: ${message}`);
 
-        const comicPrompt = `Comic book style illustration celebrating ${prs.length} Pollinations updates:
-${prs.slice(0, 5).map(p => p.title).join(', ')}.
-Dynamic composition with bees pollinating code flowers, bright colors, retro comic aesthetic.
-Write in pure plain text, no metadata or extra commentary or markdown`;
+        const comicPrompt = `Flat vector editorial infographic celebrating ${prs.length} Pollinations updates. Headline: 'POLLINATIONS - WEEKLY UPDATES'. Content includes: ${prs.slice(0, 5).map(p => p.title).join(', ')}. Style: minimal tech infographic. Color palette: cream background, navy text, lime green (#ecf874) accents. No decorative elements.`;
 
         const highlights = prs
             .slice(0, 8)
@@ -267,50 +271,29 @@ Write in pure plain text, no metadata or extra commentary or markdown`;
     }
 }
 
-async function generateTitleFromPRs(prs : Array<string>,  pollactionsToken : string, dateString: string = '') {
+async function generateTitleFromPRs(prs : any[],  pollinationsToken : string, dateString: string = '') {
     try {
-        const dateFormatted = dateString ? `[${dateString}]` : '';
-        const systemPrompt = `
-        You generate catchy titles for engineers and open-source builders.
-        Voice:
-        - Hacker, insider, dev-to-dev
-        - Playful, confident, slightly chaotic
-        - Internet-native humor
-        - Zero corporate or marketing tone
-        - No emojis
-        - No markdown formatting remove any ** or backticks or [] () of markdown
-        - Don't pick any internal information about the PRs
-        Constraints:
-        - Keep the internal dev PR information private
-        - No dates except the one provided
-        - No more than 30 words
-        Output:
-        Only one title you can use around 20-30 words. Nothing else.
-        Embed the date naturally in the middle with a funny context.
-        Adress the viewers in a cazual genz way!
-        Use the name "pollinations.ai" strictly (case sensitive).
-        Describe the PRs in short (not the internal or sensitive ones) but NOT in a technical context, make it so that everyone can understand it.
-        No markdown formatting remove any ** or backticks or [] () of markdown
-        Create a FOMO effect and ask them to register at https://enter.pollinations.ai for easy AI features access.
-        `;
-        const userPrompt = `Generate a Reddit description for this dev update from  the following pull requests without any markdown formatting just plain text (use the max of the date not the date 24hrs prior) ${dateString}:${prs}`;
-
+        const todayDate = getTodayDate();
+        
+        const prSummary = prs.slice(0, 5).map(pr => `- ${pr.title}`).join('\n');
+        
+        const systemPrompt = getSystemPromptTemplate(prSummary);
+        const userPrompt = `Create a short, factual Reddit post title (5-12 words) for today's update (${todayDate}) based on these PRs:\n${prSummary}\n\nTitle must include 'Pollinations' or 'Pollinations.ai' and follow Reddit norms - factual, non-promotional.`;
 
         const response = await fetch(POLLINATIONS_API, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${pollactionsToken}`,
+                'Authorization': `Bearer ${pollinationsToken}`,
             },
             body: JSON.stringify({
-                model: 'gemini-fast',
+                model: 'openai-large',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: userPrompt },
                 ],
-                temperature: 0.8,
-                max_tokens: 500,
-                seed : Math.floor(Math.random() * 100000),
+                temperature: 0.7,
+                max_tokens: 150,
             }),
         });
 
@@ -324,18 +307,18 @@ async function generateTitleFromPRs(prs : Array<string>,  pollactionsToken : str
         title = title.replace(/^["']|["']$/g, '').trim();
         
         if (!title || title.length < 5) {
-            title = `Pollinations: New AI Powers Unlock ${dateFormatted} - Register at https://enter.pollinations.ai for Early Access`;
+            title = `Something remarkable happened at Pollinations today`;
         }
 
         return title;
     } catch (error) {
-        console.error('PR title generation failed:', (error as any).message);
-        const dateFormatted = dateString ? `[${dateString}]` : '';
-        return `Pollinations: What's New in AI? ${dateFormatted} - Build, Share, Get Featured at https://enter.pollinations.ai`;
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`Prompt generation failed: ${message}`);
+        return `You're gonna want to see what Pollinations shipped`;
     }
 }
 
-async function generateImage(prompt : string, pollactionsToken : string, attempt = 0) {
+async function generateImage(prompt : string, pollinationsToken : string, attempt = 0) {
     if (attempt > 0) {
         const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1);
         console.log(`  Retrying in ${delay}s... (attempt ${attempt + 1}/${MAX_RETRIES})`);
@@ -343,11 +326,11 @@ async function generateImage(prompt : string, pollactionsToken : string, attempt
     }
 
     try {
-        const URL = `${POLLINATIONS_IMAGE_API}/${encodeURIComponent(prompt)}?model=nanobanana&width=1024&height=1024&seed=42`;
+        const URL = `${POLLINATIONS_IMAGE_API}/${encodeURIComponent(prompt)}?model=nanobanana-pro&width=1024&height=1024&seed=42`;
         const response = await fetch(URL, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${pollactionsToken}`,
+                'Authorization': `Bearer ${pollinationsToken}`,
             },
             signal: AbortSignal.timeout(120000),
         });
@@ -362,15 +345,18 @@ async function generateImage(prompt : string, pollactionsToken : string, attempt
         }
     } catch (error) {
         if (attempt < MAX_RETRIES - 1) {
-            console.log(`  ✗ Attempt ${attempt + 1} failed: ${(error as any).message}`);
-            return generateImage(prompt, pollactionsToken, attempt + 1);
+            const message = error instanceof Error ? error.message : String(error);
+            console.log(`  ✗ Attempt ${attempt + 1} failed: ${message}`);
+            return generateImage(prompt, pollinationsToken, attempt + 1);
         }
         throw error;
     }
 }
 
-async function pipeline(githubToken : string, pollactionsToken : string) {
+async function pipeline(githubToken : string, pollinationsToken : string) {
     try {
+        console.log('\n📋 Fetching merged PRs from previous day...\n');
+        
         const result = await getMergedPRsFromPreviousDay('pollinations', 'pollinations', githubToken);
         
         if (!result || !result.prs || result.prs.length === 0) {
@@ -379,20 +365,19 @@ async function pipeline(githubToken : string, pollactionsToken : string) {
         }
         
         const { prs, dateString } = result;
-        const promptData = await createImagePrompt(prs, dateString, pollactionsToken);
-        console.log(prs)
-        console.log('\n=== Generated Image Prompt ===');
+        const promptData = await createImagePrompt(prs, dateString, pollinationsToken);
+        console.log('\n=== Generated Image Prompt (System Prompt Based) ===');
         console.log(promptData.prompt);
         console.log('\n');
 
 
-        const postTitle = await generateTitleFromPRs(prs.map(p => p.title), pollactionsToken, dateString);
-        console.log('=== Generated Post Title ===');
+        const postTitle = await generateTitleFromPRs(prs, pollinationsToken, dateString);
+        console.log('=== Generated Post Title (System Prompt Based) ===');
         console.log(postTitle);
         console.log('\n');
         
         
-        const imageData = await generateImage(promptData.prompt, pollactionsToken);
+        const imageData = await generateImage(promptData.prompt, pollinationsToken);
         console.log('=== Generated Image URL ===');
         console.log(imageData.url);
         console.log('\n');
@@ -424,4 +409,3 @@ export {LINK, TITLE};
 fs.writeFileSync(linkTsPath, updatedLinkTs, 'utf-8');
 console.log('\n✓ link.ts updated successfully');
 })();
-

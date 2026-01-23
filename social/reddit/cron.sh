@@ -1,1 +1,0 @@
-(crontab -l 2>/dev/null; echo "30 10 * * * cd /root/reddit_bot.pollinations && bash deploy.sh") | crontab -

@@ -1,4 +1,4 @@
-import { AutoAwesome, Close, Menu } from "@mui/icons-material";
+import { Close, Menu } from "@mui/icons-material";
 import {
     AppBar,
     Box,
@@ -10,7 +10,6 @@ import {
     ListItem,
     ListItemText,
     Toolbar,
-    Tooltip,
     Typography,
     useMediaQuery,
     useTheme,
@@ -132,60 +131,6 @@ const Navbar = () => {
                         />
                     </ListItem>
                 ))}
-
-                {/* Polly AI Assistant in Mobile Menu */}
-                <ListItem
-                    component={Link}
-                    to="/bot"
-                    sx={{
-                        color: isActivePath("/bot")
-                            ? colors.lime.main
-                            : colors.text.muted,
-                        backgroundColor: isActivePath("/bot")
-                            ? colors.lime.dim
-                            : "transparent",
-                        "&:hover": {
-                            backgroundColor: colors.bg.cardGlass,
-                            color: colors.lime.main,
-                        },
-                        transition: "all 0.3s ease",
-                        borderRadius: "8px",
-                        mx: 1,
-                        mt: 2,
-                    }}
-                >
-                    <Box
-                        sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1.5,
-                            width: "100%",
-                        }}
-                    >
-                        <Box
-                            component="img"
-                            src="/polli_white.svg"
-                            alt="Polly"
-                            sx={{
-                                width: 24,
-                                height: 24,
-                                filter: isActivePath("/bot")
-                                    ? "brightness(0) saturate(100%) invert(79%) sepia(55%) saturate(497%) hue-rotate(44deg) brightness(103%) contrast(101%)"
-                                    : "brightness(0) invert(0.7)",
-                            }}
-                        />
-                        <ListItemText
-                            primary="Polly"
-                            sx={{
-                                "& .MuiTypography-root": {
-                                    fontWeight: isActivePath("/bot")
-                                        ? 600
-                                        : 400,
-                                },
-                            }}
-                        />
-                    </Box>
-                </ListItem>
             </List>
         </Box>
     );
@@ -333,50 +278,6 @@ const Navbar = () => {
                                     {item.name}
                                 </Button>
                             ))}
-
-                            <Tooltip title="Polly" placement="bottom">
-                                <IconButton
-                                    component={Link}
-                                    to="/bot"
-                                    sx={{
-                                        background: "transparent",
-                                        width: 40,
-                                        height: 40,
-                                        ml: 1,
-                                        position: "relative",
-                                        transition: "all 0.3s ease",
-                                        "&:hover": {
-                                            background:
-                                                colors.bg.cardGlassHover,
-                                        },
-                                    }}
-                                >
-                                    <Box
-                                        component="img"
-                                        src="/polli_white.svg"
-                                        alt="Polly"
-                                        sx={{
-                                            width: 22,
-                                            height: 22,
-                                            filter: isActivePath("/bot")
-                                                ? "brightness(0) saturate(100%) invert(79%) sepia(55%) saturate(497%) hue-rotate(44deg) brightness(103%) contrast(101%)"
-                                                : "brightness(0) invert(0.7)",
-                                            transition: "filter 0.3s ease",
-                                        }}
-                                    />
-                                    <AutoAwesome
-                                        sx={{
-                                            position: "absolute",
-                                            top: 4,
-                                            right: 4,
-                                            fontSize: "12px",
-                                            color: colors.lime.main,
-                                            animation:
-                                                "pulse 2s ease-in-out infinite",
-                                        }}
-                                    />
-                                </IconButton>
-                            </Tooltip>
                         </Box>
                     )}
 

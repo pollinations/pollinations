@@ -340,9 +340,7 @@ const HomePage = () => {
                                                 }}
                                             >
                                                 POLLINATIONS.AI
-                                            </Box>{" "}
-                                            <br></br>
-                                            Celebrating Open Source Development
+                                            </Box>
                                         </Typography>
 
                                         <Box
@@ -387,7 +385,6 @@ const HomePage = () => {
                                                 margin: "0 auto",
                                             }}
                                         >
-                                            This time with{" "}
                                             <Box
                                                 component="span"
                                                 onClick={() => {
@@ -402,12 +399,11 @@ const HomePage = () => {
                                                     cursor: "pointer",
                                                 }}
                                             >
-                                                Google Summer of Code 2026,
+                                                Google Summer of Code
                                             </Box>{" "}
-                                            a 16 years old program, run every
-                                            summer, with the intention of
-                                            bringing more students into open
-                                            source.
+                                            is a 16-year-old global program
+                                            focused on bringing new contributors
+                                            into open source.
                                         </Typography>
 
                                         <Box
@@ -823,7 +819,7 @@ const HomePage = () => {
                                     maxWidth: "650px",
                                     width: "100%",
                                     position: "relative",
-                                    zIndex: 2
+                                    zIndex: 2,
                                 }}
                             >
                                 <motion.div

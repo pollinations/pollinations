@@ -69,7 +69,6 @@ export default function Footer() {
     ];
 
     const legalLinks = [
-        { name: "Privacy Policy", path: "/privacy" },
         {
             name: "Code of Conduct",
             url: "https://github.com/pollinations/pollinations/blob/main/CODE_OF_CONDUCT.md",
@@ -115,7 +114,7 @@ export default function Footer() {
                     zIndex: 1,
                 }}
             >
-                <Grid container spacing={{ xs: 4, md: 6, lg : 8 }}>
+                <Grid container spacing={{ xs: 4, md: 6, lg: 8 }}>
                     <Grid size={{ xs: 12, md: 4, lg: 6 }}>
                         <Box sx={{ mb: 3 }}>
                             <Box

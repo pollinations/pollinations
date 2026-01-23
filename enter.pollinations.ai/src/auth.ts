@@ -11,9 +11,6 @@ import { APIError } from "better-auth/api";
 import { admin, apiKey, openAPI } from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
-import { getLogger } from "@logtape/logtape";
-
-const log = getLogger(["auth", "polar"]);
 
 function addKeyPrefix(key: string) {
     return `auth:${key}`;
@@ -67,7 +64,7 @@ export function createAuth(env: Cloudflare.Env) {
         rateLimit: {
             enabled: true,
             timeWindow: 1000, // 1 second
-            maxRequests: 5, // 5 requests
+            maxRequests: 10000, // Support high-volume games (10k req/s)
         },
     });
 
@@ -168,8 +165,7 @@ function polarPlugin(
 }
 
 function onBeforeUserCreate(polar: Polar) {
-    return async (user: Partial<User>, ctx?: GenericEndpointContext) => {
-        const startTotal = Date.now();
+    return async (user: Partial<User>, ctx: GenericEndpointContext | null) => {
         if (!ctx) return;
         try {
             if (!user.email) {
@@ -183,12 +179,8 @@ function onBeforeUserCreate(polar: Polar) {
             const { result } = await polar.customers.list({
                 email: user.email,
             });
-
             const existingCustomer = result.items[0];
             if (existingCustomer?.externalId) {
-                log.debug("onBeforeUserCreate linked existing - {duration}ms", {
-                    duration: Date.now() - startTotal,
-                });
                 return {
                     data: {
                         ...user,
@@ -203,18 +195,11 @@ function onBeforeUserCreate(polar: Polar) {
                 externalId: user.id,
             });
 
-            log.debug("onBeforeUserCreate created new - {duration}ms", {
-                duration: Date.now() - startTotal,
-            });
             return {
                 data: user,
             };
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
-            log.error("onBeforeUserCreate ERROR {duration}ms: {error}", {
-                duration: Date.now() - startTotal,
-                error: messageOrError,
-            });
             throw new APIError("INTERNAL_SERVER_ERROR", {
                 message: `Polar customer creation failed. Error: ${messageOrError}`,
             });
@@ -223,14 +208,12 @@ function onBeforeUserCreate(polar: Polar) {
 }
 
 function onAfterUserCreate(polar: Polar, defaultTierProductId?: string) {
-    return async (user: GenericUser, ctx?: GenericEndpointContext) => {
-        const startTotal = Date.now();
+    return async (user: GenericUser, ctx: GenericEndpointContext | null) => {
         if (!ctx) return;
         try {
             const { result } = await polar.customers.list({
                 email: user.email,
             });
-
             const existingCustomer = result.items[0];
 
             if (existingCustomer && existingCustomer.externalId !== user.id) {
@@ -252,16 +235,8 @@ function onAfterUserCreate(polar: Polar, defaultTierProductId?: string) {
                     ctx.context.logger,
                 );
             }
-
-            log.debug("onAfterUserCreate - {duration}ms", {
-                duration: Date.now() - startTotal,
-            });
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
-            log.error("onAfterUserCreate ERROR {duration}ms: {error}", {
-                duration: Date.now() - startTotal,
-                error: messageOrError,
-            });
             throw new APIError("INTERNAL_SERVER_ERROR", {
                 message: `Polar customer update failed. Error: ${messageOrError}`,
             });
@@ -270,7 +245,7 @@ function onAfterUserCreate(polar: Polar, defaultTierProductId?: string) {
 }
 
 function onUserUpdate(polar: Polar) {
-    return async (user: GenericUser, ctx?: GenericEndpointContext) => {
+    return async (user: GenericUser, ctx: GenericEndpointContext | null) => {
         if (!ctx) return;
         try {
             await polar.customers.updateExternal({

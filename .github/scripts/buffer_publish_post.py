@@ -7,12 +7,15 @@ Triggered when a post PR is merged
 import os
 import sys
 import json
+import time
 import requests
 from typing import Optional
 from datetime import datetime, timezone
 
 # Buffer API
 BUFFER_API_BASE = "https://api.bufferapp.com/1"
+MAX_RETRIES = 3
+RETRY_DELAY = 5  # seconds
 
 
 def get_env(key: str, required: bool = True) -> Optional[str]:
@@ -52,32 +55,49 @@ def create_buffer_update(
     media: Optional[dict] = None,
     now: bool = True
 ) -> dict:
-    """Create a Buffer update (post)"""
-    data = {
-        "access_token": access_token,
-        "text": text,
-        "profile_ids[]": [profile_id],
-    }
+    """Create a Buffer update (post)
+
+    Uses application/x-www-form-urlencoded format as required by Buffer API.
+    Includes retry logic for rate limits (HTTP 429).
+    """
+    # Buffer API expects profile_ids[] as separate form fields for each ID
+    data = [
+        ("access_token", access_token),
+        ("text", text),
+        ("profile_ids[]", profile_id),  # Single profile, can add more tuples for multiple
+    ]
 
     if media:
         for key, value in media.items():
             if value:
-                data[f"media[{key}]"] = value
+                data.append((f"media[{key}]", value))
 
     if now:
-        data["now"] = "true"
+        data.append(("now", "true"))
 
-    response = requests.post(
-        f"{BUFFER_API_BASE}/updates/create.json",
-        data=data,
-        timeout=60
-    )
+    # Retry logic for rate limits
+    for attempt in range(MAX_RETRIES):
+        response = requests.post(
+            f"{BUFFER_API_BASE}/updates/create.json",
+            data=data,
+            timeout=60
+        )
 
-    if response.status_code != 200:
+        if response.status_code == 200:
+            return response.json()
+
+        if response.status_code == 429:
+            # Rate limited - wait and retry
+            if attempt < MAX_RETRIES - 1:
+                print(f"Rate limited, waiting {RETRY_DELAY}s before retry {attempt + 2}/{MAX_RETRIES}...")
+                time.sleep(RETRY_DELAY)
+                continue
+
+        # Non-retryable error or max retries reached
         print(f"Error creating update: {response.status_code} - {response.text[:500]}")
         return {"success": False, "error": response.text}
 
-    return response.json()
+    return {"success": False, "error": "Max retries exceeded"}
 
 
 def publish_linkedin_post(post_data: dict, access_token: str) -> bool:

@@ -211,9 +211,6 @@ function RouteComponent() {
                         githubUsername={user?.githubUsername || ""}
                         githubAvatarUrl={user?.image || ""}
                         onSignOut={handleSignOut}
-                        onUserPortal={() => {
-                            window.location.href = "/api/polar/customer/portal";
-                        }}
                     />
                     <Button
                         as="a"

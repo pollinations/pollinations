@@ -133,6 +133,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     // ============================================================================
     "claude-sonnet-4-5-fallback": () => ({
         strategy: { mode: "fallback" },
+        defaultOptions: { max_tokens: 16384 },
         targets: [
             // Primary: AWS Bedrock (native)
             {
@@ -158,6 +159,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     }),
     "claude-opus-4-5-fallback": () => ({
         strategy: { mode: "fallback" },
+        defaultOptions: { max_tokens: 16384 },
         targets: [
             // Primary: AWS Bedrock (native)
             {

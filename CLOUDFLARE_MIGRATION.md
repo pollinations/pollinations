@@ -42,6 +42,16 @@
 **Already on Myceli.AI:** `myceli-kpi` (kpi.myceli.ai)
 **Not CF workers:** image/text services (EC2), economics-dashboard (Docker/Grafana)
 
+**Staying on OLD account (NOT transferring - archive/legacy):**
+| Worker/Project | Type | Notes |
+|----------------|------|-------|
+| `github-auth-simple` | Worker | Legacy auth, replaced by enter.pollinations.ai |
+| `rubeus` | Worker | Old Portkey gateway (new one deployed to Myceli.AI) |
+| `html-wrapper` | Worker | websim.pollinations.ai - evaluate later |
+| `pollinations-chat` | Pages | chat.pollinations.ai - evaluate later |
+| `pollinations-model-monitor` | Pages | model-monitor.pollinations.ai - evaluate later |
+| `hacktoberfest-*` | Pages | Hacktoberfest projects - archive |
+
 - [x] **B1.** Export production D1 database from OLD account (snapshot 1)
 - [x] **B2.** Create production D1 database in NEW account
 - [x] **B3.** Create production KV namespace in NEW account (empty)

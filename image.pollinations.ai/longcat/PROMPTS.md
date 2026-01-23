@@ -1,0 +1,13 @@
+## Tested and Generated Points:- 
+
+A middle-aged man with silver-streaked hair stands by a rain-speckled window, wearing a charcoal wool coat and thin metal-framed glasses. City lights blur into soft bokeh behind him as dusk settles. The shot is a tight medium close-up, drawing attention to the thoughtful tension in his brow. Cool ambient light from outside contrasts with a warm interior lamp, creating a cinematic color split that accentuates facial contours and reflective surfaces. The composition uses shallow depth of field, isolating the subject in a quiet moment of introspection.
+
+A young woman with dark curly hair reclines on a linen sofa, dressed in a muted teal silk blouse and loose trousers. Morning light filters through sheer curtains, casting soft geometric shadows across the room. The camera captures a wide medium shot, balancing her relaxed posture with the minimalist interior. Natural light wraps gently around her, highlighting fabric textures and skin tones. The scene feels airy and contemplative, emphasizing stillness and domestic calm.
+
+An elderly Japanese man wearing a traditional indigo noragi jacket sits at a wooden table, hands folded around a ceramic teacup. Behind him, a shoji screen diffuses pale daylight into the room. The camera frames him in a centered medium shot, symmetrical and restrained. Soft, even lighting reveals fine wrinkles and wood grain details, lending a tactile realism. The restrained composition conveys quiet dignity and ritual.
+
+A young Black woman with braided hair tied back stands on a rooftop at golden hour, wearing a flowing white dress that catches the breeze. The city skyline stretches behind her, slightly out of focus. The camera uses a medium-long shot, allowing the environment to breathe. Warm sunlight rims her silhouette, creating a subtle halo effect. The interplay of motion, light, and scale gives the image a sense of openness and resolve.
+
+A bearded man in his early thirties sits at a cluttered desk, wearing a rolled-sleeve oxford shirt and a leather watch. Papers, notebooks, and a laptop surround him. The camera adopts a medium shot from a slight angle, adding depth. A single desk lamp casts directional light, creating sharp contrasts and textured shadows. The scene emphasizes focus and creative intensity, with controlled chaos framing the subject.
+
+A young woman wearing a pale lavender coat stands alone at a quiet bus stop just after snowfall. Frosted glass panels and bare trees form the background. The camera frames a medium shot at eye level, fostering intimacy. Diffused overcast light softens edges and colors, muting the palette. The composition conveys solitude and anticipation, with negative space reinforcing emotional distance.

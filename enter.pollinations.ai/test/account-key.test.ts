@@ -148,7 +148,9 @@ test(
             const expectedExpiresIn = Math.floor((expiresAtMs - nowMs) / 1000);
 
             // Allow for some time drift during test execution (5 seconds)
-            expect(Math.abs(data.expiresIn - expectedExpiresIn)).toBeLessThan(5);
+            expect(Math.abs(data.expiresIn - expectedExpiresIn)).toBeLessThan(
+                5,
+            );
         }
     },
 );

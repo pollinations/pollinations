@@ -1,0 +1,115 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "claude-large",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "required",
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "549",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 07 Jan 2026 04:25:18 GMT",
+      "etag": "W/\"225-jfRHtzha2slFJKIf8OEGvYrfHSo\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "claude-opus-4-5-20251101",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "70",
+      "x-usage-prompt-text-tokens": "1010",
+      "x-usage-total-tokens": "1080"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_ba4092719c1ce84ba2b95a6656548ca3",
+        "object": "chat.completion",
+        "created": 1767759918,
+        "model": "claude-opus-4-5-20251101",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "",
+              "tool_calls": [
+                {
+                  "id": "toolu_vrtx_01UkFX1ak8nNhJUwP4w8kexR",
+                  "type": "function",
+                  "function": {
+                    "name": "calculator",
+                    "arguments": "{\"operation\":\"add\",\"a\":5,\"b\":3}"
+                  }
+                }
+              ]
+            },
+            "index": 0,
+            "logprobs": null,
+            "finish_reason": "tool_calls"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1010,
+          "completion_tokens": 70,
+          "total_tokens": 1080,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

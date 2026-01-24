@@ -1,0 +1,104 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai-fast",
+        "messages": [],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1662",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:41:17 GMT",
+      "etag": "W/\"67e-WdahhbwewatDrMqKZ9T9J7JbwhY\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-nano-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "384",
+      "x-usage-completion-text-tokens": "177",
+      "x-usage-prompt-text-tokens": "243",
+      "x-usage-total-tokens": "804"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Nice to meet you. What would you like to do today? We can keep it light or dive deep—your call.\n\nHere are a few ways I can help:\n- Talk it out: vent, reflect, or just chat about whatever’s on your mind.\n- Brainstorm: ideas for a project, gift, trip, or story.\n- Solve a problem: break down a math, tech, or everyday challenge step by step.\n- Writing help: draft, edit, or tighten up an email, resume, essay, or piece of fiction.\n- Learn something new: a clear explanation of a concept or topic.\n- Plan and organize: timelines, checklists, goals, and priorities.\n\nIf you have a specific goal, tell me the goal, any constraints, and the deadline. What would you like to start with?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1766245274,
+        "id": "pllns_d0c74ca1a56cd44fffb2d4efe736da41",
+        "model": "gpt-5-nano-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {}
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 561,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 384,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 243,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 804
+        }
+      }
+    }
+  }
+}

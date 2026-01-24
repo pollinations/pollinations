@@ -706,7 +706,7 @@ export const accountRoutes = new Hono<Env>()
                 expiresAt,
                 expiresIn,
                 permissions,
-                pollenBudget: apiKey.pollenBalance,
+                pollenBudget: apiKey.pollenBalance ?? null,
                 rateLimitEnabled: keyDetails?.rateLimitEnabled ?? true,
             });
         },

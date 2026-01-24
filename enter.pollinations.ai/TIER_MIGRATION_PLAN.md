@@ -179,7 +179,7 @@ D1    → Tiers (set on registration, refilled by cron at 00:00 UTC)
 
 | Question | Answer |
 |----------|--------|
-| Tier amounts | spore=1, seed=3, flower=10, nectar=20, router=100 |
+| Tier amounts | spore=1, seed=3, flower=10, nectar=20, router=500 |
 | Pack purchases | Polar still handles (NOT migrated to Stripe yet) |
 | Tier upgrades | Manual via `/update-tier` admin endpoint or GitHub Actions |
 | Registration timing | Immediate balance assignment |

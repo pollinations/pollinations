@@ -3,8 +3,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { getTierPollen } from "@/tier-config.ts";
-import { isValidTier, type TierName } from "@/utils/polar.ts";
+import { getTierPollen, isValidTier, type TierName } from "@/tier-config.ts";
 import { user as userTable } from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 

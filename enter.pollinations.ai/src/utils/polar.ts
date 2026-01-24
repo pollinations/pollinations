@@ -68,9 +68,8 @@ export const tierNames = [
 export type TierName = (typeof tierNames)[number];
 export type TierStatus = TierName | "none";
 
-export function isValidTier(tier: string): tier is TierName {
-    return tierNames.includes(tier as TierName);
-}
+// Re-export isValidTier from tier-config.ts for backwards compatibility
+export { isValidTier } from "@/tier-config.ts";
 
 export function getTierStatus(userTier: string | null | undefined): TierStatus {
     const normalized = userTier?.toLowerCase();

@@ -1,4 +1,3 @@
-import { Polar } from "@polar-sh/sdk";
 import {
     type BetterAuthOptions,
     type BetterAuthPlugin,
@@ -20,11 +19,6 @@ function addKeyPrefix(key: string) {
 }
 
 export function createAuth(env: Cloudflare.Env) {
-    const polar = new Polar({
-        accessToken: env.POLAR_ACCESS_TOKEN,
-        server: env.POLAR_SERVER,
-    });
-
     const db = drizzle(env.DB);
 
     const PUBLISHABLE_KEY_PREFIX = "pk";
@@ -124,12 +118,7 @@ export function createAuth(env: Cloudflare.Env) {
                 }),
             },
         },
-        plugins: [
-            adminPlugin,
-            apiKeyPlugin,
-            polarPlugin(polar, env),
-            openAPIPlugin,
-        ],
+        plugins: [adminPlugin, apiKeyPlugin, tierPlugin(env), openAPIPlugin],
         telemetry: { enabled: false },
     });
 }
@@ -138,19 +127,19 @@ export type Auth = ReturnType<typeof createAuth>;
 export type Session = Auth["$Infer"]["Session"]["session"];
 export type User = Auth["$Infer"]["Session"]["user"];
 
-function polarPlugin(polar: Polar, env: Cloudflare.Env): BetterAuthPlugin {
+/**
+ * Plugin to initialize tier balance for new users in D1.
+ * This replaces the old Polar-based tier management.
+ */
+function tierPlugin(env: Cloudflare.Env): BetterAuthPlugin {
     return {
-        id: "polar",
+        id: "tier",
         init: () => ({
             options: {
                 databaseHooks: {
                     user: {
                         create: {
-                            before: onBeforeUserCreate(polar),
-                            after: onAfterUserCreate(polar, env),
-                        },
-                        update: {
-                            after: onUserUpdate(polar),
+                            after: onAfterUserCreate(env),
                         },
                     },
                 },
@@ -159,63 +148,14 @@ function polarPlugin(polar: Polar, env: Cloudflare.Env): BetterAuthPlugin {
     } satisfies BetterAuthPlugin;
 }
 
-function onBeforeUserCreate(polar: Polar) {
-    return async (user: Partial<User>, ctx?: GenericEndpointContext) => {
-        if (!ctx) return;
-        try {
-            if (!user.email) {
-                throw new APIError("BAD_REQUEST", {
-                    message: "User creation failed: missing email address",
-                });
-            }
-
-            // Set initial tier balance for new users
-            const tierBalance = getTierPollen(DEFAULT_TIER);
-            const lastTierGrant = Date.now();
-
-            // if the customer already exists, link the new account
-            const { result } = await polar.customers.list({
-                email: user.email,
-            });
-            const existingCustomer = result.items[0];
-            if (existingCustomer?.externalId) {
-                return {
-                    data: {
-                        ...user,
-                        id: existingCustomer.externalId,
-                        tierBalance,
-                        lastTierGrant,
-                    },
-                };
-            }
-
-            await polar.customers.create({
-                email: user.email,
-                name: user.name,
-                externalId: user.id,
-            });
-
-            return {
-                data: {
-                    ...user,
-                    tierBalance,
-                    lastTierGrant,
-                },
-            };
-        } catch (e: unknown) {
-            const messageOrError = e instanceof Error ? e.message : e;
-            throw new APIError("INTERNAL_SERVER_ERROR", {
-                message: `User creation failed. Error: ${messageOrError}`,
-            });
-        }
-    };
-}
-
-function onAfterUserCreate(polar: Polar, env: Cloudflare.Env) {
+/**
+ * Set initial tier balance in D1 after user creation.
+ * This guarantees new users get their default tier pollen.
+ */
+function onAfterUserCreate(env: Cloudflare.Env) {
     return async (user: GenericUser, ctx?: GenericEndpointContext) => {
         if (!ctx) return;
         try {
-            // Set initial tier balance in D1 (guarantees persistence)
             const db = drizzle(env.DB);
             const tierBalance = getTierPollen(DEFAULT_TIER);
             await db
@@ -225,50 +165,11 @@ function onAfterUserCreate(polar: Polar, env: Cloudflare.Env) {
                     lastTierGrant: Date.now(),
                 })
                 .where(eq(userTable.id, user.id));
-
-            // Link Polar customer to user ID (needed for pack purchases)
-            const { result } = await polar.customers.list({
-                email: user.email,
-            });
-            const existingCustomer = result.items[0];
-
-            if (existingCustomer && existingCustomer.externalId !== user.id) {
-                await polar.customers.update({
-                    id: existingCustomer.id,
-                    customerUpdate: {
-                        externalId: user.id,
-                    },
-                });
-            }
-            // Note: Tier subscription is NO LONGER created in Polar
-            // Tier is managed entirely in D1 (set on registration, refilled by cron)
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
             throw new APIError("INTERNAL_SERVER_ERROR", {
-                message: `User setup failed. Error: ${messageOrError}`,
+                message: `User tier initialization failed. Error: ${messageOrError}`,
             });
         }
     };
 }
-
-function onUserUpdate(polar: Polar) {
-    return async (user: GenericUser, ctx?: GenericEndpointContext) => {
-        if (!ctx) return;
-        try {
-            await polar.customers.updateExternal({
-                externalId: user.id,
-                customerUpdateExternalID: {
-                    email: user.email,
-                    name: user.name,
-                },
-            });
-        } catch (e: unknown) {
-            const messageOrError = e instanceof Error ? e.message : e;
-            ctx.context.logger.error(
-                `Polar customer update failed. Error: ${messageOrError}`,
-            );
-        }
-    };
-}
-
-// Note: ensureDefaultSubscription removed - tier is now D1-only (no Polar subscriptions)

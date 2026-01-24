@@ -40,45 +40,15 @@ export const polarRoutes = new Hono<Env>()
     .use("*", auth({ allowApiKey: false, allowSessionCookie: true }))
     .use("*", polar)
     .get(
-        "/customer/state",
-        describeRoute({
-            tags: ["Auth"],
-            description: "Get the polar customer state for the current user.",
-            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
-        }),
-        async (c) => {
-            const user = c.var.auth.requireUser();
-            const result = await c.var.polar.getCustomerState(user.id);
-            return c.json(result);
-        },
-    )
-    .get(
-        "/customer/events",
-        describeRoute({
-            tags: ["Auth"],
-            description: "Get usage events associated with the current user.",
-            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
-        }),
-        async (c) => {
-            const user = c.var.auth.requireUser();
-            const polar = c.var.polar.client;
-            const result = await polar.events.list({
-                externalCustomerId: user.id,
-            });
-            return c.json(result);
-        },
-    )
-    .get(
         "/customer/d1-balance",
         describeRoute({
             tags: ["Auth"],
             description:
-                "Get the local D1 pollen balance for the current user (with lazy init from Polar).",
+                "Get the local D1 pollen balance for the current user.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            // Use getBalance which includes lazy init from Polar if not set
             const { tierBalance, packBalance, cryptoBalance } =
                 await c.var.polar.getBalance(user.id);
             const db = drizzle(c.env.DB);

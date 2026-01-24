@@ -1,4 +1,5 @@
-#!/usr/bin/env npx tsx
+#!/usr/bin/env node
+
 /**
  * Validates app submission before Claude processes it.
  *
@@ -10,57 +11,16 @@
  * Outputs JSON with validation results.
  *
  * Usage:
- *   ISSUE_NUMBER=123 ISSUE_AUTHOR=username npx tsx app-validate-submission.ts
+ *   ISSUE_NUMBER=123 ISSUE_AUTHOR=username node app-validate-submission.js
  */
 
-import { execSync, spawn } from "child_process";
-
-// Error codes for structured error handling
-type RegistrationErrorCode =
-    | "NOT_REGISTERED" // User not found in Enter
-    | "TIER_NOT_SET" // User exists but tier is null (Polar sync bug)
-    | "SPORE_TIER"; // User has SPORE tier, needs SEED+
-
-interface RegistrationCheck {
-    registered: boolean;
-    username?: string;
-    tier?: string | null;
-    error?: string;
-    error_code?: RegistrationErrorCode;
-}
-
-interface DuplicateCheck {
-    isDuplicate?: boolean;
-    matchType?: string;
-    reason?: string;
-    error?: string;
-}
-
-interface ExistingPR {
-    number: number;
-    headRefName: string;
-    url: string;
-}
-
-interface ValidationResult {
-    valid: boolean;
-    issue_number: string | undefined;
-    issue_author: string | undefined;
-    checks: {
-        registration?: RegistrationCheck;
-        duplicate?: DuplicateCheck;
-    };
-    errors: string[];
-    stars: number | null;
-    repo_url: string | null;
-    existing_pr?: ExistingPR | null;
-}
+const { execSync, spawn } = require("child_process");
 
 const ISSUE_NUMBER = process.env.ISSUE_NUMBER;
 const ISSUE_AUTHOR = process.env.ISSUE_AUTHOR;
 
-async function main(): Promise<void> {
-    const result: ValidationResult = {
+async function main() {
+    const result = {
         valid: true,
         issue_number: ISSUE_NUMBER,
         issue_author: ISSUE_AUTHOR,
@@ -97,43 +57,42 @@ async function main(): Promise<void> {
 
         if (!registered) {
             result.valid = false;
-            result.checks.registration!.error_code = "NOT_REGISTERED";
+            result.checks.registration.error_code = "NOT_REGISTERED";
             result.errors.push(
                 `User @${ISSUE_AUTHOR} is not registered at enter.pollinations.ai`,
             );
         } else if (tier === null || tier === undefined) {
             // User exists but tier not set - this is a bug (Polar webhook didn't fire)
             result.valid = false;
-            result.checks.registration!.error_code = "TIER_NOT_SET";
+            result.checks.registration.error_code = "TIER_NOT_SET";
             result.errors.push(
                 `User @${ISSUE_AUTHOR} has no tier set. This is a system error - please contact support.`,
             );
         } else if (tier.toLowerCase() === "spore") {
             result.valid = false;
-            result.checks.registration!.error_code = "SPORE_TIER";
+            result.checks.registration.error_code = "SPORE_TIER";
             result.errors.push(
                 `User @${ISSUE_AUTHOR} has SPORE tier. To submit an app, you need at least SEED tier. SEED tier is automatically granted based on GitHub activity.`,
             );
         }
         // SEED, FLOWER, NECTAR, ROUTER - all allowed to proceed
     } catch (err) {
-        const error = err as Error;
         result.checks.registration = {
-            error: error.message,
+            error: err.message,
             registered: false,
         };
         result.valid = false;
-        result.errors.push(`Failed to check registration: ${error.message}`);
+        result.errors.push(`Failed to check registration: ${err.message}`);
     }
 
     // 2. Fetch issue to get body for duplicate check and repo URL
     try {
         const issueCmd = `gh issue view ${ISSUE_NUMBER} --repo pollinations/pollinations --json body`;
         const issueData = JSON.parse(execSync(issueCmd, { encoding: "utf-8" }));
-        const body: string = issueData.body || "";
+        const body = issueData.body || "";
 
         // Extract repo URL if present
-        const repoMatch = body.match(/https?:\/\/github\.com\/[^\s\)]+/i);
+        const repoMatch = body.match(/https?:\/\/github\.com\/[^\s)]+/i);
         if (repoMatch) {
             result.repo_url = repoMatch[0]
                 .replace(/\.git$/, "")
@@ -141,12 +100,12 @@ async function main(): Promise<void> {
         }
 
         // Extract app URL
-        const urlMatch = body.match(/https?:\/\/[^\s\)]+/i);
+        const urlMatch = body.match(/https?:\/\/[^\s)]+/i);
         const appUrl = urlMatch ? urlMatch[0] : "";
 
         // Extract name (first line or "Name:" field)
         const nameMatch =
-            body.match(/(?:name|app\s*name)\s*[:\-]?\s*(.+)/i) ||
+            body.match(/(?:name|app\s*name)\s*[:-]?\s*(.+)/i) ||
             body.match(/^(.+)$/m);
         const appName = nameMatch ? nameMatch[1].trim().substring(0, 50) : "";
 
@@ -159,14 +118,14 @@ async function main(): Promise<void> {
                     repo: result.repo_url || "",
                 });
 
-                const dupResult = await new Promise<any>((resolve, reject) => {
+                const dupResult = await new Promise((resolve, reject) => {
                     const env = { ...process.env };
                     env.GITHUB_USERNAME = ISSUE_AUTHOR;
                     env.PROJECT_JSON = projectJson;
 
                     const proc = spawn(
-                        "npx",
-                        ["tsx", ".github/scripts/app-check-duplicate.ts"],
+                        "node",
+                        [".github/scripts/app-check-duplicate.js"],
                         {
                             env,
                             stdio: ["pipe", "pipe", "pipe"],
@@ -226,8 +185,7 @@ async function main(): Promise<void> {
                     );
                 }
             } catch (err) {
-                const error = err as Error;
-                result.checks.duplicate = { error: error.message };
+                result.checks.duplicate = { error: err.message };
             }
         }
 
@@ -260,8 +218,7 @@ async function main(): Promise<void> {
             result.existing_pr = null;
         }
     } catch (err) {
-        const error = err as Error;
-        result.errors.push(`Failed to fetch issue: ${error.message}`);
+        result.errors.push(`Failed to fetch issue: ${err.message}`);
     }
 
     console.log(JSON.stringify(result, null, 2));

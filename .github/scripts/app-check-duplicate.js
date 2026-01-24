@@ -1,6 +1,6 @@
-#!/usr/bin/env npx ts-node
+#!/usr/bin/env node
 
-import fs from "fs";
+const fs = require("fs");
 
 // Parse environment variables
 const projectJson = process.env.PROJECT_JSON;
@@ -17,38 +17,11 @@ if (!githubUsername) {
     process.exit(1);
 }
 
-interface Project {
-    name?: string;
-    url?: string;
-    repo?: string;
-}
-
-interface App {
-    emoji: string;
-    name: string;
-    nameRaw: string;
-    url: string;
-    webUrl: string;
-    desc: string;
-    language: string;
-    category: string;
-    github: string;
-    githubId: string;
-    repo: string;
-    stars: string;
-    discord: string;
-    other: string;
-    submitted: string;
-    submittedDate: string;
-    issueUrl: string;
-    approvedDate: string;
-}
-
-let project: Project;
+let project;
 try {
     project = JSON.parse(projectJson);
 } catch (e) {
-    console.error("Error: Invalid PROJECT_JSON:", (e as Error).message);
+    console.error("Error: Invalid PROJECT_JSON:", e.message);
     process.exit(1);
 }
 
@@ -60,7 +33,7 @@ const appRepo = project.repo || "";
  * Parse APPS.md markdown table into structured data
  * Handles special characters safely (no shell parsing)
  */
-function parseAppsMarkdown(filePath: string): App[] {
+function parseAppsMarkdown(filePath) {
     if (!fs.existsSync(filePath)) {
         return [];
     }
@@ -75,7 +48,7 @@ function parseAppsMarkdown(filePath: string): App[] {
     }
 
     // Parse data rows (skip header and separator)
-    const apps: App[] = [];
+    const apps = [];
     for (let i = headerIdx + 2; i < lines.length; i++) {
         const line = lines[i];
         if (!line.startsWith("|")) continue;
@@ -144,7 +117,7 @@ function parseAppsMarkdown(filePath: string): App[] {
 /**
  * Check for exact URL match
  */
-function checkUrlMatch(apps: App[], targetUrl: string): App | undefined {
+function checkUrlMatch(apps, targetUrl) {
     if (!targetUrl) return undefined;
     const normalizedTarget = targetUrl.toLowerCase().replace(/\/$/, "");
     return apps.find((app) => {
@@ -156,7 +129,7 @@ function checkUrlMatch(apps: App[], targetUrl: string): App | undefined {
 /**
  * Check for exact repo match
  */
-function checkRepoMatch(apps: App[], targetRepo: string): App | undefined {
+function checkRepoMatch(apps, targetRepo) {
     if (!targetRepo) return undefined;
     const normalizedTarget = targetRepo
         .toLowerCase()
@@ -174,11 +147,7 @@ function checkRepoMatch(apps: App[], targetRepo: string): App | undefined {
 /**
  * Check for name + user match
  */
-function checkNameUserMatch(
-    apps: App[],
-    targetName: string,
-    username: string,
-): App | undefined {
+function checkNameUserMatch(apps, targetName, username) {
     const normalizedTarget = targetName
         .toLowerCase()
         .replace(/[^a-z0-9 ]/g, "")
@@ -199,7 +168,7 @@ function checkNameUserMatch(
 /**
  * Get user's previous submissions
  */
-function getUserPreviousApps(apps: App[], username: string): App[] {
+function getUserPreviousApps(apps, username) {
     return apps.filter(
         (app) => app.github.toLowerCase() === username.toLowerCase(),
     );
@@ -208,7 +177,7 @@ function getUserPreviousApps(apps: App[], username: string): App[] {
 /**
  * Write output to GITHUB_OUTPUT file
  */
-function writeOutput(key: string, value: string): void {
+function writeOutput(key, value) {
     if (!githubOutput) {
         console.log(`${key}=${value}`);
         return;

@@ -131,7 +131,7 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
                 );
                 break;
 
-            // Pack purchase events - KEEP (packs still managed via Polar)
+            // Pack purchase events - Polar webhooks update D1 packBalance
             case "benefit_grant.created":
                 await handlePackBenefitGrant(
                     c.env,

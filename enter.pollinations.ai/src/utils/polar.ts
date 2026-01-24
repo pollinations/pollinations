@@ -8,7 +8,7 @@ const PRODUCT_CACHE_TTL = 300; // 5 minutes in seconds
 
 const log = getLogger(["hono", "polar"]);
 
-// ============ PACK PRODUCTS (Polar manages packs only) ============
+// ============ PACK PRODUCTS (Polar checkout fallback + webhooks) ============
 export const packNames = ["5x2", "10x2", "20x2", "50x2"] as const;
 export const packProductSlugPrefix = "v1:product:pack";
 

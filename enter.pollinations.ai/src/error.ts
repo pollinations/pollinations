@@ -221,7 +221,7 @@ export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
 export function getDefaultErrorMessage(status: number): string {
     const messages: Record<number, string> = {
         400: "Something was wrong with the input data, check the details for more info.",
-        401: "You need to authenticate by providing a session cookie or Authorization header (Bearer token).",
+        401: "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
         402: "Insufficient pollen balance or API key budget exhausted.",
         403: "Access denied! You don't have the required permissions for this resource or model.",
         404: "Oh no, there's nothing here.",

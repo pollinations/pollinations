@@ -96,7 +96,13 @@ export const auth = (options: AuthOptions) =>
             log.debug("API key verification result: {valid}", {
                 valid: keyResult.valid,
             });
-            if (!keyResult.valid || !keyResult.key) return null;
+            if (!keyResult.valid || !keyResult.key) {
+                // API key was provided but is invalid - throw specific error
+                throw new HTTPException(401, {
+                    message:
+                        "Invalid API key. Please check your key and try again.",
+                });
+            }
             const db = drizzle(c.env.DB, { schema });
 
             // Use permissions from verifyApiKey (set via createApiKey)

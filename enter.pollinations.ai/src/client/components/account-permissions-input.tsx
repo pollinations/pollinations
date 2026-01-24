@@ -16,7 +16,7 @@ const ACCOUNT_PERMISSIONS = [
     {
         id: "balance",
         label: "Balance",
-        description: "Read pollen balance via API",
+        description: "Read key's budget (if set) or account balance",
     },
     {
         id: "usage",

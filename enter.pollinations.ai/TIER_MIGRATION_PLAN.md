@@ -25,7 +25,7 @@
 | seed   | 3          |
 | flower | 10         |
 | nectar | 20         |
-| router | 100        |
+| router | 500        |
 
 ---
 
@@ -41,7 +41,7 @@ export const TIER_POLLEN = {
   seed: 3,
   flower: 10,
   nectar: 20,
-  router: 100,
+  router: 500,
 } as const;
 
 export type TierName = keyof typeof TIER_POLLEN;

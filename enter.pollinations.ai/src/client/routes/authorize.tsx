@@ -77,11 +77,12 @@ function AuthorizeComponent() {
     const [isValidUrl, setIsValidUrl] = useState(false);
 
     // Use shared hook for key permissions, pre-populated from URL params
+    // Default to profile permission enabled unless URL explicitly overrides
     const keyPermissions = useKeyPermissions({
         allowedModels: models,
         pollenBudget: budget,
         expiryDays: expiry ?? 30, // Default 30 days for authorize flow
-        accountPermissions: urlPermissions,
+        accountPermissions: urlPermissions ?? ["profile"], // Default profile enabled
     });
 
     // Parse and validate the redirect URL

@@ -5,8 +5,8 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import {
-    user as userTable,
     apikey as apikeyTable,
+    user as userTable,
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
 import { calculateNextPeriodStart, tierNames } from "@/utils/polar.ts";

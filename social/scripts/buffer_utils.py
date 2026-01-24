@@ -4,22 +4,13 @@ Buffer API Utilities - Shared utilities for posting to LinkedIn and Twitter via 
 https://buffer.com/developers/api
 """
 
-import os
-import sys
 import requests
 from typing import Dict, List, Optional
 
+from common import get_env
+
 
 BUFFER_API_BASE = "https://api.bufferapp.com/1"
-
-
-def get_env(key: str, required: bool = True) -> Optional[str]:
-    """Get environment variable with optional requirement check"""
-    value = os.getenv(key)
-    if required and not value:
-        print(f"Error: {key} environment variable is required")
-        sys.exit(1)
-    return value
 
 
 def get_buffer_profiles(access_token: str) -> List[Dict]:

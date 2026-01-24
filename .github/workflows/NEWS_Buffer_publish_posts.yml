@@ -9,10 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       post_file:
-        description: 'Path to the post JSON file'
-        required: true
+        description: 'Path to the post JSON file (e.g., social/news/transformed/linkedin/posts/YYYY-MM-DD.json)'
+        required: false
         type: string
-        default: 'social/news/transformed/linkedin/posts/2026-01-23.json'
 
 jobs:
   publish-to-buffer:

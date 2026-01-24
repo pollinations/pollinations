@@ -181,17 +181,18 @@ flowchart TD
 
 ### Shared Components
 
-| File | Purpose | Include with |
-|------|---------|--------------|
+| File | Purpose | Placeholder |
+|------|---------|-------------|
 | `_shared/about.md` | Company description, Pollen system, tier info | `{about}` |
-| `_shared/image_style.md` | nanobanana-pro guidance, colors, platform styles | `{image_style}` |
 
-**How it works:** When `common.py` loads a prompt via `load_prompt()`, it automatically replaces `{about}` and `{image_style}` placeholders with the shared content.
+**How it works:** When `linkedin_generate_post.py` or `twitter_generate_post.py` loads a prompt via `common.py`'s `load_prompt()`, it automatically replaces `{about}` with the shared content.
 
 **Currently integrated:**
-- ✅ LinkedIn (`linkedin/system.md` uses `{about}`)
-- ✅ Twitter (`twitter/system.md` uses `{about}`)
-- ⏳ Instagram, Discord, GitHub use standalone loaders (not yet integrated)
+- ✅ **LinkedIn** - `linkedin/system.md` uses `{about}`
+- ✅ **Twitter** - `twitter/system.md` uses `{about}`
+
+**Not using shared components:**
+- Instagram, Discord, GitHub scripts have their own `load_prompt()` functions with prompts fully self-contained
 
 ### Discord Prompts
 
@@ -241,9 +242,9 @@ flowchart TD
 | File | Purpose | Used By |
 |------|---------|---------|
 | `reddit/src/system_prompt.ts` | **EMBEDDED** system prompt (not external file) | `reddit/src/pipeline.ts` |
-| `reddit/THEMING_GUIDE.md` | Visual style guide for nature-themed infographics | Reference |
 
-> **Note:** Reddit uses embedded prompts in `reddit/src/system_prompt.ts`, NOT external `.md` files.
+> ⚠️ **TODO:** Reddit prompts are currently embedded in TypeScript (`reddit/src/system_prompt.ts`). 
+> Consider extracting to `prompts/reddit/*.md` files for consistency with other platforms.
 
 ---
 
@@ -255,7 +256,7 @@ social/
 ├── buffer-schedule.yml    # Buffer posting schedule
 │
 ├── prompts/               # AI prompts (externalized)
-│   ├── _shared/           # Shared components (about, image_style)
+│   ├── _shared/           # Shared components (about.md)
 │   ├── discord/           # Discord announcement prompts
 │   ├── github/            # Weekly news & highlights prompts
 │   ├── instagram/         # Instagram post prompts

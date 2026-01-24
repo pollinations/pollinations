@@ -1,17 +1,12 @@
+import { getLogger } from "@logtape/logtape";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { getLogger } from "@logtape/logtape";
-import { drizzle } from "drizzle-orm/d1";
-import { eq } from "drizzle-orm";
-import { Polar } from "@polar-sh/sdk";
-import type { Env } from "../env.ts";
+import { getTierPollen } from "@/tier-config.ts";
+import { isValidTier, type TierName } from "@/utils/polar.ts";
 import { user as userTable } from "../db/schema/better-auth.ts";
-import { syncUserTier } from "../tier-sync.ts";
-import {
-    isValidTier,
-    type TierName,
-    getTierProductMapCached,
-} from "@/utils/polar.ts";
+import type { Env } from "../env.ts";
 
 const log = getLogger(["hono", "admin"]);
 
@@ -40,80 +35,49 @@ export const adminRoutes = new Hono<Env>()
 
         return await next();
     })
-    .post("/sync-tier", async (c) => {
-        const body = await c.req.json<{ userId: string; tier?: string }>();
+    .post("/update-tier", async (c) => {
+        // D1-only tier update - no Polar sync
+        const body = await c.req.json<{ userId: string; tier: string }>();
 
         if (!body.userId) {
             throw new HTTPException(400, { message: "userId is required" });
         }
+        if (!body.tier || !isValidTier(body.tier)) {
+            throw new HTTPException(400, { message: "Valid tier is required" });
+        }
 
+        const targetTier = body.tier as TierName;
+        const tierBalance = getTierPollen(targetTier);
         const db = drizzle(c.env.DB);
 
-        // Look up the user's tier from D1 if not provided
-        let targetTier: TierName;
-        if (body.tier && isValidTier(body.tier)) {
-            targetTier = body.tier;
-        } else {
-            const users = await db
-                .select({ tier: userTable.tier })
-                .from(userTable)
-                .where(eq(userTable.id, body.userId))
-                .limit(1);
+        // Update tier and balance in D1
+        const result = await db
+            .update(userTable)
+            .set({
+                tier: targetTier,
+                tierBalance,
+                lastTierGrant: Date.now(),
+            })
+            .where(eq(userTable.id, body.userId))
+            .returning({ id: userTable.id });
 
-            if (users.length === 0) {
-                throw new HTTPException(404, { message: "User not found" });
-            }
-
-            const userTier = users[0]?.tier;
-            if (!userTier || !isValidTier(userTier)) {
-                throw new HTTPException(400, {
-                    message: "User has invalid tier",
-                });
-            }
-            targetTier = userTier;
+        if (result.length === 0) {
+            throw new HTTPException(404, { message: "User not found" });
         }
 
-        // Initialize Polar client
-        const polar = new Polar({
-            accessToken: c.env.POLAR_ACCESS_TOKEN,
-            server:
-                c.env.POLAR_SERVER === "production" ? "production" : "sandbox",
-        });
-
-        const productMap = await getTierProductMapCached(polar, c.env.KV);
-
-        // Sync tier directly with retry logic
-        const result = await syncUserTier(
-            polar,
-            body.userId,
-            targetTier,
-            productMap,
+        log.info(
+            "Tier updated for user {userId} to {tier} with balance {balance}",
+            {
+                userId: body.userId,
+                tier: targetTier,
+                balance: tierBalance,
+            },
         );
 
-        if (result.success) {
-            log.info(
-                "Tier sync completed for user {userId} to tier {tier} in {attempts} attempt(s)",
-                {
-                    userId: body.userId,
-                    tier: targetTier,
-                    attempts: result.attempts,
-                },
-            );
-
-            return c.json({
-                success: true,
-                userId: body.userId,
-                targetTier,
-                attempts: result.attempts,
-            });
-        } else {
-            log.error("Tier sync failed for user {userId}: {error}", {
-                userId: body.userId,
-                error: result.error,
-            });
-
-            throw new HTTPException(500, {
-                message: result.error || "Tier sync failed",
-            });
-        }
+        return c.json({
+            success: true,
+            userId: body.userId,
+            tier: targetTier,
+            tierBalance,
+        });
     });

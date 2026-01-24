@@ -1,7 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import type { Polar } from "@polar-sh/sdk";
 import type { Product } from "@polar-sh/sdk/models/components/product.js";
-import { addDays, differenceInDays } from "date-fns";
 import z from "zod";
 import { cached } from "@/cache.ts";
 
@@ -9,6 +8,7 @@ const PRODUCT_CACHE_TTL = 300; // 5 minutes in seconds
 
 const log = getLogger(["hono", "polar"]);
 
+// ============ PACK PRODUCTS (Polar manages packs only) ============
 export const packNames = ["5x2", "10x2", "20x2", "50x2"] as const;
 export const packProductSlugPrefix = "v1:product:pack";
 
@@ -22,38 +22,6 @@ export function packProductSlugFromName(name: PackName): PackProductSlug {
 
 export const packProductSlugs = packNames.map(packProductSlugFromName);
 
-export const tierNames = [
-    "spore",
-    "seed",
-    "flower",
-    "nectar",
-    "router",
-] as const;
-export const tierProductSlugPrefix = "v1:product:tier";
-
-export function tierProductSlugFromName(name: TierName): TierProductSlug {
-    return `${tierProductSlugPrefix}:${name}`;
-}
-
-export type TierName = (typeof tierNames)[number];
-export type TierStatus = TierName | "none";
-export type TierProductSlugPrefix = typeof tierProductSlugPrefix;
-export type TierProductSlug = `${TierProductSlugPrefix}:${TierName}`;
-
-export const tierProductSlugs = tierNames.map(tierProductSlugFromName);
-
-export function isValidTier(tier: string): tier is TierName {
-    return tierNames.includes(tier as TierName);
-}
-
-export function getTierStatus(userTier: string | null | undefined): TierStatus {
-    const normalized = userTier?.toLowerCase();
-    return tierNames.includes(normalized as TierName)
-        ? (normalized as TierStatus)
-        : "none";
-}
-
-export type TierProductMap = Record<TierProductSlug, Product>;
 export type PackProductMap = Record<PackProductSlug, Product>;
 
 async function getProductMap(polar: Polar, slugs: string[]) {
@@ -73,18 +41,6 @@ async function getProductMap(polar: Polar, slugs: string[]) {
     return Object.fromEntries(entries);
 }
 
-export async function getTierProductMapCached(
-    polar: Polar,
-    kv: KVNamespace,
-): Promise<TierProductMap> {
-    return await cached(getProductMap, {
-        log,
-        ttl: PRODUCT_CACHE_TTL,
-        kv,
-        keyGenerator: () => "polar:products:tier:map",
-    })(polar, tierProductSlugs);
-}
-
 export async function getPackProductMapCached(
     polar: Polar,
     kv: KVNamespace,
@@ -97,22 +53,28 @@ export async function getPackProductMapCached(
     })(polar, packProductSlugs);
 }
 
-export function getTierProductById(
-    productId: string | undefined,
-    tierProductMap: TierProductMap,
-): Product | null {
-    if (!productId) return null;
-    return (
-        Object.entries(tierProductMap)
-            .filter(([_, product]) => product.id === productId)
-            .map(([_, product]) => product)
-            .at(0) || null
-    );
+// ============ TIER TYPES (D1-only, no Polar) ============
+// Note: Tier management moved to D1 + cron job (see tier-config.ts)
+// These types are still used for D1 tier logic
+
+export const tierNames = [
+    "spore",
+    "seed",
+    "flower",
+    "nectar",
+    "router",
+] as const;
+
+export type TierName = (typeof tierNames)[number];
+export type TierStatus = TierName | "none";
+
+export function isValidTier(tier: string): tier is TierName {
+    return tierNames.includes(tier as TierName);
 }
 
-export function calculateNextPeriodStart(currentPeriodStart: Date): Date {
-    const now = new Date();
-    const daysPassed = differenceInDays(now, currentPeriodStart);
-    const nextPeriodStart = addDays(currentPeriodStart, daysPassed + 1);
-    return nextPeriodStart;
+export function getTierStatus(userTier: string | null | undefined): TierStatus {
+    const normalized = userTier?.toLowerCase();
+    return tierNames.includes(normalized as TierName)
+        ? (normalized as TierStatus)
+        : "none";
 }

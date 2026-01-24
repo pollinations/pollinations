@@ -1,0 +1,18 @@
+TOKEN tier_event_append APPEND
+TOKEN tier_event_read READ
+
+DESCRIPTION >
+    Tier events for tracking tier refills, changes, and user registrations
+
+SCHEMA >
+    `event_type` String `json:$.event_type`,
+    `environment` LowCardinality(String) `json:$.environment` DEFAULT 'undefined',
+    `user_id` Nullable(String) `json:$.user_id`,
+    `tier` Nullable(String) `json:$.tier`,
+    `pollen_amount` Nullable(Int32) `json:$.pollen_amount`,
+    `user_count` Nullable(Int32) `json:$.user_count`,
+    `timestamp` DateTime `json:$.timestamp`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
+ENGINE_SORTING_KEY "timestamp, environment, event_type"

@@ -13,7 +13,6 @@ Environment variables:
     GITHUB_TOKEN           - Required for GitHub API
     CLOUDFLARE_API_TOKEN   - Required for wrangler D1 access
     CLOUDFLARE_ACCOUNT_ID  - Required for wrangler D1 access
-    POLAR_ACCESS_TOKEN     - Required for Polar subscription updates
 """
 
 import argparse
@@ -25,8 +24,8 @@ import time
 
 from user_validate_github_profile import validate_users
 
-# Polar rate limit: 100 requests/minute, so ~0.6s delay minimum
-POLAR_DELAY_SECONDS = 1.0
+# Delay between upgrades to avoid overwhelming D1
+UPGRADE_DELAY_SECONDS = 0.5
 
 
 def fetch_spore_users(env: str = "production") -> list[str]:
@@ -95,7 +94,6 @@ def upgrade_user(username: str, env: str = "production") -> bool:
             
         if result.returncode == 0:
             print(f"   ✅ {username}: upgraded to seed")
-            # Show Polar output if any
             if result.stdout.strip():
                 for line in result.stdout.strip().split('\n'):
                     print(f"      {line}")
@@ -175,9 +173,9 @@ def main():
             success += 1
         else:
             failed += 1
-        # Rate limit for Polar API (100 req/min)
+        # Small delay between upgrades
         if i < len(approved) - 1:
-            time.sleep(POLAR_DELAY_SECONDS)
+            time.sleep(UPGRADE_DELAY_SECONDS)
     
     print(f"\n📊 Results:")
     print(f"   ✅ Upgraded: {success}")

@@ -28,6 +28,58 @@ INITIAL_RETRY_DELAY = 2
 # Get the directory where this script lives
 SCRIPTS_DIR = Path(__file__).parent
 PROMPTS_DIR = SCRIPTS_DIR.parent / "prompts"
+SHARED_PROMPTS_DIR = PROMPTS_DIR / "_shared"
+
+# Cache for shared prompts (loaded once)
+_shared_prompts_cache: Dict[str, str] = {}
+
+
+def load_shared(name: str) -> str:
+    """Load a shared prompt component from prompts/_shared/{name}.md
+    
+    Args:
+        name: 'about' or 'image_style'
+    
+    Returns:
+        The shared prompt content
+    """
+    if name in _shared_prompts_cache:
+        return _shared_prompts_cache[name]
+    
+    shared_path = SHARED_PROMPTS_DIR / f"{name}.md"
+    
+    if not shared_path.exists():
+        print(f"Warning: Shared prompt not found: {shared_path}")
+        return ""
+    
+    with open(shared_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    
+    # Remove markdown title and HTML comments
+    lines = content.split("\n")
+    filtered_lines = []
+    for line in lines:
+        if line.startswith("#") and not filtered_lines:
+            continue  # Skip first heading
+        if line.strip().startswith("<!--") and line.strip().endswith("-->"):
+            continue  # Skip single-line HTML comments
+        filtered_lines.append(line)
+    
+    content = "\n".join(filtered_lines).strip()
+    _shared_prompts_cache[name] = content
+    return content
+
+
+def _inject_shared_prompts(content: str) -> str:
+    """Inject shared prompt components into content
+    
+    Replaces {about} and {image_style} placeholders with shared content.
+    """
+    if "{about}" in content:
+        content = content.replace("{about}", load_shared("about"))
+    if "{image_style}" in content:
+        content = content.replace("{image_style}", load_shared("image_style"))
+    return content
 
 
 def get_env(key: str, required: bool = True) -> Optional[str]:
@@ -42,12 +94,16 @@ def get_env(key: str, required: bool = True) -> Optional[str]:
 def load_prompt(platform: str, prompt_name: str) -> str:
     """Load a prompt file from social/prompts/{platform}/{prompt_name}.md
     
+    Automatically injects shared components:
+    - {about} -> content from _shared/about.md
+    - {image_style} -> content from _shared/image_style.md
+    
     Args:
-        platform: 'linkedin' or 'twitter'
+        platform: 'linkedin', 'twitter', 'instagram', 'reddit', etc.
         prompt_name: 'system', 'user_with_prs', 'user_thought_leadership', etc.
     
     Returns:
-        The prompt content as a string
+        The prompt content as a string with shared components injected
     """
     prompt_path = PROMPTS_DIR / platform / f"{prompt_name}.md"
     
@@ -62,6 +118,9 @@ def load_prompt(platform: str, prompt_name: str) -> str:
     lines = content.split("\n")
     if lines and lines[0].startswith("#"):
         content = "\n".join(lines[1:]).strip()
+    
+    # Inject shared prompt components
+    content = _inject_shared_prompts(content)
     
     return content
 

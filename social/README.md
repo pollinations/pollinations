@@ -98,23 +98,39 @@ cd social/reddit && npm install && devvit upload
 | `FORCE_THOUGHT_LEADERSHIP` | LinkedIn: skip PRs, generate thought leadership |
 | `FORCE_ENGAGEMENT` | Twitter: skip PRs, generate engagement content |
 
+## Shared Prompts
+
+Common content is centralized in `prompts/_shared/`:
+
+| File | Purpose | Include with |
+|------|---------|--------------|
+| `_shared/about.md` | Company description, Pollen system, tier info | `{about}` |
+| `_shared/image_style.md` | nanobanana-pro guidance, colors, platform styles | `{image_style}` |
+
+**How it works:** When `common.py` loads a prompt via `load_prompt()`, it automatically replaces `{about}` and `{image_style}` placeholders with the shared content.
+
+**Currently integrated:**
+- ✅ LinkedIn (`linkedin/system.md` uses `{about}`)
+- ✅ Twitter (`twitter/system.md` uses `{about}`)
+
 ## Directory Structure
 
 ```
 social/
 ├── buffer-schedule.yml # Buffer posting times
 ├── prompts/           # AI prompts for post generation
+│   ├── _shared/       # Shared components (about, image_style)
 │   ├── linkedin/
 │   └── twitter/
 ├── scripts/           # Python automation
-│   ├── common.py      # Shared utilities
+│   ├── common.py      # Shared utilities (prompt loading, API calls)
 │   ├── linkedin_generate_post.py
 │   ├── twitter_generate_post.py
 │   └── buffer_publish_post.py
 ├── news/transformed/  # Generated post JSONs
 │   ├── linkedin/posts/
 │   └── twitter/posts/
-└── reddit/            # Devvit app
+└── reddit/            # Devvit app (uses embedded prompts)
 ```
 
 ## Editing Prompts

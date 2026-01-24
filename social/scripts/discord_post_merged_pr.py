@@ -21,6 +21,31 @@ MODEL = "gemini-large"
 DISCORD_CHAR_LIMIT = 2000
 CHUNK_SIZE = 1900  # Leave room for safety
 
+# Prompt paths (relative to repo root)
+PROMPTS_DIR = "social/prompts/discord"
+
+
+def get_repo_root() -> str:
+    """Get the repository root directory"""
+    current = os.path.dirname(os.path.abspath(__file__))
+    while current != '/':
+        if os.path.exists(os.path.join(current, '.git')):
+            return current
+        current = os.path.dirname(current)
+    return os.getcwd()
+
+
+def load_prompt(filename: str) -> str:
+    """Load a prompt from the social/prompts/discord/ directory"""
+    repo_root = get_repo_root()
+    prompt_path = os.path.join(repo_root, PROMPTS_DIR, filename)
+    try:
+        with open(prompt_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        print(f"Error: Prompt file not found: {prompt_path}")
+        sys.exit(1)
+
 def get_env(key: str, required: bool = True) -> Optional[str]:
     """Get environment variable with optional requirement check"""
     value = os.getenv(key)
@@ -188,200 +213,23 @@ def format_diff_for_review(diff_text: str) -> str:
     return '\n'.join(formatted_output)
 
 def get_system_prompt() -> str:
-    """Return the announcement generation prompt"""
-    return """You are a PR Update Announcer for the Pollinations AI Discord community.
-Your task is to analyze merged pull requests and create user-facing announcements about what changed.
-
-CRITICAL: You are talking to USERS of the Pollinations AI service, NOT developers!
-Users care about: bug fixes, new features, performance improvements, UI changes.
-Users DON'T care about: backend refactors, code architecture, database migrations, internal APIs.
-
-IMPORTANT: Pollinations is an open-source AI platform where the community contributes in multiple ways:
-1. **Core Platform Changes** - API improvements, new models, infrastructure updates
-2. **Community Project Submissions** - Apps, tools, examples, and projects built using Pollinations AI
-3. **Documentation & Guides** - Tutorials, examples, API documentation
-4. **Infrastructure & DevOps** - Deployment, monitoring, performance improvements
-
-CONTEXTUAL ANALYSIS - Determine the PR type based on file paths and changes:
-
-**CORE PLATFORM CHANGES** (affects all users):
-- Files in: `/api/`, `/models/`, `/backend/`, `/frontend/`, `/docker/`, `/kubernetes/`, `/src/`
-- Changes to: Rate limits, authentication, model endpoints, API responses, UI
-- Announcement focus: What changed for users, bug fixes they'll notice, new features they can use
-
-**COMMUNITY PROJECT SUBMISSIONS** (showcases community creativity):
-- Files in: `/projects/`, `/examples/`, `/apps/`, `/tools/`, `/community/`, `/notebooks/`
-- New directories with complete applications/tools
-- Announcement focus: Celebrate contributor, describe the project, encourage exploration
-
-**DOCUMENTATION UPDATES** (helps users learn):
-- Files: `README.md`, `/docs/`, `/guides/`, `/tutorials/`, `.md` files
-- Announcement focus: What's easier to understand now, new learning resources
-
-**INFRASTRUCTURE CHANGES** (behind-the-scenes improvements):
-- Files: `/deploy/`, `/monitoring/`, `/scripts/`, `docker-compose.yml`, CI/CD files, `.github/`
-- Announcement focus: Performance improvements users will notice, reliability improvements
-
-The format we will use to present the PR code diff:
-======
-## File: 'src/file1.py' 📝
-**Status:** MODIFIED
-
-@@ ... @@ def func1():
-__new hunk__
-11  unchanged code line0
-12  unchanged code line1
-13 +new code line2 added
-14  unchanged code line3
-__old hunk__
- unchanged code line0
- unchanged code line1
--old code line2 removed
- unchanged code line3
-======
-
-ANALYSIS REQUIREMENTS:
-
-**What to Focus On:**
-- Bug fixes users noticed - "Daily pollen refills work now", "Login issues fixed"
-- New features users can use - "New model available", "New API endpoint for X"
-- Performance improvements users feel - "Faster image generation", "Reduced wait times"
-- UI/UX changes - "Better tier display", "Cleaner dashboard"
-- Rate limit/quota changes - Very important! Users need to know about these
-- Community projects - Celebrate what the community built
-
-**What to Skip:**
-- Backend refactoring that doesn't affect users
-- Database schema changes (unless they fix a user-facing bug)
-- Internal API changes (unless they break existing user integrations)
-- Code organization/cleanup
-- Test updates (unless they reveal a new feature)
-- Environment variable changes (unless users need to update something)
-- Developer tooling updates
-
-OUTPUT FORMAT:
-Create a concise Discord message with just bullet points - NO headings, NO sections:
-
-```
-[One-line summary]
-
-- [Change 1 with emoji]
-- [Change 2 with emoji]
-- [Change 3 with emoji]
-
-[Optional closing line if needed]
-```
-
-FORMAT REQUIREMENTS:
-- Start with one-line summary of what changed
-- Bullet points only - each with relevant emoji
-- Use **bold** for emphasis, `code` for technical terms
-- Keep it tight - 150-400 chars total
-- Only expand if genuinely major update
-- DO NOT include role mentions unless PR description explicitly requests it
-
-EXAMPLE OUTPUTS:
-
-**Example 1 - Bug Fix:**
-```
-Fixed tier subscription bugs:
-
-- ✅ Daily pollen refills working now
-- 🎨 Better tier display in UI
-- 🔧 More reliable subscription system
-```
-
-**Example 2 - New Feature:**
-```
-Added wildcard domain support:
-
-- 🌐 Use `*.example.com` for all subdomains
-- 🔒 Extra security against domain spoofing
-- ⚡ No more adding each subdomain separately
-```
-
-**Example 3 - Multiple Changes:**
-```
-Quick updates:
-
-- 🐛 Fixed login issues
-- ⚡ Faster image generation
-- 📝 Better error messages
-- 🎨 Cleaner dashboard UI
-```
-
-The output should be raw Discord message text, not YAML or JSON.
-"""
+    """Load the system prompt from external file"""
+    return load_prompt("merged_pr_system.md")
 
 def get_user_prompt(title: str, branch: str, description: str, diff: str) -> str:
-    """Return the announcement generation prompt"""
-    template = """--Merged PR Information--
-
-Title: '{{ title }}'
-Branch: '{{ branch }}'
-{% if description and description != "No description provided" %}
-
+    """Load user prompt template and render with PR data"""
+    # Build description section
+    description_section = ""
+    if description and description != "No description provided":
+        description_section = f"""
 PR Description:
 ======
-{{ description }}
-======
-{% endif %}
-
-The PR code changes:
-======
-{{ diff }}
-======
-
-ANALYSIS TASK:
-Analyze these code changes and create a user-facing Discord announcement for the Pollinations AI community.
-
-REMEMBER: You're talking to USERS of the service, NOT developers!
-
-FIRST: Determine the PR type based on file paths:
-- **Core Platform** (API/backend/models): Focus on user-visible changes, bug fixes, new features
-- **Community Project** (projects/examples/apps): Celebrate contributor, describe the project
-- **Documentation** (README/docs/guides): Highlight what's easier to understand now
-- **Infrastructure** (deploy/monitoring/CI): Only mention if users will notice performance/reliability improvements
-
-THEN: Focus on USER IMPACT:
-1. **What changed for users** - not how it was implemented
-2. **Bug fixes they noticed** - "X now works", "Y is fixed"
-3. **New features they can use** - be specific about what they can do now
-4. **Performance improvements they'll feel** - "faster", "more reliable"
-5. **Rate limit/quota changes** - VERY important to mention
-6. **UI/UX improvements** - what looks or works better
-
-SKIP:
-- Backend refactoring (unless it fixes a user-facing bug)
-- Database migrations (unless they improve user experience)
-- Internal API changes (unless they break existing integrations)
-- Code cleanup/organization
-- Developer tooling
-
-LENGTH GUIDANCE:
-- **Default**: 150-400 chars (tight bullet points)
-- **Only expand** if genuinely major update with multiple significant changes
-
-MENTION HANDLING:
-- Check if PR description contains "@mention" or "mention updates" or similar
-- If YES: Start message with "Hey <@&1424461167883194418>! "
-- If NO: Start directly with the summary (no mention)
-
-Create a concise Discord message (raw text, not YAML/JSON) with:
-- One-line summary
-- Bullet points with emojis
-- NO headings or sections
-- Keep it tight and scannable
-"""
+{description}
+======"""
     
-    env = Environment()
-    tmpl = env.from_string(template)
-    return tmpl.render(
-        title=title,
-        branch=branch,
-        description=description or "No description provided",
-        diff=diff
-    )
+    # Load template and replace placeholders
+    template = load_prompt("merged_pr_user.md")
+    return template.replace("{title}", title).replace("{branch}", branch).replace("{description_section}", description_section).replace("{diff}", diff)
 
 def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, max_retries: int = 3) -> str:
     """Call Pollinations AI API with OpenAI-compatible format and retry logic"""

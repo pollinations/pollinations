@@ -16,6 +16,31 @@ MODEL = "gemini-large"
 CHUNK_SIZE = 50
 NEWS_FOLDER = "social/news"
 
+# Prompt paths (relative to repo root)
+PROMPTS_DIR = "social/prompts/github"
+
+
+def get_repo_root() -> str:
+    """Get the repository root directory"""
+    current = os.path.dirname(os.path.abspath(__file__))
+    while current != '/':
+        if os.path.exists(os.path.join(current, '.git')):
+            return current
+        current = os.path.dirname(current)
+    return os.getcwd()
+
+
+def load_prompt(filename: str) -> str:
+    """Load a prompt from the social/prompts/github/ directory"""
+    repo_root = get_repo_root()
+    prompt_path = os.path.join(repo_root, PROMPTS_DIR, filename)
+    try:
+        with open(prompt_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        print(f"Error: Prompt file not found: {prompt_path}")
+        sys.exit(1)
+
 
 def get_env(key: str, required: bool = True) -> str:
     value = os.getenv(key)
@@ -151,56 +176,34 @@ def chunk_prs(prs: List[Dict], chunk_size: int) -> List[List[Dict]]:
 
 
 def create_news_prompt(prs: List[Dict], is_final: bool = False, all_changes: List[str] = None) -> tuple:
-    """Create prompt to format ALL PRs for NEWS.md - no filtering, this is source of truth"""
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    """Create prompt to format ALL PRs for NEWS.md - no filtering, this is source of truth
+    
+    Prompts are loaded from social/prompts/github/
+    """
 
-    system_prompt = f"""You are creating a weekly changelog entry for NEWS.md.
-
-NEWS.md is the SINGLE SOURCE OF TRUTH for all platform updates. It will be consumed by:
-- Discord bot (to post weekly digests)
-- Website news section
-- Other automated workflows
-- Developers and users looking for complete changelog
-
-CRITICAL: Include EVERY PR provided. Do NOT skip or filter any PRs. Do NOT decide what's "important" - that's for downstream consumers to decide. This must be a COMPLETE record.
-
-OUTPUT FORMAT (follow exactly):
-```
-- **PR Title/Feature Name** — Clear description of the change. Include technical details, endpoints, parameters where relevant. Use `backticks` for code. [PR #{'{number}'}](url)
-```
-
-GUIDELINES:
-- Include ALL PRs - bug fixes, features, refactors, dependencies, EVERYTHING
-- Each bullet = one PR (no exceptions, no skipping)
-- Write clear, informative descriptions
-- Use `backticks` for technical terms, code, endpoints, parameters
-- Include the PR link at the end of each entry
-- Be concise but complete - other systems will format/filter as needed
-
-TONE: Professional, factual, comprehensive. This is a historical record that other systems depend on."""
+    # Load system prompt
+    system_prompt = load_prompt("weekly_news_system.md")
 
     if is_final:
         combined_changes = "\n\n".join(all_changes)
-        user_prompt = f"""Consolidate these PR entries into a final clean list. Remove any duplicates but keep ALL unique entries:
-
-{combined_changes}
-
-Output the complete, deduplicated list."""
+        # Load final consolidation user prompt
+        user_prompt_template = load_prompt("weekly_news_user_final.md")
+        user_prompt = user_prompt_template.replace("{combined_changes}", combined_changes)
     else:
-        user_prompt = f"""Format ALL {len(prs)} PRs into changelog entries. Include every single one:
-
-"""
+        # Build PR entries
+        pr_entries = ""
         for pr in prs:
             body_preview = pr['body'][:500] if pr['body'] else 'No description'
-            user_prompt += f"""PR #{pr['number']}: {pr['title']}
+            pr_entries += f"""PR #{pr['number']}: {pr['title']}
 Author: @{pr['author']}
 URL: {pr['html_url']}
 Merged: {pr['merged_at']}
 Description: {body_preview}
 
 """
-
-        user_prompt += """Format each PR as a bullet point. Do NOT skip any PRs."""
+        # Load chunk processing user prompt
+        user_prompt_template = load_prompt("weekly_news_user.md")
+        user_prompt = user_prompt_template.replace("{pr_count}", str(len(prs))).replace("{pr_entries}", pr_entries)
 
     return system_prompt, user_prompt
 

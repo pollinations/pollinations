@@ -11,6 +11,31 @@ POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 MODEL = "gemini-large"
 NEWS_FOLDER = "social/news"
 
+# Prompt paths (relative to repo root)
+PROMPTS_DIR = "social/prompts/discord"
+
+
+def get_repo_root() -> str:
+    """Get the repository root directory"""
+    current = os.path.dirname(os.path.abspath(__file__))
+    while current != '/':
+        if os.path.exists(os.path.join(current, '.git')):
+            return current
+        current = os.path.dirname(current)
+    return os.getcwd()
+
+
+def load_prompt(filename: str) -> str:
+    """Load a prompt from the social/prompts/discord/ directory"""
+    repo_root = get_repo_root()
+    prompt_path = os.path.join(repo_root, PROMPTS_DIR, filename)
+    try:
+        with open(prompt_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        print(f"Error: Prompt file not found: {prompt_path}")
+        sys.exit(1)
+
 
 def get_env(key: str, required: bool = True) -> str:
     value = os.getenv(key)
@@ -86,11 +111,13 @@ def get_latest_news_file() -> tuple[str, str]:
 
 
 def create_discord_prompt(news_entry: str, entry_date: str) -> tuple:
-    """Create prompt to transform NEWS.md entry for Discord"""
+    """Create prompt to transform NEWS.md entry for Discord
+    
+    Prompts are loaded from social/prompts/discord/
+    """
 
     # Try to parse date, fallback to current date if format doesn't match
     try:
-        # Extract just the YYYY-MM-DD part if there's extra stuff
         date_part = entry_date[:10] if len(entry_date) >= 10 else entry_date
         end_date = datetime.strptime(date_part, "%Y-%m-%d")
     except ValueError:
@@ -101,56 +128,13 @@ def create_discord_prompt(news_entry: str, entry_date: str) -> tuple:
     MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     date_str = f"From {start_date.day} {MONTH[start_date.month - 1]} {start_date.year} to {end_date.day} {MONTH[end_date.month - 1]} {end_date.year}"
 
-    system_prompt = f"""You are creating a weekly digest for the Pollinations AI Discord community.
-    Transform the provided NEWS.md entry into an engaging Discord message.
+    # Load system prompt and inject date_str
+    system_prompt_template = load_prompt("weekly_news_system.md")
+    system_prompt = system_prompt_template.replace("{date_str}", date_str)
 
-    CONTEXT: Pollinations is an open-source AI platform. Your audience is USERS who care about what they can DO now.
-
-    OUTPUT FORMAT:
-    ```
-    [Greet <@&1424461167883194418> naturally and casually in a playful, witty way. short]
-
-    ## 🌸 Weekly Update - {date_str}
-    (do not change anything from the mentioned date_str, strictly use it as is)
-
-    [Create sections that make sense - you have COMPLETE FREEDOM]
-    [MAKE SURE THAT WE PUT ALL THE INFO IN SOMEWHERE AROUND 200-400 WORDS TOTAL]
-    [Examples: "🎮 Discord Bot", "🚀 New Models", "⚡ Performance", "🔄 API Changes", "✨ Feature Drops", etc.]
-
-    ### [Section with emoji]
-    - Major change with clear user benefit
-    - Another significant addition
-    - Focus on what users can now do
-
-    ### [Another section if needed]
-    - More impactful changes
-    - Keep it user-focused and exciting
-
-    [Add as many sections as needed - organize however makes most sense!]
-    ```
-
-    CRITICAL RULES:
-    - Greet <@&1424461167883194418> naturally - be witty and creative!
-    - Write for USERS - focus on impact and excitement, not technical details
-    - Only include MAJOR changes that matter to users
-    - NO PR numbers, NO author names, NO technical jargon
-    - Skip all bug fixes, error handling, and maintenance work
-    - Skip styling and UI cosmetics completely
-    - If no major impactful changes found, return only: SKIP
-    - Be witty, fun, and celebratory about real wins
-    - Do not add unnecessary length to the output
-    - Keep it as concise and brief as possible while still covering whats needed
-    - Focus mainly on changes that impact the user's who use services powered by pollinations rather than developers who use pollinations.
-    - Give the final output as whole that isn't overloaded with technical info nor full of clutter but appealing to users while being fairly simple!
-
-    TONE: Conversational, witty, celebratory. Highlight the cool stuff.
-    LENGTH: Keep it punchy but complete"""
-
-    user_prompt = f"""Transform this NEWS.md entry into an engaging Discord message:
-
-{news_entry}
-
-Create a polished, witty weekly digest that celebrates these wins and makes them exciting for users. Group logically and present the real impact."""
+    # Load user prompt and inject news_entry
+    user_prompt_template = load_prompt("weekly_news_user.md")
+    user_prompt = user_prompt_template.replace("{news_entry}", news_entry)
 
     return system_prompt, user_prompt
 

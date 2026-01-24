@@ -14,6 +14,31 @@ MODEL = "gemini-large"
 NEWS_FOLDER = "social/news"
 HIGHLIGHTS_PATH = "social/news/transformed/highlights.md"
 
+# Prompt paths (relative to repo root)
+PROMPTS_DIR = "social/prompts/github"
+
+
+def get_repo_root() -> str:
+    """Get the repository root directory"""
+    current = os.path.dirname(os.path.abspath(__file__))
+    while current != '/':
+        if os.path.exists(os.path.join(current, '.git')):
+            return current
+        current = os.path.dirname(current)
+    return os.getcwd()
+
+
+def load_prompt(filename: str) -> str:
+    """Load a prompt from the social/prompts/github/ directory"""
+    repo_root = get_repo_root()
+    prompt_path = os.path.join(repo_root, PROMPTS_DIR, filename)
+    try:
+        with open(prompt_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        print(f"Error: Prompt file not found: {prompt_path}")
+        sys.exit(1)
+
 
 def get_env(key: str, required: bool = True) -> str:
     value = os.getenv(key)
@@ -133,7 +158,10 @@ def get_links_file(github_token: str, owner: str, repo: str) -> str:
 
 
 def create_highlights_prompt(news_content: str, news_date: str, links_content: str = "") -> tuple:
-    """Create prompt to extract only the most significant highlights"""
+    """Create prompt to extract only the most significant highlights
+    
+    Prompts are loaded from social/prompts/github/
+    """
 
     links_section = ""
     if links_content:
@@ -145,84 +173,13 @@ Add links naturally in the description using markdown format: [text](url)
 {links_content}
 """
 
-    system_prompt = f"""You are a strict curator for pollinations.ai highlights.
+    # Load system prompt and inject links_section
+    system_prompt_template = load_prompt("highlights_system.md")
+    system_prompt = system_prompt_template.replace("{links_section}", links_section)
 
-## CONTEXT - What is pollinations.ai?
-pollinations.ai is a free, open-source AI platform providing:
-- **Image Generation** - Create images via simple URLs or API calls
-- **Text/Chat API** - Access LLMs like GPT, Claude, Gemini, Llama, Mistral
-- **Audio Generation** - Text-to-speech and music generation
-- **Discord Bot** - AI features directly in Discord servers
-- **Web Apps** - Various AI-powered tools and creative demos
-
-Our users are creators, developers, and hobbyists who love FREE, easy-to-use AI tools.
-
-## WHERE THIS OUTPUT GOES
-The highlights you extract will be displayed **DIRECTLY** (copy-pasted as-is) on:
-1. **pollinations.ai website** - News/updates section
-2. **GitHub README.md** - Latest news section
-
-**IMPORTANT:** These highlights are REPLACED every week with new ones. Old highlights get pushed down and eventually removed. So each week's highlights should stand on their own and showcase that week's best stuff.
-
-This is a HIGHLIGHT REEL - not a changelog. Only the exciting stuff that makes users go "wow, I want to try this!"
-
-## SELECTION CRITERIA
-**Typically 3-4 highlights per week. Sometimes 0. Max ~10 for huge release weeks.**
-
-### INCLUDE (things that TRULY affect users):
-- 🚀 **New AI models** - New LLMs, image models, audio models users can now access
-- ⚡ **Speed/Performance boosts** - Faster generation, reduced latency (only if significant/noticeable)
-- ✨ **New features** - New capabilities users can try RIGHT NOW
-- 🔗 **New integrations** - Discord bot features, new platform connections, new APIs
-- 📱 **New endpoints/tools** - New API endpoints, new web apps, new parameters
-- 🎨 **New creative options** - New styles, formats, output options
-- 🎉 **Big announcements** - Partnerships, milestones, major releases
-
-### EXCLUDE (skip ALL of these - users don't care):
-- Bug fixes (even critical ones - users don't celebrate fixes)
-- Internal performance improvements users won't notice
-- Refactors, cleanups, code quality improvements
-- CI/CD, workflows, GitHub Actions, deployment changes
-- Documentation updates, README changes, tests
-- Error handling, logging, monitoring improvements
-- Internal/developer-facing changes
-- Dependency updates, security patches
-- Minor UI tweaks, small polish items
-- Any maintenance or housekeeping work
-
-## OUTPUT FORMAT
-```
-- **YYYY-MM-DD** – **🚀 Feature Name** Punchy description of what users can DO now. [Relevant Link](url) if applicable.
-- **YYYY-MM-DD** – **✨ Another Feature** Brief and exciting. Use `backticks` for code. Check the [API Docs](url).
-```
-
-Rules:
-1. Format: `- **YYYY-MM-DD** – **emoji Title** Description with [links](url) when relevant`
-2. Use the DATE provided in the changelog header (the week's end date)
-3. Emojis: 🚀 ✨ 🎨 🎵 🤖 🔗 📱 💡 🌟 🎯
-4. Focus on USER BENEFIT
-5. NO PR numbers, NO authors
-6. 1-2 lines max per entry
-7. Output ONLY the markdown bullets
-8. Add relevant links from REFERENCE LINKS section when they add value (don't force links)
-{links_section}
-## CRITICAL
-- Output exactly `SKIP` if nothing qualifies
-- Use your judgment - if something feels exciting and user-facing, include it
-- Typical weeks: 3-4 highlights. Slow weeks: 0-2. Big release weeks: up to 10
-- Trust your instincts on what users would find exciting"""
-
-    user_prompt = f"""Review this pollinations.ai changelog and extract ONLY highlights worthy of the website and README.
-
-**DATE FOR THIS CHANGELOG: {news_date}**
-Use this date for all highlights from this changelog.
-
-Typical week: 3-4 highlights. Some weeks: 0. Be very selective.
-
-CHANGELOG:
-{news_content}
-
-Output markdown bullets only, or SKIP if nothing qualifies."""
+    # Load user prompt and inject news_date and news_content
+    user_prompt_template = load_prompt("highlights_user.md")
+    user_prompt = user_prompt_template.replace("{news_date}", news_date).replace("{news_content}", news_content)
 
     return system_prompt, user_prompt
 

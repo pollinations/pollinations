@@ -4,7 +4,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
-import { user as userTable } from "@/db/schema/better-auth.ts";
+import { user as userTable, apikey as apikeyTable } from "@/db/schema/better-auth.ts";
 import { calculateNextPeriodStart, tierNames } from "@/utils/polar.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
@@ -559,6 +559,142 @@ export const accountRoutes = new Hono<Env>()
                 log.error("Error fetching daily usage: {error}", { error });
                 return c.json({ error: "Failed to fetch usage data" }, 500);
             }
+        },
+    )
+    .get(
+        "/key",
+        describeRoute({
+            tags: ["gen.pollinations.ai"],
+            description:
+                "Get API key status and information. Returns key validity, type, expiry, permissions, and remaining budget. This endpoint allows validating keys without making expensive generation requests. Requires API key authentication.",
+            responses: {
+                200: {
+                    description: "API key status and information",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.object({
+                                    valid: z
+                                        .boolean()
+                                        .describe("Whether the API key is valid and active"),
+                                    type: z
+                                        .enum(["publishable", "secret", "temporary"])
+                                        .describe("Type of API key"),
+                                    name: z
+                                        .string()
+                                        .nullable()
+                                        .describe("Display name of the API key"),
+                                    expiresAt: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Expiry timestamp in ISO 8601 format, null if never expires",
+                                        ),
+                                    expiresIn: z
+                                        .number()
+                                        .nullable()
+                                        .describe("Seconds until expiry, null if never expires"),
+                                    permissions: z
+                                        .object({
+                                            models: z
+                                                .array(z.string())
+                                                .nullable()
+                                                .describe(
+                                                    "List of allowed model IDs, null = all models allowed",
+                                                ),
+                                            account: z
+                                                .array(z.string())
+                                                .nullable()
+                                                .describe(
+                                                    "List of account permissions, null = no account access",
+                                                ),
+                                        })
+                                        .describe("API key permissions"),
+                                    pollenBudget: z
+                                        .number()
+                                        .nullable()
+                                        .describe(
+                                            "Remaining pollen budget for this key, null = unlimited (uses user balance)",
+                                        ),
+                                    rateLimitEnabled: z
+                                        .boolean()
+                                        .describe("Whether rate limiting is enabled for this key"),
+                                }),
+                            ),
+                        },
+                    },
+                },
+                401: {
+                    description: "Invalid or missing API key",
+                },
+            },
+        }),
+        async (c) => {
+            const log = c.get("log").getChild("account-key");
+
+            // This endpoint requires API key authentication
+            const apiKey = c.var.auth.apiKey;
+            if (!apiKey) {
+                log.debug("No API key provided");
+                throw new HTTPException(401, {
+                    message: "API key required. This endpoint validates API keys.",
+                });
+            }
+
+            log.debug("Returning status for API key: {keyId}", {
+                keyId: apiKey.id,
+            });
+
+            // Get key type from metadata
+            const keyType = (apiKey.metadata?.keyType as string) || "secret";
+
+            // Fetch additional key details from DB
+            const db = drizzle(c.env.DB);
+            const keyDetails = await db
+                .select({
+                    expiresAt: apikeyTable.expiresAt,
+                    rateLimitEnabled: apikeyTable.rateLimitEnabled,
+                })
+                .from(apikeyTable)
+                .where(eq(apikeyTable.id, apiKey.id))
+                .get();
+
+            let expiresAt: string | null = null;
+            let expiresIn: number | null = null;
+
+            if (keyDetails?.expiresAt) {
+                // Convert timestamp to ISO string
+                const expiryDate = new Date(keyDetails.expiresAt);
+                expiresAt = expiryDate.toISOString();
+
+                // Calculate seconds until expiry
+                const now = Date.now();
+                const msUntilExpiry = expiryDate.getTime() - now;
+
+                if (msUntilExpiry > 0) {
+                    expiresIn = Math.floor(msUntilExpiry / 1000);
+                } else {
+                    // Key is already expired
+                    expiresIn = 0;
+                }
+            }
+
+            // Format permissions for response
+            const permissions = {
+                models: apiKey.permissions?.models || null,
+                account: apiKey.permissions?.account || null,
+            };
+
+            return c.json({
+                valid: true, // If we got here, the key is valid
+                type: keyType as "publishable" | "secret" | "temporary",
+                name: apiKey.name || null,
+                expiresAt,
+                expiresIn,
+                permissions,
+                pollenBudget: apiKey.pollenBalance,
+                rateLimitEnabled: keyDetails?.rateLimitEnabled ?? true,
+            });
         },
     );
 

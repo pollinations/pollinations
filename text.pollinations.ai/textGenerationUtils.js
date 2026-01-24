@@ -30,6 +30,13 @@ export function validateAndNormalizeMessages(messages) {
         if (msg.name) normalizedMsg.name = msg.name;
         if (msg.tool_calls) normalizedMsg.tool_calls = msg.tool_calls;
 
+        // Preserve all Gemini-specific thought fields
+        Object.keys(msg).forEach(key => {
+            if (key.startsWith("thought") || key === "thought") {
+                normalizedMsg[key] = msg[key];
+            }
+        });
+
         return normalizedMsg;
     });
 }

@@ -9,6 +9,7 @@ import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransf
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
+import { passthroughToolSchemas } from "./transforms/passthroughToolSchemas.js";
 
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
@@ -94,6 +95,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
+            passthroughToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
@@ -105,6 +107,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
+            passthroughToolSchemas(),
             createGeminiThinkingTransform("v2.5"),
         ),
     },
@@ -113,6 +116,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas(),
+            passthroughToolSchemas(),
             createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v2.5"),
         ),
@@ -148,6 +152,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
+            passthroughToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-pro"),

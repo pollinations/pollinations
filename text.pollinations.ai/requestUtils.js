@@ -68,6 +68,9 @@ export function getRequestData(req) {
     // Extract user identifier
     const user = data.user || undefined;
 
+    // Gemini thought signature
+    const thought_signature = data.thought_signature || undefined;
+
     const messages = data.messages || [
         { role: "user", content: req.params[0] },
     ];
@@ -104,5 +107,6 @@ export function getRequestData(req) {
         top_logprobs,
         logit_bias,
         user,
+        thought_signature,
     };
 }

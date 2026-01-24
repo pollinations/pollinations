@@ -64,7 +64,7 @@ export function createAuth(env: Cloudflare.Env) {
         rateLimit: {
             enabled: true,
             timeWindow: 1000, // 1 second
-            maxRequests: 10000, // Support high-volume games (10k req/s)
+            maxRequests: 1000, // 1k req/s per API key
         },
     });
 

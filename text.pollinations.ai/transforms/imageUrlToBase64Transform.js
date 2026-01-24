@@ -170,13 +170,26 @@ async function processMessageContent(content) {
 export function createImageUrlToBase64Transform() {
     return async (messages, options) => {
         // Apply to Vertex AI and Bedrock providers (both require base64 images)
-        const provider = options?.modelConfig?.provider;
-        const needsBase64 = provider === "vertex-ai" || provider === "bedrock";
+        const config = options?.modelConfig;
+        const provider = config?.provider;
+
+        // For fallback configs, check if any target uses vertex-ai or bedrock
+        const targets = config?.targets || [];
+        const hasBase64Target = targets.some(
+            (t) => t.provider === "vertex-ai" || t.provider === "bedrock",
+        );
+
+        const needsBase64 =
+            provider === "vertex-ai" ||
+            provider === "bedrock" ||
+            hasBase64Target;
         if (!needsBase64) {
             return { messages, options };
         }
 
-        log(`Processing messages for ${provider} image URL conversion`);
+        log(
+            `Processing messages for ${provider || "fallback"} image URL conversion`,
+        );
 
         // Process all messages in parallel
         const processedMessages = await Promise.all(

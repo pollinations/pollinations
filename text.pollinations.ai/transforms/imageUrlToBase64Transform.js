@@ -187,9 +187,10 @@ export function createImageUrlToBase64Transform() {
             return { messages, options };
         }
 
-        log(
-            `Processing messages for ${provider || "fallback"} image URL conversion`,
-        );
+        const providerInfo = provider
+            ? provider
+            : `fallback[${targets.map((t) => t.provider).join(", ")}]`;
+        log(`Processing messages for ${providerInfo} image URL conversion`);
 
         // Process all messages in parallel
         const processedMessages = await Promise.all(

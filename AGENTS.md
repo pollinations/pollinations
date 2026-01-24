@@ -291,6 +291,8 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 
 - If the user asks to send to git or something similar do all these steps:
 - Git status, diff, create branch, commit all, push and write a PR description
+- **Avoid force pushes**: Prefer follow-up commits over `git push --force` or `--force-with-lease`. Force pushes rewrite history and can cause issues for others working on the same branch.
+- **Run biome check before committing**: `npx biome check --write <file>` to fix formatting/linting issues
 
 ## Communication Style
 

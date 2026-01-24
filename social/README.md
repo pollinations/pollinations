@@ -350,4 +350,3 @@ social/
 | `{pr_titles}` | PR title list |
 | `{pr_count}` | Number of PRs |
 | `{about}` | Shared company description (from `_shared/about.md`) |
-| `{image_style}` | Shared image guidelines (from `_shared/image_style.md`) |

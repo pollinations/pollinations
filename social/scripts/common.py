@@ -38,7 +38,7 @@ def load_shared(name: str) -> str:
     """Load a shared prompt component from prompts/_shared/{name}.md
     
     Args:
-        name: 'about' or 'image_style'
+        name: 'about'
     
     Returns:
         The shared prompt content
@@ -73,12 +73,10 @@ def load_shared(name: str) -> str:
 def _inject_shared_prompts(content: str) -> str:
     """Inject shared prompt components into content
     
-    Replaces {about} and {image_style} placeholders with shared content.
+    Replaces {about} placeholder with shared content.
     """
     if "{about}" in content:
         content = content.replace("{about}", load_shared("about"))
-    if "{image_style}" in content:
-        content = content.replace("{image_style}", load_shared("image_style"))
     return content
 
 
@@ -96,7 +94,6 @@ def load_prompt(platform: str, prompt_name: str) -> str:
     
     Automatically injects shared components:
     - {about} -> content from _shared/about.md
-    - {image_style} -> content from _shared/image_style.md
     
     Args:
         platform: 'linkedin', 'twitter', 'instagram', 'reddit', etc.

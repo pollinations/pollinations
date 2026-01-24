@@ -253,27 +253,30 @@ class FluxKlein:
     @modal.fastapi_endpoint(method="POST")
     def edit_web(
         self,
-        req: EditRequest,
+        images: list[str],
+        prompt: str,
+        width: int = 1024,
+        height: int = 1024,
+        guidance_scale: float = 4.0,
+        num_inference_steps: int = 4,
+        seed: int | None = None,
         x_enter_token: str | None = Header(default=None),
     ):
-        """Web endpoint for image editing (POST). Requires x-enter-token header.
-
-        Pass images as list of base64-encoded strings (up to 10).
-        Reference images in the prompt by index ("image 1", "image 2") or description.
+        """Web endpoint for image editing (POST).
+        
+        Query params: prompt, width, height, guidance_scale, num_inference_steps, seed
+        Body: JSON array of base64-encoded images (up to 10)
         """
         from fastapi.responses import Response
         import base64
 
-        # Verify Enter token
         self._verify_token(x_enter_token)
 
-        # Decode base64 images if provided
         ref_image_bytes_list = None
-        if req.images and len(req.images) > 0:
+        if images and len(images) > 0:
             ref_image_bytes_list = []
-            for i, img_b64 in enumerate(req.images[:10]):  # Max 10 images
+            for i, img_b64 in enumerate(images[:10]):
                 try:
-                    # Handle data URL format (data:image/png;base64,...) or raw base64
                     if img_b64.startswith("data:"):
                         img_b64 = img_b64.split(",", 1)[1]
                     img_bytes = base64.b64decode(img_b64)
@@ -283,12 +286,12 @@ class FluxKlein:
                     print(f"⚠️ Failed to decode image {i+1}: {e}")
 
         image_bytes = self.generate.local(
-            prompt=req.prompt,
-            width=req.width,
-            height=req.height,
-            guidance_scale=req.guidance_scale,
-            num_inference_steps=req.num_inference_steps,
-            seed=req.seed,
+            prompt=prompt,
+            width=width,
+            height=height,
+            guidance_scale=guidance_scale,
+            num_inference_steps=num_inference_steps,
+            seed=seed,
             image_bytes_list=ref_image_bytes_list,
         )
 

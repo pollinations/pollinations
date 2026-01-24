@@ -5,6 +5,7 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import { user as userTable, apikey as apikeyTable } from "@/db/schema/better-auth.ts";
+import type { ApiKeyType } from "@/db/schema/event.ts";
 import { calculateNextPeriodStart, tierNames } from "@/utils/polar.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
@@ -646,7 +647,7 @@ export const accountRoutes = new Hono<Env>()
             });
 
             // Get key type from metadata
-            const keyType = (apiKey.metadata?.keyType as string) || "secret";
+            const keyType = (apiKey.metadata?.keyType as ApiKeyType) || "secret";
 
             // Fetch additional key details from DB
             const db = drizzle(c.env.DB);
@@ -687,7 +688,7 @@ export const accountRoutes = new Hono<Env>()
 
             return c.json({
                 valid: true, // If we got here, the key is valid
-                type: keyType as "publishable" | "secret" | "temporary",
+                type: keyType,
                 name: apiKey.name || null,
                 expiresAt,
                 expiresIn,

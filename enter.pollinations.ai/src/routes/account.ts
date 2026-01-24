@@ -4,7 +4,10 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
-import { user as userTable, apikey as apikeyTable } from "@/db/schema/better-auth.ts";
+import {
+    user as userTable,
+    apikey as apikeyTable,
+} from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
 import { calculateNextPeriodStart, tierNames } from "@/utils/polar.ts";
 import type { Env } from "../env.ts";
@@ -577,14 +580,18 @@ export const accountRoutes = new Hono<Env>()
                                 z.object({
                                     valid: z
                                         .boolean()
-                                        .describe("Whether the API key is valid and active"),
+                                        .describe(
+                                            "Whether the API key is valid and active",
+                                        ),
                                     type: z
-                                        .enum(["publishable", "secret", "temporary"])
+                                        .enum(["publishable", "secret"])
                                         .describe("Type of API key"),
                                     name: z
                                         .string()
                                         .nullable()
-                                        .describe("Display name of the API key"),
+                                        .describe(
+                                            "Display name of the API key",
+                                        ),
                                     expiresAt: z
                                         .string()
                                         .nullable()
@@ -594,7 +601,9 @@ export const accountRoutes = new Hono<Env>()
                                     expiresIn: z
                                         .number()
                                         .nullable()
-                                        .describe("Seconds until expiry, null if never expires"),
+                                        .describe(
+                                            "Seconds until expiry, null if never expires",
+                                        ),
                                     permissions: z
                                         .object({
                                             models: z
@@ -619,7 +628,9 @@ export const accountRoutes = new Hono<Env>()
                                         ),
                                     rateLimitEnabled: z
                                         .boolean()
-                                        .describe("Whether rate limiting is enabled for this key"),
+                                        .describe(
+                                            "Whether rate limiting is enabled for this key",
+                                        ),
                                 }),
                             ),
                         },
@@ -638,7 +649,8 @@ export const accountRoutes = new Hono<Env>()
             if (!apiKey) {
                 log.debug("No API key provided");
                 throw new HTTPException(401, {
-                    message: "API key required. This endpoint validates API keys.",
+                    message:
+                        "API key required. This endpoint validates API keys.",
                 });
             }
 
@@ -646,8 +658,9 @@ export const accountRoutes = new Hono<Env>()
                 keyId: apiKey.id,
             });
 
-            // Get key type from metadata
-            const keyType = (apiKey.metadata?.keyType as ApiKeyType) || "secret";
+            // Get key type from metadata (set at key creation time)
+            const keyType: ApiKeyType =
+                (apiKey.metadata?.keyType as ApiKeyType) || "secret";
 
             // Fetch additional key details from DB
             const db = drizzle(c.env.DB);

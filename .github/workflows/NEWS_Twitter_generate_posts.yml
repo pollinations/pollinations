@@ -58,4 +58,4 @@ jobs:
           DAYS_BACK: ${{ inputs.days_back || '1' }}
           FORCE_ENGAGEMENT: ${{ inputs.force_engagement || 'false' }}
           PR_LABELS: NEWS
-        run: python .github/scripts/twitter_generate_post.py
+        run: python social/scripts/twitter_generate_post.py

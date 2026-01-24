@@ -1,22 +1,20 @@
 # Social & Content
 
-This folder contains social media automation, content outputs, and newsletter generation tools.
+Social media automation for Reddit, Twitter/X, and LinkedIn.
+
+See [AGENTS.md](./AGENTS.md) for detailed documentation.
 
 ## Structure
 
 ```
 social/
-├── news/          # Weekly updates and transformed content
-│   ├── YYYY-MM-DD.md          # Weekly news files
-│   ├── LINKS.md               # Reference links for highlights
+├── prompts/       # AI prompts for post generation
+│   ├── linkedin/  # LinkedIn system + user prompts
+│   └── twitter/   # Twitter system + user prompts
+├── scripts/       # Python automation scripts
+├── news/          # Weekly updates and generated posts
 │   └── transformed/
-│       ├── highlights.md      # AI-extracted highlights for website/README
-│       └── instagram/         # Instagram post data
-├── reddit/        # Reddit automation (Devvit app)
-├── buffer/        # Buffer configuration (future)
-└── newsletter/    # Newsletter generation (future)
+│       ├── linkedin/posts/
+│       └── twitter/posts/
+└── reddit/        # Reddit Devvit app
 ```
-
-## Workflows
-
-Checkout [Workflow Documentation](../.github/docs/NEWS-SOCIAL.md) for more details on the same.

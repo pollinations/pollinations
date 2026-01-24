@@ -58,4 +58,4 @@ jobs:
           DAYS_BACK: ${{ inputs.days_back || '7' }}
           FORCE_THOUGHT_LEADERSHIP: ${{ inputs.force_thought_leadership || 'false' }}
           PR_LABELS: NEWS
-        run: python .github/scripts/linkedin_generate_post.py
+        run: python social/scripts/linkedin_generate_post.py

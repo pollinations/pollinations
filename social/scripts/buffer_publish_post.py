@@ -4,7 +4,6 @@ Buffer Publish Post - Publishes posts to LinkedIn/Twitter via Buffer API
 Triggered when a post PR is merged
 """
 
-import os
 import sys
 import json
 import time
@@ -12,50 +11,24 @@ import requests
 from typing import Optional
 from datetime import datetime, timezone
 
-# Buffer API
-BUFFER_API_BASE = "https://api.bufferapp.com/1"
+from buffer_utils import (
+    BUFFER_API_BASE,
+    get_env,
+    get_profile_by_service,
+)
+
 MAX_RETRIES = 3
 RETRY_DELAY = 5  # seconds
 
 
-def get_env(key: str, required: bool = True) -> Optional[str]:
-    """Get environment variable with optional requirement check"""
-    value = os.getenv(key)
-    if required and not value:
-        print(f"Error: {key} environment variable is required")
-        sys.exit(1)
-    return value
-
-
-def get_buffer_profile(access_token: str, service: str) -> Optional[dict]:
-    """Get Buffer profile for a specific service"""
-    response = requests.get(
-        f"{BUFFER_API_BASE}/profiles.json",
-        params={"access_token": access_token},
-        timeout=30
-    )
-
-    if response.status_code != 200:
-        print(f"Error fetching profiles: {response.status_code} - {response.text[:500]}")
-        return None
-
-    profiles = response.json()
-    for profile in profiles:
-        if profile.get("service") == service:
-            return profile
-
-    print(f"No {service} profile found in Buffer account")
-    return None
-
-
-def create_buffer_update(
+def create_buffer_update_with_retry(
     access_token: str,
     profile_id: str,
     text: str,
     media: Optional[dict] = None,
     now: bool = True
 ) -> dict:
-    """Create a Buffer update (post)
+    """Create a Buffer update (post) with retry logic for rate limits
 
     Uses application/x-www-form-urlencoded format as required by Buffer API.
     Includes retry logic for rate limits (HTTP 429).
@@ -64,7 +37,7 @@ def create_buffer_update(
     data = [
         ("access_token", access_token),
         ("text", text),
-        ("profile_ids[]", profile_id),  # Single profile, can add more tuples for multiple
+        ("profile_ids[]", profile_id),
     ]
 
     if media:
@@ -102,7 +75,7 @@ def create_buffer_update(
 
 def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
     """Publish a LinkedIn post via Buffer"""
-    profile = get_buffer_profile(access_token, "linkedin")
+    profile = get_profile_by_service(access_token, "linkedin")
     if not profile:
         return False
 
@@ -128,7 +101,7 @@ def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
         media = {"photo": image_data["url"]}
         print(f"Including image: {image_data['url'][:100]}...")
 
-    result = create_buffer_update(
+    result = create_buffer_update_with_retry(
         access_token=access_token,
         profile_id=profile["id"],
         text=text,
@@ -147,9 +120,9 @@ def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
 def publish_twitter_post(post_data: dict, access_token: str) -> bool:
     """Publish a Twitter/X post via Buffer"""
     # Try both "twitter" and "x" service names (Buffer may use either)
-    profile = get_buffer_profile(access_token, "twitter")
+    profile = get_profile_by_service(access_token, "twitter")
     if not profile:
-        profile = get_buffer_profile(access_token, "x")
+        profile = get_profile_by_service(access_token, "x")
     if not profile:
         return False
 
@@ -172,7 +145,7 @@ def publish_twitter_post(post_data: dict, access_token: str) -> bool:
         media = {"photo": image_data["url"]}
         print(f"Including image: {image_data['url'][:100]}...")
 
-    result = create_buffer_update(
+    result = create_buffer_update_with_retry(
         access_token=access_token,
         profile_id=profile["id"],
         text=text,
@@ -210,19 +183,61 @@ def add_pr_comment(github_token: str, repo: str, pr_number: int, message: str):
         print(f"Warning: Could not add PR comment: {response.status_code}")
 
 
+def get_post_file_from_pr(github_token: str, repo: str, pr_number: int) -> Optional[str]:
+    """Get the post file path from a PR's changed files"""
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {github_token}"
+    }
+    
+    response = requests.get(
+        f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files",
+        headers=headers,
+        timeout=30
+    )
+    
+    if response.status_code != 200:
+        print(f"Error fetching PR files: {response.status_code}")
+        return None
+    
+    files = response.json()
+    for file_info in files:
+        filename = file_info.get("filename", "")
+        if (filename.startswith("social/news/transformed/linkedin/posts/") or
+            filename.startswith("social/news/transformed/twitter/posts/")) and \
+           filename.endswith(".json"):
+            return filename
+    
+    return None
+
+
 def main():
     buffer_token = get_env("BUFFER_ACCESS_TOKEN")
     github_token = get_env("GITHUB_TOKEN")
     repo = get_env("GITHUB_REPOSITORY")
-    post_file_path = get_env("POST_FILE_PATH")
+    
+    # Post file can be provided directly (workflow_dispatch) or detected from PR
+    post_file_path = get_env("POST_FILE_PATH", required=False)
     pr_number_str = get_env("PR_NUMBER", required=False)
     pr_number = int(pr_number_str) if pr_number_str else None
-
+    
     # These are guaranteed non-None by get_env with required=True
     assert buffer_token is not None
     assert github_token is not None
     assert repo is not None
-    assert post_file_path is not None
+    
+    # If no post file provided, detect from PR
+    if not post_file_path and pr_number:
+        print(f"Detecting post file from PR #{pr_number}...")
+        post_file_path = get_post_file_from_pr(github_token, repo, pr_number)
+        if not post_file_path:
+            print(f"Error: No LinkedIn or Twitter post file found in PR #{pr_number}")
+            sys.exit(1)
+        print(f"Found: {post_file_path}")
+    
+    if not post_file_path:
+        print("Error: POST_FILE_PATH not provided and no PR_NUMBER to detect from")
+        sys.exit(1)
 
     # Read the post file
     print(f"\n=== Reading post file: {post_file_path} ===")

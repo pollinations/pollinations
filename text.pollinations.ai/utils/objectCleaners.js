@@ -45,7 +45,11 @@ export const cleanNullAndUndefined = (obj) => {
 
     Object.keys(cleaned).forEach((key) => {
         // Never clean modalities, audio properties or Gemini thought signatures
-        if (key === "modalities" || key === "audio" || key.startsWith("thought_")) {
+        if (
+            key === "modalities" ||
+            key === "audio" ||
+            key.startsWith("thought_")
+        ) {
             return;
         }
 

@@ -21,7 +21,7 @@ function allowThoughtFields(obj) {
 export function passthroughToolSchemas() {
     return (messages, options) => {
         // Preservamos a assinatura nas mensagens se elas existirem
-        const newMessages = messages.map(msg => {
+        const newMessages = messages.map((msg) => {
             if (msg.thought_signature) {
                 return { ...msg, thought_signature: msg.thought_signature };
             }
@@ -39,7 +39,9 @@ export function passthroughToolSchemas() {
                               ...t,
                               function: {
                                   ...t.function,
-                                  parameters: allowThoughtFields(t.function.parameters),
+                                  parameters: allowThoughtFields(
+                                      t.function.parameters,
+                                  ),
                               },
                           }
                         : t,

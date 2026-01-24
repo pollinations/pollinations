@@ -1,8 +1,8 @@
 import debug from "debug";
 // Import the new cleaning utilities
 import {
-    cleanUndefined as newCleanUndefined,
     cleanNullAndUndefined as newCleanNullAndUndefined,
+    cleanUndefined as newCleanUndefined,
 } from "./utils/objectCleaners.js";
 
 const log = debug("pollinations:utils");
@@ -31,7 +31,7 @@ export function validateAndNormalizeMessages(messages) {
         if (msg.tool_calls) normalizedMsg.tool_calls = msg.tool_calls;
 
         // Preserve all Gemini-specific thought fields
-        Object.keys(msg).forEach(key => {
+        Object.keys(msg).forEach((key) => {
             if (key.startsWith("thought") || key === "thought") {
                 normalizedMsg[key] = msg[key];
             }
@@ -57,7 +57,7 @@ export function convertSystemToUserMessages(messages) {
         if (msg.role === "system") {
             log(
                 "Converting system message to user message:",
-                msg.content.substring(0, 50) + "...",
+                `${msg.content.substring(0, 50)}...`,
             );
             return {
                 ...msg,

@@ -107,7 +107,7 @@ const usageRecordSchema = z.object({
     api_key_type: z
         .string()
         .nullable()
-        .describe("Type of API key ('secret', 'publishable', 'temporary')"),
+        .describe("Type of API key ('secret', 'publishable')"),
     meter_source: z
         .string()
         .nullable()

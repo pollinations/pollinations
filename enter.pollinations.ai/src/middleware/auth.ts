@@ -97,6 +97,12 @@ export const auth = (options: AuthOptions) =>
                 valid: keyResult.valid,
             });
             if (!keyResult.valid || !keyResult.key) {
+                // Check for rate limit error (better-auth bug: returns 401 instead of 429)
+                if (keyResult.error?.code === "RATE_LIMITED") {
+                    throw new HTTPException(429, {
+                        message: "Rate limit exceeded. Please try again later.",
+                    });
+                }
                 // API key was provided but is invalid - throw specific error
                 throw new HTTPException(401, {
                     message:

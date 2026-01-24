@@ -132,7 +132,7 @@ function AuthorizeComponent() {
                 }),
                 prefix: "sk",
                 metadata: {
-                    keyType: "temporary",
+                    keyType: "secret",
                     createdVia: "redirect-auth",
                 },
             });

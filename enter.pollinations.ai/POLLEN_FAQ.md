@@ -32,7 +32,7 @@ Registration gives you access to the Pollinations API and the **Spore tier**, wh
 
 \*During beta only - subject to change
 
-- **Publishable Key (pk\_):** Designed for client-side apps (bound to your domain). Rate limits: 1 pollen/hour per IP+key. Access to all models, which consume Pollen based on usage.
+- **Publishable Key (pk\_):** Designed for client-side apps (bound to your domain). Rate limits: 1 pollen per IP per hour. Access to all models, which consume Pollen based on usage.
 - **Secret Key (sk\_):** For server-side apps only. No rate limits. Access to all models, which consume Pollen based on usage.
 
 ## How do daily Pollen grants work?

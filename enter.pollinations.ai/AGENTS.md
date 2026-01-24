@@ -34,17 +34,17 @@
 
 **Two types of API keys available:**
 
-1. **🌐 Publishable Key** (starts with `pk_`)
+1. **🌐 Publishable Key** (starts with `pk_`) - ⚠️ **Beta: Not yet ready for production use**
    - Always visible in dashboard
-   - Safe for client-side code (React, Vue, etc.)
-   - Pollen-based rate limiting: 1 pollen/hour refill per IP+key
-   - Access to all models
+   - For client-side apps (React, Vue, etc.)
+   - IP rate-limited: 1 pollen per IP per hour
+   - **Consumes Pollen from your balance** - exposing in public code will drain your wallet if your app gets traffic
 2. **🔒 Secret Key** (starts with `sk_`)
    - Only shown once - copy immediately!
    - For server-side apps only
    - Never expose publicly
    - No rate limits
-   - Can spend Pollen for paid models
+   - **Consumes Pollen from your balance**
 
 **For testing, use Secret Keys** for better rate limits and pollen spending.
 
@@ -359,6 +359,54 @@ curl "$BASE_URL/generate/image/test?model=flux" \
 
 ---
 
+## 💳 Local Stripe Webhook Testing
+
+To test Stripe pack purchases locally, you need to forward webhooks to your local dev server.
+
+### One-Time Setup
+
+1. **Install Stripe CLI**: https://stripe.com/docs/stripe-cli
+
+2. **Login to the correct Stripe account**:
+   ```bash
+   stripe login
+   ```
+   Authenticate with the **Myceli.AI OÜ** test account (`acct_1SrYSy6O03AauPe8`)
+
+3. **Decrypt secrets**:
+   ```bash
+   npm run decrypt-vars
+   ```
+
+### Running Local Webhook Testing
+
+```bash
+# Start webhook forwarding (uses permanent secret from Stripe Dashboard)
+stripe listen --forward-to localhost:3000 --load-from-webhooks-api
+```
+
+> **CRITICAL**: Do NOT add `/api/webhooks/stripe` to the `--forward-to` URL! The `--load-from-webhooks-api` flag already includes the path from Stripe Dashboard. Adding it manually causes path duplication (`/api/webhooks/stripe/api/webhooks/stripe`) and 404 errors.
+
+Then in another terminal:
+```bash
+npm run dev
+```
+
+### Testing a Purchase
+
+1. Go to `http://localhost:3000`
+2. Click a pack purchase button (e.g., "+ $10")
+3. Complete checkout with test card: `4242 4242 4242 4242`
+4. Watch terminal for: `Stripe: Credited X pollen to user...`
+
+### Troubleshooting
+
+- **Wrong account**: If `--load-from-webhooks-api` fails, run `stripe login` again
+- **Webhook secret mismatch**: Ensure `.dev.vars` has the correct `STRIPE_WEBHOOK_SECRET`
+- **Async crypto error**: The code uses `constructEventAsync` for Cloudflare Workers compatibility
+
+---
+
 ## Batch Testing
 
 ### Generate Multiple Images
@@ -517,7 +565,7 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 ### Authentication
 
 - **Use Secret Keys (`sk_`) for testing**: Better rate limits and can spend pollen
-- **Publishable Keys (`pk_`)**: Only for client-side apps, IP rate limited (100 req/min)
+- **Publishable Keys (`pk_`)**: Only for client-side apps, IP rate limited (1 pollen per IP per hour)
 
 ### Performance
 
@@ -529,6 +577,44 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 - **Check response headers** for cache status: `x-cache: HIT` or `MISS`
 - **Use small images** (256x256) for quick tests
 - **Monitor your balance** at https://enter.pollinations.ai after tests
+
+---
+
+## 🔐 OAuth Authorization Flow
+
+Third-party apps can redirect users to the authorize page to get an API key with pre-selected permissions.
+
+### Base URL
+
+```
+https://enter.pollinations.ai/authorize?redirect_url=YOUR_APP_URL
+```
+
+### Optional Preselection Parameters
+
+| Param | Description | Example |
+|-------|-------------|---------|
+| `models` | Comma-separated allowed models | `flux,openai,gptimage` |
+| `budget` | Pollen budget limit | `10` |
+| `expiry` | Expiry in days (default: 30) | `7` |
+| `permissions` | Account permissions | `profile,balance,usage` |
+
+### Account Permissions
+
+- `profile`: Read user's name, email, GitHub username
+- `balance`: Read pollen balance
+- `usage`: Read usage history
+
+### Example
+
+```
+https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com/callback&permissions=profile,balance&expiry=7&models=flux,openai
+```
+
+After authorization, the user is redirected back with the API key in the URL fragment:
+```
+https://myapp.com/callback#api_key=pk_xxxxx
+```
 
 ---
 

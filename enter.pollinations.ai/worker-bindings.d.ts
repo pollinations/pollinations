@@ -61,7 +61,19 @@ declare namespace Cloudflare {
         POLAR_ACCESS_TOKEN: string;
         POLAR_WEBHOOK_SECRET: string;
         TINYBIRD_INGEST_TOKEN: string;
+        TINYBIRD_POLAR_INGEST_TOKEN: string;
+        TINYBIRD_CRYPTO_INGEST_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
+        NOWPAYMENTS_API_KEY: string;
+        NOWPAYMENTS_IPN_SECRET: string;
+        NOWPAYMENTS_ENV: "sandbox" | "production";
+        STRIPE_SECRET_KEY: string;
+        STRIPE_WEBHOOK_SECRET: string;
+        STRIPE_MODE: "sandbox" | "live";
+        STRIPE_SUCCESS_URL:
+            | "http://localhost:3000"
+            | "https://enter.pollinations.ai"
+            | "https://staging.enter.pollinations.ai";
         POLLEN_RATE_LIMITER: DurableObjectNamespace /* PollenRateLimiter from pollinations-enter */;
         IMAGE_BUCKET: R2Bucket;
         DB: D1Database;

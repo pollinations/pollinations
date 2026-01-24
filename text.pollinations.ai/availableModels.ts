@@ -21,9 +21,9 @@ import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 // Import model configs
 import { portkeyConfig } from "./configs/modelConfigs.js";
 
+import { type ModelId, resolveServiceId } from "../shared/registry/registry.js";
 // Import registry for validation
 import type { TEXT_SERVICES } from "../shared/registry/text.js";
-import { resolveServiceId, type ModelId } from "../shared/registry/registry.js";
 
 // Type constraint: model names must exist in registry
 type ValidServiceName = keyof typeof TEXT_SERVICES;
@@ -62,7 +62,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["deepseek-v3.2-maas"],
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v3p2"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -159,6 +159,18 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "gemini-legacy",
+        config: portkeyConfig["gemini-2.5-pro"],
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            sanitizeToolSchemas(),
+            passthroughToolSchemas(),
+            createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
+            createGeminiThinkingTransform("v2.5"),
+        ),
+    },
+    {
         name: "nova-fast",
         config: portkeyConfig["amazon.nova-micro-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
@@ -172,6 +184,10 @@ const models: ModelDefinition[] = [
         name: "minimax",
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p1"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "nomnom",
+        config: portkeyConfig["nomnom"],
     },
 ];
 

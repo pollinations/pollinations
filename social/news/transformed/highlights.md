@@ -1,3 +1,7 @@
+- **2026-01-19** – **🚀 New Model: NomNom** Added `nomnom` (alias `gemini-scrape`) for web research, scraping, and crawling capabilities. [API Docs](https://enter.pollinations.ai/api/docs)
+- **2026-01-19** – **🎨 Klein Image Model** Deployed FLUX.2 `klein` model for faster text-to-image and precise image editing. [Try it](https://hello.pollinations.ai)
+- **2026-01-19** – **🎵 Audio Generation** Text-to-speech with voice selection is now available directly on the Play page.
+- **2026-01-19** – **🔑 Bring Your Own Key** Connect your personal API key to [chat.pollinations.ai](https://chat.pollinations.ai) for custom usage limits and billing.
 - **2026-01-12** – **🚀 New Models** Added `glm` (GLM-4.7), `minimax` (MiniMax-M2.1), and Perplexity with citations. Check the [API Docs](https://enter.pollinations.ai/api/docs).
 - **2026-01-12** – **🎁 Free Tier Upgrades** Active users are now automatically upgraded to the Seed tier ($3/day) based on activity.
 - **2026-01-12** – **📱 New AI Apps** Try **Study Buzz** (study tools), **Onyx** (noir storyboards), and **Player or AI** (Roblox game).

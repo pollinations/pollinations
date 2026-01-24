@@ -1,35 +1,29 @@
 import debug from "debug";
-import { HttpError } from "./httpError.ts";
 import dotenv from "dotenv";
 import { fileTypeFromBuffer } from "file-type";
-
-// Import shared authentication utilities
 import sharp from "sharp";
 import {
     fetchFromLeastBusyFluxServer,
     fetchFromLeastBusyServer,
     getNextTurboServerUrl,
 } from "./availableServers.ts";
+import { HttpError } from "./httpError.ts";
+import { incrementModelCounter } from "./modelCounter.ts";
+import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
+import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
+import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
+import type { ImageParams } from "./params.ts";
+import type { ProgressManager } from "./progressBar.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";
 import {
     analyzeImageSafety,
     analyzeTextSafety,
     type ContentSafetyFlags,
 } from "./utils/azureContentSafety.ts";
-import type { TrackingData } from "./utils/trackingHeaders.ts";
-
-// Import GPT Image logging utilities
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
-// Import Vertex AI Gemini image generator
+import type { TrackingData } from "./utils/trackingHeaders.ts";
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
-import type { ImageParams } from "./params.ts";
-import type { ProgressManager } from "./progressBar.ts";
-
-// Import model handlers
-import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
-import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
-import { incrementModelCounter } from "./modelCounter.ts";
 
 dotenv.config();
 
@@ -737,7 +731,7 @@ const callAzureGPTImageWithEndpoint = async (
                     }
 
                     // Determine file extension and MIME type from Content-Type header
-                    let contentType =
+                    const contentType =
                         imageResponse.headers.get("content-type") || "";
                     let extension = ".png"; // Default extension
                     let mimeType = "image/png"; // Default MIME type
@@ -814,12 +808,8 @@ const callAzureGPTImageWithEndpoint = async (
     }
 
     if (!response.ok) {
-        // Clone the response before consuming its body
-        const errorResponse = response.clone();
-        const errorText = await errorResponse.text();
-        throw new Error(
-            `Azure GPT Image API error: ${response.status} - error ${errorText}`,
-        );
+        const errorText = await response.text();
+        throw new HttpError(errorText, response.status);
     }
 
     const data = await response.json();
@@ -929,79 +919,72 @@ const generateImage = async (
                 ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}`
                 : "No userInfo provided",
         );
+        // For gptimage models, always throw errors instead of falling back
+        progress.updateBar(
+            requestId,
+            30,
+            "Processing",
+            "Checking prompt safety...",
+        );
 
-        // All requests assumed to come from enter.pollinations.ai - tier checks bypassed
-        {
-            // For gptimage models, always throw errors instead of falling back
-            progress.updateBar(
-                requestId,
-                30,
-                "Processing",
-                "Checking prompt safety...",
+        try {
+            // Check prompt safety with Azure Content Safety
+            const promptSafetyResult = await analyzeTextSafety(prompt);
+
+            // Log the prompt with safety analysis results
+            await logGptImagePrompt(
+                prompt,
+                safeParams,
+                userInfo,
+                promptSafetyResult,
             );
 
-            try {
-                // Check prompt safety with Azure Content Safety
-                const promptSafetyResult = await analyzeTextSafety(prompt);
+            if (!promptSafetyResult.safe) {
+                const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
+                logError("Azure Content Safety rejected prompt:", errorMessage);
+                progress.updateBar(
+                    requestId,
+                    100,
+                    "Error",
+                    "Prompt contains unsafe content",
+                );
 
-                // Log the prompt with safety analysis results
-                await logGptImagePrompt(
+                // Log the error with safety analysis results
+                const error = new HttpError(errorMessage, 400);
+                await logGptImageError(
                     prompt,
                     safeParams,
                     userInfo,
+                    error,
                     promptSafetyResult,
                 );
 
-                if (!promptSafetyResult.safe) {
-                    const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-                    logError(
-                        "Azure Content Safety rejected prompt:",
-                        errorMessage,
-                    );
-                    progress.updateBar(
-                        requestId,
-                        100,
-                        "Error",
-                        "Prompt contains unsafe content",
-                    );
-
-                    // Log the error with safety analysis results
-                    const error = new HttpError(errorMessage, 400);
-                    await logGptImageError(
-                        prompt,
-                        safeParams,
-                        userInfo,
-                        error,
-                        promptSafetyResult,
-                    );
-
-                    throw error;
-                }
-
-                progress.updateBar(
-                    requestId,
-                    35,
-                    "Processing",
-                    `Trying Azure GPT Image (${gptConfig.modelName})...`,
-                );
-                return await callAzureGPTImage(
-                    prompt,
-                    safeParams,
-                    userInfo,
-                    safeParams.model,
-                );
-            } catch (error) {
-                // Log the error but don't fall back - propagate it to the caller
-                logError(
-                    "Azure GPT Image generation or safety check failed:",
-                    error.message,
-                );
-
-                await logGptImageError(prompt, safeParams, userInfo, error);
-
-                progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }
+
+            progress.updateBar(
+                requestId,
+                35,
+                "Processing",
+                `Trying Azure GPT Image (${gptConfig.modelName})...`,
+            );
+            return await callAzureGPTImage(
+                prompt,
+                safeParams,
+                userInfo,
+                safeParams.model,
+            );
+        } catch (error) {
+            // Log the error but don't fall back - propagate it to the caller
+            logError(
+                "Azure GPT Image generation or safety check failed:",
+                error.message,
+            );
+
+            await logGptImageError(prompt, safeParams, userInfo, error);
+
+            progress.updateBar(requestId, 100, "Error", error.message);
+            throw error;
         }
     }
 
@@ -1145,6 +1128,39 @@ const generateImage = async (
         }
     }
 
+    if (safeParams.model === "klein") {
+        // Klein - Fast 4B model on Modal (text-to-image + image editing)
+        try {
+            return await callFluxKleinAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
+        } catch (error) {
+            logError("Flux Klein generation failed:", error.message);
+            progress.updateBar(requestId, 100, "Error", error.message);
+            throw error;
+        }
+    }
+
+    if (safeParams.model === "klein-large") {
+        // Klein Large - Higher quality 9B model on Modal (text-to-image + image editing)
+        try {
+            return await callFluxKleinAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+                "klein-large",
+            );
+        } catch (error) {
+            logError("Flux Klein Large generation failed:", error.message);
+            progress.updateBar(requestId, 100, "Error", error.message);
+            throw error;
+        }
+    }
+
     if (safeParams.model === "flux") {
         progress.updateBar(
             requestId,
@@ -1159,16 +1175,7 @@ const generateImage = async (
         );
     }
 
-    try {
-        return await callSelfHostedServer(
-            prompt,
-            safeParams,
-            concurrentRequests,
-        );
-    } catch (_error) {
-        // Cloudflare Flux fallback disabled
-        throw _error;
-    }
+    return await callSelfHostedServer(prompt, safeParams, concurrentRequests);
 };
 
 // GPT Image logging functions have been moved to utils/gptImageLogger.js

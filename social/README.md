@@ -4,6 +4,26 @@ Automated social media posting for pollinations.ai across multiple platforms.
 
 ---
 
+## Platform Overview
+
+| Platform | Trigger | Publishing | Notes |
+|----------|---------|------------|-------|
+| **LinkedIn** | Cron: Mon 14:00 UTC | Buffer | Primary target - professional presence |
+| **Twitter/X** | Cron: Daily 15:00 UTC | Buffer | Primary target - dev community |
+| **Instagram** | Cron: Daily 16:00 UTC | Direct API | Pixel art style |
+| **Discord** | On PR merge / On NEWS merge | Webhook | Real-time, no Buffer |
+| **Reddit** | Systemd timer (daily) | Devvit | Self-hosted TypeScript pipeline |
+| **Facebook** | — | — | 🚧 Not yet implemented |
+
+### Key Differences
+
+- **LinkedIn & Twitter/X** - Primary platforms. Use Buffer for scheduling. AI generates content + images, human reviews PR before publishing.
+- **Instagram** - Uses Instagram Graph API directly (not Buffer). Same PR-based review workflow.
+- **Discord** - Direct webhook posting. Two triggers: (1) Any PR merged → announcement, (2) NEWS.md merged → weekly digest.
+- **Reddit** - Completely separate pipeline. Self-hosted on EC2 with systemd timers. TypeScript-based (Devvit), not Python.
+
+---
+
 ## Pipeline Overview
 
 ### 🎨 Color Legend

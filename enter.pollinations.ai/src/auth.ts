@@ -88,8 +88,10 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 ? {
                       handler: (promise: Promise<any>) => {
                           ctx.waitUntil(
-                              promise.catch((e) => {
-                                  console.error("Background task failed:", e);
+                              promise.catch(() => {
+                                  // Silently ignore - these are non-critical tracking updates
+                                  // (lastRequest, requestCount) that fail due to D1 contention
+                                  // under high concurrent load. Auth still works correctly.
                               }),
                           );
                       },

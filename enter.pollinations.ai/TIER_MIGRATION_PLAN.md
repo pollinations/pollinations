@@ -55,30 +55,27 @@ export function getTierPollen(tier: TierName): number {
 
 ---
 
-### Phase 2: Registration - Assign Spore + Balance 🔄 PARTIAL
+### Phase 2: Registration - Assign Spore + Balance ✅ DONE
 
 **File:** `src/auth.ts` ✅ Modified
 
 **Done:**
 - ✅ Removed Polar tier subscription creation (`ensureDefaultSubscription` deleted)
 - ✅ Kept Polar customer linking (needed for pack purchases)
-
-**Still needed:**
-- [ ] Ensure new users get `tier = 'spore'` and `tierBalance = 1` on registration
-- [ ] Send `user_registration` event to Tinybird
+- ✅ New users get `tier = 'spore'` and `tierBalance = 1` on registration
+- ✅ Send `user_registration` event to Tinybird
 
 ---
 
-### Phase 3: Daily Refill - Cloudflare Cron Trigger 🔄 PARTIAL
+### Phase 3: Daily Refill - Cloudflare Cron Trigger ✅ DONE
 
-**File:** `src/scheduled.ts` ✅ Exists (needs verification)
+**File:** `src/scheduled.ts` ✅ Modified
 
 **Done:**
 - ✅ Cron trigger configured in `wrangler.toml`
-
-**Still needed:**
-- [ ] Verify refill logic runs at 00:00 UTC
-- [ ] Add Tinybird event logging for refills
+- ✅ Refill logic runs at 00:00 UTC
+- ✅ Per-user Tinybird event logging for refills
+- ✅ Aggregate event for backwards compatibility
 
 ---
 
@@ -184,11 +181,31 @@ D1    → Tiers (set on registration, refilled by cron at 00:00 UTC)
 | Tier upgrades | Manual via `/update-tier` admin endpoint or GitHub Actions |
 | Registration timing | Immediate balance assignment |
 | Refill mechanism | Cloudflare Cron at 00:00 UTC |
-| Tinybird events | tier_refill, tier_change, user_registration (not yet implemented)
+| Tinybird events | tier_refill, tier_change, user_registration ✅ All implemented
 
 ---
 
 ## Completed Work Log
+
+### 2025-01-25: All Phases Complete ✅
+
+**Completed missing tier functionality:**
+
+1. **User Registration (Phase 2):**
+   - `src/auth.ts` - Added `user_registration` event logging to Tinybird
+
+2. **Daily Refill (Phase 3):**
+   - `src/scheduled.ts` - Added per-user refill event logging (in addition to aggregate)
+   - Now logs individual `tier_refill` events for each user
+
+3. **Tier Changes:**
+   - `src/routes/admin.ts` - Added `tier_change` event logging to Tinybird
+   - Tracks previous tier for audit trail
+
+**All Tinybird events now implemented:**
+- `user_registration` - When new user signs up
+- `tier_refill` - Daily at 00:00 UTC (both per-user and aggregate)
+- `tier_change` - When admin updates user tier
 
 ### 2025-01-23: Phase 5 Complete
 

@@ -137,8 +137,12 @@ export const auth = (options: AuthOptions) =>
             };
         };
 
-        const { user, session, apiKey } =
-            (await authenticateSession()) || (await authenticateApiKey()) || {};
+        // Try session authentication first, then API key
+        let authResult = await authenticateSession();
+        if (!authResult) {
+            authResult = await authenticateApiKey();
+        }
+        const { user, session, apiKey } = authResult || {};
 
         log.debug("Authentication result: {authenticated}", {
             authenticated: !!user,

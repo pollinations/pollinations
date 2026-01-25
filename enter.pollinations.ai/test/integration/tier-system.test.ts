@@ -1,4 +1,4 @@
-import { SELF } from "cloudflare:test";
+import { SELF, createExecutionContext, env } from "cloudflare:test";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -9,11 +9,9 @@ import { test } from "../fixtures.ts";
 
 describe("Tier System End-to-End", () => {
     describe("Daily Usage Pattern", () => {
-        test("user exhausts tier balance and falls back to pack balance", async ({
-            env,
-            executionContext,
-        }) => {
+        test("user exhausts tier balance and falls back to pack balance", async () => {
             const db = drizzle(env.DB);
+            const executionContext = createExecutionContext();
             const userId = "heavy-user";
 
             // User starts with flower tier (10 pollen/day) and bought a pack (50 pollen)
@@ -85,11 +83,9 @@ describe("Tier System End-to-End", () => {
             );
         });
 
-        test("multiple users with different tiers get correct daily allowance", async ({
-            env,
-            executionContext,
-        }) => {
+        test("multiple users with different tiers get correct daily allowance", async () => {
             const db = drizzle(env.DB);
+            const executionContext = createExecutionContext();
 
             // Setup diverse user base
             const users = [
@@ -143,7 +139,6 @@ describe("Tier System End-to-End", () => {
 
     describe("Pack Purchase via Webhook", () => {
         test("Polar webhook correctly updates pack balance", async ({
-            env,
             sessionToken,
             mocks,
         }) => {
@@ -227,7 +222,7 @@ describe("Tier System End-to-End", () => {
     });
 
     describe("Race Condition Protection", () => {
-        test("concurrent API calls don't corrupt balance", async ({ env }) => {
+        test("concurrent API calls don't corrupt balance", async () => {
             const db = drizzle(env.DB);
             const userId = "concurrent-user";
 
@@ -289,7 +284,6 @@ describe("Tier System End-to-End", () => {
 
     describe("Balance Validation", () => {
         test("user cannot use service when all balances are depleted", async ({
-            env,
             sessionToken,
         }) => {
             const db = drizzle(env.DB);
@@ -336,11 +330,9 @@ describe("Tier System End-to-End", () => {
     });
 
     describe("Tier Migration Integrity", () => {
-        test("users migrated from Polar maintain their tier and get daily refills", async ({
-            env,
-            executionContext,
-        }) => {
+        test("users migrated from Polar maintain their tier and get daily refills", async () => {
             const db = drizzle(env.DB);
+            const executionContext = createExecutionContext();
 
             // Simulate migrated users with various states
             const migratedUsers = [
@@ -422,11 +414,9 @@ describe("Tier System End-to-End", () => {
     });
 
     describe("Edge Cases", () => {
-        test("handles tier changes correctly", async ({
-            env,
-            executionContext,
-        }) => {
+        test("handles tier changes correctly", async () => {
             const db = drizzle(env.DB);
+            const executionContext = createExecutionContext();
             const userId = "tier-change-user";
 
             // User starts as seed tier
@@ -471,9 +461,7 @@ describe("Tier System End-to-End", () => {
             expect(result[0]?.tierBalance).toBe(10);
         });
 
-        test("crypto balance is consumed before pack balance", async ({
-            env,
-        }) => {
+        test("crypto balance is consumed before pack balance", async () => {
             const db = drizzle(env.DB);
             const userId = "crypto-user";
 

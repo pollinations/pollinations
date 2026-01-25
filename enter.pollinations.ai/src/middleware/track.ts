@@ -15,7 +15,6 @@ import {
     openaiUsageToUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
-import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { HonoRequest } from "hono";
@@ -23,10 +22,6 @@ import { createMiddleware } from "hono/factory";
 import { routePath } from "hono/route";
 import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
-import {
-    apikey as apikeyTable,
-    user as userTable,
-} from "@/db/schema/better-auth.ts";
 import type {
     ApiKeyType,
     EventType,
@@ -54,12 +49,7 @@ import {
     ContentFilterSeveritySchema,
 } from "@/schemas/openai.ts";
 import { generateRandomId, removeUnset } from "@/util.ts";
-import {
-    atomicDeductApiKeyBalance,
-    atomicDeductUserBalance,
-    calculateDeductionSplit,
-    getUserBalances,
-} from "@/utils/balance-deduction.ts";
+import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
 import type { LoggerVariables } from "./logger.ts";
 import type { ModelVariables } from "./model.ts";
 import type { PolarVariables } from "./polar.ts";
@@ -209,103 +199,15 @@ export const track = (eventType: EventType) =>
                     log,
                 );
 
-                // Decrement per-key pollen budget after billable requests
-                // Only deduct if key has a budget set (pollenBalance is not null)
-                const apiKeyId = c.var.auth?.apiKey?.id;
-                const apiKeyPollenBalance = c.var.auth?.apiKey?.pollenBalance;
-                if (
-                    responseTracking.isBilledUsage &&
-                    responseTracking.price?.totalPrice &&
-                    apiKeyId &&
-                    apiKeyPollenBalance !== null &&
-                    apiKeyPollenBalance !== undefined
-                ) {
-                    const priceToDeduct = responseTracking.price.totalPrice;
-
-                    try {
-                        // Use atomic deduction function
-                        await atomicDeductApiKeyBalance(
-                            db,
-                            apikeyTable,
-                            apiKeyId,
-                            priceToDeduct,
-                        );
-
-                        log.debug(
-                            "Decremented {price} pollen from API key {keyId} budget",
-                            {
-                                price: priceToDeduct,
-                                keyId: apiKeyId,
-                            },
-                        );
-                    } catch (error) {
-                        log.error(
-                            "Failed to decrement API key budget for {keyId}: {error}",
-                            {
-                                keyId: apiKeyId,
-                                error:
-                                    error instanceof Error
-                                        ? error.message
-                                        : error,
-                            },
-                        );
-                    }
-                }
-
-                // Decrement user pollen balance after billable requests
-                // Strategy: decrement from tier_balance first, then crypto_balance, then pack_balance
-                if (
-                    responseTracking.isBilledUsage &&
-                    responseTracking.price?.totalPrice &&
-                    userTracking.userId
-                ) {
-                    const priceToDeduct = responseTracking.price.totalPrice;
-
-                    try {
-                        // Get current balances for logging purposes
-                        const balancesBefore = await getUserBalances(
-                            db,
-                            userTracking.userId,
-                        );
-
-                        // Calculate how the deduction will be split (for logging)
-                        const deductionSplit = calculateDeductionSplit(
-                            balancesBefore.tierBalance,
-                            balancesBefore.cryptoBalance,
-                            balancesBefore.packBalance,
-                            priceToDeduct,
-                        );
-
-                        // Perform atomic deduction
-                        await atomicDeductUserBalance(
-                            db,
-                            userTracking.userId,
-                            priceToDeduct,
-                        );
-
-                        log.debug(
-                            "Decremented {price} pollen from user {userId} (tier: -{fromTier}, crypto: -{fromCrypto}, pack: -{fromPack})",
-                            {
-                                price: priceToDeduct,
-                                userId: userTracking.userId,
-                                fromTier: deductionSplit.fromTier,
-                                fromCrypto: deductionSplit.fromCrypto,
-                                fromPack: deductionSplit.fromPack,
-                            },
-                        );
-                    } catch (error) {
-                        log.error(
-                            "Failed to decrement user balance for {userId}: {error}",
-                            {
-                                userId: userTracking.userId,
-                                error:
-                                    error instanceof Error
-                                        ? error.message
-                                        : error,
-                            },
-                        );
-                    }
-                }
+                // Handle balance deduction for both API keys and users
+                await handleBalanceDeduction({
+                    db,
+                    isBilledUsage: responseTracking.isBilledUsage,
+                    totalPrice: responseTracking.price?.totalPrice,
+                    userId: userTracking.userId,
+                    apiKeyId: c.var.auth?.apiKey?.id,
+                    apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
+                });
             })(),
         );
     });

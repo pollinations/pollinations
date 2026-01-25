@@ -12,6 +12,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
 import { user as userTable } from "./db/schema/better-auth.ts";
+import { sendTierEventToTinybird } from "./events.ts";
 import { DEFAULT_TIER, getTierPollen } from "./tier-config.ts";
 
 function addKeyPrefix(key: string) {
@@ -165,6 +166,22 @@ function onAfterUserCreate(env: Cloudflare.Env) {
                     lastTierGrant: Date.now(),
                 })
                 .where(eq(userTable.id, user.id));
+
+            // Log user registration event to Tinybird
+            ctx.context.executionCtx.waitUntil(
+                sendTierEventToTinybird(
+                    {
+                        event_type: "user_registration",
+                        environment: env.ENVIRONMENT || "unknown",
+                        user_id: user.id,
+                        tier: DEFAULT_TIER,
+                        pollen_amount: tierBalance,
+                        timestamp: new Date().toISOString(),
+                    },
+                    env.TINYBIRD_TIER_INGEST_URL,
+                    env.TINYBIRD_INGEST_TOKEN,
+                ),
+            );
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
             throw new APIError("INTERNAL_SERVER_ERROR", {

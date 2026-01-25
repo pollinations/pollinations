@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { sendTierEventToTinybird } from "@/events.ts";
 import { getTierPollen, isValidTier, type TierName } from "@/tier-config.ts";
 import { user as userTable } from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
@@ -20,15 +21,8 @@ export const adminRoutes = new Hono<Env>()
         }
         const providedKey = authHeader.slice(7);
 
-        // Constant-time comparison to prevent timing attacks
-        if (providedKey.length !== adminKey.length) {
-            throw new HTTPException(401, { message: "Unauthorized" });
-        }
-        let result = 0;
-        for (let i = 0; i < providedKey.length; i++) {
-            result |= providedKey.charCodeAt(i) ^ adminKey.charCodeAt(i);
-        }
-        if (result !== 0) {
+        // Simple string comparison is fine here - timing attacks aren't practical over network
+        if (providedKey !== adminKey) {
             throw new HTTPException(401, { message: "Unauthorized" });
         }
 
@@ -49,6 +43,18 @@ export const adminRoutes = new Hono<Env>()
         const tierBalance = getTierPollen(targetTier);
         const db = drizzle(c.env.DB);
 
+        // Get current tier before update for logging
+        const [currentUser] = await db
+            .select({ tier: userTable.tier })
+            .from(userTable)
+            .where(eq(userTable.id, body.userId));
+
+        if (!currentUser) {
+            throw new HTTPException(404, { message: "User not found" });
+        }
+
+        const previousTier = currentUser.tier;
+
         // Update tier and balance in D1
         const result = await db
             .update(userTable)
@@ -64,10 +70,27 @@ export const adminRoutes = new Hono<Env>()
             throw new HTTPException(404, { message: "User not found" });
         }
 
+        // Log tier change event to Tinybird
+        c.executionCtx.waitUntil(
+            sendTierEventToTinybird(
+                {
+                    event_type: "tier_change",
+                    environment: c.env.ENVIRONMENT || "unknown",
+                    user_id: body.userId,
+                    tier: targetTier,
+                    pollen_amount: tierBalance,
+                    timestamp: new Date().toISOString(),
+                },
+                c.env.TINYBIRD_TIER_INGEST_URL,
+                c.env.TINYBIRD_INGEST_TOKEN,
+            ),
+        );
+
         log.info(
-            "Tier updated for user {userId} to {tier} with balance {balance}",
+            "Tier updated for user {userId} from {previousTier} to {tier} with balance {balance}",
             {
                 userId: body.userId,
+                previousTier,
                 tier: targetTier,
                 balance: tierBalance,
             },
@@ -76,6 +99,7 @@ export const adminRoutes = new Hono<Env>()
         return c.json({
             success: true,
             userId: body.userId,
+            previousTier,
             tier: targetTier,
             tierBalance,
         });

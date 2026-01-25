@@ -26,18 +26,19 @@ export async function atomicDeductUserBalance(
     // 2. Then, deduct remainder from crypto_balance (up to available amount)
     // 3. Finally, deduct any remaining from pack_balance (can go negative)
     //
-    // The GREATEST(0, ...) ensures tier and crypto never go below 0
+    // The MAX(0, ...) ensures tier and crypto never go below 0
     // Pack balance is allowed to go negative as it represents paid credits
+    // Note: SQLite uses MAX/MIN instead of GREATEST/LEAST
     await db.run(sql`
 		UPDATE ${userTable}
 		SET
-			tier_balance = GREATEST(0, tier_balance - LEAST(tier_balance, ${amount})),
-			crypto_balance = GREATEST(0,
-				crypto_balance - LEAST(crypto_balance,
-					GREATEST(0, ${amount} - COALESCE(tier_balance, 0))
+			tier_balance = MAX(0, tier_balance - MIN(tier_balance, ${amount})),
+			crypto_balance = MAX(0,
+				crypto_balance - MIN(crypto_balance,
+					MAX(0, ${amount} - COALESCE(tier_balance, 0))
 				)
 			),
-			pack_balance = pack_balance - GREATEST(0,
+			pack_balance = pack_balance - MAX(0,
 				${amount} - COALESCE(tier_balance, 0) - COALESCE(crypto_balance, 0)
 			)
 		WHERE id = ${userId}

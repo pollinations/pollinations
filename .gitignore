@@ -348,3 +348,6 @@ debugsession_*/
 *.swp
 *.swo
 *~
+
+# Claude Code local config (may contain API keys)
+~/.claude.json

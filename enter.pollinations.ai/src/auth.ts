@@ -84,13 +84,17 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         advanced: {
             // Configure background tasks for Cloudflare Workers
             // Required for deferUpdates to work properly
-            backgroundTasks: ctx ? {
-                handler: (promise: Promise<any>) => {
-                    ctx.waitUntil(promise.catch((e) => {
-                        console.error("Background task failed:", e);
-                    }));
-                }
-            } : undefined,
+            backgroundTasks: ctx
+                ? {
+                      handler: (promise: Promise<any>) => {
+                          ctx.waitUntil(
+                              promise.catch((e) => {
+                                  console.error("Background task failed:", e);
+                              }),
+                          );
+                      },
+                  }
+                : undefined,
         },
         secondaryStorage: {
             get: async (key) => {

@@ -1,17 +1,15 @@
 # io.net GPU Instances
 
-Last updated: 2026-01-21
+Last updated: 2026-01-25
 
-## Active Instances
+## Active Instances (50-50 Split: 2 Flux + 2 Z-Image = 4 instances, 8 GPUs)
 
 | Instance | Public IP | SSH Port | Model | GPU 0 Port | GPU 1 Port | GPUs | Status |
 |----------|-----------|----------|-------|------------|------------|------|--------|
-| Z-Image 1 | 34.224.94.92 | 22891 | zimage | 10000→28893 | 10001→28894 | 2x RTX 4090 | ✅ Running |
-| Z-Image 2 | 3.95.36.149 | 23528 | zimage | 10000→28893 | 10001→28894 | 2x RTX 4090 | ✅ Running |
-| Z-Image 3 | 54.91.244.89 | 26345 | zimage | 10000→28893 | 10001→28894 | 2x RTX 4090 | ✅ Running |
-| Z-Image 4 | 34.224.94.92 | 31194 | zimage | 10000→28893 | 10001→28894 | 2x RTX 4090 | ✅ Running |
-| Flux 1 (vmaas-41a7d908) | 52.205.25.210 | 25656 | flux | 10000→22182 | 10001→31535 | 2x RTX 4090 | ✅ Running |
-| Flux 2 (vmaas-22e58f05) | 3.21.229.114 | 23655 | flux | 10000→20071 | 10001→23942 | 2x RTX 4090 | ✅ Running |
+| Z-Image 1 (vmaas-46665737) | 54.185.175.109 | 20033 | zimage | 10000→24946 | 10001→21753 | 2x RTX 4090 | ⚠️ Check |
+| Z-Image 2 (vmaas-8afc966b) | 54.185.175.109 | 28816 | zimage | 10000→24088 | 10001→30215 | 2x RTX 4090 | ⚠️ Check |
+| Flux 1 (vmaas-22e58f05) | 3.21.229.114 | 23655 | flux | 10000→20071 | 10001→23942 | 2x RTX 4090 | ⚠️ Check |
+| Flux 2 (vmaas-41e2e564) | 3.21.229.114 | 24671 | flux | 10000→26596 | 10001→31706 | 2x RTX 4090 | ⚠️ Check |
 
 ## Port Mapping Explanation
 
@@ -21,15 +19,13 @@ Last updated: 2026-01-21
 ## SSH Access
 
 ```bash
-# Z-Image instances
-ssh -p 22891 -i ~/.ssh/thomashkey ionet@34.224.94.92
-ssh -p 23528 -i ~/.ssh/thomashkey ionet@3.95.36.149
-ssh -p 26345 -i ~/.ssh/thomashkey ionet@54.91.244.89
-ssh -p 31194 -i ~/.ssh/thomashkey ionet@34.224.94.92
+# Z-Image instances (2 instances, 4 GPUs)
+ssh -p 20033 -i ~/.ssh/thomashkey ionet@54.185.175.109  # Z-Image 1 (vmaas-46665737)
+ssh -p 28816 -i ~/.ssh/thomashkey ionet@54.185.175.109  # Z-Image 2 (vmaas-8afc966b)
 
-# Flux instances
-ssh -p 25656 -i ~/.ssh/thomashkey ionet@52.205.25.210  # vmaas-41a7d908
-ssh -p 23655 -i ~/.ssh/thomashkey ionet@3.21.229.114   # vmaas-22e58f05
+# Flux instances (2 instances, 4 GPUs)
+ssh -p 23655 -i ~/.ssh/thomashkey ionet@3.21.229.114   # Flux 1 (vmaas-22e58f05)
+ssh -p 24671 -i ~/.ssh/thomashkey ionet@3.21.229.114   # Flux 2 (vmaas-41e2e564)
 ```
 
 ## Docker Images
@@ -110,6 +106,6 @@ cd image.pollinations.ai/nunchaku
 
 | Model | Instances | Total GPUs | GPU Type |
 |-------|-----------|------------|----------|
-| zimage | 4 | 8 | RTX 4090 |
+| zimage | 2 | 4 | RTX 4090 |
 | flux | 2 | 4 | RTX 4090 |
-| **Total** | **6** | **12** | RTX 4090 |
+| **Total** | **4** | **8** | RTX 4090 |

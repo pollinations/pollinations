@@ -568,6 +568,19 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // Handle /register endpoint BEFORE auth check (heartbeat from GPU servers)
+    if (pathname === "/register") {
+        res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Cache-Control":
+                "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+        });
+        handleRegisterEndpoint(req, res);
+        return;
+    }
+
     // Verify PLN_ENTER_TOKEN
     const token = req.headers["x-enter-token"];
     const expectedToken = process.env.PLN_ENTER_TOKEN;
@@ -638,18 +651,6 @@ const server = http.createServer((req, res) => {
             .catch(() => {
                 res.end(JSON.stringify({}));
             });
-        return;
-    }
-
-    if (pathname === "/register") {
-        res.writeHead(200, {
-            "Content-Type": "application/json",
-            "Cache-Control":
-                "no-store, no-cache, must-revalidate, proxy-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-        });
-        handleRegisterEndpoint(req, res);
         return;
     }
 

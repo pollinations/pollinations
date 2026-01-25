@@ -54,6 +54,12 @@ import {
     ContentFilterSeveritySchema,
 } from "@/schemas/openai.ts";
 import { generateRandomId, removeUnset } from "@/util.ts";
+import {
+    atomicDeductApiKeyBalance,
+    atomicDeductUserBalance,
+    calculateDeductionSplit,
+    getUserBalances,
+} from "@/utils/balance-deduction.ts";
 import type { LoggerVariables } from "./logger.ts";
 import type { ModelVariables } from "./model.ts";
 import type { PolarVariables } from "./polar.ts";
@@ -217,13 +223,13 @@ export const track = (eventType: EventType) =>
                     const priceToDeduct = responseTracking.price.totalPrice;
 
                     try {
-                        // Use D1 column for atomic decrement
-                        await db
-                            .update(apikeyTable)
-                            .set({
-                                pollenBalance: sql`${apikeyTable.pollenBalance} - ${priceToDeduct}`,
-                            })
-                            .where(eq(apikeyTable.id, apiKeyId));
+                        // Use atomic deduction function
+                        await atomicDeductApiKeyBalance(
+                            db,
+                            apikeyTable,
+                            apiKeyId,
+                            priceToDeduct,
+                        );
 
                         log.debug(
                             "Decremented {price} pollen from API key {keyId} budget",
@@ -256,50 +262,35 @@ export const track = (eventType: EventType) =>
                     const priceToDeduct = responseTracking.price.totalPrice;
 
                     try {
-                        // Get current balances to determine how to split the deduction
-                        const currentUser = await db
-                            .select({
-                                tierBalance: userTable.tierBalance,
-                                cryptoBalance: userTable.cryptoBalance,
-                                packBalance: userTable.packBalance,
-                            })
-                            .from(userTable)
-                            .where(eq(userTable.id, userTracking.userId))
-                            .limit(1);
+                        // Get current balances for logging purposes
+                        const balancesBefore = await getUserBalances(
+                            db,
+                            userTracking.userId,
+                        );
 
-                        const tierBalance = currentUser[0]?.tierBalance ?? 0;
-                        const cryptoBalance =
-                            currentUser[0]?.cryptoBalance ?? 0;
-
-                        // Decrement in order: tier (free) → crypto → pack
-                        const fromTier = Math.min(
+                        // Calculate how the deduction will be split (for logging)
+                        const deductionSplit = calculateDeductionSplit(
+                            balancesBefore.tierBalance,
+                            balancesBefore.cryptoBalance,
+                            balancesBefore.packBalance,
                             priceToDeduct,
-                            Math.max(0, tierBalance),
                         );
-                        const remainingAfterTier = priceToDeduct - fromTier;
-                        const fromCrypto = Math.min(
-                            remainingAfterTier,
-                            Math.max(0, cryptoBalance),
-                        );
-                        const fromPack = remainingAfterTier - fromCrypto;
 
-                        await db
-                            .update(userTable)
-                            .set({
-                                tierBalance: sql`${userTable.tierBalance} - ${fromTier}`,
-                                cryptoBalance: sql`${userTable.cryptoBalance} - ${fromCrypto}`,
-                                packBalance: sql`${userTable.packBalance} - ${fromPack}`,
-                            })
-                            .where(eq(userTable.id, userTracking.userId));
+                        // Perform atomic deduction
+                        await atomicDeductUserBalance(
+                            db,
+                            userTracking.userId,
+                            priceToDeduct,
+                        );
 
                         log.debug(
                             "Decremented {price} pollen from user {userId} (tier: -{fromTier}, crypto: -{fromCrypto}, pack: -{fromPack})",
                             {
                                 price: priceToDeduct,
                                 userId: userTracking.userId,
-                                fromTier,
-                                fromCrypto,
-                                fromPack,
+                                fromTier: deductionSplit.fromTier,
+                                fromCrypto: deductionSplit.fromCrypto,
+                                fromPack: deductionSplit.fromPack,
                             },
                         );
                     } catch (error) {

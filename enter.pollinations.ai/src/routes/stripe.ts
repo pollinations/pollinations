@@ -49,7 +49,7 @@ export const stripeRoutes = new Hono<Env>()
         }
 
         // Get authenticated user
-        const auth = createAuth(c.env);
+        const auth = createAuth(c.env, c.executionCtx);
         const session = await auth.api.getSession({
             headers: c.req.raw.headers,
         });

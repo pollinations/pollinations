@@ -17,6 +17,7 @@
     "concurrently": "^9.2.1"
   },
   "dependencies": {
-    "lefthook": "^2.0.4"
+    "lefthook": "^2.0.4",
+    "zod": "^4.3.5"
   }
 }

@@ -277,6 +277,8 @@ TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # TODO: Change back to staging endpoints once staging services are available
+# Staging URLs: IMAGE_SERVICE_URL = "http://ec2-44-222-254-250.compute-1.amazonaws.com:16384"
+#               TEXT_SERVICE_URL = "http://ec2-44-222-254-250.compute-1.amazonaws.com:16385"
 # Currently using prod services for simplicity
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"

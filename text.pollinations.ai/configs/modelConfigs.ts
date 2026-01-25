@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
-    createBedrockLambdaModelConfig,
     createBedrockNativeConfig,
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
@@ -91,7 +90,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     // AWS Bedrock - claude-fast, claude, claude-large, chickytutor, nova-fast
     // ============================================================================
     "us.anthropic.claude-3-5-haiku-20241022-v1:0": () =>
-        createBedrockLambdaModelConfig({
+        createBedrockNativeConfig({
             model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
         }),
     "us.anthropic.claude-haiku-4-5-20251001-v1:0": () =>
@@ -184,7 +183,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         ],
     }),
     "amazon.nova-micro-v1:0": () =>
-        createBedrockLambdaModelConfig({
+        createBedrockNativeConfig({
             model: "amazon.nova-micro-v1:0",
         }),
 

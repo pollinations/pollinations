@@ -13,6 +13,7 @@ from common import (
     get_env,
     get_repo_root,
     get_file_sha,
+    get_date_range,
     GITHUB_API_BASE,
     GITHUB_GRAPHQL_API,
     POLLINATIONS_API_BASE,
@@ -24,13 +25,6 @@ NEWS_FOLDER = "social/news"
 
 # Platform name for prompt loading
 PLATFORM = "github"
-
-
-def get_date_range() -> tuple[datetime, datetime]:
-    """Get the date range for PR search - last 7 days"""
-    end_date = datetime.now(timezone.utc)
-    start_date = end_date - timedelta(days=7)
-    return start_date, end_date
 
 
 def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> List[Dict]:
@@ -416,7 +410,7 @@ def main():
     repo_full_name = get_env('GITHUB_REPOSITORY')
     owner_name, repo_name = repo_full_name.split('/')
 
-    start_date, end_date = get_date_range()
+    start_date, end_date = get_date_range(days_back=7)
     merged_prs = get_merged_prs(owner_name, repo_name, start_date, github_token)
 
     print(f"Total merged PRs found: {len(merged_prs)}")

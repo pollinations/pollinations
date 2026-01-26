@@ -1,17 +1,15 @@
 # io.net GPU Instances
 
-Last updated: 2026-01-21
+Last updated: 2026-01-26
 
-## Active Instances
+## Active Instances (50-50 Split: 2 Flux + 2 Z-Image = 4 instances, 8 GPUs)
 
 | Instance | Public IP | SSH Port | Model | GPU 0 Port | GPU 1 Port | GPUs | Status |
 |----------|-----------|----------|-------|------------|------------|------|--------|
-| Z-Image 1 | 34.224.94.92 | 22891 | zimage | 10000→28893 | 10001→28894 | 2x RTX 4090 | ✅ Running |
-| Z-Image 2 | 3.95.36.149 | 23528 | zimage | 10000→28893 | 10001→28894 | 2x RTX 4090 | ✅ Running |
-| Z-Image 3 | 54.91.244.89 | 26345 | zimage | 10000→28893 | 10001→28894 | 2x RTX 4090 | ✅ Running |
-| Z-Image 4 | 34.224.94.92 | 31194 | zimage | 10000→28893 | 10001→28894 | 2x RTX 4090 | ✅ Running |
-| Flux 1 (vmaas-41a7d908) | 52.205.25.210 | 25656 | flux | 10000→22182 | 10001→31535 | 2x RTX 4090 | ✅ Running |
-| Flux 2 (vmaas-22e58f05) | 3.21.229.114 | 23655 | flux | 10000→20071 | 10001→23942 | 2x RTX 4090 | ✅ Running |
+| Z-Image 1 (vmaas-46665737) | 54.185.175.109 | 20033 | zimage | 10000→24946 | 10001→21753 | 2x RTX 4090 | ✅ Working |
+| Z-Image 2 (vmaas-8afc966b) | 54.185.175.109 | 28816 | zimage | 10000→24088 | 10001→30215 | 2x RTX 4090 | ✅ Working |
+| Flux 1 (vmaas-22e58f05) | 3.21.229.114 | 23655 | flux | 10000→20071 | 10001→23942 | 2x RTX 4090 | ✅ Working |
+| Flux 2 (vmaas-41e2e564) | 3.21.229.114 | 24671 | flux | 10000→26596 | 10001→31706 | 2x RTX 4090 | ✅ Working |
 
 ## Port Mapping Explanation
 
@@ -21,15 +19,13 @@ Last updated: 2026-01-21
 ## SSH Access
 
 ```bash
-# Z-Image instances
-ssh -p 22891 -i ~/.ssh/thomashkey ionet@34.224.94.92
-ssh -p 23528 -i ~/.ssh/thomashkey ionet@3.95.36.149
-ssh -p 26345 -i ~/.ssh/thomashkey ionet@54.91.244.89
-ssh -p 31194 -i ~/.ssh/thomashkey ionet@34.224.94.92
+# Z-Image instances (2 instances, 4 GPUs)
+ssh -p 20033 -i ~/.ssh/thomashkey ionet@54.185.175.109  # Z-Image 1 (vmaas-46665737)
+ssh -p 28816 -i ~/.ssh/thomashkey ionet@54.185.175.109  # Z-Image 2 (vmaas-8afc966b)
 
-# Flux instances
-ssh -p 25656 -i ~/.ssh/thomashkey ionet@52.205.25.210  # vmaas-41a7d908
-ssh -p 23655 -i ~/.ssh/thomashkey ionet@3.21.229.114   # vmaas-22e58f05
+# Flux instances (2 instances, 4 GPUs)
+ssh -p 23655 -i ~/.ssh/thomashkey ionet@3.21.229.114   # Flux 1 (vmaas-22e58f05)
+ssh -p 24671 -i ~/.ssh/thomashkey ionet@3.21.229.114   # Flux 2 (vmaas-41e2e564)
 ```
 
 ## Docker Images
@@ -41,9 +37,11 @@ ssh -p 23655 -i ~/.ssh/thomashkey ionet@3.21.229.114   # vmaas-22e58f05
 
 ## Heartbeat Registration
 
-All instances send heartbeats to `https://image.pollinations.ai/register` with:
-- `url`: Public URL (e.g., `http://52.205.25.210:22182`)
+All instances send heartbeats to the EC2 endpoint `http://3.80.56.235:16384/register` with:
+- `url`: Public URL (e.g., `http://3.21.229.114:20071`)
 - `type`: Service type (`flux` or `zimage`)
+
+**Important**: Direct EC2 endpoint bypasses Cloudflare blocking issues with certain io.net IPs
 
 ## Systemd Services (Z-Image)
 
@@ -54,42 +52,48 @@ Z-Image instances use systemd services:
 ## Flux Container Commands
 
 ```bash
-# Start Flux containers on vmaas-41a7d908 (52.205.25.210)
-docker run -d --gpus '"device=0"' --name flux1 \
-  -p 10000:8765 \
-  -e PORT=8765 \
-  -e PUBLIC_IP=52.205.25.210 \
-  -e PUBLIC_PORT=22182 \
-  -e SERVICE_TYPE=flux \
-  -e HF_TOKEN=<token> \
-  pollinations/flux-svdquant:latest
-
-docker run -d --gpus '"device=1"' --name flux2 \
-  -p 10001:8765 \
-  -e PORT=8765 \
-  -e PUBLIC_IP=52.205.25.210 \
-  -e PUBLIC_PORT=31535 \
-  -e SERVICE_TYPE=flux \
-  -e HF_TOKEN=<token> \
-  pollinations/flux-svdquant:latest
-
 # Start Flux containers on vmaas-22e58f05 (3.21.229.114)
 docker run -d --gpus '"device=0"' --name flux1 \
   -p 10000:8765 \
-  -e PORT=8765 \
   -e PUBLIC_IP=3.21.229.114 \
   -e PUBLIC_PORT=20071 \
   -e SERVICE_TYPE=flux \
-  -e HF_TOKEN=<token> \
+  -e REGISTER_URL='http://3.80.56.235:16384/register' \
+  -e HF_TOKEN=<your-hf-token> \
+  --restart unless-stopped \
   pollinations/flux-svdquant:latest
 
 docker run -d --gpus '"device=1"' --name flux2 \
-  -p 10001:8765 \
-  -e PORT=8765 \
+  -p 10001:8766 \
+  -e PORT=8766 \
   -e PUBLIC_IP=3.21.229.114 \
   -e PUBLIC_PORT=23942 \
   -e SERVICE_TYPE=flux \
-  -e HF_TOKEN=<token> \
+  -e REGISTER_URL='http://3.80.56.235:16384/register' \
+  -e HF_TOKEN=<your-hf-token> \
+  --restart unless-stopped \
+  pollinations/flux-svdquant:latest
+
+# Start Flux containers on vmaas-41e2e564 (3.21.229.114)
+docker run -d --gpus '"device=0"' --name flux1 \
+  -p 10000:8765 \
+  -e PUBLIC_IP=3.21.229.114 \
+  -e PUBLIC_PORT=26596 \
+  -e SERVICE_TYPE=flux \
+  -e REGISTER_URL='http://3.80.56.235:16384/register' \
+  -e HF_TOKEN=<your-hf-token> \
+  --restart unless-stopped \
+  pollinations/flux-svdquant:latest
+
+docker run -d --gpus '"device=1"' --name flux2 \
+  -p 10001:8766 \
+  -e PORT=8766 \
+  -e PUBLIC_IP=3.21.229.114 \
+  -e PUBLIC_PORT=31706 \
+  -e SERVICE_TYPE=flux \
+  -e REGISTER_URL='http://3.80.56.235:16384/register' \
+  -e HF_TOKEN=<your-hf-token> \
+  --restart unless-stopped \
   pollinations/flux-svdquant:latest
 ```
 
@@ -99,17 +103,34 @@ The Flux image uses a pre-built base with nunchaku compiled for SM 8.9 (RTX 4090
 Building nunchaku from source in Docker fails without GPU access, so we patch
 the base image with updated server.py instead.
 
+### Building Updated Image with Fixes
+
 ```bash
-# On a machine with the base image (87362500968a):
 cd image.pollinations.ai/nunchaku
-./rebuild-image.sh           # Build and push
-./rebuild-image.sh --no-push # Build only
+./build-updated-image.sh
+```
+
+This creates `pollinations/flux-svdquant:updated` with:
+- Updated server.py with PUBLIC_PORT support
+- Direct EC2 endpoint as default REGISTER_URL
+- Proper environment variable handling
+
+### Manual Patching (Current Method)
+
+Until the updated image is deployed, patch containers after starting:
+
+```bash
+# Copy updated server.py to containers
+scp server.py ionet@HOST:/home/ionet/server.py
+sudo docker cp /home/ionet/server.py flux1:/app/server.py
+sudo docker cp /home/ionet/server.py flux2:/app/server.py
+sudo docker restart flux1 flux2
 ```
 
 ## Capacity Summary
 
 | Model | Instances | Total GPUs | GPU Type |
 |-------|-----------|------------|----------|
-| zimage | 4 | 8 | RTX 4090 |
+| zimage | 2 | 4 | RTX 4090 |
 | flux | 2 | 4 | RTX 4090 |
-| **Total** | **6** | **12** | RTX 4090 |
+| **Total** | **4** | **8** | RTX 4090 |

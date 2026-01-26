@@ -11,6 +11,10 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
+!.env.example
+.wrangler
 
 # Build artifacts from content projects (now built independently)
 public/deck

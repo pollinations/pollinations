@@ -17,6 +17,7 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 from common import (
     load_prompt,
+    get_env,
     GITHUB_API_BASE,
     GITHUB_GRAPHQL_API,
     POLLINATIONS_API_BASE,
@@ -48,15 +49,6 @@ def get_repo_root() -> str:
         current = os.path.dirname(current)
     # Fallback: assume we're already in repo root
     return os.getcwd()
-
-
-def get_env(key: str, required: bool = True) -> str:
-    """Get environment variable with optional requirement check"""
-    value = os.getenv(key)
-    if required and not value:
-        print(f"Error: {key} environment variable is required")
-        sys.exit(1)
-    return value
 
 
 def get_date_range(days_back: int = 1) -> tuple[datetime, datetime]:

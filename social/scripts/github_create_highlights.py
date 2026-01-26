@@ -7,7 +7,7 @@ import re
 import base64
 import requests
 from datetime import datetime, timezone
-from common import load_prompt, GITHUB_API_BASE, POLLINATIONS_API_BASE, MODEL
+from common import load_prompt, get_env, GITHUB_API_BASE, POLLINATIONS_API_BASE, MODEL
 
 NEWS_FOLDER = "social/news"
 HIGHLIGHTS_PATH = "social/news/transformed/highlights.md"
@@ -24,14 +24,6 @@ def get_repo_root() -> str:
             return current
         current = os.path.dirname(current)
     return os.getcwd()
-
-
-def get_env(key: str, required: bool = True) -> str:
-    value = os.getenv(key)
-    if required and not value:
-        print(f"Error: {key} environment variable is required")
-        sys.exit(1)
-    return value
 
 
 def get_latest_news_file(github_token: str, owner: str, repo: str) -> tuple[str, str, str]:

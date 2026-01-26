@@ -10,6 +10,7 @@ from typing import Dict, List
 from datetime import datetime, timedelta, timezone
 from common import (
     load_prompt,
+    get_env,
     GITHUB_API_BASE,
     GITHUB_GRAPHQL_API,
     POLLINATIONS_API_BASE,
@@ -31,14 +32,6 @@ def get_repo_root() -> str:
             return current
         current = os.path.dirname(current)
     return os.getcwd()
-
-
-def get_env(key: str, required: bool = True) -> str:
-    value = os.getenv(key)
-    if required and not value:
-        print(f"Error: {key} environment variable is required")
-        sys.exit(1)
-    return value
 
 
 def get_date_range() -> tuple[datetime, datetime]:

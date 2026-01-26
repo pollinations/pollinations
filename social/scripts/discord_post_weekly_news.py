@@ -6,7 +6,7 @@ import random
 import re
 import requests
 from datetime import datetime, timedelta, timezone
-from common import load_prompt, POLLINATIONS_API_BASE, MODEL
+from common import load_prompt, get_env, POLLINATIONS_API_BASE, MODEL
 
 NEWS_FOLDER = "social/news"
 
@@ -22,14 +22,6 @@ def get_repo_root() -> str:
             return current
         current = os.path.dirname(current)
     return os.getcwd()
-
-
-def get_env(key: str, required: bool = True) -> str:
-    value = os.getenv(key)
-    if required and not value:
-        print(f"Error: {key} environment variable is required")
-        sys.exit(1)
-    return value
 
 
 def get_latest_news_file() -> tuple[str, str]:

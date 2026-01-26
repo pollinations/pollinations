@@ -15,6 +15,7 @@ from jinja2 import Environment, Template
 from datetime import datetime
 from common import (
     load_prompt,
+    get_env,
     GITHUB_API_BASE,
     POLLINATIONS_API_BASE,
     MODEL,
@@ -35,14 +36,6 @@ def get_repo_root() -> str:
         current = os.path.dirname(current)
     return os.getcwd()
 
-
-def get_env(key: str, required: bool = True) -> Optional[str]:
-    """Get environment variable with optional requirement check"""
-    value = os.getenv(key)
-    if required and not value:
-        print(f"❌ Error: {key} environment variable is required")
-        sys.exit(1)
-    return value
 
 def github_api_request(endpoint: str, token: str) -> Dict:
     """Make GitHub API request"""

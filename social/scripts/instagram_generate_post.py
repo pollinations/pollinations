@@ -15,39 +15,28 @@ import requests
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
-
-# Constants
-GITHUB_API_BASE = "https://api.github.com"
-GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
-POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
-POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
-MODEL = "gemini-large"
-WEBSEARCH_MODEL = "perplexity-reasoning"
-IMAGE_MODEL = "nanobanana"  # Use nanobanana for testing (nanobanana-pro for production)
-MAX_SEED = 2147483647  # Max int32
-MAX_RETRIES = 3
-INITIAL_RETRY_DELAY = 2  # Base delay for exponential backoff (2, 4, 8 seconds)
+from common import (
+    load_prompt,
+    get_env,
+    get_date_range,
+    get_file_sha,
+    call_pollinations_api,
+    GITHUB_API_BASE,
+    GITHUB_GRAPHQL_API,
+    POLLINATIONS_IMAGE_BASE,
+    MODEL,
+    IMAGE_MODEL,
+    MAX_SEED,
+    MAX_RETRIES,
+    INITIAL_RETRY_DELAY,
+)
 
 # Instagram post settings
 IMAGE_WIDTH = 2048
 IMAGE_HEIGHT = 2048  # 1:1 aspect ratio for Instagram
 
-
-def get_env(key: str, required: bool = True) -> str:
-    """Get environment variable with optional requirement check"""
-    value = os.getenv(key)
-    if required and not value:
-        print(f"Error: {key} environment variable is required")
-        sys.exit(1)
-    return value
-
-
-def get_date_range(days_back: int = 1) -> tuple[datetime, datetime]:
-    """Get date range for the specified number of days back"""
-    now = datetime.now(timezone.utc)
-    end_date = now  # Current time
-    start_date = end_date - timedelta(days=days_back)
-    return start_date, end_date
+# Platform name for prompt loading
+PLATFORM = "instagram"
 
 
 def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> List[Dict]:
@@ -164,93 +153,6 @@ def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> L
     return all_prs
 
 
-def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, temperature: float = 0.7, model: str = None, verbose: bool = True) -> str:
-    """Call Pollinations AI API with retry logic and exponential backoff
-
-    Args:
-        model: Model to use (defaults to MODEL constant if not specified)
-        verbose: If True, print full prompts sent to API
-
-    Each attempt uses a new random seed (0 to MAX_SEED/int32).
-    Retries use exponential backoff: 2s, 4s, 8s...
-    """
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    use_model = model or MODEL
-    last_error = None
-
-    # Verbose logging
-    if verbose:
-        print(f"\n  [VERBOSE] API Call to {POLLINATIONS_API_BASE}")
-        print(f"  [VERBOSE] Model: {use_model}")
-        print(f"  [VERBOSE] Temperature: {temperature}")
-        print(f"  [VERBOSE] System prompt ({len(system_prompt)} chars):")
-        print(f"  ---BEGIN SYSTEM PROMPT---")
-        print(system_prompt[:2000] + ("..." if len(system_prompt) > 2000 else ""))
-        print(f"  ---END SYSTEM PROMPT---")
-        print(f"  [VERBOSE] User prompt ({len(user_prompt)} chars):")
-        print(f"  ---BEGIN USER PROMPT---")
-        print(user_prompt[:2000] + ("..." if len(user_prompt) > 2000 else ""))
-        print(f"  ---END USER PROMPT---")
-
-    for attempt in range(MAX_RETRIES):
-        # Each attempt gets a fresh random seed
-        seed = random.randint(0, MAX_SEED)
-
-        payload = {
-            "model": use_model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            "temperature": temperature,
-            "seed": seed
-        }
-
-        if attempt == 0:
-            print(f"  Using seed: {seed}")
-        else:
-            # Exponential backoff: 2^attempt * initial_delay
-            backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
-            print(f"  Retry {attempt}/{MAX_RETRIES - 1} with new seed: {seed} (waiting {backoff_delay}s)")
-            time.sleep(backoff_delay)
-
-        try:
-            response = requests.post(
-                POLLINATIONS_API_BASE,
-                headers=headers,
-                json=payload,
-                timeout=120
-            )
-
-            if response.status_code == 200:
-                try:
-                    result = response.json()
-                    content = result['choices'][0]['message']['content']
-                    if verbose:
-                        print(f"  [VERBOSE] Response ({len(content)} chars):")
-                        print(f"  ---BEGIN RESPONSE---")
-                        print(content[:3000] + ("..." if len(content) > 3000 else ""))
-                        print(f"  ---END RESPONSE---")
-                    return content
-                except (KeyError, IndexError, json.JSONDecodeError) as e:
-                    last_error = f"Error parsing API response: {e}"
-                    print(f"  {last_error}")
-            else:
-                last_error = f"API error: {response.status_code}"
-                print(f"  {last_error}: {response.text[:500]}")
-
-        except requests.exceptions.RequestException as e:
-            last_error = f"Request failed: {e}"
-            print(f"  {last_error}")
-
-    print(f"All {MAX_RETRIES} attempts failed. Last error: {last_error}")
-    return None
-
-
 def get_instagram_trends() -> Dict:
     """Return static Instagram trends data (researched Dec 2025)
     
@@ -330,10 +232,12 @@ def get_instagram_trends() -> Dict:
     }
 
 
-def generate_post_strategy(prs: List[Dict], trends: Dict, token: str) -> Dict:
-    """AI decides the content strategy and generates image prompts"""
-
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+def generate_post_strategy(prs: List[Dict], token: str) -> Dict:
+    """AI decides the content strategy and generates image prompts
+    
+    Prompts are loaded from social/prompts/instagram/
+    (Trends data is now included in the system.md prompt file)
+    """
 
     # Format PRs for context
     pr_summary = ""
@@ -348,133 +252,20 @@ def generate_post_strategy(prs: List[Dict], trends: Dict, token: str) -> Dict:
     else:
         pr_summary = "NO UPDATES TODAY"
 
-    system_prompt = f"""You are the Gen-Z social media lead for pollinations.ai Instagram.
-pollinations.ai is a free, open-source AI image generation platform - no login, no BS, just free AI art.
+    # Load system prompt from external file and inject PR summary
+    system_prompt_template = load_prompt(PLATFORM, "system")
+    system_prompt = system_prompt_template.replace("{pr_summary}", pr_summary)
 
-YOUR MISSION: Create friendly, approachable, Gen-Z aesthetic content that reflects our brand. Turn updates into visually appealing infographics and friendly illustrations.
-
-{pr_summary}
-
-=== POLLINATIONS BRAND IDENTITY ===
-Our name "Pollinations" = 🌸 flowers, 🐝 bees, nature, growth, organic
-- "Soft, simple tools for people who want to build with heart"
-- "A developer journey that feels welcoming instead of corporate"
-- "Stay playful" - we're friendly and approachable, never intimidating
-- Community at the center - indie devs, students, small teams
-- Open source roots - we build in the open
-
-TIER METAPHORS (use these nature concepts!):
-- Spore 🌱 → Seed 🌾 → Flower 🌸 → Nectar 🍯
-- Growth, blooming, pollinating ideas
-
-=== VISUAL STYLE (CRITICAL - follow this!) ===
-
-*** PRIMARY AESTHETIC: RETRO 8-BIT PIXEL ART BUT BEAUTIFUL ***
-Think: Studio Ghibli meets retro gaming. Nostalgic but emotionally resonant.
-Reference games: Unpacking, A Short Hike, Stardew Valley, Balatro
-
-Colors:
-- PRIMARY: Lime green (#ecf874) 🌿 - use this a lot!
-- SECONDARY: Soft pastels (mint, lavender, peach, warm cream)
-- ACCENT: Dark purple (#110518) for text/contrast
-- Background: Soft gradients behind pixel sprites, warm lighting
-
-Pixel Art Style:
-- COZY PIXEL ART - chunky, clean, emotionally warm
-- Lo-fi 8-bit aesthetic with MODERN soft lighting and gradients
-- Pixel art characters (bees 🐝, flowers 🌸, cute robots, tiny devs)
-- Retro game UI elements (health bars, inventory slots, dialogue boxes)
-- CRT monitor glow effects, scanlines (subtle)
-- Pastel color palettes - NOT harsh neon
-- Think "warm hug" not "arcade flashy"
-
-AVOID:
-- Dark/dramatic/cyberpunk imagery
-- Hyper-realistic 3D renders
-- Corporate stock photo vibes
-- Intimidating or edgy tones
-- Harsh neon arcade colors
-
-=== IMAGE GENERATION (nanobanana-pro) ===
-Our model is Gemini 3 Pro Image (nanobanana-pro):
-- CONTEXTUAL UNDERSTANDING - It gets nuance
-- TEXT IN IMAGES - Use simple pixel-style text sparingly
-- High quality 4K output
-- Describe the STYLE explicitly: "cozy pixel art, 8-bit aesthetic, soft pastel gradients, retro gaming vibes, warm lighting"
-
-=== CONTENT IDEAS (on-brand) ===
-- Pixel art bee character tending a digital garden
-- Retro game-style progress bar: Spore → Seed → Flower → Nectar
-- Cozy pixel workspace with code on screen
-- 8-bit flowers blooming in a soft gradient field
-- Pixel art community scene - tiny devs building together
-- Retro game UI showing "500+ apps built" achievement unlocked
-- Nostalgic gaming references for coding life
-
-EXAMPLE PROMPTS (follow this pixel art style):
-1. "Cozy pixel art scene of a tiny 8-bit bee character watering a small pixelated code plant. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Like Stardew Valley meets coding. Emotionally warm, nostalgic but beautiful."
-
-2. "Retro 8-bit pixel art infographic showing a growth journey: tiny seed → sprouting plant → blooming flower. Soft pastel gradient background (mint to peach). Clean pixel icons, cozy vibes like Unpacking game. Warm, inviting, not harsh."
-
-3. "Pixel art community garden scene with diverse tiny 8-bit characters tending colorful digital flowers. Soft lime green and lavender sky. Chunky retro sprites with modern soft lighting. Wholesome, like A Short Hike. Text in pixel font: 'open source ❤️'"
-
-=== OUTPUT FORMAT (JSON only) ===
-{{
-    "content_type": "pixel_art|retro_infographic|cozy_scene",
-    "linked_images": true/false,
-    "strategy_reasoning": "Why this visual approach works for our brand",
-    "visual_style": "Description of the pixel art style you're going for",
-    "image_count": 1-4,
-    "images": [
-        {{
-            "prompt": "Detailed prompt - MUST include: 'cozy pixel art, 8-bit aesthetic, soft pastel gradients, lime green (#ecf874), retro gaming vibes, warm lighting'. Add specific scene description.",
-            "description": "What this image communicates",
-            "text_in_image": "Short pixel-font text if any (keep minimal)"
-        }}
-    ],
-    "caption": "Friendly, casual Gen-Z tone. Use emojis naturally ✨🌱. Include soft CTA like 'link in bio'",
-    "hashtags": ["#pollinations", "#aiart", "#opensource", "#pixelart", "#retrogaming", "#indiedev", "#8bit"],
-    "alt_text": "Accessibility description (describe pixel art style, colors, characters)"
-}}
-
-=== PROMPT TEMPLATE (use this structure for EVERY image) ===
-"[Scene description in pixel art style]. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. [Pixel character/icon description] with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. [Any pixel-font text]. Nostalgic but beautiful, emotionally warm."
-
-=== RULES ===
-- Cozy pixel art > hyper-realistic
-- Warm and nostalgic > cold and modern
-- Celebrate community > brag about tech
-- Nature/growth metaphors fit our brand (pixel bees, flowers, gardens)
-- Always include style keywords: "cozy pixel art, 8-bit, soft pastel gradients, warm lighting, retro gaming vibes"
-- Reference games for style: Unpacking, A Short Hike, Stardew Valley, Balatro
-
-=== CURRENT INSTAGRAM TRENDS (use these for inspiration) ===
-{json.dumps(trends, indent=2) if trends else "No trend data available"}"""
-
+    # Load user prompt based on whether we have PRs
     if prs:
-        user_prompt = f"""Create a cozy pixel art post about these updates: {[pr['title'] for pr in prs[:5]]}
-
-Remember: Use RETRO 8-BIT PIXEL ART style - cozy, warm, nostalgic but beautiful. Like Stardew Valley or A Short Hike.
-Lime green (#ecf874), soft pastel gradients, chunky pixels, warm lighting.
-Output valid JSON only."""
+        user_prompt_template = load_prompt(PLATFORM, "user_with_prs")
+        pr_titles = [pr['title'] for pr in prs[:5]]
+        user_prompt = user_prompt_template.replace("{pr_titles}", str(pr_titles))
     else:
-        user_prompt = """No code updates today - create brand content!
-
-Pick ONE of these on-brand themes:
-- Celebrate our community (500+ apps built with Pollinations)
-- Open source appreciation (free AI art for everyone 🌸)
-- Creative inspiration (what you can make with AI)
-- Behind the scenes (cozy pixel dev workspace, plants & coffee)
-- Nature/growth metaphors (pixel seeds blooming, 8-bit bees pollinating ideas)
-- Welcome new creators to the platform
-- Retro game achievement unlocked: "First AI Art Generated!"
-
-Remember: RETRO 8-BIT PIXEL ART style - cozy, warm, nostalgic but beautiful. 
-Like Stardew Valley, A Short Hike, or Unpacking. Chunky pixels, soft pastel gradients, warm lighting.
-Output valid JSON only."""
+        user_prompt = load_prompt(PLATFORM, "user_brand_content")
 
     print("Generating post strategy...")
-    response = call_pollinations_api(system_prompt, user_prompt, token, temperature=0.7)
+    response = call_pollinations_api(system_prompt, user_prompt, token, temperature=0.7, verbose=True)
 
     if not response:
         print("Strategy generation failed")
@@ -624,23 +415,6 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
 
     print(f"  Failed to generate image {index + 1} after {MAX_RETRIES} attempts. Last error: {last_error}")
     return None, None
-
-
-def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branch: str = "main") -> str:
-    """Get the SHA of an existing file"""
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}"
-    }
-
-    response = requests.get(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={branch}",
-        headers=headers
-    )
-
-    if response.status_code == 200:
-        return response.json().get("sha", "")
-    return ""
 
 
 def create_post_pr(strategy: Dict, images: List[bytes], image_urls: List[str], prs: List[Dict], github_token: str, owner: str, repo: str):
@@ -861,14 +635,9 @@ def main():
         merged_prs = get_merged_prs(source_owner, source_repo_name, start_date, github_token)
         print(f"Found {len(merged_prs)} merged PRs")
 
-    # Step 2: Get Instagram trends (static data, no API call needed)
-    print(f"\n=== Loading Instagram Trends ===")
-    trends = get_instagram_trends()
-    print(f"Loaded {len(trends['trending_styles'])} trending styles, {len(trends['popular_formats'])} formats")
-
-    # Step 3: Generate post strategy
+    # Step 2: Generate post strategy (trends now embedded in prompt files)
     print(f"\n=== Generating Post Strategy ===")
-    strategy = generate_post_strategy(merged_prs, trends, pollinations_token)
+    strategy = generate_post_strategy(merged_prs, pollinations_token)
 
     if not strategy:
         print("Failed to generate strategy. Exiting.")

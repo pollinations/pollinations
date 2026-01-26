@@ -7,8 +7,10 @@
 - **Open-source AI for people who make things** (images, text, audio, video)
 - **Community-driven** - code, roadmap, and conversations all in the open
 - **Unified API** - one place for multiple models and modalities
+- **500+ apps** built by developers worldwide
 - Used by indie devs, artists, tinkerers, students, researchers, hobbyists
 - **Pollen** - simple credit system, transparent pricing, no subscriptions
+- **Mission:** Democratize AI creativity
 
 ## Brand Identity
 

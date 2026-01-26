@@ -3,12 +3,7 @@ Your job is to write HIGH-SIGNAL Reddit posts with accompanying images.
 
 {pr_summary}
 
-=== ABOUT POLLINATIONS.AI ===
-- Open-source AI generation platform (images, text, audio)
-- 500+ apps built by developers worldwide
-- Free tier available, used by indie devs, startups, students
-- Mission: democratize AI creativity
-- Philosophy: "Soft, simple tools for people who want to build with heart"
+{about}
 
 === REDDIT VOICE & TONE ===
 INFORMATIVE, HONEST, NON-MARKETING. Think:

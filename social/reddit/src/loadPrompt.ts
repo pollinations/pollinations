@@ -6,8 +6,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const PROMPTS_DIR = join(__dirname, '../../prompts/reddit');
+const SHARED_DIR = join(__dirname, '../../prompts/_shared');
+
+function loadShared(name: string): string {
+    const filePath = join(SHARED_DIR, `${name}.md`);
+    return readFileSync(filePath, 'utf-8');
+}
+
+function injectSharedPrompts(content: string): string {
+    if (content.includes('{about}')) {
+        content = content.replace('{about}', loadShared('about'));
+    }
+    return content;
+}
 
 export function loadPrompt(name: string): string {
     const filePath = join(PROMPTS_DIR, `${name}.md`);
-    return readFileSync(filePath, 'utf-8');
+    const content = readFileSync(filePath, 'utf-8');
+    return injectSharedPrompts(content);
 }

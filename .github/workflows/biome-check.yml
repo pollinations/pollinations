@@ -29,7 +29,7 @@ jobs:
         run: |
           # Get only added/modified files (exclude deleted files)
           # Also exclude paths that biome.jsonc ignores (reddit, node_modules, dist, etc.)
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(js|ts|jsx|tsx|json|jsonc)$' | grep -v -E '(node_modules|reddit|dist|build|\.next|\.cache|out)/' || true)
+          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(js|ts|jsx|tsx|json|jsonc)$' | grep -v -E '(node_modules|reddit|dist|build|\.next|\.cache|out|package-lock\.json)/' | grep -v 'package-lock\.json$' || true)
           echo "Changed files:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT

@@ -60,8 +60,10 @@ async def send_heartbeat():
                 port = int(os.getenv("PORT", "8765"))
             url = f"http://{public_ip}:{port}"
             service_type = os.getenv("SERVICE_TYPE", "flux")  # Get service type from environment variable
+            # Use direct EC2 endpoint to bypass Cloudflare (some io.net IPs are blocked)
+            register_url = os.getenv("REGISTER_URL", "http://3.80.56.235:16384/register")
             async with aiohttp.ClientSession() as session:
-                async with session.post('https://image.pollinations.ai/register', json={'url': url, 'type': service_type}) as response:
+                async with session.post(register_url, json={'url': url, 'type': service_type}) as response:
                     if response.status == 200:
                         logger.info(f"Heartbeat sent successfully. URL: {url}")
                     else:

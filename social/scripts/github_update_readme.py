@@ -4,19 +4,10 @@ import re
 import base64
 import requests
 from datetime import datetime, timezone
-
-GITHUB_API_BASE = "https://api.github.com"
+from common import get_env, GITHUB_API_BASE
 HIGHLIGHTS_PATH = "social/news/transformed/highlights.md"
 README_PATH = "README.md"
 MAX_README_ENTRIES = 10
-
-
-def get_env(key: str, required: bool = True) -> str:
-    value = os.getenv(key)
-    if required and not value:
-        print(f"Error: {key} environment variable is required")
-        sys.exit(1)
-    return value
 
 
 def get_file_content(github_token: str, owner: str, repo: str, file_path: str) -> tuple[str, str]:

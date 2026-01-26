@@ -7,11 +7,8 @@ import re
 import base64
 import requests
 from datetime import datetime, timezone
-from common import load_prompt
+from common import load_prompt, GITHUB_API_BASE, POLLINATIONS_API_BASE, MODEL
 
-GITHUB_API_BASE = "https://api.github.com"
-POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
-MODEL = "gemini-large"
 NEWS_FOLDER = "social/news"
 HIGHLIGHTS_PATH = "social/news/transformed/highlights.md"
 

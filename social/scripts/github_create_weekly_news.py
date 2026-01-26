@@ -8,12 +8,14 @@ import base64
 import requests
 from typing import Dict, List
 from datetime import datetime, timedelta, timezone
-from common import load_prompt
+from common import (
+    load_prompt,
+    GITHUB_API_BASE,
+    GITHUB_GRAPHQL_API,
+    POLLINATIONS_API_BASE,
+    MODEL,
+)
 
-GITHUB_API_BASE = "https://api.github.com"
-GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
-POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
-MODEL = "gemini-large"
 CHUNK_SIZE = 50
 NEWS_FOLDER = "social/news"
 

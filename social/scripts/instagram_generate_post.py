@@ -15,19 +15,19 @@ import requests
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
-from common import load_prompt
-
-# Constants
-GITHUB_API_BASE = "https://api.github.com"
-GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
-POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
-POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
-MODEL = "gemini-large"
-WEBSEARCH_MODEL = "perplexity-reasoning"
-IMAGE_MODEL = "nanobanana"  # Use nanobanana for testing (nanobanana-pro for production)
-MAX_SEED = 2147483647  # Max int32
-MAX_RETRIES = 3
-INITIAL_RETRY_DELAY = 2  # Base delay for exponential backoff (2, 4, 8 seconds)
+from common import (
+    load_prompt,
+    GITHUB_API_BASE,
+    GITHUB_GRAPHQL_API,
+    POLLINATIONS_API_BASE,
+    POLLINATIONS_IMAGE_BASE,
+    MODEL,
+    WEBSEARCH_MODEL,
+    IMAGE_MODEL,
+    MAX_SEED,
+    MAX_RETRIES,
+    INITIAL_RETRY_DELAY,
+)
 
 # Instagram post settings
 IMAGE_WIDTH = 2048

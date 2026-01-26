@@ -14,16 +14,25 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 from pathlib import Path
 
-# Constants
+# API Endpoints
 GITHUB_API_BASE = "https://api.github.com"
 GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
-MODEL = "openai-large"
-IMAGE_MODEL = "nanobanana-pro"
+
+# Models - single source of truth for all social scripts
+MODEL = "gemini-large"  # Text generation model
+IMAGE_MODEL = "nanobanana-pro"  # Image generation model
+WEBSEARCH_MODEL = "perplexity-reasoning"  # Web search model (used by Instagram)
+
+# Limits and retry settings
 MAX_SEED = 2147483647
 MAX_RETRIES = 3
 INITIAL_RETRY_DELAY = 2
+
+# Discord-specific
+DISCORD_CHAR_LIMIT = 2000
+DISCORD_CHUNK_SIZE = 1900  # Leave room for safety
 
 # Get the directory where this script lives
 SCRIPTS_DIR = Path(__file__).parent

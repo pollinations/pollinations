@@ -6,10 +6,8 @@ import random
 import re
 import requests
 from datetime import datetime, timedelta, timezone
-from common import load_prompt
+from common import load_prompt, POLLINATIONS_API_BASE, MODEL
 
-POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
-MODEL = "gemini-large"
 NEWS_FOLDER = "social/news"
 
 # Platform name for prompt loading

@@ -13,14 +13,14 @@ import requests
 from typing import Dict, List, Optional
 from jinja2 import Environment, Template
 from datetime import datetime
-from common import load_prompt
-
-# Configuration
-GITHUB_API_BASE = "https://api.github.com"
-POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
-MODEL = "gemini-large"
-DISCORD_CHAR_LIMIT = 2000
-CHUNK_SIZE = 1900  # Leave room for safety
+from common import (
+    load_prompt,
+    GITHUB_API_BASE,
+    POLLINATIONS_API_BASE,
+    MODEL,
+    DISCORD_CHAR_LIMIT,
+    DISCORD_CHUNK_SIZE as CHUNK_SIZE,
+)
 
 # Platform name for prompt loading
 PLATFORM = "discord"

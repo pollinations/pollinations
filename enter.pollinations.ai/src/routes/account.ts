@@ -20,11 +20,6 @@ function getNextRefillAt(): string {
     return tomorrow.toISOString();
 }
 
-// For backwards compatibility with main's changes
-function calculateNextPeriodStart(): string {
-    return getNextRefillAt();
-}
-
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
@@ -60,7 +55,6 @@ type DailyUsageRecord = {
     meter_source: string | null;
     requests: number;
     cost_usd: number;
-    api_key_names: string[];
 };
 
 // Response schema for daily usage OpenAPI documentation
@@ -73,9 +67,6 @@ const dailyUsageRecordSchema = z.object({
         .describe("Billing source ('tier', 'pack', 'crypto')"),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
-    api_key_names: z
-        .array(z.string())
-        .describe("List of API key names used for this date/model"),
 });
 
 const dailyUsageResponseSchema = z.object({
@@ -264,10 +255,7 @@ export const accountRoutes = new Hono<Env>()
             }
 
             // If API key has a budget, return that
-            if (
-                apiKey?.pollenBalance !== null &&
-                apiKey?.pollenBalance !== undefined
-            ) {
+            if (apiKey?.pollenBalance != null) {
                 return c.json({ balance: apiKey.pollenBalance });
             }
 

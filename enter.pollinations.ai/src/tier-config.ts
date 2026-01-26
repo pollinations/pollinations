@@ -38,7 +38,3 @@ export function getTierEmoji(tier: string): string {
     return isValidTier(tier) ? TIERS[tier].emoji : TIERS[DEFAULT_TIER].emoji;
 }
 
-// Direct access when tier is validated - no fallback, guaranteed type safety
-export function getTier(tier: TierName): (typeof TIERS)[TierName] {
-    return TIERS[tier];
-}

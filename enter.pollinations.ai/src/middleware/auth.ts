@@ -209,7 +209,7 @@ export const auth = (options: AuthOptions) =>
             const pollenBalance = apiKey.pollenBalance;
 
             // No budget set = unlimited
-            if (pollenBalance === null || pollenBalance === undefined) return;
+            if (pollenBalance == null) return;
 
             // Budget exhausted
             if (pollenBalance <= 0) {

@@ -4,7 +4,7 @@
 
 ## What pollinations.ai Is
 
-- **Free, open-source AI platform** for people who make things
+- **Open-source AI platform** for people who make things
 - **500+ apps** built by developers worldwide
 - Used by indie devs, artists, tinkerers, students, researchers, hobbyists
 - **Community-driven** - code, roadmap, and conversations all in the open
@@ -20,7 +20,7 @@
 
 ## Brand Identity
 
-Our name "Pollinations" evokes nature, growth, and organic creativity:
+Our name "pollinations" evokes nature, growth, and organic creativity:
 - 🌸 Flowers, 🐝 bees, 🌱 seeds, growth, blooming
 - "Soft, simple tools for people who want to build with heart"
 - "Stay playful" - friendly and approachable, never intimidating

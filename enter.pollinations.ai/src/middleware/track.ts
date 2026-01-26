@@ -52,7 +52,7 @@ import { generateRandomId, removeUnset } from "@/util.ts";
 import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
 import type { LoggerVariables } from "./logger.ts";
 import type { ModelVariables } from "./model.ts";
-import type { PolarVariables } from "./polar.ts";
+import type { BalanceVariables } from "./balance.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
 
 export type ModelUsage = {
@@ -95,7 +95,7 @@ export type TrackEnv = {
     Variables: ErrorVariables &
         LoggerVariables &
         AuthVariables &
-        PolarVariables &
+        BalanceVariables &
         FrontendKeyRateLimitVariables &
         TrackVariables &
         ModelVariables;
@@ -153,15 +153,10 @@ export const track = (eventType: EventType) =>
                 // Capture balance tracking AFTER next() so balanceCheckResult is set
                 const balanceTracking = {
                     selectedMeterId:
-                        c.var.polar.balanceCheckResult?.selectedMeterId,
+                        c.var.balance.balanceCheckResult?.selectedMeterId,
                     selectedMeterSlug:
-                        c.var.polar.balanceCheckResult?.selectedMeterSlug,
-                    balances: Object.fromEntries(
-                        c.var.polar.balanceCheckResult?.meters.map((meter) => [
-                            meter.metadata.slug,
-                            meter.balance,
-                        ]) || [],
-                    ),
+                        c.var.balance.balanceCheckResult?.selectedMeterSlug,
+                    balances: c.var.balance.balanceCheckResult?.balances || {},
                 } satisfies BalanceData;
 
                 const finalEvent = createTrackingEvent({

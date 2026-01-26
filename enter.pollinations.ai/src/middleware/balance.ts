@@ -1,4 +1,3 @@
-import { Polar } from "@polar-sh/sdk";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
@@ -10,12 +9,11 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 type BalanceCheckResult = {
     selectedMeterId: string;
     selectedMeterSlug: string;
-    meters: SimplifiedMeter[];
+    balances: Record<string, number>;
 };
 
-export type PolarVariables = {
-    polar: {
-        client: Polar; // Kept for checkout fallback only
+export type BalanceVariables = {
+    balance: {
         requirePositiveBalance: (
             userId: string,
             message?: string,
@@ -29,21 +27,15 @@ export type PolarVariables = {
     };
 };
 
-export type PolarEnv = {
+export type BalanceEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & AuthVariables & PolarVariables;
+    Variables: LoggerVariables & AuthVariables & BalanceVariables;
 };
 
-export const polar = createMiddleware<PolarEnv>(async (c, next) => {
+export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     const log = c.get("log").getChild("balance");
 
-    // Polar client kept only for checkout fallback
-    const client = new Polar({
-        accessToken: c.env.POLAR_ACCESS_TOKEN,
-        server: c.env.POLAR_SERVER,
-    });
-
-    // Get balance from D1 only - no Polar API calls
+    // Get balance from D1 only
     // Pack balance is updated via webhooks, tier balance via daily cron
     const getBalance = async (
         userId: string,
@@ -105,25 +97,27 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         );
 
         if (totalBalance > 0) {
-            // Set balance result for tracking - tier is used first, then pack
-            const willUseTier = balances.tierBalance > 0;
-            c.var.polar.balanceCheckResult = {
-                selectedMeterId: willUseTier ? "local:tier" : "local:pack",
-                selectedMeterSlug: willUseTier
-                    ? "v1:meter:tier"
-                    : "v1:meter:pack",
-                meters: [
-                    {
-                        meterId: "local:tier",
-                        balance: balances.tierBalance,
-                        metadata: { slug: "local:tier", priority: 0 },
-                    },
-                    {
-                        meterId: "local:pack",
-                        balance: balances.packBalance,
-                        metadata: { slug: "local:pack", priority: 1 },
-                    },
-                ],
+            // Track which balance source will be used for analytics
+            // Priority: tier → crypto → pack (matches atomicDeductUserBalance logic)
+            let selectedSource = "pack"; // default fallback
+            let selectedSlug = "v1:meter:pack";
+
+            if (balances.tierBalance > 0) {
+                selectedSource = "tier";
+                selectedSlug = "v1:meter:tier";
+            } else if (balances.cryptoBalance > 0) {
+                selectedSource = "crypto";
+                selectedSlug = "v1:meter:crypto";
+            }
+
+            c.var.balance.balanceCheckResult = {
+                selectedMeterId: `local:${selectedSource}`,
+                selectedMeterSlug: selectedSlug,
+                balances: {
+                    "v1:meter:tier": balances.tierBalance,
+                    "v1:meter:crypto": balances.cryptoBalance,
+                    "v1:meter:pack": balances.packBalance,
+                },
             };
             return;
         }
@@ -134,17 +128,10 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         });
     };
 
-    c.set("polar", {
-        client, // Kept for checkout fallback only
+    c.set("balance", {
         requirePositiveBalance,
         getBalance,
     });
 
     await next();
 });
-
-type SimplifiedMeter = {
-    meterId: string;
-    balance: number;
-    metadata: { slug: string; priority: number };
-};

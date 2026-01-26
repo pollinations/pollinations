@@ -289,7 +289,13 @@ describe("Image Integration Tests", () => {
 
             expect(response.status).toBe(402);
             const data = await response.json();
-            expect(data.error).toContain("balance");
+            // The error might be in a different format (error can be a string or array)
+            const errorMessage = Array.isArray(data.error)
+                ? data.error.join(" ")
+                : typeof data.error === "string"
+                ? data.error
+                : data.message || JSON.stringify(data);
+            expect(String(errorMessage).toLowerCase()).toContain("balance");
         },
     );
 

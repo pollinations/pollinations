@@ -2,7 +2,6 @@ import debug from "debug";
 import PQueue from "p-queue";
 import { IncomingMessage, ServerResponse } from "node:http";
 
-const logError = debug("pollinations:error");
 const logServer = debug("pollinations:server");
 
 type Server = {
@@ -36,9 +35,6 @@ const SERVERS = {
 };
 
 const SERVER_TIMEOUT = 45000; // 45 seconds
-const MAIN_SERVER_URL =
-    process.env.POLLINATIONS_MASTER_URL ||
-    "https://image.pollinations.ai/register";
 
 const concurrency = 2;
 
@@ -148,10 +144,6 @@ export const getNextServerUrl = async (
     type: ServerType = "flux",
 ): Promise<string> => {
     const servers = SERVERS[type] || [];
-    if (servers.length === 0) {
-        await fetchServersFromMainServer();
-    }
-
     const activeServers = filterActiveServers(servers);
     if (activeServers.length === 0) {
         throw new Error(`No active ${type} servers available`);
@@ -178,42 +170,6 @@ export const getNextServerUrl = async (
 export const getNextFluxServerUrl = () => getNextServerUrl("flux");
 export const getNextTranslationServerUrl = () => getNextServerUrl("translate");
 export const getNextTurboServerUrl = () => getNextServerUrl("turbo");
-
-/**
- * Fetches the list of available servers from the main server.
- */
-async function fetchServersFromMainServer() {
-    try {
-        logServer(
-            `[${new Date().toISOString()}] Fetching servers from ${MAIN_SERVER_URL}...`,
-        );
-
-        const response = await fetch(MAIN_SERVER_URL);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const servers = await response.json();
-
-        logServer(
-            `[${new Date().toISOString()}] Received ${servers.length} servers from main server:`,
-        );
-        servers.forEach((server: ServerInfo, index: number) => {
-            logServer(`  ${index + 1}. ${server.url}`);
-        });
-
-        servers.forEach((server: ServerInfo) => {
-            registerServer(server.url, server.type);
-        });
-        logServer(
-            `[${new Date().toISOString()}] Successfully initialized ${Object.values(SERVERS).flat().length} servers`,
-        );
-    } catch (error) {
-        logError(
-            `[${new Date().toISOString()}] Failed to fetch servers from main server:`,
-            error,
-        );
-    }
-}
 
 /**
  * Handles the /register endpoint requests.

@@ -47,4 +47,4 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_LABELS: NEWS
-        run: python .github/scripts/pr_update_readme.py
+        run: python social/scripts/github_update_readme.py

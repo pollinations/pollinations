@@ -71,4 +71,4 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           POST_FILE_PATH: ${{ steps.post-file.outputs.path }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: python .github/scripts/instagram_publish_post.py
+        run: python social/scripts/instagram_publish_post.py

@@ -348,3 +348,6 @@ debugsession_*/
 *.swp
 *.swo
 *~
+
+# Agent communication file (temporary)
+agent-communication.md

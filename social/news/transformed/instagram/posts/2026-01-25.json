@@ -1,0 +1,30 @@
+{
+  "date": "2026-01-25",
+  "generated_at": "2026-01-25T16:09:13.204453+00:00",
+  "post_type": "single",
+  "content_type": "cozy_pixel_art",
+  "linked_images": false,
+  "strategy_reasoning": "Using a cozy pixel art metaphor of a bee helping a robot visualizes the technical fix (Claude image URLs) in a friendly, approachable way. The retro gaming aesthetic fits the 'bug fix' theme perfectly while maintaining the warm Pollinations brand identity.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20scene%20of%20a%20cute%208-bit%20bee%20character%20connecting%20a%20glowing%20lime%20green%20%28%23ecf874%29%20vine%20to%20a%20friendly%20retro%20robot%20holding%20a%20picture%20frame.%20Soft%20pastel%20lavender%20and%20mint%20gradient%20background.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20aesthetic%20like%20Stardew%20Valley%20or%20A%20Short%20Hike.%20A%20retro%20RPG%20dialogue%20box%20at%20the%20bottom%20says%20%27URL%20Fixed%21%27.%20Nostalgic%2C%20wholesome%2C%20emotionally%20warm.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=18165572",
+      "prompt": "Cozy pixel art scene of a cute 8-bit bee character connecting a glowing lime green (#ecf874) vine to a friendly retro robot holding a picture frame. Soft pastel lavender and mint gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley or A Short Hike. A retro RPG dialogue box at the bottom says 'URL Fixed!'. Nostalgic, wholesome, emotionally warm.",
+      "description": "A wholesome pixel art scene showing the Pollinations bee fixing a connection for a robot, representing the Claude image URL fix."
+    }
+  ],
+  "caption": "We helped our friend Claude read the map a little better! 🗺️🤖\n\nFixed a tiny bug where image URLs were causing hiccups. Now your remote images flow through the API smoother than nectar. 🍯✨\n\nCoding should feel cozy, not stressful. We got you. 🌸\n\nLink in bio to build something beautiful! 🌿\n\n#pollinations #opensource #pixelart #bugfix #indiedev #cozyvibes #8bit #generativeai",
+  "hashtags": [
+    "#pollinations",
+    "#aiart",
+    "#opensource",
+    "#pixelart",
+    "#retrogaming",
+    "#indiedev",
+    "#8bit"
+  ],
+  "alt_text": "Pixel art illustration of a cute bee character fixing a vine connection to a robot against a soft pastel and lime green gradient background.",
+  "pr_references": [
+    "#7631"
+  ]
+}

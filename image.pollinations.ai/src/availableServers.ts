@@ -1,6 +1,6 @@
+import type { IncomingMessage, ServerResponse } from "node:http";
 import debug from "debug";
 import PQueue from "p-queue";
-import { IncomingMessage, ServerResponse } from "node:http";
 
 const logServer = debug("pollinations:server");
 

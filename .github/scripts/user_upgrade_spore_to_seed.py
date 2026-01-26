@@ -82,14 +82,14 @@ def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], in
     - total_old: total count of older spore users
     """
     weekday = datetime.now(timezone.utc).weekday()
-    yesterday = int(datetime.now(timezone.utc).timestamp() - 86400)  # Unix timestamp in seconds
+    yesterday_ms = int((datetime.now(timezone.utc).timestamp() - 86400) * 1000)  # D1 uses milliseconds
 
     # Get new users (created in last 24h)
     new_query = f"""
         SELECT github_username FROM user
         WHERE tier = 'spore'
         AND github_username IS NOT NULL
-        AND created_at > {yesterday}
+        AND created_at > {yesterday_ms}
     """
     new_results = run_d1_query(new_query, env)
     new_users = [r["github_username"] for r in new_results]
@@ -99,7 +99,7 @@ def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], in
         SELECT COUNT(*) as count FROM user
         WHERE tier = 'spore'
         AND github_username IS NOT NULL
-        AND created_at <= {yesterday}
+        AND created_at <= {yesterday_ms}
     """
     count_results = run_d1_query(count_query, env)
     total_old = count_results[0]["count"] if count_results else 0
@@ -112,7 +112,7 @@ def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], in
         SELECT github_username FROM user
         WHERE tier = 'spore'
         AND github_username IS NOT NULL
-        AND created_at <= {yesterday}
+        AND created_at <= {yesterday_ms}
         ORDER BY created_at ASC
         LIMIT {slice_size} OFFSET {offset}
     """

@@ -28,7 +28,8 @@ jobs:
         id: changed-files
         run: |
           # Get only added/modified files (exclude deleted files)
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(js|ts|jsx|tsx|json|jsonc)$' || true)
+          # Also exclude paths that biome.jsonc ignores (reddit, node_modules, dist, etc.)
+          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(js|ts|jsx|tsx|json|jsonc)$' | grep -v -E '(node_modules|reddit|dist|build|\.next|\.cache|out)/' || true)
           echo "Changed files:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT

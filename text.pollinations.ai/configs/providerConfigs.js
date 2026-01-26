@@ -45,19 +45,6 @@ export function createScalewayModelConfig(additionalConfig = {}) {
 }
 
 /**
- * Creates an AWS Bedrock Lambda model configuration
- */
-export function createBedrockLambdaModelConfig(additionalConfig = {}) {
-    return {
-        provider: "openai",
-        "custom-host":
-            "https://s4gu3klsuhlqkol3x3qq6bv6em0cwqnu.lambda-url.us-east-1.on.aws/api/v1",
-        authKey: process.env.AWS_BEARER_TOKEN_BEDROCK,
-        ...additionalConfig,
-    };
-}
-
-/**
  * Creates native AWS Bedrock model configuration via Portkey
  */
 export function createBedrockNativeConfig(additionalConfig = {}) {

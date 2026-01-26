@@ -22,7 +22,7 @@ import { webhooksCryptoRoutes } from "./routes/webhooks-crypto.ts";
 import { handleScheduled } from "./scheduled.ts";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
-    return await createAuth(c.env).handler(c.req.raw);
+    return await createAuth(c.env, c.executionCtx).handler(c.req.raw);
 });
 
 export const api = new Hono<Env>()

@@ -1,0 +1,50 @@
+name: Update README with Highlights
+
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - 'social/news/transformed/highlights.md'
+  workflow_dispatch:
+
+jobs:
+  update-readme:
+    # Only run if PR was merged (not just closed), targeted main, and has NEWS label
+    if: >
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event.pull_request.merged == true &&
+       github.event.pull_request.base.ref == 'main' &&
+       contains(github.event.pull_request.labels.*.name, 'NEWS'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main  # Checkout main to get the merged highlights file
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Update README and Create PR
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_LABELS: NEWS
+        run: python social/scripts/github_update_readme.py

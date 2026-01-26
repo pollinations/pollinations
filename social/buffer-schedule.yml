@@ -1,0 +1,27 @@
+# Social Media Posting Schedule
+# All times in UTC
+# Used by buffer_publish_post.py to schedule posts via Buffer API
+
+linkedin:
+  # Best times for B2B/tech content on LinkedIn
+  days: [1, 2, 3, 4, 5]  # Monday-Friday (1=Monday, 7=Sunday)
+  times:
+    - "09:00"  # 9am UTC (morning EU, early US East)
+    - "14:00"  # 2pm UTC (afternoon EU, morning US East)
+  preferred: "09:00"  # Default if multiple options
+
+twitter:
+  # Twitter engagement peaks
+  days: [1, 2, 3, 4, 5, 6, 7]  # Every day
+  times:
+    - "12:00"  # Noon UTC
+    - "16:00"  # 4pm UTC
+    - "20:00"  # 8pm UTC
+  preferred: "16:00"  # Default if multiple options
+
+# How scheduling works:
+# 1. PR merged → Buffer publish workflow triggers
+# 2. Script reads this config
+# 3. Calculates next available slot (day + time)
+# 4. Calls Buffer API with scheduled_at timestamp
+# 5. Buffer posts at that exact time

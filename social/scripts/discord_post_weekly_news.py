@@ -6,7 +6,7 @@ import random
 import re
 import requests
 from datetime import datetime, timedelta, timezone
-from common import load_prompt, get_env, get_repo_root, POLLINATIONS_API_BASE, MODEL
+from common import load_prompt, get_env, POLLINATIONS_API_BASE, MODEL
 
 NEWS_FOLDER = "social/news"
 

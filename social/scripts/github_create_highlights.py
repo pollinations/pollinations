@@ -7,7 +7,7 @@ import re
 import base64
 import requests
 from datetime import datetime, timezone
-from common import load_prompt, get_env, get_repo_root, get_file_sha, GITHUB_API_BASE, POLLINATIONS_API_BASE, MODEL
+from common import load_prompt, get_env, get_file_sha, GITHUB_API_BASE, POLLINATIONS_API_BASE, MODEL
 
 NEWS_FOLDER = "social/news"
 HIGHLIGHTS_PATH = "social/news/transformed/highlights.md"

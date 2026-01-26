@@ -18,7 +18,6 @@ from urllib.parse import quote
 from common import (
     load_prompt,
     get_env,
-    get_repo_root,
     get_date_range,
     get_file_sha,
     GITHUB_API_BASE,
@@ -26,7 +25,6 @@ from common import (
     POLLINATIONS_API_BASE,
     POLLINATIONS_IMAGE_BASE,
     MODEL,
-    WEBSEARCH_MODEL,
     IMAGE_MODEL,
     MAX_SEED,
     MAX_RETRIES,

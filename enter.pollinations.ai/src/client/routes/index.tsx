@@ -22,21 +22,15 @@ export const Route = createFileRoute("/")({
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
-        const [customer, tierData, apiKeysResult, d1BalanceResult] =
-            await Promise.all([
-                apiClient.polar.customer.state
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-                apiClient.tiers.view
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-                apiClient["api-keys"]
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : { data: [] })),
-                apiClient.polar.customer["d1-balance"]
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-            ]);
+        const [tierData, apiKeysResult, d1BalanceResult] = await Promise.all([
+            apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
+            apiClient["api-keys"]
+                .$get()
+                .then((r) => (r.ok ? r.json() : { data: [] })),
+            apiClient.customer.balance
+                .$get()
+                .then((r) => (r.ok ? r.json() : null)),
+        ]);
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
@@ -44,7 +38,6 @@ export const Route = createFileRoute("/")({
 
         return {
             user: context.user,
-            customer,
             apiKeys,
             tierData,
             tierBalance,

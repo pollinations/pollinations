@@ -1,6 +1,5 @@
 import type { FC } from "react";
-import { getTierEmoji } from "@/tier-config.ts";
-import type { TierName, TierStatus } from "../../utils/polar.ts";
+import { getTierEmoji, type TierName, type TierStatus } from "@/tier-config.ts";
 import { TierExplanation } from "./tier-explanation";
 
 // Badge colors for each tier level
@@ -32,29 +31,27 @@ const BetaNotice = () => (
 
 const NoTierScreen: FC<{ has_polar_error?: boolean }> = ({
     has_polar_error,
-}) => {
-    return (
-        <TierContainer>
-            {has_polar_error ? (
-                <p className="text-sm text-red-700 leading-relaxed px-1">
-                    ❌ <strong>Unable to Fetch Subscription Status:</strong> We
-                    couldn't connect to the subscription service. Please refresh
-                    the page or try again later.
+}) => (
+    <TierContainer>
+        {has_polar_error ? (
+            <p className="text-sm text-red-700 leading-relaxed px-1">
+                ❌ <strong>Unable to Fetch Subscription Status:</strong> We
+                couldn't connect to the subscription service. Please refresh the
+                page or try again later.
+            </p>
+        ) : (
+            <div className="px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-900 leading-relaxed">
+                    ⏳ <strong>Setting Up Your Subscription:</strong> Your
+                    subscription is being activated. Please refresh the page in
+                    1-2 minutes.
                 </p>
-            ) : (
-                <div className="px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-900 leading-relaxed">
-                        ⏳ <strong>Setting Up Your Subscription:</strong> Your
-                        subscription is being activated. Please refresh the page
-                        in 1-2 minutes.
-                    </p>
-                </div>
-            )}
-            <BetaNotice />
-            <TierExplanation />
-        </TierContainer>
-    );
-};
+            </div>
+        )}
+        <BetaNotice />
+        <TierExplanation />
+    </TierContainer>
+);
 
 const TierScreen: FC<{
     tier: TierStatus;

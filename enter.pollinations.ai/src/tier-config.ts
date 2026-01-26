@@ -7,24 +7,19 @@ export const TIERS = {
 } as const;
 
 export type TierName = keyof typeof TIERS;
+export type TierStatus = TierName | "none";
+
+export const tierNames = Object.keys(TIERS) as TierName[];
 
 export const DEFAULT_TIER: TierName = "spore";
 
-export const TIER_POLLEN = {
-    spore: TIERS.spore.pollen,
-    seed: TIERS.seed.pollen,
-    flower: TIERS.flower.pollen,
-    nectar: TIERS.nectar.pollen,
-    router: TIERS.router.pollen,
-} as const;
+export const TIER_POLLEN = Object.fromEntries(
+    Object.entries(TIERS).map(([tier, config]) => [tier, config.pollen]),
+) as Record<TierName, number>;
 
-export const TIER_EMOJIS = {
-    spore: TIERS.spore.emoji,
-    seed: TIERS.seed.emoji,
-    flower: TIERS.flower.emoji,
-    nectar: TIERS.nectar.emoji,
-    router: TIERS.router.emoji,
-} as const;
+export const TIER_EMOJIS = Object.fromEntries(
+    Object.entries(TIERS).map(([tier, config]) => [tier, config.emoji]),
+) as Record<TierName, string>;
 
 export function isValidTier(tier: string): tier is TierName {
     return tier in TIERS;
@@ -46,4 +41,12 @@ export function getTierEmoji(tier: string): string {
 // Direct access when tier is validated - no fallback, guaranteed type safety
 export function getTier(tier: TierName): (typeof TIERS)[TierName] {
     return TIERS[tier];
+}
+
+// Get tier status from a user's tier string
+export function getTierStatus(userTier: string | null | undefined): TierStatus {
+    const normalized = userTier?.toLowerCase();
+    return tierNames.includes(normalized as TierName)
+        ? (normalized as TierName)
+        : "none";
 }

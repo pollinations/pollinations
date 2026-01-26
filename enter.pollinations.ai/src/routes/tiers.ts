@@ -7,7 +7,7 @@ import { user as userTable } from "@/db/schema/better-auth.ts";
 import { getTierPollen } from "@/tier-config.ts";
 import { capitalize } from "@/util.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
-import { type TierName, type TierStatus, tierNames } from "@/utils/polar.ts";
+import { type TierName, type TierStatus, tierNames } from "@/tier-config.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 

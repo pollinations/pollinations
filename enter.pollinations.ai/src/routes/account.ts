@@ -5,7 +5,7 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import { user as userTable } from "@/db/schema/better-auth.ts";
-import { tierNames } from "@/utils/polar.ts";
+import { tierNames } from "@/tier-config.ts";
 
 // Calculate next tier refill time (midnight UTC) - cron runs daily at 00:00 UTC
 function getNextRefillAt(): string {

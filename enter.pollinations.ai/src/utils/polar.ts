@@ -53,27 +53,6 @@ export async function getPackProductMapCached(
     })(polar, packProductSlugs);
 }
 
-// ============ TIER TYPES (D1-only, no Polar) ============
-// Note: Tier management moved to D1 + cron job (see tier-config.ts)
-// These types are still used for D1 tier logic
-
-export const tierNames = [
-    "spore",
-    "seed",
-    "flower",
-    "nectar",
-    "router",
-] as const;
-
-export type TierName = (typeof tierNames)[number];
-export type TierStatus = TierName | "none";
-
-// Re-export isValidTier from tier-config.ts for backwards compatibility
-export { isValidTier } from "@/tier-config.ts";
-
-export function getTierStatus(userTier: string | null | undefined): TierStatus {
-    const normalized = userTier?.toLowerCase();
-    return tierNames.includes(normalized as TierName)
-        ? (normalized as TierStatus)
-        : "none";
-}
+// ============ TIER TYPES MOVED ============
+// Tier types have been moved to @/tier-config.ts
+// Import from there instead of this file

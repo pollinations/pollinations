@@ -93,6 +93,12 @@ const balanceResponseSchema = z.object({
         .describe(
             "Remaining pollen balance (combines tier, pack, and crypto balances)",
         ),
+    refill: z
+        .number()
+        .nullable()
+        .describe(
+            "Unix timestamp (seconds) when the balance will be refilled next (null if never refilled)",
+        ),
 });
 
 const usageRecordSchema = z.object({
@@ -257,7 +263,7 @@ export const accountRoutes = new Hono<Env>()
                 apiKey?.pollenBalance !== null &&
                 apiKey?.pollenBalance !== undefined
             ) {
-                return c.json({ balance: apiKey.pollenBalance });
+                return c.json({ balance: apiKey.pollenBalance, refill: null });
             }
 
             // Otherwise return user's total balance
@@ -267,6 +273,7 @@ export const accountRoutes = new Hono<Env>()
                     tierBalance: userTable.tierBalance,
                     packBalance: userTable.packBalance,
                     cryptoBalance: userTable.cryptoBalance,
+                    lastTierGrant: userTable.lastTierGrant,
                 })
                 .from(userTable)
                 .where(eq(userTable.id, user.id))
@@ -275,9 +282,32 @@ export const accountRoutes = new Hono<Env>()
             const tierBalance = users[0]?.tierBalance ?? 0;
             const packBalance = users[0]?.packBalance ?? 0;
             const cryptoBalance = users[0]?.cryptoBalance ?? 0;
+            const lastTierGrant = users[0]?.lastTierGrant ?? null;
+
+            // lastTierGrant is Unix timestamp in seconds from the database
+            let refill = null;
+
+            if (lastTierGrant) {
+                const now = Math.floor(Date.now() / 1000);
+                const dayInSeconds = 24 * 60 * 60;
+                let nextRefill = lastTierGrant + dayInSeconds;
+
+                // If nextRefill is in the past, calculate how many 24-hour periods
+                // have passed and return the next upcoming refill time
+                if (nextRefill <= now) {
+                    const periodsPassed = Math.floor(
+                        (now - lastTierGrant) / dayInSeconds,
+                    );
+                    nextRefill =
+                        lastTierGrant + (periodsPassed + 1) * dayInSeconds;
+                }
+
+                refill = nextRefill;
+            }
 
             return c.json({
                 balance: tierBalance + packBalance + cryptoBalance,
+                refill,
             });
         },
     )

@@ -14,9 +14,9 @@ Estimated at $50-100 billion by 2028, this is the near-term market slice that My
 
 ### The Serviceable Obtainable Market (SOM)
 
-Myceli AI’ own traction demonstrates a path into this market. As of Q3 2025, the platform serves around 5.5 million monthly active users across 1,740 apps, generating roughly $17k in monthly revenue (Aug 2025) driven by early developer purchases. This baseline positions Myceli AI to grow revenue quickly once end-user monetization kicks in.
+Myceli AI's traction demonstrates a clear path into this market. The platform already serves millions of monthly active users across a growing ecosystem of apps, with early revenue driven by developer purchases. This baseline positions Myceli AI to scale revenue quickly once end-user monetization is fully enabled.
 
-Under conservative conversion assumptions, if ~2% of users eventually spend $5 per month on Pollen (in-app credits), that would generate about $6.6 million in annual revenue. Similarly, if ~5% of developers each contribute $2-3k in monthly spend (via premium API, hosting, etc.), that adds another $2-3 million ARR. Under these modest scenarios, Myceli AI is on track for roughly $10-20 million in annual recurring revenue within the next 2-3 years. This translates to an eight-figure ARR, reflecting our obtainable share of the market in the near term.
+With conservative conversion assumptions—a small percentage of users purchasing Pollen credits and developers upgrading to premium tiers—Myceli AI has a realistic path to eight-figure annual recurring revenue within the next few years.
 
 ### The Competitive Landscape
 

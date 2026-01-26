@@ -42,14 +42,13 @@ MAX_USERS_PER_RUN = 8000  # Safety cap under API limits
 
 def run_d1_query(query: str, env: str = "production") -> list[dict]:
     """Run a D1 query and return results."""
-    env_flag = "--env production" if env == "production" else "--env staging"
     cmd = [
         "npx", "wrangler", "d1", "execute", "DB", "--remote",
-        *env_flag.split(),
+        "--env", env,
         "--command", query,
         "--json"
     ]
-    
+
     try:
         result = subprocess.run(
             cmd,
@@ -58,14 +57,14 @@ def run_d1_query(query: str, env: str = "production") -> list[dict]:
             cwd=os.path.join(os.path.dirname(__file__), "../../enter.pollinations.ai"),
             timeout=60
         )
-        
+
         if result.returncode != 0:
             print(f"❌ D1 query failed: {result.stderr}", file=sys.stderr)
             return []
-        
+
         data = json.loads(result.stdout)
         return data[0].get("results", [])
-        
+
     except subprocess.TimeoutExpired:
         print("❌ D1 query timed out", file=sys.stderr)
         return []
@@ -76,70 +75,63 @@ def run_d1_query(query: str, env: str = "production") -> list[dict]:
 
 def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], int]:
     """Fetch spore users using day-based slicing strategy.
-    
+
     Returns (new_users, slice_users, total_old) where:
     - new_users: users created in the last 24 hours
     - slice_users: today's slice of older users (1/7th, using LIMIT/OFFSET)
     - total_old: total count of older spore users
     """
-    # Today's weekday (0=Monday, 6=Sunday)
     weekday = datetime.now(timezone.utc).weekday()
-    
-    # Unix timestamp for 24 hours ago
-    yesterday = int((datetime.now(timezone.utc).timestamp() - 86400) * 1000)  # D1 uses milliseconds
-    
-    # Query 1: New users (created in last 24h)
+    yesterday = int(datetime.now(timezone.utc).timestamp() - 86400)  # Unix timestamp in seconds
+
+    # Get new users (created in last 24h)
     new_query = f"""
-        SELECT github_username FROM user 
-        WHERE tier = 'spore' 
-        AND github_username IS NOT NULL 
+        SELECT github_username FROM user
+        WHERE tier = 'spore'
+        AND github_username IS NOT NULL
         AND created_at > {yesterday}
     """
     new_results = run_d1_query(new_query, env)
     new_users = [r["github_username"] for r in new_results]
-    
-    # Query 2: Count total older users
+
+    # Count total older users
     count_query = f"""
-        SELECT COUNT(*) as count FROM user 
-        WHERE tier = 'spore' 
-        AND github_username IS NOT NULL 
+        SELECT COUNT(*) as count FROM user
+        WHERE tier = 'spore'
+        AND github_username IS NOT NULL
         AND created_at <= {yesterday}
     """
     count_results = run_d1_query(count_query, env)
     total_old = count_results[0]["count"] if count_results else 0
-    
-    # Query 3: Today's slice using LIMIT/OFFSET (equal partitions)
-    # Order by created_at for consistent ordering, slice into 7 equal parts
-    slice_size = (total_old + 6) // 7  # Ceiling division
+
+    # Get today's slice using LIMIT/OFFSET (equal partitions)
+    slice_size = (total_old + 6) // 7  # Ceiling division for 7 equal parts
     offset = weekday * slice_size
-    
+
     slice_query = f"""
-        SELECT github_username FROM user 
-        WHERE tier = 'spore' 
-        AND github_username IS NOT NULL 
+        SELECT github_username FROM user
+        WHERE tier = 'spore'
+        AND github_username IS NOT NULL
         AND created_at <= {yesterday}
         ORDER BY created_at ASC
         LIMIT {slice_size} OFFSET {offset}
     """
     slice_results = run_d1_query(slice_query, env)
     slice_users = [r["github_username"] for r in slice_results]
-    
+
     return new_users, slice_users, total_old
 
 
 def upgrade_user(username: str, env: str = "production") -> bool:
     """Upgrade a single user to seed tier via tsx script."""
-    env_flag = "--env" 
-    env_value = "production" if env == "production" else "staging"
-    
     cmd = [
         "npx", "tsx", "scripts/tier-update-user.ts",
         "update-tier",
         "--githubUsername", username,
         "--tier", "seed",
-        env_flag, env_value
+        "--env", env
     ]
-    
+
     try:
         result = subprocess.run(
             cmd,
@@ -148,30 +140,28 @@ def upgrade_user(username: str, env: str = "production") -> bool:
             cwd=os.path.join(os.path.dirname(__file__), "../../enter.pollinations.ai"),
             timeout=120
         )
-        
+
         # Check for skip (user already at higher tier)
         if "SKIP_UPGRADE=true" in result.stdout:
             print(f"   ⏭️  {username}: already at higher tier")
             return True
-            
+
         if result.returncode == 0:
             print(f"   ✅ {username}: upgraded to seed")
-            # Show Polar output if any
             if result.stdout.strip():
                 for line in result.stdout.strip().split('\n'):
                     print(f"      {line}")
             return True
-        else:
-            print(f"   ❌ {username}: failed")
-            # Show both stdout and stderr for debugging
-            if result.stdout.strip():
-                for line in result.stdout.strip().split('\n'):
-                    print(f"      {line}")
-            if result.stderr.strip():
-                for line in result.stderr.strip().split('\n'):
-                    print(f"      {line}", file=sys.stderr)
-            return False
-            
+
+        print(f"   ❌ {username}: failed")
+        if result.stdout.strip():
+            for line in result.stdout.strip().split('\n'):
+                print(f"      {line}")
+        if result.stderr.strip():
+            for line in result.stderr.strip().split('\n'):
+                print(f"      {line}", file=sys.stderr)
+        return False
+
     except subprocess.TimeoutExpired:
         print(f"   ❌ {username}: upgrade timed out", file=sys.stderr)
         return False
@@ -182,83 +172,83 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Validate only, no upgrades")
     parser.add_argument("--env", choices=["staging", "production"], default="production", help="Environment")
     args = parser.parse_args()
-    
+
     weekday = datetime.now(timezone.utc).weekday()
-    weekday_name = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][weekday]
-    
+    weekday_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
     print(f"🌱 Spore → Seed Upgrade Script")
     print(f"   Environment: {args.env}")
     print(f"   Mode: {'DRY RUN' if args.dry_run else 'LIVE'}")
-    print(f"   Day slice: {weekday_name} (slice {weekday + 1}/7)")
+    print(f"   Day slice: {weekday_names[weekday]} (slice {weekday + 1}/7)")
     print()
-    
-    # Step 1: Fetch spore users (new + today's slice)
+
+    # Fetch spore users (new + today's slice)
     print("📥 Fetching spore users from D1...")
     new_users, slice_users, total_old = fetch_spore_users(args.env)
     print(f"   New users (last 24h): {len(new_users)}")
     print(f"   Today's slice: {len(slice_users)} (of {total_old} total older users)")
-    
+
     # Combine: new users first (priority), then slice
     users = new_users + slice_users
-    
+
     # Apply max limit
     if len(users) > MAX_USERS_PER_RUN:
         print(f"   ⚠️  Limiting to {MAX_USERS_PER_RUN} users (was {len(users)})")
         users = users[:MAX_USERS_PER_RUN]
-    
+
     print(f"   Total to process: {len(users)}")
-    
+
     if not users:
         print("✅ No spore users to process")
         return 0
-    
-    # Step 2: Validate GitHub profiles
+
+    # Validate GitHub profiles
     print(f"\n🔍 Validating {len(users)} GitHub profiles (batches of 50)...")
     results = validate_users(users)
-    
+
     approved = [r["username"] for r in results if r["approved"]]
     rejected = [r for r in results if not r["approved"]]
-    
+
     print(f"   ✅ Approved: {len(approved)}")
     print(f"   ❌ Rejected: {len(rejected)}")
-    
+
     if rejected:
         print("\n   Rejected users:")
-        for r in rejected[:10]:  # Show first 10
+        for r in rejected[:10]:
             print(f"      {r['username']}: {r['reason']}")
         if len(rejected) > 10:
             print(f"      ... and {len(rejected) - 10} more")
-    
+
     if not approved:
         print("\n✅ No users approved for upgrade")
         return 0
-    
-    # Step 3: Upgrade approved users
+
+    # Upgrade approved users
     if args.dry_run:
         print(f"\n🔍 DRY RUN - would upgrade {len(approved)} users:")
-        for u in approved[:20]:
-            print(f"   • {u}")
+        for username in approved[:20]:
+            print(f"   • {username}")
         if len(approved) > 20:
             print(f"   ... and {len(approved) - 20} more")
         return 0
-    
+
     print(f"\n⬆️  Upgrading {len(approved)} users...")
     success = 0
     failed = 0
-    
+
     for i, username in enumerate(approved):
         if upgrade_user(username, args.env):
             success += 1
         else:
             failed += 1
-        # Rate limit for Polar API (100 req/min)
+        # Rate limit for Polar API
         if i < len(approved) - 1:
             time.sleep(POLAR_DELAY_SECONDS)
-    
+
     print(f"\n📊 Results:")
     print(f"   ✅ Upgraded: {success}")
     print(f"   ❌ Failed: {failed}")
-    
+
     return 0 if failed == 0 else 1
 
 

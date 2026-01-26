@@ -82,14 +82,14 @@ def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], in
     - total_old: total count of older spore users
     """
     weekday = datetime.now(timezone.utc).weekday()
-    yesterday_ms = int((datetime.now(timezone.utc).timestamp() - 86400) * 1000)  # D1 uses milliseconds
+    yesterday = int(datetime.now(timezone.utc).timestamp() - 86400)  # Unix timestamp in seconds
 
     # Get new users (created in last 24h)
     new_query = f"""
         SELECT github_username FROM user
         WHERE tier = 'spore'
         AND github_username IS NOT NULL
-        AND created_at > {yesterday_ms}
+        AND created_at > {yesterday}
     """
     new_results = run_d1_query(new_query, env)
     new_users = [r["github_username"] for r in new_results]
@@ -99,7 +99,7 @@ def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], in
         SELECT COUNT(*) as count FROM user
         WHERE tier = 'spore'
         AND github_username IS NOT NULL
-        AND created_at <= {yesterday_ms}
+        AND created_at <= {yesterday}
     """
     count_results = run_d1_query(count_query, env)
     total_old = count_results[0]["count"] if count_results else 0
@@ -112,7 +112,7 @@ def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], in
         SELECT github_username FROM user
         WHERE tier = 'spore'
         AND github_username IS NOT NULL
-        AND created_at <= {yesterday_ms}
+        AND created_at <= {yesterday}
         ORDER BY created_at ASC
         LIMIT {slice_size} OFFSET {offset}
     """
@@ -171,6 +171,7 @@ def main():
     parser = argparse.ArgumentParser(description="Upgrade spore users to seed tier")
     parser.add_argument("--dry-run", action="store_true", help="Validate only, no upgrades")
     parser.add_argument("--env", choices=["staging", "production"], default="production", help="Environment")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed score breakdowns")
     args = parser.parse_args()
 
     weekday = datetime.now(timezone.utc).weekday()
@@ -198,19 +199,32 @@ def main():
 
     print(f"   Total to process: {len(users)}")
 
-    if not users:
+    if not new_users and not slice_users:
         print("✅ No spore users to process")
         return 0
 
-    # Validate GitHub profiles
-    print(f"\n🔍 Validating {len(users)} GitHub profiles (batches of 50)...")
-    results = validate_users(users)
+    # Phase 1: Validate new users (last 24h)
+    new_results = []
+    if new_users:
+        print(f"\n🔍 Phase 1: Validating {len(new_users)} NEW users (last 24h)...")
+        new_results = validate_users(new_users)
+        new_approved = sum(1 for r in new_results if r["approved"])
+        print(f"   ✅ Approved: {new_approved}/{len(new_results)} ({100*new_approved/len(new_results):.0f}%)")
 
+    # Phase 2: Validate slice of older users
+    slice_results = []
+    if slice_users:
+        print(f"\n🔍 Phase 2: Validating {len(slice_users)} SLICE users (day {weekday + 1}/7)...")
+        slice_results = validate_users(slice_users)
+        slice_approved = sum(1 for r in slice_results if r["approved"])
+        print(f"   ✅ Approved: {slice_approved}/{len(slice_results)} ({100*slice_approved/len(slice_results):.0f}%)")
+
+    # Combine results
+    results = new_results + slice_results
     approved = [r["username"] for r in results if r["approved"]]
     rejected = [r for r in results if not r["approved"]]
 
-    print(f"   ✅ Approved: {len(approved)}")
-    print(f"   ❌ Rejected: {len(rejected)}")
+    print(f"\n📊 Total: {len(approved)} approved, {len(rejected)} rejected")
 
     if rejected:
         print("\n   Rejected users:")
@@ -218,6 +232,19 @@ def main():
             print(f"      {r['username']}: {r['reason']}")
         if len(rejected) > 10:
             print(f"      ... and {len(rejected) - 10} more")
+
+    # Verbose: show score breakdown samples
+    if args.verbose:
+        print("\n📊 Score breakdown samples (first 20):")
+        print(f"   {'Username':<25} {'Age':<12} {'Repos':<12} {'Commits':<12} {'Stars':<12} {'Total':<8}")
+        print(f"   {'-'*25} {'-'*12} {'-'*12} {'-'*12} {'-'*12} {'-'*8}")
+        for r in results[:20]:
+            d = r.get("details")
+            if d:
+                status = "✅" if r["approved"] else "❌"
+                print(f"   {r['username']:<25} {d['age_days']:>4}d={d['age_pts']:.1f}pt  {d['repos']:>3}={d['repos_pts']:.1f}pt    {d['commits']:>4}={d['commits_pts']:.1f}pt   {d['stars']:>4}={d['stars_pts']:.1f}pt   {status}{d['total']:.1f}")
+            else:
+                print(f"   {r['username']:<25} (not found)")
 
     if not approved:
         print("\n✅ No users approved for upgrade")

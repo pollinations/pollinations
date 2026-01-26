@@ -10,7 +10,7 @@ Points-based validation formula:
 
 import json
 import os
-import random
+# random import removed - no longer shuffling
 import time
 import urllib.error
 import urllib.request
@@ -52,10 +52,10 @@ def build_query(usernames: list[str]) -> str:
     return f"query {{ {''.join(fragments)} }}"
 
 
-def score_user(data: dict | None, username: str) -> dict:
+def score_user(data: dict | None, username: str, verbose: bool = False) -> dict:
     """Calculate score for a single user. Returns dict with username, approved, reason."""
     if not data:
-        return {"username": username, "approved": False, "reason": "User not found"}
+        return {"username": username, "approved": False, "reason": "User not found", "details": None}
 
     created = datetime.fromisoformat(data["createdAt"].replace("Z", "+00:00"))
     age_days = (datetime.now(timezone.utc) - created).days
@@ -67,15 +67,33 @@ def score_user(data: dict | None, username: str) -> dict:
         "stars": sum(node["stargazerCount"] for node in (data["repositories"].get("nodes") or []) if node),
     }
 
-    score = sum(
-        min(metrics[config["field"]] * config["multiplier"], config["max"])
-        for config in SCORING
-    )
+    # Calculate individual scores
+    scores = {}
+    for config in SCORING:
+        field = config["field"]
+        raw = metrics[field] * config["multiplier"]
+        capped = min(raw, config["max"])
+        scores[field] = capped
+
+    total_score = sum(scores.values())
+
+    details = {
+        "age_days": age_days,
+        "age_pts": scores["age_days"],
+        "repos": metrics["repos"],
+        "repos_pts": scores["repos"],
+        "commits": metrics["commits"],
+        "commits_pts": scores["commits"],
+        "stars": metrics["stars"],
+        "stars_pts": scores["stars"],
+        "total": total_score,
+    }
 
     return {
         "username": username,
-        "approved": score >= THRESHOLD,
-        "reason": f"{score:.1f} pts"
+        "approved": total_score >= THRESHOLD,
+        "reason": f"{total_score:.1f} pts",
+        "details": details
     }
 
 
@@ -114,7 +132,7 @@ def validate_users(usernames: list[str]) -> list[dict]:
     if not usernames:
         return []
 
-    random.shuffle(usernames)
+    # Don't shuffle - preserve order (new users first, then slice)
     results = []
     approved_count = 0
 

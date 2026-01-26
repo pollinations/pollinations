@@ -48,8 +48,20 @@ export async function handleScheduled(
 
     // Send per-user refill events to Tinybird
     if (usersToRefill.length > 0) {
+        ctx.waitUntil(sendUserRefillEvents(usersToRefill, env, log));
+    }
+
+    async function sendUserRefillEvents(
+        users: Array<{
+            id: string;
+            tier: string | null;
+            tierBalance: number | null;
+        }>,
+        env: CloudflareBindings,
+        log: ReturnType<typeof getLogger>,
+    ): Promise<void> {
         const timestamp = new Date().toISOString();
-        const events = usersToRefill
+        const events = users
             .map((user) => {
                 const tierName = user.tier as TierName;
                 const pollenAmount = TIER_POLLEN[tierName] ?? TIER_POLLEN.spore;
@@ -65,41 +77,39 @@ export async function handleScheduled(
             })
             .join("\n");
 
-        ctx.waitUntil(
-            fetch(env.TINYBIRD_TIER_INGEST_URL, {
+        try {
+            const response = await fetch(env.TINYBIRD_TIER_INGEST_URL, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${env.TINYBIRD_INGEST_TOKEN}`,
                     "Content-Type": "application/x-ndjson",
                 },
                 body: events,
-            })
-                .then(async (response) => {
-                    if (!response.ok) {
-                        const text = await response.text();
-                        log.error(
-                            "TINYBIRD_TIER_EVENTS_FAILED: status={status} statusText={statusText}",
-                            {
-                                eventType: "tinybird_tier_events_failed",
-                                status: response.status,
-                                statusText: response.statusText,
-                                responseBody: text,
-                            },
-                        );
-                    } else {
-                        log.info("TINYBIRD_TIER_EVENTS_SENT: count={count}", {
-                            eventType: "tinybird_tier_events_sent",
-                            count: usersToRefill.length,
-                        });
-                    }
-                })
-                .catch((error) => {
-                    log.error("TINYBIRD_TIER_EVENTS_ERROR: error={error}", {
-                        eventType: "tinybird_tier_events_error",
-                        error: String(error),
-                    });
-                }),
-        );
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                log.error(
+                    "TINYBIRD_TIER_EVENTS_FAILED: status={status} statusText={statusText}",
+                    {
+                        eventType: "tinybird_tier_events_failed",
+                        status: response.status,
+                        statusText: response.statusText,
+                        responseBody: text,
+                    },
+                );
+            } else {
+                log.info("TINYBIRD_TIER_EVENTS_SENT: count={count}", {
+                    eventType: "tinybird_tier_events_sent",
+                    count: users.length,
+                });
+            }
+        } catch (error) {
+            log.error("TINYBIRD_TIER_EVENTS_ERROR: error={error}", {
+                eventType: "tinybird_tier_events_error",
+                error: String(error),
+            });
+        }
     }
 
     // Also send aggregate event for backwards compatibility

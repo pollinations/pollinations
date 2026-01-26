@@ -33,67 +33,69 @@ export async function handleBalanceDeduction({
     if (!isBilledUsage || !totalPrice) return;
 
     // Handle API key budget deduction
-    if (
-        apiKeyId &&
-        apiKeyPollenBalance !== null &&
-        apiKeyPollenBalance !== undefined
-    ) {
-        try {
-            await atomicDeductApiKeyBalance(
-                db,
-                apikeyTable,
-                apiKeyId,
-                totalPrice,
-            );
-            log.debug(
-                "Decremented {price} pollen from API key {keyId} budget",
-                {
-                    price: totalPrice,
-                    keyId: apiKeyId,
-                },
-            );
-        } catch (error) {
-            log.error(
-                "Failed to decrement API key budget for {keyId}: {error}",
-                {
-                    keyId: apiKeyId,
-                    error: error instanceof Error ? error.message : error,
-                },
-            );
-        }
+    if (apiKeyId && hasApiKeyBudget(apiKeyPollenBalance)) {
+        await deductApiKeyBalance(db, apiKeyId, totalPrice);
     }
 
     // Handle user balance deduction
     if (userId) {
-        try {
-            const balancesBefore = await getUserBalances(db, userId);
-            const deductionSplit = calculateDeductionSplit(
-                balancesBefore.tierBalance,
-                balancesBefore.cryptoBalance,
-                balancesBefore.packBalance,
-                totalPrice,
-            );
+        await deductUserBalance(db, userId, totalPrice);
+    }
+}
 
-            await atomicDeductUserBalance(db, userId, totalPrice);
+function hasApiKeyBudget(
+    balance: number | null | undefined,
+): balance is number {
+    return balance !== null && balance !== undefined;
+}
 
-            log.debug(
-                "Decremented {price} pollen from user {userId} (tier: -{fromTier}, crypto: -{fromCrypto}, pack: -{fromPack})",
-                {
-                    price: totalPrice,
-                    userId,
-                    fromTier: deductionSplit.fromTier,
-                    fromCrypto: deductionSplit.fromCrypto,
-                    fromPack: deductionSplit.fromPack,
-                },
-            );
-        } catch (error) {
-            log.error(
-                "Failed to decrement user balance for {userId}: {error}",
-                {
-                    userId,
-                    error: error instanceof Error ? error.message : error,
-                },
-            );
-        }
+async function deductApiKeyBalance(
+    db: DrizzleD1Database,
+    apiKeyId: string,
+    amount: number,
+): Promise<void> {
+    try {
+        await atomicDeductApiKeyBalance(db, apikeyTable, apiKeyId, amount);
+        log.debug("Decremented {price} pollen from API key {keyId} budget", {
+            price: amount,
+            keyId: apiKeyId,
+        });
+    } catch (error) {
+        log.error("Failed to decrement API key budget for {keyId}: {error}", {
+            keyId: apiKeyId,
+            error: error instanceof Error ? error.message : error,
+        });
+    }
+}
+
+async function deductUserBalance(
+    db: DrizzleD1Database,
+    userId: string,
+    amount: number,
+): Promise<void> {
+    try {
+        const balancesBefore = await getUserBalances(db, userId);
+        const deductionSplit = calculateDeductionSplit(
+            balancesBefore.tierBalance,
+            balancesBefore.cryptoBalance,
+            balancesBefore.packBalance,
+            amount,
+        );
+
+        await atomicDeductUserBalance(db, userId, amount);
+
+        log.debug(
+            "Decremented {price} pollen from user {userId} (tier: -{fromTier}, crypto: -{fromCrypto}, pack: -{fromPack})",
+            {
+                price: amount,
+                userId,
+                ...deductionSplit,
+            },
+        );
+    } catch (error) {
+        log.error("Failed to decrement user balance for {userId}: {error}", {
+            userId,
+            error: error instanceof Error ? error.message : error,
+        });
     }
 }

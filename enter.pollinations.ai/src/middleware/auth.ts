@@ -118,6 +118,11 @@ export const auth = (options: AuthOptions) =>
                 }
             }
 
+            // Check if the key is disabled
+            if (fullApiKey?.enabled === false) {
+                return null;
+            }
+
             return {
                 user: fullApiKey?.user as User,
                 apiKey: {

@@ -39,6 +39,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [name, setName] = useState(apiKey.name || "");
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const keyPermissions = useKeyPermissions({
         allowedModels: apiKey.permissions?.models ?? null,
@@ -54,6 +55,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
     async function handleSave() {
         setIsSubmitting(true);
+        setError(null);
         try {
             const { expiryDays, ...permissions } = keyPermissions.permissions;
             await onUpdate(apiKey.id, {
@@ -64,6 +66,9 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     : null,
             });
             onClose();
+        } catch (error) {
+            console.error("Failed to update API key:", error);
+            setError(error instanceof Error ? error.message : "Failed to update API key");
         } finally {
             setIsSubmitting(false);
         }
@@ -93,6 +98,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     <Dialog.Title className="text-xl font-bold mb-6">
                         Edit API Key
                     </Dialog.Title>
+
+                    {error && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                            {error}
+                        </div>
+                    )}
 
                     <div className="space-y-6">
                         <Field.Root>

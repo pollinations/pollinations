@@ -15,6 +15,7 @@ import requests
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
+from common import load_prompt
 
 # Constants
 GITHUB_API_BASE = "https://api.github.com"
@@ -32,8 +33,8 @@ INITIAL_RETRY_DELAY = 2  # Base delay for exponential backoff (2, 4, 8 seconds)
 IMAGE_WIDTH = 2048
 IMAGE_HEIGHT = 2048  # 1:1 aspect ratio for Instagram
 
-# Prompt paths (relative to repo root)
-PROMPTS_DIR = "social/prompts/instagram"
+# Platform name for prompt loading
+PLATFORM = "instagram"
 
 
 def get_repo_root() -> str:
@@ -47,18 +48,6 @@ def get_repo_root() -> str:
         current = os.path.dirname(current)
     # Fallback: assume we're already in repo root
     return os.getcwd()
-
-
-def load_prompt(filename: str) -> str:
-    """Load a prompt from the social/prompts/instagram/ directory"""
-    repo_root = get_repo_root()
-    prompt_path = os.path.join(repo_root, PROMPTS_DIR, filename)
-    try:
-        with open(prompt_path, 'r', encoding='utf-8') as f:
-            return f.read()
-    except FileNotFoundError:
-        print(f"Error: Prompt file not found: {prompt_path}")
-        sys.exit(1)
 
 
 def get_env(key: str, required: bool = True) -> str:
@@ -379,16 +368,16 @@ def generate_post_strategy(prs: List[Dict], token: str) -> Dict:
         pr_summary = "NO UPDATES TODAY"
 
     # Load system prompt from external file and inject PR summary
-    system_prompt_template = load_prompt("system.md")
+    system_prompt_template = load_prompt(PLATFORM, "system")
     system_prompt = system_prompt_template.replace("{pr_summary}", pr_summary)
 
     # Load user prompt based on whether we have PRs
     if prs:
-        user_prompt_template = load_prompt("user_with_prs.md")
+        user_prompt_template = load_prompt(PLATFORM, "user_with_prs")
         pr_titles = [pr['title'] for pr in prs[:5]]
         user_prompt = user_prompt_template.replace("{pr_titles}", str(pr_titles))
     else:
-        user_prompt = load_prompt("user_brand_content.md")
+        user_prompt = load_prompt(PLATFORM, "user_brand_content")
 
     print("Generating post strategy...")
     response = call_pollinations_api(system_prompt, user_prompt, token, temperature=0.7)

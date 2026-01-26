@@ -13,6 +13,7 @@ import requests
 from typing import Dict, List, Optional
 from jinja2 import Environment, Template
 from datetime import datetime
+from common import load_prompt
 
 # Configuration
 GITHUB_API_BASE = "https://api.github.com"
@@ -21,8 +22,8 @@ MODEL = "gemini-large"
 DISCORD_CHAR_LIMIT = 2000
 CHUNK_SIZE = 1900  # Leave room for safety
 
-# Prompt paths (relative to repo root)
-PROMPTS_DIR = "social/prompts/discord"
+# Platform name for prompt loading
+PLATFORM = "discord"
 
 
 def get_repo_root() -> str:
@@ -34,17 +35,6 @@ def get_repo_root() -> str:
         current = os.path.dirname(current)
     return os.getcwd()
 
-
-def load_prompt(filename: str) -> str:
-    """Load a prompt from the social/prompts/discord/ directory"""
-    repo_root = get_repo_root()
-    prompt_path = os.path.join(repo_root, PROMPTS_DIR, filename)
-    try:
-        with open(prompt_path, 'r', encoding='utf-8') as f:
-            return f.read()
-    except FileNotFoundError:
-        print(f"Error: Prompt file not found: {prompt_path}")
-        sys.exit(1)
 
 def get_env(key: str, required: bool = True) -> Optional[str]:
     """Get environment variable with optional requirement check"""
@@ -214,7 +204,7 @@ def format_diff_for_review(diff_text: str) -> str:
 
 def get_system_prompt() -> str:
     """Load the system prompt from external file"""
-    return load_prompt("merged_pr_system.md")
+    return load_prompt(PLATFORM, "merged_pr_system")
 
 def get_user_prompt(title: str, branch: str, description: str, diff: str) -> str:
     """Load user prompt template and render with PR data"""
@@ -228,7 +218,7 @@ PR Description:
 ======"""
     
     # Load template and replace placeholders
-    template = load_prompt("merged_pr_user.md")
+    template = load_prompt(PLATFORM, "merged_pr_user")
     return template.replace("{title}", title).replace("{branch}", branch).replace("{description_section}", description_section).replace("{diff}", diff)
 
 def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, max_retries: int = 3) -> str:

@@ -6,13 +6,14 @@ import random
 import re
 import requests
 from datetime import datetime, timedelta, timezone
+from common import load_prompt
 
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 MODEL = "gemini-large"
 NEWS_FOLDER = "social/news"
 
-# Prompt paths (relative to repo root)
-PROMPTS_DIR = "social/prompts/discord"
+# Platform name for prompt loading
+PLATFORM = "discord"
 
 
 def get_repo_root() -> str:
@@ -23,18 +24,6 @@ def get_repo_root() -> str:
             return current
         current = os.path.dirname(current)
     return os.getcwd()
-
-
-def load_prompt(filename: str) -> str:
-    """Load a prompt from the social/prompts/discord/ directory"""
-    repo_root = get_repo_root()
-    prompt_path = os.path.join(repo_root, PROMPTS_DIR, filename)
-    try:
-        with open(prompt_path, 'r', encoding='utf-8') as f:
-            return f.read()
-    except FileNotFoundError:
-        print(f"Error: Prompt file not found: {prompt_path}")
-        sys.exit(1)
 
 
 def get_env(key: str, required: bool = True) -> str:
@@ -129,11 +118,11 @@ def create_discord_prompt(news_entry: str, entry_date: str) -> tuple:
     date_str = f"From {start_date.day} {MONTH[start_date.month - 1]} {start_date.year} to {end_date.day} {MONTH[end_date.month - 1]} {end_date.year}"
 
     # Load system prompt and inject date_str
-    system_prompt_template = load_prompt("weekly_news_system.md")
+    system_prompt_template = load_prompt(PLATFORM, "weekly_news_system")
     system_prompt = system_prompt_template.replace("{date_str}", date_str)
 
     # Load user prompt and inject news_entry
-    user_prompt_template = load_prompt("weekly_news_user.md")
+    user_prompt_template = load_prompt(PLATFORM, "weekly_news_user")
     user_prompt = user_prompt_template.replace("{news_entry}", news_entry)
 
     return system_prompt, user_prompt

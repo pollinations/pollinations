@@ -8,6 +8,7 @@ import base64
 import requests
 from typing import Dict, List
 from datetime import datetime, timedelta, timezone
+from common import load_prompt
 
 GITHUB_API_BASE = "https://api.github.com"
 GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
@@ -16,8 +17,8 @@ MODEL = "gemini-large"
 CHUNK_SIZE = 50
 NEWS_FOLDER = "social/news"
 
-# Prompt paths (relative to repo root)
-PROMPTS_DIR = "social/prompts/github"
+# Platform name for prompt loading
+PLATFORM = "github"
 
 
 def get_repo_root() -> str:
@@ -28,18 +29,6 @@ def get_repo_root() -> str:
             return current
         current = os.path.dirname(current)
     return os.getcwd()
-
-
-def load_prompt(filename: str) -> str:
-    """Load a prompt from the social/prompts/github/ directory"""
-    repo_root = get_repo_root()
-    prompt_path = os.path.join(repo_root, PROMPTS_DIR, filename)
-    try:
-        with open(prompt_path, 'r', encoding='utf-8') as f:
-            return f.read()
-    except FileNotFoundError:
-        print(f"Error: Prompt file not found: {prompt_path}")
-        sys.exit(1)
 
 
 def get_env(key: str, required: bool = True) -> str:
@@ -182,12 +171,12 @@ def create_news_prompt(prs: List[Dict], is_final: bool = False, all_changes: Lis
     """
 
     # Load system prompt
-    system_prompt = load_prompt("weekly_news_system.md")
+    system_prompt = load_prompt(PLATFORM, "weekly_news_system")
 
     if is_final:
         combined_changes = "\n\n".join(all_changes)
         # Load final consolidation user prompt
-        user_prompt_template = load_prompt("weekly_news_user_final.md")
+        user_prompt_template = load_prompt(PLATFORM, "weekly_news_user_final")
         user_prompt = user_prompt_template.replace("{combined_changes}", combined_changes)
     else:
         # Build PR entries
@@ -202,7 +191,7 @@ Description: {body_preview}
 
 """
         # Load chunk processing user prompt
-        user_prompt_template = load_prompt("weekly_news_user.md")
+        user_prompt_template = load_prompt(PLATFORM, "weekly_news_user")
         user_prompt = user_prompt_template.replace("{pr_count}", str(len(prs))).replace("{pr_entries}", pr_entries)
 
     return system_prompt, user_prompt

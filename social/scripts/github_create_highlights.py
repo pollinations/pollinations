@@ -7,6 +7,7 @@ import re
 import base64
 import requests
 from datetime import datetime, timezone
+from common import load_prompt
 
 GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
@@ -14,8 +15,8 @@ MODEL = "gemini-large"
 NEWS_FOLDER = "social/news"
 HIGHLIGHTS_PATH = "social/news/transformed/highlights.md"
 
-# Prompt paths (relative to repo root)
-PROMPTS_DIR = "social/prompts/github"
+# Platform name for prompt loading
+PLATFORM = "github"
 
 
 def get_repo_root() -> str:
@@ -26,18 +27,6 @@ def get_repo_root() -> str:
             return current
         current = os.path.dirname(current)
     return os.getcwd()
-
-
-def load_prompt(filename: str) -> str:
-    """Load a prompt from the social/prompts/github/ directory"""
-    repo_root = get_repo_root()
-    prompt_path = os.path.join(repo_root, PROMPTS_DIR, filename)
-    try:
-        with open(prompt_path, 'r', encoding='utf-8') as f:
-            return f.read()
-    except FileNotFoundError:
-        print(f"Error: Prompt file not found: {prompt_path}")
-        sys.exit(1)
 
 
 def get_env(key: str, required: bool = True) -> str:
@@ -174,11 +163,11 @@ Add links naturally in the description using markdown format: [text](url)
 """
 
     # Load system prompt and inject links_section
-    system_prompt_template = load_prompt("highlights_system.md")
+    system_prompt_template = load_prompt(PLATFORM, "highlights_system")
     system_prompt = system_prompt_template.replace("{links_section}", links_section)
 
     # Load user prompt and inject news_date and news_content
-    user_prompt_template = load_prompt("highlights_user.md")
+    user_prompt_template = load_prompt(PLATFORM, "highlights_user")
     user_prompt = user_prompt_template.replace("{news_date}", news_date).replace("{news_content}", news_content)
 
     return system_prompt, user_prompt

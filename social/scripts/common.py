@@ -255,20 +255,59 @@ def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> L
     return all_prs
 
 
-def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, temperature: float = 0.7) -> Optional[str]:
-    """Call Pollinations AI API with retry logic"""
+def call_pollinations_api(
+    system_prompt: str,
+    user_prompt: str,
+    token: str,
+    temperature: float = 0.7,
+    max_retries: int = None,
+    model: str = None,
+    verbose: bool = False,
+    exit_on_failure: bool = False
+) -> Optional[str]:
+    """Call Pollinations AI API with retry logic and exponential backoff
+    
+    Args:
+        system_prompt: System prompt for the AI
+        user_prompt: User prompt for the AI
+        token: Pollinations API token
+        temperature: Temperature for generation (default 0.7)
+        max_retries: Number of retries (default MAX_RETRIES from constants)
+        model: Model to use (default MODEL from constants)
+        verbose: If True, print full prompts sent to API
+        exit_on_failure: If True, sys.exit(1) on failure instead of returning None
+    
+    Returns:
+        Response content or None if failed (exits if exit_on_failure=True)
+    """
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
 
+    use_model = model or MODEL
+    retries = max_retries if max_retries is not None else MAX_RETRIES
     last_error = None
 
-    for attempt in range(MAX_RETRIES):
+    # Verbose logging
+    if verbose:
+        print(f"\n  [VERBOSE] API Call to {POLLINATIONS_API_BASE}")
+        print(f"  [VERBOSE] Model: {use_model}")
+        print(f"  [VERBOSE] Temperature: {temperature}")
+        print(f"  [VERBOSE] System prompt ({len(system_prompt)} chars):")
+        print(f"  ---BEGIN SYSTEM PROMPT---")
+        print(system_prompt[:2000] + ("..." if len(system_prompt) > 2000 else ""))
+        print(f"  ---END SYSTEM PROMPT---")
+        print(f"  [VERBOSE] User prompt ({len(user_prompt)} chars):")
+        print(f"  ---BEGIN USER PROMPT---")
+        print(user_prompt[:2000] + ("..." if len(user_prompt) > 2000 else ""))
+        print(f"  ---END USER PROMPT---")
+
+    for attempt in range(retries):
         seed = random.randint(0, MAX_SEED)
 
         payload = {
-            "model": MODEL,
+            "model": use_model,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
@@ -277,9 +316,12 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, temp
             "seed": seed
         }
 
-        if attempt > 0:
+        if attempt == 0:
+            if verbose:
+                print(f"  Using seed: {seed}")
+        else:
             backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
-            print(f"  Retry {attempt}/{MAX_RETRIES - 1} (waiting {backoff_delay}s)")
+            print(f"  Retry {attempt}/{retries - 1} with new seed: {seed} (waiting {backoff_delay}s)")
             time.sleep(backoff_delay)
 
         try:
@@ -291,17 +333,34 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, temp
             )
 
             if response.status_code == 200:
-                result = response.json()
-                return result['choices'][0]['message']['content']
+                try:
+                    result = response.json()
+                    content = result['choices'][0]['message']['content']
+                    if verbose:
+                        print(f"  [VERBOSE] Response ({len(content)} chars):")
+                        print(f"  ---BEGIN RESPONSE---")
+                        print(content[:3000] + ("..." if len(content) > 3000 else ""))
+                        print(f"  ---END RESPONSE---")
+                    return content
+                except (KeyError, IndexError, json.JSONDecodeError) as e:
+                    last_error = f"Error parsing API response: {e}"
+                    error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+                    print(f"  {last_error}")
+                    print(f"  Response preview: {error_preview}")
             else:
                 last_error = f"API error: {response.status_code}"
-                print(f"  {last_error}: {response.text[:500]}")
+                error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+                print(f"  {last_error}")
+                print(f"  Error preview: {error_preview}")
 
         except requests.exceptions.RequestException as e:
             last_error = f"Request failed: {e}"
             print(f"  {last_error}")
 
-    print(f"All {MAX_RETRIES} attempts failed. Last error: {last_error}")
+    print(f"All {retries} attempts failed. Last error: {last_error}")
+    
+    if exit_on_failure:
+        sys.exit(1)
     return None
 
 

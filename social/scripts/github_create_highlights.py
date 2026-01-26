@@ -7,7 +7,7 @@ import re
 import base64
 import requests
 from datetime import datetime, timezone
-from common import load_prompt, get_env, get_file_sha, GITHUB_API_BASE, POLLINATIONS_API_BASE, MODEL
+from common import load_prompt, get_env, get_file_sha, call_pollinations_api, GITHUB_API_BASE, MODEL
 
 NEWS_FOLDER = "social/news"
 HIGHLIGHTS_PATH = "social/news/transformed/highlights.md"
@@ -150,64 +150,6 @@ Add links naturally in the description using markdown format: [text](url)
     user_prompt = user_prompt_template.replace("{news_date}", news_date).replace("{news_content}", news_content)
 
     return system_prompt, user_prompt
-
-
-def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, max_retries: int = 3) -> str:
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    last_error = None
-    for attempt in range(max_retries):
-        seed = random.randint(0, 2147483647)
-
-        payload = {
-            "model": MODEL,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            "temperature": 0.3,
-            "seed": seed
-        }
-
-        if attempt > 0:
-            print(f"Retry {attempt}/{max_retries - 1} with new seed: {seed}")
-
-        try:
-            response = requests.post(
-                POLLINATIONS_API_BASE,
-                headers=headers,
-                json=payload,
-                timeout=120
-            )
-
-            if response.status_code == 200:
-                try:
-                    result = response.json()
-                    return result['choices'][0]['message']['content']
-                except (KeyError, IndexError, json.JSONDecodeError) as e:
-                    last_error = f"Error parsing API response: {e}"
-                    error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
-                    print(f"{last_error}")
-                    print(f"Response preview: {error_preview}")
-            else:
-                last_error = f"API error: {response.status_code}"
-                error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
-                print(f"{last_error}")
-                print(f"Error preview: {error_preview}")
-
-        except requests.exceptions.RequestException as e:
-            last_error = f"Request failed: {e}"
-            print(last_error)
-
-        if attempt < max_retries - 1:
-            print("Waiting 5 seconds before retry...")
-            time.sleep(5)
-
-    print(f"All {max_retries} attempts failed. Last error: {last_error}")
-    sys.exit(1)
 
 
 def parse_response(response: str) -> str:
@@ -379,7 +321,7 @@ def main():
     # Generate highlights using AI
     print("Generating highlights...")
     system_prompt, user_prompt = create_highlights_prompt(news_content, news_date, links_content)
-    ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
+    ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token, temperature=0.3, exit_on_failure=True)
     new_highlights = parse_response(ai_response)
 
     # Check if AI returned SKIP

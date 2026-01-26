@@ -20,9 +20,9 @@ from common import (
     get_env,
     get_date_range,
     get_file_sha,
+    call_pollinations_api,
     GITHUB_API_BASE,
     GITHUB_GRAPHQL_API,
-    POLLINATIONS_API_BASE,
     POLLINATIONS_IMAGE_BASE,
     MODEL,
     IMAGE_MODEL,
@@ -153,93 +153,6 @@ def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> L
     return all_prs
 
 
-def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, temperature: float = 0.7, model: str = None, verbose: bool = True) -> str:
-    """Call Pollinations AI API with retry logic and exponential backoff
-
-    Args:
-        model: Model to use (defaults to MODEL constant if not specified)
-        verbose: If True, print full prompts sent to API
-
-    Each attempt uses a new random seed (0 to MAX_SEED/int32).
-    Retries use exponential backoff: 2s, 4s, 8s...
-    """
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    use_model = model or MODEL
-    last_error = None
-
-    # Verbose logging
-    if verbose:
-        print(f"\n  [VERBOSE] API Call to {POLLINATIONS_API_BASE}")
-        print(f"  [VERBOSE] Model: {use_model}")
-        print(f"  [VERBOSE] Temperature: {temperature}")
-        print(f"  [VERBOSE] System prompt ({len(system_prompt)} chars):")
-        print(f"  ---BEGIN SYSTEM PROMPT---")
-        print(system_prompt[:2000] + ("..." if len(system_prompt) > 2000 else ""))
-        print(f"  ---END SYSTEM PROMPT---")
-        print(f"  [VERBOSE] User prompt ({len(user_prompt)} chars):")
-        print(f"  ---BEGIN USER PROMPT---")
-        print(user_prompt[:2000] + ("..." if len(user_prompt) > 2000 else ""))
-        print(f"  ---END USER PROMPT---")
-
-    for attempt in range(MAX_RETRIES):
-        # Each attempt gets a fresh random seed
-        seed = random.randint(0, MAX_SEED)
-
-        payload = {
-            "model": use_model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            "temperature": temperature,
-            "seed": seed
-        }
-
-        if attempt == 0:
-            print(f"  Using seed: {seed}")
-        else:
-            # Exponential backoff: 2^attempt * initial_delay
-            backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
-            print(f"  Retry {attempt}/{MAX_RETRIES - 1} with new seed: {seed} (waiting {backoff_delay}s)")
-            time.sleep(backoff_delay)
-
-        try:
-            response = requests.post(
-                POLLINATIONS_API_BASE,
-                headers=headers,
-                json=payload,
-                timeout=120
-            )
-
-            if response.status_code == 200:
-                try:
-                    result = response.json()
-                    content = result['choices'][0]['message']['content']
-                    if verbose:
-                        print(f"  [VERBOSE] Response ({len(content)} chars):")
-                        print(f"  ---BEGIN RESPONSE---")
-                        print(content[:3000] + ("..." if len(content) > 3000 else ""))
-                        print(f"  ---END RESPONSE---")
-                    return content
-                except (KeyError, IndexError, json.JSONDecodeError) as e:
-                    last_error = f"Error parsing API response: {e}"
-                    print(f"  {last_error}")
-            else:
-                last_error = f"API error: {response.status_code}"
-                print(f"  {last_error}: {response.text[:500]}")
-
-        except requests.exceptions.RequestException as e:
-            last_error = f"Request failed: {e}"
-            print(f"  {last_error}")
-
-    print(f"All {MAX_RETRIES} attempts failed. Last error: {last_error}")
-    return None
-
-
 def get_instagram_trends() -> Dict:
     """Return static Instagram trends data (researched Dec 2025)
     
@@ -352,7 +265,7 @@ def generate_post_strategy(prs: List[Dict], token: str) -> Dict:
         user_prompt = load_prompt(PLATFORM, "user_brand_content")
 
     print("Generating post strategy...")
-    response = call_pollinations_api(system_prompt, user_prompt, token, temperature=0.7)
+    response = call_pollinations_api(system_prompt, user_prompt, token, temperature=0.7, verbose=True)
 
     if not response:
         print("Strategy generation failed")

@@ -6,7 +6,7 @@ export async function getGitHubStats() {
     return await res.json();
 }
 
-export async function getStarHistory(days = 30) {
+export async function getStarHistory(_days = 30) {
     // GitHub doesn't provide star history directly
     // For now, return current count - would need a service like star-history.com or track in DB
     const stats = await getGitHubStats();

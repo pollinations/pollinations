@@ -4,10 +4,10 @@
  * Usage: node scripts/load-secrets.js
  */
 
-import { execSync } from "child_process";
-import { writeFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { execSync } from "node:child_process";
+import { writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const secretsPath = join(__dirname, "../secrets/env.json");

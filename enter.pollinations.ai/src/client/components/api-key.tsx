@@ -48,7 +48,6 @@ type ApiKey = {
     permissions: { [key: string]: string[] } | null;
     metadata: { [key: string]: unknown } | null;
     pollenBalance?: number | null;
-    enabled?: boolean;
 };
 
 type ApiKeyManagerProps = {
@@ -59,7 +58,6 @@ type ApiKeyManagerProps = {
         updates: {
             allowedModels?: string[] | null;
             pollenBudget?: number | null;
-            enabled?: boolean;
         },
     ) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
@@ -303,18 +301,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                         const plaintextKey = apiKey.metadata?.[
                                             "plaintextKey"
                                         ] as string | undefined;
-                                        const isDisabled =
-                                            apiKey.enabled === false;
 
                                         return (
                                             <Fragment key={apiKey.id}>
-                                                <Cell
-                                                    className={
-                                                        isDisabled
-                                                            ? "opacity-50"
-                                                            : ""
-                                                    }
-                                                >
+                                                <Cell>
                                                     <span
                                                         className={cn(
                                                             "px-2 py-1 rounded text-xs font-medium",
@@ -328,13 +318,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                             : "🔒 Secret"}
                                                     </span>
                                                 </Cell>
-                                                <Cell
-                                                    className={
-                                                        isDisabled
-                                                            ? "opacity-50"
-                                                            : ""
-                                                    }
-                                                >
+                                                <Cell>
                                                     <span
                                                         className="text-xs truncate block"
                                                         title={
@@ -343,11 +327,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                         }
                                                     >
                                                         {apiKey.name}
-                                                        {isDisabled && (
-                                                            <span className="ml-1 text-red-500">
-                                                                (disabled)
-                                                            </span>
-                                                        )}
                                                     </span>
                                                 </Cell>
                                                 <Cell>

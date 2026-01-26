@@ -1,5 +1,4 @@
 import { Dialog } from "@ark-ui/react/dialog";
-import { Switch } from "@ark-ui/react/switch";
 import type { FC } from "react";
 import { useState } from "react";
 import { Button } from "./button.tsx";
@@ -9,7 +8,6 @@ type ApiKey = {
     id: string;
     name?: string | null;
     start?: string | null;
-    enabled?: boolean;
     pollenBalance?: number | null;
     permissions: { [key: string]: string[] } | null;
 };
@@ -21,7 +19,6 @@ type EditApiKeyDialogProps = {
         updates: {
             allowedModels?: string[] | null;
             pollenBudget?: number | null;
-            enabled?: boolean;
         },
     ) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
@@ -34,7 +31,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     onDelete,
     onClose,
 }) => {
-    const [enabled, setEnabled] = useState(apiKey.enabled ?? true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -51,7 +47,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             await onUpdate(apiKey.id, {
                 allowedModels: keyPermissions.permissions.allowedModels,
                 pollenBudget: keyPermissions.permissions.pollenBudget,
-                enabled,
             });
             onClose();
         } catch (error) {
@@ -109,33 +104,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                             <div className="px-3 py-2 bg-gray-100 rounded border border-gray-300 font-mono text-xs text-gray-500">
                                 {apiKey.start}...
                             </div>
-                        </div>
-
-                        {/* Enabled Toggle */}
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <div className="text-sm font-semibold">
-                                    Enabled
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                    Disabled keys cannot make API calls
-                                </div>
-                            </div>
-                            <Switch.Root
-                                checked={enabled}
-                                onCheckedChange={({ checked }) =>
-                                    setEnabled(checked)
-                                }
-                                className="flex items-center"
-                            >
-                                <Switch.Control
-                                    className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${enabled ? "bg-green-500" : "bg-gray-300"}`}
-                                >
-                                    <Switch.Thumb
-                                        className={`block w-5 h-5 bg-white rounded-full shadow transition-transform ${enabled ? "translate-x-5" : "translate-x-0.5"}`}
-                                    />
-                                </Switch.Control>
-                            </Switch.Root>
                         </div>
 
                         {/* Permissions */}

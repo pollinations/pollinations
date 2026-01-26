@@ -204,7 +204,6 @@ function RouteComponent() {
         updates: {
             allowedModels?: string[] | null;
             pollenBudget?: number | null;
-            enabled?: boolean;
         },
     ) => {
         const response = await fetch(`/api/api-keys/${id}/update`, {

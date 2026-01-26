@@ -5,9 +5,9 @@
  * Usage: node scripts/find-dead-code.js
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,10 +22,14 @@ function getAllTsFiles(dir, files = []) {
 
         if (stat.isDirectory()) {
             // Skip node_modules and test directories
-            if (!item.includes('node_modules') && !item.includes('__tests__') && !item.includes('.git')) {
+            if (
+                !item.includes("node_modules") &&
+                !item.includes("__tests__") &&
+                !item.includes(".git")
+            ) {
                 getAllTsFiles(fullPath, files);
             }
-        } else if (item.endsWith('.ts') || item.endsWith('.tsx')) {
+        } else if (item.endsWith(".ts") || item.endsWith(".tsx")) {
             files.push(fullPath);
         }
     }
@@ -35,25 +39,33 @@ function getAllTsFiles(dir, files = []) {
 
 // Extract exports from a file
 function extractExports(filePath) {
-    const content = fs.readFileSync(filePath, 'utf8');
+    const content = fs.readFileSync(filePath, "utf8");
     const exports = [];
 
     // Match: export function name
-    const funcMatches = content.matchAll(/export\s+(async\s+)?function\s+(\w+)/g);
+    const funcMatches = content.matchAll(
+        /export\s+(async\s+)?function\s+(\w+)/g,
+    );
     for (const match of funcMatches) {
-        exports.push({ name: match[2], type: 'function', file: filePath });
+        exports.push({ name: match[2], type: "function", file: filePath });
     }
 
     // Match: export const name = () => or export const name = async () =>
-    const constMatches = content.matchAll(/export\s+const\s+(\w+)\s*=\s*(async\s+)?\(/g);
+    const constMatches = content.matchAll(
+        /export\s+const\s+(\w+)\s*=\s*(async\s+)?\(/g,
+    );
     for (const match of constMatches) {
-        exports.push({ name: match[1], type: 'const-function', file: filePath });
+        exports.push({
+            name: match[1],
+            type: "const-function",
+            file: filePath,
+        });
     }
 
     // Match: export class Name
     const classMatches = content.matchAll(/export\s+class\s+(\w+)/g);
     for (const match of classMatches) {
-        exports.push({ name: match[1], type: 'class', file: filePath });
+        exports.push({ name: match[1], type: "class", file: filePath });
     }
 
     // Match: export type Name and export interface Name
@@ -70,12 +82,15 @@ function isExportUsed(exportName, allFiles, definingFile) {
     for (const file of allFiles) {
         if (file === definingFile) continue; // Skip the file where it's defined
 
-        const content = fs.readFileSync(file, 'utf8');
+        const content = fs.readFileSync(file, "utf8");
 
         // Check for imports
         if (content.includes(`import`) && content.includes(exportName)) {
             // More precise check for import statements
-            const importRegex = new RegExp(`import.*[{,\\s]${exportName}[},\\s].*from`, 'g');
+            const importRegex = new RegExp(
+                `import.*[{,\\s]${exportName}[},\\s].*from`,
+                "g",
+            );
             if (importRegex.test(content)) return true;
         }
 
@@ -85,13 +100,17 @@ function isExportUsed(exportName, allFiles, definingFile) {
         }
 
         // For default exports from the defining file
-        const relativePath = path.relative(path.dirname(file), definingFile)
-            .replace(/\\/g, '/').replace(/\.tsx?$/, '');
-        if (content.includes(`from "${relativePath}"`) ||
+        const relativePath = path
+            .relative(path.dirname(file), definingFile)
+            .replace(/\\/g, "/")
+            .replace(/\.tsx?$/, "");
+        if (
+            content.includes(`from "${relativePath}"`) ||
             content.includes(`from './${relativePath}'`) ||
-            content.includes(`from '${relativePath}'`)) {
+            content.includes(`from '${relativePath}'`)
+        ) {
             // Check if this import uses our export
-            const afterImport = content.split(`from`).slice(1).join('from');
+            const afterImport = content.split(`from`).slice(1).join("from");
             if (afterImport.includes(exportName)) return true;
         }
     }
@@ -100,9 +119,9 @@ function isExportUsed(exportName, allFiles, definingFile) {
 }
 
 // Main execution
-console.log('🔍 Analyzing enter.pollinations.ai for unused exports...\n');
+console.log("🔍 Analyzing enter.pollinations.ai for unused exports...\n");
 
-const srcDir = path.join(__dirname, '..', 'src');
+const srcDir = path.join(__dirname, "..", "src");
 const allFiles = getAllTsFiles(srcDir);
 
 console.log(`📁 Found ${allFiles.length} TypeScript files\n`);
@@ -120,15 +139,17 @@ console.log(`📦 Found ${allExports.length} total exports\n`);
 const unusedExports = [];
 for (const exp of allExports) {
     // Skip some common entry points and special files
-    if (exp.file.includes('index.ts') ||
-        exp.file.includes('routes.ts') ||
-        exp.file.includes('.test.') ||
-        exp.file.includes('.spec.')) {
+    if (
+        exp.file.includes("index.ts") ||
+        exp.file.includes("routes.ts") ||
+        exp.file.includes(".test.") ||
+        exp.file.includes(".spec.")
+    ) {
         continue;
     }
 
     // Skip React components (usually exported for use)
-    if (exp.type === 'const-function' && /^[A-Z]/.test(exp.name)) {
+    if (exp.type === "const-function" && /^[A-Z]/.test(exp.name)) {
         continue;
     }
 
@@ -149,20 +170,24 @@ for (const exp of unusedExports) {
 
 // Display results
 if (Object.keys(byFile).length === 0) {
-    console.log('✅ No obviously unused exports found!\n');
+    console.log("✅ No obviously unused exports found!\n");
 } else {
-    console.log('⚠️  Potentially unused exports:\n');
-    console.log('=' .repeat(60) + '\n');
+    console.log("⚠️  Potentially unused exports:\n");
+    console.log("=".repeat(60) + "\n");
 
     for (const [file, exports] of Object.entries(byFile)) {
         console.log(`📄 ${file}`);
         for (const exp of exports) {
             console.log(`   ❌ ${exp.type}: ${exp.name}`);
         }
-        console.log('');
+        console.log("");
     }
 
-    console.log('=' .repeat(60));
-    console.log(`\n📊 Total: ${unusedExports.length} potentially unused exports in ${Object.keys(byFile).length} files\n`);
-    console.log('⚠️  Note: Some may be used externally or dynamically. Verify before removing!\n');
+    console.log("=".repeat(60));
+    console.log(
+        `\n📊 Total: ${unusedExports.length} potentially unused exports in ${Object.keys(byFile).length} files\n`,
+    );
+    console.log(
+        "⚠️  Note: Some may be used externally or dynamically. Verify before removing!\n",
+    );
 }

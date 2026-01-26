@@ -11,6 +11,8 @@ from datetime import datetime, timedelta, timezone
 from common import (
     load_prompt,
     get_env,
+    get_repo_root,
+    get_file_sha,
     GITHUB_API_BASE,
     GITHUB_GRAPHQL_API,
     POLLINATIONS_API_BASE,
@@ -22,16 +24,6 @@ NEWS_FOLDER = "social/news"
 
 # Platform name for prompt loading
 PLATFORM = "github"
-
-
-def get_repo_root() -> str:
-    """Get the repository root directory"""
-    current = os.path.dirname(os.path.abspath(__file__))
-    while current != '/':
-        if os.path.exists(os.path.join(current, '.git')):
-            return current
-        current = os.path.dirname(current)
-    return os.getcwd()
 
 
 def get_date_range() -> tuple[datetime, datetime]:
@@ -284,23 +276,6 @@ def create_news_file_content(news_entry: str, entry_date: str) -> str:
 
 {news_entry}
 """
-
-
-def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branch: str = "main") -> str:
-    """Get the SHA of an existing file (needed for updates)"""
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}"
-    }
-
-    response = requests.get(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={branch}",
-        headers=headers
-    )
-
-    if response.status_code == 200:
-        return response.json().get("sha", "")
-    return ""
 
 
 def create_pr_with_news(news_content: str, github_token: str, owner: str, repo: str, pr_count: int):

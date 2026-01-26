@@ -43,6 +43,16 @@ SHARED_PROMPTS_DIR = PROMPTS_DIR / "_shared"
 _shared_prompts_cache: Dict[str, str] = {}
 
 
+def get_repo_root() -> str:
+    """Get the repository root directory by looking for .git folder"""
+    current = os.path.dirname(os.path.abspath(__file__))
+    while current != '/':
+        if os.path.exists(os.path.join(current, '.git')):
+            return current
+        current = os.path.dirname(current)
+    return os.getcwd()
+
+
 def load_shared(name: str) -> str:
     """Load a shared prompt component from prompts/_shared/{name}.md
     

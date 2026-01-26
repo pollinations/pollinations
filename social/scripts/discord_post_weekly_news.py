@@ -6,22 +6,12 @@ import random
 import re
 import requests
 from datetime import datetime, timedelta, timezone
-from common import load_prompt, get_env, POLLINATIONS_API_BASE, MODEL
+from common import load_prompt, get_env, get_repo_root, POLLINATIONS_API_BASE, MODEL
 
 NEWS_FOLDER = "social/news"
 
 # Platform name for prompt loading
 PLATFORM = "discord"
-
-
-def get_repo_root() -> str:
-    """Get the repository root directory"""
-    current = os.path.dirname(os.path.abspath(__file__))
-    while current != '/':
-        if os.path.exists(os.path.join(current, '.git')):
-            return current
-        current = os.path.dirname(current)
-    return os.getcwd()
 
 
 def get_latest_news_file() -> tuple[str, str]:

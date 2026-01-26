@@ -18,6 +18,9 @@ from urllib.parse import quote
 from common import (
     load_prompt,
     get_env,
+    get_repo_root,
+    get_date_range,
+    get_file_sha,
     GITHUB_API_BASE,
     GITHUB_GRAPHQL_API,
     POLLINATIONS_API_BASE,
@@ -36,27 +39,6 @@ IMAGE_HEIGHT = 2048  # 1:1 aspect ratio for Instagram
 
 # Platform name for prompt loading
 PLATFORM = "instagram"
-
-
-def get_repo_root() -> str:
-    """Get the repository root directory"""
-    # When running from GitHub Actions, we're in the repo root
-    # When running locally, find the repo root by looking for .git
-    current = os.path.dirname(os.path.abspath(__file__))
-    while current != '/':
-        if os.path.exists(os.path.join(current, '.git')):
-            return current
-        current = os.path.dirname(current)
-    # Fallback: assume we're already in repo root
-    return os.getcwd()
-
-
-def get_date_range(days_back: int = 1) -> tuple[datetime, datetime]:
-    """Get date range for the specified number of days back"""
-    now = datetime.now(timezone.utc)
-    end_date = now  # Current time
-    start_date = end_date - timedelta(days=days_back)
-    return start_date, end_date
 
 
 def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> List[Dict]:
@@ -522,23 +504,6 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
 
     print(f"  Failed to generate image {index + 1} after {MAX_RETRIES} attempts. Last error: {last_error}")
     return None, None
-
-
-def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branch: str = "main") -> str:
-    """Get the SHA of an existing file"""
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}"
-    }
-
-    response = requests.get(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={branch}",
-        headers=headers
-    )
-
-    if response.status_code == 200:
-        return response.json().get("sha", "")
-    return ""
 
 
 def create_post_pr(strategy: Dict, images: List[bytes], image_urls: List[str], prs: List[Dict], github_token: str, owner: str, repo: str):

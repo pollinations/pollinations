@@ -16,6 +16,7 @@ from datetime import datetime
 from common import (
     load_prompt,
     get_env,
+    get_repo_root,
     GITHUB_API_BASE,
     POLLINATIONS_API_BASE,
     MODEL,
@@ -25,16 +26,6 @@ from common import (
 
 # Platform name for prompt loading
 PLATFORM = "discord"
-
-
-def get_repo_root() -> str:
-    """Get the repository root directory"""
-    current = os.path.dirname(os.path.abspath(__file__))
-    while current != '/':
-        if os.path.exists(os.path.join(current, '.git')):
-            return current
-        current = os.path.dirname(current)
-    return os.getcwd()
 
 
 def github_api_request(endpoint: str, token: str) -> Dict:

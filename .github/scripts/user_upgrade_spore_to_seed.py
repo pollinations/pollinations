@@ -4,6 +4,12 @@
 Fetches spore users from D1, validates GitHub profiles, and upgrades eligible users.
 Can be run locally or via GitHub Actions.
 
+Strategy (stateless, day-based slicing):
+    1. Always check users created in the last 24 hours (new users)
+    2. For older users, use LIMIT/OFFSET with day-of-week slicing
+       This ensures all users are checked once per week without tracking state.
+    3. Reduced API cost by fetching only 5 repos per user (was 100)
+
 Usage:
     python user_upgrade_spore_to_seed.py              # Full run
     python user_upgrade_spore_to_seed.py --dry-run    # Validate only, no upgrades
@@ -22,22 +28,25 @@ import os
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 
 from user_validate_github_profile import validate_users
 
 # Polar rate limit: 100 requests/minute, so ~0.6s delay minimum
 POLAR_DELAY_SECONDS = 1.0
 
+# Max users to process per run (stay well under 1000 point/hour GitHub API limit)
+# With repos(first:5), each batch of 50 costs ~3 points, so 266 batches = 13,300 users
+MAX_USERS_PER_RUN = 8000  # Safety cap under API limits
 
-def fetch_spore_users(env: str = "production") -> list[str]:
-    """Fetch spore users from D1 database via wrangler."""
+
+def run_d1_query(query: str, env: str = "production") -> list[dict]:
+    """Run a D1 query and return results."""
     env_flag = "--env production" if env == "production" else "--env staging"
-    db_name = "DB"
-    
     cmd = [
-        "npx", "wrangler", "d1", "execute", db_name, "--remote",
+        "npx", "wrangler", "d1", "execute", "DB", "--remote",
         *env_flag.split(),
-        "--command", "SELECT github_username FROM user WHERE tier = 'spore' AND github_username IS NOT NULL",
+        "--command", query,
         "--json"
     ]
     
@@ -55,8 +64,7 @@ def fetch_spore_users(env: str = "production") -> list[str]:
             return []
         
         data = json.loads(result.stdout)
-        users = [row["github_username"] for row in data[0].get("results", [])]
-        return users
+        return data[0].get("results", [])
         
     except subprocess.TimeoutExpired:
         print("❌ D1 query timed out", file=sys.stderr)
@@ -64,6 +72,59 @@ def fetch_spore_users(env: str = "production") -> list[str]:
     except (json.JSONDecodeError, KeyError, IndexError) as e:
         print(f"❌ Failed to parse D1 response: {e}", file=sys.stderr)
         return []
+
+
+def fetch_spore_users(env: str = "production") -> tuple[list[str], list[str], int]:
+    """Fetch spore users using day-based slicing strategy.
+    
+    Returns (new_users, slice_users, total_old) where:
+    - new_users: users created in the last 24 hours
+    - slice_users: today's slice of older users (1/7th, using LIMIT/OFFSET)
+    - total_old: total count of older spore users
+    """
+    # Today's weekday (0=Monday, 6=Sunday)
+    weekday = datetime.now(timezone.utc).weekday()
+    
+    # Unix timestamp for 24 hours ago
+    yesterday = int((datetime.now(timezone.utc).timestamp() - 86400) * 1000)  # D1 uses milliseconds
+    
+    # Query 1: New users (created in last 24h)
+    new_query = f"""
+        SELECT github_username FROM user 
+        WHERE tier = 'spore' 
+        AND github_username IS NOT NULL 
+        AND created_at > {yesterday}
+    """
+    new_results = run_d1_query(new_query, env)
+    new_users = [r["github_username"] for r in new_results]
+    
+    # Query 2: Count total older users
+    count_query = f"""
+        SELECT COUNT(*) as count FROM user 
+        WHERE tier = 'spore' 
+        AND github_username IS NOT NULL 
+        AND created_at <= {yesterday}
+    """
+    count_results = run_d1_query(count_query, env)
+    total_old = count_results[0]["count"] if count_results else 0
+    
+    # Query 3: Today's slice using LIMIT/OFFSET (equal partitions)
+    # Order by created_at for consistent ordering, slice into 7 equal parts
+    slice_size = (total_old + 6) // 7  # Ceiling division
+    offset = weekday * slice_size
+    
+    slice_query = f"""
+        SELECT github_username FROM user 
+        WHERE tier = 'spore' 
+        AND github_username IS NOT NULL 
+        AND created_at <= {yesterday}
+        ORDER BY created_at ASC
+        LIMIT {slice_size} OFFSET {offset}
+    """
+    slice_results = run_d1_query(slice_query, env)
+    slice_users = [r["github_username"] for r in slice_results]
+    
+    return new_users, slice_users, total_old
 
 
 def upgrade_user(username: str, env: str = "production") -> bool:
@@ -122,15 +183,30 @@ def main():
     parser.add_argument("--env", choices=["staging", "production"], default="production", help="Environment")
     args = parser.parse_args()
     
+    weekday = datetime.now(timezone.utc).weekday()
+    weekday_name = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][weekday]
+    
     print(f"🌱 Spore → Seed Upgrade Script")
     print(f"   Environment: {args.env}")
     print(f"   Mode: {'DRY RUN' if args.dry_run else 'LIVE'}")
+    print(f"   Day slice: {weekday_name} (slice {weekday + 1}/7)")
     print()
     
-    # Step 1: Fetch spore users
+    # Step 1: Fetch spore users (new + today's slice)
     print("📥 Fetching spore users from D1...")
-    users = fetch_spore_users(args.env)
-    print(f"   Found {len(users)} spore users")
+    new_users, slice_users, total_old = fetch_spore_users(args.env)
+    print(f"   New users (last 24h): {len(new_users)}")
+    print(f"   Today's slice: {len(slice_users)} (of {total_old} total older users)")
+    
+    # Combine: new users first (priority), then slice
+    users = new_users + slice_users
+    
+    # Apply max limit
+    if len(users) > MAX_USERS_PER_RUN:
+        print(f"   ⚠️  Limiting to {MAX_USERS_PER_RUN} users (was {len(users)})")
+        users = users[:MAX_USERS_PER_RUN]
+    
+    print(f"   Total to process: {len(users)}")
     
     if not users:
         print("✅ No spore users to process")

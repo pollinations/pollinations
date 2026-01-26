@@ -46,7 +46,7 @@ def build_query(usernames: list[str]) -> str:
     u{i}: user(login: "{safe}") {{
         login
         createdAt
-        repositories(privacy: PUBLIC, isFork: false, first: 100) {{ totalCount nodes {{ stargazerCount }} }}
+        repositories(privacy: PUBLIC, isFork: false, first: 5, orderBy: {{field: STARGAZERS, direction: DESC}}) {{ totalCount nodes {{ stargazerCount }} }}
         contributionsCollection {{ totalCommitContributions }}
     }}''')
     return f"query {{ {''.join(fragments)} }}"

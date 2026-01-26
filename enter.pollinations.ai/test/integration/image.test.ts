@@ -293,8 +293,8 @@ describe("Image Integration Tests", () => {
             const errorMessage = Array.isArray(data.error)
                 ? data.error.join(" ")
                 : typeof data.error === "string"
-                ? data.error
-                : data.message || JSON.stringify(data);
+                  ? data.error
+                  : data.message || JSON.stringify(data);
             expect(String(errorMessage).toLowerCase()).toContain("balance");
         },
     );

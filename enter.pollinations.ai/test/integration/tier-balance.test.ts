@@ -4,11 +4,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 import { handleScheduled } from "@/scheduled.ts";
-import {
-    getTierPollen,
-    TIER_POLLEN,
-    tierNames,
-} from "@/tier-config.ts";
+import { getTierPollen, TIER_POLLEN, tierNames } from "@/tier-config.ts";
 import {
     atomicDeductUserBalance,
     getUserBalances,

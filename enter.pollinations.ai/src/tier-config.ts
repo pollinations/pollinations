@@ -37,4 +37,3 @@ export function getTierEmoji(tier: string): string;
 export function getTierEmoji(tier: string): string {
     return isValidTier(tier) ? TIERS[tier].emoji : TIERS[DEFAULT_TIER].emoji;
 }
-

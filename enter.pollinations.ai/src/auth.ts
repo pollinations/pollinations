@@ -168,7 +168,8 @@ function onAfterUserCreate(env: Cloudflare.Env) {
                 .where(eq(userTable.id, user.id));
 
             // Log user registration event to Tinybird
-            ctx.context.executionCtx.waitUntil(
+            // Use optional chaining for test environments where executionCtx may not exist
+            ctx.context.executionCtx?.waitUntil(
                 sendTierEventToTinybird(
                     {
                         event_type: "user_registration",

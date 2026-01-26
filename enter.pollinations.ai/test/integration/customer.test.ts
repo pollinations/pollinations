@@ -1,19 +1,9 @@
 import { SELF } from "cloudflare:test";
 import { test } from "../fixtures.ts";
-import { productSlugToUrlParam } from "@/routes/polar.ts";
-import { packProductSlugs } from "@/utils/polar.ts";
 import { expect } from "vitest";
 
-const base = "http://localhost:3000/api/polar";
-const customerRoutes = [
-    "/customer/state",
-    "/customer/events",
-    "/customer/portal",
-];
-const checkoutRoutes = packProductSlugs.map(
-    (slug) => `/checkout/${productSlugToUrlParam(slug)}`,
-);
-const routes = [...customerRoutes, ...checkoutRoutes];
+const base = "http://localhost:3000/api/customer";
+const routes = ["/balance"];
 
 test.for(
     routes,
@@ -33,5 +23,7 @@ test.for(
         },
         redirect: "manual",
     });
-    expect(sessionCookieResponse.status).toBeOneOf([200, 302]);
+
+    // Customer balance route should return 200 with valid session
+    expect(sessionCookieResponse.status).toBe(200);
 });

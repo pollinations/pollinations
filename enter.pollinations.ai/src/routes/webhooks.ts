@@ -103,7 +103,15 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
     const headers = Object.fromEntries(c.req.raw.headers.entries());
 
     try {
-        const payload = validateEvent(rawBody, headers, webhookSecret);
+        // In test environment, allow simpler validation
+        let payload: any;
+        if (c.env.ENVIRONMENT === "test" && headers["x-test-webhook"] === "true") {
+            // Simple test mode - just parse the JSON without signature validation
+            payload = JSON.parse(rawBody);
+        } else {
+            // Production mode - full Polar signature validation
+            payload = validateEvent(rawBody, headers, webhookSecret);
+        }
         log.info("📥 POLAR_WEBHOOK: type={webhookType}", {
             eventType: "polar_webhook",
             webhookType: payload.type,

@@ -1,0 +1,30 @@
+apiVersion: 1
+
+datasources:
+  - name: D1
+    type: yesoreyeram-infinity-datasource
+    access: proxy
+    isDefault: false
+    jsonData:
+      global_queries: []
+    secureJsonData:
+      httpHeaderValue1: "Bearer $__env{CLOUDFLARE_API_TOKEN}"
+    editable: true
+
+  - name: Tinybird
+    type: grafana-clickhouse-datasource
+    uid: PAD1A0A25CD30D456
+    access: proxy
+    isDefault: true
+    jsonData:
+      host: clickhouse.europe-west2.gcp.tinybird.co
+      port: 443
+      protocol: http
+      secure: true
+      username: pollinations_enter
+      defaultDatabase: default
+      dialTimeout: "10"
+      queryTimeout: "60"
+    secureJsonData:
+      password: "$__env{TINYBIRD_GENERATION_EVENT_READ}"
+    editable: true

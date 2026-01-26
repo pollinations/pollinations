@@ -1,0 +1,125 @@
+name: Deploy Myceli Websites
+
+on:
+  push:
+    branches:
+      - production
+    paths:
+      - 'apps/myceli/**'
+  workflow_dispatch:
+
+jobs:
+  deploy-docs:
+    name: Deploy Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/myceli/docs/package-lock.json
+      - name: Install dependencies
+        working-directory: apps/myceli/docs
+        run: npm ci
+      - name: Build
+        working-directory: apps/myceli/docs
+        run: npm run build
+      - name: Deploy to Cloudflare Pages
+        working-directory: apps/myceli/docs
+        run: npx wrangler pages deploy dist --project-name=myceli-docs --branch=production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  deploy-kpi:
+    name: Deploy KPI Dashboard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/myceli/kpi/package-lock.json
+      - name: Install dependencies
+        working-directory: apps/myceli/kpi
+        run: npm ci
+      - name: Build
+        working-directory: apps/myceli/kpi
+        run: npm run build
+      - name: Deploy to Cloudflare Workers
+        working-directory: apps/myceli/kpi
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  deploy-onepager:
+    name: Deploy One-Pager
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/myceli/onepager/package-lock.json
+      - name: Install dependencies
+        working-directory: apps/myceli/onepager
+        run: npm ci
+      - name: Build
+        working-directory: apps/myceli/onepager
+        run: npm run build
+      - name: Deploy to Cloudflare Pages
+        working-directory: apps/myceli/onepager
+        run: npx wrangler pages deploy dist --project-name=myceli-onepager --branch=production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  deploy-pitch:
+    name: Deploy Pitch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/myceli/pitch/package-lock.json
+      - name: Install dependencies
+        working-directory: apps/myceli/pitch
+        run: npm ci
+      - name: Build
+        working-directory: apps/myceli/pitch
+        run: npm run build
+      - name: Deploy to Cloudflare Pages
+        working-directory: apps/myceli/pitch
+        run: npx wrangler pages deploy dist --project-name=myceli-pitch --branch=production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  deploy-website:
+    name: Deploy Website
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/myceli/website/package-lock.json
+      - name: Install dependencies
+        working-directory: apps/myceli/website
+        run: npm ci
+      - name: Build
+        working-directory: apps/myceli/website
+        run: npm run build
+      - name: Deploy to Cloudflare Pages
+        working-directory: apps/myceli/website
+        run: npx wrangler pages deploy dist --project-name=myceli-ai --branch=production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

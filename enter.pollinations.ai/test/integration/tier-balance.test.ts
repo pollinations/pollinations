@@ -6,9 +6,7 @@ import { user as userTable } from "@/db/schema/better-auth.ts";
 import { handleScheduled } from "@/scheduled.ts";
 import {
     getTierPollen,
-    getTierStatus,
     TIER_POLLEN,
-    type TierStatus,
     tierNames,
 } from "@/tier-config.ts";
 import {
@@ -350,26 +348,6 @@ describe("Tier Balance Management", () => {
     });
 
     describe("Tier Configuration", () => {
-        test("getTierStatus should return correct tier status", () => {
-            // Valid tiers (lowercase)
-            expect(getTierStatus("spore")).toBe("spore");
-            expect(getTierStatus("seed")).toBe("seed");
-            expect(getTierStatus("flower")).toBe("flower");
-            expect(getTierStatus("nectar")).toBe("nectar");
-            expect(getTierStatus("router")).toBe("router");
-
-            // Case insensitive - normalizes to lowercase
-            expect(getTierStatus("SPORE")).toBe("spore");
-            expect(getTierStatus("Seed")).toBe("seed");
-            expect(getTierStatus("FLOWER")).toBe("flower");
-
-            // Invalid values
-            expect(getTierStatus(null)).toBe("none");
-            expect(getTierStatus(undefined)).toBe("none");
-            expect(getTierStatus("")).toBe("none");
-            expect(getTierStatus("invalid")).toBe("none");
-        });
-
         test("getTierPollen should return correct pollen amounts", () => {
             expect(getTierPollen("spore")).toBe(TIER_POLLEN.spore);
             expect(getTierPollen("seed")).toBe(TIER_POLLEN.seed);

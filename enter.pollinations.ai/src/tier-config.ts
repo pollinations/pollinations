@@ -42,11 +42,3 @@ export function getTierEmoji(tier: string): string {
 export function getTier(tier: TierName): (typeof TIERS)[TierName] {
     return TIERS[tier];
 }
-
-// Get tier status from a user's tier string
-export function getTierStatus(userTier: string | null | undefined): TierStatus {
-    const normalized = userTier?.toLowerCase();
-    return tierNames.includes(normalized as TierName)
-        ? (normalized as TierName)
-        : "none";
-}

@@ -115,7 +115,16 @@ export const auth = (options: AuthOptions) =>
             log.debug("API key lookup result: {found}", {
                 found: !!fullApiKey,
                 userId: fullApiKey?.user?.id,
+                enabled: fullApiKey?.enabled,
             });
+
+            // Check if the key is disabled
+            if (fullApiKey?.enabled === false) {
+                log.debug("API key is disabled: {keyId}", {
+                    keyId: keyResult.key.id
+                });
+                return null; // Treat disabled keys as invalid
+            }
 
             return {
                 user: fullApiKey?.user as User,

@@ -37,6 +37,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const [enabled, setEnabled] = useState(apiKey.enabled ?? true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const keyPermissions = useKeyPermissions({
         allowedModels: apiKey.permissions?.models ?? null,
@@ -45,6 +46,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
     const handleSave = async () => {
         setIsSubmitting(true);
+        setError(null);
         try {
             await onUpdate(apiKey.id, {
                 allowedModels: keyPermissions.permissions.allowedModels,
@@ -54,6 +56,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             onClose();
         } catch (error) {
             console.error("Failed to update API key:", error);
+            setError(error instanceof Error ? error.message : "Failed to update API key");
         } finally {
             setIsSubmitting(false);
         }
@@ -85,6 +88,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     <Dialog.Title className="text-lg font-semibold mb-6">
                         Manage API Key
                     </Dialog.Title>
+
+                    {error && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                            {error}
+                        </div>
+                    )}
 
                     <div className="space-y-6">
                         {/* Key Info (Read-only) */}

@@ -135,9 +135,10 @@ export const apiKeysRoutes = new Hono<Env>()
 
             // Build permissions object
             // Format: { models?: string[], account?: string[] }
-            const existingPermissions =
-                (existingKey.permissions as Record<string, string[]> | null) ??
-                {};
+            // Parse permissions from JSON string stored in database
+            const existingPermissions = existingKey.permissions
+                ? JSON.parse(existingKey.permissions as string) as Record<string, string[]>
+                : {};
             let newPermissions: Record<string, string[]> | null | undefined;
 
             // Handle allowedModels: null = remove, [...] = set

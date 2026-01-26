@@ -4,11 +4,8 @@ import http from "node:http";
 import { parse } from "node:url";
 import debug from "debug";
 import urldecode from "urldecode";
-import { HttpError } from "./httpError.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
-import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
-import { getModelCounts } from "./modelCounter.js";
 // IMAGE_CONFIG imported but used elsewhere
 // import { IMAGE_CONFIG } from "./models.js";
 import {
@@ -18,14 +15,17 @@ import {
 } from "./createAndReturnImages.js";
 import { createAndReturnVideo, isVideoModel } from "./createAndReturnVideos.js";
 import { registerFeedListener, sendToFeedListeners } from "./feedListeners.js";
+import { HttpError } from "./httpError.js";
+import { getModelCounts } from "./modelCounter.js";
 import { MODELS } from "./models.js";
 import {
     normalizeAndTranslatePrompt,
     type TimingStep,
 } from "./normalizeAndTranslatePrompt.js";
-import { ImageParamsSchema, type ImageParams } from "./params.js";
+import { type ImageParams, ImageParamsSchema } from "./params.js";
 import { createProgressTracker, type ProgressManager } from "./progressBar.js";
 import { sleep } from "./util.ts";
+import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 
 // Queue configuration for image service (reserved for future use)
 // const QUEUE_CONFIG = {

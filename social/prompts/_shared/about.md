@@ -22,7 +22,7 @@ Our name "Pollinations" evokes nature, growth, and organic creativity:
 ## Tier System
 
 Users grow through contribution tiers:
-- **Spore** 🌱 (1 pollen/day) - Welcome to the community
-- **Seed** 🌾 (3 pollen/day) - Auto-upgraded based on GitHub activity
+- **Spore** 🍄 (1 pollen/day) - Welcome to the community
+- **Seed** 🌱 (3 pollen/day) - Auto-upgraded based on GitHub activity
 - **Flower** 🌸 (10 pollen/day) - Submit an app to our showcase
 - **Nectar** 🍯 (20 pollen/day) - Maintainers and major contributors

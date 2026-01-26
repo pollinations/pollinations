@@ -60,7 +60,7 @@ export const ImageParamsSchema = z
         enhance: sanitizedBoolean.catch(false),
         negative_prompt: z.coerce.string().catch("worst quality, blurry"),
         nofeed: sanitizedBoolean.catch(false),
-        safe: sanitizedBoolean.catch(false),
+        safe: sanitizedBoolean.catch(true),
         private: sanitizedBoolean.catch(false).optional(),
         quality: z.literal(validQualities).catch("medium"),
         image: z

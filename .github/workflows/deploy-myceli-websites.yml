@@ -8,6 +8,10 @@ on:
       - 'apps/myceli/**'
   workflow_dispatch:
 
+concurrency:
+  group: myceli-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy-docs:
     name: Deploy Docs

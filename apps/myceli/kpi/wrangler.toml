@@ -1,5 +1,5 @@
 name = "myceli-kpi"
-account_id = "b6ec751c0862027ba269faf7029b2501"
+# account_id is set via CLOUDFLARE_ACCOUNT_ID env var in CI
 main = "src/worker/index.ts"
 compatibility_date = "2024-01-01"
 

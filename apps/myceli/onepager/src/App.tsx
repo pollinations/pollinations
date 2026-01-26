@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { marked } from "marked";
 import { useEffect, useState } from "react";
 
@@ -12,7 +13,7 @@ const App = () => {
                 if (response.ok) {
                     const markdown = await response.text();
                     const html = await marked(markdown);
-                    setContent(html);
+                    setContent(DOMPurify.sanitize(html));
                 } else {
                     setContent(
                         '<p class="text-gray-500">Content not found.</p>',

@@ -4,9 +4,9 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { StandardSchemaV1 } from "hono-openapi";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
+import { type BalanceVariables, balance } from "@/middleware/balance.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
-import { type BalanceVariables, balance } from "@/middleware/balance.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
@@ -574,7 +574,10 @@ export function contentFilterResultsToHeaders(
     ) as Record<string, string>;
 }
 
-async function checkBalance({ auth, balance }: AuthVariables & BalanceVariables) {
+async function checkBalance({
+    auth,
+    balance,
+}: AuthVariables & BalanceVariables) {
     if (auth.user?.id) {
         await balance.requirePositiveBalance(
             auth.user.id,

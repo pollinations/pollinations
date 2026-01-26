@@ -105,7 +105,10 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
     try {
         // In test environment, allow simpler validation
         let payload: any;
-        if (c.env.ENVIRONMENT === "test" && headers["x-test-webhook"] === "true") {
+        if (
+            c.env.ENVIRONMENT === "test" &&
+            headers["x-test-webhook"] === "true"
+        ) {
             // Simple test mode - just parse the JSON without signature validation
             payload = JSON.parse(rawBody);
         } else {

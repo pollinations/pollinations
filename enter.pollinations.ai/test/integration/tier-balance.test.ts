@@ -4,7 +4,13 @@ import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 import { handleScheduled } from "@/scheduled.ts";
-import { TIER_POLLEN } from "@/tier-config.ts";
+import {
+    getTierPollen,
+    getTierStatus,
+    TIER_POLLEN,
+    type TierStatus,
+    tierNames,
+} from "@/tier-config.ts";
 import {
     atomicDeductUserBalance,
     getUserBalances,
@@ -203,6 +209,94 @@ describe("Tier Balance Management", () => {
             expect(balances.cryptoBalance).toBe(0);
             expect(balances.packBalance).toBe(-4); // 6 - 10 = -4 (pack can go negative)
         });
+
+        test("should prioritize tier → crypto → pack balance order", async () => {
+            const db = drizzle(env.DB);
+            const userId = "test-priority-order";
+
+            // Setup: User with only crypto balance
+            await db
+                .insert(userTable)
+                .values({
+                    id: userId,
+                    email: "priority@test.com",
+                    name: "Priority Test",
+                    tier: "flower",
+                    tierBalance: 0,
+                    packBalance: 0,
+                    cryptoBalance: 10,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                })
+                .onConflictDoUpdate({
+                    target: userTable.id,
+                    set: {
+                        tierBalance: 0,
+                        packBalance: 0,
+                        cryptoBalance: 10,
+                    },
+                });
+
+            // Deduct from crypto when tier is 0
+            await atomicDeductUserBalance(db, userId, 3);
+            let balances = await getUserBalances(db, userId);
+            expect(balances.cryptoBalance).toBe(7); // 10 - 3
+            expect(balances.tierBalance).toBe(0);
+            expect(balances.packBalance).toBe(0);
+
+            // Add tier balance
+            await db
+                .update(userTable)
+                .set({ tierBalance: 5 })
+                .where(sql`${userTable.id} = ${userId}`);
+
+            // Now deduct should come from tier first
+            await atomicDeductUserBalance(db, userId, 2);
+            balances = await getUserBalances(db, userId);
+            expect(balances.tierBalance).toBe(3); // 5 - 2
+            expect(balances.cryptoBalance).toBe(7); // Unchanged
+
+            // Deduct more than tier, should spill to crypto
+            await atomicDeductUserBalance(db, userId, 5);
+            balances = await getUserBalances(db, userId);
+            expect(balances.tierBalance).toBe(0); // 3 - 3
+            expect(balances.cryptoBalance).toBe(5); // 7 - 2
+        });
+
+        test("should handle zero deductions gracefully", async () => {
+            const db = drizzle(env.DB);
+            const userId = "test-zero-deduct";
+
+            await db
+                .insert(userTable)
+                .values({
+                    id: userId,
+                    email: "zero@test.com",
+                    name: "Zero Deduct Test",
+                    tier: "flower",
+                    tierBalance: 10,
+                    packBalance: 5,
+                    cryptoBalance: 3,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                })
+                .onConflictDoUpdate({
+                    target: userTable.id,
+                    set: {
+                        tierBalance: 10,
+                        packBalance: 5,
+                        cryptoBalance: 3,
+                    },
+                });
+
+            // Deduct 0 should not change balances
+            await atomicDeductUserBalance(db, userId, 0);
+
+            const balances = await getUserBalances(db, userId);
+            expect(balances.tierBalance).toBe(10);
+            expect(balances.cryptoBalance).toBe(3);
+            expect(balances.packBalance).toBe(5);
+        });
     });
 
     describe("Concurrent Balance Updates", () => {
@@ -252,6 +346,56 @@ describe("Tier Balance Management", () => {
             expect(totalBalance).toBe(10);
             expect(balances.tierBalance).toBeGreaterThanOrEqual(0);
             expect(balances.cryptoBalance).toBeGreaterThanOrEqual(0);
+        });
+    });
+
+    describe("Tier Configuration", () => {
+        test("getTierStatus should return correct tier status", () => {
+            // Valid tiers (lowercase)
+            expect(getTierStatus("spore")).toBe("spore");
+            expect(getTierStatus("seed")).toBe("seed");
+            expect(getTierStatus("flower")).toBe("flower");
+            expect(getTierStatus("nectar")).toBe("nectar");
+            expect(getTierStatus("router")).toBe("router");
+
+            // Case insensitive - normalizes to lowercase
+            expect(getTierStatus("SPORE")).toBe("spore");
+            expect(getTierStatus("Seed")).toBe("seed");
+            expect(getTierStatus("FLOWER")).toBe("flower");
+
+            // Invalid values
+            expect(getTierStatus(null)).toBe("none");
+            expect(getTierStatus(undefined)).toBe("none");
+            expect(getTierStatus("")).toBe("none");
+            expect(getTierStatus("invalid")).toBe("none");
+        });
+
+        test("getTierPollen should return correct pollen amounts", () => {
+            expect(getTierPollen("spore")).toBe(TIER_POLLEN.spore);
+            expect(getTierPollen("seed")).toBe(TIER_POLLEN.seed);
+            expect(getTierPollen("flower")).toBe(TIER_POLLEN.flower);
+            expect(getTierPollen("nectar")).toBe(TIER_POLLEN.nectar);
+            expect(getTierPollen("router")).toBe(TIER_POLLEN.router);
+
+            // Default tier
+            expect(getTierPollen("spore")).toBe(1);
+        });
+
+        test("tierNames should contain all valid tier names", () => {
+            expect(tierNames).toEqual([
+                "spore",
+                "seed",
+                "flower",
+                "nectar",
+                "router",
+            ]);
+            expect(tierNames).toHaveLength(5);
+
+            // Verify each name exists in TIER_POLLEN
+            for (const tier of tierNames) {
+                expect(TIER_POLLEN[tier]).toBeDefined();
+                expect(TIER_POLLEN[tier]).toBeGreaterThan(0);
+            }
         });
     });
 });

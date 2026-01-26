@@ -20,14 +20,14 @@ export function simpleHash(str: string): string {
     // Good enough for cache keys, much faster than SHA-256
     try {
         return btoa(str)
-            .replace(/[^a-zA-Z0-9]/g, '')
+            .replace(/[^a-zA-Z0-9]/g, "")
             .substring(0, 32); // Limit length for readability
     } catch {
         // Fallback for strings with non-Latin characters
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
             const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
+            hash = (hash << 5) - hash + char;
             hash = hash & hash; // Convert to 32-bit integer
         }
         return Math.abs(hash).toString(36);
@@ -37,7 +37,9 @@ export function simpleHash(str: string): string {
 /**
  * Create cache key from parts - simple concatenation and hashing
  */
-export function createCacheKey(...parts: (string | number | boolean)[]): string {
-    const combined = parts.join('|');
+export function createCacheKey(
+    ...parts: (string | number | boolean)[]
+): string {
+    const combined = parts.join("|");
     return `cache_${simpleHash(combined)}`;
 }

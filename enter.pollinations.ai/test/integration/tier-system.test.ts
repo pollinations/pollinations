@@ -1,4 +1,4 @@
-import { SELF, createExecutionContext, env } from "cloudflare:test";
+import { createExecutionContext, env, SELF } from "cloudflare:test";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { beforeEach, describe, expect, it } from "vitest";

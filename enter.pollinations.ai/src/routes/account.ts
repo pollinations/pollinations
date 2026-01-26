@@ -24,6 +24,7 @@ function getNextRefillAt(): string {
 function calculateNextPeriodStart(): string {
     return getNextRefillAt();
 }
+
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";

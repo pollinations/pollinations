@@ -6,18 +6,12 @@ import random
 import re
 import requests
 from datetime import datetime, timedelta, timezone
+from common import load_prompt, get_env, call_pollinations_api, MODEL
 
-POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
-MODEL = "gemini-large"
 NEWS_FOLDER = "social/news"
 
-
-def get_env(key: str, required: bool = True) -> str:
-    value = os.getenv(key)
-    if required and not value:
-        print(f"Error: {key} environment variable is required")
-        sys.exit(1)
-    return value
+# Platform name for prompt loading
+PLATFORM = "discord"
 
 
 def get_latest_news_file() -> tuple[str, str]:
@@ -86,11 +80,13 @@ def get_latest_news_file() -> tuple[str, str]:
 
 
 def create_discord_prompt(news_entry: str, entry_date: str) -> tuple:
-    """Create prompt to transform NEWS.md entry for Discord"""
+    """Create prompt to transform NEWS.md entry for Discord
+    
+    Prompts are loaded from social/prompts/discord/
+    """
 
     # Try to parse date, fallback to current date if format doesn't match
     try:
-        # Extract just the YYYY-MM-DD part if there's extra stuff
         date_part = entry_date[:10] if len(entry_date) >= 10 else entry_date
         end_date = datetime.strptime(date_part, "%Y-%m-%d")
     except ValueError:
@@ -101,116 +97,15 @@ def create_discord_prompt(news_entry: str, entry_date: str) -> tuple:
     MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     date_str = f"From {start_date.day} {MONTH[start_date.month - 1]} {start_date.year} to {end_date.day} {MONTH[end_date.month - 1]} {end_date.year}"
 
-    system_prompt = f"""You are creating a weekly digest for the Pollinations AI Discord community.
-    Transform the provided NEWS.md entry into an engaging Discord message.
+    # Load system prompt and inject date_str
+    system_prompt_template = load_prompt(PLATFORM, "weekly_news_system")
+    system_prompt = system_prompt_template.replace("{date_str}", date_str)
 
-    CONTEXT: Pollinations is an open-source AI platform. Your audience is USERS who care about what they can DO now.
-
-    OUTPUT FORMAT:
-    ```
-    [Greet <@&1424461167883194418> naturally and casually in a playful, witty way. short]
-
-    ## 🌸 Weekly Update - {date_str}
-    (do not change anything from the mentioned date_str, strictly use it as is)
-
-    [Create sections that make sense - you have COMPLETE FREEDOM]
-    [MAKE SURE THAT WE PUT ALL THE INFO IN SOMEWHERE AROUND 200-400 WORDS TOTAL]
-    [Examples: "🎮 Discord Bot", "🚀 New Models", "⚡ Performance", "🔄 API Changes", "✨ Feature Drops", etc.]
-
-    ### [Section with emoji]
-    - Major change with clear user benefit
-    - Another significant addition
-    - Focus on what users can now do
-
-    ### [Another section if needed]
-    - More impactful changes
-    - Keep it user-focused and exciting
-
-    [Add as many sections as needed - organize however makes most sense!]
-    ```
-
-    CRITICAL RULES:
-    - Greet <@&1424461167883194418> naturally - be witty and creative!
-    - Write for USERS - focus on impact and excitement, not technical details
-    - Only include MAJOR changes that matter to users
-    - NO PR numbers, NO author names, NO technical jargon
-    - Skip all bug fixes, error handling, and maintenance work
-    - Skip styling and UI cosmetics completely
-    - If no major impactful changes found, return only: SKIP
-    - Be witty, fun, and celebratory about real wins
-    - Do not add unnecessary length to the output
-    - Keep it as concise and brief as possible while still covering whats needed
-    - Focus mainly on changes that impact the user's who use services powered by pollinations rather than developers who use pollinations.
-    - Give the final output as whole that isn't overloaded with technical info nor full of clutter but appealing to users while being fairly simple!
-
-    TONE: Conversational, witty, celebratory. Highlight the cool stuff.
-    LENGTH: Keep it punchy but complete"""
-
-    user_prompt = f"""Transform this NEWS.md entry into an engaging Discord message:
-
-{news_entry}
-
-Create a polished, witty weekly digest that celebrates these wins and makes them exciting for users. Group logically and present the real impact."""
+    # Load user prompt and inject news_entry
+    user_prompt_template = load_prompt(PLATFORM, "weekly_news_user")
+    user_prompt = user_prompt_template.replace("{news_entry}", news_entry)
 
     return system_prompt, user_prompt
-
-
-def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, max_retries: int = 3) -> str:
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    last_error = None
-    for attempt in range(max_retries):
-        seed = random.randint(0, 2147483647)
-
-        payload = {
-            "model": MODEL,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            "temperature": 0.7,
-            "seed": seed
-        }
-
-        if attempt > 0:
-            print(f"Retry {attempt}/{max_retries - 1} with new seed: {seed}")
-
-        try:
-            response = requests.post(
-                POLLINATIONS_API_BASE,
-                headers=headers,
-                json=payload,
-                timeout=120
-            )
-
-            if response.status_code == 200:
-                try:
-                    result = response.json()
-                    return result['choices'][0]['message']['content']
-                except (KeyError, IndexError, json.JSONDecodeError) as e:
-                    last_error = f"Error parsing API response: {e}"
-                    error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
-                    print(f"{last_error}")
-                    print(f"Response preview: {error_preview}")
-            else:
-                last_error = f"API error: {response.status_code}"
-                error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
-                print(f"{last_error}")
-                print(f"Error preview: {error_preview}")
-
-        except requests.exceptions.RequestException as e:
-            last_error = f"Request failed: {e}"
-            print(last_error)
-
-        if attempt < max_retries - 1:
-            print("Waiting 5 seconds before retry...")
-            time.sleep(5)
-
-    print(f"All {max_retries} attempts failed. Last error: {last_error}")
-    sys.exit(1)
 
 
 def parse_message(response: str) -> str:
@@ -307,7 +202,7 @@ def main():
     # Transform for Discord
     print("Transforming entry for Discord...")
     system_prompt, user_prompt = create_discord_prompt(latest_entry, entry_date)
-    ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
+    ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token, exit_on_failure=True)
     discord_message = parse_message(ai_response)
 
     if discord_message.upper().startswith('SKIP'):

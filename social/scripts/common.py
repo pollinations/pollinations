@@ -14,20 +14,89 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 from pathlib import Path
 
-# Constants
+# API Endpoints
 GITHUB_API_BASE = "https://api.github.com"
 GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
-MODEL = "openai-large"
-IMAGE_MODEL = "nanobanana-pro"
+
+# Models - single source of truth for all social scripts
+MODEL = "gemini-large"  # Text generation model
+IMAGE_MODEL = "nanobanana-pro"  # Image generation model
+WEBSEARCH_MODEL = "perplexity-reasoning"  # Web search model (used by Instagram)
+
+# Limits and retry settings
 MAX_SEED = 2147483647
 MAX_RETRIES = 3
 INITIAL_RETRY_DELAY = 2
 
+# Discord-specific
+DISCORD_CHAR_LIMIT = 2000
+DISCORD_CHUNK_SIZE = 1900  # Leave room for safety
+
 # Get the directory where this script lives
 SCRIPTS_DIR = Path(__file__).parent
 PROMPTS_DIR = SCRIPTS_DIR.parent / "prompts"
+SHARED_PROMPTS_DIR = PROMPTS_DIR / "_shared"
+
+# Cache for shared prompts (loaded once)
+_shared_prompts_cache: Dict[str, str] = {}
+
+
+def get_repo_root() -> str:
+    """Get the repository root directory by looking for .git folder"""
+    current = os.path.dirname(os.path.abspath(__file__))
+    while current != '/':
+        if os.path.exists(os.path.join(current, '.git')):
+            return current
+        current = os.path.dirname(current)
+    return os.getcwd()
+
+
+def load_shared(name: str) -> str:
+    """Load a shared prompt component from prompts/_shared/{name}.md
+    
+    Args:
+        name: 'about'
+    
+    Returns:
+        The shared prompt content
+    """
+    if name in _shared_prompts_cache:
+        return _shared_prompts_cache[name]
+    
+    shared_path = SHARED_PROMPTS_DIR / f"{name}.md"
+    
+    if not shared_path.exists():
+        print(f"Warning: Shared prompt not found: {shared_path}")
+        return ""
+    
+    with open(shared_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    
+    # Remove markdown title and HTML comments
+    lines = content.split("\n")
+    filtered_lines = []
+    for line in lines:
+        if line.startswith("#") and not filtered_lines:
+            continue  # Skip first heading
+        if line.strip().startswith("<!--") and line.strip().endswith("-->"):
+            continue  # Skip single-line HTML comments
+        filtered_lines.append(line)
+    
+    content = "\n".join(filtered_lines).strip()
+    _shared_prompts_cache[name] = content
+    return content
+
+
+def _inject_shared_prompts(content: str) -> str:
+    """Inject shared prompt components into content
+    
+    Replaces {about} placeholder with shared content.
+    """
+    if "{about}" in content:
+        content = content.replace("{about}", load_shared("about"))
+    return content
 
 
 def get_env(key: str, required: bool = True) -> Optional[str]:
@@ -42,12 +111,15 @@ def get_env(key: str, required: bool = True) -> Optional[str]:
 def load_prompt(platform: str, prompt_name: str) -> str:
     """Load a prompt file from social/prompts/{platform}/{prompt_name}.md
     
+    Automatically injects shared components:
+    - {about} -> content from _shared/about.md
+    
     Args:
-        platform: 'linkedin' or 'twitter'
+        platform: 'linkedin', 'twitter', 'instagram', 'reddit', etc.
         prompt_name: 'system', 'user_with_prs', 'user_thought_leadership', etc.
     
     Returns:
-        The prompt content as a string
+        The prompt content as a string with shared components injected
     """
     prompt_path = PROMPTS_DIR / platform / f"{prompt_name}.md"
     
@@ -62,6 +134,9 @@ def load_prompt(platform: str, prompt_name: str) -> str:
     lines = content.split("\n")
     if lines and lines[0].startswith("#"):
         content = "\n".join(lines[1:]).strip()
+    
+    # Inject shared prompt components
+    content = _inject_shared_prompts(content)
     
     return content
 
@@ -180,20 +255,59 @@ def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> L
     return all_prs
 
 
-def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, temperature: float = 0.7) -> Optional[str]:
-    """Call Pollinations AI API with retry logic"""
+def call_pollinations_api(
+    system_prompt: str,
+    user_prompt: str,
+    token: str,
+    temperature: float = 0.7,
+    max_retries: int = None,
+    model: str = None,
+    verbose: bool = False,
+    exit_on_failure: bool = False
+) -> Optional[str]:
+    """Call Pollinations AI API with retry logic and exponential backoff
+    
+    Args:
+        system_prompt: System prompt for the AI
+        user_prompt: User prompt for the AI
+        token: Pollinations API token
+        temperature: Temperature for generation (default 0.7)
+        max_retries: Number of retries (default MAX_RETRIES from constants)
+        model: Model to use (default MODEL from constants)
+        verbose: If True, print full prompts sent to API
+        exit_on_failure: If True, sys.exit(1) on failure instead of returning None
+    
+    Returns:
+        Response content or None if failed (exits if exit_on_failure=True)
+    """
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
 
+    use_model = model or MODEL
+    retries = max_retries if max_retries is not None else MAX_RETRIES
     last_error = None
 
-    for attempt in range(MAX_RETRIES):
+    # Verbose logging
+    if verbose:
+        print(f"\n  [VERBOSE] API Call to {POLLINATIONS_API_BASE}")
+        print(f"  [VERBOSE] Model: {use_model}")
+        print(f"  [VERBOSE] Temperature: {temperature}")
+        print(f"  [VERBOSE] System prompt ({len(system_prompt)} chars):")
+        print(f"  ---BEGIN SYSTEM PROMPT---")
+        print(system_prompt[:2000] + ("..." if len(system_prompt) > 2000 else ""))
+        print(f"  ---END SYSTEM PROMPT---")
+        print(f"  [VERBOSE] User prompt ({len(user_prompt)} chars):")
+        print(f"  ---BEGIN USER PROMPT---")
+        print(user_prompt[:2000] + ("..." if len(user_prompt) > 2000 else ""))
+        print(f"  ---END USER PROMPT---")
+
+    for attempt in range(retries):
         seed = random.randint(0, MAX_SEED)
 
         payload = {
-            "model": MODEL,
+            "model": use_model,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
@@ -202,9 +316,12 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, temp
             "seed": seed
         }
 
-        if attempt > 0:
+        if attempt == 0:
+            if verbose:
+                print(f"  Using seed: {seed}")
+        else:
             backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
-            print(f"  Retry {attempt}/{MAX_RETRIES - 1} (waiting {backoff_delay}s)")
+            print(f"  Retry {attempt}/{retries - 1} with new seed: {seed} (waiting {backoff_delay}s)")
             time.sleep(backoff_delay)
 
         try:
@@ -216,17 +333,34 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, temp
             )
 
             if response.status_code == 200:
-                result = response.json()
-                return result['choices'][0]['message']['content']
+                try:
+                    result = response.json()
+                    content = result['choices'][0]['message']['content']
+                    if verbose:
+                        print(f"  [VERBOSE] Response ({len(content)} chars):")
+                        print(f"  ---BEGIN RESPONSE---")
+                        print(content[:3000] + ("..." if len(content) > 3000 else ""))
+                        print(f"  ---END RESPONSE---")
+                    return content
+                except (KeyError, IndexError, json.JSONDecodeError) as e:
+                    last_error = f"Error parsing API response: {e}"
+                    error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+                    print(f"  {last_error}")
+                    print(f"  Response preview: {error_preview}")
             else:
                 last_error = f"API error: {response.status_code}"
-                print(f"  {last_error}: {response.text[:500]}")
+                error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+                print(f"  {last_error}")
+                print(f"  Error preview: {error_preview}")
 
         except requests.exceptions.RequestException as e:
             last_error = f"Request failed: {e}"
             print(f"  {last_error}")
 
-    print(f"All {MAX_RETRIES} attempts failed. Last error: {last_error}")
+    print(f"All {retries} attempts failed. Last error: {last_error}")
+    
+    if exit_on_failure:
+        sys.exit(1)
     return None
 
 

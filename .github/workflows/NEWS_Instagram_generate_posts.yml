@@ -58,4 +58,4 @@ jobs:
           DAYS_BACK: ${{ inputs.days_back || '1' }}
           FORCE_BRAND_CONTENT: ${{ inputs.force_brand_content || 'false' }}
           PR_LABELS: NEWS
-        run: python .github/scripts/instagram_generate_post.py
+        run: python social/scripts/instagram_generate_post.py

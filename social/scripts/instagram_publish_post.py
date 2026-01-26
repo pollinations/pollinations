@@ -10,21 +10,13 @@ import json
 import time
 import requests
 from typing import Dict, List, Optional
+from common import get_env
 
 # Constants
 INSTAGRAM_GRAPH_API = "https://graph.facebook.com/v21.0"
 GITHUB_API_BASE = "https://api.github.com"
 MAX_RETRIES = 3
 RETRY_DELAY = 5
-
-
-def get_env(key: str, required: bool = True) -> str:
-    """Get environment variable with optional requirement check"""
-    value = os.getenv(key)
-    if required and not value:
-        print(f"Error: {key} environment variable is required")
-        sys.exit(1)
-    return value
 
 
 def read_post_json(file_path: str) -> Optional[Dict]:

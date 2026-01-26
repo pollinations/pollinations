@@ -8,28 +8,23 @@ import base64
 import requests
 from typing import Dict, List
 from datetime import datetime, timedelta, timezone
+from common import (
+    load_prompt,
+    get_env,
+    get_repo_root,
+    get_file_sha,
+    get_date_range,
+    call_pollinations_api,
+    GITHUB_API_BASE,
+    GITHUB_GRAPHQL_API,
+    MODEL,
+)
 
-GITHUB_API_BASE = "https://api.github.com"
-GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
-POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
-MODEL = "gemini-large"
 CHUNK_SIZE = 50
 NEWS_FOLDER = "social/news"
 
-
-def get_env(key: str, required: bool = True) -> str:
-    value = os.getenv(key)
-    if required and not value:
-        print(f"Error: {key} environment variable is required")
-        sys.exit(1)
-    return value
-
-
-def get_date_range() -> tuple[datetime, datetime]:
-    """Get the date range for PR search - last 7 days"""
-    end_date = datetime.now(timezone.utc)
-    start_date = end_date - timedelta(days=7)
-    return start_date, end_date
+# Platform name for prompt loading
+PLATFORM = "github"
 
 
 def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> List[Dict]:
@@ -151,115 +146,36 @@ def chunk_prs(prs: List[Dict], chunk_size: int) -> List[List[Dict]]:
 
 
 def create_news_prompt(prs: List[Dict], is_final: bool = False, all_changes: List[str] = None) -> tuple:
-    """Create prompt to format ALL PRs for NEWS.md - no filtering, this is source of truth"""
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    """Create prompt to format ALL PRs for NEWS.md - no filtering, this is source of truth
+    
+    Prompts are loaded from social/prompts/github/
+    """
 
-    system_prompt = f"""You are creating a weekly changelog entry for NEWS.md.
-
-NEWS.md is the SINGLE SOURCE OF TRUTH for all platform updates. It will be consumed by:
-- Discord bot (to post weekly digests)
-- Website news section
-- Other automated workflows
-- Developers and users looking for complete changelog
-
-CRITICAL: Include EVERY PR provided. Do NOT skip or filter any PRs. Do NOT decide what's "important" - that's for downstream consumers to decide. This must be a COMPLETE record.
-
-OUTPUT FORMAT (follow exactly):
-```
-- **PR Title/Feature Name** — Clear description of the change. Include technical details, endpoints, parameters where relevant. Use `backticks` for code. [PR #{'{number}'}](url)
-```
-
-GUIDELINES:
-- Include ALL PRs - bug fixes, features, refactors, dependencies, EVERYTHING
-- Each bullet = one PR (no exceptions, no skipping)
-- Write clear, informative descriptions
-- Use `backticks` for technical terms, code, endpoints, parameters
-- Include the PR link at the end of each entry
-- Be concise but complete - other systems will format/filter as needed
-
-TONE: Professional, factual, comprehensive. This is a historical record that other systems depend on."""
+    # Load system prompt
+    system_prompt = load_prompt(PLATFORM, "weekly_news_system")
 
     if is_final:
         combined_changes = "\n\n".join(all_changes)
-        user_prompt = f"""Consolidate these PR entries into a final clean list. Remove any duplicates but keep ALL unique entries:
-
-{combined_changes}
-
-Output the complete, deduplicated list."""
+        # Load final consolidation user prompt
+        user_prompt_template = load_prompt(PLATFORM, "weekly_news_user_final")
+        user_prompt = user_prompt_template.replace("{combined_changes}", combined_changes)
     else:
-        user_prompt = f"""Format ALL {len(prs)} PRs into changelog entries. Include every single one:
-
-"""
+        # Build PR entries
+        pr_entries = ""
         for pr in prs:
             body_preview = pr['body'][:500] if pr['body'] else 'No description'
-            user_prompt += f"""PR #{pr['number']}: {pr['title']}
+            pr_entries += f"""PR #{pr['number']}: {pr['title']}
 Author: @{pr['author']}
 URL: {pr['html_url']}
 Merged: {pr['merged_at']}
 Description: {body_preview}
 
 """
-
-        user_prompt += """Format each PR as a bullet point. Do NOT skip any PRs."""
+        # Load chunk processing user prompt
+        user_prompt_template = load_prompt(PLATFORM, "weekly_news_user")
+        user_prompt = user_prompt_template.replace("{pr_count}", str(len(prs))).replace("{pr_entries}", pr_entries)
 
     return system_prompt, user_prompt
-
-
-def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, max_retries: int = 3) -> str:
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    last_error = None
-    for attempt in range(max_retries):
-        seed = random.randint(0, 2147483647)
-
-        payload = {
-            "model": MODEL,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            "temperature": 0.3,
-            "seed": seed
-        }
-
-        if attempt > 0:
-            print(f"Retry {attempt}/{max_retries - 1} with new seed: {seed}")
-
-        try:
-            response = requests.post(
-                POLLINATIONS_API_BASE,
-                headers=headers,
-                json=payload
-            )
-
-            if response.status_code == 200:
-                try:
-                    result = response.json()
-                    return result['choices'][0]['message']['content']
-                except (KeyError, IndexError, json.JSONDecodeError) as e:
-                    last_error = f"Error parsing API response: {e}"
-                    error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
-                    print(f"{last_error}")
-                    print(f"Response preview: {error_preview}")
-            else:
-                last_error = f"API error: {response.status_code}"
-                error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
-                print(f"{last_error}")
-                print(f"Error preview: {error_preview}")
-
-        except requests.exceptions.RequestException as e:
-            last_error = f"Request failed: {e}"
-            print(last_error)
-
-        if attempt < max_retries - 1:
-            print("Waiting 5 seconds before retry...")
-            time.sleep(5)
-
-    print(f"All {max_retries} attempts failed. Last error: {last_error}")
-    sys.exit(1)
 
 
 def parse_response(response: str) -> str:
@@ -297,23 +213,6 @@ def create_news_file_content(news_entry: str, entry_date: str) -> str:
 
 {news_entry}
 """
-
-
-def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branch: str = "main") -> str:
-    """Get the SHA of an existing file (needed for updates)"""
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}"
-    }
-
-    response = requests.get(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={branch}",
-        headers=headers
-    )
-
-    if response.status_code == 200:
-        return response.json().get("sha", "")
-    return ""
 
 
 def create_pr_with_news(news_content: str, github_token: str, owner: str, repo: str, pr_count: int):
@@ -454,7 +353,7 @@ def main():
     repo_full_name = get_env('GITHUB_REPOSITORY')
     owner_name, repo_name = repo_full_name.split('/')
 
-    start_date, end_date = get_date_range()
+    start_date, end_date = get_date_range(days_back=7)
     merged_prs = get_merged_prs(owner_name, repo_name, start_date, github_token)
 
     print(f"Total merged PRs found: {len(merged_prs)}")
@@ -469,7 +368,7 @@ def main():
     if len(merged_prs) <= CHUNK_SIZE:
         print("Small batch - using single AI call...")
         system_prompt, user_prompt = create_news_prompt(merged_prs)
-        ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
+        ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token, temperature=0.3, exit_on_failure=True)
         news_content = parse_response(ai_response)
     else:
         print(f"Large batch - chunking into {CHUNK_SIZE} PR batches...")
@@ -479,14 +378,14 @@ def main():
         for i, chunk in enumerate(pr_chunks, 1):
             print(f"Processing chunk {i}/{len(pr_chunks)} ({len(chunk)} PRs)...")
             sys_prompt, usr_prompt = create_news_prompt(chunk)
-            response = call_pollinations_api(sys_prompt, usr_prompt, pollinations_token)
+            response = call_pollinations_api(sys_prompt, usr_prompt, pollinations_token, temperature=0.3, exit_on_failure=True)
             changes = parse_response(response)
             all_changes.append(changes)
             time.sleep(0.5)
 
         print("Consolidating all entries...")
         sys_prompt, usr_prompt = create_news_prompt([], is_final=True, all_changes=all_changes)
-        ai_response = call_pollinations_api(sys_prompt, usr_prompt, pollinations_token)
+        ai_response = call_pollinations_api(sys_prompt, usr_prompt, pollinations_token, temperature=0.3, exit_on_failure=True)
         news_content = parse_response(ai_response)
 
     if not news_content.strip():

@@ -7,20 +7,13 @@ import re
 import base64
 import requests
 from datetime import datetime, timezone
+from common import load_prompt, get_env, get_file_sha, call_pollinations_api, GITHUB_API_BASE, MODEL
 
-GITHUB_API_BASE = "https://api.github.com"
-POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
-MODEL = "gemini-large"
 NEWS_FOLDER = "social/news"
 HIGHLIGHTS_PATH = "social/news/transformed/highlights.md"
 
-
-def get_env(key: str, required: bool = True) -> str:
-    value = os.getenv(key)
-    if required and not value:
-        print(f"Error: {key} environment variable is required")
-        sys.exit(1)
-    return value
+# Platform name for prompt loading
+PLATFORM = "github"
 
 
 def get_latest_news_file(github_token: str, owner: str, repo: str) -> tuple[str, str, str]:
@@ -133,7 +126,10 @@ def get_links_file(github_token: str, owner: str, repo: str) -> str:
 
 
 def create_highlights_prompt(news_content: str, news_date: str, links_content: str = "") -> tuple:
-    """Create prompt to extract only the most significant highlights"""
+    """Create prompt to extract only the most significant highlights
+    
+    Prompts are loaded from social/prompts/github/
+    """
 
     links_section = ""
     if links_content:
@@ -145,144 +141,15 @@ Add links naturally in the description using markdown format: [text](url)
 {links_content}
 """
 
-    system_prompt = f"""You are a strict curator for pollinations.ai highlights.
+    # Load system prompt and inject links_section
+    system_prompt_template = load_prompt(PLATFORM, "highlights_system")
+    system_prompt = system_prompt_template.replace("{links_section}", links_section)
 
-## CONTEXT - What is pollinations.ai?
-pollinations.ai is a free, open-source AI platform providing:
-- **Image Generation** - Create images via simple URLs or API calls
-- **Text/Chat API** - Access LLMs like GPT, Claude, Gemini, Llama, Mistral
-- **Audio Generation** - Text-to-speech and music generation
-- **Discord Bot** - AI features directly in Discord servers
-- **Web Apps** - Various AI-powered tools and creative demos
-
-Our users are creators, developers, and hobbyists who love FREE, easy-to-use AI tools.
-
-## WHERE THIS OUTPUT GOES
-The highlights you extract will be displayed **DIRECTLY** (copy-pasted as-is) on:
-1. **pollinations.ai website** - News/updates section
-2. **GitHub README.md** - Latest news section
-
-**IMPORTANT:** These highlights are REPLACED every week with new ones. Old highlights get pushed down and eventually removed. So each week's highlights should stand on their own and showcase that week's best stuff.
-
-This is a HIGHLIGHT REEL - not a changelog. Only the exciting stuff that makes users go "wow, I want to try this!"
-
-## SELECTION CRITERIA
-**Typically 3-4 highlights per week. Sometimes 0. Max ~10 for huge release weeks.**
-
-### INCLUDE (things that TRULY affect users):
-- 🚀 **New AI models** - New LLMs, image models, audio models users can now access
-- ⚡ **Speed/Performance boosts** - Faster generation, reduced latency (only if significant/noticeable)
-- ✨ **New features** - New capabilities users can try RIGHT NOW
-- 🔗 **New integrations** - Discord bot features, new platform connections, new APIs
-- 📱 **New endpoints/tools** - New API endpoints, new web apps, new parameters
-- 🎨 **New creative options** - New styles, formats, output options
-- 🎉 **Big announcements** - Partnerships, milestones, major releases
-
-### EXCLUDE (skip ALL of these - users don't care):
-- Bug fixes (even critical ones - users don't celebrate fixes)
-- Internal performance improvements users won't notice
-- Refactors, cleanups, code quality improvements
-- CI/CD, workflows, GitHub Actions, deployment changes
-- Documentation updates, README changes, tests
-- Error handling, logging, monitoring improvements
-- Internal/developer-facing changes
-- Dependency updates, security patches
-- Minor UI tweaks, small polish items
-- Any maintenance or housekeeping work
-
-## OUTPUT FORMAT
-```
-- **YYYY-MM-DD** – **🚀 Feature Name** Punchy description of what users can DO now. [Relevant Link](url) if applicable.
-- **YYYY-MM-DD** – **✨ Another Feature** Brief and exciting. Use `backticks` for code. Check the [API Docs](url).
-```
-
-Rules:
-1. Format: `- **YYYY-MM-DD** – **emoji Title** Description with [links](url) when relevant`
-2. Use the DATE provided in the changelog header (the week's end date)
-3. Emojis: 🚀 ✨ 🎨 🎵 🤖 🔗 📱 💡 🌟 🎯
-4. Focus on USER BENEFIT
-5. NO PR numbers, NO authors
-6. 1-2 lines max per entry
-7. Output ONLY the markdown bullets
-8. Add relevant links from REFERENCE LINKS section when they add value (don't force links)
-{links_section}
-## CRITICAL
-- Output exactly `SKIP` if nothing qualifies
-- Use your judgment - if something feels exciting and user-facing, include it
-- Typical weeks: 3-4 highlights. Slow weeks: 0-2. Big release weeks: up to 10
-- Trust your instincts on what users would find exciting"""
-
-    user_prompt = f"""Review this pollinations.ai changelog and extract ONLY highlights worthy of the website and README.
-
-**DATE FOR THIS CHANGELOG: {news_date}**
-Use this date for all highlights from this changelog.
-
-Typical week: 3-4 highlights. Some weeks: 0. Be very selective.
-
-CHANGELOG:
-{news_content}
-
-Output markdown bullets only, or SKIP if nothing qualifies."""
+    # Load user prompt and inject news_date and news_content
+    user_prompt_template = load_prompt(PLATFORM, "highlights_user")
+    user_prompt = user_prompt_template.replace("{news_date}", news_date).replace("{news_content}", news_content)
 
     return system_prompt, user_prompt
-
-
-def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, max_retries: int = 3) -> str:
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    last_error = None
-    for attempt in range(max_retries):
-        seed = random.randint(0, 2147483647)
-
-        payload = {
-            "model": MODEL,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            "temperature": 0.3,
-            "seed": seed
-        }
-
-        if attempt > 0:
-            print(f"Retry {attempt}/{max_retries - 1} with new seed: {seed}")
-
-        try:
-            response = requests.post(
-                POLLINATIONS_API_BASE,
-                headers=headers,
-                json=payload,
-                timeout=120
-            )
-
-            if response.status_code == 200:
-                try:
-                    result = response.json()
-                    return result['choices'][0]['message']['content']
-                except (KeyError, IndexError, json.JSONDecodeError) as e:
-                    last_error = f"Error parsing API response: {e}"
-                    error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
-                    print(f"{last_error}")
-                    print(f"Response preview: {error_preview}")
-            else:
-                last_error = f"API error: {response.status_code}"
-                error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
-                print(f"{last_error}")
-                print(f"Error preview: {error_preview}")
-
-        except requests.exceptions.RequestException as e:
-            last_error = f"Request failed: {e}"
-            print(last_error)
-
-        if attempt < max_retries - 1:
-            print("Waiting 5 seconds before retry...")
-            time.sleep(5)
-
-    print(f"All {max_retries} attempts failed. Last error: {last_error}")
-    sys.exit(1)
 
 
 def parse_response(response: str) -> str:
@@ -309,23 +176,6 @@ def merge_highlights(new_highlights: str, existing_highlights: str) -> str:
         return new_clean + "\n"
 
     return new_clean + "\n" + existing_clean + "\n"
-
-
-def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branch: str = "main") -> str:
-    """Get the SHA of an existing file (needed for updates)"""
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}"
-    }
-
-    response = requests.get(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={branch}",
-        headers=headers
-    )
-
-    if response.status_code == 200:
-        return response.json().get("sha", "")
-    return ""
 
 
 def create_highlights_pr(highlights_content: str, new_highlights: str, github_token: str, owner: str, repo: str, news_file_path: str):
@@ -471,7 +321,7 @@ def main():
     # Generate highlights using AI
     print("Generating highlights...")
     system_prompt, user_prompt = create_highlights_prompt(news_content, news_date, links_content)
-    ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
+    ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token, temperature=0.3, exit_on_failure=True)
     new_highlights = parse_response(ai_response)
 
     # Check if AI returned SKIP

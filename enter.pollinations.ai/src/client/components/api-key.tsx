@@ -58,6 +58,7 @@ type ApiKeyManagerProps = {
         updates: {
             allowedModels?: string[] | null;
             pollenBudget?: number | null;
+            accountPermissions?: string[] | null;
         },
     ) => Promise<void>;
     onDelete: (id: string) => Promise<void>;

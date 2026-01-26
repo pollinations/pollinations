@@ -2,7 +2,9 @@ import { Dialog } from "@ark-ui/react/dialog";
 import type { FC } from "react";
 import { useState } from "react";
 import { Button } from "./button.tsx";
-import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
+import { ModelPermissions } from "./model-permissions.tsx";
+import { PollenBudgetInput } from "./pollen-budget-input.tsx";
+import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 
 type ApiKey = {
     id: string;
@@ -19,6 +21,7 @@ type EditApiKeyDialogProps = {
         updates: {
             allowedModels?: string[] | null;
             pollenBudget?: number | null;
+            accountPermissions?: string[] | null;
         },
     ) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
@@ -32,38 +35,27 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     onClose,
 }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const keyPermissions = useKeyPermissions({
-        allowedModels: apiKey.permissions?.models ?? null,
-        pollenBudget: apiKey.pollenBalance ?? null,
-    });
+    const [allowedModels, setAllowedModels] = useState<string[] | null>(
+        apiKey.permissions?.models ?? null
+    );
+    const [pollenBudget, setPollenBudget] = useState<number | null>(
+        apiKey.pollenBalance ?? null
+    );
+    const [accountPermissions, setAccountPermissions] = useState<string[] | null>(
+        apiKey.permissions?.account ?? null
+    );
 
     const handleSave = async () => {
         setIsSubmitting(true);
-        setError(null);
         try {
             await onUpdate(apiKey.id, {
-                allowedModels: keyPermissions.permissions.allowedModels,
-                pollenBudget: keyPermissions.permissions.pollenBudget,
+                allowedModels,
+                pollenBudget,
+                accountPermissions,
             });
             onClose();
         } catch (error) {
             console.error("Failed to update API key:", error);
-            setError(error instanceof Error ? error.message : "Failed to update API key");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleDelete = async () => {
-        setIsSubmitting(true);
-        try {
-            await onDelete(apiKey.id);
-            onClose();
-        } catch (error) {
-            console.error("Failed to delete API key:", error);
         } finally {
             setIsSubmitting(false);
         }
@@ -80,105 +72,52 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         scrollbarColor: "rgba(156, 163, 175, 0.5) transparent",
                     }}
                 >
-                    <Dialog.Title className="text-lg font-semibold mb-6">
-                        Manage API Key
+                    <Dialog.Title className="text-lg font-semibold mb-4">
+                        Edit: {apiKey.name || "API Key"}
                     </Dialog.Title>
 
-                    {error && (
-                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                            {error}
-                        </div>
-                    )}
-
-                    <div className="space-y-6">
-                        {/* Key Info (Read-only) */}
-                        <div className="space-y-2">
-                            <div className="text-sm font-semibold">Name</div>
-                            <div className="px-3 py-2 bg-gray-100 rounded border border-gray-300 text-sm">
-                                {apiKey.name || "Unnamed"}
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <div className="text-sm font-semibold">Key</div>
-                            <div className="px-3 py-2 bg-gray-100 rounded border border-gray-300 font-mono text-xs text-gray-500">
-                                {apiKey.start}...
-                            </div>
-                        </div>
-
-                        {/* Permissions */}
-                        <KeyPermissionsInputs
-                            value={keyPermissions}
-                            disabled={isSubmitting}
+                    <div className="space-y-4">
+                        <ModelPermissions
+                            value={allowedModels}
+                            onChange={setAllowedModels}
                             compact
                         />
+                        <PollenBudgetInput
+                            value={pollenBudget}
+                            onChange={setPollenBudget}
+                        />
+                        <AccountPermissionsInput
+                            value={accountPermissions}
+                            onChange={setAccountPermissions}
+                        />
 
-                        {/* Actions */}
                         <div className="flex gap-2 justify-between pt-4 border-t border-gray-300">
-                            {!showDeleteConfirm ? (
-                                <>
-                                    <Button
-                                        type="button"
-                                        color="red"
-                                        weight="outline"
-                                        onClick={() =>
-                                            setShowDeleteConfirm(true)
-                                        }
-                                        className="disabled:opacity-50"
-                                        disabled={isSubmitting}
-                                    >
-                                        Delete
-                                    </Button>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            type="button"
-                                            weight="outline"
-                                            onClick={onClose}
-                                            disabled={isSubmitting}
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            onClick={handleSave}
-                                            disabled={isSubmitting}
-                                        >
-                                            {isSubmitting
-                                                ? "Saving..."
-                                                : "Save"}
-                                        </Button>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="text-sm text-red-600 font-medium">
-                                        Delete this key permanently?
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            type="button"
-                                            weight="outline"
-                                            onClick={() =>
-                                                setShowDeleteConfirm(false)
-                                            }
-                                            disabled={isSubmitting}
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            color="red"
-                                            weight="strong"
-                                            onClick={handleDelete}
-                                            disabled={isSubmitting}
-                                        >
-                                            {isSubmitting
-                                                ? "Deleting..."
-                                                : "Confirm Delete"}
-                                        </Button>
-                                    </div>
-                                </>
-                            )}
+                            <Button
+                                type="button"
+                                color="red"
+                                weight="outline"
+                                onClick={() => onDelete(apiKey.id).then(onClose)}
+                                disabled={isSubmitting}
+                            >
+                                Delete
+                            </Button>
+                            <div className="flex gap-2">
+                                <Button
+                                    type="button"
+                                    weight="outline"
+                                    onClick={onClose}
+                                    disabled={isSubmitting}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={handleSave}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? "Saving..." : "Save"}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </Dialog.Content>

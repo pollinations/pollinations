@@ -15,6 +15,9 @@
             "complexity": {
                 "useLiteralKeys": "off",
                 "noBannedTypes": "off"
+            },
+            "security": {
+                "noDangerouslySetInnerHtml": "off"
             }
         }
     },
@@ -36,8 +39,18 @@
             "!**/worker-runtime.d.ts",
             "!**/worker-bindins.d.ts",
             "!**/better-auth.ts",
-            "!**/routeTree.gen.ts"
+            "!**/routeTree.gen.ts",
+            // exclude CSS files - Biome doesn't support Tailwind v4 syntax
+            "!**/*.css"
         ]
+    },
+    "css": {
+        "formatter": {
+            "enabled": false
+        },
+        "linter": {
+            "enabled": false
+        }
     },
     "json": {
         "formatter": {

@@ -4,18 +4,26 @@
 
 ## What pollinations.ai Is
 
-- **Open-source AI for people who make things** (images, text, audio, video)
-- **Community-driven** - code, roadmap, and conversations all in the open
-- **Unified API** - one place for multiple models and modalities
+- **Free, open-source AI platform** for people who make things
 - **500+ apps** built by developers worldwide
 - Used by indie devs, artists, tinkerers, students, researchers, hobbyists
+- **Community-driven** - code, roadmap, and conversations all in the open
 - **Pollen** - simple credit system, transparent pricing, no subscriptions
 - **Mission:** Democratize AI creativity
+
+## What You Can Create
+
+- **Images** - Generate art via simple URLs or API calls
+- **Text/Chat** - Access LLMs like GPT, Claude, Gemini, Llama, Mistral
+- **Audio** - Text-to-speech and music generation
+- **Video** - AI-powered video generation
 
 ## Brand Identity
 
 Our name "Pollinations" evokes nature, growth, and organic creativity:
 - 🌸 Flowers, 🐝 bees, 🌱 seeds, growth, blooming
+- "Soft, simple tools for people who want to build with heart"
+- "Stay playful" - friendly and approachable, never intimidating
 - Community-first, building in the open
 - No gatekeeping, no corporate nonsense - just good tools and good people
 

@@ -7,7 +7,9 @@ CRITICAL: You are talking to USERS of the Pollinations AI service, NOT developer
 Users care about: bug fixes, new features, performance improvements, UI changes.
 Users DON'T care about: backend refactors, code architecture, database migrations, internal APIs.
 
-IMPORTANT: Pollinations is an open-source AI platform where the community contributes in multiple ways:
+{about}
+
+Community contributes in multiple ways:
 1. **Core Platform Changes** - API improvements, new models, infrastructure updates
 2. **Community Project Submissions** - Apps, tools, examples, and projects built using Pollinations AI
 3. **Documentation & Guides** - Tutorials, examples, API documentation

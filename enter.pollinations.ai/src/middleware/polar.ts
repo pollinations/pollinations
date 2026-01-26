@@ -140,12 +140,11 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         let packBalance = users[0]?.packBalance;
         const cryptoBalance = users[0]?.cryptoBalance ?? 0;
 
-        // Lazy init: check Polar if either balance is null OR both are zero
-        // This handles: new users (both null), users with only tier set (pack null),
-        // and users who got 0 written before fix
+        // Lazy init: check Polar ONLY if balance is null (new users)
+        // Do NOT sync when balance is 0 - that's a legitimate spent balance
+        // Polar doesn't track spending, only grants, so syncing on 0 would restore spent pollen
         const hasNullBalance = tierBalance == null || packBalance == null;
-        const hasBothZero = tierBalance === 0 && packBalance === 0;
-        const needsInit = hasNullBalance || hasBothZero;
+        const needsInit = hasNullBalance;
 
         if (needsInit) {
             log.info(
@@ -175,16 +174,10 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
                     "Synced balances from Polar for user {userId}: tier={tierBalance}, pack={packBalance}",
                     { userId, tierBalance, packBalance },
                 );
-            } else if (hasNullBalance) {
+            } else {
                 // User has NULL balance(s) but Polar also has 0 - keep NULL, let webhooks handle initial grant
                 log.debug(
                     "User {userId} has no Polar balance yet, keeping D1 as-is",
-                    { userId },
-                );
-            } else if (hasBothZero) {
-                // User has 0/0 in D1 and Polar also has 0 - genuine zero balance
-                log.debug(
-                    "User {userId} has zero balance in both D1 and Polar",
                     { userId },
                 );
             }

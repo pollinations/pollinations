@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
-    createBedrockLambdaModelConfig,
     createBedrockNativeConfig,
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
@@ -91,7 +90,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     // AWS Bedrock - claude-fast, claude, claude-large, chickytutor, nova-fast
     // ============================================================================
     "us.anthropic.claude-3-5-haiku-20241022-v1:0": () =>
-        createBedrockLambdaModelConfig({
+        createBedrockNativeConfig({
             model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
         }),
     "us.anthropic.claude-haiku-4-5-20251001-v1:0": () =>
@@ -184,9 +183,35 @@ export const portkeyConfig: PortkeyConfigMap = {
         ],
     }),
     "amazon.nova-micro-v1:0": () =>
-        createBedrockLambdaModelConfig({
+        createBedrockNativeConfig({
             model: "amazon.nova-micro-v1:0",
         }),
+    // Nova Micro with Nova Lite fallback for rate limiting
+    "nova-micro-fallback": () => ({
+        strategy: { mode: "fallback" },
+        targets: [
+            // Primary: Nova Micro (cheapest)
+            {
+                provider: "bedrock",
+                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
+                aws_region: process.env.AWS_REGION || "us-east-1",
+                override_params: {
+                    model: "amazon.nova-micro-v1:0",
+                },
+            },
+            // Fallback: Nova Lite (multimodal, slightly more expensive but still cheap)
+            {
+                provider: "bedrock",
+                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
+                aws_region: process.env.AWS_REGION || "us-east-1",
+                override_params: {
+                    model: "amazon.nova-lite-v1:0",
+                },
+            },
+        ],
+    }),
 
     // ============================================================================
     // Google Vertex AI - gemini, gemini-fast, gemini-large, gemini-search, kimi-k2-thinking

@@ -104,16 +104,58 @@ export const auth = (options: AuthOptions) =>
                 | { models?: string[]; account?: string[] }
                 | undefined;
 
-            // Fetch API key with user in single query using relation
-            const fullApiKey = await db.query.apikey.findFirst({
-                where: eq(schema.apikey.id, keyResult.key.id),
-                with: { user: true },
-            });
+            // Fetch API key with user - we need fresh data from DB for expiry check
+            const apiKeyData = await db
+                .select()
+                .from(schema.apikey)
+                .where(eq(schema.apikey.id, keyResult.key.id))
+                .get();
+
+            // Then get the user separately if we have an API key
+            const userData = apiKeyData
+                ? await db
+                      .select()
+                      .from(schema.user)
+                      .where(eq(schema.user.id, apiKeyData.userId))
+                      .get()
+                : null;
+
+            const fullApiKey = apiKeyData
+                ? {
+                      ...apiKeyData,
+                      user: userData,
+                  }
+                : null;
 
             log.debug("API key lookup result: {found}", {
-                found: !!fullApiKey,
+                found: Boolean(fullApiKey),
                 userId: fullApiKey?.user?.id,
+                hasExpiry: Boolean(fullApiKey?.expiresAt),
+                expiresAt: fullApiKey?.expiresAt,
             });
+
+            // Check if key has expired
+            if (fullApiKey?.expiresAt) {
+                const expiryDate = new Date(fullApiKey.expiresAt);
+                const now = new Date();
+                const isExpired = expiryDate < now;
+
+                log.debug("Checking API key expiry", {
+                    keyId: fullApiKey.id,
+                    expiresAt: fullApiKey.expiresAt,
+                    expiryDate: expiryDate.toISOString(),
+                    now: now.toISOString(),
+                    isExpired,
+                });
+
+                if (isExpired) {
+                    log.debug("API key has expired", {
+                        keyId: fullApiKey.id,
+                        expiresAt: fullApiKey.expiresAt,
+                    });
+                    return null;
+                }
+            }
 
             return {
                 user: fullApiKey?.user as User,

@@ -79,9 +79,11 @@ const UpdateApiKeySchema = z.object({
         .optional()
         .describe('Account permissions: ["balance", "usage"]. null = none'),
     expiresAt: z
-        .date()
+        .string()
+        .datetime()
         .nullable()
         .optional()
+        .transform((val) => val ? new Date(val) : val)
         .describe("Expiration date for the key. null = no expiry"),
 });
 
@@ -122,7 +124,10 @@ export const apiKeysRoutes = new Hono<Env>()
                     lastRequest: key.lastRequest,
                     expiresAt: key.expiresAt,
                     permissions: key.permissions
-                        ? JSON.parse(key.permissions)
+                        ? (() => {
+                              const parsed = JSON.parse(key.permissions);
+                              return Object.keys(parsed).length > 0 ? parsed : null;
+                          })()
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
@@ -204,11 +209,29 @@ export const apiKeysRoutes = new Hono<Env>()
                 d1Updates.pollenBalance = pollenBudget;
             if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
 
+            // Fetch the key first to get the raw key for cache invalidation
+            const existingKeyForCache = Object.keys(d1Updates).length > 0
+                ? await db.query.apikey.findFirst({
+                      where: eq(schema.apikey.id, id),
+                  })
+                : null;
+
             if (Object.keys(d1Updates).length > 0) {
                 await db
                     .update(schema.apikey)
                     .set(d1Updates)
                     .where(eq(schema.apikey.id, id));
+
+                // Invalidate better-auth's KV cache for this key
+                // Better-auth uses "auth:" prefix and might cache by both ID and key value
+                const cacheKey = `auth:api-key:${id}`;
+                await c.env.KV.delete(cacheKey);
+
+                if (existingKeyForCache?.key) {
+                    // Also invalidate cache by the actual key value
+                    const keyCacheKey = `auth:api-key:${existingKeyForCache.key}`;
+                    await c.env.KV.delete(keyCacheKey);
+                }
             }
 
             // Fetch updated key to return current state
@@ -221,6 +244,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 name: finalKey?.name,
                 permissions: finalKey?.permissions,
                 pollenBalance: finalKey?.pollenBalance ?? null,
+                expiresAt: finalKey?.expiresAt ?? null,
             });
         },
     );

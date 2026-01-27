@@ -62,7 +62,7 @@ const SectionHeader: FC<SectionHeaderProps> = ({
                 {label}
                 {type === "video" && (
                     <>
-                        <span className="text-[10px] text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full font-medium">
+                        <span className="text-[10px] text-gray-500 bg-transparent px-1.5 py-0.5 rounded-full font-medium border border-gray-400">
                             alpha 🧪
                         </span>
                         <span className="relative inline-flex items-center group/alpha">
@@ -177,7 +177,7 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
                             {tableLabel}
                             {type === "video" && (
                                 <>
-                                    <span className="text-[10px] text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full font-medium">
+                                    <span className="text-[10px] text-gray-500 bg-transparent px-1.5 py-0.5 rounded-full font-medium border border-gray-400">
                                         alpha 🧪
                                     </span>
                                     <span className="relative inline-flex items-center group/alpha">

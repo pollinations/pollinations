@@ -16,7 +16,7 @@ function addKeyPrefix(key: string) {
     return `auth:${key}`;
 }
 
-export function createAuth(env: Cloudflare.Env) {
+export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const polar = new Polar({
         accessToken: env.POLAR_ACCESS_TOKEN,
         server: env.POLAR_SERVER,
@@ -32,6 +32,7 @@ export function createAuth(env: Cloudflare.Env) {
         storage: "secondary-storage",
         fallbackToDatabase: true,
         enableMetadata: true,
+        deferUpdates: true, // Defers lastRequest/requestCount updates - OK if dropped, prevents D1 contention
         defaultPrefix: PUBLISHABLE_KEY_PREFIX,
         defaultKeyLength: 16, // Minimum key length for validation (matches custom generator)
         minimumNameLength: 1, // Allow short hostnames (e.g., "x.ai")
@@ -62,9 +63,7 @@ export function createAuth(env: Cloudflare.Env) {
             maxExpiresIn: 365, // Max 1 year
         },
         rateLimit: {
-            enabled: true,
-            timeWindow: 1000, // 1 second
-            maxRequests: 5, // 5 requests
+            enabled: false, // Disabled - Roblox games hit rate limits with many concurrent players
         },
     });
 
@@ -82,6 +81,23 @@ export function createAuth(env: Cloudflare.Env) {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
+        advanced: {
+            // Configure background tasks for Cloudflare Workers
+            // Required for deferUpdates to work properly
+            backgroundTasks: ctx
+                ? {
+                      handler: (promise: Promise<any>) => {
+                          ctx.waitUntil(
+                              promise.catch(() => {
+                                  // Silently ignore - these are non-critical tracking updates
+                                  // (lastRequest, requestCount) that fail due to D1 contention
+                                  // under high concurrent load. Auth still works correctly.
+                              }),
+                          );
+                      },
+                  }
+                : undefined,
+        },
         secondaryStorage: {
             get: async (key) => {
                 return await env.KV.get(addKeyPrefix(key));
@@ -165,7 +181,7 @@ function polarPlugin(
 }
 
 function onBeforeUserCreate(polar: Polar) {
-    return async (user: Partial<User>, ctx?: GenericEndpointContext) => {
+    return async (user: Partial<User>, ctx: GenericEndpointContext | null) => {
         if (!ctx) return;
         try {
             if (!user.email) {
@@ -208,7 +224,7 @@ function onBeforeUserCreate(polar: Polar) {
 }
 
 function onAfterUserCreate(polar: Polar, defaultTierProductId?: string) {
-    return async (user: GenericUser, ctx?: GenericEndpointContext) => {
+    return async (user: GenericUser, ctx: GenericEndpointContext | null) => {
         if (!ctx) return;
         try {
             const { result } = await polar.customers.list({
@@ -245,7 +261,7 @@ function onAfterUserCreate(polar: Polar, defaultTierProductId?: string) {
 }
 
 function onUserUpdate(polar: Polar) {
-    return async (user: GenericUser, ctx?: GenericEndpointContext) => {
+    return async (user: GenericUser, ctx: GenericEndpointContext | null) => {
         if (!ctx) return;
         try {
             await polar.customers.updateExternal({

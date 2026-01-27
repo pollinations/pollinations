@@ -15,7 +15,6 @@ import {
     openaiUsageToUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
-import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { HonoRequest } from "hono";
@@ -23,10 +22,6 @@ import { createMiddleware } from "hono/factory";
 import { routePath } from "hono/route";
 import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
-import {
-    apikey as apikeyTable,
-    user as userTable,
-} from "@/db/schema/better-auth.ts";
 import type {
     ApiKeyType,
     EventType,
@@ -54,9 +49,10 @@ import {
     ContentFilterSeveritySchema,
 } from "@/schemas/openai.ts";
 import { generateRandomId, removeUnset } from "@/util.ts";
+import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
+import type { BalanceVariables } from "./balance.ts";
 import type { LoggerVariables } from "./logger.ts";
 import type { ModelVariables } from "./model.ts";
-import type { PolarVariables } from "./polar.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
 
 export type ModelUsage = {
@@ -99,7 +95,7 @@ export type TrackEnv = {
     Variables: ErrorVariables &
         LoggerVariables &
         AuthVariables &
-        PolarVariables &
+        BalanceVariables &
         FrontendKeyRateLimitVariables &
         TrackVariables &
         ModelVariables;
@@ -157,15 +153,10 @@ export const track = (eventType: EventType) =>
                 // Capture balance tracking AFTER next() so balanceCheckResult is set
                 const balanceTracking = {
                     selectedMeterId:
-                        c.var.polar.balanceCheckResult?.selectedMeterId,
+                        c.var.balance.balanceCheckResult?.selectedMeterId,
                     selectedMeterSlug:
-                        c.var.polar.balanceCheckResult?.selectedMeterSlug,
-                    balances: Object.fromEntries(
-                        c.var.polar.balanceCheckResult?.meters.map((meter) => [
-                            meter.metadata.slug,
-                            meter.balance,
-                        ]) || [],
-                    ),
+                        c.var.balance.balanceCheckResult?.selectedMeterSlug,
+                    balances: c.var.balance.balanceCheckResult?.balances || {},
                 } satisfies BalanceData;
 
                 const finalEvent = createTrackingEvent({
@@ -203,118 +194,15 @@ export const track = (eventType: EventType) =>
                     log,
                 );
 
-                // Decrement per-key pollen budget after billable requests
-                // Only deduct if key has a budget set (pollenBalance is not null)
-                const apiKeyId = c.var.auth?.apiKey?.id;
-                const apiKeyPollenBalance = c.var.auth?.apiKey?.pollenBalance;
-                if (
-                    responseTracking.isBilledUsage &&
-                    responseTracking.price?.totalPrice &&
-                    apiKeyId &&
-                    apiKeyPollenBalance !== null &&
-                    apiKeyPollenBalance !== undefined
-                ) {
-                    const priceToDeduct = responseTracking.price.totalPrice;
-
-                    try {
-                        // Use D1 column for atomic decrement
-                        await db
-                            .update(apikeyTable)
-                            .set({
-                                pollenBalance: sql`${apikeyTable.pollenBalance} - ${priceToDeduct}`,
-                            })
-                            .where(eq(apikeyTable.id, apiKeyId));
-
-                        log.debug(
-                            "Decremented {price} pollen from API key {keyId} budget",
-                            {
-                                price: priceToDeduct,
-                                keyId: apiKeyId,
-                            },
-                        );
-                    } catch (error) {
-                        log.error(
-                            "Failed to decrement API key budget for {keyId}: {error}",
-                            {
-                                keyId: apiKeyId,
-                                error:
-                                    error instanceof Error
-                                        ? error.message
-                                        : error,
-                            },
-                        );
-                    }
-                }
-
-                // Decrement user pollen balance after billable requests
-                // Strategy: decrement from tier_balance first, then crypto_balance, then pack_balance
-                if (
-                    responseTracking.isBilledUsage &&
-                    responseTracking.price?.totalPrice &&
-                    userTracking.userId
-                ) {
-                    const priceToDeduct = responseTracking.price.totalPrice;
-
-                    try {
-                        // Get current balances to determine how to split the deduction
-                        const currentUser = await db
-                            .select({
-                                tierBalance: userTable.tierBalance,
-                                cryptoBalance: userTable.cryptoBalance,
-                                packBalance: userTable.packBalance,
-                            })
-                            .from(userTable)
-                            .where(eq(userTable.id, userTracking.userId))
-                            .limit(1);
-
-                        const tierBalance = currentUser[0]?.tierBalance ?? 0;
-                        const cryptoBalance =
-                            currentUser[0]?.cryptoBalance ?? 0;
-
-                        // Decrement in order: tier (free) → crypto → pack
-                        const fromTier = Math.min(
-                            priceToDeduct,
-                            Math.max(0, tierBalance),
-                        );
-                        const remainingAfterTier = priceToDeduct - fromTier;
-                        const fromCrypto = Math.min(
-                            remainingAfterTier,
-                            Math.max(0, cryptoBalance),
-                        );
-                        const fromPack = remainingAfterTier - fromCrypto;
-
-                        await db
-                            .update(userTable)
-                            .set({
-                                tierBalance: sql`${userTable.tierBalance} - ${fromTier}`,
-                                cryptoBalance: sql`${userTable.cryptoBalance} - ${fromCrypto}`,
-                                packBalance: sql`${userTable.packBalance} - ${fromPack}`,
-                            })
-                            .where(eq(userTable.id, userTracking.userId));
-
-                        log.debug(
-                            "Decremented {price} pollen from user {userId} (tier: -{fromTier}, crypto: -{fromCrypto}, pack: -{fromPack})",
-                            {
-                                price: priceToDeduct,
-                                userId: userTracking.userId,
-                                fromTier,
-                                fromCrypto,
-                                fromPack,
-                            },
-                        );
-                    } catch (error) {
-                        log.error(
-                            "Failed to decrement user balance for {userId}: {error}",
-                            {
-                                userId: userTracking.userId,
-                                error:
-                                    error instanceof Error
-                                        ? error.message
-                                        : error,
-                            },
-                        );
-                    }
-                }
+                // Handle balance deduction for both API keys and users
+                await handleBalanceDeduction({
+                    db,
+                    isBilledUsage: responseTracking.isBilledUsage,
+                    totalPrice: responseTracking.price?.totalPrice,
+                    userId: userTracking.userId,
+                    apiKeyId: c.var.auth?.apiKey?.id,
+                    apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
+                });
             })(),
         );
     });

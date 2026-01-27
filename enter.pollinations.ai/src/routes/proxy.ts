@@ -4,9 +4,9 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { StandardSchemaV1 } from "hono-openapi";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
+import { type BalanceVariables, balance } from "@/middleware/balance.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
-import { type PolarVariables, polar } from "@/middleware/polar.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
@@ -249,7 +249,7 @@ export const proxyRoutes = new Hono<Env>()
     // Auth required for all endpoints below (API key only - no session cookies)
     .use(auth({ allowApiKey: true, allowSessionCookie: false }))
     .use(frontendKeyRateLimit)
-    .use(polar)
+    .use(balance)
     // Request deduplication: prevents duplicate concurrent requests by sharing promises
     .use(requestDeduplication)
     .post(
@@ -593,9 +593,12 @@ export function contentFilterResultsToHeaders(
     ) as Record<string, string>;
 }
 
-async function checkBalance({ auth, polar }: AuthVariables & PolarVariables) {
+async function checkBalance({
+    auth,
+    balance,
+}: AuthVariables & BalanceVariables) {
     if (auth.user?.id) {
-        await polar.requirePositiveBalance(
+        await balance.requirePositiveBalance(
             auth.user.id,
             "Insufficient pollen balance to use this model",
         );

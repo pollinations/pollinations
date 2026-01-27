@@ -42,16 +42,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-01-26** – **🚀 Alibaba Wan 2.6** Generate videos from images with audio support using the new `wan` model. [API Docs](https://enter.pollinations.ai/api/docs)
+- **2026-01-26** – **🎨 Klein Large (9B)** Experience higher quality image generation and editing with the new `klein-large` model.
+- **2026-01-26** – **🛠️ Vercel AI SDK** Build apps easily with the new official Pollinations provider for Vercel AI SDK.
+- **2026-01-26** – **🤖 Gemini 2.5 Pro** Access Google's latest `gemini-2.5-pro` model for advanced text generation tasks.
 - **2026-01-19** – **🚀 New Model: NomNom** Added `nomnom` (alias `gemini-scrape`) for web research, scraping, and crawling capabilities. [API Docs](https://enter.pollinations.ai/api/docs)
 - **2026-01-19** – **🎨 Klein Image Model** Deployed FLUX.2 `klein` model for faster text-to-image and precise image editing. [Try it](https://hello.pollinations.ai)
 - **2026-01-19** – **🎵 Audio Generation** Text-to-speech with voice selection is now available directly on the Play page.
 - **2026-01-19** – **🔑 Bring Your Own Key** Connect your personal API key to [chat.pollinations.ai](https://chat.pollinations.ai) for custom usage limits and billing.
 - **2026-01-12** – **🚀 New Models** Added `glm` (GLM-4.7), `minimax` (MiniMax-M2.1), and Perplexity with citations. Check the [API Docs](https://enter.pollinations.ai/api/docs).
 - **2026-01-12** – **🎁 Free Tier Upgrades** Active users are now automatically upgraded to the Seed tier ($3/day) based on activity.
-- **2026-01-12** – **📱 New AI Apps** Try **Study Buzz** (study tools), **Onyx** (noir storyboards), and **Player or AI** (Roblox game).
-- **2026-01-12** – **🎥 Video Playback** Video generations now render with native players and improved tooltips.
-- **2026-01-05** – **🎵 React Audio Hook** New `usePollinationsAudio` hook for adding AI voice to your apps. [Docs](https://react-hooks.pollinations.ai)
-- **2026-01-05** – **🤖 Gemini Agent Tools** Enable `google_search`, `code_execution`, and `url_context` on Gemini models. [API Docs](https://enter.pollinations.ai/api/docs)
 ---
 
 ## 🌟 Introduction

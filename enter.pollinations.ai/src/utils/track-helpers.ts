@@ -40,6 +40,16 @@ export async function handleBalanceDeduction({
     // Handle user balance deduction
     if (userId) {
         await deductUserBalance(db, userId, totalPrice);
+    } else {
+        // CRITICAL: Billable usage without userId means balance won't be deducted!
+        // This is a bug - log it so we can investigate
+        log.error(
+            "BILLING_SKIP: Billable request with no userId - balance NOT deducted! price={price} apiKeyId={apiKeyId}",
+            {
+                price: totalPrice,
+                apiKeyId: apiKeyId ?? "none",
+            },
+        );
     }
 }
 

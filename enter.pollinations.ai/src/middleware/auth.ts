@@ -129,8 +129,22 @@ export const auth = (options: AuthOptions) =>
                 userId: fullApiKey?.user?.id,
             });
 
+            // CRITICAL: Reject if API key exists but has no associated user
+            // This would cause billing to silently skip balance deduction (infinite pollen bug)
+            // Use 402 because this is a billing issue - key is valid but we can't bill
+            if (!fullApiKey?.user) {
+                log.error(
+                    "AUTH_NO_USER: API key {keyId} has no associated user - rejecting request",
+                    { keyId: keyResult.key.id },
+                );
+                throw new HTTPException(402, {
+                    message:
+                        "API key is not associated with a valid user. Please regenerate your API key.",
+                });
+            }
+
             return {
-                user: fullApiKey?.user as User,
+                user: fullApiKey.user as User,
                 apiKey: {
                     id: keyResult.key.id,
                     name: keyResult.key.name || undefined,

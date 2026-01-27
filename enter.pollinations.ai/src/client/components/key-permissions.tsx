@@ -5,41 +5,27 @@ import { ExpiryDaysInput } from "./expiry-days-input.tsx";
 import { ModelPermissions } from "./model-permissions.tsx";
 import { PollenBudgetInput } from "./pollen-budget-input.tsx";
 
-export type KeyPermissions = {
+export interface KeyPermissions {
     allowedModels: string[] | null;
     pollenBudget: number | null;
     expiryDays: number | null;
     accountPermissions: string[] | null;
-};
-
-export type UseKeyPermissionsOptions = Partial<KeyPermissions>;
+}
 
 /**
- * Hook to manage API key permission state.
- * Used by both dashboard key creation and authorize flow.
- * All fields can be pre-populated via options (e.g., from URL params).
+ * Hook to manage API key permission state
  */
-export function useKeyPermissions(options: UseKeyPermissionsOptions = {}) {
-    const [allowedModels, setAllowedModels] = useState<string[] | null>(
-        options.allowedModels ?? null,
+export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
+    const [allowedModels, setAllowedModels] = useState(
+        initial.allowedModels ?? null,
     );
-    const [pollenBudget, setPollenBudget] = useState<number | null>(
-        options.pollenBudget ?? null,
+    const [pollenBudget, setPollenBudget] = useState(
+        initial.pollenBudget ?? null,
     );
-    const [expiryDays, setExpiryDays] = useState<number | null>(
-        options.expiryDays ?? null,
+    const [expiryDays, setExpiryDays] = useState(initial.expiryDays ?? null);
+    const [accountPermissions, setAccountPermissions] = useState(
+        initial.accountPermissions ?? null,
     );
-    const [accountPermissions, setAccountPermissions] = useState<
-        string[] | null
-    >(options.accountPermissions ?? null);
-
-    const updatePermissions = async (keyId: string) => {
-        await updateKeyPermissions(keyId, {
-            allowedModels,
-            pollenBudget,
-            accountPermissions,
-        });
-    };
 
     return {
         permissions: {
@@ -52,13 +38,17 @@ export function useKeyPermissions(options: UseKeyPermissionsOptions = {}) {
         setPollenBudget,
         setExpiryDays,
         setAccountPermissions,
-        updatePermissions,
+        updatePermissions: (keyId: string) =>
+            updateKeyPermissions(keyId, {
+                allowedModels,
+                pollenBudget,
+                accountPermissions,
+            }),
     };
 }
 
 /**
- * Update API key permissions via the backend.
- * Internal utility - prefer using the hook's updatePermissions method.
+ * Update API key permissions via the backend
  */
 async function updateKeyPermissions(
     keyId: string,
@@ -66,53 +56,37 @@ async function updateKeyPermissions(
 ): Promise<void> {
     const { allowedModels, pollenBudget, accountPermissions } = permissions;
 
-    const hasAllowedModels =
-        allowedModels !== null && allowedModels !== undefined;
-    const hasPollenBudget = pollenBudget !== null && pollenBudget !== undefined;
-    const hasAccountPermissions =
-        accountPermissions !== null &&
-        accountPermissions !== undefined &&
-        accountPermissions.length > 0;
+    const updates = {
+        ...(allowedModels !== undefined && { allowedModels }),
+        ...(pollenBudget !== undefined && { pollenBudget }),
+        ...(accountPermissions?.length && { accountPermissions }),
+    };
 
-    if (!hasAllowedModels && !hasPollenBudget && !hasAccountPermissions) {
-        return; // Nothing to update
-    }
+    if (!Object.keys(updates).length) return;
 
     const response = await fetch(`/api/api-keys/${keyId}/update`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-            ...(hasAllowedModels && { allowedModels }),
-            ...(hasPollenBudget && { pollenBudget }),
-            ...(hasAccountPermissions && { accountPermissions }),
-        }),
+        body: JSON.stringify(updates),
     });
 
     if (!response.ok) {
-        const errorData = await response.json();
+        const error = await response.json();
         throw new Error(
-            `Failed to set permissions/budget: ${(errorData as { message?: string }).message || "Unknown error"}`,
+            `Failed to update permissions: ${(error as { message?: string }).message || "Unknown error"}`,
         );
     }
 }
 
-type KeyPermissionsInputsProps = {
-    value: {
-        permissions: KeyPermissions;
-        setAllowedModels: (models: string[] | null) => void;
-        setPollenBudget: (val: number | null) => void;
-        setExpiryDays: (val: number | null) => void;
-        setAccountPermissions: (val: string[] | null) => void;
-        updatePermissions?: (keyId: string) => Promise<void>;
-    };
+interface KeyPermissionsInputsProps {
+    value: ReturnType<typeof useKeyPermissions>;
     disabled?: boolean;
     compact?: boolean;
-};
+}
 
 /**
- * Renders all key permission inputs.
- * Used by both dashboard key creation and authorize flow.
+ * Renders all key permission inputs
  */
 export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     value,

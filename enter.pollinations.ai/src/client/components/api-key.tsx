@@ -1,6 +1,7 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import { type FormatDistanceToken, formatDistanceToNowStrict } from "date-fns";
+import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 
 const shortFormatDistance: Record<FormatDistanceToken, string> = {
@@ -37,23 +38,32 @@ import {
 import { cn } from "@/util.ts";
 import { Button } from "../components/button.tsx";
 
-type ApiKey = {
+interface ApiKey {
     id: string;
     name?: string | null;
     start?: string | null;
     createdAt: Date;
     lastRequest?: Date | null;
     expiresAt?: Date | null;
-    permissions: { [key: string]: string[] } | null;
-    metadata: { [key: string]: unknown } | null;
+    permissions: Record<string, string[]> | null;
+    metadata: Record<string, unknown> | null;
     pollenBalance?: number | null;
-};
+}
 
-type ApiKeyManagerProps = {
+interface ApiKeyUpdateParams {
+    name?: string;
+    allowedModels?: string[] | null;
+    pollenBudget?: number | null;
+    accountPermissions?: string[] | null;
+    expiresAt?: Date | null;
+}
+
+interface ApiKeyManagerProps {
     apiKeys: ApiKey[];
     onCreate: (formData: CreateApiKey) => Promise<CreateApiKeyResponse>;
+    onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
-};
+}
 
 const Cell: FC<React.ComponentProps<"div">> = ({ children, ...props }) => {
     return (
@@ -74,8 +84,8 @@ const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
             await navigator.clipboard.writeText(fullKey);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error("Failed to copy:", err);
+        } catch (_err) {
+            // Silently fail
         }
     };
 
@@ -100,37 +110,12 @@ const LimitsBadge: FC<{
     expiresAt: Date | null | undefined;
     pollenBudget: number | null | undefined;
 }> = ({ expiresAt, pollenBudget }) => {
-    const hasExpiry = expiresAt !== null && expiresAt !== undefined;
-    const hasBudget = pollenBudget !== null && pollenBudget !== undefined;
-
-    // Format expiry
-    let expiryStr = "∞";
-    if (hasExpiry) {
-        const expiresDate = new Date(expiresAt);
-        const now = new Date();
-        const daysLeft = Math.ceil(
-            (expiresDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-        );
-        if (daysLeft <= 0) {
-            expiryStr = "expired";
-        } else {
-            const timeLeft = formatDistanceToNowStrict(expiresDate, {
-                addSuffix: false,
-                locale: shortLocale,
-            });
-            expiryStr = timeLeft;
-        }
-    }
-
-    // Format budget - show decimals only when needed
-    let budgetStr = "∞";
-    const isExhausted = hasBudget && pollenBudget <= 0;
-    if (hasBudget) {
-        const formatted = Number.isInteger(pollenBudget)
-            ? pollenBudget.toString()
-            : pollenBudget.toFixed(2);
-        budgetStr = pollenBudget <= 0 ? "empty" : `${formatted}p`;
-    }
+    const expiryStr = formatExpiry(expiresAt);
+    const budgetStr = formatBudget(pollenBudget);
+    const isExhausted =
+        pollenBudget !== null &&
+        pollenBudget !== undefined &&
+        pollenBudget <= 0;
 
     return (
         <div className="flex items-center text-xs whitespace-nowrap">
@@ -146,6 +131,32 @@ const LimitsBadge: FC<{
         </div>
     );
 };
+
+function formatExpiry(expiresAt: Date | null | undefined): string {
+    if (!expiresAt) return "∞";
+
+    const expiresDate = new Date(expiresAt);
+    const daysLeft = Math.ceil(
+        (expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+    );
+
+    return daysLeft <= 0
+        ? "expired"
+        : formatDistanceToNowStrict(expiresDate, {
+              addSuffix: false,
+              locale: shortLocale,
+          });
+}
+
+function formatBudget(pollenBudget: number | null | undefined): string {
+    if (pollenBudget === null || pollenBudget === undefined) return "∞";
+    if (pollenBudget <= 0) return "empty";
+
+    const formatted = Number.isInteger(pollenBudget)
+        ? pollenBudget.toString()
+        : pollenBudget.toFixed(2);
+    return `${formatted}p`;
+}
 
 const ModelsBadge: FC<{
     permissions: { [key: string]: string[] } | null;
@@ -227,9 +238,11 @@ const ModelsBadge: FC<{
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     apiKeys,
     onCreate,
+    onUpdate,
     onDelete,
 }) => {
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
 
     const handleDelete = async () => {
         if (deleteId) {
@@ -383,7 +396,19 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                         }
                                                     />
                                                 </Cell>
-                                                <Cell>
+                                                <Cell className="flex gap-1">
+                                                    <button
+                                                        type="button"
+                                                        className="w-6 h-6 flex items-center justify-center rounded hover:bg-blue-100 text-gray-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                                        onClick={() =>
+                                                            setEditingKey(
+                                                                apiKey,
+                                                            )
+                                                        }
+                                                        title="Manage key"
+                                                    >
+                                                        ⚙
+                                                    </button>
                                                     <button
                                                         type="button"
                                                         className="w-6 h-6 flex items-center justify-center rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
@@ -450,6 +475,14 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </Dialog.Content>
                 </Dialog.Positioner>
             </Dialog.Root>
+            {editingKey && (
+                <EditApiKeyDialog
+                    apiKey={editingKey}
+                    onUpdate={onUpdate}
+                    onDelete={onDelete}
+                    onClose={() => setEditingKey(null)}
+                />
+            )}
         </>
     );
 };
@@ -515,7 +548,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         );
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setIsSubmitting(true);
         try {
@@ -526,29 +559,26 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 ...keyPermissions.permissions,
             });
             setCreatedKey(newKey);
-        } catch (error) {
-            console.error("Failed to create API key:", error);
         } finally {
             setIsSubmitting(false);
         }
-    };
+    }
 
-    const handleCopyAndClose = async () => {
-        if (createdKey) {
-            try {
-                await navigator.clipboard.writeText(createdKey.key);
-                setCopied(true);
-                setTimeout(() => {
-                    onComplete();
-                    setIsOpen(false);
-                }, 500);
-            } catch (err) {
-                console.error("Failed to copy:", err);
+    async function handleCopyAndClose() {
+        if (!createdKey) return;
+
+        try {
+            await navigator.clipboard.writeText(createdKey.key);
+            setCopied(true);
+            setTimeout(() => {
                 onComplete();
                 setIsOpen(false);
-            }
+            }, 500);
+        } catch (_err) {
+            onComplete();
+            setIsOpen(false);
         }
-    };
+    }
 
     return (
         <Dialog.Root open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>

@@ -99,6 +99,20 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     <div className="space-y-6">
                         <Field.Root>
                             <Field.Label className="block text-sm font-semibold mb-2">
+                                Current Key
+                            </Field.Label>
+                            <div className="p-3 rounded-lg border-2 border-gray-200 bg-gray-50">
+                                <div className="font-medium text-gray-800 mb-1">
+                                    {apiKey.start?.startsWith("pk_") ? "🌐 Publishable Key" : "🔒 Secret Key"}
+                                </div>
+                                <div className="font-mono text-xs text-gray-600">
+                                    {apiKey.start}...
+                                </div>
+                            </div>
+                        </Field.Root>
+
+                        <Field.Root>
+                            <Field.Label className="block text-sm font-semibold mb-2">
                                 Name
                             </Field.Label>
                             <Field.Input
@@ -109,15 +123,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 placeholder="Enter API key name"
                                 disabled={isSubmitting}
                             />
-                        </Field.Root>
-
-                        <Field.Root>
-                            <Field.Label className="block text-sm font-semibold mb-2">
-                                Key (Read-only)
-                            </Field.Label>
-                            <div className="px-3 py-2 bg-gray-100 rounded border border-gray-300 font-mono text-xs text-gray-600">
-                                {apiKey.start}...
-                            </div>
                         </Field.Root>
 
                         <KeyPermissionsInputs

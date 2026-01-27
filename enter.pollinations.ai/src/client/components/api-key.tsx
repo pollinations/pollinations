@@ -56,9 +56,11 @@ type ApiKeyManagerProps = {
     onUpdate: (
         id: string,
         updates: {
+            name?: string;
             allowedModels?: string[] | null;
             pollenBudget?: number | null;
             accountPermissions?: string[] | null;
+            expiresAt?: Date | null;
         },
     ) => Promise<void>;
     onDelete: (id: string) => Promise<void>;

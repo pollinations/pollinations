@@ -202,9 +202,11 @@ function RouteComponent() {
     const handleUpdateApiKey = async (
         id: string,
         updates: {
+            name?: string;
             allowedModels?: string[] | null;
             pollenBudget?: number | null;
             accountPermissions?: string[] | null;
+            expiresAt?: Date | null;
         },
     ) => {
         const response = await fetch(`/api/api-keys/${id}/update`, {

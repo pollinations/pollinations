@@ -34,6 +34,10 @@ function parseMetadata(metadata: string): Record<string, unknown> | null {
  * - account: ["balance", "usage"] = allow access to account endpoints
  */
 const UpdateApiKeySchema = z.object({
+    name: z
+        .string()
+        .optional()
+        .describe("Name for the API key"),
     allowedModels: z
         .array(z.string())
         .nullable()
@@ -49,6 +53,11 @@ const UpdateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe('Account permissions: ["balance", "usage"]. null = none'),
+    expiresAt: z
+        .date()
+        .nullable()
+        .optional()
+        .describe("Expiration date for the key. null = no expiry"),
 });
 
 /**
@@ -112,7 +121,7 @@ export const apiKeysRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const authClient = c.var.auth.client;
             const { id } = c.req.param();
-            const { allowedModels, pollenBudget, accountPermissions } =
+            const { name, allowedModels, pollenBudget, accountPermissions, expiresAt } =
                 c.req.valid("json");
 
             // Verify ownership before updating
@@ -168,14 +177,21 @@ export const apiKeysRoutes = new Hono<Env>()
                 });
             }
 
-            // Update pollenBalance directly in D1 if provided
-            // null = remove budget (unlimited), number = set budget
-            if (pollenBudget !== undefined) {
+            // Update D1 columns directly if provided
+            const d1Updates: {
+                name?: string;
+                pollenBalance?: number | null;
+                expiresAt?: Date | null;
+            } = {};
+
+            if (name !== undefined) d1Updates.name = name;
+            if (pollenBudget !== undefined) d1Updates.pollenBalance = pollenBudget;
+            if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
+
+            if (Object.keys(d1Updates).length > 0) {
                 await db
                     .update(schema.apikey)
-                    .set({
-                        pollenBalance: pollenBudget,
-                    })
+                    .set(d1Updates)
                     .where(eq(schema.apikey.id, id));
             }
 

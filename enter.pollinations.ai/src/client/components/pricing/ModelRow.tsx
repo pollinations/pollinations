@@ -98,26 +98,29 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             NEW
                         </span>
                     )}
-                    {showPaidOnly && (
-                        <Tooltip content="Requires paid balance (tier balance not accepted)">
-                            <span className="text-[10px] text-red-700 bg-red-100 px-1.5 py-0.5 rounded-full font-semibold border border-red-400">
-                                PAID
-                            </span>
-                        </Tooltip>
-                    )}
                 </div>
             </td>
             <td className="py-2 px-2 text-sm">
                 <div className="flex justify-center">
-                    <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                            showPaidOnly
-                                ? "bg-gradient-to-r from-purple-100 to-purple-200 text-purple-900 border border-purple-300"
-                                : "bg-gradient-to-r from-yellow-100 to-orange-100 text-orange-900 border border-orange-200"
-                        } ${model.type === "image" ? "uppercase" : ""}`}
-                    >
-                        {genPerPollen}
-                    </span>
+                    {showPaidOnly ? (
+                        <Tooltip content="Requires Pollen Pack (tier balance not accepted)">
+                            <span
+                                className={`inline-flex flex-col items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700 border border-purple-200 ${model.type === "image" ? "uppercase" : ""}`}
+                            >
+                                <span className="flex items-center gap-1">
+                                    <span>💎</span>
+                                    <span>{genPerPollen}</span>
+                                </span>
+                                <span className="text-[9px] text-purple-600 font-medium normal-case">Pack Only</span>
+                            </span>
+                        </Tooltip>
+                    ) : (
+                        <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200 ${model.type === "image" ? "uppercase" : ""}`}
+                        >
+                            {genPerPollen}
+                        </span>
+                    )}
                 </div>
             </td>
             <td className="py-2 px-2 text-sm text-center">
@@ -135,7 +138,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             perToken={model.perToken}
                             className={showPaidOnly
                                 ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                : undefined}
+                                : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
                         />
                         <PriceBadge
                             prices={[model.promptAudioPrice]}
@@ -144,7 +147,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             perToken={model.perToken}
                             className={showPaidOnly
                                 ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                : undefined}
+                                : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
                         />
                         <PriceBadge
                             prices={[model.promptImagePrice]}
@@ -153,7 +156,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             perToken={model.perToken}
                             className={showPaidOnly
                                 ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                : undefined}
+                                : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
                         />
                     </div>
                 )}
@@ -170,7 +173,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             perToken={model.perToken}
                             className={showPaidOnly
                                 ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                : undefined}
+                                : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
                         />
                         <PriceBadge
                             prices={[model.completionAudioPrice]}
@@ -179,7 +182,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             perToken={model.perToken}
                             className={showPaidOnly
                                 ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                : undefined}
+                                : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
                         />
                         {model.perSecondPrice ? (
                             <>
@@ -190,7 +193,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                     perSecond
                                     className={showPaidOnly
                                         ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                        : undefined}
+                                        : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
                                 />
                                 <PriceBadge
                                     prices={[model.perAudioSecondPrice]}
@@ -199,7 +202,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                     perSecond
                                     className={showPaidOnly
                                         ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                        : undefined}
+                                        : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
                                 />
                             </>
                         ) : model.perTokenPrice ? (
@@ -210,7 +213,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 perToken
                                 className={showPaidOnly
                                     ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                    : undefined}
+                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
                             />
                         ) : model.perImagePrice ? (
                             <PriceBadge
@@ -220,7 +223,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 perImage
                                 className={showPaidOnly
                                     ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                    : undefined}
+                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
                             />
                         ) : (
                             <PriceBadge
@@ -230,7 +233,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 perToken={model.perToken}
                                 className={showPaidOnly
                                     ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                    : undefined}
+                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
                             />
                         )}
                     </div>

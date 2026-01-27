@@ -69,6 +69,9 @@ export const Pricing: FC = () => {
                 <div>
                   <strong>/sec</strong> = cost per second of video
                 </div>
+                <div>
+                  💎 <strong>Pack Only</strong> = requires purchased pollen
+                </div>
               </div>
             </div>
             <div className="bg-white/50 rounded-lg p-4 border border-amber-200">

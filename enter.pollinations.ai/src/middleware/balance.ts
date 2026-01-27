@@ -18,6 +18,7 @@ export type BalanceVariables = {
             userId: string,
             message?: string,
         ) => Promise<void>;
+        requirePaidBalance: (userId: string, message?: string) => Promise<void>;
         getBalance: (userId: string) => Promise<{
             tierBalance: number;
             packBalance: number;
@@ -128,8 +129,71 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         });
     };
 
+    const requirePaidBalance = async (userId: string, message?: string) => {
+        let balances: {
+            tierBalance: number;
+            packBalance: number;
+            cryptoBalance: number;
+        };
+        try {
+            balances = await getBalance(userId);
+        } catch (error) {
+            log.error("Failed to get balance for user {userId}", {
+                userId,
+                error: error instanceof Error ? error.message : String(error),
+            });
+            throw new HTTPException(503, {
+                message: "Unable to verify balance. Please try again shortly.",
+            });
+        }
+
+        // For paid-only models, only consider crypto + pack balance
+        const paidBalance = balances.cryptoBalance + balances.packBalance;
+
+        log.debug(
+            "Paid balance check for user {userId}: crypto={cryptoBalance}, pack={packBalance}, paid={paidBalance}",
+            {
+                userId,
+                cryptoBalance: balances.cryptoBalance,
+                packBalance: balances.packBalance,
+                paidBalance,
+            },
+        );
+
+        if (paidBalance > 0) {
+            // Track which balance source will be used
+            // Priority for paid-only: crypto → pack
+            let selectedSource = "pack";
+            let selectedSlug = "v1:meter:pack";
+
+            if (balances.cryptoBalance > 0) {
+                selectedSource = "crypto";
+                selectedSlug = "v1:meter:crypto";
+            }
+
+            c.var.balance.balanceCheckResult = {
+                selectedMeterId: `local:${selectedSource}`,
+                selectedMeterSlug: selectedSlug,
+                balances: {
+                    "v1:meter:tier": 0, // Tier not available for paid-only
+                    "v1:meter:crypto": balances.cryptoBalance,
+                    "v1:meter:pack": balances.packBalance,
+                },
+            };
+            return;
+        }
+
+        // No paid balance available
+        throw new HTTPException(402, {
+            message:
+                message ||
+                "This model requires a paid balance. Tier balance cannot be used.",
+        });
+    };
+
     c.set("balance", {
         requirePositiveBalance,
+        requirePaidBalance,
         getBalance,
     });
 

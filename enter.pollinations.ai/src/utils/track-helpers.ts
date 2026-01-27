@@ -1,8 +1,11 @@
 import { getLogger } from "@logtape/logtape";
+import type { ServiceId } from "@shared/registry/registry.ts";
+import { getServiceDefinition } from "@shared/registry/registry.ts";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apikeyTable } from "@/db/schema/better-auth.ts";
 import {
     atomicDeductApiKeyBalance,
+    atomicDeductPaidBalance,
     atomicDeductUserBalance,
     calculateDeductionSplit,
     getUserBalances,
@@ -17,6 +20,7 @@ interface DeductionParams {
     userId?: string;
     apiKeyId?: string;
     apiKeyPollenBalance?: number | null;
+    modelResolved?: string;
 }
 
 /**
@@ -29,6 +33,7 @@ export async function handleBalanceDeduction({
     userId,
     apiKeyId,
     apiKeyPollenBalance,
+    modelResolved,
 }: DeductionParams): Promise<void> {
     if (!isBilledUsage || !totalPrice) return;
 
@@ -39,7 +44,7 @@ export async function handleBalanceDeduction({
 
     // Handle user balance deduction
     if (userId) {
-        await deductUserBalance(db, userId, totalPrice);
+        await deductUserBalance(db, userId, totalPrice, modelResolved);
     }
 }
 
@@ -72,26 +77,42 @@ async function deductUserBalance(
     db: DrizzleD1Database,
     userId: string,
     amount: number,
+    modelResolved?: string,
 ): Promise<void> {
     try {
-        const balancesBefore = await getUserBalances(db, userId);
-        const deductionSplit = calculateDeductionSplit(
-            balancesBefore.tierBalance,
-            balancesBefore.cryptoBalance,
-            balancesBefore.packBalance,
-            amount,
-        );
+        // Check if model is paid-only
+        const isPaidOnly = modelResolved
+            ? getServiceDefinition(modelResolved as ServiceId).paidOnly
+            : false;
 
-        await atomicDeductUserBalance(db, userId, amount);
+        if (isPaidOnly) {
+            // For paid-only models, use special deduction that skips tier
+            await atomicDeductPaidBalance(db, userId, amount);
+            log.debug(
+                "Decremented {price} pollen from user {userId} (paid-only model, tier excluded)",
+                { price: amount, userId },
+            );
+        } else {
+            // Regular deduction flow
+            const balancesBefore = await getUserBalances(db, userId);
+            const deductionSplit = calculateDeductionSplit(
+                balancesBefore.tierBalance,
+                balancesBefore.cryptoBalance,
+                balancesBefore.packBalance,
+                amount,
+            );
 
-        log.debug(
-            "Decremented {price} pollen from user {userId} (tier: -{fromTier}, crypto: -{fromCrypto}, pack: -{fromPack})",
-            {
-                price: amount,
-                userId,
-                ...deductionSplit,
-            },
-        );
+            await atomicDeductUserBalance(db, userId, amount);
+
+            log.debug(
+                "Decremented {price} pollen from user {userId} (tier: -{fromTier}, crypto: -{fromCrypto}, pack: -{fromPack})",
+                {
+                    price: amount,
+                    userId,
+                    ...deductionSplit,
+                },
+            );
+        }
     } catch (error) {
         log.error("Failed to decrement user balance for {userId}: {error}", {
             userId,

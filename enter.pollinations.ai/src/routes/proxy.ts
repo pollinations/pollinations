@@ -6,6 +6,7 @@ import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
 import { type BalanceVariables, balance } from "@/middleware/balance.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
@@ -24,6 +25,7 @@ import {
     getTextModelsInfo,
     ModelInfoSchema,
 } from "@shared/registry/model-info.ts";
+import { getServiceDefinition } from "@shared/registry/registry.ts";
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -577,11 +579,22 @@ export function contentFilterResultsToHeaders(
 async function checkBalance({
     auth,
     balance,
-}: AuthVariables & BalanceVariables) {
+    model,
+}: AuthVariables & BalanceVariables & ModelVariables) {
     if (auth.user?.id) {
-        await balance.requirePositiveBalance(
-            auth.user.id,
-            "Insufficient pollen balance to use this model",
-        );
+        // Get the service definition to check if model is paid-only
+        const serviceDefinition = getServiceDefinition(model.resolved);
+
+        if (serviceDefinition.paidOnly) {
+            await balance.requirePaidBalance(
+                auth.user.id,
+                "This premium model requires a paid balance. Tier balance cannot be used.",
+            );
+        } else {
+            await balance.requirePositiveBalance(
+                auth.user.id,
+                "Insufficient pollen balance to use this model",
+            );
+        }
     }
 }

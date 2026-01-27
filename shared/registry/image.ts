@@ -90,6 +90,7 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "seedream-pro",
         provider: "bytedance",
+        paidOnly: true,
         cost: [
             // ByteDance ARK Seedream 4.5 - $0.04 per image
             {
@@ -173,6 +174,7 @@ export const IMAGE_SERVICES = {
         aliases: ["veo-3.1-fast", "video"],
         modelId: "veo",
         provider: "google",
+        paidOnly: true,
         cost: [
             // Veo 3.1 Fast - $0.15 per second of video
             // We bill by "video seconds" - each second is counted like a token

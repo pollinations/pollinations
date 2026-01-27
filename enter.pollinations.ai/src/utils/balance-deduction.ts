@@ -130,3 +130,29 @@ export function calculateDeductionSplit(
 
     return { fromTier, fromCrypto, fromPack };
 }
+
+/**
+ * Atomically deducts pollen from paid balances only (excluding tier_balance).
+ * Deduction order: crypto_balance → pack_balance
+ *
+ * @param db - Drizzle database instance
+ * @param userId - User ID to deduct from
+ * @param amount - Amount of pollen to deduct
+ * @returns Promise that resolves when deduction is complete
+ */
+export async function atomicDeductPaidBalance(
+    db: DrizzleD1Database,
+    userId: string,
+    amount: number,
+): Promise<void> {
+    if (amount <= 0) return;
+
+    // Deduct from crypto first, then pack (tier is not touched)
+    await db.run(sql`
+		UPDATE ${userTable}
+		SET
+			crypto_balance = MAX(0, crypto_balance - MIN(crypto_balance, ${amount})),
+			pack_balance = pack_balance - MAX(0, ${amount} - COALESCE(crypto_balance, 0))
+		WHERE id = ${userId}
+	`);
+}

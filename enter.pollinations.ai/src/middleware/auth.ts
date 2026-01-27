@@ -34,23 +34,21 @@ export type AuthOptions = {
     allowApiKey: boolean;
 };
 
-type ApiKey = {
+interface ApiKey {
     id: string;
     name?: string;
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
-    /** The raw API key value (for passthrough to community models) */
     rawKey?: string;
-};
+}
 
-type AuthResult = {
+interface AuthResult {
     user?: User;
     session?: Session;
     apiKey?: ApiKey;
-    /** The raw API key value extracted from request (for passthrough) */
     rawApiKey?: string;
-};
+}
 
 /** Extracts Bearer token from Authorization header (RFC 6750) or query parameter */
 function extractApiKey(c: Context<AuthEnv>): string | null {
@@ -160,19 +158,12 @@ export const auth = (options: AuthOptions) =>
             return user;
         };
 
-        const requireModelAccess = (): void => {
-            // No API key (session auth) = allow all models
-            if (!apiKey) return;
-            // No permissions or no models restriction = allow all (backward compatible)
-            if (!apiKey.permissions?.models) return;
+        function requireModelAccess(): void {
+            if (!apiKey || !apiKey.permissions?.models) return;
 
-            // Get resolved model from middleware (must run after resolveModel middleware)
             const model = c.var.model;
-            if (!model) return; // No model middleware ran, skip check
+            if (!model) return;
 
-            // Allowlist stores canonical model IDs (e.g., "flux-pro-1.1")
-            // User may request via alias (e.g., "flux") which resolves to canonical ID
-            // Check if the resolved canonical ID is in the allowlist
             if (!apiKey.permissions.models.includes(model.resolved)) {
                 log.debug("Model access denied: {model} not in allowlist", {
                     model: model.requested,
@@ -183,19 +174,14 @@ export const auth = (options: AuthOptions) =>
                     message: `Model '${model.requested}' is not allowed for this API key`,
                 });
             }
-        };
+        }
 
-        const requireKeyBudget = (): void => {
-            // No API key (session auth) = no budget check
+        function requireKeyBudget(): void {
             if (!apiKey) return;
 
-            // Get pollenBalance from D1 column
-            const pollenBalance = apiKey.pollenBalance;
-
-            // No budget set = unlimited
+            const { pollenBalance } = apiKey;
             if (pollenBalance === null || pollenBalance === undefined) return;
 
-            // Budget exhausted
             if (pollenBalance <= 0) {
                 log.debug(
                     "API key budget exhausted: {keyId} pollenBalance={pollenBalance}",
@@ -209,7 +195,7 @@ export const auth = (options: AuthOptions) =>
                         "API key budget exhausted. Please top up or create a new key.",
                 });
             }
-        };
+        }
 
         c.set("auth", {
             client,

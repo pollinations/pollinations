@@ -5,16 +5,16 @@ import { useState } from "react";
 import { Button } from "./button.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 
-type ApiKey = {
+interface ApiKey {
     id: string;
     name?: string | null;
     start?: string | null;
     pollenBalance?: number | null;
-    permissions: { [key: string]: string[] } | null;
+    permissions: Record<string, string[]> | null;
     expiresAt?: Date | null;
-};
+}
 
-type EditApiKeyDialogProps = {
+interface EditApiKeyDialogProps {
     apiKey: ApiKey;
     onUpdate: (
         id: string,
@@ -28,7 +28,7 @@ type EditApiKeyDialogProps = {
     ) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
     onClose: () => void;
-};
+}
 
 export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
@@ -45,20 +45,22 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         pollenBudget: apiKey.pollenBalance ?? null,
         accountPermissions: apiKey.permissions?.account ?? null,
         expiryDays: apiKey.expiresAt
-            ? Math.ceil((new Date(apiKey.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+            ? Math.ceil(
+                  (new Date(apiKey.expiresAt).getTime() - Date.now()) /
+                      (1000 * 60 * 60 * 24),
+              )
             : null,
     });
 
-    const handleSave = async () => {
+    async function handleSave() {
         setIsSubmitting(true);
         try {
+            const { expiryDays, ...permissions } = keyPermissions.permissions;
             await onUpdate(apiKey.id, {
                 name,
-                allowedModels: keyPermissions.permissions.allowedModels,
-                pollenBudget: keyPermissions.permissions.pollenBudget,
-                accountPermissions: keyPermissions.permissions.accountPermissions,
-                expiresAt: keyPermissions.permissions.expiryDays
-                    ? new Date(Date.now() + keyPermissions.permissions.expiryDays * 24 * 60 * 60 * 1000)
+                ...permissions,
+                expiresAt: expiryDays
+                    ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
                     : null,
             });
             onClose();
@@ -67,9 +69,9 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         } finally {
             setIsSubmitting(false);
         }
-    };
+    }
 
-    const handleDelete = async () => {
+    async function handleDelete() {
         setIsSubmitting(true);
         try {
             await onDelete(apiKey.id);
@@ -79,7 +81,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         } finally {
             setIsSubmitting(false);
         }
-    };
+    }
 
     return (
         <Dialog.Root open onOpenChange={({ open }) => !open && onClose()}>
@@ -103,7 +105,9 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                             </Field.Label>
                             <div className="p-3 rounded-lg border-2 border-gray-200 bg-gray-50">
                                 <div className="font-medium text-gray-800 mb-1">
-                                    {apiKey.start?.startsWith("pk_") ? "🌐 Publishable Key" : "🔒 Secret Key"}
+                                    {apiKey.start?.startsWith("pk_")
+                                        ? "🌐 Publishable Key"
+                                        : "🔒 Secret Key"}
                                 </div>
                                 <div className="font-mono text-xs text-gray-600">
                                     {apiKey.start}...
@@ -131,13 +135,44 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         />
 
                         <div className="flex gap-2 justify-between pt-4 border-t border-gray-300">
-                            {!showDeleteConfirm ? (
+                            {showDeleteConfirm ? (
+                                <>
+                                    <div className="text-sm text-red-600 font-medium">
+                                        Delete this key permanently?
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            type="button"
+                                            weight="outline"
+                                            onClick={() =>
+                                                setShowDeleteConfirm(false)
+                                            }
+                                            disabled={isSubmitting}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            color="red"
+                                            weight="strong"
+                                            onClick={handleDelete}
+                                            disabled={isSubmitting}
+                                        >
+                                            {isSubmitting
+                                                ? "Deleting..."
+                                                : "Confirm Delete"}
+                                        </Button>
+                                    </div>
+                                </>
+                            ) : (
                                 <>
                                     <Button
                                         type="button"
                                         color="red"
                                         weight="outline"
-                                        onClick={() => setShowDeleteConfirm(true)}
+                                        onClick={() =>
+                                            setShowDeleteConfirm(true)
+                                        }
                                         disabled={isSubmitting}
                                     >
                                         Delete Key
@@ -156,32 +191,9 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                             onClick={handleSave}
                                             disabled={isSubmitting}
                                         >
-                                            {isSubmitting ? "Saving..." : "Save Changes"}
-                                        </Button>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="text-sm text-red-600 font-medium">
-                                        Delete this key permanently?
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            type="button"
-                                            weight="outline"
-                                            onClick={() => setShowDeleteConfirm(false)}
-                                            disabled={isSubmitting}
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            color="red"
-                                            weight="strong"
-                                            onClick={handleDelete}
-                                            disabled={isSubmitting}
-                                        >
-                                            {isSubmitting ? "Deleting..." : "Confirm Delete"}
+                                            {isSubmitting
+                                                ? "Saving..."
+                                                : "Save Changes"}
                                         </Button>
                                     </div>
                                 </>

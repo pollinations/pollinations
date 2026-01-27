@@ -1,0 +1,47 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-legacy",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sun, 25 Jan 2026 03:06:35 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"vertex-ai-1769",
+          "delay": 21
+        },
+        {
+          "data": "310395363\",\"object\":\"chat.completion.chunk\",\"created\":1769310395,\"model\":\"gemini-2.5-pro\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"yes\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\"yes\"}}]},\"index\":0,\"finish_reason\":\"STOP\"}],\"usage\":{\"prompt_tokens\":265,\"completion_tokens\":136,\"total_tokens\":401,\"completion_tokens_details\":{\"reasoning_tokens\":135,\"audio_tokens\":0},\"prompt_tokens_details\":{\"audio_tokens\":0}}}\n\n",
+          "delay": 1
+        }
+      ]
+    }
+  }
+}

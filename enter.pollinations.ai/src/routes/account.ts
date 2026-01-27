@@ -9,7 +9,17 @@ import {
     user as userTable,
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
-import { calculateNextPeriodStart, tierNames } from "@/utils/polar.ts";
+import { tierNames } from "@/tier-config.ts";
+
+// Calculate next tier refill time (midnight UTC) - cron runs daily at 00:00 UTC
+function getNextRefillAt(): string {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    tomorrow.setUTCHours(0, 0, 0, 0);
+    return tomorrow.toISOString();
+}
+
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
@@ -45,7 +55,6 @@ type DailyUsageRecord = {
     meter_source: string | null;
     requests: number;
     cost_usd: number;
-    api_key_names: string[];
 };
 
 // Response schema for daily usage OpenAPI documentation
@@ -58,9 +67,6 @@ const dailyUsageRecordSchema = z.object({
         .describe("Billing source ('tier', 'pack', 'crypto')"),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
-    api_key_names: z
-        .array(z.string())
-        .describe("List of API key names used for this date/model"),
 });
 
 const dailyUsageResponseSchema = z.object({
@@ -200,12 +206,8 @@ export const accountRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "User not found" });
             }
 
-            // Convert Unix seconds from DB to JS milliseconds
-            const nextResetAt = profile.lastTierGrant
-                ? calculateNextPeriodStart(
-                      new Date(profile.lastTierGrant * 1000),
-                  ).toISOString()
-                : null;
+            // Next reset is always midnight UTC (cron runs daily)
+            const nextResetAt = getNextRefillAt();
 
             return c.json({
                 name: profile.name,
@@ -253,10 +255,7 @@ export const accountRoutes = new Hono<Env>()
             }
 
             // If API key has a budget, return that
-            if (
-                apiKey?.pollenBalance !== null &&
-                apiKey?.pollenBalance !== undefined
-            ) {
+            if (apiKey?.pollenBalance != null) {
                 return c.json({ balance: apiKey.pollenBalance });
             }
 

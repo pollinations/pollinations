@@ -62,7 +62,7 @@ async function main() {
                 `User @${ISSUE_AUTHOR} is not registered at enter.pollinations.ai`,
             );
         } else if (tier === null || tier === undefined) {
-            // User exists but tier not set - this is a bug (Polar webhook didn't fire)
+            // User exists but tier not set - this is a system error (D1 initialization failed)
             result.valid = false;
             result.checks.registration.error_code = "TIER_NOT_SET";
             result.errors.push(

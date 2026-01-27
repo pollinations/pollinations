@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { useEffect, useState } from "react";
-import type { TierStatus } from "../../../utils/polar";
+import type { TierStatus } from "../../../tier-config";
 import { Chart } from "./components/Chart";
 import { FilterButton } from "./components/FilterButton";
 import { MultiSelect } from "./components/MultiSelect";

@@ -1,4 +1,3 @@
-import { Polar } from "@polar-sh/sdk";
 import {
     type BetterAuthOptions,
     type BetterAuthPlugin,
@@ -9,21 +8,18 @@ import {
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { admin, apiKey, openAPI } from "better-auth/plugins";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
+import { user as userTable } from "./db/schema/better-auth.ts";
+import { sendTierEventToTinybird } from "./events.ts";
+import { DEFAULT_TIER, getTierPollen } from "./tier-config.ts";
 
 function addKeyPrefix(key: string) {
     return `auth:${key}`;
 }
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
-    const polar = new Polar({
-        accessToken: env.POLAR_ACCESS_TOKEN,
-        server: env.POLAR_SERVER,
-    });
-
-    const defaultTierProductId = env.POLAR_PRODUCT_TIER_SPORE;
-
     const db = drizzle(env.DB);
 
     const PUBLISHABLE_KEY_PREFIX = "pk";
@@ -139,12 +135,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 }),
             },
         },
-        plugins: [
-            adminPlugin,
-            apiKeyPlugin,
-            polarPlugin(polar, defaultTierProductId),
-            openAPIPlugin,
-        ],
+        plugins: [adminPlugin, apiKeyPlugin, tierPlugin(env), openAPIPlugin],
         telemetry: { enabled: false },
     });
 }
@@ -153,25 +144,19 @@ export type Auth = ReturnType<typeof createAuth>;
 export type Session = Auth["$Infer"]["Session"]["session"];
 export type User = Auth["$Infer"]["Session"]["user"];
 
-function polarPlugin(
-    polar: Polar,
-    defaultTierProductId?: string,
-): BetterAuthPlugin {
+/**
+ * Plugin to initialize tier balance for new users in D1.
+ * This replaces the old Polar-based tier management.
+ */
+function tierPlugin(env: Cloudflare.Env): BetterAuthPlugin {
     return {
-        id: "polar",
+        id: "tier",
         init: () => ({
             options: {
                 databaseHooks: {
                     user: {
                         create: {
-                            before: onBeforeUserCreate(polar),
-                            after: onAfterUserCreate(
-                                polar,
-                                defaultTierProductId,
-                            ),
-                        },
-                        update: {
-                            after: onUserUpdate(polar),
+                            after: onAfterUserCreate(env),
                         },
                     },
                 },
@@ -180,128 +165,45 @@ function polarPlugin(
     } satisfies BetterAuthPlugin;
 }
 
-function onBeforeUserCreate(polar: Polar) {
-    return async (user: Partial<User>, ctx: GenericEndpointContext | null) => {
+/**
+ * Set initial tier balance in D1 after user creation.
+ * This guarantees new users get their default tier pollen.
+ */
+function onAfterUserCreate(env: Cloudflare.Env) {
+    return async (user: GenericUser, ctx?: GenericEndpointContext) => {
         if (!ctx) return;
         try {
-            if (!user.email) {
-                throw new APIError("BAD_REQUEST", {
-                    message:
-                        "Polar customer creation failed: missing email address",
-                });
-            }
+            const db = drizzle(env.DB);
+            const tierBalance = getTierPollen(DEFAULT_TIER);
+            await db
+                .update(userTable)
+                .set({
+                    tierBalance,
+                    lastTierGrant: Date.now(),
+                })
+                .where(eq(userTable.id, user.id));
 
-            // if the customer already exists, link the new account
-            const { result } = await polar.customers.list({
-                email: user.email,
-            });
-            const existingCustomer = result.items[0];
-            if (existingCustomer?.externalId) {
-                return {
-                    data: {
-                        ...user,
-                        id: existingCustomer.externalId,
+            // Log user registration event to Tinybird
+            // Use optional chaining for test environments where executionCtx may not exist
+            ctx.context.executionCtx?.waitUntil(
+                sendTierEventToTinybird(
+                    {
+                        event_type: "user_registration",
+                        environment: env.ENVIRONMENT || "unknown",
+                        user_id: user.id,
+                        tier: DEFAULT_TIER,
+                        pollen_amount: tierBalance,
+                        timestamp: new Date().toISOString(),
                     },
-                };
-            }
-
-            await polar.customers.create({
-                email: user.email,
-                name: user.name,
-                externalId: user.id,
-            });
-
-            return {
-                data: user,
-            };
-        } catch (e: unknown) {
-            const messageOrError = e instanceof Error ? e.message : e;
-            throw new APIError("INTERNAL_SERVER_ERROR", {
-                message: `Polar customer creation failed. Error: ${messageOrError}`,
-            });
-        }
-    };
-}
-
-function onAfterUserCreate(polar: Polar, defaultTierProductId?: string) {
-    return async (user: GenericUser, ctx: GenericEndpointContext | null) => {
-        if (!ctx) return;
-        try {
-            const { result } = await polar.customers.list({
-                email: user.email,
-            });
-            const existingCustomer = result.items[0];
-
-            if (existingCustomer && existingCustomer.externalId !== user.id) {
-                await polar.customers.update({
-                    id: existingCustomer.id,
-                    customerUpdate: {
-                        externalId: user.id,
-                    },
-                });
-            }
-
-            // Auto-create subscription for new user's default tier
-            if (existingCustomer && defaultTierProductId) {
-                await ensureDefaultSubscription(
-                    polar,
-                    existingCustomer.id,
-                    defaultTierProductId,
-                    user.id,
-                    ctx.context.logger,
-                );
-            }
-        } catch (e: unknown) {
-            const messageOrError = e instanceof Error ? e.message : e;
-            throw new APIError("INTERNAL_SERVER_ERROR", {
-                message: `Polar customer update failed. Error: ${messageOrError}`,
-            });
-        }
-    };
-}
-
-function onUserUpdate(polar: Polar) {
-    return async (user: GenericUser, ctx: GenericEndpointContext | null) => {
-        if (!ctx) return;
-        try {
-            await polar.customers.updateExternal({
-                externalId: user.id,
-                customerUpdateExternalID: {
-                    email: user.email,
-                    name: user.name,
-                },
-            });
-        } catch (e: unknown) {
-            const messageOrError = e instanceof Error ? e.message : e;
-            ctx.context.logger.error(
-                `Polar customer update failed. Error: ${messageOrError}`,
+                    env.TINYBIRD_TIER_INGEST_URL,
+                    env.TINYBIRD_INGEST_TOKEN,
+                ),
             );
+        } catch (e: unknown) {
+            const messageOrError = e instanceof Error ? e.message : e;
+            throw new APIError("INTERNAL_SERVER_ERROR", {
+                message: `User tier initialization failed. Error: ${messageOrError}`,
+            });
         }
     };
-}
-
-async function ensureDefaultSubscription(
-    polar: Polar,
-    customerId: string,
-    productId: string,
-    userId: string,
-    logger: { info: (msg: string) => void; error: (msg: string) => void },
-): Promise<void> {
-    try {
-        const { result: subs } = await polar.subscriptions.list({
-            customerId,
-            active: true,
-            limit: 1,
-        });
-
-        if (subs.items.length === 0) {
-            await polar.subscriptions.create({
-                productId,
-                customerId,
-            });
-            logger.info(`Created default tier subscription for user ${userId}`);
-        }
-    } catch (error) {
-        logger.error(`Failed to create default subscription: ${error}`);
-    }
 }

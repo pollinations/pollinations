@@ -143,8 +143,12 @@ export const auth = (options: AuthOptions) =>
             };
         };
 
-        const { user, session, apiKey } =
-            (await authenticateSession()) || (await authenticateApiKey()) || {};
+        // Try session authentication first, then API key
+        let authResult = await authenticateSession();
+        if (!authResult) {
+            authResult = await authenticateApiKey();
+        }
+        const { user, session, apiKey } = authResult || {};
 
         log.debug("Authentication result: {authenticated}", {
             authenticated: !!user,
@@ -205,7 +209,7 @@ export const auth = (options: AuthOptions) =>
             const pollenBalance = apiKey.pollenBalance;
 
             // No budget set = unlimited
-            if (pollenBalance === null || pollenBalance === undefined) return;
+            if (pollenBalance == null) return;
 
             // Budget exhausted
             if (pollenBalance <= 0) {

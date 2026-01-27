@@ -378,13 +378,25 @@ describe("Tier Balance Management", () => {
     describe("Paid-Only Models", () => {
         test("should reject paid-only models when user has only tier balance", async ({
             apiKey,
+            sessionToken,
             mocks,
         }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const db = drizzle(env.DB);
 
+            // Get the authenticated user ID from session
+            const sessionResponse = await SELF.fetch(
+                "http://localhost:3000/api/auth/get-session",
+                {
+                    headers: {
+                        cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const session = await sessionResponse.json();
+            const userId = session.user.id;
+
             // Setup user with only tier balance
-            const userId = apiKey.split("-")[0]; // Extract user ID from API key
             await db
                 .update(userTable)
                 .set({
@@ -419,13 +431,25 @@ describe("Tier Balance Management", () => {
 
         test("should accept paid-only models when user has crypto balance", async ({
             apiKey,
+            sessionToken,
             mocks,
         }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const db = drizzle(env.DB);
 
+            // Get the authenticated user ID from session
+            const sessionResponse = await SELF.fetch(
+                "http://localhost:3000/api/auth/get-session",
+                {
+                    headers: {
+                        cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const session = await sessionResponse.json();
+            const userId = session.user.id;
+
             // Setup user with crypto balance
-            const userId = apiKey.split("-")[0];
             await db
                 .update(userTable)
                 .set({
@@ -450,13 +474,25 @@ describe("Tier Balance Management", () => {
 
         test("should accept paid-only models when user has pack balance", async ({
             apiKey,
+            sessionToken,
             mocks,
         }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const db = drizzle(env.DB);
 
+            // Get the authenticated user ID from session
+            const sessionResponse = await SELF.fetch(
+                "http://localhost:3000/api/auth/get-session",
+                {
+                    headers: {
+                        cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const session = await sessionResponse.json();
+            const userId = session.user.id;
+
             // Setup user with pack balance
-            const userId = apiKey.split("-")[0];
             await db
                 .update(userTable)
                 .set({
@@ -481,13 +517,25 @@ describe("Tier Balance Management", () => {
 
         test("should allow regular models with tier balance", async ({
             apiKey,
+            sessionToken,
             mocks,
         }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const db = drizzle(env.DB);
 
+            // Get the authenticated user ID from session
+            const sessionResponse = await SELF.fetch(
+                "http://localhost:3000/api/auth/get-session",
+                {
+                    headers: {
+                        cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const session = await sessionResponse.json();
+            const userId = session.user.id;
+
             // Setup user with only tier balance
-            const userId = apiKey.split("-")[0];
             await db
                 .update(userTable)
                 .set({
@@ -572,7 +620,7 @@ describe("Tier Balance Management", () => {
 
         test("should show paid_only field in model info", async () => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/v1/models",
+                "http://localhost:3000/api/generate/v1/models",
             );
 
             expect(response.status).toBe(200);
@@ -591,13 +639,25 @@ describe("Tier Balance Management", () => {
 
         test("should accept paid-only models with mixed balance (crypto + tier)", async ({
             apiKey,
+            sessionToken,
             mocks,
         }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const db = drizzle(env.DB);
 
+            // Get the authenticated user ID from session
+            const sessionResponse = await SELF.fetch(
+                "http://localhost:3000/api/auth/get-session",
+                {
+                    headers: {
+                        cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const session = await sessionResponse.json();
+            const userId = session.user.id;
+
             // Setup user with mixed balance including crypto
-            const userId = apiKey.split("-")[0];
             await db
                 .update(userTable)
                 .set({
@@ -709,13 +769,25 @@ describe("Tier Balance Management", () => {
 
         test("should reject all paid-only model aliases with tier-only balance", async ({
             apiKey,
+            sessionToken,
             mocks,
         }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const db = drizzle(env.DB);
 
+            // Get the authenticated user ID from session
+            const sessionResponse = await SELF.fetch(
+                "http://localhost:3000/api/auth/get-session",
+                {
+                    headers: {
+                        cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const session = await sessionResponse.json();
+            const userId = session.user.id;
+
             // Setup user with only tier balance
-            const userId = apiKey.split("-")[0];
             await db
                 .update(userTable)
                 .set({

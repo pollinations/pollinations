@@ -9,6 +9,7 @@ import {
     hasSearch,
     hasVision,
     isNewModel,
+    isPaidOnly,
 } from "./model-info.ts";
 import { PriceBadge } from "./PriceBadge.tsx";
 import { Tooltip } from "./Tooltip.tsx";
@@ -37,15 +38,23 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showSearch = hasSearch(model.name);
     const showCodeExecution = hasCodeExecution(model.name);
     const showNew = isNewModel(model.name);
+    const showPaidOnly = isPaidOnly(model.name);
 
     return (
         <tr className="border-b border-gray-200">
             <td className="py-2 px-2 text-sm text-gray-700 whitespace-nowrap relative group">
                 <div className="flex items-center gap-2">
                     <div className="flex flex-col">
-                        <span className={showNew ? "font-bold" : "font-medium"}>
-                            {modelDisplayName || model.name}
-                        </span>
+                        <div className="flex items-center gap-1">
+                            <span className={showNew ? "font-bold" : "font-medium"}>
+                                {modelDisplayName || model.name}
+                            </span>
+                            {showPaidOnly && (
+                                <Tooltip content="Requires paid balance (tier balance not accepted)">
+                                    <span className="text-xs text-orange-600">💰</span>
+                                </Tooltip>
+                            )}
+                        </div>
                         <button
                             type="button"
                             onClick={copyModelName}

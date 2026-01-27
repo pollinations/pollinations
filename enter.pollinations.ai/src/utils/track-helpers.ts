@@ -26,15 +26,19 @@ interface DeductionParams {
 /**
  * Handles balance deduction for both API keys and users after billable requests
  */
-export async function handleBalanceDeduction({
-    db,
-    isBilledUsage,
-    totalPrice,
-    userId,
-    apiKeyId,
-    apiKeyPollenBalance,
-    modelResolved,
-}: DeductionParams): Promise<void> {
+export async function handleBalanceDeduction(
+    params: DeductionParams,
+): Promise<void> {
+    const {
+        db,
+        isBilledUsage,
+        totalPrice,
+        userId,
+        apiKeyId,
+        apiKeyPollenBalance,
+        modelResolved,
+    } = params;
+
     if (!isBilledUsage || !totalPrice) return;
 
     // Handle API key budget deduction
@@ -51,7 +55,7 @@ export async function handleBalanceDeduction({
 function hasApiKeyBudget(
     balance: number | null | undefined,
 ): balance is number {
-    return balance !== null && balance !== undefined;
+    return typeof balance === "number";
 }
 
 async function deductApiKeyBalance(
@@ -80,43 +84,43 @@ async function deductUserBalance(
     modelResolved?: string,
 ): Promise<void> {
     try {
-        // Check if model is paid-only
         const isPaidOnly = modelResolved
-            ? getServiceDefinition(modelResolved as ServiceId).paidOnly
+            ? (getServiceDefinition(modelResolved as ServiceId).paidOnly ??
+              false)
             : false;
 
         if (isPaidOnly) {
-            // For paid-only models, use special deduction that skips tier
             await atomicDeductPaidBalance(db, userId, amount);
             log.debug(
                 "Decremented {price} pollen from user {userId} (paid-only model, tier excluded)",
                 { price: amount, userId },
             );
-        } else {
-            // Regular deduction flow
-            const balancesBefore = await getUserBalances(db, userId);
-            const deductionSplit = calculateDeductionSplit(
-                balancesBefore.tierBalance,
-                balancesBefore.cryptoBalance,
-                balancesBefore.packBalance,
-                amount,
-            );
-
-            await atomicDeductUserBalance(db, userId, amount);
-
-            log.debug(
-                "Decremented {price} pollen from user {userId} (tier: -{fromTier}, crypto: -{fromCrypto}, pack: -{fromPack})",
-                {
-                    price: amount,
-                    userId,
-                    ...deductionSplit,
-                },
-            );
+            return;
         }
+
+        // Regular deduction flow
+        const balancesBefore = await getUserBalances(db, userId);
+        const deductionSplit = calculateDeductionSplit(
+            balancesBefore.tierBalance,
+            balancesBefore.cryptoBalance,
+            balancesBefore.packBalance,
+            amount,
+        );
+
+        await atomicDeductUserBalance(db, userId, amount);
+
+        log.debug(
+            "Decremented {price} pollen from user {userId} (tier: -{fromTier}, crypto: -{fromCrypto}, pack: -{fromPack})",
+            {
+                price: amount,
+                userId,
+                ...deductionSplit,
+            },
+        );
     } catch (error) {
         log.error("Failed to decrement user balance for {userId}: {error}", {
             userId,
-            error: error instanceof Error ? error.message : error,
+            error: error instanceof Error ? error.message : String(error),
         });
     }
 }

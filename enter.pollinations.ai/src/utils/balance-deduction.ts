@@ -70,6 +70,12 @@ export async function atomicDeductApiKeyBalance(
 	`);
 }
 
+export type UserBalances = {
+    tierBalance: number;
+    cryptoBalance: number;
+    packBalance: number;
+};
+
 /**
  * Gets the current balances for a user.
  * Useful for logging or displaying balance information.
@@ -81,11 +87,7 @@ export async function atomicDeductApiKeyBalance(
 export async function getUserBalances(
     db: DrizzleD1Database,
     userId: string,
-): Promise<{
-    tierBalance: number;
-    cryptoBalance: number;
-    packBalance: number;
-}> {
+): Promise<UserBalances> {
     const result = await db
         .select({
             tierBalance: userTable.tierBalance,
@@ -96,12 +98,19 @@ export async function getUserBalances(
         .where(sql`${userTable.id} = ${userId}`)
         .limit(1);
 
+    const user = result[0];
     return {
-        tierBalance: result[0]?.tierBalance ?? 0,
-        cryptoBalance: result[0]?.cryptoBalance ?? 0,
-        packBalance: result[0]?.packBalance ?? 0,
+        tierBalance: user?.tierBalance ?? 0,
+        cryptoBalance: user?.cryptoBalance ?? 0,
+        packBalance: user?.packBalance ?? 0,
     };
 }
+
+export type DeductionSplit = {
+    fromTier: number;
+    fromCrypto: number;
+    fromPack: number;
+};
 
 /**
  * Calculates how a deduction would be split across balance types.
@@ -118,11 +127,7 @@ export function calculateDeductionSplit(
     cryptoBalance: number,
     packBalance: number,
     amount: number,
-): {
-    fromTier: number;
-    fromCrypto: number;
-    fromPack: number;
-} {
+): DeductionSplit {
     const fromTier = Math.min(amount, Math.max(0, tierBalance));
     const remainingAfterTier = amount - fromTier;
     const fromCrypto = Math.min(remainingAfterTier, Math.max(0, cryptoBalance));

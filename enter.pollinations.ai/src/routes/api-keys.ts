@@ -10,16 +10,42 @@ import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 
 /**
- * Parse metadata that may be double-serialized by better-auth.
- * Handles both: '{"key":"value"}' and '"{\\"key\\":\\"value\\"}"'
+ * Build updated permissions object based on changes
+ */
+function buildUpdatedPermissions(
+    existing: Record<string, string[]>,
+    allowedModels?: string[] | null,
+    accountPermissions?: string[] | null,
+): Record<string, string[]> | undefined {
+    const updated = { ...existing };
+    let hasChanges = false;
+
+    if (allowedModels === null) {
+        delete updated.models;
+        hasChanges = true;
+    } else if (allowedModels?.length) {
+        updated.models = allowedModels;
+        hasChanges = true;
+    }
+
+    if (accountPermissions === null) {
+        delete updated.account;
+        hasChanges = true;
+    } else if (accountPermissions?.length) {
+        updated.account = accountPermissions;
+        hasChanges = true;
+    }
+
+    return hasChanges ? updated : undefined;
+}
+
+/**
+ * Parse potentially double-serialized JSON metadata
  */
 function parseMetadata(metadata: string): Record<string, unknown> | null {
     try {
-        let parsed = JSON.parse(metadata);
-        if (typeof parsed === "string") {
-            parsed = JSON.parse(parsed);
-        }
-        return parsed;
+        const parsed = JSON.parse(metadata);
+        return typeof parsed === "string" ? JSON.parse(parsed) : parsed;
     } catch {
         return null;
     }
@@ -34,6 +60,7 @@ function parseMetadata(metadata: string): Record<string, unknown> | null {
  * - account: ["balance", "usage"] = allow access to account endpoints
  */
 const UpdateApiKeySchema = z.object({
+    name: z.string().optional().describe("Name for the API key"),
     allowedModels: z
         .array(z.string())
         .nullable()
@@ -49,10 +76,13 @@ const UpdateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe('Account permissions: ["balance", "usage"]. null = none'),
-    enabled: z
-        .boolean()
+    expiresAt: z
+        .string()
+        .datetime()
+        .nullable()
         .optional()
-        .describe("Whether the key is enabled. false = disabled"),
+        .transform((val) => (val ? new Date(val) : val))
+        .describe("Expiration date for the key. null = no expiry"),
 });
 
 /**
@@ -92,11 +122,15 @@ export const apiKeysRoutes = new Hono<Env>()
                     lastRequest: key.lastRequest,
                     expiresAt: key.expiresAt,
                     permissions: key.permissions
-                        ? JSON.parse(key.permissions)
+                        ? (() => {
+                              const parsed = JSON.parse(key.permissions);
+                              return Object.keys(parsed).length > 0
+                                  ? parsed
+                                  : null;
+                          })()
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
-                    enabled: key.enabled ?? true,
                 })),
             });
         },
@@ -117,8 +151,13 @@ export const apiKeysRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const authClient = c.var.auth.client;
             const { id } = c.req.param();
-            const { allowedModels, pollenBudget, accountPermissions, enabled } =
-                c.req.valid("json");
+            const {
+                name,
+                allowedModels,
+                pollenBudget,
+                accountPermissions,
+                expiresAt,
+            } = c.req.valid("json");
 
             // Verify ownership before updating
             const db = drizzle(c.env.DB, { schema });
@@ -133,59 +172,53 @@ export const apiKeysRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "API key not found" });
             }
 
-            // Build permissions object
-            // Format: { models?: string[], account?: string[] }
-            const existingPermissions =
-                (existingKey.permissions as Record<string, string[]> | null) ??
-                {};
-            let newPermissions: Record<string, string[]> | null | undefined;
+            const existingPermissions = existingKey.permissions
+                ? JSON.parse(existingKey.permissions as string)
+                : {};
 
-            // Handle allowedModels: null = remove, [...] = set
-            if (allowedModels === null) {
-                newPermissions = { ...existingPermissions };
-                delete newPermissions.models;
-            } else if (allowedModels && allowedModels.length > 0) {
-                newPermissions = {
-                    ...existingPermissions,
-                    models: allowedModels,
-                };
-            }
+            const updatedPermissions = buildUpdatedPermissions(
+                existingPermissions,
+                allowedModels,
+                accountPermissions,
+            );
 
-            // Handle accountPermissions: null = remove, [...] = set
-            if (accountPermissions === null) {
-                newPermissions = newPermissions ?? { ...existingPermissions };
-                delete newPermissions.account;
-            } else if (accountPermissions && accountPermissions.length > 0) {
-                newPermissions = newPermissions ?? { ...existingPermissions };
-                newPermissions.account = accountPermissions;
-            }
-
-            // Only call better-auth's updateApiKey if we have permission changes
-            // (it throws "No values to update" if permissions is undefined)
-            if (newPermissions !== undefined) {
+            if (updatedPermissions) {
                 await authClient.api.updateApiKey({
                     body: {
                         keyId: id,
                         userId: user.id,
-                        permissions: newPermissions,
+                        permissions: updatedPermissions,
                     },
                 });
             }
 
-            // Update D1 columns directly if provided
             const d1Updates: {
+                name?: string;
                 pollenBalance?: number | null;
-                enabled?: boolean;
+                expiresAt?: Date | null;
             } = {};
+
+            if (name !== undefined) d1Updates.name = name;
             if (pollenBudget !== undefined)
                 d1Updates.pollenBalance = pollenBudget;
-            if (enabled !== undefined) d1Updates.enabled = enabled;
+            if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
 
             if (Object.keys(d1Updates).length > 0) {
+                const keyForCache = await db.query.apikey.findFirst({
+                    where: eq(schema.apikey.id, id),
+                });
+
                 await db
                     .update(schema.apikey)
                     .set(d1Updates)
                     .where(eq(schema.apikey.id, id));
+
+                // Invalidate better-auth's KV cache
+                await c.env.KV.delete(`auth:api-key:${id}`);
+
+                if (keyForCache?.key) {
+                    await c.env.KV.delete(`auth:api-key:${keyForCache.key}`);
+                }
             }
 
             // Fetch updated key to return current state
@@ -198,7 +231,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 name: finalKey?.name,
                 permissions: finalKey?.permissions,
                 pollenBalance: finalKey?.pollenBalance ?? null,
-                enabled: finalKey?.enabled ?? true,
+                expiresAt: finalKey?.expiresAt ?? null,
             });
         },
     );

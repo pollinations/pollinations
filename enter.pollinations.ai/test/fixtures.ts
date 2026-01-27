@@ -50,18 +50,15 @@ type SignupData = {
 };
 
 export const test = base.extend<Fixtures>({
-    // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
     log: async ({}, use) => {
         await ensureConfigured({ level: "trace" });
         await use(getLogger(["test"]));
     },
-    // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
     mocks: async ({}, use) => {
         const mocks = createFetchMock(createMocks(), { logRequests: true });
         await use(mocks);
         await teardownFetchMock();
     },
-    // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
     auth: async ({}, use) => {
         const auth = createAuthClientInstance();
         await use(auth);

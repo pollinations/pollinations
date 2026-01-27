@@ -84,8 +84,8 @@ const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
             await navigator.clipboard.writeText(fullKey);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error("Failed to copy:", err);
+        } catch (_err) {
+            // Silently fail
         }
     };
 
@@ -140,12 +140,12 @@ function formatExpiry(expiresAt: Date | null | undefined): string {
         (expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
     );
 
-    if (daysLeft <= 0) return "expired";
-
-    return formatDistanceToNowStrict(expiresDate, {
-        addSuffix: false,
-        locale: shortLocale,
-    });
+    return daysLeft <= 0
+        ? "expired"
+        : formatDistanceToNowStrict(expiresDate, {
+              addSuffix: false,
+              locale: shortLocale,
+          });
 }
 
 function formatBudget(pollenBudget: number | null | undefined): string {
@@ -559,8 +559,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 ...keyPermissions.permissions,
             });
             setCreatedKey(newKey);
-        } catch (error) {
-            console.error("Failed to create API key:", error);
         } finally {
             setIsSubmitting(false);
         }
@@ -576,8 +574,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 onComplete();
                 setIsOpen(false);
             }, 500);
-        } catch (err) {
-            console.error("Failed to copy:", err);
+        } catch (_err) {
             onComplete();
             setIsOpen(false);
         }

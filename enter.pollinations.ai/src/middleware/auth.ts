@@ -52,18 +52,16 @@ interface AuthResult {
 
 /** Extracts Bearer token from Authorization header (RFC 6750) or query parameter */
 function extractApiKey(c: Context<AuthEnv>): string | null {
-    // Try Authorization header first (RFC 6750)
     const auth = c.req.header("authorization");
     const match = auth?.match(/^Bearer (.+)$/);
     if (match?.[1]) return match[1];
 
-    // Fallback to query parameter for GET requests (browser-friendly)
     return c.req.query("key") || null;
 }
 
 export const auth = (options: AuthOptions) =>
     createMiddleware<AuthEnv>(async (c, next) => {
-        const log = c.get("log").getChild("auth");
+        const _log = c.get("log").getChild("auth");
         const client = createAuth(c.env);
 
         const authenticateSession = async (): Promise<AuthResult | null> => {
@@ -81,37 +79,25 @@ export const auth = (options: AuthOptions) =>
         const authenticateApiKey = async (): Promise<AuthResult | null> => {
             if (!options.allowApiKey) return null;
             const rawApiKey = extractApiKey(c);
-            log.debug("Extracted API key: {hasKey}", {
-                hasKey: !!rawApiKey,
-                keyPrefix: rawApiKey?.substring(0, 8),
-            });
             if (!rawApiKey) return null;
-            const keyResult = await client.api.verifyApiKey({
-                body: {
-                    key: rawApiKey,
-                },
-            });
-            log.debug("API key verification result: {valid}", {
-                valid: keyResult.valid,
-            });
-            if (!keyResult.valid || !keyResult.key) return null;
-            const db = drizzle(c.env.DB, { schema });
 
-            // Use permissions from verifyApiKey (set via createApiKey)
-            // No fallback - permissions must be set at key creation time
-            // Format: { models?: string[], account?: string[] }
+            const keyResult = await client.api.verifyApiKey({
+                body: { key: rawApiKey },
+            });
+
+            if (!keyResult.valid || !keyResult.key) return null;
+
+            const db = drizzle(c.env.DB, { schema });
             const permissions = keyResult.key.permissions as
                 | { models?: string[]; account?: string[] }
                 | undefined;
 
-            // Fetch API key with user - we need fresh data from DB for expiry check
             const apiKeyData = await db
                 .select()
                 .from(schema.apikey)
                 .where(eq(schema.apikey.id, keyResult.key.id))
                 .get();
 
-            // Then get the user separately if we have an API key
             const userData = apiKeyData
                 ? await db
                       .select()
@@ -121,38 +107,13 @@ export const auth = (options: AuthOptions) =>
                 : null;
 
             const fullApiKey = apiKeyData
-                ? {
-                      ...apiKeyData,
-                      user: userData,
-                  }
+                ? { ...apiKeyData, user: userData }
                 : null;
-
-            log.debug("API key lookup result: {found}", {
-                found: Boolean(fullApiKey),
-                userId: fullApiKey?.user?.id,
-                hasExpiry: Boolean(fullApiKey?.expiresAt),
-                expiresAt: fullApiKey?.expiresAt,
-            });
 
             // Check if key has expired
             if (fullApiKey?.expiresAt) {
                 const expiryDate = new Date(fullApiKey.expiresAt);
-                const now = new Date();
-                const isExpired = expiryDate < now;
-
-                log.debug("Checking API key expiry", {
-                    keyId: fullApiKey.id,
-                    expiresAt: fullApiKey.expiresAt,
-                    expiryDate: expiryDate.toISOString(),
-                    now: now.toISOString(),
-                    isExpired,
-                });
-
-                if (isExpired) {
-                    log.debug("API key has expired", {
-                        keyId: fullApiKey.id,
-                        expiresAt: fullApiKey.expiresAt,
-                    });
+                if (expiryDate < new Date()) {
                     return null;
                 }
             }
@@ -174,21 +135,10 @@ export const auth = (options: AuthOptions) =>
         const { user, session, apiKey } =
             (await authenticateSession()) || (await authenticateApiKey()) || {};
 
-        log.debug("Authentication result: {authenticated}", {
-            authenticated: !!user,
-            hasSession: !!session,
-            hasApiKey: !!apiKey,
-            userId: user?.id,
-        });
-
         const requireAuthorization = async (options?: {
             message?: string;
         }): Promise<void> => {
-            log.debug("Checking authorization: {hasUser}", {
-                hasUser: !!user,
-            });
             if (!user) {
-                log.debug("Authorization failed: No user");
                 throw new HTTPException(401, {
                     message: options?.message,
                 });
@@ -207,11 +157,6 @@ export const auth = (options: AuthOptions) =>
             if (!model) return;
 
             if (!apiKey.permissions.models.includes(model.resolved)) {
-                log.debug("Model access denied: {model} not in allowlist", {
-                    model: model.requested,
-                    resolved: model.resolved,
-                    allowed: apiKey.permissions.models,
-                });
                 throw new HTTPException(403, {
                     message: `Model '${model.requested}' is not allowed for this API key`,
                 });
@@ -225,13 +170,6 @@ export const auth = (options: AuthOptions) =>
             if (pollenBalance === null || pollenBalance === undefined) return;
 
             if (pollenBalance <= 0) {
-                log.debug(
-                    "API key budget exhausted: {keyId} pollenBalance={pollenBalance}",
-                    {
-                        keyId: apiKey.id,
-                        pollenBalance,
-                    },
-                );
                 throw new HTTPException(402, {
                     message:
                         "API key budget exhausted. Please top up or create a new key.",

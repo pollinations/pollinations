@@ -64,8 +64,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     : null,
             });
             onClose();
-        } catch (error) {
-            console.error("Failed to update API key:", error);
         } finally {
             setIsSubmitting(false);
         }
@@ -76,8 +74,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         try {
             await onDelete(apiKey.id);
             onClose();
-        } catch (error) {
-            console.error("Failed to delete API key:", error);
         } finally {
             setIsSubmitting(false);
         }

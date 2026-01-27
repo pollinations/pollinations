@@ -20,7 +20,6 @@ function buildUpdatedPermissions(
     const updated = { ...existing };
     let hasChanges = false;
 
-    // Handle models: null = remove, array = set
     if (allowedModels === null) {
         delete updated.models;
         hasChanges = true;
@@ -29,7 +28,6 @@ function buildUpdatedPermissions(
         hasChanges = true;
     }
 
-    // Handle account: null = remove, array = set
     if (accountPermissions === null) {
         delete updated.account;
         hasChanges = true;
@@ -83,7 +81,7 @@ const UpdateApiKeySchema = z.object({
         .datetime()
         .nullable()
         .optional()
-        .transform((val) => val ? new Date(val) : val)
+        .transform((val) => (val ? new Date(val) : val))
         .describe("Expiration date for the key. null = no expiry"),
 });
 
@@ -126,7 +124,9 @@ export const apiKeysRoutes = new Hono<Env>()
                     permissions: key.permissions
                         ? (() => {
                               const parsed = JSON.parse(key.permissions);
-                              return Object.keys(parsed).length > 0 ? parsed : null;
+                              return Object.keys(parsed).length > 0
+                                  ? parsed
+                                  : null;
                           })()
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
@@ -172,12 +172,8 @@ export const apiKeysRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "API key not found" });
             }
 
-            // Build updated permissions object
             const existingPermissions = existingKey.permissions
-                ? (JSON.parse(existingKey.permissions as string) as Record<
-                      string,
-                      string[]
-                  >)
+                ? JSON.parse(existingKey.permissions as string)
                 : {};
 
             const updatedPermissions = buildUpdatedPermissions(
@@ -186,8 +182,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 accountPermissions,
             );
 
-            // Only update if permissions changed
-            if (updatedPermissions !== undefined) {
+            if (updatedPermissions) {
                 await authClient.api.updateApiKey({
                     body: {
                         keyId: id,
@@ -197,7 +192,6 @@ export const apiKeysRoutes = new Hono<Env>()
                 });
             }
 
-            // Update D1 columns directly if provided
             const d1Updates: {
                 name?: string;
                 pollenBalance?: number | null;
@@ -209,28 +203,21 @@ export const apiKeysRoutes = new Hono<Env>()
                 d1Updates.pollenBalance = pollenBudget;
             if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
 
-            // Fetch the key first to get the raw key for cache invalidation
-            const existingKeyForCache = Object.keys(d1Updates).length > 0
-                ? await db.query.apikey.findFirst({
-                      where: eq(schema.apikey.id, id),
-                  })
-                : null;
-
             if (Object.keys(d1Updates).length > 0) {
+                const keyForCache = await db.query.apikey.findFirst({
+                    where: eq(schema.apikey.id, id),
+                });
+
                 await db
                     .update(schema.apikey)
                     .set(d1Updates)
                     .where(eq(schema.apikey.id, id));
 
-                // Invalidate better-auth's KV cache for this key
-                // Better-auth uses "auth:" prefix and might cache by both ID and key value
-                const cacheKey = `auth:api-key:${id}`;
-                await c.env.KV.delete(cacheKey);
+                // Invalidate better-auth's KV cache
+                await c.env.KV.delete(`auth:api-key:${id}`);
 
-                if (existingKeyForCache?.key) {
-                    // Also invalidate cache by the actual key value
-                    const keyCacheKey = `auth:api-key:${existingKeyForCache.key}`;
-                    await c.env.KV.delete(keyCacheKey);
+                if (keyForCache?.key) {
+                    await c.env.KV.delete(`auth:api-key:${keyForCache.key}`);
                 }
             }
 

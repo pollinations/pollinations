@@ -69,10 +69,7 @@ describe("API Key Management", () => {
     });
 
     describe("POST /api/api-keys/:id/update", () => {
-        test("should update API key name", async ({
-            auth,
-            sessionToken,
-        }) => {
+        test("should update API key name", async ({ auth, sessionToken }) => {
             // Create a new key for this test
             const createResponse = await auth.apiKey.create({
                 name: "original-name",
@@ -170,10 +167,7 @@ describe("API Key Management", () => {
             });
         });
 
-        test("should update pollen budget", async ({
-            auth,
-            sessionToken,
-        }) => {
+        test("should update pollen budget", async ({ auth, sessionToken }) => {
             // Create a new key
             const createResponse = await auth.apiKey.create({
                 name: "budget-test",
@@ -218,10 +212,7 @@ describe("API Key Management", () => {
             expect(updatedKey.pollenBalance).toBe(50);
         });
 
-        test("should update expiry date", async ({
-            auth,
-            sessionToken,
-        }) => {
+        test("should update expiry date", async ({ auth, sessionToken }) => {
             // Create a new key
             const createResponse = await auth.apiKey.create({
                 name: "expiry-test",

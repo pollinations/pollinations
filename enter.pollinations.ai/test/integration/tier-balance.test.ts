@@ -1,4 +1,4 @@
-import { createExecutionContext, env } from "cloudflare:test";
+import { createExecutionContext, env, SELF } from "cloudflare:test";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
@@ -7,9 +7,11 @@ import { handleScheduled } from "@/scheduled.ts";
 import { getTierPollen, TIER_POLLEN, tierNames } from "@/tier-config.ts";
 import {
     atomicDeductUserBalance,
+    atomicDeductPaidBalance,
     getUserBalances,
 } from "@/utils/balance-deduction.ts";
 import { test } from "../fixtures.ts";
+import worker from "@/index.ts";
 
 describe("Tier Balance Management", () => {
     describe("Daily Cron Refill", () => {
@@ -370,6 +372,221 @@ describe("Tier Balance Management", () => {
                 expect(TIER_POLLEN[tier]).toBeDefined();
                 expect(TIER_POLLEN[tier]).toBeGreaterThan(0);
             }
+        });
+    });
+
+    describe("Paid-Only Models", () => {
+        test("should reject paid-only models when user has only tier balance", async ({
+            apiKey,
+            mocks,
+        }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const db = drizzle(env.DB);
+
+            // Setup user with only tier balance
+            const userId = apiKey.split("-")[0]; // Extract user ID from API key
+            await db
+                .update(userTable)
+                .set({
+                    tierBalance: 10,
+                    packBalance: 0,
+                    cryptoBalance: 0,
+                })
+                .where(sql`${userTable.id} = ${userId}`);
+
+            // Test paid-only text model: claude-large
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "claude-large",
+                        messages: [
+                            { role: "user", content: "test" },
+                        ],
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(402);
+            const error = await response.json();
+            expect(error.error?.message).toContain("requires a paid balance");
+        });
+
+        test("should accept paid-only models when user has crypto balance", async ({
+            apiKey,
+            mocks,
+        }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const db = drizzle(env.DB);
+
+            // Setup user with crypto balance
+            const userId = apiKey.split("-")[0];
+            await db
+                .update(userTable)
+                .set({
+                    tierBalance: 0,
+                    packBalance: 0,
+                    cryptoBalance: 10,
+                })
+                .where(sql`${userTable.id} = ${userId}`);
+
+            // Test paid-only image model: seedream-pro
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/image/test?model=seedream-pro",
+                {
+                    headers: {
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            expect(response.status).toBe(200);
+        });
+
+        test("should accept paid-only models when user has pack balance", async ({
+            apiKey,
+            mocks,
+        }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const db = drizzle(env.DB);
+
+            // Setup user with pack balance
+            const userId = apiKey.split("-")[0];
+            await db
+                .update(userTable)
+                .set({
+                    tierBalance: 0,
+                    packBalance: 10,
+                    cryptoBalance: 0,
+                })
+                .where(sql`${userTable.id} = ${userId}`);
+
+            // Test paid-only video model: veo
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/image/test?model=veo",
+                {
+                    headers: {
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            expect(response.status).toBe(200);
+        });
+
+        test("should allow regular models with tier balance", async ({
+            apiKey,
+            mocks,
+        }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const db = drizzle(env.DB);
+
+            // Setup user with only tier balance
+            const userId = apiKey.split("-")[0];
+            await db
+                .update(userTable)
+                .set({
+                    tierBalance: 10,
+                    packBalance: 0,
+                    cryptoBalance: 0,
+                })
+                .where(sql`${userTable.id} = ${userId}`);
+
+            // Test regular model: openai
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "openai",
+                        messages: [
+                            { role: "user", content: "test" },
+                        ],
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+        });
+
+        test("atomicDeductPaidBalance should skip tier balance", async () => {
+            const db = drizzle(env.DB);
+            const userId = "test-paid-deduct";
+
+            // Setup user with all balance types
+            await db
+                .insert(userTable)
+                .values({
+                    id: userId,
+                    email: "paid@test.com",
+                    name: "Paid Deduct Test",
+                    tier: "flower",
+                    tierBalance: 10,
+                    packBalance: 5,
+                    cryptoBalance: 3,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                })
+                .onConflictDoUpdate({
+                    target: userTable.id,
+                    set: {
+                        tierBalance: 10,
+                        packBalance: 5,
+                        cryptoBalance: 3,
+                    },
+                });
+
+            // Deduct 2 pollen using paid-only deduction
+            await atomicDeductPaidBalance(db, userId, 2);
+
+            let balances = await getUserBalances(db, userId);
+            expect(balances.tierBalance).toBe(10); // Unchanged - tier is skipped
+            expect(balances.cryptoBalance).toBe(1); // 3 - 2
+            expect(balances.packBalance).toBe(5); // Unchanged
+
+            // Deduct 4 more (1 from crypto, 3 from pack)
+            await atomicDeductPaidBalance(db, userId, 4);
+
+            balances = await getUserBalances(db, userId);
+            expect(balances.tierBalance).toBe(10); // Still unchanged
+            expect(balances.cryptoBalance).toBe(0); // 1 - 1
+            expect(balances.packBalance).toBe(2); // 5 - 3
+
+            // Deduct 5 more (all from pack, goes negative)
+            await atomicDeductPaidBalance(db, userId, 5);
+
+            balances = await getUserBalances(db, userId);
+            expect(balances.tierBalance).toBe(10); // Still unchanged
+            expect(balances.cryptoBalance).toBe(0);
+            expect(balances.packBalance).toBe(-3); // 2 - 5 = -3
+        });
+
+        test("should show paid_only field in model info", async () => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/v1/models",
+            );
+
+            expect(response.status).toBe(200);
+            const data = await response.json();
+
+            // Check that paid-only models have the flag
+            const claudeLarge = data.data.find((m: any) => m.name === "claude-large");
+            expect(claudeLarge).toBeDefined();
+            expect(claudeLarge.paid_only).toBe(true);
+
+            // Check that regular models don't have the flag or have it as false
+            const openai = data.data.find((m: any) => m.name === "openai");
+            expect(openai).toBeDefined();
+            expect(openai.paid_only).toBeUndefined();
         });
     });
 });

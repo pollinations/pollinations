@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { getTierEmoji } from "@/tier-config.ts";
+import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 
 type PollenBalanceProps = {
     tierBalance: number;
@@ -104,21 +105,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 </div>
             </div>
             {/* Purchase info */}
-            <div className="bg-gradient-to-r from-violet-100 to-purple-100 rounded-xl p-4 border border-violet-300 mt-4">
+            <div className="bg-gradient-to-r from-violet-100/40 to-purple-100/40 rounded-xl p-4 border border-violet-200 mt-4">
                 <p className="text-sm font-medium text-violet-900">
-                    🎁 During beta, we double your pollen with every purchase!
-                </p>
-                <p className="text-sm font-medium text-violet-900 mt-2">
-                    ⏳ After a purchase, please wait 1-2 minutes for your
-                    balance to update.{" "}
-                    <a
-                        href="https://github.com/pollinations/pollinations/issues/new?template=balance-problem.yml"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline hover:text-violet-700"
-                    >
-                        Still missing?
-                    </a>
+                    🎁 During beta, we double your pollen! ($5 → 10💎, $10 → 20💎,
+                    $20 → 40💎, $50 → 100💎)
                 </p>
                 <p className="text-sm font-medium text-violet-900 mt-2">
                     💳 Want to pay with a different method?{" "}
@@ -132,6 +122,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     </a>
                 </p>
             </div>
+            <PaymentTrustBadge />
         </div>
     );
 };

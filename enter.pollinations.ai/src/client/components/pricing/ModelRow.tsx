@@ -98,6 +98,13 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             NEW
                         </span>
                     )}
+                    {showPaidOnly && (
+                        <Tooltip content="Requires paid balance (tier balance not accepted)">
+                            <span className="text-[10px] text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded-full font-semibold border border-purple-400">
+                                PAID
+                            </span>
+                        </Tooltip>
+                    )}
                 </div>
             </td>
             <td className="py-2 px-2 text-sm">

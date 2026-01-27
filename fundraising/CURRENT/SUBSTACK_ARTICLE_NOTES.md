@@ -25,10 +25,10 @@
 
 ---
 
-## The "16-Year-Old Me" Thread
+## The "Young Developer Me" Thread
 
 Weave this throughout:
-- What would teenage hacker me have wanted?
+- What would 18-year-old developer me have wanted?
 - Free access to powerful AI tools
 - A place to learn by doing, not gatekept
 - Community that welcomes beginners
@@ -71,7 +71,6 @@ We chose openness. Here's what happened.
 - 5K developers building with us, 1K apps already published
 - Mix: teenage hackers, indie devs, senior engineers (ages 11-73, 89 countries)
 - Example: Indian university students coding through holidays - trying to pay them, they refuse
-- 3 teens (18-20) building professional voice clone for artist Portrait XO
 - People join dev team organically by following our public work
 - 600+ new developers joining daily
 
@@ -151,10 +150,10 @@ Challenge: converting free users to paying customers while maintaining goodwill
 - $820 weekly revenue → 229% WoW growth
 - 10.9B tokens/week processed
 
-**Mini VC for teen developers:**
+**Mini VC for young developers:**
 - Gamified proof-of-work: GitHub activity = Pollen credits
 - Supporting next generation of builders
-- First-mover advantage in user-pays AI model
+- User-pays model enables sustainability
 
 ---
 
@@ -199,7 +198,7 @@ Hard to switch off - always something happening, people eager for input. It's fu
 - [ ] Beautiful organic visualizations of the Pollinations network on GitHub (TODO: create these)
 - [ ] Key stats: 20K users, 17K Discord, 5K developers, 1K apps
 - [ ] "Every ChatGPT conversation = coding" insight
-- [ ] Portrait XO voice clone project example
+- [ ] Community-built apps: Roblox games, Discord bots, Minecraft integrations
 
 ---
 

@@ -65,7 +65,11 @@ jobs:
             set -e
             echo "🚀 Deploying to STAGING..."
             cd /home/ubuntu/pollinations
-            git pull origin staging
+            
+            # Fetch and force-reset to avoid divergent branch issues
+            git fetch origin staging
+            git checkout staging 2>/dev/null || git checkout -b staging origin/staging
+            git reset --hard origin/staging
             
             cd text.pollinations.ai
             pnpm install --frozen-lockfile || pnpm install
@@ -134,9 +138,11 @@ jobs:
             # Navigate to repo
             cd /home/ubuntu/pollinations
             
-            # Pull latest changes
-            echo "📥 Pulling latest changes..."
-            git pull origin production
+            # Fetch and force-reset to avoid divergent branch issues
+            echo "📥 Fetching latest changes..."
+            git fetch origin production
+            git checkout production 2>/dev/null || git checkout -b production origin/production
+            git reset --hard origin/production
             
             # Update text service
             echo "📝 Updating text.pollinations.ai..."

@@ -239,7 +239,11 @@ function RouteComponent() {
                             >
                                 Usage
                                 {activeTab === "balance" && (
-                                    <img src="/stats-icon.svg" alt="stats" className="emoji-pulse ml-1 w-7 h-7 inline-block" />
+                                    <img
+                                        src="/stats-icon.svg"
+                                        alt="stats"
+                                        className="emoji-pulse ml-1 w-7 h-7 inline-block"
+                                    />
                                 )}
                             </button>
                         </h2>

@@ -107,8 +107,8 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
             {/* Purchase info */}
             <div className="bg-gradient-to-r from-violet-100/40 to-purple-100/40 rounded-xl p-4 border border-violet-200 mt-4">
                 <p className="text-sm font-medium text-violet-900">
-                    🎁 During beta, we double your pollen! ($5 → 10💎, $10 → 20💎,
-                    $20 → 40💎, $50 → 100💎)
+                    🎁 During beta, we double your pollen! ($5 → 10💎, $10 →
+                    20💎, $20 → 40💎, $50 → 100💎)
                 </p>
                 <p className="text-sm font-medium text-violet-900 mt-2">
                     💳 Want to pay with a different method?{" "}

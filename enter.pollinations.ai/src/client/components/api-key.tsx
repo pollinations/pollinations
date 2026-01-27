@@ -280,7 +280,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     {[...apiKeys]
                                         .sort(
                                             (a, b) =>
-                                                new Date(b.createdAt).getTime() -
+                                                new Date(
+                                                    b.createdAt,
+                                                ).getTime() -
                                                 new Date(a.createdAt).getTime(),
                                         )
                                         .map((apiKey) => {
@@ -289,9 +291,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             ] as string | undefined;
                                             const isPublishable =
                                                 keyType === "publishable";
-                                            const plaintextKey = apiKey.metadata?.[
-                                                "plaintextKey"
-                                            ] as string | undefined;
+                                            const plaintextKey = apiKey
+                                                .metadata?.["plaintextKey"] as
+                                                | string
+                                                | undefined;
 
                                             return (
                                                 <Fragment key={apiKey.id}>
@@ -334,7 +337,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                             />
                                                         ) : (
                                                             <span className="font-mono text-xs text-gray-500">
-                                                                {apiKey.start}...
+                                                                {apiKey.start}
+                                                                ...
                                                             </span>
                                                         )}
                                                     </Cell>

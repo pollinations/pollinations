@@ -6,9 +6,6 @@ compatibility_flags = [ "nodejs_compat", "nodejs_als" ]
 [dev]
 port = 3000
 
-[triggers]
-crons = [ "* * * * *" ] # every minute
-
 [assets]
 directory = "dist/client"
 not_found_handling = "single-page-application"
@@ -52,10 +49,18 @@ ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
+TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Polar Sandbox product IDs for tier subscriptions
 POLAR_PRODUCT_TIER_SPORE = "19fa1660-a90c-453d-8132-4d228cc7db39"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+# NOWPayments crypto payments (sandbox for dev)
+NOWPAYMENTS_ENV = "sandbox"
+# Stripe payments (sandbox for dev)
+STRIPE_MODE = "sandbox"
+STRIPE_SUCCESS_URL = "http://localhost:3000"
 
 
 [env.local]
@@ -89,9 +94,15 @@ ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
+TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 POLAR_PRODUCT_TIER_SPORE = "19fa1660-a90c-453d-8132-4d228cc7db39"
 IMAGE_SERVICE_URL = "http://localhost:16384"
 TEXT_SERVICE_URL = "http://localhost:16385"
+# Stripe payments (sandbox for local development)
+STRIPE_MODE = "sandbox"
+STRIPE_SUCCESS_URL = "http://localhost:3000"
 POLLEN_REFILL_PER_HOUR = 1
 
 [env.production]
@@ -124,11 +135,11 @@ bucket_name = "pollinations-images"
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 
-# Edge rate limiter: ~10 req/s per IP (100 req per 10s)
+# Edge rate limiter: ~1000 req/s per IP (10000 req per 10s)
 [[env.production.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
-simple = { limit = 100, period = 10 }
+simple = { limit = 10000, period = 10 }
 
 [[env.production.durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
@@ -146,10 +157,18 @@ ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "https://enter.pollinations.ai"
 POLAR_SERVER = "production"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
+TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 POLAR_PRODUCT_TIER_SPORE = "01a31c1a-7af7-4958-9b73-c10e2fac5f70"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 POLLEN_REFILL_PER_HOUR = 1
+# NOWPayments crypto payments (production)
+NOWPAYMENTS_ENV = "production"
+# Stripe payments (live for production)
+STRIPE_MODE = "live"
+STRIPE_SUCCESS_URL = "https://enter.pollinations.ai"
 
 [env.staging]
 
@@ -161,7 +180,7 @@ custom_domain = true
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
-database_id = "073195b4-d99e-4b67-9575-eb5efe6d3234"
+database_id = "bd0ef469-d727-4ff4-9118-bd7e6e7985ae"
 migrations_dir = "drizzle"
 
 [[env.staging.kv_namespaces]]
@@ -177,10 +196,11 @@ bucket_name = "pollinations-images"
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 
+# Edge rate limiter: ~1000 req/s per IP (10000 req per 10s)
 [[env.staging.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
-simple = { limit = 100, period = 10 }
+simple = { limit = 10000, period = 10 }
 
 [[env.staging.durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
@@ -196,11 +216,71 @@ LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "https://staging.enter.pollinations.ai"
-POLAR_SERVER = "sandbox"
+POLAR_SERVER = "production"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-POLAR_PRODUCT_TIER_SPORE = "19fa1660-a90c-453d-8132-4d228cc7db39"
+TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
+TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
+POLAR_PRODUCT_TIER_SPORE = "01a31c1a-7af7-4958-9b73-c10e2fac5f70"
 IMAGE_SERVICE_URL = "http://ec2-44-222-254-250.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-44-222-254-250.compute-1.amazonaws.com:16385"
+# Stripe payments: sandbox mode for staging
+STRIPE_MODE = "sandbox"
+STRIPE_SUCCESS_URL = "https://staging.enter.pollinations.ai"
+
+[env.dev]
+
+[[env.dev.routes]]
+pattern = "dev.enter.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "development-pollinations-enter-db"
+database_id = "6345cb3c-e57a-4aab-bdd4-bca0de7bd930"
+migrations_dir = "drizzle"
+
+[[env.dev.kv_namespaces]]
+# development-pollinations-enter-kv
+binding = "KV"
+id = "aa0d0aceb6bd45de93032270c7adf4ab"
+
+[[env.dev.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+remote = true
+
+[[env.dev.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+remote = true
+
+[[env.dev.durable_objects.bindings]]
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
+
+[[env.dev.migrations]]
+tag = "v2"
+new_classes = ["PollenRateLimiter"]
+
+[env.dev.vars]
+ENVIRONMENT = "dev"
+LOG_LEVEL = "debug"
+LOG_FORMAT = "json"
+ALLOW_ANONYMOUS_USAGE = false
+POLAR_SUCCESS_URL = "https://dev.enter.pollinations.ai"
+POLAR_SERVER = "sandbox"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
+TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
+POLAR_PRODUCT_TIER_SPORE = "19fa1660-a90c-453d-8132-4d228cc7db39"
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+# Stripe payments (sandbox for dev)
+STRIPE_MODE = "sandbox"
+STRIPE_SUCCESS_URL = "https://dev.enter.pollinations.ai"
 
 [env.test]
 
@@ -223,10 +303,11 @@ bucket_name = "pollinations-images"
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 
+# Edge rate limiter: ~1000 req/s per IP (10000 req per 10s)
 [[env.test.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
-simple = { limit = 100, period = 10 }
+simple = { limit = 10000, period = 10 }
 
 [[env.test.durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
@@ -243,7 +324,11 @@ POLAR_ACCESS_TOKEN = "test_polar_token"
 POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
+TINYBIRD_POLAR_INGEST_URL = "http://localhost:7181/v0/events?name=polar_event"
+TINYBIRD_CRYPTO_INGEST_URL = "http://localhost:7181/v0/events?name=crypto_event"
+TINYBIRD_STRIPE_INGEST_URL = "http://localhost:7181/v0/events?name=stripe_event"
 TINYBIRD_INGEST_TOKEN = "test_tinybird_ingest_token"
+TINYBIRD_POLAR_INGEST_TOKEN = "test_tinybird_polar_ingest_token"
 TINYBIRD_READ_TOKEN = "test_tinybird_read_token"
 POLAR_PRODUCT_TIER_SPORE = "polar_product_id_spore"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"

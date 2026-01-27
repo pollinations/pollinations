@@ -11,6 +11,7 @@ export interface App {
     description: string;
     category: string;
     github: string;
+    githubId: string;
     repo: string;
     discord: string;
     other: string;
@@ -43,14 +44,30 @@ function parseAppsMarkdown(markdown: string): App[] {
         const cols = row.split("|").map((c) => c.trim());
         cols.shift();
         cols.pop();
-        if (cols.length < 11) continue;
 
-        const nameMatch = cols[1].match(/\[([^\]]+)\]\(([^)]+)\)/);
-        const name = nameMatch ? nameMatch[1] : cols[1];
-        const url = nameMatch ? nameMatch[2] : "";
+        // Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date |
+        if (cols.length < 15) continue;
+
+        const name = cols[1];
+        let url = cols[2];
+        const description = cols[3];
+        const language = cols[4];
+        const category = cols[5].toLowerCase();
+        const github = cols[6];
+        const githubId = cols[7];
+        const repo = cols[8];
+        const starsCol = cols[9];
+        const discord = cols[10];
+        const other = cols[11];
+        const date = cols[12];
+
+        // If no web URL but there's a repo, use repo as URL (fallback for repo-only apps)
+        if (!url && repo) {
+            url = repo;
+        }
 
         let stars: number | null = null;
-        const starsMatch = cols[7].match(/⭐([\d.]+)(k)?/);
+        const starsMatch = starsCol.match(/⭐([\d.]+)(k)?/);
         if (starsMatch) {
             stars = parseFloat(starsMatch[1]);
             if (starsMatch[2] === "k") stars *= 1000;
@@ -61,15 +78,16 @@ function parseAppsMarkdown(markdown: string): App[] {
             emoji: cols[0],
             name,
             url,
-            description: cols[2],
-            language: cols[3],
-            category: cols[4].toLowerCase(),
-            github: cols[5],
-            repo: cols[6],
+            description,
+            language,
+            category,
+            github,
+            githubId,
+            repo,
             stars,
-            discord: cols[8],
-            other: cols[9],
-            date: cols[10],
+            discord,
+            other,
+            date,
         });
     }
 

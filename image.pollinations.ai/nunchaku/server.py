@@ -60,8 +60,10 @@ async def send_heartbeat():
                 port = int(os.getenv("PORT", "8765"))
             url = f"http://{public_ip}:{port}"
             service_type = os.getenv("SERVICE_TYPE", "flux")  # Get service type from environment variable
+            # Use direct EC2 endpoint to bypass Cloudflare (some io.net IPs are blocked)
+            register_url = os.getenv("REGISTER_URL", "http://3.80.56.235:16384/register")
             async with aiohttp.ClientSession() as session:
-                async with session.post('https://image.pollinations.ai/register', json={'url': url, 'type': service_type}) as response:
+                async with session.post(register_url, json={'url': url, 'type': service_type}) as response:
                     if response.status == 200:
                         logger.info(f"Heartbeat sent successfully. URL: {url}")
                     else:
@@ -138,8 +140,18 @@ async def lifespan(app: FastAPI):
 def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int]:
     """Find the nearest dimensions that are multiples of 8 and their product is divisible by 65536.
     Also enforces a maximum total pixel count to prevent CUDA OOM errors."""
-    # Cap total pixels to prevent CUDA OOM with quantized models (1024x1024 = 1,048,576)
-    MAX_PIXELS = 768 * 768
+    # Validate input dimensions to prevent CUDA kernel crashes from malformed requests
+    # Max reasonable dimension is 8192 (8K resolution)
+    MAX_DIMENSION = 8192
+    MIN_DIMENSION = 64
+    
+    if width > MAX_DIMENSION or height > MAX_DIMENSION:
+        raise ValueError(f"Dimensions too large: {width}x{height}. Maximum allowed is {MAX_DIMENSION}x{MAX_DIMENSION}")
+    if width < MIN_DIMENSION or height < MIN_DIMENSION:
+        raise ValueError(f"Dimensions too small: {width}x{height}. Minimum allowed is {MIN_DIMENSION}x{MIN_DIMENSION}")
+    
+    # Cap total pixels to prevent CUDA OOM with quantized models
+    MAX_PIXELS = 1024 * 1024  # 1,048,576 pixels
     start_w = round(width)
     start_h = round(height)
     
@@ -197,8 +209,13 @@ async def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_tok
 
     generator = torch.Generator("cuda").manual_seed(seed)
     
-    # Find nearest valid dimensions
-    width, height = find_nearest_valid_dimensions(request.width, request.height)
+    # Find nearest valid dimensions (with input validation)
+    try:
+        width, height = find_nearest_valid_dimensions(request.width, request.height)
+    except ValueError as e:
+        logger.error(f"Invalid dimensions: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    
     print(f"Original dimensions: {request.width}x{request.height}")
     print(f"Adjusted dimensions: {width}x{height}")
 
@@ -239,6 +256,11 @@ async def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_tok
         logger.error(f"CUDA OOM Error: {str(e)} - Exiting to trigger systemd restart")
         # Exit with non-zero status to trigger systemd restart
         sys.exit(1)
+    except Exception as e:
+        # Catch any other unexpected errors (like CUDA kernel assertions) and return 500
+        # instead of crashing the entire server
+        logger.error(f"Unexpected error during generation: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

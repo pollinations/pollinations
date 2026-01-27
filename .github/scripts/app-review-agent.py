@@ -78,6 +78,19 @@ def gh_api(endpoint, method="GET", data=None):
 
     return resp.json() if resp.text else {}
 
+def get_github_user_id(username):
+    """Fetch GitHub user ID for a username."""
+    if not username:
+        return ""
+    # Remove @ prefix if present
+    username = username.lstrip('@')
+    try:
+        user_data = gh_api(f"/users/{username}")
+        return str(user_data.get("id", ""))
+    except Exception as e:
+        print(f"  Warning: Could not fetch GitHub user ID for {username}: {e}")
+        return ""
+
 def call_llm(system_prompt, user_message):
     """Call Pollinations API for a single completion."""
     headers = {"Content-Type": "application/json"}
@@ -267,7 +280,37 @@ Respond with ONLY a JSON object (no markdown, no explanation):
     repo_url = parsed['repo'] if parsed['repo'] and parsed['repo'] != "_No response_" else ""
     discord = parsed['discord'] if parsed['discord'] and parsed['discord'] != "_No response_" else ""
 
-    new_row = f"| {emoji} | [{parsed['name']}]({parsed['url']}) | {description} | {language} | {category} | @{ISSUE_AUTHOR} | {repo_url} | {stars_str} | {discord} | | {today} |"
+    # Fetch GitHub user ID
+    github_user_id = get_github_user_id(ISSUE_AUTHOR)
+    print(f"   GitHub User ID: {github_user_id}")
+
+    # Determine if app URL is a GitHub repo or a web URL
+    app_url = parsed['url'] if parsed['url'] and parsed['url'] != "_No response_" else ""
+    is_github_repo = "github.com" in app_url and "github.io" not in app_url
+    
+    if is_github_repo:
+        web_url = ""
+        # Use app URL as repo if no separate repo provided
+        if not repo_url:
+            repo_url = app_url
+    else:
+        web_url = app_url
+
+    # Get issue creation date for Submitted_Date
+    issue_created_at = ""
+    try:
+        issue_details = gh_api(f"/repos/pollinations/pollinations/issues/{ISSUE_NUMBER}")
+        created_at = issue_details.get("created_at", "")
+        if created_at:
+            issue_created_at = created_at[:10]  # YYYY-MM-DD
+    except Exception as e:
+        print(f"   Warning: Could not fetch issue creation date: {e}")
+        issue_created_at = today  # Fallback to today
+
+    issue_url = f"https://github.com/pollinations/pollinations/issues/{ISSUE_NUMBER}"
+
+    # Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date |
+    new_row = f"| {emoji} | {parsed['name']} | {web_url} | {description} | {language} | {category} | @{ISSUE_AUTHOR} | {github_user_id} | {repo_url} | {stars_str} | {discord} | | {issue_created_at} | {issue_url} | {today} |"
 
     # Add row using the prepend script
     os.environ["NEW_ROW"] = new_row

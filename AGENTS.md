@@ -22,10 +22,14 @@ App submissions are now **fully automated** via the `app-review-submission.yml` 
 **Table format in APPS.md:**
 
 ```markdown
-| Emoji | Name            | Description                   | Language | Category | GitHub  | Repo                   | Stars | Discord | Other | Submitted  |
-| ----- | --------------- | ----------------------------- | -------- | -------- | ------- | ---------------------- | ----- | ------- | ----- | ---------- |
-| 🎨    | [App Name](url) | Brief description (~80 chars) |          | creative | @github | https://github.com/... | ⭐123 |         |       | 2025-01-01 |
+| Emoji | Name     | Web_URL | Description                   | Language | Category | GitHub  | GitHub_ID | Repo                   | Stars | Discord | Other | Submitted_Date | Issue_URL | Approved_Date |
+| ----- | -------- | ------- | ----------------------------- | -------- | -------- | ------- | --------- | ---------------------- | ----- | ------- | ----- | -------------- | --------- | ------------- |
+| 🎨    | App Name | url     | Brief description (~80 chars) |          | creative | @github | 12345678  | https://github.com/... | ⭐123 |         |       | 2025-01-01     | #1234     | 2025-01-02    |
 ```
+
+- **Submitted_Date**: Issue creation date (when user submitted)
+- **Issue_URL**: Link to original GitHub issue
+- **Approved_Date**: PR merge date (when app was approved)
 
 **Categories:**
 
@@ -78,6 +82,35 @@ All API requests go through `gen.pollinations.ai`, which routes to the `enter.po
 - **Get API keys**: [enter.pollinations.ai](https://enter.pollinations.ai)
 - **Full API docs**: [APIDOCS.md](./APIDOCS.md)
 
+### Local Development
+
+**Service Ports:**
+- **enter.pollinations.ai**: `http://localhost:3000` (API under `/api/*`)
+- **text.pollinations.ai**: `http://localhost:16385`
+- **image.pollinations.ai**: `http://localhost:16384`
+
+**Local API Testing:**
+```bash
+# Enter gateway (local)
+curl "http://localhost:3000/api/generate/image/test?model=flux" -H "Authorization: Bearer $TOKEN"
+curl "http://localhost:3000/api/generate/v1/chat/completions" -H "Authorization: Bearer $TOKEN" ...
+```
+
+**Testing Enter with Local Services:**
+To test enter.pollinations.ai with local text/image services, edit `enter.pollinations.ai/wrangler.toml`:
+```toml
+# Default (remote EC2):
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+
+# For local testing (env.local):
+IMAGE_SERVICE_URL = "http://localhost:16384"
+TEXT_SERVICE_URL = "http://localhost:16385"
+```
+Use `npm run dev` in each service directory to start them.
+
+**Note:** EC2 hostnames in wrangler.toml may change. Check the actual values in `enter.pollinations.ai/wrangler.toml`.
+
 ## Model Context Protocol (MCP)
 
 The `packages/mcp/` directory contains a Model Context Protocol server that allows AI agents to directly generate images, text, and audio using the pollinations.ai API.
@@ -120,6 +153,46 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 - **[Full API Documentation](./APIDOCS.md)**
 - **[Enter Services Deployment](.claude/skills/enter-services/SKILL.md)** - Deploy and manage services on AWS EC2
 
+## ⚠️ YAGNI - You Aren't Gonna Need It
+
+**THIS IS CRITICAL. Follow YAGNI religiously:**
+
+- **Don't keep code for "potential futures"** - Only implement what's needed NOW
+- **Remove unused functions** - Even if they "might be useful someday"
+- **No speculative abstractions** - If we need it later, we'll add it then
+- **No "just in case" helpers** - Don't create test utilities or wrappers preemptively
+- **Keep the codebase minimal** - Less code = fewer bugs = easier maintenance
+
+## Code Style
+
+**Prefer functional, elegant, and minimal solutions:**
+
+- Don't implement things we're not using anymore
+- Check assumptions on the web and codebase regularly
+- When continuing work from a previous session, read all relevant code first
+- Check related PRs including comments, description, and history
+- If in the middle of a feature/fix, identify clear next steps before proceeding
+
+**Before implementing:**
+- **Verify assumptions on the web** - APIs, libraries, and patterns change frequently
+- **Read related files into context** - Get the full picture before making changes
+- **Check existing implementations** - Don't reinvent what already exists in the codebase
+
+## Common Mistakes to Avoid
+
+**IMPORTANT - Claude often makes these mistakes:**
+
+- **Don't use `cd` in bash commands** - Use the `cwd` parameter instead
+- **Don't run `pytest`** - Use `npm run test` or `npx vitest run`
+- **Don't create .md documentation files** unless explicitly asked
+- **Always use absolute paths** for file operations
+- **Don't edit files manually during a Claude Code session** - this busts the cache
+- **Don't run `/compact`** unless absolutely necessary - it busts cache
+- **Don't let searches run wild** - Use targeted file paths, not broad searches
+- **Don't modify test files to make tests pass** - Fix the actual code instead
+- **Run `npm run decrypt-vars`** before running tests in enter.pollinations.ai
+- **Check `.testingtokens`** file for test API keys: `enter.pollinations.ai/.testingtokens`
+
 ## Development Guidelines
 
 1. Code Style:
@@ -128,6 +201,7 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
    - Use ES modules (import/export) - all .js files are treated as ES modules
    - Follow existing code formatting patterns
    - Add descriptive comments for complex logic
+   - **Run biome check** after making changes: `npx biome check --write <file>`
 
 2. Testing:
 
@@ -135,6 +209,33 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
    - Follow existing test patterns in /test directories
    - **Test with real production code, not mocks** - Tests should validate actual behavior
    - Avoid creating mock infrastructure - use direct function imports instead
+
+   **Test Commands by Service:**
+   - **enter.pollinations.ai**: `cd enter.pollinations.ai && npm run test` (vitest + Cloudflare Workers pool)
+   - **image.pollinations.ai**: `cd image.pollinations.ai && npm run test` (vitest)
+   - **text.pollinations.ai**: No test runner configured yet
+
+   **⚡ Run tests individually** - Full suite takes time. Use:
+   ```bash
+   npx vitest run --testNamePattern="specific test name"
+   npx vitest run test/specific-file.test.ts
+   ```
+
+   **Snapshot System:** enter.pollinations.ai uses VCR-style snapshots for API responses:
+   - Snapshots stored in test fixtures, replayed during tests
+   - Set `TEST_VCR_MODE=record` to record new snapshots
+   - Default mode is `replay-or-record`
+
+   **Testing Tokens:** `enter.pollinations.ai/.testingtokens` contains:
+   - `ENTER_API_TOKEN_LOCAL` / `ENTER_API_TOKEN_REMOTE` - API keys
+   - `ENTER_TOKEN`, `GITHUB_TOKEN`, `POLAR_ACCESS_TOKEN`
+
+   **Testing Best Practices:**
+   - Read existing tests entirely to understand patterns before adding new ones
+   - Prefer adding to existing test files over creating new ones
+   - Test core functionality - minimal, short, and sweet
+   - Don't create new testing patterns - follow existing conventions
+   - Make requests to `gen.pollinations.ai` for production API testing
 
 3. Documentation:
 
@@ -144,15 +245,7 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
    - **Avoid creating markdown documentation files while working** unless explicitly requested
    - If temporary files are needed for testing/debugging, create them in a `temp/` folder clearly labeled as temporary
 
-4. YAGNI Principle (You Aren't Gonna Need It):
-
-   - **Don't keep code for "potential futures"** - Only implement what's needed now
-   - Remove unused functions, even if they "might be useful someday"
-   - If we need something later, we'll add it when we actually need it
-   - Example: Don't create test utilities or helper functions "just in case"
-   - Keep the codebase minimal and focused on current requirements
-
-5. Architecture Considerations:
+4. Architecture Considerations:
 
    - Frontend changes should be in pollinations.ai/
    - Image generation in image.pollinations.ai/
@@ -198,17 +291,31 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 
 - If the user asks to send to git or something similar do all these steps:
 - Git status, diff, create branch, commit all, push and write a PR description
+- **Avoid force pushes**: Prefer follow-up commits over `git push --force` or `--force-with-lease`. Force pushes rewrite history and can cause issues for others working on the same branch.
+- **Run biome check before committing**: `npx biome check --write <file>` to fix formatting/linting issues
 
 ## Communication Style
 
-**All PRs, comments, issues: bullet points, <200 words, no fluff**
+**BE CONCISE. All PRs, comments, issues: bullet points, <200 words, NO FLUFF.**
 
 **PR Format:**
-
 - Use "- Adds X", "- Fix Y" format
-- 3-5 bullets for most PRs
+- 3-5 bullets max
 - Simple titles: "fix:", "feat:", "Add"
-- Reference: `repo:pollinations/pollinations author:eulervoid`
+- No long paragraphs, no marketing language
+
+**Issue Comments:**
+- Bullet points only
+- State facts, not opinions
+- Link to relevant code/files
+- No "I think" or "maybe" - be direct
+
+**Code Reviews:**
+- Focus on parts that need improving, not what's already good
+- Be concise and information-dense
+- Link to specific lines/files
+- Don't praise code that's fine
+- Don't repeat obvious things
 
 ## GitHub Labels
 

@@ -144,7 +144,7 @@ jobs:
         if: github.event_name != 'issue_comment' || steps.auth.outputs.authorized == 'true'
         continue-on-error: true
         run: |
-          npx tsx .github/scripts/app-validate-submission.ts > /tmp/validation.json 2>&1 || true
+          node .github/scripts/app-validate-submission.js > /tmp/validation.json 2>&1 || true
           cat /tmp/validation.json
           echo "result<<EOF" >> $GITHUB_OUTPUT
           cat /tmp/validation.json >> $GITHUB_OUTPUT

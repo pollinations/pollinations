@@ -7,7 +7,8 @@ export const PriceBadge: FC<{
     perImage?: boolean;
     perToken?: boolean;
     perSecond?: boolean;
-}> = ({ prices, emoji, subEmojis, perImage, perToken, perSecond }) => {
+    className?: string;
+}> = ({ prices, emoji, subEmojis, perImage, perToken, perSecond, className }) => {
     const validPrices = prices.filter((p) => p && p !== "—");
     if (validPrices.length === 0) return null;
 
@@ -21,7 +22,7 @@ export const PriceBadge: FC<{
             : "";
 
     return (
-        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-gray-100 text-gray-700">
+        <span className={className || "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-gray-100 text-gray-700"}>
             <span>{emoji}</span>
             <span className="inline-flex items-center gap-1">
                 {validPrices.map((price, j) => (

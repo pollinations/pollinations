@@ -45,16 +45,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             <td className="py-2 px-2 text-sm text-gray-700 whitespace-nowrap relative group">
                 <div className="flex items-center gap-2">
                     <div className="flex flex-col">
-                        <div className="flex items-center gap-1">
-                            <span className={showNew ? "font-bold" : "font-medium"}>
-                                {modelDisplayName || model.name}
-                            </span>
-                            {showPaidOnly && (
-                                <Tooltip content="Requires paid balance (tier balance not accepted)">
-                                    <span className="text-xs text-orange-600">💰</span>
-                                </Tooltip>
-                            )}
-                        </div>
+                        <span className={showNew ? "font-bold" : "font-medium"}>
+                            {modelDisplayName || model.name}
+                        </span>
                         <button
                             type="button"
                             onClick={copyModelName}
@@ -110,7 +103,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             <td className="py-2 px-2 text-sm">
                 <div className="flex justify-center">
                     <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-yellow-100 to-orange-100 text-orange-900 border border-orange-200 ${model.type === "image" ? "uppercase" : ""}`}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            showPaidOnly
+                                ? "bg-gradient-to-r from-purple-100 to-purple-200 text-purple-900 border border-purple-300"
+                                : "bg-gradient-to-r from-yellow-100 to-orange-100 text-orange-900 border border-orange-200"
+                        } ${model.type === "image" ? "uppercase" : ""}`}
                     >
                         {genPerPollen}
                     </span>
@@ -129,18 +126,27 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             emoji="💬"
                             subEmojis={["💬", "💾"]}
                             perToken={model.perToken}
+                            className={showPaidOnly
+                                ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
+                                : undefined}
                         />
                         <PriceBadge
                             prices={[model.promptAudioPrice]}
                             emoji="🔊"
                             subEmojis={["🔊"]}
                             perToken={model.perToken}
+                            className={showPaidOnly
+                                ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
+                                : undefined}
                         />
                         <PriceBadge
                             prices={[model.promptImagePrice]}
                             emoji="🖼️"
                             subEmojis={["🖼️"]}
                             perToken={model.perToken}
+                            className={showPaidOnly
+                                ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
+                                : undefined}
                         />
                     </div>
                 )}
@@ -155,12 +161,18 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             emoji="💬"
                             subEmojis={["💬"]}
                             perToken={model.perToken}
+                            className={showPaidOnly
+                                ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
+                                : undefined}
                         />
                         <PriceBadge
                             prices={[model.completionAudioPrice]}
                             emoji="🔊"
                             subEmojis={["🔊"]}
                             perToken={model.perToken}
+                            className={showPaidOnly
+                                ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
+                                : undefined}
                         />
                         {model.perSecondPrice ? (
                             <>
@@ -169,12 +181,18 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                     emoji="🎬"
                                     subEmojis={["🎬"]}
                                     perSecond
+                                    className={showPaidOnly
+                                        ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
+                                        : undefined}
                                 />
                                 <PriceBadge
                                     prices={[model.perAudioSecondPrice]}
                                     emoji="🔊"
                                     subEmojis={["🔊"]}
                                     perSecond
+                                    className={showPaidOnly
+                                        ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
+                                        : undefined}
                                 />
                             </>
                         ) : model.perTokenPrice ? (
@@ -183,6 +201,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 emoji="🎬"
                                 subEmojis={["🎬"]}
                                 perToken
+                                className={showPaidOnly
+                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
+                                    : undefined}
                             />
                         ) : model.perImagePrice ? (
                             <PriceBadge
@@ -190,6 +211,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 emoji="🖼️"
                                 subEmojis={["🖼️"]}
                                 perImage
+                                className={showPaidOnly
+                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
+                                    : undefined}
                             />
                         ) : (
                             <PriceBadge
@@ -197,6 +221,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 emoji="🖼️"
                                 subEmojis={["🖼️"]}
                                 perToken={model.perToken}
+                                className={showPaidOnly
+                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
+                                    : undefined}
                             />
                         )}
                     </div>

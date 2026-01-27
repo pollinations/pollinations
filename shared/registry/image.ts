@@ -56,6 +56,7 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "nanobanana-pro",
         provider: "google",
+        paidOnly: true,
         cost: [
             // Gemini 3 Pro Image via Vertex AI
             // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)

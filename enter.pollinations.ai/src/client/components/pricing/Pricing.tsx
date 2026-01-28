@@ -28,11 +28,8 @@ export const Pricing: FC = () => {
                     Vote on next models
                 </Button>
             </div>
-            <div className="bg-amber-50/30 rounded-2xl p-6 border border-amber-300 space-y-6 overflow-hidden">
-                <div
-                    className="overflow-x-auto md:overflow-x-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-                    style={{ overflowY: "clip" }}
-                >
+            <div className="bg-amber-50/30 rounded-2xl p-6 border border-amber-300 space-y-6">
+                <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <UnifiedModelTable
                         imageModels={imageModels}
                         videoModels={videoModels}

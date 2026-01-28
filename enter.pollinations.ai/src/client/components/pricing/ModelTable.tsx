@@ -66,31 +66,24 @@ const SectionHeader: FC<SectionHeaderProps> = ({
                 <td colSpan={4} className="h-6 rounded-t-lg" />
             </tr>
         )}
-        <tr className={`${sectionColors.bg} rounded-t-lg`}>
+        <tr className={`${sectionColors.bg} overflow-hidden rounded-t-lg`}>
             <td
-                className={`text-left pt-3 pb-2 px-4 text-base font-bold ${sectionColors.text} align-middle first:rounded-tl-lg`}
+                className={`text-left pt-3 pb-2 px-4 text-base font-bold ${sectionColors.text} align-middle border-t border-l border-amber-200 rounded-tl-lg`}
             >
                 <div className="flex items-center gap-2">
                     {label.toUpperCase()}
                     {type === "video" && (
-                        <>
-                            <span className="text-[10px] text-gray-500 bg-transparent px-1.5 py-0.5 rounded-full font-medium border border-gray-400">
-                                alpha 🧪
+                        <span className="relative inline-flex items-center group/alpha text-[10px] text-gray-500 bg-transparent px-1.5 py-0.5 rounded-full font-medium border border-gray-400 cursor-pointer hover:bg-gray-50">
+                            alpha
+                            <span className="invisible group-hover/alpha:visible absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none">
+                                API endpoints and parameters may change
                             </span>
-                            <span className="relative inline-flex items-center group/alpha">
-                                <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold cursor-pointer">
-                                    i
-                                </span>
-                                <span className="invisible group-hover/alpha:visible absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none">
-                                    API endpoints and parameters may change
-                                </span>
-                            </span>
-                        </>
+                        </span>
                     )}
                 </div>
             </td>
             <td
-                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[90px] align-middle`}
+                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[90px] align-middle border-t border-amber-200`}
             >
                 <div>1 pollen ≈</div>
                 <div
@@ -104,7 +97,7 @@ const SectionHeader: FC<SectionHeaderProps> = ({
                 </div>
             </td>
             <td
-                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[130px] align-middle`}
+                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[130px] align-middle border-t border-amber-200`}
             >
                 <div>Input</div>
                 <div
@@ -114,7 +107,7 @@ const SectionHeader: FC<SectionHeaderProps> = ({
                 </div>
             </td>
             <td
-                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[90px] align-middle last:rounded-tr-lg`}
+                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[90px] align-middle border-t border-r border-amber-200 rounded-tr-lg`}
             >
                 <div>Output</div>
                 <div
@@ -142,7 +135,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     const personaModels = sortedTextModels.filter((m) => isPersona(m.name));
 
     return (
-        <table className="w-full">
+        <table className="w-full border-separate border-spacing-0">
             <tbody>
                 {/* Image Section */}
                 <SectionHeader label="Image" type="image" isFirst />

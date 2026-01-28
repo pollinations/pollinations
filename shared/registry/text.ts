@@ -316,6 +316,7 @@ export const TEXT_SERVICES = {
         aliases: ["claude-opus-4.5", "claude-opus"],
         modelId: "claude-opus-4-5-20251101",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,

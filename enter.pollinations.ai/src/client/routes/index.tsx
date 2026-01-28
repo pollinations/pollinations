@@ -22,21 +22,15 @@ export const Route = createFileRoute("/")({
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
-        const [customer, tierData, apiKeysResult, d1BalanceResult] =
-            await Promise.all([
-                apiClient.polar.customer.state
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-                apiClient.tiers.view
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-                apiClient["api-keys"]
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : { data: [] })),
-                apiClient.polar.customer["d1-balance"]
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-            ]);
+        const [tierData, apiKeysResult, d1BalanceResult] = await Promise.all([
+            apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
+            apiClient["api-keys"]
+                .$get()
+                .then((r) => (r.ok ? r.json() : { data: [] })),
+            apiClient.customer.balance
+                .$get()
+                .then((r) => (r.ok ? r.json() : null)),
+        ]);
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
@@ -44,7 +38,6 @@ export const Route = createFileRoute("/")({
 
         return {
             user: context.user,
-            customer,
             apiKeys,
             tierData,
             tierBalance,
@@ -245,6 +238,13 @@ function RouteComponent() {
                                 }`}
                             >
                                 Usage
+                                {activeTab === "balance" && (
+                                    <img
+                                        src="/stats-icon.svg"
+                                        alt="stats"
+                                        className="emoji-pulse ml-1 w-7 h-7 inline-block"
+                                    />
+                                )}
                             </button>
                         </h2>
                         {activeTab === "balance" && (
@@ -254,32 +254,36 @@ function RouteComponent() {
                                     color="violet"
                                     weight="light"
                                     onClick={() => handleBuyPollen(5)}
+                                    className="btn-shimmer"
                                 >
-                                    + $5
+                                    💎 $5
                                 </Button>
                                 <Button
                                     as="button"
                                     color="violet"
                                     weight="light"
                                     onClick={() => handleBuyPollen(10)}
+                                    className="btn-shimmer"
                                 >
-                                    + $10
+                                    💎 $10
                                 </Button>
                                 <Button
                                     as="button"
                                     color="violet"
                                     weight="light"
                                     onClick={() => handleBuyPollen(20)}
+                                    className="btn-shimmer"
                                 >
-                                    + $20
+                                    💎 $20
                                 </Button>
                                 <Button
                                     as="button"
                                     color="violet"
                                     weight="light"
                                     onClick={() => handleBuyPollen(50)}
+                                    className="btn-shimmer"
                                 >
-                                    + $50
+                                    💎 $50
                                 </Button>
                             </div>
                         )}
@@ -430,6 +434,7 @@ function RouteComponent() {
                             tierBalance={tierBalance}
                             packBalance={packBalance}
                             cryptoBalance={cryptoBalance}
+                            tier={tierData?.active?.tier}
                         />
                     )}
                     {activeTab === "usage" && (

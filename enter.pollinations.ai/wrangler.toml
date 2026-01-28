@@ -51,9 +51,8 @@ POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
 TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
-# Polar Sandbox product IDs for tier subscriptions
-POLAR_PRODUCT_TIER_SPORE = "19fa1660-a90c-453d-8132-4d228cc7db39"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 # NOWPayments crypto payments (sandbox for dev)
@@ -97,7 +96,6 @@ TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=g
 TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
 TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
-POLAR_PRODUCT_TIER_SPORE = "19fa1660-a90c-453d-8132-4d228cc7db39"
 IMAGE_SERVICE_URL = "http://localhost:16384"
 TEXT_SERVICE_URL = "http://localhost:16385"
 # Stripe payments (sandbox for local development)
@@ -159,8 +157,8 @@ POLAR_SERVER = "production"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
 TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
-POLAR_PRODUCT_TIER_SPORE = "01a31c1a-7af7-4958-9b73-c10e2fac5f70"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 POLLEN_REFILL_PER_HOUR = 1
@@ -169,6 +167,10 @@ NOWPAYMENTS_ENV = "production"
 # Stripe payments (live for production)
 STRIPE_MODE = "live"
 STRIPE_SUCCESS_URL = "https://enter.pollinations.ai"
+
+# TEMPORARILY DISABLED to debug balance reset bug - 2026-01-27
+# [env.production.triggers]
+# crons = ["0 0 * * *"]
 
 [env.staging]
 
@@ -220,10 +222,10 @@ POLAR_SERVER = "production"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
 TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
-POLAR_PRODUCT_TIER_SPORE = "01a31c1a-7af7-4958-9b73-c10e2fac5f70"
-IMAGE_SERVICE_URL = "http://ec2-44-222-254-250.compute-1.amazonaws.com:16384"
-TEXT_SERVICE_URL = "http://ec2-44-222-254-250.compute-1.amazonaws.com:16385"
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 # Stripe payments: sandbox mode for staging
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "https://staging.enter.pollinations.ai"
@@ -274,13 +276,20 @@ POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
 TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
-POLAR_PRODUCT_TIER_SPORE = "19fa1660-a90c-453d-8132-4d228cc7db39"
+# TODO: Change back to staging endpoints once staging services are available
+# Staging URLs: IMAGE_SERVICE_URL = "http://ec2-44-222-254-250.compute-1.amazonaws.com:16384"
+#               TEXT_SERVICE_URL = "http://ec2-44-222-254-250.compute-1.amazonaws.com:16385"
+# Currently using prod services for simplicity
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 # Stripe payments (sandbox for dev)
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "https://dev.enter.pollinations.ai"
+
+[env.staging.triggers]
+crons = ["0 0 * * *"]
 
 [env.test]
 
@@ -326,10 +335,10 @@ POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
 TINYBIRD_POLAR_INGEST_URL = "http://localhost:7181/v0/events?name=polar_event"
 TINYBIRD_CRYPTO_INGEST_URL = "http://localhost:7181/v0/events?name=crypto_event"
+TINYBIRD_TIER_INGEST_URL = "http://localhost:7181/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "http://localhost:7181/v0/events?name=stripe_event"
 TINYBIRD_INGEST_TOKEN = "test_tinybird_ingest_token"
 TINYBIRD_POLAR_INGEST_TOKEN = "test_tinybird_polar_ingest_token"
 TINYBIRD_READ_TOKEN = "test_tinybird_read_token"
-POLAR_PRODUCT_TIER_SPORE = "polar_product_id_spore"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"

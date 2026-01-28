@@ -134,10 +134,14 @@ export const handleError: ErrorHandler<Env> = async (err, c) => {
     return c.json(response, status);
 };
 
-function createBaseErrorResponse(
+/**
+ * Creates a standardized error response
+ */
+function createErrorResponse(
     error: Error,
     status: ContentfulStatusCode,
     timestamp: string,
+    details?: any,
 ): ErrorResponse {
     return {
         success: false,
@@ -145,10 +149,19 @@ function createBaseErrorResponse(
             message: error.message || getDefaultErrorMessage(status),
             code: getErrorCode(status),
             timestamp,
+            ...(details && { details }),
             ...(!!error.cause && { cause: error.cause }),
         },
         status,
     };
+}
+
+function createBaseErrorResponse(
+    error: Error,
+    status: ContentfulStatusCode,
+    timestamp: string,
+): ErrorResponse {
+    return createErrorResponse(error, status, timestamp);
 }
 
 function createValidationErrorResponse(
@@ -157,20 +170,10 @@ function createValidationErrorResponse(
     timestamp: string,
 ): ErrorResponse {
     const flatErrors = z.flattenError(error.zodError);
-    return {
-        success: false,
-        error: {
-            message: error.message || getDefaultErrorMessage(status),
-            code: getErrorCode(status),
-            details: {
-                name: error.name,
-                ...flatErrors,
-            },
-            timestamp,
-            ...(!!error.cause && { cause: error.cause }),
-        },
-        status,
-    };
+    return createErrorResponse(error, status, timestamp, {
+        name: error.name,
+        ...flatErrors,
+    });
 }
 
 function createInternalErrorResponse(
@@ -178,20 +181,10 @@ function createInternalErrorResponse(
     status: ContentfulStatusCode,
     timestamp: string,
 ): ErrorResponse {
-    return {
-        success: false,
-        error: {
-            message: error.message || getDefaultErrorMessage(status),
-            code: getErrorCode(status),
-            details: {
-                name: error.name,
-                stack: error.stack,
-            },
-            timestamp,
-            ...(!!error.cause && { cause: error.cause }),
-        },
-        status,
-    };
+    return createErrorResponse(error, status, timestamp, {
+        name: error.name,
+        stack: error.stack,
+    });
 }
 
 export function getErrorCode(status: number): string {

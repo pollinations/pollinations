@@ -13,7 +13,12 @@ if [ -z "$GPU0_PUBLIC_PORT" ] || [ -z "$GPU1_PUBLIC_PORT" ]; then
 fi
 
 PUBLIC_IP="${PUBLIC_IP:-52.205.25.210}"
-PLN_ENTER_TOKEN="${PLN_ENTER_TOKEN:-cwBOpVgB8XumrXkUQbdjSR4fluV0Nq4iyzhUyy488vc}"
+# PLN_ENTER_TOKEN must be provided as environment variable - no default for security
+if [ -z "$PLN_ENTER_TOKEN" ]; then
+    echo "ERROR: PLN_ENTER_TOKEN must be set"
+    echo "Usage: PLN_ENTER_TOKEN=xxx GPU0_PUBLIC_PORT=24602 GPU1_PUBLIC_PORT=25962 bash setup-ionet.sh"
+    exit 1
+fi
 BRANCH="${BRANCH:-main}"
 SPAN_MODEL_ID="1PCYo-4R6MgM-cXAsTuMO-tH4tEcO8A8P"
 

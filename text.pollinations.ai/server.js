@@ -15,8 +15,6 @@ import {
 import { availableModels } from "./availableModels.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { getRequestData } from "./requestUtils.js";
-// Note: ImageFetchError is checked by name property in error handling below
-import { ImageFetchError } from "./transforms/imageUrlToBase64Transform.js";
 
 // Load environment variables including .env.local overrides
 // Load .env.local first (higher priority), then .env as fallback

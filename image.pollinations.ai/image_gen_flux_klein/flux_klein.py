@@ -25,7 +25,7 @@ from pydantic import BaseModel
 app = modal.App("flux-klein")
 
 # Expected Enter token for authentication (set via Modal secret)
-# Create secret: modal secret create enter-token ENTER_TOKEN=your_token_here
+# Create secret: modal secret create enter-token PLN_ENTER_TOKEN=your_token_here
 ENTER_TOKEN_HEADER = "x-enter-token"
 
 # CUDA base image with Python
@@ -115,7 +115,7 @@ GPU_OPTIONS = {
         "/root/.inductor-cache": modal.Volume.from_name("inductor-cache", create_if_missing=True),
     },
     secrets=[
-        modal.Secret.from_name("enter-token", required_keys=["ENTER_TOKEN"]),
+        modal.Secret.from_name("enter-token", required_keys=["PLN_ENTER_TOKEN"]),
         modal.Secret.from_name("huggingface-secret", required_keys=["HF_TOKEN"]),
     ],
 )
@@ -210,9 +210,9 @@ class FluxKlein:
     def _verify_token(self, token: str | None) -> None:
         """Verify the Enter token, raise HTTPException if invalid."""
         import os
-        expected_token = os.environ.get("ENTER_TOKEN")
+        expected_token = os.environ.get("PLN_ENTER_TOKEN")
         if not expected_token:
-            raise HTTPException(status_code=500, detail="ENTER_TOKEN not configured")
+            raise HTTPException(status_code=500, detail="PLN_ENTER_TOKEN not configured")
         
         if not token:
             print("❌ No Enter token provided")

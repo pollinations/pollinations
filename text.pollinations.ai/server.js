@@ -261,6 +261,11 @@ export async function sendErrorResponse(
     const errorDetails = error.details || error.response?.data;
     if (errorDetails) errorResponse.details = errorDetails;
 
+    // For ImageFetchError, include the problematic URL for debugging
+    if (error.url) {
+        errorResponse.imageUrl = error.url;
+    }
+
     // Extract client information (for logs only)
     const clientInfo = {
         ip: getIp(req) || "unknown",

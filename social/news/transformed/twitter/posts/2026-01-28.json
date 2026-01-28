@@ -1,0 +1,32 @@
+{
+  "date": "2026-01-28",
+  "generated_at": "2026-01-28T15:10:14.357722+00:00",
+  "platform": "twitter",
+  "tweet_type": "shipped",
+  "tweet": "kimi just leveled up to K2.5 🧠✨\n\nstrictly better logic for your apps via fireworks ai. smarter, faster, agentic vibes.\n\nalso: we stopped throwing panic attacks (500 errors) when you send bad image urls. it's a chill 400 now. you're welcome.\n\ngo build cool stuff.",
+  "alt_tweet": "pov: you just upgraded to kimi K2.5 and fixed the error handling logic in the same PR.\n\nwe are so back. 🌸\n\n(ps: bad image urls return 400s now instead of scary 500s. we got u.)",
+  "full_tweet": "kimi just leveled up to K2.5 🧠✨\n\nstrictly better logic for your apps via fireworks ai. smarter, faster, agentic vibes.\n\nalso: we stopped throwing panic attacks (500 errors) when you send bad image urls. it's a chill 400 now. you're welcome.\n\ngo build cool stuff.",
+  "hashtags": [
+    "#OpenSource",
+    "#AI",
+    "#BuildInPublic"
+  ],
+  "image": {
+    "url": "https://gen.pollinations.ai/image/An%20energetic%20pixel%20art%20scene%20depicting%20a%20%27Level%20Up%27%20moment%20for%20a%20cute%20AI%20mascot%20character.%20The%20character%2C%20a%20small%20glowing%20robot%20bee%2C%20is%20hovering%20in%20the%20center%2C%20radiating%20waves%20of%20power%20in%20lime%20green%20%28%23ecf874%29%20and%20electric%20blue.%20Above%20it%2C%20a%20floating%20pixelated%20banner%20reads%20%27UPGRADE%20COMPLETE%27.%20Background%20is%20a%20dark%2C%20cozy%20coding%20environment%20with%20floating%20400%20and%20200%20status%20codes%20turning%20into%20confetti.%20Style%3A%2016-bit%20SNES%20RPG%20evolution%20screen%20meets%20high-contrast%20cyberpunk.%20Composition%3A%20Centered%2C%20explosive%20energy%2C%20scroll-stopping%20neon%20colors.%20Avoid%3A%20Dull%20colors%2C%20corporate%20minimalism%2C%20realistic%20style.?model=nanobanana-pro&width=1200&height=675&quality=hd&nologo=true&private=true&nofeed=true&seed=56929854",
+    "prompt": "An energetic pixel art scene depicting a 'Level Up' moment for a cute AI mascot character. The character, a small glowing robot bee, is hovering in the center, radiating waves of power in lime green (#ecf874) and electric blue. Above it, a floating pixelated banner reads 'UPGRADE COMPLETE'. Background is a dark, cozy coding environment with floating 400 and 200 status codes turning into confetti. Style: 16-bit SNES RPG evolution screen meets high-contrast cyberpunk. Composition: Centered, explosive energy, scroll-stopping neon colors. Avoid: Dull colors, corporate minimalism, realistic style."
+  },
+  "reasoning": "Combines the major feature release (Kimi K2.5) with a relatable dev-humor bug fix (400 vs 500 errors). The 'Level Up' visual reinforces the model upgrade, while the text keeps it casual and community-focused.",
+  "pr_references": [
+    "#7729",
+    "#7728",
+    "#7722",
+    "#7721",
+    "#7710",
+    "#7718",
+    "#7716",
+    "#7618",
+    "#7703",
+    "#7671"
+  ],
+  "char_count": 262
+}

@@ -238,6 +238,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         }
     };
 
+    const sortedKeys = [...apiKeys].sort(
+        (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
     return (
         <>
             <div className="flex flex-col gap-2">
@@ -277,145 +282,131 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     <span className="font-bold text-pink-400 text-sm">
                                         Models
                                     </span>
-                                    {[...apiKeys]
-                                        .sort(
-                                            (a, b) =>
-                                                new Date(
-                                                    b.createdAt,
-                                                ).getTime() -
-                                                new Date(a.createdAt).getTime(),
-                                        )
-                                        .map((apiKey) => {
-                                            const keyType = apiKey.metadata?.[
-                                                "keyType"
-                                            ] as string | undefined;
-                                            const isPublishable =
-                                                keyType === "publishable";
-                                            const plaintextKey = apiKey
-                                                .metadata?.["plaintextKey"] as
-                                                | string
-                                                | undefined;
+                                    {sortedKeys.map((apiKey) => {
+                                        const keyType = apiKey.metadata?.[
+                                            "keyType"
+                                        ] as string | undefined;
+                                        const isPublishable =
+                                            keyType === "publishable";
+                                        const plaintextKey = apiKey.metadata?.[
+                                            "plaintextKey"
+                                        ] as string | undefined;
 
-                                            return (
-                                                <Fragment key={apiKey.id}>
-                                                    <Cell>
-                                                        <span
-                                                            className={cn(
-                                                                "px-2 py-1 rounded text-xs font-medium",
-                                                                isPublishable
-                                                                    ? "bg-blue-100 text-blue-700"
-                                                                    : "bg-purple-100 text-purple-700",
-                                                            )}
-                                                        >
-                                                            {isPublishable
-                                                                ? "🌐 Publishable"
-                                                                : "🔒 Secret"}
-                                                        </span>
-                                                    </Cell>
-                                                    <Cell>
-                                                        <span
-                                                            className="text-xs truncate block"
-                                                            title={
-                                                                apiKey.name ??
-                                                                undefined
-                                                            }
-                                                        >
-                                                            {apiKey.name}
-                                                        </span>
-                                                    </Cell>
-                                                    <Cell>
-                                                        {isPublishable &&
-                                                        plaintextKey ? (
-                                                            <KeyDisplay
-                                                                fullKey={
-                                                                    plaintextKey
-                                                                }
-                                                                start={
-                                                                    apiKey.start ??
-                                                                    ""
-                                                                }
-                                                            />
-                                                        ) : (
-                                                            <span className="font-mono text-xs text-gray-500">
-                                                                {apiKey.start}
-                                                                ...
-                                                            </span>
+                                        return (
+                                            <Fragment key={apiKey.id}>
+                                                <Cell>
+                                                    <span
+                                                        className={cn(
+                                                            "px-2 py-1 rounded text-xs font-medium",
+                                                            isPublishable
+                                                                ? "bg-blue-100 text-blue-700"
+                                                                : "bg-purple-100 text-purple-700",
                                                         )}
-                                                    </Cell>
-                                                    <Cell>
-                                                        <div className="flex items-center text-xs whitespace-nowrap">
-                                                            <span className="text-gray-600">
-                                                                {formatDistanceToNowStrict(
-                                                                    apiKey.createdAt,
-                                                                    {
-                                                                        addSuffix: false,
-                                                                        locale: shortLocale,
-                                                                    },
-                                                                )}
-                                                            </span>
-                                                            <span className="text-gray-400 mx-1">
-                                                                /
-                                                            </span>
-                                                            <span className="text-gray-500">
-                                                                {apiKey.lastRequest
-                                                                    ? formatDistanceToNowStrict(
-                                                                          new Date(
-                                                                              apiKey.lastRequest,
-                                                                          ),
-                                                                          {
-                                                                              addSuffix: false,
-                                                                              locale: shortLocale,
-                                                                          },
-                                                                      )
-                                                                    : "—"}
-                                                            </span>
-                                                        </div>
-                                                    </Cell>
-                                                    <Cell>
-                                                        <LimitsBadge
-                                                            expiresAt={
-                                                                apiKey.expiresAt
+                                                    >
+                                                        {isPublishable
+                                                            ? "🌐 Publishable"
+                                                            : "🔒 Secret"}
+                                                    </span>
+                                                </Cell>
+                                                <Cell>
+                                                    <span
+                                                        className="text-xs truncate block"
+                                                        title={
+                                                            apiKey.name ??
+                                                            undefined
+                                                        }
+                                                    >
+                                                        {apiKey.name}
+                                                    </span>
+                                                </Cell>
+                                                <Cell>
+                                                    {isPublishable &&
+                                                    plaintextKey ? (
+                                                        <KeyDisplay
+                                                            fullKey={
+                                                                plaintextKey
                                                             }
-                                                            pollenBudget={
-                                                                apiKey.pollenBalance
+                                                            start={
+                                                                apiKey.start ??
+                                                                ""
                                                             }
                                                         />
-                                                    </Cell>
-                                                    <Cell>
-                                                        <ModelsBadge
-                                                            permissions={
-                                                                apiKey.permissions
-                                                            }
-                                                        />
-                                                    </Cell>
-                                                </Fragment>
-                                            );
-                                        })}
+                                                    ) : (
+                                                        <span className="font-mono text-xs text-gray-500">
+                                                            {apiKey.start}
+                                                            ...
+                                                        </span>
+                                                    )}
+                                                </Cell>
+                                                <Cell>
+                                                    <div className="flex items-center text-xs whitespace-nowrap">
+                                                        <span className="text-gray-600">
+                                                            {formatDistanceToNowStrict(
+                                                                apiKey.createdAt,
+                                                                {
+                                                                    addSuffix: false,
+                                                                    locale: shortLocale,
+                                                                },
+                                                            )}
+                                                        </span>
+                                                        <span className="text-gray-400 mx-1">
+                                                            /
+                                                        </span>
+                                                        <span className="text-gray-500">
+                                                            {apiKey.lastRequest
+                                                                ? formatDistanceToNowStrict(
+                                                                      new Date(
+                                                                          apiKey.lastRequest,
+                                                                      ),
+                                                                      {
+                                                                          addSuffix: false,
+                                                                          locale: shortLocale,
+                                                                      },
+                                                                  )
+                                                                : "—"}
+                                                        </span>
+                                                    </div>
+                                                </Cell>
+                                                <Cell>
+                                                    <LimitsBadge
+                                                        expiresAt={
+                                                            apiKey.expiresAt
+                                                        }
+                                                        pollenBudget={
+                                                            apiKey.pollenBalance
+                                                        }
+                                                    />
+                                                </Cell>
+                                                <Cell>
+                                                    <ModelsBadge
+                                                        permissions={
+                                                            apiKey.permissions
+                                                        }
+                                                    />
+                                                </Cell>
+                                            </Fragment>
+                                        );
+                                    })}
                                 </div>
                             </div>
                             {/* Fixed delete column - outside scroll area */}
                             <div className="flex-shrink-0 pl-3 flex flex-col gap-y-2">
+                                {/* h-5 matches the header row height for alignment */}
                                 <span className="h-5"></span>
-                                {[...apiKeys]
-                                    .sort(
-                                        (a, b) =>
-                                            new Date(b.createdAt).getTime() -
-                                            new Date(a.createdAt).getTime(),
-                                    )
-                                    .map((apiKey) => (
-                                        <Cell key={apiKey.id}>
-                                            <button
-                                                type="button"
-                                                className="w-6 h-6 flex items-center justify-center rounded bg-red-50 hover:bg-red-100 text-red-300 hover:text-red-600 transition-colors text-lg cursor-pointer"
-                                                onClick={() =>
-                                                    setDeleteId(apiKey.id)
-                                                }
-                                                title="Delete key"
-                                            >
-                                                ×
-                                            </button>
-                                        </Cell>
-                                    ))}
+                                {sortedKeys.map((apiKey) => (
+                                    <Cell key={apiKey.id}>
+                                        <button
+                                            type="button"
+                                            className="w-6 h-6 flex items-center justify-center rounded bg-red-50 hover:bg-red-100 text-red-300 hover:text-red-600 transition-colors text-lg cursor-pointer"
+                                            onClick={() =>
+                                                setDeleteId(apiKey.id)
+                                            }
+                                            title="Delete key"
+                                        >
+                                            ×
+                                        </button>
+                                    </Cell>
+                                ))}
                             </div>
                         </div>
                         {apiKeys.some(

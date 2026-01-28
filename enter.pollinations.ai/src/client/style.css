@@ -150,11 +150,11 @@
     background: linear-gradient(
         90deg,
         transparent 0%,
-        rgba(255, 255, 255, 0.4) 50%,
+        rgba(255, 255, 255, 0.3) 50%,
         transparent 100%
     );
     background-size: 200% 100%;
-    animation: shimmer 3s ease-in-out infinite;
+    animation: shimmer 8s ease-in-out infinite;
     pointer-events: none;
     border-radius: inherit;
 }

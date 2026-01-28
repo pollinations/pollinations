@@ -241,7 +241,10 @@ function RouteComponent() {
                             </button>
                         </h2>
                         {activeTab === "balance" && (
-                            <div className="flex flex-wrap gap-2">
+                            <div
+                                id="buy-pollen"
+                                className="flex flex-wrap gap-2"
+                            >
                                 <Button
                                     as="button"
                                     color="violet"

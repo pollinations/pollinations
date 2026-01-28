@@ -86,7 +86,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 value={paidBalance}
                                 label="💎"
                                 color="purple"
-                                title={`💎 Purchased: ${paidBalance.toFixed(2)} pollen\nFrom packs you've bought`}
+                                title={`💎 Purchased: ${paidBalance.toFixed(2)} pollen\nFrom packs you've bought\nRequired for 💎 Paid Only models; used after daily grants for others`}
                                 position="left"
                             />
                             {/* Free Pollen - Soft teal for free */}
@@ -95,7 +95,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 value={tierBalance}
                                 label={tierEmoji}
                                 color="teal"
-                                title={`${tierEmoji} Daily: ${tierBalance.toFixed(2)} pollen\nFree pollen from your tier, refills at 00:00 UTC`}
+                                title={`${tierEmoji} Daily: ${tierBalance.toFixed(2)} pollen\nFree pollen from your tier, refills at 00:00 UTC\nUsed first, except for 💎 Paid Only models`}
                                 position="right"
                                 offset={paidPercentage}
                             />

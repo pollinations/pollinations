@@ -135,7 +135,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     const personaModels = sortedTextModels.filter((m) => isPersona(m.name));
 
     return (
-        <table className="w-full border-separate border-spacing-0">
+        <table className="w-full">
             <tbody>
                 {/* Image Section */}
                 <SectionHeader label="Image" type="image" isFirst />

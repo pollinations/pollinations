@@ -82,7 +82,7 @@ export const Pricing: FC = () => {
                                     video
                                 </div>
                             </div>
-                            <div className="text-xs text-amber-600 mt-3 pt-3 border-t border-amber-200">
+                            <div className="text-xs text-purple-700 mt-3 pt-3 border-t border-amber-200">
                                 <div>
                                     <span className="font-semibold">*</span> 1
                                     pollen ≈ based on average community usage.
@@ -104,7 +104,7 @@ export const Pricing: FC = () => {
                                     2. Purchased pollen is used after daily is
                                     depleted
                                 </div>
-                                <div className="text-amber-600 mt-2">
+                                <div className="text-purple-700 mt-2">
                                     ⚠️ <strong>Exception:</strong> 💎 Paid Only
                                     models require purchased pollen only
                                 </div>
@@ -143,7 +143,7 @@ export const Pricing: FC = () => {
                                         <path d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a10.3 10.3 0 0 1-4.56.95c-4.01 0-6.83-2.5-6.83-7.28 0-4.19 2.39-7.34 6.42-7.34 3.23 0 5.78 2.38 5.78 6.84v1.91zm-8.09-2.62h4.24c0-1.41-.56-2.84-2.09-2.84-1.43 0-2.15 1.36-2.15 2.84zM40.95 5.57c-1.33 0-2.31.58-2.87 1.34l-.12-.99h-3.56v18.56l4.02-.86.01-4.51c.55.42 1.36 1.01 2.69 1.01 2.72 0 5.2-2.2 5.2-7.13 0-4.49-2.53-7.42-5.37-7.42zm-.95 10.35c-.9 0-1.42-.32-1.78-.72l-.02-5.69c.39-.45.93-.78 1.8-.78 1.38 0 2.33 1.55 2.33 3.59 0 2.06-.94 3.6-2.33 3.6zM28.24 4.66l4.05-.86V.51l-4.05.85v3.3zM32.29 5.91H28.24v14h4.05v-14zM24.36 7.24l-.26-1.33h-3.49v14h4.04V10.3c.96-1.25 2.58-1.02 3.08-.84V5.91c-.52-.19-2.42-.56-3.37 1.33zM16.05 2.72l-3.95.84-.02 12.82c0 2.37 1.78 4.11 4.15 4.11 1.31 0 2.27-.24 2.8-.53v-3.28c-.51.21-3.02.94-3.02-1.42V9.26h3.02V5.91h-3.02l.04-3.19zM5.36 10.03c0-.6.5-.83 1.31-.83 1.17 0 2.66.36 3.83.99V6.54c-1.28-.51-2.55-.71-3.83-.71C3.38 5.83.96 7.75.96 10.42c0 4.15 5.71 3.49 5.71 5.28 0 .7-.61.93-1.46.93-1.27 0-2.89-.52-4.18-1.23v3.7c1.42.61 2.86.87 4.18.87 3.35 0 5.65-1.66 5.65-4.38 0-4.48-5.5-3.68-5.5-5.56z" />
                                     </svg>
                                 </div>
-                                <div className="text-amber-600 text-xs mt-1">
+                                <div className="text-purple-700 text-xs mt-1">
                                     Prices may adjust during beta.
                                 </div>
                             </div>

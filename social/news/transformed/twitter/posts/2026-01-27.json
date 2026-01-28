@@ -1,0 +1,24 @@
+{
+  "date": "2026-01-27",
+  "generated_at": "2026-01-27T15:10:13.971635+00:00",
+  "platform": "twitter",
+  "tweet_type": "shipped",
+  "tweet": "just taught Claude how to use the internet. web-research skill is live. 🧠\n\nplus:\n- parallel model comparisons\n- fixed github rate limits (y'all upgrading too fast)\n- security chores 🔒\n\ngo build something smart. 🌸",
+  "alt_tweet": "pov: your AI assistant finally has internet access.\n\nweb-research skill = shipped 🚢\n\nalso fixed some github rate limits because you guys are upgrading tiers too fast (suffering from success).\n\nlink in bio. go build. 🐝",
+  "full_tweet": "just taught Claude how to use the internet. web-research skill is live. 🧠\n\nplus:\n- parallel model comparisons\n- fixed github rate limits (y'all upgrading too fast)\n- security chores 🔒\n\ngo build something smart. 🌸 #OpenSource #AI",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image": null,
+  "reasoning": "Focuses on the most exciting feature (web research) while acknowledging the community growth (rate limits) with a humble-brag ('suffering from success'). The tone is casual and direct, fitting the dev-twitter vibe.",
+  "pr_references": [
+    "#7700",
+    "#7693",
+    "#7676",
+    "#7678",
+    "#7677",
+    "#7675"
+  ],
+  "char_count": 228
+}

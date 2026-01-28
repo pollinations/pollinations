@@ -99,7 +99,7 @@ class EditRequest(BaseModel):
         "/root/.inductor-cache": modal.Volume.from_name("inductor-cache", create_if_missing=True),
     },
     secrets=[
-        modal.Secret.from_name("enter-token", required_keys=["ENTER_TOKEN"]),
+        modal.Secret.from_name("enter-token", required_keys=["PLN_ENTER_TOKEN"]),
         modal.Secret.from_name("huggingface-secret", required_keys=["HF_TOKEN"]),
     ],
 )
@@ -182,9 +182,9 @@ class FluxKlein9B:
     def _verify_token(self, token: str | None) -> None:
         """Verify the Enter token."""
         import os
-        expected_token = os.environ.get("ENTER_TOKEN")
+        expected_token = os.environ.get("PLN_ENTER_TOKEN")
         if not expected_token:
-            raise HTTPException(status_code=500, detail="ENTER_TOKEN not configured")
+            raise HTTPException(status_code=500, detail="PLN_ENTER_TOKEN not configured")
         
         if not token:
             print("❌ No Enter token provided")

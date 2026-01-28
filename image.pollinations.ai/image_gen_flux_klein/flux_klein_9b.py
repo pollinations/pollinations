@@ -90,8 +90,8 @@ class EditRequest(BaseModel):
     image=flux_klein_image,
     scaledown_window=5 * MINUTES,
     timeout=10 * MINUTES,
-    max_containers=2,
-    concurrency_limit=2,
+    max_containers=4,  # Increased to compensate for lower concurrency
+    concurrency_limit=1,  # Reduced from 2 - 9B model uses ~44GB VRAM, can't handle concurrent requests
     volumes={
         "/cache": modal.Volume.from_name("hf-hub-cache", create_if_missing=True),
         "/root/.nv": modal.Volume.from_name("nv-cache", create_if_missing=True),

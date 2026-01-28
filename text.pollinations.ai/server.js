@@ -216,7 +216,6 @@ async function handleRequest(req, res, requestData) {
             errorLog("Error stack:", error.stack);
 
             // Simply pass through the error using sendErrorResponse
-            // The error.status property will be used if set (including ImageFetchError)
             await sendErrorResponse(
                 res,
                 req,

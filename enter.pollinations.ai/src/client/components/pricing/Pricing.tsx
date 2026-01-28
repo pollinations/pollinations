@@ -30,7 +30,7 @@ export const Pricing: FC = () => {
             </div>
             <div className="bg-amber-50/30 rounded-2xl p-6 border border-amber-300 space-y-6 overflow-hidden">
                 <div
-                    className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                    className="overflow-x-auto md:overflow-x-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                     style={{ overflowY: "clip" }}
                 >
                     <UnifiedModelTable
@@ -90,22 +90,21 @@ export const Pricing: FC = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="bg-amber-100/50 rounded-lg px-3 py-2 text-xs text-amber-800">
+                    <div className="bg-white/50 rounded-lg px-3 py-2 text-xs text-amber-800 border border-amber-200">
                         <span className="font-semibold">* 1 pollen ≈</span>{" "}
                         based on average community usage over the last 7 days.
                         Actual costs vary with modality, prompt length, and
                         output.
                     </div>
-                </div>
-
-                <div className="bg-amber-100/50 rounded-lg px-4 py-3 text-center">
-                    <p className="text-sm font-medium text-amber-900">
-                        🎁 <span className="font-bold">Beta bonus:</span> 2x
-                        pollen on every purchase!
-                    </p>
-                    <p className="text-xs text-amber-700 mt-1">
-                        Prices may adjust as we fine-tune during beta.
-                    </p>
+                    <div className="bg-white/50 rounded-lg px-4 py-3 text-center border border-amber-200">
+                        <p className="text-sm font-medium text-amber-900">
+                            🎁 <span className="font-bold">Beta bonus:</span> 2x
+                            pollen on every purchase!
+                        </p>
+                        <p className="text-xs text-amber-700 mt-1">
+                            Prices may adjust as we fine-tune during beta.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

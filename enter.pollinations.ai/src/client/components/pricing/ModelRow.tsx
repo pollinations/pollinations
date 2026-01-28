@@ -17,9 +17,10 @@ import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
     model: ModelPrice;
+    isLast?: boolean;
 };
 
-export const ModelRow: FC<ModelRowProps> = ({ model }) => {
+export const ModelRow: FC<ModelRowProps> = ({ model, isLast = false }) => {
     const modelDisplayName = getModelDisplayName(model.name);
     const genPerPollen = calculatePerPollen(model);
     const [copied, setCopied] = useState(false);
@@ -41,7 +42,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showPaidOnly = isPaidOnly(model.name);
 
     return (
-        <tr className="border-b border-gray-200">
+        <tr className={isLast ? "" : "border-b border-gray-200"}>
             <td className="py-2 px-2 text-sm text-gray-700 relative group">
                 <div className="flex items-center gap-2">
                     <div className="flex flex-col">

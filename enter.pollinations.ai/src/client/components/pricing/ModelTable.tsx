@@ -50,7 +50,7 @@ type SectionHeaderProps = {
 };
 
 const sectionColors = {
-    bg: "bg-white/50",
+    bg: "",
     text: "text-gray-900",
     subtext: "text-gray-700",
 };
@@ -66,9 +66,9 @@ const SectionHeader: FC<SectionHeaderProps> = ({
                 <td colSpan={4} className="h-6 rounded-t-lg" />
             </tr>
         )}
-        <tr className={`${sectionColors.bg} overflow-hidden rounded-t-lg`}>
+        <tr>
             <td
-                className={`text-left pt-3 pb-2 px-4 text-base font-bold ${sectionColors.text} align-middle border-t border-l border-amber-200 rounded-tl-lg`}
+                className={`text-left pt-3 pb-2 px-4 text-base font-bold ${sectionColors.text} align-middle`}
             >
                 <div className="flex items-center gap-2">
                     {label.toUpperCase()}
@@ -83,7 +83,7 @@ const SectionHeader: FC<SectionHeaderProps> = ({
                 </div>
             </td>
             <td
-                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[90px] align-middle border-t border-amber-200`}
+                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[90px] align-middle`}
             >
                 <div>1 pollen ≈</div>
                 <div
@@ -97,7 +97,7 @@ const SectionHeader: FC<SectionHeaderProps> = ({
                 </div>
             </td>
             <td
-                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[130px] align-middle border-t border-amber-200`}
+                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[130px] align-middle`}
             >
                 <div>Input</div>
                 <div
@@ -107,7 +107,7 @@ const SectionHeader: FC<SectionHeaderProps> = ({
                 </div>
             </td>
             <td
-                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[90px] align-middle border-t border-r border-amber-200 rounded-tr-lg`}
+                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[90px] align-middle`}
             >
                 <div>Output</div>
                 <div
@@ -135,60 +135,70 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     const personaModels = sortedTextModels.filter((m) => isPersona(m.name));
 
     return (
-        <table className="w-full border-separate border-spacing-0">
-            <tbody>
-                {/* Image Section */}
-                <SectionHeader label="Image" type="image" isFirst />
-                {sortedImageModels.map((model, index) => (
-                    <ModelRow
-                        key={model.name}
-                        model={model}
-                        isLast={index === sortedImageModels.length - 1}
-                    />
-                ))}
+        <div className="flex flex-col gap-6">
+            {/* Image Section */}
+            <table className="w-full border-separate border-spacing-0 bg-white/50 rounded-lg">
+                <tbody>
+                    <SectionHeader label="Image" type="image" isFirst />
+                    {sortedImageModels.map((model, index) => (
+                        <ModelRow
+                            key={model.name}
+                            model={model}
+                            isLast={index === sortedImageModels.length - 1}
+                        />
+                    ))}
+                </tbody>
+            </table>
 
-                {/* Video Section */}
-                <SectionHeader label="Video" type="video" />
-                {sortedVideoModels.map((model, index) => (
-                    <ModelRow
-                        key={model.name}
-                        model={model}
-                        isLast={index === sortedVideoModels.length - 1}
-                    />
-                ))}
+            {/* Video Section */}
+            <table className="w-full border-separate border-spacing-0 bg-white/50 rounded-lg">
+                <tbody>
+                    <SectionHeader label="Video" type="video" isFirst />
+                    {sortedVideoModels.map((model, index) => (
+                        <ModelRow
+                            key={model.name}
+                            model={model}
+                            isLast={index === sortedVideoModels.length - 1}
+                        />
+                    ))}
+                </tbody>
+            </table>
 
-                {/* Text Section */}
-                <SectionHeader label="Text" type="text" />
-                {regularTextModels.map((model, index) => (
-                    <ModelRow
-                        key={model.name}
-                        model={model}
-                        isLast={
-                            personaModels.length === 0 &&
-                            index === regularTextModels.length - 1
-                        }
-                    />
-                ))}
-                {personaModels.length > 0 && (
-                    <>
-                        <tr>
-                            <td colSpan={4} className="pt-4 pb-1 px-2">
-                                <div className="text-xs font-semibold text-pink-500 opacity-60">
-                                    Persona
-                                </div>
-                            </td>
-                        </tr>
-                        {personaModels.map((model, index) => (
-                            <ModelRow
-                                key={model.name}
-                                model={model}
-                                isLast={index === personaModels.length - 1}
-                            />
-                        ))}
-                    </>
-                )}
-            </tbody>
-        </table>
+            {/* Text Section */}
+            <table className="w-full border-separate border-spacing-0 bg-white/50 rounded-lg">
+                <tbody>
+                    <SectionHeader label="Text" type="text" isFirst />
+                    {regularTextModels.map((model, index) => (
+                        <ModelRow
+                            key={model.name}
+                            model={model}
+                            isLast={
+                                personaModels.length === 0 &&
+                                index === regularTextModels.length - 1
+                            }
+                        />
+                    ))}
+                    {personaModels.length > 0 && (
+                        <>
+                            <tr>
+                                <td colSpan={4} className="pt-4 pb-1 px-2">
+                                    <div className="text-xs font-semibold text-pink-500 opacity-60">
+                                        Persona
+                                    </div>
+                                </td>
+                            </tr>
+                            {personaModels.map((model, index) => (
+                                <ModelRow
+                                    key={model.name}
+                                    model={model}
+                                    isLast={index === personaModels.length - 1}
+                                />
+                            ))}
+                        </>
+                    )}
+                </tbody>
+            </table>
+        </div>
     );
 };
 

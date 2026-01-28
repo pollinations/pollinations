@@ -15,6 +15,8 @@ import {
 import { availableModels } from "./availableModels.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { getRequestData } from "./requestUtils.js";
+// Note: ImageFetchError is checked by name property in error handling below
+import { ImageFetchError } from "./transforms/imageUrlToBase64Transform.js";
 
 // Load environment variables including .env.local overrides
 // Load .env.local first (higher priority), then .env as fallback
@@ -216,6 +218,7 @@ async function handleRequest(req, res, requestData) {
             errorLog("Error stack:", error.stack);
 
             // Simply pass through the error using sendErrorResponse
+            // The error.status property will be used if set (including ImageFetchError)
             await sendErrorResponse(
                 res,
                 req,
@@ -258,6 +261,11 @@ export async function sendErrorResponse(
     // Include upstream error details if available
     const errorDetails = error.details || error.response?.data;
     if (errorDetails) errorResponse.details = errorDetails;
+
+    // For ImageFetchError, include the problematic URL for debugging
+    if (error.url) {
+        errorResponse.imageUrl = error.url;
+    }
 
     // Extract client information (for logs only)
     const clientInfo = {

@@ -133,7 +133,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi",
-        config: portkeyConfig["kimi-k2-thinking-maas"],
+        config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {

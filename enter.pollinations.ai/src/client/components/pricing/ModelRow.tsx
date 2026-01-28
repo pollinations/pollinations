@@ -42,7 +42,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
 
     return (
         <tr className="border-b border-gray-200">
-            <td className="py-2 px-2 text-sm text-gray-700 whitespace-nowrap relative group">
+            <td className="py-2 px-2 text-sm text-gray-700 relative group">
                 <div className="flex items-center gap-2">
                     <div className="flex flex-col">
                         <span className={showNew ? "font-bold" : "font-medium"}>
@@ -98,65 +98,80 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             NEW
                         </span>
                     )}
+                    {showPaidOnly && (
+                        <Tooltip content="Requires Pollen Pack (tier balance not accepted)">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-transparent text-purple-700 border border-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]">
+                                <span>💎</span>
+                                <span className="flex flex-col items-center leading-tight">
+                                    <span className="text-[9px] text-purple-600 font-medium">
+                                        PACK
+                                    </span>
+                                    <span className="text-[9px] text-purple-600 font-medium">
+                                        ONLY
+                                    </span>
+                                </span>
+                            </span>
+                        </Tooltip>
+                    )}
                 </div>
             </td>
             <td className="py-2 px-2 text-sm">
                 <div className="flex justify-center">
-                    {showPaidOnly ? (
-                        <Tooltip content="Requires Pollen Pack (tier balance not accepted)">
-                            <span
-                                className={`inline-flex flex-col items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700 border border-purple-200 ${model.type === "image" ? "uppercase" : ""}`}
-                            >
-                                <span className="flex items-center gap-1">
-                                    <span>💎</span>
-                                    <span>{genPerPollen}</span>
-                                </span>
-                                <span className="text-[9px] text-purple-600 font-medium normal-case">Pack Only</span>
-                            </span>
-                        </Tooltip>
-                    ) : (
-                        <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200 ${model.type === "image" ? "uppercase" : ""}`}
-                        >
-                            {genPerPollen}
-                        </span>
-                    )}
+                    <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${model.type === "image" ? "uppercase" : ""} ${showPaidOnly ? "bg-purple-200 text-purple-700 border border-purple-300" : "bg-cyan-200 text-cyan-700 border border-cyan-300"}`}
+                    >
+                        {genPerPollen}
+                    </span>
                 </div>
             </td>
             <td className="py-2 px-2 text-sm text-center">
                 {genPerPollen === "—" ? (
                     <span className="text-gray-400">—</span>
                 ) : (
-                    <div className="flex flex-wrap gap-1 justify-center">
+                    <div className="flex flex-col gap-1 items-center">
                         <PriceBadge
-                            prices={[
-                                model.promptTextPrice,
-                                model.promptCachedPrice,
-                            ]}
+                            prices={[model.promptTextPrice]}
                             emoji="💬"
-                            subEmojis={["💬", "💾"]}
+                            subEmojis={["💬"]}
                             perToken={model.perToken}
-                            className={showPaidOnly
-                                ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
+                            className={
+                                showPaidOnly
+                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                            }
+                        />
+                        <PriceBadge
+                            prices={[model.promptCachedPrice]}
+                            emoji="�"
+                            subEmojis={["💾"]}
+                            perToken={model.perToken}
+                            className={
+                                showPaidOnly
+                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                            }
                         />
                         <PriceBadge
                             prices={[model.promptAudioPrice]}
                             emoji="🔊"
                             subEmojis={["🔊"]}
                             perToken={model.perToken}
-                            className={showPaidOnly
-                                ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
+                            className={
+                                showPaidOnly
+                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                            }
                         />
                         <PriceBadge
                             prices={[model.promptImagePrice]}
                             emoji="🖼️"
                             subEmojis={["🖼️"]}
                             perToken={model.perToken}
-                            className={showPaidOnly
-                                ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
+                            className={
+                                showPaidOnly
+                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                            }
                         />
                     </div>
                 )}
@@ -165,24 +180,28 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 {genPerPollen === "—" ? (
                     <span className="text-gray-400">—</span>
                 ) : (
-                    <div className="flex flex-wrap gap-1 justify-center">
+                    <div className="flex flex-col gap-1 items-center">
                         <PriceBadge
                             prices={[model.completionTextPrice]}
                             emoji="💬"
                             subEmojis={["💬"]}
                             perToken={model.perToken}
-                            className={showPaidOnly
-                                ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
+                            className={
+                                showPaidOnly
+                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                            }
                         />
                         <PriceBadge
                             prices={[model.completionAudioPrice]}
                             emoji="🔊"
                             subEmojis={["🔊"]}
                             perToken={model.perToken}
-                            className={showPaidOnly
-                                ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
+                            className={
+                                showPaidOnly
+                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                            }
                         />
                         {model.perSecondPrice ? (
                             <>
@@ -191,18 +210,22 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                     emoji="🎬"
                                     subEmojis={["🎬"]}
                                     perSecond
-                                    className={showPaidOnly
-                                        ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                        : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
+                                    className={
+                                        showPaidOnly
+                                            ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                            : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                                    }
                                 />
                                 <PriceBadge
                                     prices={[model.perAudioSecondPrice]}
                                     emoji="🔊"
                                     subEmojis={["🔊"]}
                                     perSecond
-                                    className={showPaidOnly
-                                        ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                        : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
+                                    className={
+                                        showPaidOnly
+                                            ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                            : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                                    }
                                 />
                             </>
                         ) : model.perTokenPrice ? (
@@ -211,9 +234,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 emoji="🎬"
                                 subEmojis={["🎬"]}
                                 perToken
-                                className={showPaidOnly
-                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
+                                className={
+                                    showPaidOnly
+                                        ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                        : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                                }
                             />
                         ) : model.perImagePrice ? (
                             <PriceBadge
@@ -221,9 +246,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 emoji="🖼️"
                                 subEmojis={["🖼️"]}
                                 perImage
-                                className={showPaidOnly
-                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
+                                className={
+                                    showPaidOnly
+                                        ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                        : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                                }
                             />
                         ) : (
                             <PriceBadge
@@ -231,9 +258,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 emoji="🖼️"
                                 subEmojis={["🖼️"]}
                                 perToken={model.perToken}
-                                className={showPaidOnly
-                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-100 text-purple-700"
-                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-yellow-100 text-yellow-800"}
+                                className={
+                                    showPaidOnly
+                                        ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                        : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                                }
                             />
                         )}
                     </div>

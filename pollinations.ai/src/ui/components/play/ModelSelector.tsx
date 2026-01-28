@@ -114,7 +114,9 @@ export const ModelSelector = memo(function ModelSelector({
                             >
                                 {m.name}
                                 {isPaidOnly && (
-                                    <span className="ml-1 text-[9px] font-black uppercase tracking-wider text-indicator-warning">💰</span>
+                                    <span className="ml-1 text-[9px] font-black uppercase tracking-wider text-indicator-warning">
+                                        💰
+                                    </span>
                                 )}
                             </Button>
                             {!isAllowed && (

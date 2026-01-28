@@ -1,8 +1,8 @@
 import type { FC } from "react";
-import type { ModelPrice } from "./types.ts";
+import { calculatePerPollen } from "./calculations.ts";
 import { ModelRow } from "./ModelRow.tsx";
 import { isPersona } from "./model-info.ts";
-import { calculatePerPollen } from "./calculations.ts";
+import type { ModelPrice } from "./types.ts";
 
 type ModelTableProps = {
     models: ModelPrice[];
@@ -56,7 +56,7 @@ const SectionHeader: FC<SectionHeaderProps> = ({
 }) => (
     <tr>
         <td
-            className={`text-left ${isFirst ? "pt-0" : "pt-6"} pb-1 px-2 text-sm font-bold text-pink-500 align-top`}
+            className={`text-left ${isFirst ? "pt-0" : "pt-12"} pb-1 px-2 text-sm font-bold text-pink-500 align-top`}
         >
             <div className="flex items-center gap-2">
                 {label}
@@ -77,7 +77,9 @@ const SectionHeader: FC<SectionHeaderProps> = ({
                 )}
             </div>
         </td>
-        <td className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[120px] align-top">
+        <td
+            className={`text-center text-sm font-bold text-pink-500 ${isFirst ? "pt-0" : "pt-12"} pb-1 px-2 whitespace-nowrap w-[90px] align-top`}
+        >
             <div>1 pollen ≈</div>
             <div className="text-xs font-normal text-pink-400 opacity-70 italic">
                 {type === "text"
@@ -87,13 +89,17 @@ const SectionHeader: FC<SectionHeaderProps> = ({
                       : "videos"}
             </div>
         </td>
-        <td className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[190px] align-top">
+        <td
+            className={`text-center text-sm font-bold text-pink-500 ${isFirst ? "pt-0" : "pt-12"} pb-1 px-2 whitespace-nowrap w-[130px] align-top`}
+        >
             <div>Input</div>
             <div className="text-xs font-normal text-pink-400 opacity-70 italic">
                 pollen
             </div>
         </td>
-        <td className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[120px] align-top">
+        <td
+            className={`text-center text-sm font-bold text-pink-500 ${isFirst ? "pt-0" : "pt-12"} pb-1 px-2 whitespace-nowrap w-[90px] align-top`}
+        >
             <div>Output</div>
             <div className="text-xs font-normal text-pink-400 opacity-70 italic">
                 pollen
@@ -193,7 +199,7 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
                             )}
                         </div>
                     </th>
-                    <th className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[120px] align-top">
+                    <th className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[90px] align-top">
                         <div>1 pollen ≈</div>
                         <div className="text-xs font-normal text-pink-400 opacity-70 italic">
                             {type === "text"
@@ -203,13 +209,13 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
                                   : "videos"}
                         </div>
                     </th>
-                    <th className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[190px] align-top">
+                    <th className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[130px] align-top">
                         <div>Input</div>
                         <div className="text-xs font-normal text-pink-400 opacity-70 italic">
                             pollen
                         </div>
                     </th>
-                    <th className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[120px] align-top">
+                    <th className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[90px] align-top">
                         <div>Output</div>
                         <div className="text-xs font-normal text-pink-400 opacity-70 italic">
                             pollen

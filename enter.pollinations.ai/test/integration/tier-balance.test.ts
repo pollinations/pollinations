@@ -3,15 +3,15 @@ import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import { user as userTable } from "@/db/schema/better-auth.ts";
+import worker from "@/index.ts";
 import { handleScheduled } from "@/scheduled.ts";
 import { getTierPollen, TIER_POLLEN, tierNames } from "@/tier-config.ts";
 import {
-    atomicDeductUserBalance,
     atomicDeductPaidBalance,
+    atomicDeductUserBalance,
     getUserBalances,
 } from "@/utils/balance-deduction.ts";
 import { test } from "../fixtures.ts";
-import worker from "@/index.ts";
 
 describe("Tier Balance Management", () => {
     describe("Daily Cron Refill", () => {
@@ -417,9 +417,7 @@ describe("Tier Balance Management", () => {
                     },
                     body: JSON.stringify({
                         model: "claude-large",
-                        messages: [
-                            { role: "user", content: "test" },
-                        ],
+                        messages: [{ role: "user", content: "test" }],
                     }),
                 },
             );
@@ -556,9 +554,7 @@ describe("Tier Balance Management", () => {
                     },
                     body: JSON.stringify({
                         model: "openai",
-                        messages: [
-                            { role: "user", content: "test" },
-                        ],
+                        messages: [{ role: "user", content: "test" }],
                     }),
                 },
             );
@@ -627,7 +623,9 @@ describe("Tier Balance Management", () => {
             const data = await response.json();
 
             // Check that paid-only models have the flag
-            const claudeLarge = data.data.find((m: any) => m.name === "claude-large");
+            const claudeLarge = data.data.find(
+                (m: any) => m.name === "claude-large",
+            );
             expect(claudeLarge).toBeDefined();
             expect(claudeLarge.paid_only).toBe(true);
 
@@ -678,9 +676,7 @@ describe("Tier Balance Management", () => {
                     },
                     body: JSON.stringify({
                         model: "claude-large",
-                        messages: [
-                            { role: "user", content: "test" },
-                        ],
+                        messages: [{ role: "user", content: "test" }],
                     }),
                 },
             );
@@ -870,7 +866,8 @@ describe("Tier Balance Management", () => {
             expect(balances.tierBalance).toBe(100);
 
             // Total paid balance should be reduced by exactly 8
-            const totalPaidBalance = balances.cryptoBalance + balances.packBalance;
+            const totalPaidBalance =
+                balances.cryptoBalance + balances.packBalance;
             expect(totalPaidBalance).toBe(2); // (5 + 5) - 8 = 2
 
             // Crypto should be fully consumed first

@@ -15,12 +15,7 @@ modal setup  # Authenticate with Modal
 
 1. Go to [Modal Secrets](https://modal.com/secrets)
 2. Create `huggingface-secret` with key `HF_TOKEN` (your Hugging Face token)
-3. Create `enter-token` with key `ENTER_TOKEN` (the Pollinations Enter token for auth)
-
-**Token naming:**
-- Modal secret uses `ENTER_TOKEN` (internal Modal secret name)
-- Node.js service uses `PLN_ENTER_TOKEN` env var
-- Both must contain the same token value for authentication to work
+3. Create `enter-token` with key `PLN_ENTER_TOKEN` (the Pollinations Enter token for auth)
 
 ### 3. Deploy
 

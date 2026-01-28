@@ -115,12 +115,22 @@
     }
 }
 
-/* NEW badge glow animation */
+/* NEW badge glow animation (green) */
 @keyframes glow {
     0%, 100% {
         box-shadow: 0 0 4px rgba(34, 197, 94, 0.4);
     }
     50% {
         box-shadow: 0 0 12px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.4);
+    }
+}
+
+/* PAID ONLY badge glow animation (purple) */
+@keyframes glow-purple {
+    0%, 100% {
+        box-shadow: 0 0 4px rgba(192, 132, 252, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 12px rgba(192, 132, 252, 0.8), 0 0 20px rgba(192, 132, 252, 0.4);
     }
 }

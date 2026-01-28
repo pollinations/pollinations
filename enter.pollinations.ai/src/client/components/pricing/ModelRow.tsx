@@ -100,7 +100,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     )}
                     {showPaidOnly && (
                         <Tooltip content="Requires purchased pollen (daily tier balance not accepted)">
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-transparent text-purple-700 border border-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-transparent text-purple-700 border border-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.5)] animate-[glow-purple_2s_ease-in-out_infinite]">
                                 <span>💎</span>
                                 <span className="text-[9px] text-purple-600 font-medium">
                                     PAID ONLY

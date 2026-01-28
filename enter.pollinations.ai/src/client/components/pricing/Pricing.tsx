@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import { Button } from "../button.tsx";
 import { getModelPrices } from "./data.ts";
 import { UnifiedModelTable } from "./ModelTable.tsx";
 import { useModelStats } from "./useModelStats.ts";
@@ -15,14 +16,17 @@ export const Pricing: FC = () => {
         <div className="flex flex-col gap-2">
             <div className="flex flex-col sm:flex-row justify-between gap-3">
                 <h2 className="font-bold flex-1">Pricing</h2>
-                <a
+                <Button
+                    as="a"
                     href="https://github.com/pollinations/pollinations/issues/5321"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="self-start px-3 py-1.5 text-sm font-medium bg-gray-200 text-gray-900 rounded-full hover:bg-gray-300 transition-colors"
+                    color="amber"
+                    weight="light"
+                    className="!text-green-900"
                 >
                     Vote on next models
-                </a>
+                </Button>
             </div>
             <div className="bg-amber-50/30 rounded-2xl p-6 border border-amber-300 space-y-6">
                 <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

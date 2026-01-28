@@ -2,9 +2,15 @@ import fetch from "node-fetch";
 import { beforeAll, describe, expect, it } from "vitest";
 
 const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:16385";
-const PLN_ENTER_TOKEN =
-    process.env.PLN_ENTER_TOKEN ||
-    "cZOpvvV4xpbOe1IOYrN0R2a3zxHEAcLntneihfU3f2Y3Pfy5";
+// PLN_ENTER_TOKEN must be set via environment variable
+// Run `npm run decrypt-vars` to populate .env from sops secrets before running tests
+const PLN_ENTER_TOKEN = process.env.PLN_ENTER_TOKEN;
+
+if (!PLN_ENTER_TOKEN) {
+    console.warn(
+        "⚠️  PLN_ENTER_TOKEN not set. Run `npm run decrypt-vars` first or set the env var.",
+    );
+}
 
 // Skip Claude tests in CI if no credentials available
 const SKIP_CLAUDE_TESTS = process.env.CI && !process.env.AWS_ACCESS_KEY_ID;

@@ -229,6 +229,20 @@ for instance in "${IONET_INSTANCES[@]}"; do
 done
 
 #######################################
+# 4. Update Modal Secret
+#######################################
+section "Updating Modal Secret"
+
+log "Updating enter-token secret for Flux Klein models..."
+if modal secret create enter-token PLN_ENTER_TOKEN="$NEW_TOKEN" --force 2>/dev/null; then
+    log "✅ Modal enter-token secret updated"
+    log "ℹ️  Flux Klein and Flux Klein 9B will use new token on next cold start"
+else
+    error "❌ Failed to update Modal secret"
+    FAILURES+=("Modal: enter-token")
+fi
+
+#######################################
 # Summary
 #######################################
 section "Token Rotation Summary"
@@ -259,4 +273,4 @@ echo "  - image.pollinations.ai/z-image/setup-ionet.sh"
 echo "  - text.pollinations.ai/test/usage-headers.test.js"
 echo "  - enter.pollinations.ai/.testingtokens"
 echo ""
-log "After committing, trigger EC2 deploy to update enter-services."
+log "After committing, trigger EC2 deploy to update enter-services (CI handles this)."

@@ -72,7 +72,7 @@ export const Pricing: FC = () => {
                                     video
                                 </div>
                                 <div>
-                                    💎 <strong>Paid</strong> = requires
+                                    💎 <strong>Paid Only</strong> = requires
                                     purchased pollen
                                 </div>
                             </div>

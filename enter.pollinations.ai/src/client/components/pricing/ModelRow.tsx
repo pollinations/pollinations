@@ -103,7 +103,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-transparent text-purple-700 border border-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]">
                                 <span>💎</span>
                                 <span className="text-[9px] text-purple-600 font-medium">
-                                    PAID
+                                    PAID ONLY
                                 </span>
                             </span>
                         </Tooltip>

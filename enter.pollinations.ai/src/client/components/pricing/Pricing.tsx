@@ -38,18 +38,35 @@ export const Pricing: FC = () => {
                 </div>
 
                 <div className="pt-4 space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                         <div className="bg-white/50 rounded-lg p-4 border border-amber-200">
-                            <div className="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-2">
-                                Model Capabilities
-                            </div>
-                            <div className="space-y-1 text-gray-600">
-                                <div>👁️ vision</div>
-                                <div>🎙️ audio input</div>
-                                <div>🔊 audio output</div>
-                                <div>🧠 reasoning</div>
-                                <div>🔍 search</div>
-                                <div>💻 code execution</div>
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <div className="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-2">
+                                        Model Capabilities
+                                    </div>
+                                    <div className="space-y-1 text-gray-600">
+                                        <div>👁️ vision</div>
+                                        <div>🎙️ audio input</div>
+                                        <div>🔊 audio output</div>
+                                        <div>🧠 reasoning</div>
+                                        <div>🔍 search</div>
+                                        <div>💻 code execution</div>
+                                    </div>
+                                </div>
+                                <div className="w-px bg-amber-200" />
+                                <div className="flex-1">
+                                    <div className="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-2">
+                                        Token Types
+                                    </div>
+                                    <div className="space-y-1 text-gray-600">
+                                        <div>💬 text input/output</div>
+                                        <div>💾 cached input</div>
+                                        <div>🔊 audio input/output</div>
+                                        <div>🖼️ image</div>
+                                        <div>🎬 video</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div className="bg-white/50 rounded-lg p-4 border border-amber-200">
@@ -77,18 +94,6 @@ export const Pricing: FC = () => {
                                 <div>
                                     Actual costs vary with modality and output.
                                 </div>
-                            </div>
-                        </div>
-                        <div className="bg-white/50 rounded-lg p-4 border border-amber-200">
-                            <div className="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-2">
-                                Token Types
-                            </div>
-                            <div className="space-y-1 text-gray-600">
-                                <div>💬 text input/output</div>
-                                <div>💾 cached input</div>
-                                <div>🔊 audio input/output</div>
-                                <div>🖼️ image</div>
-                                <div>🎬 video</div>
                             </div>
                         </div>
                     </div>

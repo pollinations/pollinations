@@ -41,9 +41,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model, isLast = false }) => {
     const showNew = isNewModel(model.name);
     const showPaidOnly = isPaidOnly(model.name);
 
+    const borderClass = isLast ? "" : "border-b border-gray-200";
+
     return (
-        <tr className={isLast ? "" : "border-b border-gray-200"}>
-            <td className="py-2 px-2 text-sm text-gray-700 relative group">
+        <tr>
+            <td className={`py-2 px-2 text-sm text-gray-700 relative group ${borderClass}`}>
                 <div className="flex items-center gap-2">
                     <div className="flex flex-col">
                         <span className={showNew ? "font-bold" : "font-medium"}>
@@ -111,7 +113,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model, isLast = false }) => {
                     )}
                 </div>
             </td>
-            <td className="py-2 px-2 text-sm">
+            <td className={`py-2 px-2 text-sm ${borderClass}`}>
                 <div className="flex justify-center">
                     <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${model.type === "image" ? "uppercase" : ""} ${showPaidOnly ? "bg-purple-200 text-purple-700 border border-purple-300" : "bg-cyan-200 text-cyan-700 border border-cyan-300"}`}
@@ -120,7 +122,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model, isLast = false }) => {
                     </span>
                 </div>
             </td>
-            <td className="py-2 px-2 text-sm text-center">
+            <td className={`py-2 px-2 text-sm text-center ${borderClass}`}>
                 {genPerPollen === "—" ? (
                     <span className="text-gray-400">—</span>
                 ) : (
@@ -172,7 +174,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model, isLast = false }) => {
                     </div>
                 )}
             </td>
-            <td className="py-2 px-2 text-sm text-center">
+            <td className={`py-2 px-2 text-sm text-center ${borderClass}`}>
                 {genPerPollen === "—" ? (
                     <span className="text-gray-400">—</span>
                 ) : (

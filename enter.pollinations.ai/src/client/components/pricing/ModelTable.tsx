@@ -51,8 +51,8 @@ type SectionHeaderProps = {
 
 const sectionColors = {
     bg: "bg-white/50",
-    text: "text-amber-800",
-    subtext: "text-amber-700",
+    text: "text-gray-900",
+    subtext: "text-gray-700",
 };
 
 const SectionHeader: FC<SectionHeaderProps> = ({

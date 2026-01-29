@@ -29,7 +29,7 @@
 [View all apps →](apps/APPS.md)
 
 > [!IMPORTANT]
-> **💎 Paid-Only Models (Starting Jan 30):** `claude-large`, `gemini-large`, `veo`, `seedream-pro`, and `nanobanana-pro` now require purchased pollen. Free daily credits work for all other models. [Get pollen →](https://enter.pollinations.ai)
+> **💎 Paid-Only Models (Starting Jan 30):** `claude-large`, `gemini-large`, `veo`, `seedream-pro`, and `nanobanana-pro` will require purchased pollen. Free daily credits work for all other models. [Get pollen →](https://enter.pollinations.ai)
 
 ## 🚀 New Unified API — Now Live
 
@@ -46,7 +46,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-01-30** – **💎 Paid-Only Models** `claude-large`, `gemini-large`, `veo`, `seedream-pro`, and `nanobanana-pro` now require purchased pollen. Free credits work for all other models.
+- **2026-01-30** – **💎 Paid-Only Models** `claude-large`, `gemini-large`, `veo`, `seedream-pro`, and `nanobanana-pro` will require purchased pollen. Free credits work for all other models.
 - **2026-01-30** – **🆕 Kimi K2.5 Thinking** New open-source reasoning model rivaling Claude Opus at ~1/8th the cost.
 - **2026-01-30** – **� New Payment Methods** PayPal, Apple Pay, and Google Pay now accepted via Stripe.
 - **2026-01-26** – **�� Alibaba Wan 2.6** Generate videos from images with audio support using the new `wan` model. [API Docs](https://enter.pollinations.ai/api/docs)

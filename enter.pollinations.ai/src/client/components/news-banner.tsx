@@ -1,7 +1,7 @@
 import type { FC } from "react";
 
 // Set to true when there's a special announcement to show
-const SHOW_BANNER = false;
+const SHOW_BANNER = true;
 
 /**
  * News/announcement banner - hidden by default.
@@ -14,16 +14,17 @@ export const NewsBanner: FC = () => {
         <div className="bg-violet-50/60 border border-violet-200 rounded-lg p-4 text-sm">
             <div className="flex flex-col gap-2">
                 <span className="text-xs text-gray-500">
-                    Dec 2025 — What's new
+                    Jan 2026 — What's new
                 </span>
                 <ul className="text-xs space-y-1.5">
                     <li className="text-gray-600">
-                        🎉 <strong>Tier values updated</strong>{" "}
-                        <span className="text-gray-400 italic">dec 1</span>
+                        💎 <strong>Paid-only models:</strong> claude-large, gemini-large, veo, seedream-pro, nanobanana-pro now require purchased pollen
                     </li>
                     <li className="text-gray-600">
-                        🚀 <strong>Fresh models dropped:</strong> Claude Opus
-                        4.5, Kimi K2, Seedream 4.5, VEO 3.1, Seedance Pro-Fast
+                        🆕 <strong>Kimi K2.5 thinking:</strong> Rivals Claude Opus at ~1/8th the cost
+                    </li>
+                    <li className="text-gray-600">
+                        � <strong>New payment methods:</strong> PayPal, Apple Pay, Google Pay via Stripe
                     </li>
                 </ul>
             </div>

@@ -2,7 +2,7 @@
 
 ---
 id: 0xprj01
-title: Pollinations Gaming SDKs (Roblox/Godot/Unity)
+title: Gaming SDKs (Roblox/Godot/Unity)
 category: Game Dev
 difficulty: Intermediate
 duration: 175
@@ -16,15 +16,15 @@ The *'Roblox for AI'* vision needs concrete tools. This project involves buildin
 
 ---
 id: 0xprj06
-title: Pollinations CLI Tool
+title: CLI Tool
 category: Developer Tools
 difficulty: Intermediate
 duration: 175
 mentor: 0xmnt02
-technologies: Node.js, TypeScript, Commander.js, Pollinations REST API
+technologies: Node.js, TypeScript, Commander.js, pollinations.ai REST API
 ---
 
-A **command-line interface** for interacting with Pollinations APIs.
+A **command-line interface** for interacting with pollinations.ai APIs.
 
 Full platform management from terminal:
 - `polli auth` — login/sessions
@@ -48,7 +48,7 @@ technologies: TypeScript, Docker, GitHub Actions, Claude/GPT Agents
 
 **24/7 multi-agent system** monitoring infrastructure, self-maintaining tests, auto-creating issues.
 
-Create a multi-agent system that monitors Pollinations infrastructure around the clock. Tests **API reliability**, **security**, **rate limiting**, and **model quality**. Self-maintains test suites and auto-creates GitHub issues/PRs for findings.
+Create a multi-agent system that monitors pollinations.ai infrastructure around the clock. Tests **API reliability**, **security**, **rate limiting**, and **model quality**. Self-maintains test suites and auto-creates GitHub issues/PRs for findings.
 
 **Extensions:** Chaos engineering (intentionally breaking things to test resilience) and a living health dashboard with historical trends.
 
@@ -84,7 +84,7 @@ Develop techniques to embed semantic metadata (creator info, generation paramete
 
 ---
 id: 0xprj05
-title: Pollinations Assistant
+title: Generative Assistant
 category: AI/ML
 difficulty: Advanced
 duration: 350
@@ -92,9 +92,9 @@ mentor: 0xmnt01
 technologies: TypeScript, Streaming SSE, Semantic Routing, Markdown
 ---
 
-**Multi-modal orchestrator** routing to all Pollinations models with streaming support.
+**Multi-modal orchestrator** routing to all pollinations.ai models with streaming support.
 
-Build a single chat endpoint that routes to all Pollinations models. Supports true **multi-modal responses** combining text, images, and audio in one response. Features *auto model selection* based on intent and streaming with interleaved content.
+Build a single chat endpoint that routes to all pollinations.ai models. Supports true **multi-modal responses** combining text, images, and audio in one response. Features *auto model selection* based on intent and streaming with interleaved content.
 
 **Extensions:** Real-time streaming canvas via WebSocket and voice-first mode with duplex audio.
 

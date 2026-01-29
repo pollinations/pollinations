@@ -25,7 +25,7 @@ import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
 import "highlight.js/styles/github-dark.css";
 import socBotAPI from "../api/socBot.ts";
-import faqData from "../info/faq.json";
+import { parseFaq } from "../utils/parseFaq";
 import { colors } from "../theme";
 
 const MarkdownComponents = {
@@ -436,6 +436,7 @@ const PollyChat = () => {
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [_expandedFaq, _setExpandedFaq] = useState(null);
+    const [faqData, setFaqData] = useState([]);
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
     const pollyAPI = useRef(new socBotAPI()); // API class name unchanged
@@ -451,6 +452,7 @@ const PollyChat = () => {
 
     useEffect(() => {
         document.title = "AI Assistant | GSoC × pollinations.ai";
+        parseFaq().then(setFaqData);
         setMessages([
             {
                 id: 1,

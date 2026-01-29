@@ -1,8 +1,8 @@
 import { Box, Paper, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { format, parseISO } from "date-fns";
 import { motion } from "framer-motion";
-import { useEffect, useRef } from "react";
-import gsocTimeline from "../info/timeline.json";
+import { useEffect, useRef, useState } from "react";
+import { parseTimeline } from "../utils/parseTimeline";
 import { colors, gradients } from "../theme";
 
 const cardVariants = {
@@ -19,10 +19,14 @@ const TimelinePage = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
     const today = new Date();
     const currentPhaseRef = useRef(null);
+    const [gsocTimeline, setGsocTimeline] = useState([]);
 
     useEffect(() => {
         document.title = "Timeline | GSoC × pollinations.ai";
+        parseTimeline().then(setGsocTimeline);
+    }, []);
 
+    useEffect(() => {
         // Auto-scroll to current phase
         if (currentPhaseRef.current) {
             currentPhaseRef.current.scrollIntoView({
@@ -30,7 +34,7 @@ const TimelinePage = () => {
                 block: "center",
             });
         }
-    }, []);
+    }, [gsocTimeline]);
 
     return (
         <Box

@@ -1,45 +1,72 @@
 # 2026 Google Summer of Code Timeline
 
-## Organization Application Phase
+---
+title: Organization Application Period
+description: Mentoring organizations can submit applications to Google Summer of Code.
+startDate: 2026-01-19
+endDate: 2026-02-03
+isCurrent: true
+---
 
-| Date | Event |
-|------|-------|
-| January 19 - 18:00 UTC | Mentoring organizations can begin submitting applications to Google |
-| February 3 - 18:00 UTC | Mentoring organization application deadline |
-| February 3 - 18 | Google program administrators review organization applications |
-| February 19 - 18:00 UTC | List of accepted mentoring organizations published |
+---
+title: Accepted Organizations Announced
+description: List of accepted mentoring organizations published.
+startDate: 2026-02-19
+endDate: 2026-02-19
+---
 
-## Contributor Application Phase
+---
+title: Contributor Application Discussion
+description: Potential GSoC contributors discuss application ideas with mentoring organizations.
+startDate: 2026-02-19
+endDate: 2026-03-15
+---
 
-| Date | Event |
-|------|-------|
-| February 19 - March 15 | Potential GSoC contributors discuss application ideas with mentoring organizations |
-| March 16 - 18:00 UTC | GSoC contributor application period begins |
-| March 31 - 18:00 UTC | GSoC contributor application deadline |
-| April 21 - 18:00 UTC | GSoC contributor proposal rankings due from Org Admins |
-| April 30 - 18:00 UTC | Accepted GSoC contributor projects announced |
+---
+title: Contributor Application Period
+description: GSoC contributor application period.
+startDate: 2026-03-16
+endDate: 2026-03-31
+---
 
-## Community Bonding & Coding Phase
+---
+title: Accepted GSoC Contributors Announced
+description: Accepted GSoC contributor projects announced.
+startDate: 2026-04-30
+endDate: 2026-04-30
+---
 
-| Date | Event |
-|------|-------|
-| May 1 - 24 | Community Bonding Period - GSoC contributors get to know mentors, read documentation, get up to speed |
-| May 25 | Coding officially begins! |
+---
+title: Community Bonding Period
+description: GSoC contributors get to know mentors, read documentation, and get up to speed.
+startDate: 2026-05-01
+endDate: 2026-05-24
+---
 
-## Evaluation & Work Phase (Standard 12-Week Timeline)
+---
+title: Coding Period
+description: GSoC contributors work on their projects with guidance from mentors.
+startDate: 2026-05-25
+endDate: 2026-08-24
+---
 
-| Date | Event |
-|------|-------|
-| July 6 - 18:00 UTC | Mentors and GSoC contributors can begin submitting midterm evaluations |
-| July 10 - 18:00 UTC | Midterm evaluation deadline |
-| July 6 - August 16 | Work Period - GSoC contributors work on their project with guidance from Mentors |
-| August 17 - 24 - 18:00 UTC | Final week: GSoC contributors submit final work product and final mentor evaluation |
-| August 24 - 31 - 18:00 UTC | Mentors submit final GSoC contributor evaluations |
+---
+title: Midterm Evaluations
+description: Midterm evaluation deadline for mentors and GSoC contributors.
+startDate: 2026-07-06
+endDate: 2026-07-10
+---
 
-## Extended Timeline Phase
+---
+title: Final Evaluations
+description: Final week and evaluation deadline for standard timeline contributors.
+startDate: 2026-08-17
+endDate: 2026-08-31
+---
 
-| Date | Event |
-|------|-------|
-| August 24 - November 2 | GSoC contributors with extended timelines continue coding |
-| November 2 - 18:00 UTC | Final date for all GSoC contributors to submit final work product and final evaluation |
-| November 9 - 18:00 UTC | Final date for mentors to submit evaluations for GSoC contributor projects with extended deadlines |
+---
+title: Extended Timeline Final Deadline
+description: Final submission and evaluation deadline for GSoC contributors with extended timelines.
+startDate: 2026-08-24
+endDate: 2026-11-09
+---

@@ -15,7 +15,7 @@ import {
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import mentors from "../info/mentors.json";
+import { parseMentors } from "../utils/parseMentors";
 import { parseProjects } from "../utils/parseProjects";
 import { colors, getCategoryColor, gradients } from "../theme";
 
@@ -33,11 +33,13 @@ const cardVariants = {
 
 const ProjectsPage = () => {
     const [projects, setProjects] = useState([]);
+    const [mentors, setMentors] = useState([]);
     const [copyEmailToast, setCopyEmailToast] = useState(false);
     const [submitApplicationToast, setSubmitApplicationToast] = useState(false);
 
     useEffect(() => {
         document.title = "Projects | GSoC × pollinations.ai";
+        parseMentors().then(setMentors);
         parseProjects().then(setProjects);
     }, []);
 

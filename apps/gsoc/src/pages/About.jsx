@@ -21,9 +21,9 @@ import {
     Typography
 } from "@mui/material";
 import { motion } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import mentorsData from "../info/mentors.json";
+import { parseMentors } from "../utils/parseMentors";
 import { colors, gradients } from "../theme";
 
 // Animation variants
@@ -41,8 +41,11 @@ const cardVariants = {
 };
 
 const AboutPage = () => {
+    const [mentorsData, setMentorsData] = useState([]);
+
     useEffect(() => {
         document.title = "About | GSoC × pollinations.ai";
+        parseMentors().then(setMentorsData);
     }, []);
 
     const features = [

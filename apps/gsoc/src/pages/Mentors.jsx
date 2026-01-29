@@ -23,7 +23,7 @@ import {
 } from "@mui/material";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import mentors from "../info/mentors.json";
+import { parseMentors } from "../utils/parseMentors";
 import { colors, gradients } from "../theme";
 
 const cardVariants = {
@@ -40,11 +40,13 @@ const cardVariants = {
 };
 
 const MentorsPage = () => {
+    const [mentors, setMentors] = useState([]);
     const [expanded, setExpanded] = useState(null);
     const [openToast, setOpenToast] = useState(false);
 
     useEffect(() => {
         document.title = "Mentors | GSoC × pollinations.ai";
+        parseMentors().then(setMentors);
     }, []);
 
     const handleCloseToast = () => {

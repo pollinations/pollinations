@@ -18,13 +18,17 @@ export const NewsBanner: FC = () => {
                 </span>
                 <ul className="text-xs space-y-1.5">
                     <li className="text-gray-600">
-                        💎 <strong>Paid-only models:</strong> claude-large, gemini-large, veo, seedream-pro, nanobanana-pro now require purchased pollen
+                        💎 <strong>Paid-only models:</strong> claude-large,
+                        gemini-large, veo, seedream-pro, nanobanana-pro now
+                        require purchased pollen
                     </li>
                     <li className="text-gray-600">
-                        🆕 <strong>Kimi K2.5 thinking:</strong> Rivals Claude Opus at ~1/8th the cost
+                        🆕 <strong>Kimi K2.5 thinking:</strong> Rivals Claude
+                        Opus at ~1/8th the cost
                     </li>
                     <li className="text-gray-600">
-                        � <strong>New payment methods:</strong> PayPal, Apple Pay, Google Pay via Stripe
+                        � <strong>New payment methods:</strong> PayPal, Apple
+                        Pay, Google Pay via Stripe
                     </li>
                 </ul>
             </div>

@@ -37,7 +37,7 @@ export const NewsBanner: FC = () => {
         fetch(HIGHLIGHTS_RAW_URL)
             .then((res) => res.text())
             .then((md) => setHighlights(parseHighlights(md).slice(0, 3)))
-            .catch(() => {});
+            .catch((err) => console.error("Failed to fetch highlights:", err));
     }, []);
 
     if (highlights.length === 0) return null;

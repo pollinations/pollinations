@@ -521,6 +521,49 @@ describe("Tier Balance Management", () => {
             expect(error.error?.message).toContain("requires a paid balance");
         });
 
+        test("should reject seedream-pro when user has only tier balance", async ({
+            apiKey,
+            sessionToken,
+            mocks,
+        }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const db = drizzle(env.DB);
+
+            // Get the authenticated user ID from session
+            const sessionResponse = await SELF.fetch(
+                "http://localhost:3000/api/auth/get-session",
+                {
+                    headers: {
+                        cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const session = await sessionResponse.json();
+            const userId = session.user.id;
+
+            // Setup user with only tier balance
+            await db
+                .update(userTable)
+                .set({
+                    tierBalance: 10,
+                    packBalance: 0,
+                    cryptoBalance: 0,
+                })
+                .where(sql`${userTable.id} = ${userId}`);
+
+            // Test paid-only image model: seedream-pro
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/image/test?model=seedream-pro",
+                {
+                    headers: {
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            expect(response.status).toBe(402);
+        });
+
         test("should accept paid-only models when user has crypto balance", async ({
             apiKey,
             sessionToken,

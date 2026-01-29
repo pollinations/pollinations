@@ -346,7 +346,7 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
 
         # Add reference image for I2I
         if reference_url:
-            # Strip key= param from reference URL if present (auth goes on outer URL only)
+            # Strip key= param from reference URL if present
             clean_ref = re.sub(r'[&?]key=[^&]*', '', reference_url)
             # Don't pre-encode - requests library handles URL encoding of params
             params["image"] = clean_ref
@@ -386,8 +386,9 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
                     img_format = "JPEG" if is_jpeg else ("PNG" if is_png else "WebP")
                     print(f"  Image {index + 1} generated successfully ({img_format}, {len(image_bytes):,} bytes)")
 
-                    # Build public URL without key for I2I reference
-                    public_params = {k: v for k, v in params.items() if k != "key"}
+                    # Build public URL without key or image params
+                    # (image param causes URL chain explosion when used as next reference)
+                    public_params = {k: v for k, v in params.items() if k not in ("key", "image")}
                     public_url = base_url + "?" + "&".join(f"{k}={v}" for k, v in public_params.items())
 
                     return image_bytes, public_url

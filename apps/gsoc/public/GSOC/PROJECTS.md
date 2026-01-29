@@ -35,6 +35,10 @@ Full platform management from terminal:
 - `polli deploy` — deploy to hosting
 - `polli usage` — balance, stats
 - `polli generate` — quick image/text/audio
+- `polli pollen` — quick checkin on the pollen token count
+- `polli deploy status` — check deployment status of any app deployed through pollinations
+
+
 
 **Extensions:** `--ui` browser mode, GitHub Action integration.
 

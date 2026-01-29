@@ -401,7 +401,7 @@ const HomePage = () => {
                                             >
                                                 Google Summer of Code
                                             </Box>{" "}
-                                            is a 16-year-old global program
+                                            is a global program
                                             focused on bringing new contributors
                                             into open source.
                                         </Typography>

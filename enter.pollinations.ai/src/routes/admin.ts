@@ -138,15 +138,15 @@ export const adminRoutes = new Hono<Env>()
             });
         }
 
-        // Get counts per tier before update
-        const tierCounts = await db
+        // Get all users with their current balance BEFORE the update
+        const usersToRefill = await db
             .select({
+                id: userTable.id,
                 tier: userTable.tier,
-                count: sql<number>`COUNT(*)`,
+                tierBalance: userTable.tierBalance,
             })
             .from(userTable)
-            .where(sql`tier IS NOT NULL`)
-            .groupBy(userTable.tier);
+            .where(sql`tier IS NOT NULL`);
 
         // Perform the bulk UPDATE
         const result = await db.run(sql`
@@ -168,28 +168,47 @@ export const adminRoutes = new Hono<Env>()
         const timestamp = new Date().toISOString();
         const environment = c.env.ENVIRONMENT || "unknown";
 
-        // Send one event per tier to Tinybird (NDJSON format)
+        // Compute tier breakdown for response and logging
+        const tierBreakdown = usersToRefill.reduce(
+            (acc, user) => {
+                const tier = user.tier as TierName;
+                if (!acc[tier]) {
+                    acc[tier] = {
+                        count: 0,
+                        pollenAmount: TIER_POLLEN[tier] ?? TIER_POLLEN.spore,
+                    };
+                }
+                acc[tier].count++;
+                return acc;
+            },
+            {} as Record<string, { count: number; pollenAmount: number }>,
+        );
+
+        // Send per-user events to Tinybird (NDJSON format)
         c.executionCtx.waitUntil(
             (async () => {
                 if (
                     !c.env.TINYBIRD_TIER_INGEST_URL ||
-                    !c.env.TINYBIRD_INGEST_TOKEN
+                    !c.env.TINYBIRD_INGEST_TOKEN ||
+                    usersToRefill.length === 0
                 )
                     return;
-                const events = tierCounts
-                    .filter((t) => t.tier)
-                    .map((t) =>
-                        JSON.stringify({
+
+                const events = usersToRefill
+                    .map((user) => {
+                        const tierName = user.tier as TierName;
+                        const pollenAmount =
+                            TIER_POLLEN[tierName] ?? TIER_POLLEN.spore;
+                        return JSON.stringify({
                             event_type: "tier_refill",
                             environment,
-                            tier: t.tier,
-                            user_count: t.count,
-                            pollen_amount:
-                                TIER_POLLEN[t.tier as TierName] ??
-                                TIER_POLLEN.spore,
+                            user_id: user.id,
+                            tier: user.tier,
+                            pollen_amount: pollenAmount,
+                            previous_balance: user.tierBalance,
                             timestamp,
-                        }),
-                    )
+                        });
+                    })
                     .join("\n");
 
                 await fetch(c.env.TINYBIRD_TIER_INGEST_URL, {
@@ -199,6 +218,16 @@ export const adminRoutes = new Hono<Env>()
                         "Content-Type": "application/x-ndjson",
                     },
                     body: events,
+                }).catch((err) => {
+                    log.error(
+                        "Failed to send tier refill events to Tinybird: {error}",
+                        {
+                            error:
+                                err instanceof Error
+                                    ? err.message
+                                    : String(err),
+                        },
+                    );
                 });
             })(),
         );
@@ -206,26 +235,14 @@ export const adminRoutes = new Hono<Env>()
         log.info("TIER_REFILL_COMPLETE: usersUpdated={usersUpdated}", {
             eventType: "tier_refill_complete",
             usersUpdated: refillCount,
-            tierBreakdown: Object.fromEntries(
-                tierCounts.map((t) => [t.tier, t.count]),
-            ),
+            tierBreakdown,
         });
 
         return c.json({
             success: true,
             skipped: false,
             usersRefilled: refillCount,
-            tierBreakdown: Object.fromEntries(
-                tierCounts.map((t) => [
-                    t.tier,
-                    {
-                        count: t.count,
-                        pollenAmount:
-                            TIER_POLLEN[t.tier as TierName] ??
-                            TIER_POLLEN.spore,
-                    },
-                ]),
-            ),
+            tierBreakdown,
             timestamp,
         });
     });

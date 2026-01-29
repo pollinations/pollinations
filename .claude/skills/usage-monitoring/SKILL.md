@@ -355,6 +355,20 @@ ssh enter-services "sed -i 's/logIp(socketIp, \"text\", \`path=\${req.path} mode
 
 ## Generate AWS vs Tinybird Comparison Plot
 
+Use the included script:
+
+```bash
+# From the skill directory
+python3 scripts/plot_aws_vs_tinybird.py --hours 3 --output /tmp/comparison.png
+
+# Options:
+#   --hours N       Hours of data to fetch (default: 3)
+#   --output PATH   Output file path (default: /tmp/aws_vs_tinybird.png)
+#   --utc-offset N  UTC offset for local time (default: 1)
+```
+
+Or manually with this Python code:
+
 ```python
 # Save as /tmp/plot_comparison.py
 import matplotlib.pyplot as plt

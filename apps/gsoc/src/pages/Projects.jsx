@@ -556,50 +556,8 @@ const ProjectsPage = () => {
                                                     )}
                                                 </Stack>
 
-                                                {/* Buttons */}
-                                                <Stack
-                                                    direction="row"
-                                                    spacing={1.5}
-                                                    sx={{
-                                                        justifyContent: {
-                                                            xs: "center",
-                                                            md: "flex-start",
-                                                        },
-                                                    }}
-                                                >
-                                                    <Button
-                                                        variant="contained"
-                                                        size="small"
-                                                        onClick={() =>
-                                                            setSubmitApplicationToast(
-                                                                true,
-                                                            )
-                                                        }
-                                                        sx={{
-                                                            bgcolor:
-                                                                colors.lime.dim,
-                                                            color: colors.lime
-                                                                .main,
-                                                            textTransform:
-                                                                "none",
-                                                            fontWeight: 600,
-                                                            border: `1px solid ${colors.lime.border}`,
-                                                            "&:hover": {
-                                                                bgcolor:
-                                                                    colors.lime
-                                                                        .border,
-                                                                borderColor:
-                                                                    colors.lime
-                                                                        .glow,
-                                                            },
-                                                        }}
-                                                    >
-                                                        Apply to this project
-                                                    </Button>
-                                                </Stack>
                                             </Box>
 
-                                            {/* Right: Mentor (fixed width) */}
                                             <Box
                                                 sx={{
                                                     flexShrink: 0,

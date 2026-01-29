@@ -1,4 +1,4 @@
-# GSoC 2026 Project Ideas
+# GSoC 2026 Projects
 
 ---
 id: 0xprj01
@@ -7,12 +7,14 @@ category: Game Dev
 difficulty: Intermediate
 duration: 175
 mentor: 0xmnt01
-technologies: Lua, C#, GDScript, Rest API
+technologies: Lua, C#, GDScript, Rest API, Reinforcement Learning, Transfer Learning
 ---
 
 Create **plug-and-play SDKs** to bring generative AI into popular game engines.
 
 The *'Roblox for AI'* vision needs concrete tools. This project involves building and documenting easy-to-use SDKs or "starter kits" for **Roblox**, **Godot**, or **Unity**. The goal is to allow a *vibe coder* (a teenager with no credit card) to add generative AI NPCs, textures, or dialogue to their game in **one line of code**.
+
+**Extensions:** AI NPC behavior using **reinforcement learning** and **transfer learning** for characters that learn from player interactions, adapt dialogue style, and maintain consistent personalities. This approach has extensive ML community recipes, cloud provider fine-tuning APIs, and benchmark comparisons for performance evaluation.
 
 ---
 id: 0xprj06

@@ -1297,8 +1297,8 @@
     "list": []
   },
   "time": {
-    "from": "now-30d",
-    "to": "now"
+    "from": "now-7d/d",
+    "to": "now/d"
   },
   "timepicker": {},
   "timezone": "browser",

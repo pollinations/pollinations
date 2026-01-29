@@ -954,13 +954,11 @@ const HomePage = () => {
                                             />
 
                                             <Box
-                                                container
-                                                spacing={1}
                                                 sx={{
                                                     display: "flex",
                                                     gap: 3,
+                                                    justifyContent: "center",
                                                 }}
-                                                justifyContent="center"
                                             >
                                                 {navigationItems.map(
                                                     (item, index) => (

@@ -119,8 +119,8 @@ const TimelinePage = () => {
                 />
 
                 {gsocTimeline.map((phase, index) => {
-                    const startDate = parseISO(phase.startDate);
-                    const endDate = parseISO(phase.endDate);
+                    const startDate = phase.startDate instanceof Date ? phase.startDate : parseISO(phase.startDate);
+                    const endDate = phase.endDate instanceof Date ? phase.endDate : parseISO(phase.endDate);
                     const isActive =
                         phase.isCurrent ||
                         (today >= startDate && today <= endDate);

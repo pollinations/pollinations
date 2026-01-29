@@ -54,7 +54,6 @@ function RouteComponent() {
 
     return (
         <div className="flex flex-col gap-6">
-            <NewsBanner />
             <div className="flex flex-col gap-20">
                 <Header>
                     <div className="relative">
@@ -83,6 +82,7 @@ function RouteComponent() {
                         API Ref.
                     </Button>
                 </Header>
+                <NewsBanner />
                 <FAQ />
                 <Pricing />
                 <Footer />

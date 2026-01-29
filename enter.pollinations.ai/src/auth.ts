@@ -135,7 +135,12 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 }),
             },
         },
-        plugins: [adminPlugin, apiKeyPlugin, tierPlugin(env), openAPIPlugin],
+        plugins: [
+            adminPlugin,
+            apiKeyPlugin,
+            tierPlugin(env, ctx),
+            openAPIPlugin,
+        ],
         telemetry: { enabled: false },
     });
 }
@@ -148,7 +153,10 @@ export type User = Auth["$Infer"]["Session"]["user"];
  * Plugin to initialize tier balance for new users in D1.
  * This replaces the old Polar-based tier management.
  */
-function tierPlugin(env: Cloudflare.Env): BetterAuthPlugin {
+function tierPlugin(
+    env: Cloudflare.Env,
+    executionCtx?: ExecutionContext,
+): BetterAuthPlugin {
     return {
         id: "tier",
         init: () => ({
@@ -156,7 +164,7 @@ function tierPlugin(env: Cloudflare.Env): BetterAuthPlugin {
                 databaseHooks: {
                     user: {
                         create: {
-                            after: onAfterUserCreate(env),
+                            after: onAfterUserCreate(env, executionCtx),
                         },
                     },
                 },
@@ -169,9 +177,11 @@ function tierPlugin(env: Cloudflare.Env): BetterAuthPlugin {
  * Set initial tier balance in D1 after user creation.
  * This guarantees new users get their default tier pollen.
  */
-function onAfterUserCreate(env: Cloudflare.Env) {
-    return async (user: GenericUser, ctx?: GenericEndpointContext) => {
-        if (!ctx) return;
+function onAfterUserCreate(
+    env: Cloudflare.Env,
+    executionCtx?: ExecutionContext,
+) {
+    return async (user: GenericUser, _ctx?: GenericEndpointContext) => {
         try {
             const db = drizzle(env.DB);
             const tierBalance = getTierPollen(DEFAULT_TIER);
@@ -184,8 +194,8 @@ function onAfterUserCreate(env: Cloudflare.Env) {
                 .where(eq(userTable.id, user.id));
 
             // Log user registration event to Tinybird
-            // Use optional chaining for test environments where executionCtx may not exist
-            ctx.context.executionCtx?.waitUntil(
+            // Use the ExecutionContext passed from createAuth, not better-auth's internal context
+            executionCtx?.waitUntil(
                 sendTierEventToTinybird(
                     {
                         event_type: "user_registration",
@@ -193,7 +203,6 @@ function onAfterUserCreate(env: Cloudflare.Env) {
                         user_id: user.id,
                         tier: DEFAULT_TIER,
                         pollen_amount: tierBalance,
-                        timestamp: new Date().toISOString(),
                     },
                     env.TINYBIRD_TIER_INGEST_URL,
                     env.TINYBIRD_INGEST_TOKEN,

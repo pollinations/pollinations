@@ -3,10 +3,14 @@ apiVersion: 1
 datasources:
   - name: D1
     type: yesoreyeram-infinity-datasource
+    uid: P33A123E5D474E8F3
     access: proxy
     isDefault: false
     jsonData:
       global_queries: []
+      httpHeaderName1: "Authorization"
+      allowedHosts:
+        - "https://api.cloudflare.com"
     secureJsonData:
       httpHeaderValue1: "Bearer $__env{CLOUDFLARE_API_TOKEN}"
     editable: true

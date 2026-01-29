@@ -391,6 +391,7 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
         modelId: "gemini-3-pro-preview",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,

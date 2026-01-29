@@ -344,12 +344,12 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
             "key": token
         }
 
-        # Add reference image for I2I (must be fully URL-encoded)
+        # Add reference image for I2I
         if reference_url:
             # Strip key= param from reference URL if present (auth goes on outer URL only)
             clean_ref = re.sub(r'[&?]key=[^&]*', '', reference_url)
-            # Encode the full URL so nested params don't break outer URL parsing
-            params["image"] = quote(clean_ref, safe='')
+            # Don't pre-encode - requests library handles URL encoding of params
+            params["image"] = clean_ref
 
         if attempt == 0:
             print(f"  Using seed: {seed}")

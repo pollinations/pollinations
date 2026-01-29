@@ -236,36 +236,6 @@ print('Saved to /tmp/bedrock_usage.png')
 
 ---
 
-# Cost Estimation
-
-## Bedrock Pricing (us-east-1, Jan 2026)
-
-| Model | Input (per 1M tokens) | Output (per 1M tokens) |
-|-------|----------------------|------------------------|
-| Claude Opus 4.5 | $15.00 | $75.00 |
-| Claude Sonnet 4.5 | $3.00 | $15.00 |
-| Claude Haiku 4.5 | $0.80 | $4.00 |
-| Nova Micro | $0.035 | $0.14 |
-| Nova Lite | $0.06 | $0.24 |
-
-## Quick Cost Calculation
-
-```bash
-# Get totals and estimate cost
-MODEL="global.anthropic.claude-opus-4-5-20251101-v1:0"
-INPUT_PRICE=15.00  # per 1M tokens
-OUTPUT_PRICE=75.00
-
-inp=$(aws cloudwatch get-metric-statistics --namespace AWS/Bedrock --metric-name InputTokenCount --dimensions Name=ModelId,Value="$MODEL" --start-time $(date -u -v-48H +%Y-%m-%dT%H:%M:%SZ) --end-time $(date -u +%Y-%m-%dT%H:%M:%SZ) --period 172800 --statistics Sum --region us-east-1 --output json | jq -r '.Datapoints[0].Sum // 0')
-out=$(aws cloudwatch get-metric-statistics --namespace AWS/Bedrock --metric-name OutputTokenCount --dimensions Name=ModelId,Value="$MODEL" --start-time $(date -u -v-48H +%Y-%m-%dT%H:%M:%SZ) --end-time $(date -u +%Y-%m-%dT%H:%M:%SZ) --period 172800 --statistics Sum --region us-east-1 --output json | jq -r '.Datapoints[0].Sum // 0')
-
-echo "Input tokens: $inp"
-echo "Output tokens: $out"
-echo "Estimated cost: \$$(echo "scale=2; ($inp/1000000)*$INPUT_PRICE + ($out/1000000)*$OUTPUT_PRICE" | bc)"
-```
-
----
-
 # Real-Time Comparison (text.pollinations.ai logs vs Tinybird)
 
 These commands compare token counts from the text.pollinations.ai service logs with Tinybird data to verify logging accuracy.

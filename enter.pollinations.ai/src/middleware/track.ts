@@ -246,7 +246,9 @@ async function trackResponse(
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const cacheInfo = extractCacheHeaders(response);
-    if (!response.ok || cacheInfo.cacheHit) {
+    // Skip billing for graceful degradation fallback responses
+    const skipBilling = response.headers.get("x-skip-billing") === "true";
+    if (!response.ok || cacheInfo.cacheHit || skipBilling) {
         return {
             responseOk: response.ok,
             responseStatus: response.status,

@@ -15,6 +15,35 @@ import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import type { Env } from "../env.ts";
 
+// Hardcoded "insufficient balance" image URL - pre-cached on gen.pollinations.ai
+// This exact URL was generated and cached on 2026-01-29. Do not modify without re-caching.
+const INSUFFICIENT_BALANCE_IMAGE_URL =
+    "https://gen.pollinations.ai/image/A%20tiny%20sad%20pixel%20bee%20character%20looking%20at%20an%20empty%20honey%20jar%20labeled%20'POLLEN'.%20Retro%20game%20UI%20dialogue%20box%20with%20pixel%20font%20text%3A%20'Out%20of%20Pollen!'%20and%20'Get%20more%20at%20enter.pollinations.ai'.%20Pixel%20art%20flowers%20wilting%20slightly%20in%20background.%20Cozy%208-bit%20pixel%20art%20aesthetic.%20Soft%20lime%20green%20(%23ecf874)%20and%20pastel%20gradient%20background.%20Chunky%20retro%20sprites%20with%20warm%20lighting%2C%20lo-fi%20vibes%20like%20Stardew%20Valley%20or%20A%20Short%20Hike.%20Nostalgic%20but%20beautiful%2C%20emotionally%20warm.?model=nanobanana-pro&seed=3&width=1024&height=1024&nologo=true";
+
+// Hardcoded response for text when balance is insufficient
+const INSUFFICIENT_BALANCE_TEXT_RESPONSE = {
+    id: "insufficient-balance",
+    object: "chat.completion",
+    created: Math.floor(Date.now() / 1000),
+    model: "system",
+    choices: [
+        {
+            index: 0,
+            message: {
+                role: "assistant",
+                content:
+                    "You need more pollen to use this model.\n\nGet pollen at: https://enter.pollinations.ai",
+            },
+            finish_reason: "stop",
+        },
+    ],
+    usage: {
+        prompt_tokens: 0,
+        completion_tokens: 0,
+        total_tokens: 0,
+    },
+};
+
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
 const resolver = <T extends StandardSchemaV1>(schema: T) =>
@@ -57,7 +86,23 @@ const chatCompletionHandlers = factory.createHandlers(
         // Use resolved model from middleware for the backend request
         const requestBody = await c.req.json();
         requestBody.model = c.var.model.resolved;
-        await checkBalance(c.var);
+
+        // Check balance with graceful degradation for text
+        try {
+            await checkBalance(c.var);
+        } catch (error) {
+            if (error instanceof HTTPException && error.status === 402) {
+                // Return hardcoded helpful response instead of error
+                log.info(
+                    "Insufficient balance, returning fallback text response",
+                );
+                // Set headers to skip billing in track middleware
+                c.header("x-model-used", "system");
+                c.header("x-skip-billing", "true");
+                return c.json(INSUFFICIENT_BALANCE_TEXT_RESPONSE);
+            }
+            throw error;
+        }
 
         const textServiceUrl =
             c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
@@ -315,7 +360,20 @@ export const proxyRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             c.var.auth.requireModelAccess();
             c.var.auth.requireKeyBudget();
-            await checkBalance(c.var);
+
+            // Check balance with graceful degradation for simple text
+            try {
+                await checkBalance(c.var);
+            } catch (error) {
+                if (error instanceof HTTPException && error.status === 402) {
+                    // Return plain text helpful response
+                    log.info("Insufficient balance, returning fallback text");
+                    return c.text(
+                        "You need more pollen to use this model.\n\nGet pollen at: https://enter.pollinations.ai",
+                    );
+                }
+                throw error;
+            }
 
             // Use resolved model from middleware
             const model = c.var.model.resolved;
@@ -430,7 +488,20 @@ export const proxyRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             c.var.auth.requireModelAccess();
             c.var.auth.requireKeyBudget();
-            await checkBalance(c.var);
+
+            // Check balance with graceful degradation for images
+            try {
+                await checkBalance(c.var);
+            } catch (error) {
+                if (error instanceof HTTPException && error.status === 402) {
+                    // Redirect to external "insufficient balance" image (no auth needed)
+                    log.info(
+                        "Insufficient balance, redirecting to fallback image",
+                    );
+                    return c.redirect(INSUFFICIENT_BALANCE_IMAGE_URL, 302);
+                }
+                throw error;
+            }
 
             // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
             const promptParam = c.req.param("prompt") || "";

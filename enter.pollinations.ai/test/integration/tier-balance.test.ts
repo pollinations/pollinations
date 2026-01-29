@@ -407,6 +407,7 @@ describe("Tier Balance Management", () => {
                 .where(sql`${userTable.id} = ${userId}`);
 
             // Test paid-only text model: claude-large
+            // With graceful degradation, insufficient balance returns fallback JSON response
             const response = await SELF.fetch(
                 "http://localhost:3000/api/generate/v1/chat/completions",
                 {
@@ -422,9 +423,13 @@ describe("Tier Balance Management", () => {
                 },
             );
 
-            expect(response.status).toBe(402);
-            const error = await response.json();
-            expect(error.error?.message).toContain("requires a paid balance");
+            // Graceful degradation returns 200 with fallback message
+            expect(response.status).toBe(200);
+            const body = await response.json();
+            expect(body.id).toBe("insufficient-balance");
+            expect(body.choices[0].message.content).toContain(
+                "need more pollen",
+            );
         });
 
         test("should reject nanobanana-pro when user has only tier balance", async ({
@@ -458,16 +463,21 @@ describe("Tier Balance Management", () => {
                 .where(sql`${userTable.id} = ${userId}`);
 
             // Test paid-only image model: nanobanana-pro
+            // With graceful degradation, insufficient balance returns a 302 redirect to fallback image
             const response = await SELF.fetch(
                 "http://localhost:3000/api/generate/image/test?model=nanobanana-pro",
                 {
                     headers: {
                         "authorization": `Bearer ${apiKey}`,
                     },
+                    redirect: "manual", // Don't follow redirects so we can check the status
                 },
             );
 
-            expect(response.status).toBe(402);
+            expect(response.status).toBe(302);
+            const location = response.headers.get("location");
+            // Fallback uses external gen.pollinations.ai to bypass enter gateway
+            expect(location).toContain("gen.pollinations.ai");
         });
 
         test("should reject gemini-large when user has only tier balance", async ({
@@ -501,6 +511,7 @@ describe("Tier Balance Management", () => {
                 .where(sql`${userTable.id} = ${userId}`);
 
             // Test paid-only text model: gemini-large
+            // With graceful degradation, insufficient balance returns fallback JSON response
             const response = await SELF.fetch(
                 "http://localhost:3000/api/generate/v1/chat/completions",
                 {
@@ -516,9 +527,16 @@ describe("Tier Balance Management", () => {
                 },
             );
 
-            expect(response.status).toBe(402);
-            const error = await response.json();
-            expect(error.error?.message).toContain("requires a paid balance");
+            // Graceful degradation returns 200 with fallback message
+            expect(response.status).toBe(200);
+            const body = await response.json();
+            expect(body.id).toBe("insufficient-balance");
+            expect(body.choices[0].message.content).toContain(
+                "need more pollen",
+            );
+            expect(body.choices[0].message.content).toContain(
+                "enter.pollinations.ai",
+            );
         });
 
         test("should accept paid-only models when user has crypto balance", async ({

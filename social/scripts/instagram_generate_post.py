@@ -387,8 +387,15 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
                     print(f"  Image {index + 1} generated successfully ({img_format}, {len(image_bytes):,} bytes)")
 
                     # Build public URL without key for I2I reference
+                    # Must URL-encode image param since we're building URL manually
                     public_params = {k: v for k, v in params.items() if k != "key"}
-                    public_url = base_url + "?" + "&".join(f"{k}={v}" for k, v in public_params.items())
+                    param_parts = []
+                    for k, v in public_params.items():
+                        if k == "image":
+                            param_parts.append(f"{k}={quote(str(v), safe='')}")
+                        else:
+                            param_parts.append(f"{k}={v}")
+                    public_url = base_url + "?" + "&".join(param_parts)
 
                     return image_bytes, public_url
                 else:

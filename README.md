@@ -27,6 +27,10 @@
 | [Resonance](https://resonanceai.netlify.app) | Mobile-first image generator with many styles and features (Z Image Turbo, Flux) | @Bakhshi7889 |
 
 [View all apps →](apps/APPS.md)
+
+> [!IMPORTANT]
+> **💎 Paid-Only Models (Starting Jan 30):** `claude-large`, `gemini-large`, `veo`, `seedream-pro`, and `nanobanana-pro` now require purchased pollen. Free daily credits work for all other models. [Get pollen →](https://enter.pollinations.ai)
+
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -45,7 +49,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-01-30** – **💎 Paid-Only Models** `claude-large`, `gemini-large`, `veo`, `seedream-pro`, and `nanobanana-pro` now require purchased pollen. Free credits work for all other models.
 - **2026-01-30** – **🆕 Kimi K2.5 Thinking** New open-source reasoning model rivaling Claude Opus at ~1/8th the cost.
 - **2026-01-30** – **� New Payment Methods** PayPal, Apple Pay, and Google Pay now accepted via Stripe.
-- **2026-01-26** – **�🚀 Alibaba Wan 2.6** Generate videos from images with audio support using the new `wan` model. [API Docs](https://enter.pollinations.ai/api/docs)
+- **2026-01-26** – **�� Alibaba Wan 2.6** Generate videos from images with audio support using the new `wan` model. [API Docs](https://enter.pollinations.ai/api/docs)
 - **2026-01-26** – **🎨 Klein Large (9B)** Experience higher quality image generation and editing with the new `klein-large` model.
 - **2026-01-26** – **🛠️ Vercel AI SDK** Build apps easily with the new official Pollinations provider for Vercel AI SDK.
 - **2026-01-26** – **🤖 Gemini 2.5 Pro** Access Google's latest `gemini-2.5-pro` model for advanced text generation tasks.

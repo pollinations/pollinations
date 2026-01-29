@@ -1,36 +1,67 @@
-import type { FC } from "react";
+import { type FC, useEffect, useState } from "react";
 
-// Set to true when there's a special announcement to show
-const SHOW_BANNER = true;
+const HIGHLIGHTS_RAW_URL =
+    "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/highlights.md";
+const HIGHLIGHTS_GITHUB_URL =
+    "https://github.com/pollinations/pollinations/blob/main/social/news/transformed/highlights.md";
 
-/**
- * News/announcement banner - hidden by default.
- * To show: set SHOW_BANNER = true and update the content below.
- */
+interface Highlight {
+    date: string;
+    emoji: string;
+    title: string;
+    description: string;
+}
+
+function parseHighlights(md: string): Highlight[] {
+    return md
+        .split("\n")
+        .filter((line) => line.startsWith("- **"))
+        .map((line) => {
+            const dateMatch = line.match(/^- \*\*(\d{4}-\d{2}-\d{2})\*\*/);
+            const emojiTitleMatch = line.match(/– \*\*(\S+)\s+([^*]+)\*\*/);
+            const descStart = line.lastIndexOf("**") + 2;
+            const description = line.slice(descStart).trim();
+            return {
+                date: dateMatch?.[1] ?? "",
+                emoji: emojiTitleMatch?.[1] ?? "",
+                title: emojiTitleMatch?.[2]?.trim() ?? "",
+                description,
+            };
+        });
+}
+
 export const NewsBanner: FC = () => {
-    if (!SHOW_BANNER) return null;
+    const [highlights, setHighlights] = useState<Highlight[]>([]);
+
+    useEffect(() => {
+        fetch(HIGHLIGHTS_RAW_URL)
+            .then((res) => res.text())
+            .then((md) => setHighlights(parseHighlights(md).slice(0, 3)))
+            .catch(() => {});
+    }, []);
+
+    if (highlights.length === 0) return null;
 
     return (
         <div className="bg-violet-50/60 border border-violet-200 rounded-lg p-4 text-sm">
             <div className="flex flex-col gap-2">
-                <span className="text-xs text-gray-500">
-                    Jan 2026 — What's new
-                </span>
+                <span className="text-xs text-gray-500">What's new</span>
                 <ul className="text-xs space-y-1.5">
-                    <li className="text-gray-600">
-                        💎 <strong>Paid-only models:</strong> claude-large,
-                        gemini-large, veo, seedream-pro, nanobanana-pro now
-                        require purchased pollen
-                    </li>
-                    <li className="text-gray-600">
-                        🆕 <strong>Kimi K2.5 thinking:</strong> Rivals Claude
-                        Opus at ~1/8th the cost
-                    </li>
-                    <li className="text-gray-600">
-                        � <strong>New payment methods:</strong> PayPal, Apple
-                        Pay, Google Pay via Stripe
-                    </li>
+                    {highlights.map((h) => (
+                        <li key={h.date + h.title} className="text-gray-600">
+                            {h.emoji} <strong>{h.title}:</strong>{" "}
+                            {h.description}
+                        </li>
+                    ))}
                 </ul>
+                <a
+                    href={HIGHLIGHTS_GITHUB_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-violet-600 hover:text-violet-800 hover:underline"
+                >
+                    More...
+                </a>
             </div>
         </div>
     );

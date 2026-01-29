@@ -1,0 +1,1309 @@
+{
+  "annotations": {
+    "list": [{
+      "builtIn": 1,
+      "datasource": {
+        "type": "grafana",
+        "uid": "-- Grafana --"
+      },
+      "enable": true,
+      "hide": true,
+      "iconColor": "rgba(0, 211, 255, 1)",
+      "name": "Annotations & Alerts",
+      "type": "dashboard"
+    }]
+  },
+  "description": "Tier cost analysis — user distribution, usage rates, and financial forecasting",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [{
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "panels": [],
+      "title": "User Distribution",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "P33A123E5D474E8F3"
+      },
+      "description": "Total count of all users registered in the system (from D1 database). This is the complete user base, regardless of activity level.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "blue",
+              "value": null
+            }]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "yesoreyeram-infinity-datasource",
+          "uid": "P33A123E5D474E8F3"
+        },
+        "format": "table",
+        "parser": "backend",
+        "refId": "A",
+        "root_selector": "$.result[0].results",
+        "source": "url",
+        "type": "json",
+        "url": "https://api.cloudflare.com/client/v4/accounts/efdcb0933eaac64f27c0b295039b28f2/d1/database/f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3/query",
+        "url_options": {
+          "body_content_type": "application/json",
+          "body_type": "raw",
+          "data": "{\"sql\":\"SELECT COUNT(*) as total_users FROM user\"}",
+          "method": "POST"
+        }
+      }],
+      "title": "Total Users",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "P33A123E5D474E8F3"
+      },
+      "description": "Breakdown of registered users by their subscription tier. Tiers determine daily free usage limits: Spore ($1), Seed ($3), Flower ($10), Nectar ($20).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 5
+      },
+      "id": 2,
+      "options": {
+        "barRadius": 0.1,
+        "barWidth": 0.8,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "orientation": "horizontal",
+        "showValue": "always",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "yesoreyeram-infinity-datasource",
+          "uid": "P33A123E5D474E8F3"
+        },
+        "format": "table",
+        "parser": "backend",
+        "refId": "A",
+        "root_selector": "$.result[0].results",
+        "source": "url",
+        "type": "json",
+        "url": "https://api.cloudflare.com/client/v4/accounts/efdcb0933eaac64f27c0b295039b28f2/d1/database/f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3/query",
+        "url_options": {
+          "body_content_type": "application/json",
+          "body_type": "raw",
+          "data": "{\"sql\":\"SELECT COALESCE(tier, 'unknown') as tier, COUNT(*) as user_count FROM user GROUP BY tier ORDER BY CASE tier WHEN 'nectar' THEN 1 WHEN 'flower' THEN 2 WHEN 'seed' THEN 3 WHEN 'spore' THEN 4 ELSE 5 END\"}",
+          "method": "POST"
+        }
+      }],
+      "title": "Users by Tier",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "P33A123E5D474E8F3"
+      },
+      "description": "Visual representation of how users are distributed across tiers. Shows what percentage of your user base is on each tier level.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
+      "id": 3,
+      "options": {
+        "displayLabels": ["name", "percent"],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": ["value", "percent"]
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "yesoreyeram-infinity-datasource",
+          "uid": "P33A123E5D474E8F3"
+        },
+        "format": "table",
+        "parser": "backend",
+        "refId": "A",
+        "root_selector": "$.result[0].results",
+        "source": "url",
+        "type": "json",
+        "url": "https://api.cloudflare.com/client/v4/accounts/efdcb0933eaac64f27c0b295039b28f2/d1/database/f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3/query",
+        "url_options": {
+          "body_content_type": "application/json",
+          "body_type": "raw",
+          "data": "{\"sql\":\"SELECT COALESCE(tier, 'unknown') as tier, COUNT(*) as user_count FROM user GROUP BY tier ORDER BY user_count DESC\"}",
+          "method": "POST"
+        }
+      }],
+      "title": "Tier Distribution %",
+      "transformations": [{
+        "id": "rowsToFields",
+        "options": {
+          "mappings": [{
+            "fieldName": "tier",
+            "handlerKey": "field.name"
+          }, {
+            "fieldName": "user_count",
+            "handlerKey": "field.value"
+          }]
+        }
+      }],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "P33A123E5D474E8F3"
+      },
+      "description": "THEORETICAL MAXIMUM daily cost if every user fully consumed their tier allowance. Calculated as: (Spore users × $1) + (Seed × $3) + (Flower × $10) + (Nectar × $20). In practice, actual costs are much lower.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }, {
+              "color": "yellow",
+              "value": 50
+            }, {
+              "color": "orange",
+              "value": 100
+            }, {
+              "color": "red",
+              "value": 500
+            }]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["sum"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "yesoreyeram-infinity-datasource",
+          "uid": "P33A123E5D474E8F3"
+        },
+        "format": "table",
+        "parser": "backend",
+        "refId": "A",
+        "root_selector": "$.result[0].results",
+        "source": "url",
+        "type": "json",
+        "url": "https://api.cloudflare.com/client/v4/accounts/efdcb0933eaac64f27c0b295039b28f2/d1/database/f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3/query",
+        "url_options": {
+          "body_content_type": "application/json",
+          "body_type": "raw",
+          "data": "{\"sql\":\"SELECT SUM(CASE tier WHEN 'spore' THEN 1 WHEN 'seed' THEN 3 WHEN 'flower' THEN 10 WHEN 'nectar' THEN 20 ELSE 0 END) as max_daily_liability FROM user\"}",
+          "method": "POST"
+        }
+      }],
+      "title": "Max Daily Liability",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "ACTUAL average daily cost over the selected time period. This is how much we spend per day on average subsidizing free tier usage.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }, {
+              "color": "yellow",
+              "value": 50
+            }, {
+              "color": "orange",
+              "value": 100
+            }, {
+              "color": "red",
+              "value": 500
+            }]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
+      "id": 15,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["mean"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE $__timeFilter(start_time) AND selected_meter_slug IN ('v1:meter:tier', 'local:tier') AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time ORDER BY time",
+        "refId": "A"
+      }],
+      "title": "Avg Daily Cost",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "id": 200,
+      "panels": [],
+      "title": "Usage Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "ACTUAL COST incurred each day from free tier usage, broken down by tier. This is real money spent subsidizing user usage. Stacked bars show contribution from each tier.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Pollen ($)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": [{
+            "matcher": {
+              "id": "byName",
+              "options": "spore"
+            },
+            "properties": [{
+              "id": "displayName",
+              "value": "Spore ($1/day)"
+            }, {
+              "id": "color",
+              "value": {
+                "fixedColor": "green",
+                "mode": "fixed"
+              }
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "seed"
+            },
+            "properties": [{
+              "id": "displayName",
+              "value": "Seed ($3/day)"
+            }, {
+              "id": "color",
+              "value": {
+                "fixedColor": "blue",
+                "mode": "fixed"
+              }
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "flower"
+            },
+            "properties": [{
+              "id": "displayName",
+              "value": "Flower ($10/day)"
+            }, {
+              "id": "color",
+              "value": {
+                "fixedColor": "orange",
+                "mode": "fixed"
+              }
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "nectar"
+            },
+            "properties": [{
+              "id": "displayName",
+              "value": "Nectar ($20/day)"
+            }, {
+              "id": "color",
+              "value": {
+                "fixedColor": "purple",
+                "mode": "fixed"
+              }
+            }]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 16,
+        "x": 0,
+        "y": 14
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": ["sum", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  sumIf(total_price, user_tier = 'spore') as spore,\n  sumIf(total_price, user_tier = 'seed') as seed,\n  sumIf(total_price, user_tier = 'flower') as flower,\n  sumIf(total_price, user_tier = 'nectar') as nectar\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('spore', 'seed', 'flower', 'nectar')\nGROUP BY time\nORDER BY time",
+        "refId": "A"
+      }],
+      "title": "Daily Tier Consumption by Tier",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "EFFICIENCY METRIC: What percentage of their daily allowance do users actually consume? Lower % = users don't use their full allocation = we save money. Example: If Spore users get $1/day but only use $0.33 on average, that's 33% usage rate.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }, {
+              "color": "yellow",
+              "value": 50
+            }, {
+              "color": "red",
+              "value": 80
+            }]
+          },
+          "unit": "percent"
+        },
+        "overrides": [{
+            "matcher": {
+              "id": "byName",
+              "options": "Spore"
+            },
+            "properties": [{
+              "id": "displayName",
+              "value": "Spore ($1/day)"
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Seed"
+            },
+            "properties": [{
+              "id": "displayName",
+              "value": "Seed ($3/day)"
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Flower"
+            },
+            "properties": [{
+              "id": "displayName",
+              "value": "Flower ($10/day)"
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Nectar"
+            },
+            "properties": [{
+              "id": "displayName",
+              "value": "Nectar ($20/day)"
+            }]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 16,
+        "y": 14
+      },
+      "id": 6,
+      "options": {
+        "displayMode": "gradient",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 1)) * 100 as Spore FROM generation_event WHERE $__timeFilter(start_time) AND user_tier = 'spore' AND is_billed_usage = true AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 3)) * 100 as Seed FROM generation_event WHERE $__timeFilter(start_time) AND user_tier = 'seed' AND is_billed_usage = true AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 10)) * 100 as Flower FROM generation_event WHERE $__timeFilter(start_time) AND user_tier = 'flower' AND is_billed_usage = true AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 20)) * 100 as Nectar FROM generation_event WHERE $__timeFilter(start_time) AND user_tier = 'nectar' AND is_billed_usage = true AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')",
+          "refId": "D"
+        }
+      ],
+      "title": "Tier Usage Rate (Avg % of Daily Limit)",
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 300,
+      "panels": [],
+      "title": "Financial Forecasting",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "HISTORICAL daily spending on free tiers. Each bar = total cost for that day across all tiers combined. Use this to see spending patterns and anomalies.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "red",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Daily Cost ($)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 33
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": ["sum", "mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_tier_cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
+        "refId": "A"
+      }],
+      "title": "Total Daily Tier Cost",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "AVERAGE daily cost over the selected time range. Calculated as: (sum of all daily costs) ÷ (number of days). Useful baseline for budgeting.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }, {
+              "color": "yellow",
+              "value": 100
+            }, {
+              "color": "red",
+              "value": 500
+            }]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 25
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["mean"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
+        "refId": "A"
+      }],
+      "title": "Avg Daily Cost",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "TOTAL SPEND in the selected time range. Sum of all daily tier costs. This is how much we actually spent on free tier subsidies.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "blue",
+              "value": null
+            }]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 25
+      },
+      "id": 10,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["sum"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
+        "refId": "A"
+      }],
+      "title": "Period Total Cost",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "SIMPLE PROJECTION: Takes average daily cost from selected period and multiplies by 30 days. Assumes usage stays constant (no growth). Formula: Avg Daily × 30.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }, {
+              "color": "yellow",
+              "value": 3000
+            }, {
+              "color": "red",
+              "value": 10000
+            }]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 29
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT AVG(daily_cost) * 30 as projected_monthly_cost FROM (SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE $__timeFilter(start_time) AND selected_meter_slug IN ('v1:meter:tier', 'local:tier') AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time)",
+        "refId": "A"
+      }],
+      "title": "Projected Monthly (30d)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Same as daily cost but grouped by week. Easier to spot weekly trends and reduces noise from day-to-day fluctuations.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "orange",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Weekly Cost ($)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 33
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": ["sum", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT\n  toStartOfWeek(start_time) as time,\n  SUM(total_price) as weekly_cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
+        "refId": "A"
+      }],
+      "title": "Weekly Tier Cost",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Shows daily cost (blue) alongside running cumulative total (green, right axis). Cumulative shows total spend accumulating over time - useful for budget tracking.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Cost ($)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": [{
+            "matcher": {
+              "id": "byName",
+              "options": "daily_cost"
+            },
+            "properties": [{
+              "id": "displayName",
+              "value": "Actual Daily Cost"
+            }, {
+              "id": "color",
+              "value": {
+                "fixedColor": "blue",
+                "mode": "fixed"
+              }
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "trend_cost"
+            },
+            "properties": [{
+              "id": "displayName",
+              "value": "Trend Line"
+            }, {
+              "id": "color",
+              "value": {
+                "fixedColor": "red",
+                "mode": "fixed"
+              }
+            }, {
+              "id": "custom.lineStyle",
+              "value": {
+                "dash": [10, 10],
+                "fill": "dash"
+              }
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cumulative_cost"
+            },
+            "properties": [{
+              "id": "displayName",
+              "value": "Cumulative Cost"
+            }, {
+              "id": "custom.axisPlacement",
+              "value": "right"
+            }, {
+              "id": "color",
+              "value": {
+                "fixedColor": "green",
+                "mode": "fixed"
+              }
+            }]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 41
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": ["last", "sum"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT time, daily_cost, sum(daily_cost) OVER (ORDER BY time) as cumulative_cost FROM (SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE $__timeFilter(start_time) AND selected_meter_slug IN ('v1:meter:tier', 'local:tier') AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time ORDER BY time)",
+        "refId": "A"
+      }],
+      "title": "Cost Trend & Cumulative",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "PROJECTIONS based on average daily cost: Next 30 Days = avg × 30, Next 90 Days = avg × 90. These assume constant usage rate. For growth-adjusted forecasts, multiply by expected user growth rate.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }, {
+              "color": "yellow",
+              "value": 5000
+            }, {
+              "color": "red",
+              "value": 15000
+            }]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 29
+      },
+      "id": 14,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT\n  'Next 30 Days' as period,\n  AVG(daily_cost) * 30 as projected_cost\nFROM (\n  SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n  GROUP BY time\n)\nUNION ALL\nSELECT\n  'Next 90 Days' as period,\n  AVG(daily_cost) * 90 as projected_cost\nFROM (\n  SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n  GROUP BY time\n)",
+        "refId": "A"
+      }],
+      "title": "Growth-Adjusted Projections",
+      "type": "stat"
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 40,
+  "tags": ["economics", "tier", "costs"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Tier Costs",
+  "uid": "tier-costs-dashboard",
+  "version": 1,
+  "weekStart": ""
+}

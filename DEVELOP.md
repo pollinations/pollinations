@@ -36,6 +36,24 @@ We use [sops](https://github.com/getsops/sops) with [age](https://github.com/Fil
 
 The variables are kept encrypted in `**/secrets/*.json`. If you need to edit them, run `sops edit /secrets/file.json`. This will open an editor and when you save the file, write it to the encrypted file. (hint: set the editor env variable: `export EDITOR=/path/to/your/editor` to open with your favorite editor)
 
+###### macOS Keychain Storage (Recommended)
+
+For better security on macOS, store your age key in the system Keychain instead of a plain text file:
+
+```bash
+# Store the age key in Keychain (one-time setup)
+# You'll be prompted to paste your key
+security add-generic-password -a "$USER" -s "sops-age-key" -w
+```
+
+Then add this to your `~/.zshrc` to automatically load the key:
+
+```bash
+# Load SOPS age key from macOS Keychain
+export SOPS_AGE_KEY=$(security find-generic-password -a "$USER" -s "sops-age-key" -w 2>/dev/null)
+```
+
+Now `sops` commands work normally without needing a keys.txt file.
 
 ###### Common SOPS commands:
 | Command | Description |

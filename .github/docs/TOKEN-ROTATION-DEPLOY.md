@@ -2,7 +2,20 @@
 
 Security hardening following Jan 28-29 token compromise. This checklist tracks all deployment steps.
 
-## Pre-Merge Requirements
+## ⚠️ Downtime Risk Considerations
+
+| Component | Risk | Mitigation |
+|-----------|------|------------|
+| **GitHub CI** | CI will fail if `SOPS_AGE_KEY` not updated before merge | Update secret BEFORE merge |
+| **Modal Flux Klein** | Cold start required - existing containers won't have new token | Redeploy immediately after merge |
+| **io.net instances** | Manual SSH required - services will reject requests until updated | Update all 4 instances promptly |
+| **EC2 services** | Automatic via CI - brief restart during deploy | Monitor health endpoints |
+
+**Recommended order**: Pre-merge secrets → Merge → Modal redeploy → io.net updates → Verify
+
+---
+
+## Pre-Merge Requirements (CRITICAL - DO THESE FIRST)
 
 - [ ] **Update GitHub Secret `SOPS_AGE_KEY`**
   ```bash
@@ -43,7 +56,9 @@ Security hardening following Jan 28-29 token compromise. This checklist tracks a
   git checkout production && git merge main && git push
   ```
 
-## Post-Merge: Modal Deployment
+## Post-Merge: Modal Deployment (DO IMMEDIATELY)
+
+> ⚠️ **Flux Klein will be DOWN** until these are redeployed. Existing Modal containers have the old `enter-token` secret and won't accept the new `x-backend-token` header.
 
 - [ ] **Redeploy Flux Klein 4B**
   ```bash
@@ -56,9 +71,17 @@ Security hardening following Jan 28-29 token compromise. This checklist tracks a
   modal deploy flux_klein_9b.py
   ```
 
-## Post-Merge: io.net Instances
+- [ ] **Verify Modal endpoints respond**
+  ```bash
+  # Test direct Modal endpoint (should return image or auth error, not 500)
+  curl -I "https://myceli-ai--flux-klein-fluxklein-generate-web.modal.run?prompt=test"
+  ```
 
-For each io.net instance, SSH in and run the setup script:
+## Post-Merge: io.net Instances (DO PROMPTLY)
+
+> ⚠️ **Z-Image and Nunchaku/Flux on io.net will reject requests** until manually updated. These require SSH access.
+
+For each io.net instance, SSH in and update:
 
 ### Z-Image Instances
 - [ ] **Z-Image Worker 1** (54.185.175.109:20033)
@@ -89,7 +112,7 @@ For each io.net instance, SSH in and run the setup script:
   sudo systemctl restart ionet-flux-worker*
   ```
 
-## Verification
+## Verification (Final Checks)
 
 - [ ] **EC2 services responding**
   ```bash
@@ -109,7 +132,13 @@ For each io.net instance, SSH in and run the setup script:
 
 - [ ] **Z-Image works (io.net)**
   ```bash
-  curl "https://image.pollinations.ai/prompt/test%20bird?model=zimage" -o test-zimage.png
+  curl "https://image.pollinations.ai/prompt/test%20bird?model=turbo" -o test-turbo.png
+  ```
+
+- [ ] **No auth errors in logs**
+  ```bash
+  # Check EC2 image service logs for "Invalid or missing backend token" errors
+  ssh ubuntu@<EC2_HOST> "sudo journalctl -u image-pollinations -n 50 | grep -i token"
   ```
 
 ## Token Architecture Reference

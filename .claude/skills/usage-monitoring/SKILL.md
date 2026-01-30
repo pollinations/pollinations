@@ -415,7 +415,8 @@ When rotating `PLN_ENTER_TOKEN`:
 - **Resolution**: Token rotated, hardcoded default removed, attacker blocked
 
 See detailed incident reports in `incidents/2026-01-29-token-compromise/`:
-- `findings.md` - Complete incident findings
+- `findings.md` - Complete incident findings and response
+- `INVESTIGATION.md` - Detailed investigation report (consolidated)
 - `token-diagram.md` - Token architecture diagram
 - `status-report.md` - Executive summary
 - `workflows-audit.md` - GitHub workflows security audit

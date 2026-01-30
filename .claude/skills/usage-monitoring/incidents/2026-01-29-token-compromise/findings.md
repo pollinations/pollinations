@@ -242,12 +242,10 @@ Target: ██░░░░░░░░░░ 15% LOW (after HTTPS)
 
 ## 📚 Supporting Documents
 
-1. `SECURITY_STATUS_REPORT.md` - Executive summary
-2. `SECURITY_TOKENS_DIAGRAM.md` - Token architecture
-3. `agent_1.md` - GitHub Actions investigation
-4. `agent_2.md` - Network investigation
-5. `agent_3.md` - Codebase investigation
-6. `/tmp/aws_vs_logs_live.png` - Live attack graph
+1. `INVESTIGATION.md` - Detailed investigation report (consolidated)
+2. `status-report.md` - Executive summary
+3. `token-diagram.md` - Token architecture
+4. `workflows-audit.md` - GitHub workflows security audit
 
 ---
 

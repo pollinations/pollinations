@@ -14,15 +14,14 @@ Prod:    Browser → economics.myceli.ai → Cloudflare Tunnel → Grafana → T
 ```bash
 cd apps/myceli/economics
 
-# 1. Decrypt secrets and generate .env
-sops -d secrets/secrets.vars.json | jq -r 'to_entries | .[] | select(.key != "sops") | "\(.key)=\(.value)"' > .env
+# 1. Create .env with secrets (get from team)
+cp /path/to/shared/.env .env
 
 # 2. Start Grafana
 docker compose up -d
 
 # 3. Access Grafana
 open http://localhost:3000
-# Login: see secrets/secrets.vars.json (decrypt with sops)
 ```
 
 ## Data Sources
@@ -40,23 +39,17 @@ open http://localhost:3000
 
 ## Secrets Management
 
-All secrets are SOPS-encrypted with age:
+Secrets are stored in `.env` (gitignored) locally and on the production server.
 
 | Variable | Purpose |
-|----------|---------|
+|----------|--------|
 | `GF_ADMIN_USER` | Grafana admin username |
 | `GF_ADMIN_PASSWORD` | Grafana admin password |
 | `CLOUDFLARE_TUNNEL_TOKEN` | Cloudflare Tunnel token (prod) |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API token for D1 |
 | `TINYBIRD_GENERATION_EVENT_READ` | Read token for generation_event |
 
-```bash
-# Edit secrets
-sops secrets/secrets.vars.json
-
-# Regenerate .env
-sops -d secrets/secrets.vars.json | jq -r 'to_entries | .[] | select(.key != "sops") | "\(.key)=\(.value)"' > .env
-```
+**Security:** `.env` is gitignored. Share secrets securely via 1Password or similar.
 
 ## Creating/Editing Panels
 

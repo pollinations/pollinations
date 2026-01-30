@@ -10,7 +10,6 @@ SCHEMA >
     `user_id` Nullable(String) `json:$.user_id`,
     `tier` Nullable(String) `json:$.tier`,
     `pollen_amount` Nullable(Int32) `json:$.pollen_amount`,
-    `previous_balance` Nullable(Float64) `json:$.previous_balance`,
     `user_count` Nullable(Int32) `json:$.user_count`,
     `timestamp` DateTime `json:$.timestamp`
 

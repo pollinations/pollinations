@@ -9,7 +9,8 @@ import { cn } from "../../../utils";
 // Features emoji display with visual progression
 //
 // Tiers progress visually:
-// - spore: Muted, starting point
+// - microbe: Entry level, most subtle
+// - spore: Verified, starting point
 // - seed: Growing, more prominent
 // - flower: Blooming, vibrant
 // - nectar: Premium, golden glow
@@ -20,6 +21,7 @@ const tierCardVariants = cva(
     {
         variants: {
             tier: {
+                microbe: "bg-surface-card border-l-4 border-border-subtle/50",
                 spore: "bg-surface-card border-l-4 border-border-subtle",
                 seed: "bg-surface-card border-l-4 border-border-main",
                 flower: "bg-surface-card border-l-4 border-border-brand shadow-shadow-brand-sm",
@@ -37,6 +39,7 @@ const emojiVariants = cva(
     {
         variants: {
             tier: {
+                microbe: "w-9 h-9 bg-border-subtle/20",
                 spore: "w-10 h-10 bg-border-subtle/30",
                 seed: "w-11 h-11 bg-border-main/30",
                 flower: "w-12 h-12 bg-button-primary-bg/20",
@@ -54,6 +57,7 @@ const tierNameVariants = cva(
     {
         variants: {
             tier: {
+                microbe: "bg-border-subtle/20 text-text-body-secondary",
                 spore: "bg-border-subtle/30 text-text-body-secondary",
                 seed: "bg-border-main/30 text-text-body-main",
                 flower: "bg-button-primary-bg/20 text-text-brand",

@@ -41,6 +41,7 @@
         "better-auth": "^1.4.17",
         "clsx": "^2.1.1",
         "date-fns": "^4.1.0",
+        "disposable-email-domains-js": "^1.21.0",
         "drizzle-orm": "^0.44.7",
         "eventsource-parser": "^3.0.6",
         "fast-json-stable-stringify": "^2.1.0",

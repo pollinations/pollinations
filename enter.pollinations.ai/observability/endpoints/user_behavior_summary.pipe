@@ -1,0 +1,79 @@
+DESCRIPTION >
+    Forensic usage + behavior summary for multiple users over 7d and 30d windows.
+    Includes billed + unbilled events. Used for abuse detection scoring.
+    Pass comma-separated user_ids to batch query.
+
+TOKEN generation_event_read READ
+
+NODE user_behavior_summary_node
+SQL >
+    %
+    SELECT
+        user_id,
+
+        -- ============ 30D VOLUME (ALL EVENTS) ============
+        count() AS requests_total_30d,
+        countIf(is_billed_usage OR total_price > 0) AS requests_billed_30d,
+
+        -- Cost (billed only)
+        sumIf(total_price, is_billed_usage OR total_price > 0) AS total_consumed_30d,
+        sumIf(total_price, (is_billed_usage OR total_price > 0) AND splitByChar(':', selected_meter_slug)[-1] = 'pack') AS pack_consumed_30d,
+        sumIf(total_price, (is_billed_usage OR total_price > 0) AND splitByChar(':', selected_meter_slug)[-1] != 'pack') AS tier_consumed_30d,
+
+        -- ============ 30D BEHAVIOR ============
+        -- Error rates: separate "bad script" from "rate limited"
+        countIf(response_status >= 400) / greatest(1, count()) AS error_rate_30d,
+        countIf(response_status >= 400 AND response_status < 500 AND response_status != 429) / greatest(1, count()) AS client_error_rate_30d,
+        countIf(response_status = 429) / greatest(1, count()) AS rate_limited_rate_30d,
+
+        -- Model diversity: use model_requested to capture what user asked for
+        uniqExactIf(model_requested, model_requested != 'undefined') AS unique_models_requested_30d,
+
+        -- Cache hits: repetition / loops
+        countIf(cache_hit) / greatest(1, count()) AS cache_hit_rate_30d,
+
+        -- Moderation / abuse attempts
+        countIf(
+            moderation_prompt_jailbreak_detected OR
+            moderation_completion_protected_material_code_detected OR
+            moderation_completion_protected_material_text_detected OR
+            moderation_prompt_hate_severity != 'undefined' OR
+            moderation_prompt_self_harm_severity != 'undefined' OR
+            moderation_prompt_sexual_severity != 'undefined' OR
+            moderation_prompt_violence_severity != 'undefined' OR
+            moderation_completion_hate_severity != 'undefined' OR
+            moderation_completion_self_harm_severity != 'undefined' OR
+            moderation_completion_sexual_severity != 'undefined' OR
+            moderation_completion_violence_severity != 'undefined'
+        ) AS moderation_flags_count_30d,
+
+        countIf(
+            moderation_prompt_jailbreak_detected OR
+            moderation_completion_protected_material_code_detected OR
+            moderation_completion_protected_material_text_detected OR
+            moderation_prompt_hate_severity != 'undefined' OR
+            moderation_prompt_self_harm_severity != 'undefined' OR
+            moderation_prompt_sexual_severity != 'undefined' OR
+            moderation_prompt_violence_severity != 'undefined' OR
+            moderation_completion_hate_severity != 'undefined' OR
+            moderation_completion_self_harm_severity != 'undefined' OR
+            moderation_completion_sexual_severity != 'undefined' OR
+            moderation_completion_violence_severity != 'undefined'
+        ) / greatest(1, count()) AS moderation_flag_rate_30d,
+
+        -- ============ 7D VOLUME ============
+        countIf(start_time >= now() - INTERVAL 7 DAY) AS requests_total_7d,
+        countIf(start_time >= now() - INTERVAL 7 DAY AND (is_billed_usage OR total_price > 0)) AS requests_billed_7d,
+
+        -- 7D Cost (billed only)
+        sumIf(total_price, start_time >= now() - INTERVAL 7 DAY AND (is_billed_usage OR total_price > 0)) AS total_consumed_7d,
+        sumIf(total_price, start_time >= now() - INTERVAL 7 DAY AND (is_billed_usage OR total_price > 0) AND splitByChar(':', selected_meter_slug)[-1] = 'pack') AS pack_consumed_7d,
+        sumIf(total_price, start_time >= now() - INTERVAL 7 DAY AND (is_billed_usage OR total_price > 0) AND splitByChar(':', selected_meter_slug)[-1] != 'pack') AS tier_consumed_7d
+
+    FROM generation_event
+    WHERE start_time >= now() - INTERVAL 30 DAY
+        AND environment = 'production'
+        AND user_id IN splitByChar(',', {{String(user_ids, '')}})
+    GROUP BY user_id
+
+TYPE endpoint

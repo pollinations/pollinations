@@ -25,18 +25,19 @@ else
 fi
 
 log "----------------------------------------"
-log "Fetching registered servers from image.pollinations.ai/register..."
+log "Fetching registered servers from EC2 image service..."
 
-# Get the list of IPs from image.pollinations.ai/register and extract unique IPs
-registered_response=$(curl -s https://image.pollinations.ai/register)
+# Use direct EC2 endpoint (requires SSH tunnel or internal access)
+REGISTER_URL="${REGISTER_URL:-http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register}"
+registered_response=$(curl -s "$REGISTER_URL")
 if [ $? -ne 0 ]; then
-    log "ERROR: Failed to fetch data from image.pollinations.ai/register"
+    log "ERROR: Failed to fetch data from $REGISTER_URL"
     exit 1
 fi
 
 registered_ips=$(echo "$registered_response" | jq -r '.[] | select(.type=="flux") | .url' | cut -d/ -f3 | cut -d: -f1 | sort -u)
 if [ -z "$registered_ips" ]; then
-    log "WARNING: No registered flux IPs found from image.pollinations.ai!"
+    log "WARNING: No registered flux IPs found from EC2 image service!"
 else
     log "Found the following registered flux IPs:"
     echo "$registered_ips" | while read -r ip; do

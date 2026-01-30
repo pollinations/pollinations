@@ -77,17 +77,13 @@ update_zimage_instance() {
     log "Updating Z-Image instance: $user_host (port $port)"
     
     if ssh $SSH_OPTS -p "$port" -i "$SSH_KEY" "$user_host" "bash -s" <<REMOTE_EOF
-        # Update systemd service files - replace any PLN_IMAGE_BACKEND_TOKEN value
-        if [ -f /etc/systemd/system/zimage-gpu0.service ]; then
-            sudo sed -i 's|PLN_IMAGE_BACKEND_TOKEN=.*|PLN_IMAGE_BACKEND_TOKEN=${NEW_TOKEN}|g' /etc/systemd/system/zimage-gpu0.service
-            sudo sed -i 's|PLN_IMAGE_BACKEND_TOKEN=.*|PLN_IMAGE_BACKEND_TOKEN=${NEW_TOKEN}|g' /etc/systemd/system/zimage-gpu1.service 2>/dev/null || true
-            sudo systemctl daemon-reload
-            sudo systemctl restart zimage-gpu0 zimage-gpu1 2>/dev/null || sudo systemctl restart zimage-gpu0
-            echo "Updated and restarted zimage services"
-        else
-            echo "No zimage systemd services found"
-            exit 1
-        fi
+        # Update .env file with new token (services use EnvironmentFile)
+        echo "PLN_IMAGE_BACKEND_TOKEN=${NEW_TOKEN}" > \$HOME/.env
+        echo "Updated \$HOME/.env"
+        
+        # Restart services to pick up new token
+        sudo systemctl restart zimage-gpu0 zimage-gpu1 2>/dev/null || sudo systemctl restart zimage-gpu0
+        echo "Restarted zimage services"
 REMOTE_EOF
     then
         log "✅ Successfully updated $user_host:$port"

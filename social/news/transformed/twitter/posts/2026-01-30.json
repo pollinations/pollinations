@@ -1,0 +1,25 @@
+{
+  "date": "2026-01-30",
+  "generated_at": "2026-01-30T15:11:39.650171+00:00",
+  "platform": "twitter",
+  "tweet_type": "shipped",
+  "tweet": "shipped 4 PRs today:\n\n- deleted nix (it's not u, it's me 👋)\n- fixed the insta bot\n- reddit bot now running on 'nanobanana' model 🍌\n\nyes that is the actual technical term. nature is healing. 🌸\n\n#OpenSource #AI",
+  "alt_tweet": "pov: you just deleted the flake.lock file and switched your prod env to run on 'nanobanana'. 🍌\n\n4 PRs merged. repo feels lighter. vibes are immaculate. 🌸",
+  "full_tweet": "shipped 4 PRs today:\n\n- deleted nix (it's not u, it's me 👋)\n- fixed the insta bot\n- reddit bot now running on 'nanobanana' model 🍌\n\nyes that is the actual technical term. nature is healing. 🌸\n\n#OpenSource #AI #OpenSource #AI",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image": {
+    "url": "https://gen.pollinations.ai/image/A%20triumphant%20pixel%20art%20scene%20featuring%20a%20developer%20bee%20character%20holding%20a%20tiny%2C%20glowing%20banana%20aloft%20like%20a%20legendary%20RPG%20item.%20The%20bee%20has%20a%20proud%2C%20determined%20expression%2C%20wearing%20oversized%20dev%20glasses.%20In%20the%20background%2C%20a%20retro%20computer%20terminal%20displays%20%27MODEL%3A%20NANOBANANA%27%20in%20chunky%20lime%20green%20%28%23ecf874%29%20text.%20To%20the%20side%2C%20a%20dusty%20file%20folder%20labeled%20%27Nix%27%20is%20floating%20into%20a%20pixelated%20trash%20bin.%20Style%3A%20energetic%208-bit%20aesthetic%2C%20high%20contrast%20electric%20purple%20shadows%2C%20vibrant%20and%20joyful.%20Composition%3A%20centered%20hero%20shot%2C%20dynamic%20action%20pose%2C%20scroll-stopping%20color%20pop.%20Avoid%3A%20blurry%20details%2C%20realistic%20textures%2C%20corporate%20boredom.?model=nanobanana-pro&width=1200&height=675&quality=hd&nologo=true&private=true&nofeed=true&seed=832109481",
+    "prompt": "A triumphant pixel art scene featuring a developer bee character holding a tiny, glowing banana aloft like a legendary RPG item. The bee has a proud, determined expression, wearing oversized dev glasses. In the background, a retro computer terminal displays 'MODEL: NANOBANANA' in chunky lime green (#ecf874) text. To the side, a dusty file folder labeled 'Nix' is floating into a pixelated trash bin. Style: energetic 8-bit aesthetic, high contrast electric purple shadows, vibrant and joyful. Composition: centered hero shot, dynamic action pose, scroll-stopping color pop. Avoid: blurry details, realistic textures, corporate boredom."
+  },
+  "reasoning": "Highlights the funniest update ('nanobanana') while celebrating the technical cleanup (removing Nix). The tone is casual, uses the bee/nature branding, and fits the 'devs having fun' persona.",
+  "pr_references": [
+    "#7794",
+    "#7789",
+    "#7787",
+    "#7763"
+  ],
+  "char_count": 224
+}

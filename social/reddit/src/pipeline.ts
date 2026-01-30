@@ -326,7 +326,7 @@ async function generateImage(prompt : string, pollinationsToken : string, attemp
     }
 
     try {
-        const URL = `${POLLINATIONS_IMAGE_API}/${encodeURIComponent(prompt)}?model=nanobanana-pro&width=1024&height=1024&seed=42`;
+        const URL = `${POLLINATIONS_IMAGE_API}/${encodeURIComponent(prompt)}?model=nanobanana&width=1024&height=1024&seed=42`;
         const response = await fetch(URL, {
             method: 'GET',
             headers: {

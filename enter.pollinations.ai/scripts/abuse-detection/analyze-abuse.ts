@@ -19,20 +19,277 @@
 import { execSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { boolean, command, run, string } from "@drizzle-team/brocli";
+import { isDisposableEmail as checkDisposable } from "disposable-email-domains-js";
 import { isValidTier, TIER_POLLEN, type TierName } from "../../src/tier-config";
-import {
-    type AbuseDetectionResult,
-    detectAbuse,
-    extractEmailLocalBase,
-    extractUsernameBase,
-    findBurstRegistrations,
-    findCrossDomainDuplicates,
-    findDuplicatesByNormalizedEmail,
-    findGitHubIdClusters,
-    findSimilarUsernames,
-    isInBurstCluster,
-    isInGitHubIdCluster,
-} from "../../src/utils/abuse-detection";
+
+// ============================================================================
+// ABUSE DETECTION (inlined - self-contained script)
+// ============================================================================
+
+type AbuseConfidence = "high" | "medium" | "low" | "none";
+
+interface AbuseDetectionResult {
+    confidence: AbuseConfidence;
+    signals: string[];
+    emailNormalized: string;
+    emailBase: string;
+    isDisposableDomain: boolean;
+    isGitHubNoreply: boolean;
+}
+
+const GMAIL_DOMAINS = ["gmail.com", "googlemail.com"];
+
+function normalizeEmail(email: string): string {
+    const [localPart, domain] = email.toLowerCase().split("@");
+    if (!localPart || !domain) return email.toLowerCase();
+    if (GMAIL_DOMAINS.includes(domain)) {
+        const withoutPlus = localPart.split("+")[0];
+        const withoutDots = withoutPlus.replace(/\./g, "");
+        return `${withoutDots}@gmail.com`;
+    }
+    const withoutPlus = localPart.split("+")[0];
+    return `${withoutPlus}@${domain}`;
+}
+
+function extractEmailBase(email: string): string {
+    const [localPart, domain] = email.toLowerCase().split("@");
+    if (!localPart || !domain) return "";
+    if (domain === "users.noreply.github.com") {
+        const match = localPart.match(/^\d+\+(.+)$/);
+        return match ? match[1] : localPart;
+    }
+    const withoutPlus = localPart.split("+")[0];
+    const withoutNumbers = withoutPlus.replace(/\d+$/, "");
+    return withoutNumbers || withoutPlus;
+}
+
+function isGitHubNoreplyEmail(email: string): boolean {
+    return email.toLowerCase().endsWith("@users.noreply.github.com");
+}
+
+function isDisposableEmail(email: string): boolean {
+    return checkDisposable(email);
+}
+
+function detectAbuse(email: string): AbuseDetectionResult {
+    const signals: string[] = [];
+    const emailNormalized = normalizeEmail(email);
+    const emailBase = extractEmailBase(email);
+    const disposable = isDisposableEmail(email);
+    const githubNoreply = isGitHubNoreplyEmail(email);
+    if (disposable) signals.push("disposable_domain");
+    if (githubNoreply) signals.push("github_noreply");
+    let confidence: AbuseConfidence = "none";
+    if (disposable) confidence = "high";
+    else if (githubNoreply) confidence = "medium";
+    return { confidence, signals, emailNormalized, emailBase, isDisposableDomain: disposable, isGitHubNoreply: githubNoreply };
+}
+
+function findDuplicatesByNormalizedEmail(
+    targetNormalized: string,
+    allUsers: Array<{ id: string; email: string }>,
+    excludeUserId?: string,
+): Array<{ id: string; email: string; normalized: string }> {
+    return allUsers
+        .filter((u) => u.id !== excludeUserId)
+        .map((u) => ({ ...u, normalized: normalizeEmail(u.email) }))
+        .filter((u) => u.normalized === targetNormalized);
+}
+
+function extractUsernameBase(username: string): string {
+    if (!username) return "";
+    const lower = username.toLowerCase();
+    const withoutTrailingNumbers = lower.replace(/\d+$/, "");
+    const withoutLeadingNumbers = withoutTrailingNumbers.replace(/^\d+/, "");
+    return withoutLeadingNumbers || lower;
+}
+
+function extractEmailLocalBase(email: string): string {
+    const [localPart] = email.toLowerCase().split("@");
+    if (!localPart) return "";
+    const withoutPlus = localPart.split("+")[0];
+    const withoutDots = withoutPlus.replace(/\./g, "");
+    const withoutNumbers = withoutDots.replace(/\d+/g, "");
+    return withoutNumbers || withoutDots;
+}
+
+function findSimilarUsernames(
+    targetUsername: string,
+    allUsers: Array<{ id: string; github_username: string | null }>,
+    excludeUserId?: string,
+    minBaseLength = 4,
+): Array<{ id: string; github_username: string; usernameBase: string }> {
+    const targetBase = extractUsernameBase(targetUsername);
+    if (!targetBase || targetBase.length < minBaseLength) return [];
+    return allUsers
+        .filter((u) => u.id !== excludeUserId && u.github_username)
+        .map((u) => ({ id: u.id, github_username: u.github_username as string, usernameBase: extractUsernameBase(u.github_username as string) }))
+        .filter((u) => u.usernameBase === targetBase);
+}
+
+const COMMON_LOCAL_PARTS = new Set([
+    "admin", "support", "hello", "info", "contact", "sales", "noreply", "no-reply", "team", "mail", "me", "test", "dev",
+    "webmaster", "postmaster", "hostmaster", "abuse", "security", "billing", "help", "office", "marketing", "hr", "jobs",
+    "careers", "press", "media", "news", "newsletter", "subscribe", "unsubscribe", "feedback", "enquiry", "inquiry",
+    "user", "users", "account", "accounts", "service", "services",
+]);
+
+function isCommonLocalPart(localPart: string): boolean {
+    if (!localPart) return false;
+    return COMMON_LOCAL_PARTS.has(localPart.toLowerCase());
+}
+
+function isHighEntropyIdentifier(localPart: string): boolean {
+    if (!localPart) return false;
+    if (isCommonLocalPart(localPart)) return false;
+    if (localPart.length < 6) return false;
+    const hasLetters = /[a-z]/i.test(localPart);
+    const hasNumbers = /[0-9]/.test(localPart);
+    const hasUnderscore = /_/.test(localPart);
+    if (hasLetters && hasNumbers) return true;
+    if (hasUnderscore) return true;
+    if (localPart.length >= 8) return true;
+    return false;
+}
+
+function findCrossDomainDuplicates(
+    targetEmail: string,
+    allUsers: Array<{ id: string; email: string }>,
+    excludeUserId?: string,
+    minBaseLength = 5,
+    requireHighEntropy = true,
+): Array<{ id: string; email: string; localBase: string }> {
+    const targetLocalBase = extractEmailLocalBase(targetEmail);
+    if (!targetLocalBase || targetLocalBase.length < minBaseLength) return [];
+    if (requireHighEntropy && !isHighEntropyIdentifier(targetLocalBase)) return [];
+    return allUsers
+        .filter((u) => u.id !== excludeUserId)
+        .map((u) => ({ id: u.id, email: u.email, localBase: extractEmailLocalBase(u.email) }))
+        .filter((u) => u.localBase === targetLocalBase);
+}
+
+const BURST_WINDOW_SECONDS = 5 * 60;
+const BURST_MIN_CLUSTER_SIZE = 15;
+
+interface BurstCluster {
+    windowStart: number;
+    windowEnd: number;
+    users: Array<{ id: string; created_at: number }>;
+}
+
+function findBurstRegistrations(
+    allUsers: Array<{ id: string; created_at: number }>,
+    windowSeconds = BURST_WINDOW_SECONDS,
+    minClusterSize = BURST_MIN_CLUSTER_SIZE,
+): Map<string, BurstCluster> {
+    const sorted = [...allUsers].sort((a, b) => a.created_at - b.created_at);
+    const clusters = new Map<string, BurstCluster>();
+    for (let i = 0; i < sorted.length; i++) {
+        const windowStart = sorted[i].created_at;
+        const windowEnd = windowStart + windowSeconds;
+        const usersInWindow = sorted.filter((u) => u.created_at >= windowStart && u.created_at < windowEnd);
+        if (usersInWindow.length >= minClusterSize) {
+            const clusterKey = String(Math.floor(windowStart / windowSeconds));
+            if (!clusters.has(clusterKey)) {
+                clusters.set(clusterKey, { windowStart, windowEnd, users: usersInWindow });
+            }
+        }
+    }
+    return clusters;
+}
+
+function isInBurstCluster(
+    userId: string,
+    burstClusters: Map<string, BurstCluster>,
+): { inBurst: boolean; clusterSize: number; clusterKey: string | null } {
+    for (const [key, cluster] of burstClusters) {
+        if (cluster.users.some((u) => u.id === userId)) {
+            return { inBurst: true, clusterSize: cluster.users.length, clusterKey: key };
+        }
+    }
+    return { inBurst: false, clusterSize: 0, clusterKey: null };
+}
+
+const GITHUB_ID_CLUSTER_RANGE = 1000;
+const GITHUB_ID_MIN_CLUSTER_SIZE = 5;
+const GITHUB_ID_TIME_WINDOW_SECONDS = 60 * 60;
+
+interface GitHubIdCluster {
+    rangeStart: number;
+    rangeEnd: number;
+    users: Array<{ id: string; github_id: number; created_at: number }>;
+    density: number;
+}
+
+function subClusterByTime(
+    users: Array<{ id: string; github_id: number; created_at: number }>,
+    timeWindowSeconds: number,
+    minClusterSize: number,
+): Array<Array<{ id: string; github_id: number; created_at: number }>> {
+    const sorted = [...users].sort((a, b) => a.created_at - b.created_at);
+    const clusters: Array<Array<{ id: string; github_id: number; created_at: number }>> = [];
+    let clusterStart = 0;
+    for (let i = 1; i <= sorted.length; i++) {
+        const isEnd = i === sorted.length;
+        const timeGap = isEnd ? Infinity : sorted[i].created_at - sorted[i - 1].created_at;
+        if (timeGap > timeWindowSeconds || isEnd) {
+            const cluster = sorted.slice(clusterStart, i);
+            if (cluster.length >= minClusterSize) clusters.push(cluster);
+            clusterStart = i;
+        }
+    }
+    return clusters;
+}
+
+function findGitHubIdClusters(
+    allUsers: Array<{ id: string; github_id: number | null; created_at: number }>,
+    maxRange = GITHUB_ID_CLUSTER_RANGE,
+    minClusterSize = GITHUB_ID_MIN_CLUSTER_SIZE,
+    timeWindowSeconds = GITHUB_ID_TIME_WINDOW_SECONDS,
+): Map<string, GitHubIdCluster> {
+    const withGitHubId = allUsers.filter(
+        (u): u is { id: string; github_id: number; created_at: number } => u.github_id !== null && u.created_at !== undefined,
+    );
+    const sorted = [...withGitHubId].sort((a, b) => a.github_id - b.github_id);
+    const clusters = new Map<string, GitHubIdCluster>();
+    let clusterStart = 0;
+    for (let i = 1; i <= sorted.length; i++) {
+        const isEnd = i === sorted.length;
+        const gap = isEnd ? Infinity : sorted[i].github_id - sorted[i - 1].github_id;
+        if (gap > maxRange || isEnd) {
+            const idClusterUsers = sorted.slice(clusterStart, i);
+            if (idClusterUsers.length >= minClusterSize) {
+                const timeClusters = subClusterByTime(idClusterUsers, timeWindowSeconds, minClusterSize);
+                for (const timeCluster of timeClusters) {
+                    const githubIds = timeCluster.map((u) => u.github_id);
+                    const rangeStart = Math.min(...githubIds);
+                    const rangeEnd = Math.max(...githubIds);
+                    const clusterKey = `${rangeStart}-${rangeEnd}`;
+                    const rawIdRange = rangeEnd - rangeStart + 1;
+                    const idRange = Math.max(1, rawIdRange);
+                    const rawDensity = timeCluster.length / idRange;
+                    const density = Math.min(1, rawDensity);
+                    clusters.set(clusterKey, { rangeStart, rangeEnd, users: timeCluster, density });
+                }
+            }
+            clusterStart = i;
+        }
+    }
+    return clusters;
+}
+
+function isInGitHubIdCluster(
+    githubId: number | null,
+    gitHubIdClusters: Map<string, GitHubIdCluster>,
+): { inCluster: boolean; clusterSize: number; clusterDensity: number; clusterRange: string | null } {
+    if (githubId === null) return { inCluster: false, clusterSize: 0, clusterDensity: 0, clusterRange: null };
+    for (const [range, cluster] of gitHubIdClusters) {
+        if (cluster.users.some((u) => u.github_id === githubId)) {
+            return { inCluster: true, clusterSize: cluster.users.length, clusterDensity: cluster.density, clusterRange: range };
+        }
+    }
+    return { inCluster: false, clusterSize: 0, clusterDensity: 0, clusterRange: null };
+}
 
 type Environment = "staging" | "production";
 

@@ -1,8 +1,8 @@
 // Import transform functions
 
-import { type ModelId, resolveServiceId } from "../shared/registry/registry.js";
+import { type ModelId, resolveServiceId } from "../shared/registry/registry.ts";
 // Import registry for validation
-import type { TEXT_SERVICES } from "../shared/registry/text.js";
+import type { TEXT_SERVICES } from "../shared/registry/text.ts";
 // Import model configs
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import chickyTutorPrompt from "./personas/chickytutor.js";

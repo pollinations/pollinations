@@ -79,37 +79,38 @@ Security hardening following Jan 28-29 token compromise. This checklist tracks a
 
 ## Post-Merge: io.net Instances (DO PROMPTLY)
 
-> ⚠️ **Z-Image and Nunchaku/Flux on io.net will reject requests** until manually updated. These require SSH access.
+> ⚠️ **Z-Image and Flux on io.net will reject requests** until manually updated. These require SSH access.
 
-For each io.net instance, SSH in and update:
+### Primary Instance (38.128.232.183) - 8x L40 GPUs
 
-### Z-Image Instances
-- [ ] **Z-Image Worker 1** (54.185.175.109:20033)
+This is the main production instance with 3x Z-Image + 5x Flux services.
+
+**Pre-staged items** (already done):
+- ✅ `.env` file created at `/home/ionet/.env` with `PLN_IMAGE_BACKEND_TOKEN`
+- ✅ PR branch fetched to instance
+- ✅ Switchover script created at `/home/ionet/switch-to-new-tokens.sh`
+
+- [ ] **Run switchover script** (after PR merged to main)
   ```bash
-  ssh -p 20033 ionet@54.185.175.109
-  PLN_IMAGE_BACKEND_TOKEN=xxx GPU0_PUBLIC_PORT=24602 GPU1_PUBLIC_PORT=25962 bash ~/pollinations/image.pollinations.ai/z-image/setup-ionet.sh
+  ssh -i ~/.ssh/pollinations_services_2026 ionet@38.128.232.183
+  bash /home/ionet/switch-to-new-tokens.sh
   ```
 
-- [ ] **Z-Image Worker 2** (54.185.175.109:28816)
-  ```bash
-  ssh -p 28816 ionet@54.185.175.109
-  PLN_IMAGE_BACKEND_TOKEN=xxx GPU0_PUBLIC_PORT=xxx GPU1_PUBLIC_PORT=xxx bash ~/pollinations/image.pollinations.ai/z-image/setup-ionet.sh
-  ```
+  This script will:
+  1. Pull merged changes from main
+  2. Update Z-Image systemd services to use EnvironmentFile
+  3. Restart Z-Image services (GPU 0-2)
+  4. Recreate Flux Docker containers with new token (GPU 3-7)
 
-### Nunchaku/Flux Instances
-- [ ] **Flux Worker 1** (3.21.229.114:23655)
+### Legacy Instances (if still active)
+
+These instances may be down. Check before attempting:
+
+- [ ] **Flux Worker 1** (3.21.229.114:23655) - ⚠️ Check if active
   ```bash
   ssh -p 23655 ionet@3.21.229.114
-  # Update .env and restart
   echo "PLN_IMAGE_BACKEND_TOKEN=xxx" > $HOME/.env
-  sudo systemctl restart ionet-flux-worker*
-  ```
-
-- [ ] **Flux Worker 2** (3.21.229.114:24671)
-  ```bash
-  ssh -p 24671 ionet@3.21.229.114
-  echo "PLN_IMAGE_BACKEND_TOKEN=xxx" > $HOME/.env
-  sudo systemctl restart ionet-flux-worker*
+  # Recreate Docker containers with new token
   ```
 
 ## Verification (Final Checks)

@@ -414,6 +414,62 @@ When rotating `PLN_ENTER_TOKEN`:
 - **Detection**: AWS CloudWatch >> Tinybird (24% coverage during attack)
 - **Resolution**: Token rotated, hardcoded default removed, attacker blocked
 
+See detailed incident reports in `incidents/2026-01-29-token-compromise/`:
+- `findings.md` - Complete incident findings
+- `token-diagram.md` - Token architecture diagram
+- `status-report.md` - Executive summary
+- `workflows-audit.md` - GitHub workflows security audit
+
+---
+
+# Infrastructure Security
+
+## SSH Log Analysis
+
+Check who has been accessing the enter-services instance:
+
+```bash
+# Successful logins (excluding your IPs)
+ssh enter-services "sudo cat /var/log/auth.log | grep 'Accepted' | grep -oP 'from \K[0-9.]+' | sort | uniq -c | sort -rn"
+
+# Failed login attempts (brute force detection)
+ssh enter-services "sudo cat /var/log/auth.log | grep -i 'failed\|invalid' | head -50"
+
+# Check authorized keys
+ssh enter-services "cat ~/.ssh/authorized_keys"
+```
+
+## .env File Security
+
+**Critical**: .env files should have 600 permissions (owner read/write only).
+
+```bash
+# Check current permissions
+ssh enter-services "ls -la ~/pollinations/*/.env"
+
+# Fix permissions if needed
+ssh enter-services "chmod 600 ~/pollinations/text.pollinations.ai/.env ~/pollinations/image.pollinations.ai/.env"
+```
+
+## GitHub Secrets Audit
+
+```bash
+# List all secrets
+gh secret list --repo pollinations/pollinations
+
+# Check which secrets are used in workflows
+grep -r "secrets\." .github/workflows/ --include="*.yml" | grep -oP 'secrets\.\K[A-Z_]+' | sort -u
+```
+
+## Workflow Security Checklist
+
+- [ ] .env files have 600 permissions on server
+- [ ] No tokens logged in workflow output (even partial)
+- [ ] PLN_ENTER_TOKEN read from local .env, not passed from GitHub
+- [ ] Third-party actions pinned to SHA
+- [ ] `pull_request_target` workflows don't checkout PR code
+- [ ] Unused secrets deleted from GitHub
+
 ### Reference Graphs (Jan 29, 2026)
 
 See `artifacts/` folder for example comparison plots:

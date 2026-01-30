@@ -24,9 +24,9 @@ from pydantic import BaseModel
 # Modal app configuration - uses myceli-ai workspace
 app = modal.App("flux-klein")
 
-# Expected Enter token for authentication (set via Modal secret)
-# Create secret: modal secret create enter-token PLN_ENTER_TOKEN=your_token_here
-ENTER_TOKEN_HEADER = "x-enter-token"
+# Expected Backend token for authentication (set via Modal secret)
+# Create secret: modal secret create backend-token PLN_IMAGE_BACKEND_TOKEN=your_token_here
+ENTER_TOKEN_HEADER = "x-backend-token"
 
 # CUDA base image with Python
 cuda_version = "12.4.0"
@@ -115,7 +115,7 @@ GPU_OPTIONS = {
         "/root/.inductor-cache": modal.Volume.from_name("inductor-cache", create_if_missing=True),
     },
     secrets=[
-        modal.Secret.from_name("enter-token", required_keys=["PLN_ENTER_TOKEN"]),
+        modal.Secret.from_name("backend-token", required_keys=["PLN_IMAGE_BACKEND_TOKEN"]),
         modal.Secret.from_name("huggingface-secret", required_keys=["HF_TOKEN"]),
     ],
 )
@@ -208,19 +208,19 @@ class FluxKlein:
         return byte_stream.getvalue()
     
     def _verify_token(self, token: str | None) -> None:
-        """Verify the Enter token, raise HTTPException if invalid."""
+        """Verify the Backend token, raise HTTPException if invalid."""
         import os
-        expected_token = os.environ.get("PLN_ENTER_TOKEN")
+        expected_token = os.environ.get("PLN_IMAGE_BACKEND_TOKEN")
         if not expected_token:
-            raise HTTPException(status_code=500, detail="PLN_ENTER_TOKEN not configured")
+            raise HTTPException(status_code=500, detail="PLN_IMAGE_BACKEND_TOKEN not configured")
         
         if not token:
-            print("❌ No Enter token provided")
-            raise HTTPException(status_code=401, detail="Missing x-enter-token header")
+            print("❌ No Backend token provided")
+            raise HTTPException(status_code=401, detail="Missing x-backend-token header")
         
         if token != expected_token:
-            print("❌ Invalid Enter token")
-            raise HTTPException(status_code=401, detail="Invalid x-enter-token")
+            print("❌ Invalid Backend token")
+            raise HTTPException(status_code=401, detail="Invalid x-backend-token")
 
     @modal.fastapi_endpoint(method="GET")
     def generate_web(
@@ -231,13 +231,13 @@ class FluxKlein:
         guidance_scale: float = 4.0,
         num_inference_steps: int = 4,
         seed: int | None = None,
-        x_enter_token: str | None = Header(default=None),
+        x_backend_token: str | None = Header(default=None),
     ):
-        """Web endpoint for text-to-image generation (GET). Requires x-enter-token header."""
+        """Web endpoint for text-to-image generation (GET). Requires x-backend-token header."""
         from fastapi.responses import Response
 
-        # Verify Enter token
-        self._verify_token(x_enter_token)
+        # Verify Backend token
+        self._verify_token(x_backend_token)
 
         image_bytes = self.generate.local(
             prompt=prompt,
@@ -260,7 +260,7 @@ class FluxKlein:
         guidance_scale: float = 4.0,
         num_inference_steps: int = 4,
         seed: int | None = None,
-        x_enter_token: str | None = Header(default=None),
+        x_backend_token: str | None = Header(default=None),
     ):
         """Web endpoint for image editing (POST).
         
@@ -270,7 +270,7 @@ class FluxKlein:
         from fastapi.responses import Response
         import base64
 
-        self._verify_token(x_enter_token)
+        self._verify_token(x_backend_token)
 
         ref_image_bytes_list = None
         if images and len(images) > 0:

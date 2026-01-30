@@ -188,18 +188,25 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
 app = FastAPI(title="FLUX Image Generation API", lifespan=lifespan)
 
 # Auth verification
-def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token")):
-    expected_token = os.getenv("PLN_ENTER_TOKEN")
+def verify_backend_token(
+    x_backend_token: str = Header(None, alias="x-backend-token"),
+):
+    """Verify backend authentication token.
+    
+    Requires x-backend-token header validated against PLN_IMAGE_BACKEND_TOKEN env var.
+    """
+    expected_token = os.getenv("PLN_IMAGE_BACKEND_TOKEN")
     if not expected_token:
-        logger.warning("PLN_ENTER_TOKEN not configured - allowing request")
+        logger.warning("PLN_IMAGE_BACKEND_TOKEN not configured - allowing request")
         return True
-    if x_enter_token != expected_token:
-        logger.warning(f"Invalid or missing PLN_ENTER_TOKEN")
+    
+    if x_backend_token != expected_token:
+        logger.warning("Invalid or missing backend token")
         raise HTTPException(status_code=403, detail="Unauthorized")
     return True
 
 @app.post("/generate")
-async def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
+async def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token)):
     print(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")

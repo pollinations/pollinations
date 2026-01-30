@@ -47,12 +47,10 @@ export const callFluxKleinAPI = async (
             variant === "klein-large" ? "Klein Large (9B)" : "Klein (4B)";
         logOps(`Calling Flux ${variantName} API with prompt:`, prompt);
 
-        // Use PLN_IMAGE_BACKEND_TOKEN for backend communication, fallback to PLN_ENTER_TOKEN
-        const backendToken =
-            process.env.PLN_IMAGE_BACKEND_TOKEN || process.env.PLN_ENTER_TOKEN;
+        const backendToken = process.env.PLN_IMAGE_BACKEND_TOKEN;
         if (!backendToken) {
             throw new Error(
-                "PLN_IMAGE_BACKEND_TOKEN or PLN_ENTER_TOKEN environment variable is required",
+                "PLN_IMAGE_BACKEND_TOKEN environment variable is required",
             );
         }
 

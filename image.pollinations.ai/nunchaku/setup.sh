@@ -37,8 +37,8 @@ log_step() { echo -e "\n${BLUE}━━━━━━━━━━━━━━━━�
 # Validate required environment variables
 validate_env() {
     local missing=0
-    # PLN_IMAGE_BACKEND_TOKEN is optional (falls back to PLN_ENTER_TOKEN or no auth)
-    for var in HF_TOKEN WORKER_NUM PUBLIC_IP GPU0_PUBLIC_PORT GPU1_PUBLIC_PORT; do
+    # PLN_IMAGE_BACKEND_TOKEN is required for authentication
+    for var in HF_TOKEN WORKER_NUM PUBLIC_IP GPU0_PUBLIC_PORT GPU1_PUBLIC_PORT PLN_IMAGE_BACKEND_TOKEN; do
         if [ -z "${!var}" ]; then
             log_error "Missing required environment variable: $var"
             missing=1
@@ -52,15 +52,11 @@ validate_env() {
         echo "  PUBLIC_IP=52.205.25.210 \\"
         echo "  GPU0_PUBLIC_PORT=27235 \\"
         echo "  GPU1_PUBLIC_PORT=30830 \\"
-        echo "  PLN_IMAGE_BACKEND_TOKEN=xxx \\  # Optional but recommended"
+        echo "  PLN_IMAGE_BACKEND_TOKEN=xxx \\"
         echo "  bash setup.sh"
         exit 1
     fi
     
-    # Warn if no backend token is set
-    if [ -z "$PLN_IMAGE_BACKEND_TOKEN" ] && [ -z "$PLN_ENTER_TOKEN" ]; then
-        log_warn "No PLN_IMAGE_BACKEND_TOKEN or PLN_ENTER_TOKEN set - server will accept unauthenticated requests"
-    fi
 }
 
 # Install system dependencies
@@ -177,8 +173,7 @@ create_env_file() {
     log_step "🔑 Step 5: Creating .env file"
     cat > $HOME/.env <<EOF
 HF_TOKEN=$HF_TOKEN
-PLN_IMAGE_BACKEND_TOKEN=${PLN_IMAGE_BACKEND_TOKEN:-}
-PLN_ENTER_TOKEN=${PLN_ENTER_TOKEN:-}
+PLN_IMAGE_BACKEND_TOKEN=$PLN_IMAGE_BACKEND_TOKEN
 EOF
     log_info "Environment file created at $HOME/.env"
 }

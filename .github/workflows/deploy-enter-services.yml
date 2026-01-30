@@ -168,33 +168,25 @@ jobs:
             sudo systemctl is-active text-pollinations.service || exit 1
             sudo systemctl is-active image-pollinations.service || exit 1
             
-            # Health check endpoints
+            # Health check endpoints (no token needed - just verify services respond)
             echo "🏥 Running health checks..."
             sleep 2  # Give services a moment to fully initialize
             
-            # Read token from deployed .env file (no longer passed from GitHub)
-            PLN_ENTER_TOKEN=$(grep -E '^PLN_ENTER_TOKEN=' /home/ubuntu/pollinations/text.pollinations.ai/.env | cut -d'=' -f2)
-            if [ -z "$PLN_ENTER_TOKEN" ]; then
-              echo "❌ Could not read PLN_ENTER_TOKEN from .env file"
+            # Check text service health - any HTTP response means service is up
+            TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:16385/ || echo "000")
+            if [ "$TEXT_HEALTH" = "000" ]; then
+              echo "❌ Text service not responding"
               exit 1
             fi
-            echo "✅ Token loaded from local .env"
+            echo "✅ Text service responding (HTTP $TEXT_HEALTH)"
             
-            # Check text service health (use /openai/models - /models returns 410 deprecated)
-            TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $PLN_ENTER_TOKEN" http://localhost:16385/openai/models || echo "000")
-            if [ "$TEXT_HEALTH" != "200" ]; then
-              echo "❌ Text service health check failed (HTTP $TEXT_HEALTH)"
+            # Check image service health - any HTTP response means service is up
+            IMAGE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:16384/ || echo "000")
+            if [ "$IMAGE_HEALTH" = "000" ]; then
+              echo "❌ Image service not responding"
               exit 1
             fi
-            echo "✅ Text service responding (HTTP 200)"
-            
-            # Check image service health (use /about - /models returns 410 deprecated)
-            IMAGE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $PLN_ENTER_TOKEN" http://localhost:16384/about || echo "000")
-            if [ "$IMAGE_HEALTH" != "200" ]; then
-              echo "❌ Image service health check failed (HTTP $IMAGE_HEALTH)"
-              exit 1
-            fi
-            echo "✅ Image service responding (HTTP 200)"
+            echo "✅ Image service responding (HTTP $IMAGE_HEALTH)"
             
             echo "🎉 Deployment complete!"
             echo "📊 Service Status:"

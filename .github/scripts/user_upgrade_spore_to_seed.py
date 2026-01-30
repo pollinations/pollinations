@@ -19,7 +19,6 @@ Environment variables:
     GITHUB_TOKEN           - Required for GitHub API
     CLOUDFLARE_API_TOKEN   - Required for wrangler D1 access
     CLOUDFLARE_ACCOUNT_ID  - Required for wrangler D1 access
-    POLAR_ACCESS_TOKEN     - Required for Polar subscription updates
 """
 
 import argparse
@@ -32,8 +31,8 @@ from datetime import datetime, timezone
 
 from user_validate_github_profile import validate_users
 
-# Polar rate limit: 100 requests/minute, so ~0.6s delay minimum
-POLAR_DELAY_SECONDS = 1.0
+# Rate limit delay between upgrades
+UPGRADE_DELAY_SECONDS = 1.0
 
 # Max users to process per run (stay well under 1000 point/hour GitHub API limit)
 # With repos(first:5), each batch of 50 costs ~3 points, so 266 batches = 13,300 users
@@ -268,9 +267,9 @@ def main():
             success += 1
         else:
             failed += 1
-        # Rate limit for Polar API
+        # Rate limit between upgrades
         if i < len(approved) - 1:
-            time.sleep(POLAR_DELAY_SECONDS)
+            time.sleep(UPGRADE_DELAY_SECONDS)
 
     print(f"\n📊 Results:")
     print(f"   ✅ Upgraded: {success}")

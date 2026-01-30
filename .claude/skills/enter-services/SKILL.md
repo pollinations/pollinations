@@ -1,12 +1,11 @@
 ---
 name: enter-services
-description: "Deploy and manage enter.pollinations.ai text/image services on EC2 and Cloudflare Workers. Requires: SSH keys, sops, wrangler."
+description: "Deploy and manage enter.pollinations.ai text/image services on EC2 and Cloudflare Workers. Requires: sops, wrangler."
 ---
 
 # Requirements
 
 Before using this skill, ensure you have:
-- **SSH keys**: Configured via GitHub secrets (see workflow)
 - **sops**: `brew install sops` (for decrypting secrets)
 - **Wrangler**: `npm install -g wrangler`
 - **Node.js**: `brew install node`
@@ -19,8 +18,21 @@ Must run from the `pollinations` repo root.
 
 | Environment | Gateway (Cloudflare Worker) | Text/Image Services (EC2) |
 |-------------|----------------------------|---------------------------|
-| **Production** | `enter.pollinations.ai` | `3.80.56.235` (ports 16384/16385) |
+| **Production** | `enter.pollinations.ai` | Via Cloudflare Tunnel (ports 16384/16385) |
 | **Staging** | `staging.enter.pollinations.ai` | `44.222.254.250` (ports 16384/16385) |
+
+## Cloudflare Tunnel (Recommended)
+
+Services are accessed via Cloudflare Tunnel for security:
+- `text-internal.pollinations.ai` → localhost:16385
+- `image-internal.pollinations.ai` → localhost:16384
+- `deploy.pollinations.ai` → localhost:8787 (deploy webhook)
+
+**Benefits:**
+- No public ports exposed
+- HTTPS encryption for all traffic
+- No SSH keys needed for deployment
+- Cloudflare Access for authentication
 
 ---
 
@@ -79,19 +91,26 @@ ssh enter-services-staging "sudo systemctl restart text-pollinations.service ima
 
 # Deploy to Production
 
+## Via Cloudflare Tunnel (Recommended)
+
+Deployments are triggered via webhook - no SSH required:
+
+```bash
+# From GitHub Actions or locally
+curl -X POST "https://deploy.pollinations.ai" \
+  -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+  -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"
+```
+
 The GitHub workflow handles production deployments automatically on push to `production` branch.
 
-**Manual deployment:**
-```bash
-# 1. SSH into production
-ssh enter-services
+## Via SSH (Legacy)
 
-# 2. Pull and restart
-cd /home/ubuntu/pollinations
-git pull origin production
-cd text.pollinations.ai && npm install
-cd ../image.pollinations.ai && npm install
-sudo systemctl restart text-pollinations.service image-pollinations.service
+```bash
+ssh enter-services "cd /home/ubuntu/pollinations && git pull origin production && \
+  cd text.pollinations.ai && pnpm install && \
+  cd ../image.pollinations.ai && pnpm install && \
+  sudo systemctl restart text-pollinations.service image-pollinations.service"
 ```
 
 ---
@@ -197,10 +216,26 @@ ssh enter-services-staging "sudo apt-get install -y build-essential"
 
 ---
 
+# Cloudflare Tunnel Setup (New Instance)
+
+```bash
+# Run setup with tunnel flag
+bash enter.pollinations.ai/scripts/setup-services.sh /home/ubuntu/pollinations --with-tunnel
+```
+
+This installs cloudflared and creates the deploy-webhook service. Follow the printed manual steps to:
+1. Login to Cloudflare and create tunnel
+2. Configure tunnel ingress rules
+3. Create deploy token
+4. Setup Cloudflare Access application and service token
+
+---
+
 # Notes
 
-- **Production** deploys on push to `production` branch
+- **Production** deploys on push to `production` branch via webhook
 - **Staging** deploys on push to `staging` branch
 - Always test on staging before merging to production
-- The Cloudflare Worker (enter.pollinations.ai) routes to EC2 services
+- The Cloudflare Worker (enter.pollinations.ai) routes to EC2 via tunnel
 - Text service: port 16385, Image service: port 16384
+- Deploy webhook: port 8787 (localhost only, via tunnel)

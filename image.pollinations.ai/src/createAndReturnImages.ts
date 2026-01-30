@@ -212,8 +212,13 @@ export const callSelfHostedServer = async (
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...(process.env.PLN_ENTER_TOKEN && {
-                        "x-enter-token": process.env.PLN_ENTER_TOKEN,
+                    // Use PLN_IMAGE_BACKEND_TOKEN for backend communication (IO.net workers)
+                    // Falls back to PLN_ENTER_TOKEN for backward compatibility
+                    ...((process.env.PLN_IMAGE_BACKEND_TOKEN ||
+                        process.env.PLN_ENTER_TOKEN) && {
+                        "x-backend-token":
+                            process.env.PLN_IMAGE_BACKEND_TOKEN ||
+                            process.env.PLN_ENTER_TOKEN,
                     }),
                 },
                 body: JSON.stringify(body),

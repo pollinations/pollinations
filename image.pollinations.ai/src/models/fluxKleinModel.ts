@@ -47,13 +47,9 @@ export const callFluxKleinAPI = async (
             variant === "klein-large" ? "Klein Large (9B)" : "Klein (4B)";
         logOps(`Calling Flux ${variantName} API with prompt:`, prompt);
 
-        // Use PLN_IMAGE_BACKEND_TOKEN for backend communication, fallback to PLN_ENTER_TOKEN
-        const backendToken =
-            process.env.PLN_IMAGE_BACKEND_TOKEN || process.env.PLN_ENTER_TOKEN;
-        if (!backendToken) {
-            throw new Error(
-                "PLN_IMAGE_BACKEND_TOKEN or PLN_ENTER_TOKEN environment variable is required",
-            );
+        const enterToken = process.env.PLN_ENTER_TOKEN;
+        if (!enterToken) {
+            throw new Error("PLN_ENTER_TOKEN environment variable is required");
         }
 
         progress.updateBar(
@@ -73,7 +69,7 @@ export const callFluxKleinAPI = async (
                 safeParams,
                 progress,
                 requestId,
-                backendToken,
+                enterToken,
                 variant,
             );
         }
@@ -83,7 +79,7 @@ export const callFluxKleinAPI = async (
             safeParams,
             progress,
             requestId,
-            backendToken,
+            enterToken,
             variant,
         );
     } catch (error) {
@@ -104,7 +100,7 @@ async function generateTextToImage(
     safeParams: ImageParams,
     progress: ProgressManager,
     requestId: string,
-    backendToken: string,
+    enterToken: string,
     variant: KleinVariant = "klein",
 ): Promise<ImageGenerationResult> {
     logOps("Using text-to-image mode (GET)");
@@ -128,7 +124,7 @@ async function generateTextToImage(
             fetch(url, {
                 method: "GET",
                 headers: {
-                    "x-backend-token": backendToken,
+                    "x-enter-token": enterToken,
                 },
                 signal,
             }),
@@ -181,7 +177,7 @@ async function generateWithEditing(
     safeParams: ImageParams,
     progress: ProgressManager,
     requestId: string,
-    backendToken: string,
+    enterToken: string,
     variant: KleinVariant = "klein",
 ): Promise<ImageGenerationResult> {
     logOps(
@@ -265,7 +261,7 @@ async function generateWithEditing(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-backend-token": backendToken,
+                    "x-enter-token": enterToken,
                 },
                 body: JSON.stringify(base64Images),
                 signal,

@@ -54,19 +54,16 @@ jobs:
 
       - name: Deploy to staging via SSH
         uses: appleboy/ssh-action@v1.0.0
+        env:
+          PLN_ENTER_TOKEN: ${{ secrets.PLN_ENTER_TOKEN }}
         with:
           host: ${{ secrets.ENTER_SERVICES_STAGING_HOST }}
           username: ${{ secrets.ENTER_SERVICES_STAGING_USER }}
           key: ${{ secrets.ENTER_SERVICES_STAGING_SSH_KEY }}
+          envs: PLN_ENTER_TOKEN
           script: |
             set -e
             echo "🚀 Deploying to STAGING..."
-            
-            # Secure .env file permissions (prevent world-readable secrets)
-            chmod 600 /home/ubuntu/pollinations/text.pollinations.ai/.env 2>/dev/null || true
-            chmod 600 /home/ubuntu/pollinations/image.pollinations.ai/.env 2>/dev/null || true
-            echo "🔒 Secured .env file permissions"
-            
             cd /home/ubuntu/pollinations
             git pull origin staging
             
@@ -122,19 +119,17 @@ jobs:
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
+        env:
+          PLN_ENTER_TOKEN: ${{ secrets.PLN_ENTER_TOKEN }}
         with:
           host: ${{ secrets.ENTER_SERVICES_HOST }}
           username: ${{ secrets.ENTER_SERVICES_USER }}
           key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          envs: PLN_ENTER_TOKEN
           script: |
             set -e
             
             echo "🚀 Starting deployment to enter-services..."
-            
-            # Secure .env file permissions (prevent world-readable secrets)
-            chmod 600 /home/ubuntu/pollinations/text.pollinations.ai/.env 2>/dev/null || true
-            chmod 600 /home/ubuntu/pollinations/image.pollinations.ai/.env 2>/dev/null || true
-            echo "🔒 Secured .env file permissions"
             
             # Navigate to repo
             cd /home/ubuntu/pollinations
@@ -172,13 +167,8 @@ jobs:
             echo "🏥 Running health checks..."
             sleep 2  # Give services a moment to fully initialize
             
-            # Read token from deployed .env file (no longer passed from GitHub)
-            PLN_ENTER_TOKEN=$(grep -E '^PLN_ENTER_TOKEN=' /home/ubuntu/pollinations/text.pollinations.ai/.env | cut -d'=' -f2)
-            if [ -z "$PLN_ENTER_TOKEN" ]; then
-              echo "❌ Could not read PLN_ENTER_TOKEN from .env file"
-              exit 1
-            fi
-            echo "✅ Token loaded from local .env"
+            # PLN_ENTER_TOKEN is passed as environment variable from GitHub secret
+            echo "Using PLN_ENTER_TOKEN: ${PLN_ENTER_TOKEN:0:10}..."
             
             # Check text service health (use /openai/models - /models returns 410 deprecated)
             TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $PLN_ENTER_TOKEN" http://localhost:16385/openai/models || echo "000")

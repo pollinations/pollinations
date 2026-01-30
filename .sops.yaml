@@ -1,4 +1,4 @@
 creation_rules:
     - path_regex: (\.env$|\.encrypted\.env$|\.vars.json$|env\.json$)
       age: >-
-        age1k85e3hjd2tv3wtjv7npjtmp9pwr5cfda22hyz9ajg06uqel3cc5s6c34rd
+        age1dd8ammekey2t9tzvvznwwx9m35q7jyxvzaydwqjawy99hgmdp3ms9556l5

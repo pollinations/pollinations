@@ -271,25 +271,13 @@ def is_safety_checker_enabled() -> bool:
     return _truthy_env(enable_value)
 
 
-def verify_backend_token(
-    x_backend_token: str = Header(None, alias="x-backend-token"),
-    x_enter_token: str = Header(None, alias="x-enter-token"),  # Legacy fallback
-):
-    """Verify backend authentication token.
-    
-    Accepts either x-backend-token (new) or x-enter-token (legacy) header.
-    Validates against PLN_IMAGE_BACKEND_TOKEN or PLN_ENTER_TOKEN env var.
-    """
-    # Get expected token - prefer PLN_IMAGE_BACKEND_TOKEN, fallback to PLN_ENTER_TOKEN
-    expected_token = os.getenv("PLN_IMAGE_BACKEND_TOKEN") or os.getenv("PLN_ENTER_TOKEN")
+def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token")):
+    expected_token = os.getenv("PLN_ENTER_TOKEN")
     if not expected_token:
-        logger.warning("PLN_IMAGE_BACKEND_TOKEN/PLN_ENTER_TOKEN not configured - allowing request")
+        logger.warning("PLN_ENTER_TOKEN not configured - allowing request")
         return True
-    
-    # Accept either header for backward compatibility
-    provided_token = x_backend_token or x_enter_token
-    if provided_token != expected_token:
-        logger.warning("Invalid or missing backend token")
+    if x_enter_token != expected_token:
+        logger.warning("Invalid or missing PLN_ENTER_TOKEN")
         raise HTTPException(status_code=403, detail="Unauthorized")
     return True
 
@@ -323,7 +311,7 @@ def check_nsfw(image_array, safety_checker_adj: float = 0.0):
 
 
 @app.post("/generate")
-def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token)):
+def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     logger.info(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")

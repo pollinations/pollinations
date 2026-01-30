@@ -11,6 +11,7 @@ import { Button } from "../components/button.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Footer } from "../components/footer.tsx";
 import { Header } from "../components/header.tsx";
+import { NewsBanner } from "../components/news-banner.tsx";
 import { PollenBalance } from "../components/pollen-balance.tsx";
 import { Pricing } from "../components/pricing/index.ts";
 import { TierPanel } from "../components/tier-panel.tsx";
@@ -213,6 +214,7 @@ function RouteComponent() {
                         API Reference
                     </Button>
                 </Header>
+                <NewsBanner />
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
                         <h2 className="flex items-center gap-3">

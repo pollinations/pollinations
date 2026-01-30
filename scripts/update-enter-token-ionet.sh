@@ -1,4 +1,13 @@
 #!/bin/bash
+# DEPRECATED: io.net instances now use PLN_IMAGE_BACKEND_TOKEN
+# Use ./rotate-backend-token.sh instead
+#
+# This script is kept for reference only.
+echo "DEPRECATED: io.net instances now use PLN_IMAGE_BACKEND_TOKEN"
+echo "Use ./rotate-backend-token.sh instead"
+exit 1
+
+# OLD SCRIPT BELOW (kept for reference):
 # Update PLN_ENTER_TOKEN on all io.net instances
 # Usage: ./update-enter-token-ionet.sh
 #

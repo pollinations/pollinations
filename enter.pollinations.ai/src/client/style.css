@@ -115,7 +115,7 @@
     }
 }
 
-/* NEW badge glow animation */
+/* NEW badge glow animation (green) */
 @keyframes glow {
     0%, 100% {
         box-shadow: 0 0 4px rgba(34, 197, 94, 0.4);
@@ -123,4 +123,63 @@
     50% {
         box-shadow: 0 0 12px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.4);
     }
+}
+
+/* PAID ONLY badge glow animation (purple) */
+@keyframes glow-purple {
+    0%, 100% {
+        box-shadow: 0 0 4px rgba(192, 132, 252, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 12px rgba(192, 132, 252, 0.8), 0 0 20px rgba(192, 132, 252, 0.4);
+    }
+}
+
+/* Diamond shimmer animation for payment buttons */
+@keyframes shimmer {
+    0% {
+        background-position: -200% center;
+    }
+    100% {
+        background-position: 200% center;
+    }
+}
+
+.btn-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 8s ease-in-out infinite;
+    pointer-events: none;
+    border-radius: inherit;
+}
+
+/* Pulsing emoji animation for toggle buttons */
+@keyframes emoji-pulse {
+    0%, 100% {
+        opacity: 0.4;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.emoji-pulse {
+    filter: grayscale(1) opacity(0.6);
+    animation: emoji-pulse 1.5s ease-in-out infinite;
 }

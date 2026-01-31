@@ -11,6 +11,7 @@ import { Button } from "../components/button.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Footer } from "../components/footer.tsx";
 import { Header } from "../components/header.tsx";
+import { NewsBanner } from "../components/news-banner.tsx";
 import { PollenBalance } from "../components/pollen-balance.tsx";
 import { Pricing } from "../components/pricing/index.ts";
 import { TierPanel } from "../components/tier-panel.tsx";
@@ -213,6 +214,7 @@ function RouteComponent() {
                         API Reference
                     </Button>
                 </Header>
+                <NewsBanner />
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
                         <h2 className="flex items-center gap-3">
@@ -238,41 +240,55 @@ function RouteComponent() {
                                 }`}
                             >
                                 Usage
+                                {activeTab === "balance" && (
+                                    <img
+                                        src="/stats-icon.svg"
+                                        alt="stats"
+                                        className="emoji-pulse ml-1 w-7 h-7 inline-block"
+                                    />
+                                )}
                             </button>
                         </h2>
                         {activeTab === "balance" && (
-                            <div className="flex flex-wrap gap-2">
+                            <div
+                                id="buy-pollen"
+                                className="flex flex-wrap gap-2"
+                            >
                                 <Button
                                     as="button"
                                     color="violet"
                                     weight="light"
                                     onClick={() => handleBuyPollen(5)}
+                                    className="btn-shimmer"
                                 >
-                                    + $5
+                                    💎 $5
                                 </Button>
                                 <Button
                                     as="button"
                                     color="violet"
                                     weight="light"
                                     onClick={() => handleBuyPollen(10)}
+                                    className="btn-shimmer"
                                 >
-                                    + $10
+                                    💎 $10
                                 </Button>
                                 <Button
                                     as="button"
                                     color="violet"
                                     weight="light"
                                     onClick={() => handleBuyPollen(20)}
+                                    className="btn-shimmer"
                                 >
-                                    + $20
+                                    💎 $20
                                 </Button>
                                 <Button
                                     as="button"
                                     color="violet"
                                     weight="light"
                                     onClick={() => handleBuyPollen(50)}
+                                    className="btn-shimmer"
                                 >
-                                    + $50
+                                    💎 $50
                                 </Button>
                             </div>
                         )}
@@ -443,8 +459,8 @@ function RouteComponent() {
                     onCreate={handleCreateApiKey}
                     onDelete={handleDeleteApiKey}
                 />
+                <Pricing packBalance={packBalance} />
                 <FAQ />
-                <Pricing />
                 <Footer />
             </div>
         </div>

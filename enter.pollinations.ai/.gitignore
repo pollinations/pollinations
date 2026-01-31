@@ -8,3 +8,7 @@ dist/
 *.log
 backups/
 prod_data*.sql
+
+# Sensitive data - never commit
+scripts/flagged-users*.csv
+scripts/flagged-users*.md

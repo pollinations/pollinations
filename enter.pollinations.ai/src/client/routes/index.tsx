@@ -459,8 +459,8 @@ function RouteComponent() {
                     onCreate={handleCreateApiKey}
                     onDelete={handleDeleteApiKey}
                 />
-                <FAQ />
                 <Pricing packBalance={packBalance} />
+                <FAQ />
                 <Footer />
             </div>
         </div>

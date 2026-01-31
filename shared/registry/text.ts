@@ -316,6 +316,7 @@ export const TEXT_SERVICES = {
         aliases: ["claude-opus-4.5", "claude-opus"],
         modelId: "claude-opus-4-5-20251101",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -392,6 +393,7 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
         modelId: "gemini-3-pro-preview",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -414,6 +416,7 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-2.5-pro"],
         modelId: "gemini-2.5-pro",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,

@@ -3,9 +3,23 @@ import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { beforeEach, describe, expect, it } from "vitest";
 import { user as userTable } from "@/db/schema/better-auth.ts";
-import { handleScheduled } from "@/scheduled.ts";
 import { atomicDeductUserBalance } from "@/utils/balance-deduction.ts";
 import { test } from "../fixtures.ts";
+
+// Helper to trigger tier refill via admin API
+async function triggerTierRefill() {
+    const response = await SELF.fetch(
+        "https://enter.pollinations.ai/api/admin/trigger-refill",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+                "Content-Type": "application/json",
+            },
+        },
+    );
+    return response.json();
+}
 
 describe("Tier System End-to-End", () => {
     describe("Daily Usage Pattern", () => {
@@ -60,9 +74,8 @@ describe("Tier System End-to-End", () => {
             expect(afterUsage[0]?.tierBalance).toBe(0);
             expect(afterUsage[0]?.packBalance).toBe(40);
 
-            // Run daily cron to refill
-            const controller = {} as ScheduledController;
-            await handleScheduled(controller, env, executionContext);
+            // Trigger tier refill
+            await triggerTierRefill();
 
             // Check balance after refill
             const afterRefill = await db
@@ -121,8 +134,7 @@ describe("Tier System End-to-End", () => {
             }
 
             // Run cron
-            const controller = {} as ScheduledController;
-            await handleScheduled(controller, env, executionContext);
+            await triggerTierRefill();
 
             // Verify each user got correct amount
             for (const user of users) {
@@ -377,8 +389,7 @@ describe("Tier System End-to-End", () => {
             }
 
             // Run daily refill
-            const controller = {} as ScheduledController;
-            await handleScheduled(controller, env, executionContext);
+            await triggerTierRefill();
 
             // Verify correct refills
             const activeUser = await db
@@ -442,8 +453,7 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`);
 
             // Run daily refill
-            const controller = {} as ScheduledController;
-            await handleScheduled(controller, env, executionContext);
+            await triggerTierRefill();
 
             // User should get flower tier amount (10), not seed (3)
             const result = await db

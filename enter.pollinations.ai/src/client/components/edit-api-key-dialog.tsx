@@ -11,7 +11,7 @@ interface ApiKey {
     start?: string | null;
     pollenBalance?: number | null;
     permissions: Record<string, string[]> | null;
-    expiresAt?: Date | null;
+    expiresAt?: string | null;
 }
 
 interface EditApiKeyDialogProps {

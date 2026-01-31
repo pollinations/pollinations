@@ -42,11 +42,11 @@ interface ApiKey {
     id: string;
     name?: string | null;
     start?: string | null;
-    createdAt: Date;
-    lastRequest?: Date | null;
-    expiresAt?: Date | null;
-    permissions: Record<string, string[]> | null;
-    metadata: Record<string, unknown> | null;
+    createdAt: string;
+    lastRequest?: string | null;
+    expiresAt?: string | null;
+    permissions: { [key: string]: string[] } | null;
+    metadata: { [key: string]: unknown } | null;
     pollenBalance?: number | null;
 }
 
@@ -251,6 +251,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         }
     };
 
+    const sortedKeys = [...apiKeys].sort(
+        (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
     return (
         <>
             <div className="flex flex-col gap-2">
@@ -265,37 +270,32 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 </div>
                 {apiKeys.length ? (
                     <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-300 overflow-hidden">
-                        <div
-                            className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-                            style={{ overflowY: "clip" }}
-                        >
-                            <div className="grid grid-cols-[auto_auto_auto_auto_auto_auto_auto] gap-x-3 gap-y-2 text-sm min-w-max">
-                                <span className="font-bold text-pink-400 text-sm">
-                                    Type
-                                </span>
-                                <span className="font-bold text-pink-400 text-sm">
-                                    Name
-                                </span>
-                                <span className="font-bold text-pink-400 text-sm">
-                                    Key
-                                </span>
-                                <span className="font-bold text-pink-400 text-sm">
-                                    Created / Used
-                                </span>
-                                <span className="font-bold text-pink-400 text-sm">
-                                    Expiry / Budget
-                                </span>
-                                <span className="font-bold text-pink-400 text-sm">
-                                    Models
-                                </span>
-                                <span></span>
-                                {[...apiKeys]
-                                    .sort(
-                                        (a, b) =>
-                                            new Date(b.createdAt).getTime() -
-                                            new Date(a.createdAt).getTime(),
-                                    )
-                                    .map((apiKey) => {
+                        <div className="flex">
+                            {/* Scrollable content area */}
+                            <div
+                                className="flex-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                                style={{ overflowY: "clip" }}
+                            >
+                                <div className="grid grid-cols-[auto_auto_auto_auto_auto_auto] gap-x-3 gap-y-2 text-sm min-w-max">
+                                    <span className="font-bold text-pink-400 text-sm">
+                                        Type
+                                    </span>
+                                    <span className="font-bold text-pink-400 text-sm">
+                                        Name
+                                    </span>
+                                    <span className="font-bold text-pink-400 text-sm">
+                                        Key
+                                    </span>
+                                    <span className="font-bold text-pink-400 text-sm">
+                                        Created / Used
+                                    </span>
+                                    <span className="font-bold text-pink-400 text-sm">
+                                        Expiry / Budget
+                                    </span>
+                                    <span className="font-bold text-pink-400 text-sm">
+                                        Models
+                                    </span>
+                                    {sortedKeys.map((apiKey) => {
                                         const keyType = apiKey.metadata?.[
                                             "keyType"
                                         ] as string | undefined;
@@ -346,7 +346,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                         />
                                                     ) : (
                                                         <span className="font-mono text-xs text-gray-500">
-                                                            {apiKey.start}...
+                                                            {apiKey.start}
+                                                            ...
                                                         </span>
                                                     )}
                                                 </Cell>
@@ -425,6 +426,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             </Fragment>
                                         );
                                     })}
+                                </div>
                             </div>
                         </div>
                         {apiKeys.some(

@@ -15,6 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| Moltbot With Pollinations.ai provider | Multi-channel AI assistant for Telegram and WhatsApp using Pollinations AI. | @its3li |
 | [Pollinations Provider for Vercel AI SDK](https://ai-sdk-pollinations-example.vercel.app) | Vercel AI SDK provider for Pollinations: text, image, and speech generation. | @artsiombarouski |
 | [Fable Friend](https://huggingface.co/spaces/Shreemahor/Fable-Friend) | Interactive AI story adventure with selectable role, genre, and image style. | @Shreemahor |
 | [PolliDev](https://fabioarieira.com/pollidev/) | Developer-focused tool for managing generative image assets and prompts. | @FabioArieiraBaia |
@@ -24,7 +25,6 @@
 | [SteamKit](https://steamkit.dev/) | AI toolkit for Steam developers to generate marketing and store page assets. | @zouspants123321 |
 | [CHATTY AI](https://ai.studio/apps/drive/1LrJOAZdc-qwB__D736EjWboWs4PPrjYK) | Enhance and update CHATTY AI web app to work seamlessly on Free Tier. | @tefa2007h-dev |
 | [Presintation web site](https://astro-prezintatsiya.vercel.app/) | AI-powered web app that creates professional presentations in seconds. | @cyberuz001 |
-| [Resonance](https://resonanceai.netlify.app) | Mobile-first image generator with many styles and features (Z Image Turbo, Flux) | @Bakhshi7889 |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
@@ -42,16 +42,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-01-30** – **💎 Paid-Only Models** `claude-large`, `gemini-large`, `veo`, `seedream-pro`, and `nanobanana-pro` will require purchased pollen. Free credits work for all other models.
+- **2026-01-30** – **🆕 Kimi K2.5 Thinking** New open-source reasoning model rivaling Claude Opus at ~1/8th the cost.
+- **2026-01-30** – **💳 New Payment Methods** PayPal, Apple Pay, and Google Pay now accepted via Stripe.
+- **2026-01-26** – **🚀 Alibaba Wan 2.6** Generate videos from images with audio support using the new `wan` model. [API Docs](https://enter.pollinations.ai/api/docs)
+- **2026-01-26** – **🎨 Klein Large (9B)** Experience higher quality image generation and editing with the new `klein-large` model.
+- **2026-01-26** – **🛠️ Vercel AI SDK** Build apps easily with the new official Pollinations provider for Vercel AI SDK.
+- **2026-01-26** – **🤖 Gemini 2.5 Pro** Access Google's latest `gemini-2.5-pro` model for advanced text generation tasks.
 - **2026-01-19** – **🚀 New Model: NomNom** Added `nomnom` (alias `gemini-scrape`) for web research, scraping, and crawling capabilities. [API Docs](https://enter.pollinations.ai/api/docs)
 - **2026-01-19** – **🎨 Klein Image Model** Deployed FLUX.2 `klein` model for faster text-to-image and precise image editing. [Try it](https://hello.pollinations.ai)
 - **2026-01-19** – **🎵 Audio Generation** Text-to-speech with voice selection is now available directly on the Play page.
-- **2026-01-19** – **🔑 Bring Your Own Key** Connect your personal API key to [chat.pollinations.ai](https://chat.pollinations.ai) for custom usage limits and billing.
-- **2026-01-12** – **🚀 New Models** Added `glm` (GLM-4.7), `minimax` (MiniMax-M2.1), and Perplexity with citations. Check the [API Docs](https://enter.pollinations.ai/api/docs).
-- **2026-01-12** – **🎁 Free Tier Upgrades** Active users are now automatically upgraded to the Seed tier ($3/day) based on activity.
-- **2026-01-12** – **📱 New AI Apps** Try **Study Buzz** (study tools), **Onyx** (noir storyboards), and **Player or AI** (Roblox game).
-- **2026-01-12** – **🎥 Video Playback** Video generations now render with native players and improved tooltips.
-- **2026-01-05** – **🎵 React Audio Hook** New `usePollinationsAudio` hook for adding AI voice to your apps. [Docs](https://react-hooks.pollinations.ai)
-- **2026-01-05** – **🤖 Gemini Agent Tools** Enable `google_search`, `code_execution`, and `url_context` on Gemini models. [API Docs](https://enter.pollinations.ai/api/docs)
 ---
 
 ## 🌟 Introduction

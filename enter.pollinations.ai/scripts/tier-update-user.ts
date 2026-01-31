@@ -1,20 +1,21 @@
 /**
  * User Tier Update Script
  *
- * Updates a user's Polar subscription tier. D1 tier is updated by Polar webhook.
+ * Updates a user's tier directly in D1 database.
  * Used by GitHub Actions when app submissions are approved or spore→seed upgrades.
  *
  * Usage:
  *   npx tsx scripts/tier-update-user.ts update-tier --github-username "john" --tier flower --env production
  *   npx tsx scripts/tier-update-user.ts check-user --github-username "john" --env production
+ *   npx tsx scripts/tier-update-user.ts verify-tier --github-username "john" --tier flower --env production
  *
  * Environment variables:
- *   POLAR_ACCESS_TOKEN - Required for Polar subscription updates
+ *   CLOUDFLARE_API_TOKEN - Required for D1 access via wrangler
+ *   CLOUDFLARE_ACCOUNT_ID - Required for D1 access via wrangler
  */
 
-import { command, run, string, boolean } from "@drizzle-team/brocli";
 import { execSync } from "node:child_process";
-import { Polar } from "@polar-sh/sdk";
+import { boolean, command, run, string } from "@drizzle-team/brocli";
 
 type TierName = "spore" | "seed" | "flower" | "nectar" | "router";
 type Environment = "staging" | "production";
@@ -91,97 +92,32 @@ function getD1User(env: Environment, githubUsername: string): D1User | null {
     }
 }
 
-// Production tier product IDs (must match manage-polar.ts)
-const TIER_PRODUCT_IDS = {
-    production: {
-        spore: "01a31c1a-7af7-4958-9b73-c10e2fac5f70",
-        seed: "fe32ee28-c7c4-4e7a-87fa-6ffc062e3658",
-        flower: "dfb4c4f6-2004-4205-a358-b1f7bb3b310e",
-        nectar: "066f91a4-8ed1-4329-b5f7-3f71e992ed28",
-        router: "0286ea62-540f-4b19-954f-b8edb9095c43",
-    },
-    staging: {
-        spore: "19fa1660-a90c-453d-8132-4d228cc7db39",
-        seed: "c6f94c1b-c119-4e59-9f18-59391c8afee3",
-        flower: "18bdd5c4-dcb3-4a15-8ca6-1c0b45f76b84",
-        nectar: "a438764a-c486-4ff4-8f85-e66199c6b26f",
-        router: "9256189e-ad01-4608-8102-4ebfc4b506e0",
-    },
-} as const;
+// Tier pollen amounts (must match tier-config.ts)
+const TIER_POLLEN: Record<TierName, number> = {
+    spore: 1,
+    seed: 3,
+    flower: 10,
+    nectar: 20,
+    router: 500,
+};
 
 /**
- * Update Polar subscription for a user using SDK directly.
- * Returns { success, error?, polarTier? }
+ * Update tier directly in D1 database.
+ * Also sets tier_balance to the new tier's pollen amount.
  */
-async function updatePolarSubscription(
+function updateD1Tier(
     env: Environment,
-    email: string,
+    userId: string,
     tier: TierName,
-): Promise<{ success: boolean; error?: string; polarTier?: string }> {
-    if (!process.env.POLAR_ACCESS_TOKEN) {
-        return { success: false, error: "POLAR_ACCESS_TOKEN not set" };
-    }
-
-    const polar = new Polar({
-        accessToken: process.env.POLAR_ACCESS_TOKEN,
-        server: env === "production" ? "production" : "sandbox",
-    });
-
-    const targetProductId = TIER_PRODUCT_IDS[env][tier];
+): { success: boolean; error?: string } {
+    const tierBalance = TIER_POLLEN[tier];
+    const sql = `UPDATE user SET tier = '${tier}', tier_balance = ${tierBalance} WHERE id = '${userId}';`;
 
     try {
-        // Find customer by email
-        const customerResponse = await polar.customers.list({
-            email: email.toLowerCase(),
-            limit: 1,
-        });
-        const customer = customerResponse.result.items[0];
-        if (!customer) {
-            return {
-                success: false,
-                error: `No Polar customer found for ${email}`,
-            };
-        }
-
-        // Find active subscription
-        const subsResponse = await polar.subscriptions.list({
-            customerId: customer.id,
-            active: true,
-            limit: 1,
-        });
-        const subscription = subsResponse.result.items[0];
-
-        if (subscription) {
-            // Already on target tier?
-            if (subscription.productId === targetProductId) {
-                console.log(`   Polar: Already on ${tier} tier`);
-                return { success: true, polarTier: tier };
-            }
-
-            // Update existing subscription
-            console.log(`   Polar: Updating subscription to ${tier}...`);
-            await polar.subscriptions.update({
-                id: subscription.id,
-                subscriptionUpdate: {
-                    productId: targetProductId,
-                    prorationBehavior: "prorate",
-                },
-            });
-            console.log(`   ✅ Polar subscription updated to ${tier}`);
-            return { success: true, polarTier: tier };
-        } else {
-            // No subscription - create one
-            console.log(`   Polar: Creating new ${tier} subscription...`);
-            await polar.subscriptions.create({
-                productId: targetProductId,
-                customerId: customer.id,
-            });
-            console.log(`   ✅ Polar subscription created: ${tier}`);
-            return { success: true, polarTier: tier };
-        }
+        queryD1(env, sql);
+        return { success: true };
     } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
-        console.error(`   ❌ Polar update failed: ${msg}`);
         return { success: false, error: msg };
     }
 }
@@ -247,24 +183,19 @@ const updateTierCommand = command({
             console.log(`\n⬆️  Upgrading: ${currentTier} → ${targetTier}`);
         }
 
-        // Update Polar subscription only (D1 tier is updated by Polar webhook)
+        // Update tier directly in D1
         if (!opts.dryRun) {
-            console.log(`\n🌸 Updating Polar subscription...`);
-            const polarResult = await updatePolarSubscription(
-                env,
-                user.email,
-                targetTier,
-            );
-            if (!polarResult.success) {
+            console.log(`\n🌸 Updating D1 tier...`);
+            const result = updateD1Tier(env, user.id, targetTier);
+            if (!result.success) {
                 console.error(
-                    `❌ Polar update failed: ${polarResult.error || "unknown error"}`,
+                    `❌ D1 update failed: ${result.error || "unknown error"}`,
                 );
                 process.exit(1);
             }
+            console.log(`   ✅ D1 tier updated to ${targetTier}`);
         } else {
-            console.log(
-                `📝 Would update Polar subscription to '${targetTier}'`,
-            );
+            console.log(`📝 Would update D1 tier to '${targetTier}'`);
         }
 
         console.log(`\n✅ Tier update complete!`);
@@ -296,66 +227,10 @@ const checkUserCommand = command({
     },
 });
 
-/**
- * Get Polar subscription tier for a user by email using SDK directly.
- * Returns the tier name or null if no active subscription.
- */
-async function getPolarTier(
-    env: Environment,
-    email: string,
-): Promise<string | null> {
-    if (!process.env.POLAR_ACCESS_TOKEN) {
-        console.warn("⚠️  POLAR_ACCESS_TOKEN not set - cannot check Polar tier");
-        return null;
-    }
-
-    const polar = new Polar({
-        accessToken: process.env.POLAR_ACCESS_TOKEN,
-        server: env === "production" ? "production" : "sandbox",
-    });
-
-    try {
-        // Find customer by email
-        const customerResponse = await polar.customers.list({
-            email: email.toLowerCase(),
-            limit: 1,
-        });
-        const customer = customerResponse.result.items[0];
-        if (!customer) {
-            return null;
-        }
-
-        // Find active subscription
-        const subsResponse = await polar.subscriptions.list({
-            customerId: customer.id,
-            active: true,
-            limit: 1,
-        });
-        const subscription = subsResponse.result.items[0];
-
-        if (!subscription) {
-            return null;
-        }
-
-        // Map product ID back to tier name
-        const productId = subscription.productId;
-        const tierMap = TIER_PRODUCT_IDS[env];
-        for (const [tierName, id] of Object.entries(tierMap)) {
-            if (id === productId) {
-                return tierName;
-            }
-        }
-
-        return null;
-    } catch {
-        return null;
-    }
-}
-
-// Verify tier command - checks both D1 and Polar match the expected tier
+// Verify tier command - checks D1 tier matches expected
 const verifyTierCommand = command({
     name: "verify-tier",
-    desc: "Verify a user's tier matches in both D1 and Polar",
+    desc: "Verify a user's tier in D1 matches expected value",
     options: {
         githubUsername: string().required().desc("GitHub username to verify"),
         tier: string()
@@ -371,7 +246,7 @@ const verifyTierCommand = command({
         console.log(`\n🔍 Verifying tier for: ${opts.githubUsername}`);
         console.log(`   Expected tier: ${expectedTier}`);
 
-        // Step 1: Check D1
+        // Check D1
         const user = getD1User(env, opts.githubUsername);
         if (!user) {
             console.error(`❌ User not found in D1 database`);
@@ -383,30 +258,20 @@ const verifyTierCommand = command({
         const d1Tier = user.tier || "none";
         console.log(`   D1 tier: ${d1Tier}`);
 
-        // Step 2: Check Polar
-        const polarTier = await getPolarTier(env, user.email);
-        console.log(`   Polar tier: ${polarTier || "unknown"}`);
-
-        // Step 3: Verify both match expected
+        // Verify D1 matches expected
         const d1Match = d1Tier === expectedTier;
-        const polarMatch = polarTier === expectedTier || polarTier === null; // Allow null if Polar not set up
 
-        if (d1Match && polarMatch) {
-            console.log(
-                `\n✅ VERIFIED: Tier is ${expectedTier} in both systems`,
-            );
+        if (d1Match) {
+            console.log(`\n✅ VERIFIED: Tier is ${expectedTier}`);
             console.log("VERIFIED=true");
             console.log(`d1_tier=${d1Tier}`);
-            console.log(`polar_tier=${polarTier || "not_checked"}`);
             process.exit(0);
         } else {
-            console.error(`\n❌ MISMATCH: Expected ${expectedTier}`);
+            console.error(
+                `\n❌ MISMATCH: Expected ${expectedTier}, got ${d1Tier}`,
+            );
             console.log("VERIFIED=false");
             console.log(`d1_tier=${d1Tier}`);
-            console.log(`polar_tier=${polarTier || "unknown"}`);
-            if (!d1Match) console.error(`   D1 has: ${d1Tier}`);
-            if (!polarMatch && polarTier)
-                console.error(`   Polar has: ${polarTier}`);
             process.exit(1);
         }
     },

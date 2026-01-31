@@ -87,3 +87,11 @@ export const getImageModelId = (modelName: string): string | undefined => {
     const service = getServiceDefinition(modelName as ServiceId);
     return service?.modelId as string | undefined;
 };
+
+/**
+ * Check if a model requires paid balance only (no tier balance)
+ */
+export const isPaidOnly = (modelName: string): boolean => {
+    const service = getServiceDefinition(modelName as ServiceId);
+    return service?.paidOnly === true;
+};

@@ -1,22 +1,73 @@
 import type { FC } from "react";
+import { getTierEmoji } from "@/tier-config.ts";
+import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 
 type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
     cryptoBalance: number;
+    tier?: string;
+};
+
+type GaugeSegmentProps = {
+    percentage: number;
+    value: number;
+    label: string;
+    color: "purple" | "teal";
+    title: string;
+    position: "left" | "right";
+    offset?: number;
+};
+
+const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
+    percentage,
+    value,
+    label,
+    color,
+    title,
+    position,
+    offset = 0,
+}) => {
+    const bgColor = color === "purple" ? "bg-purple-200" : "bg-teal-200";
+    const textColor = color === "purple" ? "text-purple-900" : "text-gray-900";
+
+    const style =
+        position === "left"
+            ? { width: `${percentage}%` }
+            : { left: `${offset}%`, width: `${percentage}%` };
+
+    return (
+        <div
+            className={`absolute inset-y-0 ${bgColor} transition-all duration-500 ease-out cursor-help`}
+            style={style}
+            title={title}
+        >
+            {percentage > 15 && (
+                <div className="absolute inset-0 flex items-center justify-center gap-1">
+                    <span className={`${textColor} font-bold text-sm`}>
+                        {label} {value.toFixed(1)}
+                    </span>
+                </div>
+            )}
+        </div>
+    );
 };
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
     cryptoBalance,
+    tier = "spore",
 }) => {
+    const tierEmoji = getTierEmoji(tier);
     const paidBalance = packBalance + cryptoBalance;
     const totalPollen = Math.max(0, tierBalance + paidBalance);
-    const freePercentage =
-        totalPollen > 0 ? (tierBalance / totalPollen) * 100 : 0;
-    const paidPercentage =
-        totalPollen > 0 ? (paidBalance / totalPollen) * 100 : 0;
+    const freePercentage = calculatePercentage(tierBalance, totalPollen);
+    const paidPercentage = calculatePercentage(paidBalance, totalPollen);
+
+    function calculatePercentage(value: number, total: number): number {
+        return total > 0 ? (value / total) * 100 : 0;
+    }
 
     return (
         <div className="bg-violet-50/30 rounded-2xl p-4 sm:p-8 border border-violet-300">
@@ -31,59 +82,33 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     <div className="w-full max-w-[540px]">
                         <div className="relative h-8 bg-gray-200 rounded-full overflow-hidden border border-purple-400">
                             {/* Paid Pollen - Soft purple for paid (pack + crypto) */}
-                            <div
-                                className="absolute inset-y-0 left-0 bg-purple-200 transition-all duration-500 ease-out"
-                                style={{ width: `${paidPercentage}%` }}
-                            >
-                                {/* Paid label inside */}
-                                {paidPercentage > 15 && (
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <span className="text-purple-900 font-bold text-sm">
-                                            💎 {paidBalance.toFixed(1)}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
+                            <PollenGaugeSegment
+                                percentage={paidPercentage}
+                                value={paidBalance}
+                                label="💎"
+                                color="purple"
+                                title={`💎 Purchased: ${paidBalance.toFixed(2)} pollen\nFrom packs you've bought\nRequired for 💎 Paid Only models; used after daily grants for others`}
+                                position="left"
+                            />
                             {/* Free Pollen - Soft teal for free */}
-                            <div
-                                className="absolute inset-y-0 bg-teal-200 transition-all duration-500 ease-out"
-                                style={{
-                                    left: `${paidPercentage}%`,
-                                    width: `${freePercentage}%`,
-                                }}
-                            >
-                                {/* Free label inside */}
-                                {freePercentage > 15 && (
-                                    <div className="absolute inset-0 flex items-center justify-center gap-1">
-                                        <span className="text-gray-900 font-extrabold text-sm">
-                                            FREE
-                                        </span>
-                                        <span className="text-gray-900 font-bold text-sm">
-                                            {tierBalance.toFixed(1)}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
+                            <PollenGaugeSegment
+                                percentage={freePercentage}
+                                value={tierBalance}
+                                label={tierEmoji}
+                                color="teal"
+                                title={`${tierEmoji} Daily: ${tierBalance.toFixed(2)} pollen\nFree pollen from your tier, refills at 00:00 UTC\nUsed first, except for 💎 Paid Only models`}
+                                position="right"
+                                offset={paidPercentage}
+                            />
                         </div>
                     </div>
                 </div>
             </div>
             {/* Purchase info */}
-            <div className="bg-gradient-to-r from-violet-100 to-purple-100 rounded-xl p-4 border border-violet-300 mt-4">
+            <div className="bg-gradient-to-r from-violet-100/40 to-purple-100/40 rounded-xl p-4 border border-violet-200 mt-4">
                 <p className="text-sm font-medium text-violet-900">
-                    🎁 During beta, we double your pollen with every purchase!
-                </p>
-                <p className="text-sm font-medium text-violet-900 mt-2">
-                    ⏳ After a purchase, please wait 1-2 minutes for your
-                    balance to update.{" "}
-                    <a
-                        href="https://github.com/pollinations/pollinations/issues/new?template=balance-problem.yml"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline hover:text-violet-700"
-                    >
-                        Still missing?
-                    </a>
+                    🎁 During beta, we double your pollen! ($5 → 10💎, $10 →
+                    20💎, $20 → 40💎, $50 → 100💎)
                 </p>
                 <p className="text-sm font-medium text-violet-900 mt-2">
                     💳 Want to pay with a different method?{" "}
@@ -97,6 +122,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     </a>
                 </p>
             </div>
+            <PaymentTrustBadge />
         </div>
     );
 };

@@ -21,20 +21,6 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
-    "turbo": {
-        aliases: [],
-        modelId: "turbo",
-        provider: "scaleway",
-        cost: [
-            {
-                date: COST_START_DATE,
-                completionImageTokens: 0.0003,
-            },
-        ],
-        description: "SDXL Turbo - Single-step real-time generation",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-    },
     "nanobanana": {
         aliases: [],
         modelId: "nanobanana",

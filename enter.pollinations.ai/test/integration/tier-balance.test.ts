@@ -4,7 +4,6 @@ import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 import worker from "@/index.ts";
-import { handleScheduled } from "@/scheduled.ts";
 import { getTierPollen, TIER_POLLEN, tierNames } from "@/tier-config.ts";
 import {
     atomicDeductPaidBalance,
@@ -12,6 +11,21 @@ import {
     getUserBalances,
 } from "@/utils/balance-deduction.ts";
 import { test } from "../fixtures.ts";
+
+// Helper to trigger tier refill via admin API
+async function triggerTierRefill() {
+    const response = await SELF.fetch(
+        "https://enter.pollinations.ai/api/admin/trigger-refill",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+                "Content-Type": "application/json",
+            },
+        },
+    );
+    return response.json();
+}
 
 describe("Tier Balance Management", () => {
     describe("Daily Cron Refill", () => {
@@ -53,8 +67,7 @@ describe("Tier Balance Management", () => {
             }
 
             // Execute the scheduled handler
-            const controller = {} as ScheduledController;
-            await handleScheduled(controller, env, executionContext);
+            await triggerTierRefill();
 
             // Verify: Check that all users have their tier balance refilled
             const users = await db
@@ -125,8 +138,7 @@ describe("Tier Balance Management", () => {
                 });
 
             // Execute the scheduled handler
-            const controller = {} as ScheduledController;
-            await handleScheduled(controller, env, executionContext);
+            await triggerTierRefill();
 
             // Check that only tier balance was updated
             const user = await db

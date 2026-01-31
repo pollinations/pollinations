@@ -18,7 +18,7 @@ npx tsx scripts/abuse-detection/analyze-abuse.ts export-csv --env production
 npx tsx scripts/abuse-detection/analyze-abuse.ts export-csv --env production --all
 ```
 
-**Output**: `flagged-users.csv` + `flagged-users-summary.md`
+**Output**: `flagged-users-actions.csv` (ops) + `flagged-users-debug.csv` (engineering) + `flagged-users-summary.md`
 
 ---
 
@@ -54,7 +54,7 @@ flowchart TB
         RISKBAND --> |enforce| ENFORCE[🔴 Enforce<br/>Auto-action]
         RISKBAND --> |review| REVIEW[🟡 Review<br/>Manual check]
         RISKBAND --> |watch| WATCH[🟢 Watch<br/>Monitor only]
-        ENFORCE --> CSV[flagged-users.csv]
+        ENFORCE --> CSV[abuse-actions.csv<br/>abuse-debug.csv]
         REVIEW --> CSV
         WATCH --> CSV
         CSV --> SUMMARY[flagged-users-summary.md]
@@ -261,23 +261,30 @@ flowchart TB
         IDSCORE[Identity Score] --> COMBINED["combinedScore = clamp(<br/>identityScore + behaviorScore, 0, 100)"]
         BSCORE[Behavior Score] --> COMBINED
         
-        COMBINED --> HARD{Hard identity signal?<br/>disposable OR dup≥3}
-        HARD --> |Yes| ENFORCE[🔴 ENFORCE]
+        COMBINED --> ALLOWLIST{Allowlisted domain?<br/>ProtonMail, Tutanota, etc.}
+        ALLOWLIST --> |Yes| REVIEW_ALLOW[🟡 REVIEW<br/>Never auto-enforce]
         
-        HARD --> |No| BEHAVIOR{score ≥ 70 AND<br/>behaviorScore ≥ 30?}
-        BEHAVIOR --> |Yes| ENFORCE
+        ALLOWLIST --> |No| HARD{Hard identity signal?<br/>disposable OR dup≥3}
+        HARD --> |Yes| BEHAV_CHECK{behaviorScore ≥ 30?}
+        BEHAV_CHECK --> |Yes| ENFORCE[🔴 ENFORCE]
+        BEHAV_CHECK --> |No| REVIEW_HARD[🟡 REVIEW]
         
-        BEHAVIOR --> |No| MID{score ≥ 40 OR<br/>(signals ≥ 2 AND behavior ≥ 30)?}
+        HARD --> |No| HIGHSCORE{score ≥ 70 AND<br/>behaviorScore ≥ 30?}
+        HIGHSCORE --> |Yes| ENFORCE
+        
+        HIGHSCORE --> |No| MID{Hard signal OR score ≥ 40 OR<br/>(signals ≥ 2 AND behavior ≥ 30)?}
         MID --> |Yes| REVIEW[🟡 REVIEW]
         
         MID --> |No| WATCH[🟢 WATCH]
     end
 ```
 
+**Privacy Email Allowlist**: ProtonMail, Tutanota, Mailfence, Disroot, Riseup, Posteo, iCloud Private Relay, etc. These domains are never auto-enforced.
+
 | Band | Criteria | Action |
 |------|----------|--------|
-| `enforce` | Hard signals OR combined ≥70 + behavior confirmation | Auto-downgrade |
-| `review` | Combined ≥40 OR 2+ signals with behavior | Manual review |
+| `enforce` | (Hard signals + behavior ≥30) OR (combined ≥70 + behavior ≥30), NOT allowlisted | Auto-downgrade |
+| `review` | Allowlisted with flags, OR hard signal alone, OR combined ≥40, OR 2+ signals | Manual review |
 | `watch` | Low score, single weak signal | Monitor only |
 
 ---

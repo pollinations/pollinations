@@ -26,31 +26,31 @@ import { boolean, command, run, string } from "@drizzle-team/brocli";
  * Automatically loads TINYBIRD_INGEST_TOKEN if not already set.
  */
 function loadDevVars(): void {
-	const devVarsPath = resolve(import.meta.dirname, "../../.dev.vars");
-	if (!existsSync(devVarsPath)) {
-		return;
-	}
+    const devVarsPath = resolve(import.meta.dirname, "../../.dev.vars");
+    if (!existsSync(devVarsPath)) {
+        return;
+    }
 
-	try {
-		const content = readFileSync(devVarsPath, "utf-8");
-		for (const line of content.split("\n")) {
-			const trimmed = line.trim();
-			if (!trimmed || trimmed.startsWith("#")) continue;
+    try {
+        const content = readFileSync(devVarsPath, "utf-8");
+        for (const line of content.split("\n")) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith("#")) continue;
 
-			const eqIndex = trimmed.indexOf("=");
-			if (eqIndex === -1) continue;
+            const eqIndex = trimmed.indexOf("=");
+            if (eqIndex === -1) continue;
 
-			const key = trimmed.slice(0, eqIndex);
-			const value = trimmed.slice(eqIndex + 1);
+            const key = trimmed.slice(0, eqIndex);
+            const value = trimmed.slice(eqIndex + 1);
 
-			// Only set if not already in environment
-			if (!process.env[key]) {
-				process.env[key] = value;
-			}
-		}
-	} catch {
-		// Silently ignore parse errors
-	}
+            // Only set if not already in environment
+            if (!process.env[key]) {
+                process.env[key] = value;
+            }
+        }
+    } catch {
+        // Silently ignore parse errors
+    }
 }
 
 // Load .dev.vars before anything else
@@ -118,7 +118,14 @@ function detectAbuse(email: string): AbuseDetectionResult {
     let confidence: AbuseConfidence = "none";
     if (disposable) confidence = "high";
     else if (githubNoreply) confidence = "medium";
-    return { confidence, signals, emailNormalized, emailBase, isDisposableDomain: disposable, isGitHubNoreply: githubNoreply };
+    return {
+        confidence,
+        signals,
+        emailNormalized,
+        emailBase,
+        isDisposableDomain: disposable,
+        isGitHubNoreply: githubNoreply,
+    };
 }
 
 function findDuplicatesByNormalizedEmail(
@@ -159,15 +166,55 @@ function findSimilarUsernames(
     if (!targetBase || targetBase.length < minBaseLength) return [];
     return allUsers
         .filter((u) => u.id !== excludeUserId && u.github_username)
-        .map((u) => ({ id: u.id, github_username: u.github_username as string, usernameBase: extractUsernameBase(u.github_username as string) }))
+        .map((u) => ({
+            id: u.id,
+            github_username: u.github_username as string,
+            usernameBase: extractUsernameBase(u.github_username as string),
+        }))
         .filter((u) => u.usernameBase === targetBase);
 }
 
 const COMMON_LOCAL_PARTS = new Set([
-    "admin", "support", "hello", "info", "contact", "sales", "noreply", "no-reply", "team", "mail", "me", "test", "dev",
-    "webmaster", "postmaster", "hostmaster", "abuse", "security", "billing", "help", "office", "marketing", "hr", "jobs",
-    "careers", "press", "media", "news", "newsletter", "subscribe", "unsubscribe", "feedback", "enquiry", "inquiry",
-    "user", "users", "account", "accounts", "service", "services",
+    "admin",
+    "support",
+    "hello",
+    "info",
+    "contact",
+    "sales",
+    "noreply",
+    "no-reply",
+    "team",
+    "mail",
+    "me",
+    "test",
+    "dev",
+    "webmaster",
+    "postmaster",
+    "hostmaster",
+    "abuse",
+    "security",
+    "billing",
+    "help",
+    "office",
+    "marketing",
+    "hr",
+    "jobs",
+    "careers",
+    "press",
+    "media",
+    "news",
+    "newsletter",
+    "subscribe",
+    "unsubscribe",
+    "feedback",
+    "enquiry",
+    "inquiry",
+    "user",
+    "users",
+    "account",
+    "accounts",
+    "service",
+    "services",
 ]);
 
 function isCommonLocalPart(localPart: string): boolean {
@@ -197,10 +244,15 @@ function findCrossDomainDuplicates(
 ): Array<{ id: string; email: string; localBase: string }> {
     const targetLocalBase = extractEmailLocalBase(targetEmail);
     if (!targetLocalBase || targetLocalBase.length < minBaseLength) return [];
-    if (requireHighEntropy && !isHighEntropyIdentifier(targetLocalBase)) return [];
+    if (requireHighEntropy && !isHighEntropyIdentifier(targetLocalBase))
+        return [];
     return allUsers
         .filter((u) => u.id !== excludeUserId)
-        .map((u) => ({ id: u.id, email: u.email, localBase: extractEmailLocalBase(u.email) }))
+        .map((u) => ({
+            id: u.id,
+            email: u.email,
+            localBase: extractEmailLocalBase(u.email),
+        }))
         .filter((u) => u.localBase === targetLocalBase);
 }
 
@@ -223,11 +275,17 @@ function findBurstRegistrations(
     for (let i = 0; i < sorted.length; i++) {
         const windowStart = sorted[i].created_at;
         const windowEnd = windowStart + windowSeconds;
-        const usersInWindow = sorted.filter((u) => u.created_at >= windowStart && u.created_at < windowEnd);
+        const usersInWindow = sorted.filter(
+            (u) => u.created_at >= windowStart && u.created_at < windowEnd,
+        );
         if (usersInWindow.length >= minClusterSize) {
             const clusterKey = String(Math.floor(windowStart / windowSeconds));
             if (!clusters.has(clusterKey)) {
-                clusters.set(clusterKey, { windowStart, windowEnd, users: usersInWindow });
+                clusters.set(clusterKey, {
+                    windowStart,
+                    windowEnd,
+                    users: usersInWindow,
+                });
             }
         }
     }
@@ -240,7 +298,11 @@ function isInBurstCluster(
 ): { inBurst: boolean; clusterSize: number; clusterKey: string | null } {
     for (const [key, cluster] of burstClusters) {
         if (cluster.users.some((u) => u.id === userId)) {
-            return { inBurst: true, clusterSize: cluster.users.length, clusterKey: key };
+            return {
+                inBurst: true,
+                clusterSize: cluster.users.length,
+                clusterKey: key,
+            };
         }
     }
     return { inBurst: false, clusterSize: 0, clusterKey: null };
@@ -263,11 +325,15 @@ function subClusterByTime(
     minClusterSize: number,
 ): Array<Array<{ id: string; github_id: number; created_at: number }>> {
     const sorted = [...users].sort((a, b) => a.created_at - b.created_at);
-    const clusters: Array<Array<{ id: string; github_id: number; created_at: number }>> = [];
+    const clusters: Array<
+        Array<{ id: string; github_id: number; created_at: number }>
+    > = [];
     let clusterStart = 0;
     for (let i = 1; i <= sorted.length; i++) {
         const isEnd = i === sorted.length;
-        const timeGap = isEnd ? Infinity : sorted[i].created_at - sorted[i - 1].created_at;
+        const timeGap = isEnd
+            ? Infinity
+            : sorted[i].created_at - sorted[i - 1].created_at;
         if (timeGap > timeWindowSeconds || isEnd) {
             const cluster = sorted.slice(clusterStart, i);
             if (cluster.length >= minClusterSize) clusters.push(cluster);
@@ -278,24 +344,35 @@ function subClusterByTime(
 }
 
 function findGitHubIdClusters(
-    allUsers: Array<{ id: string; github_id: number | null; created_at: number }>,
+    allUsers: Array<{
+        id: string;
+        github_id: number | null;
+        created_at: number;
+    }>,
     maxRange = GITHUB_ID_CLUSTER_RANGE,
     minClusterSize = GITHUB_ID_MIN_CLUSTER_SIZE,
     timeWindowSeconds = GITHUB_ID_TIME_WINDOW_SECONDS,
 ): Map<string, GitHubIdCluster> {
     const withGitHubId = allUsers.filter(
-        (u): u is { id: string; github_id: number; created_at: number } => u.github_id !== null && u.created_at !== undefined,
+        (u): u is { id: string; github_id: number; created_at: number } =>
+            u.github_id !== null && u.created_at !== undefined,
     );
     const sorted = [...withGitHubId].sort((a, b) => a.github_id - b.github_id);
     const clusters = new Map<string, GitHubIdCluster>();
     let clusterStart = 0;
     for (let i = 1; i <= sorted.length; i++) {
         const isEnd = i === sorted.length;
-        const gap = isEnd ? Infinity : sorted[i].github_id - sorted[i - 1].github_id;
+        const gap = isEnd
+            ? Infinity
+            : sorted[i].github_id - sorted[i - 1].github_id;
         if (gap > maxRange || isEnd) {
             const idClusterUsers = sorted.slice(clusterStart, i);
             if (idClusterUsers.length >= minClusterSize) {
-                const timeClusters = subClusterByTime(idClusterUsers, timeWindowSeconds, minClusterSize);
+                const timeClusters = subClusterByTime(
+                    idClusterUsers,
+                    timeWindowSeconds,
+                    minClusterSize,
+                );
                 for (const timeCluster of timeClusters) {
                     const githubIds = timeCluster.map((u) => u.github_id);
                     const rangeStart = Math.min(...githubIds);
@@ -305,7 +382,12 @@ function findGitHubIdClusters(
                     const idRange = Math.max(1, rawIdRange);
                     const rawDensity = timeCluster.length / idRange;
                     const density = Math.min(1, rawDensity);
-                    clusters.set(clusterKey, { rangeStart, rangeEnd, users: timeCluster, density });
+                    clusters.set(clusterKey, {
+                        rangeStart,
+                        rangeEnd,
+                        users: timeCluster,
+                        density,
+                    });
                 }
             }
             clusterStart = i;
@@ -317,14 +399,35 @@ function findGitHubIdClusters(
 function isInGitHubIdCluster(
     githubId: number | null,
     gitHubIdClusters: Map<string, GitHubIdCluster>,
-): { inCluster: boolean; clusterSize: number; clusterDensity: number; clusterRange: string | null } {
-    if (githubId === null) return { inCluster: false, clusterSize: 0, clusterDensity: 0, clusterRange: null };
+): {
+    inCluster: boolean;
+    clusterSize: number;
+    clusterDensity: number;
+    clusterRange: string | null;
+} {
+    if (githubId === null)
+        return {
+            inCluster: false,
+            clusterSize: 0,
+            clusterDensity: 0,
+            clusterRange: null,
+        };
     for (const [range, cluster] of gitHubIdClusters) {
         if (cluster.users.some((u) => u.github_id === githubId)) {
-            return { inCluster: true, clusterSize: cluster.users.length, clusterDensity: cluster.density, clusterRange: range };
+            return {
+                inCluster: true,
+                clusterSize: cluster.users.length,
+                clusterDensity: cluster.density,
+                clusterRange: range,
+            };
         }
     }
-    return { inCluster: false, clusterSize: 0, clusterDensity: 0, clusterRange: null };
+    return {
+        inCluster: false,
+        clusterSize: 0,
+        clusterDensity: 0,
+        clusterRange: null,
+    };
 }
 
 type Environment = "staging" | "production";
@@ -347,9 +450,44 @@ const SIGNAL_WEIGHTS = {
     github_noreply: 5, // Many legitimate users use this
 };
 
+/**
+ * Allowlist for privacy-focused email domains that should NOT trigger auto-enforce.
+ * These domains are sometimes incorrectly flagged as disposable but are legitimate
+ * privacy-conscious email providers used by real users.
+ *
+ * Users with these domains will still be flagged for review, but won't be auto-enforced
+ * based on the disposable email signal alone.
+ */
+const PRIVACY_EMAIL_ALLOWLIST = new Set([
+    // Privacy-focused providers (sometimes incorrectly flagged as disposable)
+    "protonmail.com",
+    "protonmail.ch",
+    "proton.me",
+    "pm.me",
+    "tutanota.com",
+    "tutanota.de",
+    "tutamail.com",
+    "tuta.io",
+    "mailfence.com",
+    "disroot.org",
+    "riseup.net",
+    "posteo.de",
+    "posteo.net",
+    "ctemplar.com",
+    "cock.li",
+    // iCloud hide-my-email (legitimate Apple feature)
+    "privaterelay.appleid.com",
+]);
+
+function isAllowlistedDomain(email: string): boolean {
+    const domain = email.toLowerCase().split("@")[1];
+    return domain ? PRIVACY_EMAIL_ALLOWLIST.has(domain) : false;
+}
+
 interface ConfidenceInput {
     isDisposable: boolean;
     isGitHubNoreply: boolean;
+    isAllowlistedDomain: boolean; // Privacy-focused domains that shouldn't auto-enforce
     duplicateCount: number;
     similarUsernameCount: number;
     crossDomainCount: number;
@@ -389,7 +527,8 @@ function calculateConfidence(input: ConfidenceInput): ConfidenceResult {
     // 2. GitHub ID cluster (amplified by cluster size AND density)
     // Only count as signal if density >= 0.1 (strong cluster)
     // Weak clusters are recorded as metadata but don't contribute to signalCount
-    const isStrongCluster = input.githubIdClusterSize > 0 && input.githubIdClusterDensity >= 0.1;
+    const isStrongCluster =
+        input.githubIdClusterSize > 0 && input.githubIdClusterDensity >= 0.1;
     if (input.githubIdClusterSize > 0) {
         const sizeAmplifier = Math.min(
             2,
@@ -505,16 +644,33 @@ function calculateConfidence(input: ConfidenceInput): ConfidenceResult {
     else level = "low";
 
     // 2-stage classification: enforce vs review vs watch
-    // Enforce: Hard identity signals OR (high score + behavior confirmation)
+    // Enforce: Hard identity signals (with behavior confirmation) OR (high score + behavior confirmation)
     // Review: Medium score or multiple signals
     // Watch: Low score, single weak signal
     let riskBand: ConfidenceResult["riskBand"];
-    const hasHardIdentitySignal = input.isDisposable || input.duplicateCount >= 3;
+    const hasHardIdentitySignal =
+        input.isDisposable || input.duplicateCount >= 3;
     const hasBehaviorConfirmation = input.behaviorScore >= 30;
-    // Enforce requires either hard identity evidence OR combined score+behavior
-    if (hasHardIdentitySignal || (score >= 70 && hasBehaviorConfirmation)) {
+    const isAllowlisted = input.isAllowlistedDomain;
+
+    // Enforce requires BOTH identity evidence AND behavior confirmation
+    // Exception: allowlisted domains (privacy providers) require manual review
+    // This prevents auto-downgrading legitimate privacy-conscious users
+    if (isAllowlisted) {
+        // Allowlisted domains go to review, not enforce (even with hard signals)
+        riskBand = score >= 40 || hasHardIdentitySignal ? "review" : "watch";
+    } else if (hasHardIdentitySignal && hasBehaviorConfirmation) {
+        // Hard signal + bad behavior = enforce
         riskBand = "enforce";
-    } else if (score >= 40 || (signalCount >= 2 && hasBehaviorConfirmation)) {
+    } else if (score >= 70 && hasBehaviorConfirmation) {
+        // High combined score + bad behavior = enforce
+        riskBand = "enforce";
+    } else if (
+        hasHardIdentitySignal ||
+        score >= 40 ||
+        (signalCount >= 2 && hasBehaviorConfirmation)
+    ) {
+        // Hard signal alone, or medium score = review (not auto-enforce)
         riskBand = "review";
     } else {
         riskBand = "watch";
@@ -882,7 +1038,7 @@ const exportCsvCommand = command({
                 "moderation_flags_30d",
             ].join(","),
         );
-        
+
         // === DEBUG CSV HEADER (for engineers) ===
         const debugHeader = [
             // A) Decision & ranking
@@ -931,15 +1087,16 @@ const exportCsvCommand = command({
             // F) Debug
             "confidence_breakdown",
         ].join(",");
-        
+
         const debugRows: string[] = [debugHeader];
 
         let flaggedCount = 0;
         let actionCount = 0;
         let contextOnlyCount = 0;
-        let hasTinybirdCount = 0;
-        let zeroUsageCount = 0;
-        
+        // Track Tinybird coverage for FLAGGED users only (for correct percentages)
+        let flaggedWithTinybirdCount = 0;
+        let flaggedZeroUsageCount = 0;
+
         // Separate rows for actions vs context
         const actionRows: string[] = [];
         const contextRows: string[] = [];
@@ -978,10 +1135,11 @@ const exportCsvCommand = command({
             // GHID-only low-density users go to context, not flags
             const flagReasons: string[] = [];
             const contextSignals: string[] = [];
-            
+
             // Determine if GHID is "strong" (density >= 0.1)
-            const isStrongGhidCluster = githubIdInfo.inCluster && githubIdInfo.clusterDensity >= 0.1;
-            
+            const isStrongGhidCluster =
+                githubIdInfo.inCluster && githubIdInfo.clusterDensity >= 0.1;
+
             if (detection.isDisposableDomain) {
                 flagReasons.push("disposable_email");
                 signalCounts.disposable_email++;
@@ -1028,6 +1186,7 @@ const exportCsvCommand = command({
             const confidenceResult = calculateConfidence({
                 isDisposable: detection.isDisposableDomain,
                 isGitHubNoreply: detection.isGitHubNoreply,
+                isAllowlistedDomain: isAllowlistedDomain(user.email),
                 duplicateCount: duplicates.length,
                 similarUsernameCount: similarUsernames.length,
                 crossDomainCount: crossDomainDuplicates.length,
@@ -1067,12 +1226,13 @@ const exportCsvCommand = command({
 
             // Track Tinybird coverage: distinguish missing telemetry from zero usage
             const hasTinybirdData = usage !== undefined;
-            if (hasTinybirdData) hasTinybirdCount++;
-            
+            if (isFlagged && hasTinybirdData) flaggedWithTinybirdCount++;
+
             // Usage metrics for CSV
             const requests30d = usage?.requests_total_30d ?? 0;
-            if (hasTinybirdData && requests30d === 0) zeroUsageCount++;
-            
+            if (isFlagged && hasTinybirdData && requests30d === 0)
+                flaggedZeroUsageCount++;
+
             const tierConsumed30d = usage?.tier_consumed_30d ?? 0;
             const dailyPollen = getTierDailyPollen(user.tier);
             const allowance30d = dailyPollen * 30;
@@ -1108,7 +1268,7 @@ const exportCsvCommand = command({
                 String(usage?.unique_models_requested_30d ?? 0),
                 String(usage?.moderation_flags_count_30d ?? 0),
             ].join(",");
-            
+
             // === DEBUG ROW (for engineers - 36 columns) ===
             // Matches debugHeader: decision → identity → behavior → signals → drill-down → debug
             const debugRow = [
@@ -1166,14 +1326,15 @@ const exportCsvCommand = command({
 
             csvRows.push(opsRow);
             debugRows.push(debugRow);
-            
+
             // Split into actions (review+enforce) vs context (watch)
+            // Only count FLAGGED users for summary stats (avoid denominator mismatch)
             if (riskBand === "enforce" || riskBand === "review") {
                 actionRows.push(opsRow);
-                actionCount++;
+                if (isFlagged) actionCount++;
             } else {
                 contextRows.push(opsRow);
-                contextOnlyCount++;
+                if (isFlagged) contextOnlyCount++;
             }
         }
 
@@ -1183,12 +1344,12 @@ const exportCsvCommand = command({
         // === OUTPUT FILES (per Elliot's feedback) ===
         // abuse-actions.csv: Ops file (20 cols) - review + enforce only
         // abuse-debug.csv: Engineer file (36 cols) - all users with full detail
-        
+
         // Write ops action file (review + enforce only, 20 columns)
         const actionPath = outputPath.replace(/\.csv$/, "-actions.csv");
         const actionContent = [opsHeader, ...actionRows].join("\n");
         writeFileSync(actionPath, actionContent, "utf-8");
-        
+
         // Write debug file (all flagged users, 36 columns)
         const debugPath = outputPath.replace(/\.csv$/, "-debug.csv");
         writeFileSync(debugPath, debugContent, "utf-8");
@@ -1203,21 +1364,25 @@ const exportCsvCommand = command({
         console.log(`   🔴 enforce + review (actions): ${actionCount}`);
         console.log(`   🟢 watch (context-only):       ${contextOnlyCount}`);
         console.log("");
-        console.log("📁 OUTPUT FILES:");
-        console.log(`   abuse-actions.csv (ops, 20 cols):  ${actionPath}`);
-        console.log(`   abuse-debug.csv (eng, 36 cols):    ${debugPath}`);
-        console.log("");
-        console.log("📊 TINYBIRD COVERAGE:");
-        const missingTelemetry = flaggedCount - hasTinybirdCount;
-        console.log(`   Has telemetry:      ${hasTinybirdCount} (${((hasTinybirdCount / flaggedCount) * 100).toFixed(1)}%)`);
-        console.log(`   Missing telemetry:  ${missingTelemetry} (${((missingTelemetry / flaggedCount) * 100).toFixed(1)}%)`);
-        console.log(`   Zero usage (30d):   ${zeroUsageCount} (${((zeroUsageCount / flaggedCount) * 100).toFixed(1)}%)`);
+        console.log("📊 TINYBIRD COVERAGE (flagged users):");
+        const missingTelemetry = flaggedCount - flaggedWithTinybirdCount;
+        console.log(
+            `   Has telemetry:      ${flaggedWithTinybirdCount} (${((flaggedWithTinybirdCount / flaggedCount) * 100).toFixed(1)}%)`,
+        );
+        console.log(
+            `   Missing telemetry:  ${missingTelemetry} (${((missingTelemetry / flaggedCount) * 100).toFixed(1)}%)`,
+        );
+        console.log(
+            `   Zero usage (30d):   ${flaggedZeroUsageCount} (${((flaggedZeroUsageCount / flaggedCount) * 100).toFixed(1)}%)`,
+        );
         console.log("");
         console.log("📈 SIGNAL BREAKDOWN (users with each signal):");
         console.log(
             `   disposable_email:     ${signalCounts.disposable_email}`,
         );
-        console.log(`   github_noreply:       ${signalCounts.github_noreply} (context-only)`);
+        console.log(
+            `   github_noreply:       ${signalCounts.github_noreply} (context-only)`,
+        );
         console.log(`   email_duplicate:      ${signalCounts.email_duplicate}`);
         console.log(
             `   username_pattern:     ${signalCounts.username_pattern}`,
@@ -1237,8 +1402,8 @@ const exportCsvCommand = command({
             flaggedUsers: flaggedCount,
             actionCount,
             contextOnlyCount,
-            hasTinybirdCount,
-            zeroUsageCount,
+            hasTinybirdCount: flaggedWithTinybirdCount,
+            zeroUsageCount: flaggedZeroUsageCount,
             signalCounts,
             burstClusters: burstClusters.size,
             usersInBurstClusters,
@@ -1273,11 +1438,22 @@ interface SummaryData {
 function generateMarkdownSummary(data: SummaryData): string {
     const flaggedPct = ((data.flaggedUsers / data.totalUsers) * 100).toFixed(1);
     const actionPct = ((data.actionCount / data.flaggedUsers) * 100).toFixed(1);
-    const contextPct = ((data.contextOnlyCount / data.flaggedUsers) * 100).toFixed(1);
+    // contextOnlyCount is for flagged watch-band users only, NOT all watch users
+    const contextPct =
+        data.flaggedUsers > 0
+            ? ((data.contextOnlyCount / data.flaggedUsers) * 100).toFixed(1)
+            : "0.0";
     const missingTelemetry = data.flaggedUsers - data.hasTinybirdCount;
-    const tinybirdPct = ((data.hasTinybirdCount / data.flaggedUsers) * 100).toFixed(1);
-    const missingPct = ((missingTelemetry / data.flaggedUsers) * 100).toFixed(1);
-    const zeroPct = ((data.zeroUsageCount / data.flaggedUsers) * 100).toFixed(1);
+    const tinybirdPct = (
+        (data.hasTinybirdCount / data.flaggedUsers) *
+        100
+    ).toFixed(1);
+    const missingPct = ((missingTelemetry / data.flaggedUsers) * 100).toFixed(
+        1,
+    );
+    const zeroPct = ((data.zeroUsageCount / data.flaggedUsers) * 100).toFixed(
+        1,
+    );
 
     return `# Abuse Detection Summary
 

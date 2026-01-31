@@ -79,7 +79,6 @@ export const adminRoutes = new Hono<Env>()
                     user_id: body.userId,
                     tier: targetTier,
                     pollen_amount: tierBalance,
-                    timestamp: new Date().toISOString(),
                 },
                 c.env.TINYBIRD_TIER_INGEST_URL,
                 c.env.TINYBIRD_INGEST_TOKEN,

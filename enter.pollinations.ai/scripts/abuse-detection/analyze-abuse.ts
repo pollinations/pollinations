@@ -1096,6 +1096,22 @@ const exportCsvCommand = command({
         // Track Tinybird coverage for FLAGGED users only (for correct percentages)
         let flaggedWithTinybirdCount = 0;
         let flaggedZeroUsageCount = 0;
+        // Track GHID cluster breakdown (strong triggers vs weak context)
+        let ghidStrongCount = 0;
+        let ghidWeakCount = 0;
+
+        // Collect top users for Impact Triage section
+        interface TriageUser {
+            userId: string;
+            riskBand: string;
+            flagReasons: string;
+            contextSignals: string;
+            tierUsagePct: number;
+            pollen: number;
+            requests: number;
+            behaviorScore: number;
+        }
+        const triageUsers: TriageUser[] = [];
 
         // Usage stats accumulators (flagged users with Tinybird data only)
         const usageStats = {
@@ -1217,6 +1233,15 @@ const exportCsvCommand = command({
 
             const isFlagged = flagReasons.length > 0;
 
+            // Track GHID strong vs weak for flagged users only
+            if (isFlagged && githubIdInfo.inCluster) {
+                if (isStrongGhidCluster) {
+                    ghidStrongCount++;
+                } else {
+                    ghidWeakCount++;
+                }
+            }
+
             // Get behavioral data and compute behavior score FIRST
             const usage = behaviorData.get(user.id);
             const behaviorScore = calculateBehaviorScore(usage);
@@ -1295,6 +1320,20 @@ const exportCsvCommand = command({
             // Track flagged count by band (regardless of Tinybird)
             if (isFlagged && usageStats.byBand[riskBand]) {
                 usageStats.byBand[riskBand].count++;
+            }
+
+            // Collect triage users for Impact Triage section (flagged with Tinybird data)
+            if (isFlagged && hasTinybirdData) {
+                triageUsers.push({
+                    userId: user.id,
+                    riskBand,
+                    flagReasons: flagReasons.join("; "),
+                    contextSignals: contextSignals.join("; "),
+                    tierUsagePct: tierUsagePct30d,
+                    pollen: tierConsumed30d,
+                    requests: requests30d,
+                    behaviorScore,
+                });
             }
 
             // === OPS ROW (for triage - 20 columns) ===
@@ -1466,9 +1505,12 @@ const exportCsvCommand = command({
             usersInBurstClusters,
             githubIdClusters: githubIdClusters.size,
             usersInGitHubIdClusters,
+            ghidStrongCount,
+            ghidWeakCount,
             env,
             timestamp: new Date().toISOString(),
             usageStats,
+            triageUsers,
         });
         writeFileSync(summaryPath, summaryContent, "utf-8");
         console.log(`   Summary file: ${summaryPath}`);
@@ -1485,6 +1527,17 @@ interface UsageByBand {
     tierPct: number[];
 }
 
+interface TriageUserData {
+    userId: string;
+    riskBand: string;
+    flagReasons: string;
+    contextSignals: string;
+    tierUsagePct: number;
+    pollen: number;
+    requests: number;
+    behaviorScore: number;
+}
+
 interface SummaryData {
     totalUsers: number;
     flaggedUsers: number;
@@ -1497,6 +1550,8 @@ interface SummaryData {
     usersInBurstClusters: number;
     githubIdClusters: number;
     usersInGitHubIdClusters: number;
+    ghidStrongCount: number;
+    ghidWeakCount: number;
     env: string;
     timestamp: string;
     usageStats: {
@@ -1505,6 +1560,7 @@ interface SummaryData {
         tierUsagePct: number[];
         byBand: Record<string, UsageByBand>;
     };
+    triageUsers: TriageUserData[];
 }
 
 function median(arr: number[]): number {
@@ -1571,6 +1627,40 @@ function generateMarkdownSummary(data: SummaryData): string {
         })
         .join("\n");
 
+    // Coverage bias note
+    const watchBand = usageStats.byBand.watch;
+    const watchCoverage =
+        watchBand && watchBand.count > 0
+            ? ((watchBand.tbCount / watchBand.count) * 100).toFixed(1)
+            : "0.0";
+    const watchMissingPct =
+        watchBand && watchBand.count > 0
+            ? (100 - (watchBand.tbCount / watchBand.count) * 100).toFixed(0)
+            : "0";
+
+    // Impact Triage: Top 20 by pollen, requests, behavior_score
+    const { triageUsers } = data;
+    const top20ByPollen = [...triageUsers]
+        .sort((a, b) => b.pollen - a.pollen)
+        .slice(0, 20);
+    const top20ByRequests = [...triageUsers]
+        .sort((a, b) => b.requests - a.requests)
+        .slice(0, 20);
+    const top20ByBehavior = [...triageUsers]
+        .filter((u) => u.behaviorScore >= 30) // Only show users above enforcement threshold
+        .sort((a, b) => b.behaviorScore - a.behaviorScore)
+        .slice(0, 20);
+
+    const formatTriageRow = (u: TriageUserData) =>
+        `| ${u.userId.slice(0, 8)}… | ${u.riskBand} | ${u.pollen.toFixed(2)} | ${u.requests.toLocaleString()} | ${u.behaviorScore} | ${u.tierUsagePct.toFixed(1)}% | ${u.flagReasons || "-"} | ${u.contextSignals || "-"} |`;
+
+    const pollenRows = top20ByPollen.map(formatTriageRow).join("\n");
+    const requestRows = top20ByRequests.map(formatTriageRow).join("\n");
+    const behaviorRows =
+        top20ByBehavior.length > 0
+            ? top20ByBehavior.map(formatTriageRow).join("\n")
+            : "| - | - | - | - | - | - | - | - |";
+
     return `# Abuse Detection Summary
 
 > Generated: ${data.timestamp}  
@@ -1618,6 +1708,8 @@ function generateMarkdownSummary(data: SummaryData): string {
 |------|--------:|---------:|---------:|---------------:|-------------:|----------------:|-------------:|----------------:|
 ${bandRows}
 
+> ⚠️ **Interpretation note**: Watch band has ${watchCoverage}% Tinybird coverage (~${watchMissingPct}% missing). Usage stats may undercount actual impact.
+
 ## Signal Breakdown
 
 Users with each detection signal:
@@ -1638,6 +1730,31 @@ Users with each detection signal:
 |--------------|----------|-------------------|
 | Burst registrations | ${data.burstClusters} | ${data.usersInBurstClusters} |
 | GitHub ID clusters | ${data.githubIdClusters} | ${data.usersInGitHubIdClusters} |
+
+> **GHID breakdown (flagged users)**: Strong triggers: ${data.ghidStrongCount} | Weak context: ${data.ghidWeakCount}  
+> Strong = density ≥ 0.1 (counted in Signal Breakdown). Weak = context-only (not counted as triggers).
+
+## Impact Triage
+
+Top flagged users by cost and risk (Tinybird users only). Use for daily ops queue.
+
+### Top 20 by Pollen Consumed (30d)
+
+| User ID | Band | Pollen | Requests | Behavior | Tier % | Flag Reasons | Context |
+|---------|------|-------:|---------:|---------:|-------:|--------------|---------|
+${pollenRows}
+
+### Top 20 by Requests (30d)
+
+| User ID | Band | Pollen | Requests | Behavior | Tier % | Flag Reasons | Context |
+|---------|------|-------:|---------:|---------:|-------:|--------------|---------|
+${requestRows}
+
+### Top 20 by Behavior Score (≥30 only)
+
+| User ID | Band | Pollen | Requests | Behavior | Tier % | Flag Reasons | Context |
+|---------|------|-------:|---------:|---------:|-------:|--------------|---------|
+${behaviorRows}
 
 ---
 

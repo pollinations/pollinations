@@ -30,13 +30,6 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // Assuming 'turbo' is of type 'sd'
-    turbo: {
-        type: "pollinations",
-        enhance: true,
-        defaultSideLength: 768,
-    },
-
     // ByteDance ARK Seedream 4.0 - better quality (default)
     seedream: {
         type: "seedream",

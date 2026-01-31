@@ -5,7 +5,6 @@ import sharp from "sharp";
 import {
     fetchFromLeastBusyFluxServer,
     fetchFromLeastBusyServer,
-    getNextTurboServerUrl,
 } from "./availableServers.ts";
 import { HttpError } from "./httpError.ts";
 import { incrementModelCounter } from "./modelCounter.ts";
@@ -140,13 +139,8 @@ async function resizeInputImageForGptImage(buffer: Buffer): Promise<Buffer> {
     }
 }
 
-async function fetchFromTurboServer(params: object) {
-    const host = await getNextTurboServerUrl();
-    return fetch(`${host}/generate`, params);
-}
-
 /**
- * Calls self-hosted image generation servers (flux, zimage, turbo pools).
+ * Calls self-hosted image generation servers (flux, zimage pools).
  * @param {string} prompt - The prompt for image generation.
  * @param {Object} safeParams - The parameters for image generation.
  * @param {number} concurrentRequests - The number of concurrent requests.
@@ -202,12 +196,10 @@ export const callSelfHostedServer = async (
         try {
             // Route to appropriate server pool based on model
             const fetchFunction =
-                safeParams.model === "turbo"
-                    ? fetchFromTurboServer
-                    : safeParams.model === "zimage"
-                      ? (opts: RequestInit) =>
-                            fetchFromLeastBusyServer("zimage", opts)
-                      : fetchFromLeastBusyFluxServer;
+                safeParams.model === "zimage"
+                    ? (opts: RequestInit) =>
+                          fetchFromLeastBusyServer("zimage", opts)
+                    : fetchFromLeastBusyFluxServer;
             response = await fetchFunction({
                 method: "POST",
                 headers: {
@@ -435,7 +427,7 @@ async function callCloudflareModel(
  * @param {ImageParams} safeParams - The parameters for image generation
  * @returns {Promise<ImageGenerationResult>}
  */
-async function callCloudflareFlux(
+async function _callCloudflareFlux(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
@@ -453,7 +445,7 @@ async function callCloudflareFlux(
  * @param {ImageParams} safeParams - The parameters for image generation
  * @returns {Promise<ImageGenerationResult>}
  */
-async function callCloudflareSDXL(
+async function _callCloudflareSDXL(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
@@ -470,7 +462,7 @@ async function callCloudflareSDXL(
  * @param {ImageParams} safeParams - The parameters for image generation
  * @returns {Promise<ImageGenerationResult>}
  */
-async function callCloudflareDreamshaper(
+async function _callCloudflareDreamshaper(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {

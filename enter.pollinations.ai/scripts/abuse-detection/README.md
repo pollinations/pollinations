@@ -54,7 +54,7 @@ flowchart TB
         RISKBAND --> |enforce| ENFORCE[🔴 Enforce<br/>Auto-action]
         RISKBAND --> |review| REVIEW[🟡 Review<br/>Manual check]
         RISKBAND --> |watch| WATCH[🟢 Watch<br/>Monitor only]
-        ENFORCE --> CSV[abuse-actions.csv<br/>abuse-debug.csv]
+        ENFORCE --> CSV[flagged-users-actions.csv<br/>flagged-users-debug.csv]
         REVIEW --> CSV
         WATCH --> CSV
         CSV --> SUMMARY[flagged-users-summary.md]
@@ -338,8 +338,8 @@ The pipeline generates **two CSV files**:
 
 | File | Columns | Audience |
 |------|---------|----------|
-| `abuse-actions.csv` | 20 | Ops (triage) - Review + Enforce only |
-| `abuse-debug.csv` | 36 | Engineers - All flagged users with full detail |
+| `flagged-users-actions.csv` | 20 | Ops (triage) - Review + Enforce only |
+| `flagged-users-debug.csv` | 36 | Engineers - All flagged users with full detail |
 
 ### Key Columns
 - **Decision**: `risk_band`, `combined_score`, `behavior_score`, `identity_score`, `flag_reasons`

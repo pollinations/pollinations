@@ -69,7 +69,7 @@ const SectionHeader: FC<SectionHeaderProps> = ({
         )}
         <tr>
             <td
-                className={`text-left pt-3 pb-2 px-4 text-xl font-subheading tracking-tight text-purple-700 align-middle`}
+                className={`text-left pt-3 pb-2 px-4 text-xl font-subheading tracking-tight text-gray-900 align-middle`}
             >
                 <div className="flex items-center gap-2">
                     {label}

@@ -110,7 +110,13 @@ export const ModelRow: FC<ModelRowProps> = ({
                         </span>
                     )}
                     {showPaidOnly && (
-                        <Tooltip content="Requires purchased pollen (daily tier balance not accepted)">
+                        <Tooltip
+                            content={
+                                isDisabled
+                                    ? "Top up your 💎 pollen balance to unlock this model."
+                                    : "This model uses your purchased pollen 💎 only."
+                            }
+                        >
                             <span className="text-[10px] text-purple-700 bg-transparent px-1.5 py-0.5 rounded-full font-semibold border border-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.5)] animate-[glow-purple_2s_ease-in-out_infinite]">
                                 💎 PAID ONLY
                             </span>

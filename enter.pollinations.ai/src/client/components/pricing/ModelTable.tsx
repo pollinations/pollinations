@@ -69,10 +69,10 @@ const SectionHeader: FC<SectionHeaderProps> = ({
         )}
         <tr>
             <td
-                className={`text-left pt-3 pb-2 px-4 text-base font-bold ${sectionColors.text} align-middle`}
+                className={`text-left pt-3 pb-2 px-4 text-xl font-subheading tracking-tight text-purple-700 align-middle`}
             >
                 <div className="flex items-center gap-2">
-                    {label.toUpperCase()}
+                    {label}
                     {type === "video" && (
                         <span className="relative inline-flex items-center group/alpha text-[10px] text-gray-500 bg-transparent px-1.5 py-0.5 rounded-full font-medium border border-gray-400 cursor-pointer hover:bg-gray-50">
                             alpha
@@ -139,7 +139,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     return (
         <div className="flex flex-col gap-6">
             {/* Image Section */}
-            <table className="w-full border-separate border-spacing-0 bg-white/50 rounded-lg">
+            <table className="w-full border-separate border-spacing-0 bg-white/50 rounded-2xl border border-gray-200 shadow-sm">
                 <tbody>
                     <SectionHeader label="Image" type="image" isFirst />
                     {sortedImageModels.map((model, index) => (
@@ -154,7 +154,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             </table>
 
             {/* Video Section */}
-            <table className="w-full border-separate border-spacing-0 bg-white/50 rounded-lg">
+            <table className="w-full border-separate border-spacing-0 bg-white/50 rounded-2xl border border-gray-200 shadow-sm">
                 <tbody>
                     <SectionHeader label="Video" type="video" isFirst />
                     {sortedVideoModels.map((model, index) => (
@@ -169,7 +169,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             </table>
 
             {/* Text Section */}
-            <table className="w-full border-separate border-spacing-0 bg-white/50 rounded-lg">
+            <table className="w-full border-separate border-spacing-0 bg-white/50 rounded-2xl border border-gray-200 shadow-sm">
                 <tbody>
                     <SectionHeader label="Text" type="text" isFirst />
                     {regularTextModels.map((model, index) => (

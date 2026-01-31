@@ -10,15 +10,51 @@
  * Usage:
  *   npx tsx scripts/abuse-detection/analyze-abuse.ts export-csv --env production --all
  *
- * Environment variables:
+ * Environment variables (auto-loaded from .dev.vars if present):
  *   CLOUDFLARE_API_TOKEN - Required for D1 access via wrangler
  *   CLOUDFLARE_ACCOUNT_ID - Required for D1 access via wrangler
  *   TINYBIRD_INGEST_TOKEN - Required for behavioral data from Tinybird
  */
 
 import { execSync } from "node:child_process";
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { boolean, command, run, string } from "@drizzle-team/brocli";
+
+/**
+ * Load environment variables from .dev.vars file.
+ * Automatically loads TINYBIRD_INGEST_TOKEN if not already set.
+ */
+function loadDevVars(): void {
+	const devVarsPath = resolve(import.meta.dirname, "../../.dev.vars");
+	if (!existsSync(devVarsPath)) {
+		return;
+	}
+
+	try {
+		const content = readFileSync(devVarsPath, "utf-8");
+		for (const line of content.split("\n")) {
+			const trimmed = line.trim();
+			if (!trimmed || trimmed.startsWith("#")) continue;
+
+			const eqIndex = trimmed.indexOf("=");
+			if (eqIndex === -1) continue;
+
+			const key = trimmed.slice(0, eqIndex);
+			const value = trimmed.slice(eqIndex + 1);
+
+			// Only set if not already in environment
+			if (!process.env[key]) {
+				process.env[key] = value;
+			}
+		}
+	} catch {
+		// Silently ignore parse errors
+	}
+}
+
+// Load .dev.vars before anything else
+loadDevVars();
 import { isDisposableEmail as checkDisposable } from "disposable-email-domains-js";
 import { isValidTier, TIER_POLLEN, type TierName } from "../../src/tier-config";
 

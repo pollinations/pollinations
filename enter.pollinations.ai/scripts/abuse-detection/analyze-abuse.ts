@@ -1097,6 +1097,45 @@ const exportCsvCommand = command({
         let flaggedWithTinybirdCount = 0;
         let flaggedZeroUsageCount = 0;
 
+        // Usage stats accumulators (flagged users with Tinybird data only)
+        const usageStats = {
+            requests: [] as number[],
+            pollen: [] as number[],
+            tierUsagePct: [] as number[],
+            byBand: {
+                enforce: {
+                    count: 0,
+                    tbCount: 0,
+                    requests: [] as number[],
+                    pollen: [] as number[],
+                    tierPct: [] as number[],
+                },
+                review: {
+                    count: 0,
+                    tbCount: 0,
+                    requests: [] as number[],
+                    pollen: [] as number[],
+                    tierPct: [] as number[],
+                },
+                watch: {
+                    count: 0,
+                    tbCount: 0,
+                    requests: [] as number[],
+                    pollen: [] as number[],
+                    tierPct: [] as number[],
+                },
+            } as Record<
+                string,
+                {
+                    count: number;
+                    tbCount: number;
+                    requests: number[];
+                    pollen: number[];
+                    tierPct: number[];
+                }
+            >,
+        };
+
         // Separate rows for actions vs context
         const actionRows: string[] = [];
         const contextRows: string[] = [];
@@ -1166,12 +1205,12 @@ const exportCsvCommand = command({
                 signalCounts.burst_registration++;
             }
             if (githubIdInfo.inCluster) {
-                signalCounts.github_id_cluster++;
-                // Only count strong GHID clusters as flag reasons
+                // Only count strong GHID clusters as a signal (prevents >100% in summary)
                 if (isStrongGhidCluster) {
+                    signalCounts.github_id_cluster++;
                     flagReasons.push("github_id_cluster");
                 } else {
-                    // Weak GHID cluster goes to context
+                    // Weak GHID cluster goes to context (not counted in signal breakdown)
                     contextSignals.push("github_id_cluster_weak");
                 }
             }
@@ -1239,6 +1278,24 @@ const exportCsvCommand = command({
             const tierUsagePct30d =
                 allowance30d > 0 ? (tierConsumed30d / allowance30d) * 100 : 0;
             const packConsumed30d = usage?.pack_consumed_30d ?? 0;
+
+            // Accumulate usage stats for flagged users with Tinybird data
+            if (isFlagged && hasTinybirdData) {
+                usageStats.requests.push(requests30d);
+                usageStats.pollen.push(tierConsumed30d);
+                usageStats.tierUsagePct.push(tierUsagePct30d);
+                // Track by risk band
+                if (usageStats.byBand[riskBand]) {
+                    usageStats.byBand[riskBand].requests.push(requests30d);
+                    usageStats.byBand[riskBand].pollen.push(tierConsumed30d);
+                    usageStats.byBand[riskBand].tierPct.push(tierUsagePct30d);
+                    usageStats.byBand[riskBand].tbCount++;
+                }
+            }
+            // Track flagged count by band (regardless of Tinybird)
+            if (isFlagged && usageStats.byBand[riskBand]) {
+                usageStats.byBand[riskBand].count++;
+            }
 
             // === OPS ROW (for triage - 20 columns) ===
             // Matches header: decision → identity → behavior
@@ -1411,6 +1468,7 @@ const exportCsvCommand = command({
             usersInGitHubIdClusters,
             env,
             timestamp: new Date().toISOString(),
+            usageStats,
         });
         writeFileSync(summaryPath, summaryContent, "utf-8");
         console.log(`   Summary file: ${summaryPath}`);
@@ -1418,6 +1476,14 @@ const exportCsvCommand = command({
         console.log(`\n✅ CSV export complete\n`);
     },
 });
+
+interface UsageByBand {
+    count: number;
+    tbCount: number;
+    requests: number[];
+    pollen: number[];
+    tierPct: number[];
+}
 
 interface SummaryData {
     totalUsers: number;
@@ -1433,6 +1499,32 @@ interface SummaryData {
     usersInGitHubIdClusters: number;
     env: string;
     timestamp: string;
+    usageStats: {
+        requests: number[];
+        pollen: number[];
+        tierUsagePct: number[];
+        byBand: Record<string, UsageByBand>;
+    };
+}
+
+function median(arr: number[]): number {
+    if (arr.length === 0) return 0;
+    const sorted = [...arr].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 !== 0
+        ? sorted[mid]
+        : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+function percentile(arr: number[], p: number): number {
+    if (arr.length === 0) return 0;
+    const sorted = [...arr].sort((a, b) => a - b);
+    const idx = Math.ceil((p / 100) * sorted.length) - 1;
+    return sorted[Math.max(0, idx)];
+}
+
+function sum(arr: number[]): number {
+    return arr.reduce((a, b) => a + b, 0);
 }
 
 function generateMarkdownSummary(data: SummaryData): string {
@@ -1454,6 +1546,30 @@ function generateMarkdownSummary(data: SummaryData): string {
     const zeroPct = ((data.zeroUsageCount / data.flaggedUsers) * 100).toFixed(
         1,
     );
+
+    // Usage stats calculations
+    const { usageStats } = data;
+    const tbUsers = usageStats.requests.length;
+    const totalRequests = sum(usageStats.requests);
+    const medianRequests = median(usageStats.requests);
+    const p95Requests = percentile(usageStats.requests, 95);
+    const totalPollen = sum(usageStats.pollen);
+    const medianPollen = median(usageStats.pollen);
+    const p95Pollen = percentile(usageStats.pollen, 95);
+    const medianTierPct = median(usageStats.tierUsagePct);
+    const p95TierPct = percentile(usageStats.tierUsagePct, 95);
+
+    // Per-band stats
+    const bandRows = ["enforce", "review", "watch"]
+        .map((band) => {
+            const b = usageStats.byBand[band];
+            if (!b || b.count === 0)
+                return `| ${band} | 0 | 0 | - | - | - | - | - | - |`;
+            const coverage =
+                b.count > 0 ? ((b.tbCount / b.count) * 100).toFixed(1) : "0.0";
+            return `| ${band} | ${b.count} | ${b.tbCount} | ${coverage}% | ${sum(b.requests).toLocaleString()} | ${sum(b.pollen).toFixed(2)} | ${median(b.pollen).toFixed(2)} | ${percentile(b.pollen, 95).toFixed(2)} | ${median(b.tierPct).toFixed(1)}% |`;
+        })
+        .join("\n");
 
     return `# Abuse Detection Summary
 
@@ -1481,6 +1597,26 @@ function generateMarkdownSummary(data: SummaryData): string {
 | Has telemetry | ${data.hasTinybirdCount.toLocaleString()} | ${tinybirdPct}% |
 | Missing telemetry | ${missingTelemetry.toLocaleString()} | ${missingPct}% |
 | Zero usage (30d) | ${data.zeroUsageCount.toLocaleString()} | ${zeroPct}% |
+
+## Usage Overview (last 30d, Tinybird users only)
+
+| Metric | Value |
+|--------|------:|
+| Users with telemetry | ${tbUsers.toLocaleString()} |
+| Total requests (30d) | ${totalRequests.toLocaleString()} |
+| Median requests / user | ${Math.round(medianRequests).toLocaleString()} |
+| P95 requests / user | ${Math.round(p95Requests).toLocaleString()} |
+| Total pollen consumed (30d) | ${totalPollen.toFixed(2)} |
+| Median pollen / user | ${medianPollen.toFixed(2)} |
+| P95 pollen / user | ${p95Pollen.toFixed(2)} |
+| Median tier usage % | ${medianTierPct.toFixed(1)}% |
+| P95 tier usage % | ${p95TierPct.toFixed(1)}% |
+
+### Usage by Risk Band (Tinybird users)
+
+| Band | Flagged | TB users | Coverage | Requests (sum) | Pollen (sum) | Pollen (median) | Pollen (P95) | Tier % (median) |
+|------|--------:|---------:|---------:|---------------:|-------------:|----------------:|-------------:|----------------:|
+${bandRows}
 
 ## Signal Breakdown
 

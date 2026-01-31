@@ -416,6 +416,7 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-2.5-pro"],
         modelId: "gemini-2.5-pro",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,

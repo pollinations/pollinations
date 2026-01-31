@@ -41,7 +41,7 @@ jobs:
       - name: Create Highlights and PR
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
-          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_LABELS: NEWS
         run: python social/scripts/github_create_highlights.py

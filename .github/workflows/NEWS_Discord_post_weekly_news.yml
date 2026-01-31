@@ -29,7 +29,7 @@ jobs:
 
       - name: Transform and Post to Discord
         env:
-          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
           DISCORD_WEBHOOK_DIGEST: ${{ secrets.DISCORD_WEBHOOK_DIGEST }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python social/scripts/discord_post_weekly_news.py

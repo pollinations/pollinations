@@ -39,7 +39,7 @@ jobs:
       - name: Review PR and Post to Discord
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
-          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO_FULL_NAME: ${{ github.repository }}

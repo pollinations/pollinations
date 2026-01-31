@@ -44,7 +44,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
 
                 <div className="pt-4 space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                        <div className="bg-white/50 rounded-lg p-4 border border-amber-200">
+                        <div className="bg-white/50 rounded-lg p-4 border border-amber-300 shadow-sm">
                             <div className="flex gap-4">
                                 <div className="flex-1">
                                     <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
@@ -59,7 +59,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                         <div>💻 code execution</div>
                                     </div>
                                 </div>
-                                <div className="w-px bg-amber-200" />
+                                <div className="w-px bg-amber-300" />
                                 <div className="flex-1">
                                     <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
                                         Token Types
@@ -74,7 +74,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-white/50 rounded-lg p-4 border border-amber-200">
+                        <div className="bg-white/50 rounded-lg p-4 border border-amber-300 shadow-sm">
                             <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
                                 Pricing Metrics
                             </div>
@@ -91,7 +91,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                     video
                                 </div>
                             </div>
-                            <div className="text-xs text-purple-700 mt-3 pt-3 border-t border-amber-200">
+                            <div className="text-xs text-purple-700 mt-3 pt-3 border-t border-amber-300">
                                 <div>
                                     <span className="font-semibold">*</span> 1
                                     pollen ≈ based on average community usage.
@@ -103,7 +103,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="bg-white/50 rounded-lg px-4 py-3 border border-amber-200">
+                        <div className="bg-white/50 rounded-lg px-4 py-3 border border-amber-300 shadow-sm">
                             <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
                                 💡 How Pollen is Spent
                             </div>
@@ -119,7 +119,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-white/50 rounded-lg px-4 py-3 border border-amber-200">
+                        <div className="bg-white/50 rounded-lg px-4 py-3 border border-amber-300 shadow-sm">
                             <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
                                 🎁 Beta Bonus
                             </div>

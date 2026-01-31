@@ -6,6 +6,7 @@ import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
 import { type BalanceVariables, balance } from "@/middleware/balance.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
@@ -24,6 +25,7 @@ import {
     getTextModelsInfo,
     ModelInfoSchema,
 } from "@shared/registry/model-info.ts";
+import { getServiceDefinition } from "@shared/registry/registry.ts";
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -126,7 +128,7 @@ function filterModelsByPermissions<T extends { name: string }>(
     models: T[],
     allowedModels: string[] | undefined,
 ): T[] {
-    if (!allowedModels || allowedModels.length === 0) return models;
+    if (!allowedModels?.length) return models;
     return models.filter((m) => allowedModels.includes(m.name));
 }
 
@@ -496,13 +498,10 @@ export const proxyRoutes = new Hono<Env>()
 function proxyHeaders(c: Context): Record<string, string> {
     const clientIP = c.req.header("cf-connecting-ip") || "";
     const clientHost = c.req.header("host") || "";
-    const headers = { ...c.req.header() };
-
-    // Get user's raw API key from auth context (already extracted by auth middleware)
-    // This allows community models (like NomNom) to receive the user's key for billing passthrough
     const userApiKey = c.var.auth?.apiKey?.rawKey || "";
 
-    // Remove Authorization header - we use x-enter-token for backend auth instead
+    // Copy headers excluding Authorization
+    const headers = { ...c.req.header() };
     delete headers.authorization;
     delete headers.Authorization;
 
@@ -513,29 +512,27 @@ function proxyHeaders(c: Context): Record<string, string> {
         "x-forwarded-for": clientIP,
         "x-real-ip": clientIP,
         "x-enter-token": c.env.PLN_ENTER_TOKEN,
-        // Forward user's API key for community models that need billing passthrough
-        "x-user-api-key": userApiKey,
+        "x-user-api-key": userApiKey, // For community model billing passthrough
     };
 }
 
-function proxyUrl(
-    c: Context,
-    targetBaseUrl: string,
-    targetPort: string = "",
-): URL {
+function proxyUrl(c: Context, targetBaseUrl: string, targetPort = ""): URL {
     const incomingUrl = new URL(c.req.url);
     const targetUrl = new URL(targetBaseUrl);
-    // Only override port if explicitly provided
+
     if (targetPort) {
         targetUrl.port = targetPort;
     }
-    // Copy query parameters but exclude the 'key' parameter (used for enter.pollinations.ai auth only)
+
+    // Copy query parameters excluding 'key' (auth only)
     const searchParams = new URLSearchParams(incomingUrl.search);
     searchParams.delete("key");
-    // Replace model with resolved model (handles aliases like flux -> zimage)
+
+    // Replace model with resolved model (handles aliases)
     if (c.var.model?.resolved && searchParams.has("model")) {
         searchParams.set("model", c.var.model.resolved);
     }
+
     targetUrl.search = searchParams.toString();
     return targetUrl;
 }
@@ -547,57 +544,88 @@ function joinPaths(...paths: string[]): string {
 export function contentFilterResultsToHeaders(
     response: CreateChatCompletionResponse,
 ): Record<string, string> {
-    const promptFilterResults =
+    const promptFilters =
         response.prompt_filter_results?.[0]?.content_filter_results;
-    const completionFilterResults =
-        response.choices?.[0]?.content_filter_results;
-    const mapToString = (value: unknown) => (value ? String(value) : undefined);
-    const headers = {
-        "x-moderation-prompt-hate-severity": mapToString(
-            promptFilterResults?.hate?.severity,
-        ),
-        "x-moderation-prompt-self-harm-severity": mapToString(
-            promptFilterResults?.self_harm?.severity,
-        ),
-        "x-moderation-prompt-sexual-severity": mapToString(
-            promptFilterResults?.sexual?.severity,
-        ),
-        "x-moderation-prompt-violence-severity": mapToString(
-            promptFilterResults?.violence?.severity,
-        ),
-        "x-moderation-prompt-jailbreak-detected": mapToString(
-            promptFilterResults?.jailbreak?.detected,
-        ),
-        "x-moderation-completion-hate-severity": mapToString(
-            completionFilterResults?.hate?.severity,
-        ),
-        "x-moderation-completion-self-harm-severity": mapToString(
-            completionFilterResults?.self_harm?.severity,
-        ),
-        "x-moderation-completion-sexual-severity": mapToString(
-            completionFilterResults?.sexual?.severity,
-        ),
-        "x-moderation-completion-violence-severity": mapToString(
-            completionFilterResults?.violence?.severity,
-        ),
-        "x-moderation-completion-protected-material-text-detected": mapToString(
-            completionFilterResults?.protected_material_text?.detected,
-        ),
-        "x-moderation-completion-protected-material-code-detected": mapToString(
-            completionFilterResults?.protected_material_code?.detected,
-        ),
-    };
-    // Filter out undefined values
-    return Object.fromEntries(
-        Object.entries(headers).filter(([_, value]) => value !== undefined),
-    ) as Record<string, string>;
+    const completionFilters = response.choices?.[0]?.content_filter_results;
+
+    const mapToString = (value: unknown): string | undefined =>
+        value ? String(value) : undefined;
+
+    // Build header mappings
+    const headerMappings: Array<[string, unknown]> = [
+        // Prompt filters
+        ["x-moderation-prompt-hate-severity", promptFilters?.hate?.severity],
+        [
+            "x-moderation-prompt-self-harm-severity",
+            promptFilters?.self_harm?.severity,
+        ],
+        [
+            "x-moderation-prompt-sexual-severity",
+            promptFilters?.sexual?.severity,
+        ],
+        [
+            "x-moderation-prompt-violence-severity",
+            promptFilters?.violence?.severity,
+        ],
+        [
+            "x-moderation-prompt-jailbreak-detected",
+            promptFilters?.jailbreak?.detected,
+        ],
+        // Completion filters
+        [
+            "x-moderation-completion-hate-severity",
+            completionFilters?.hate?.severity,
+        ],
+        [
+            "x-moderation-completion-self-harm-severity",
+            completionFilters?.self_harm?.severity,
+        ],
+        [
+            "x-moderation-completion-sexual-severity",
+            completionFilters?.sexual?.severity,
+        ],
+        [
+            "x-moderation-completion-violence-severity",
+            completionFilters?.violence?.severity,
+        ],
+        [
+            "x-moderation-completion-protected-material-text-detected",
+            completionFilters?.protected_material_text?.detected,
+        ],
+        [
+            "x-moderation-completion-protected-material-code-detected",
+            completionFilters?.protected_material_code?.detected,
+        ],
+    ];
+
+    // Convert to headers, filtering out undefined values
+    const headers: Record<string, string> = {};
+    for (const [key, value] of headerMappings) {
+        const stringValue = mapToString(value);
+        if (stringValue !== undefined) {
+            headers[key] = stringValue;
+        }
+    }
+
+    return headers;
 }
 
 async function checkBalance({
     auth,
     balance,
-}: AuthVariables & BalanceVariables) {
-    if (auth.user?.id) {
+    model,
+}: AuthVariables & BalanceVariables & ModelVariables): Promise<void> {
+    if (!auth.user?.id) return;
+
+    const serviceDefinition = getServiceDefinition(model.resolved);
+    const isPaidOnly = serviceDefinition.paidOnly ?? false;
+
+    if (isPaidOnly) {
+        await balance.requirePaidBalance(
+            auth.user.id,
+            "This premium model requires a paid balance. Tier balance cannot be used.",
+        );
+    } else {
         await balance.requirePositiveBalance(
             auth.user.id,
             "Insufficient pollen balance to use this model",

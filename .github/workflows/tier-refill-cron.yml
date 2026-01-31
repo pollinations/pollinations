@@ -4,36 +4,38 @@ on:
   schedule:
     # Run at 00:00 UTC daily
     - cron: '0 0 * * *'
-  workflow_dispatch:
-    # Allow manual triggering from GitHub UI
+  workflow_dispatch: # Manual trigger from GitHub UI
 
 jobs:
   refill:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Production Tier Refill
+      - name: Trigger Tier Refill
         run: |
+          # Call the tier refill endpoint
           response=$(curl -s -w "\n%{http_code}" -X POST \
             "https://enter.pollinations.ai/api/admin/trigger-refill" \
             -H "Authorization: Bearer ${{ secrets.PLN_ENTER_TOKEN }}" \
             -H "Content-Type: application/json")
-          
+
+          # Parse response and status code
           http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | sed '$d')
-          
+          body=$(echo "$response" | head -n-1)
+
+          # Display response
           echo "Response: $body"
-          echo "HTTP Code: $http_code"
-          
+          echo "HTTP Status: $http_code"
+
+          # Fail on non-200 status
           if [ "$http_code" != "200" ]; then
             echo "::error::Tier refill failed with HTTP $http_code"
             exit 1
           fi
-          
-          # Check if it was skipped or executed
-          skipped=$(echo "$body" | jq -r '.skipped // false')
-          if [ "$skipped" = "true" ]; then
+
+          # Report outcome
+          if [ "$(echo "$body" | jq -r '.skipped')" = "true" ]; then
             echo "::notice::Tier refill skipped - already ran today"
           else
-            users=$(echo "$body" | jq -r '.usersRefilled // 0')
+            users=$(echo "$body" | jq -r '.usersRefilled')
             echo "::notice::Tier refill complete - $users users refilled"
           fi

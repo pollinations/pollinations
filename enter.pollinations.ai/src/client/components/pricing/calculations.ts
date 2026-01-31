@@ -3,8 +3,8 @@
  */
 
 import millify from "millify";
-import type { ModelPrice } from "./types.ts";
 import { hasReasoning, hasVision } from "./model-info.ts";
+import type { ModelPrice } from "./types.ts";
 
 // ============================================================================
 // WORKLOAD PROFILES

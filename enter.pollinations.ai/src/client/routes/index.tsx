@@ -460,7 +460,7 @@ function RouteComponent() {
                     onDelete={handleDeleteApiKey}
                 />
                 <FAQ />
-                <Pricing />
+                <Pricing packBalance={packBalance} />
                 <Footer />
             </div>
         </div>

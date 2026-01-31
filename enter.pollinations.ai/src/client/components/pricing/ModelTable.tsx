@@ -13,6 +13,7 @@ type UnifiedModelTableProps = {
     imageModels: ModelPrice[];
     videoModels: ModelPrice[];
     textModels: ModelPrice[];
+    packBalance?: number;
 };
 
 // Helper to convert per pollen string to numeric value for sorting
@@ -124,6 +125,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     imageModels,
     videoModels,
     textModels,
+    packBalance = 0,
 }) => {
     const sortedImageModels = sortModels(imageModels);
     const sortedVideoModels = sortModels(videoModels);
@@ -145,6 +147,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                             key={model.name}
                             model={model}
                             isLast={index === sortedImageModels.length - 1}
+                            packBalance={packBalance}
                         />
                     ))}
                 </tbody>
@@ -159,6 +162,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                             key={model.name}
                             model={model}
                             isLast={index === sortedVideoModels.length - 1}
+                            packBalance={packBalance}
                         />
                     ))}
                 </tbody>
@@ -176,6 +180,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                                 personaModels.length === 0 &&
                                 index === regularTextModels.length - 1
                             }
+                            packBalance={packBalance}
                         />
                     ))}
                     {personaModels.length > 0 && (
@@ -192,6 +197,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                                     key={model.name}
                                     model={model}
                                     isLast={index === personaModels.length - 1}
+                                    packBalance={packBalance}
                                 />
                             ))}
                         </>

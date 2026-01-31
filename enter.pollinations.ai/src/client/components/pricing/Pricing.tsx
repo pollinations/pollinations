@@ -4,7 +4,11 @@ import { getModelPrices } from "./data.ts";
 import { UnifiedModelTable } from "./ModelTable.tsx";
 import { useModelStats } from "./useModelStats.ts";
 
-export const Pricing: FC = () => {
+type PricingProps = {
+    packBalance?: number;
+};
+
+export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
     const { stats } = useModelStats();
     const allModels = getModelPrices(stats);
 
@@ -34,6 +38,7 @@ export const Pricing: FC = () => {
                         imageModels={imageModels}
                         videoModels={videoModels}
                         textModels={textModels}
+                        packBalance={packBalance}
                     />
                 </div>
 

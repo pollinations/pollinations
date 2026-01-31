@@ -18,9 +18,14 @@ import type { ModelPrice } from "./types.ts";
 type ModelRowProps = {
     model: ModelPrice;
     isLast?: boolean;
+    packBalance?: number;
 };
 
-export const ModelRow: FC<ModelRowProps> = ({ model, isLast = false }) => {
+export const ModelRow: FC<ModelRowProps> = ({
+    model,
+    isLast = false,
+    packBalance = 0,
+}) => {
     const modelDisplayName = getModelDisplayName(model.name);
     const genPerPollen = calculatePerPollen(model);
     const [copied, setCopied] = useState(false);
@@ -40,12 +45,15 @@ export const ModelRow: FC<ModelRowProps> = ({ model, isLast = false }) => {
     const showCodeExecution = hasCodeExecution(model.name);
     const showNew = isNewModel(model.name);
     const showPaidOnly = isPaidOnly(model.name);
+    const isDisabled = showPaidOnly && packBalance <= 0;
 
     const borderClass = isLast ? "" : "border-b border-gray-200";
 
     return (
-        <tr>
-            <td className={`py-2 px-2 text-sm text-gray-700 relative group ${borderClass}`}>
+        <tr className={isDisabled ? "opacity-50" : ""}>
+            <td
+                className={`py-2 px-2 text-sm text-gray-700 relative group ${borderClass}`}
+            >
                 <div className="flex items-center gap-2">
                     <div className="flex flex-col">
                         <span className={showNew ? "font-bold" : "font-medium"}>

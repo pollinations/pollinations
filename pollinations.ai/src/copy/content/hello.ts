@@ -18,7 +18,7 @@ export const HELLO_PAGE = {
     // Pollen Section
     pollenTitle: "Pollen",
     pollenDescription:
-        "Running AI models costs money. Pollen is how we keep the servers humming without ads or selling your data. One simple credit across all models — predictable, transparent, no surprises.",
+        "Running AI models costs money. Pollen is how we keep the servers humming without ads or selling your data. One simple credit across all models — predictable, transparent, no surprises. Note: Premium models (claude-large, veo, seedream-pro) require paid balance only.",
 
     // Get Pollen Section
     getPollenTitle: "How to Get Pollen",

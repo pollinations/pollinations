@@ -73,6 +73,7 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
     voices?: string[];
     isSpecialized?: boolean;
     persona?: boolean;
+    paidOnly?: boolean; // Models that require paid balance only
 };
 
 /** Sorts the cost and price definitions by date, in descending order */

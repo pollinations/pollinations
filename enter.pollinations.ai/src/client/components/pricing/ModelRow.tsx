@@ -9,6 +9,7 @@ import {
     hasSearch,
     hasVision,
     isNewModel,
+    isPaidOnly,
 } from "./model-info.ts";
 import { PriceBadge } from "./PriceBadge.tsx";
 import { Tooltip } from "./Tooltip.tsx";
@@ -16,9 +17,15 @@ import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
     model: ModelPrice;
+    isLast?: boolean;
+    packBalance?: number;
 };
 
-export const ModelRow: FC<ModelRowProps> = ({ model }) => {
+export const ModelRow: FC<ModelRowProps> = ({
+    model,
+    isLast = false,
+    packBalance = 0,
+}) => {
     const modelDisplayName = getModelDisplayName(model.name);
     const genPerPollen = calculatePerPollen(model);
     const [copied, setCopied] = useState(false);
@@ -37,10 +44,16 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showSearch = hasSearch(model.name);
     const showCodeExecution = hasCodeExecution(model.name);
     const showNew = isNewModel(model.name);
+    const showPaidOnly = isPaidOnly(model.name);
+    const isDisabled = showPaidOnly && packBalance <= 0;
+
+    const borderClass = isLast ? "" : "border-b border-gray-200";
 
     return (
-        <tr className="border-b border-gray-200">
-            <td className="py-2 px-2 text-sm text-gray-700 whitespace-nowrap relative group">
+        <tr className={isDisabled ? "opacity-50" : ""}>
+            <td
+                className={`py-2 px-2 text-sm text-gray-700 relative group ${borderClass}`}
+            >
                 <div className="flex items-center gap-2">
                     <div className="flex flex-col">
                         <span className={showNew ? "font-bold" : "font-medium"}>
@@ -96,62 +109,108 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             NEW
                         </span>
                     )}
+                    {showPaidOnly && (
+                        <Tooltip
+                            content={
+                                isDisabled
+                                    ? "Top up your 💎 pollen balance to unlock this model."
+                                    : "This model uses your purchased pollen 💎 only."
+                            }
+                        >
+                            <span className="text-[10px] text-purple-700 bg-transparent px-1.5 py-0.5 rounded-full font-semibold border border-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.5)] animate-[glow-purple_2s_ease-in-out_infinite]">
+                                💎 PAID ONLY
+                            </span>
+                        </Tooltip>
+                    )}
                 </div>
             </td>
-            <td className="py-2 px-2 text-sm">
+            <td className={`py-2 px-2 text-sm ${borderClass}`}>
                 <div className="flex justify-center">
                     <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-yellow-100 to-orange-100 text-orange-900 border border-orange-200 ${model.type === "image" ? "uppercase" : ""}`}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${model.type === "image" ? "uppercase" : ""} ${showPaidOnly ? "bg-purple-200 text-purple-700 border border-purple-300" : "bg-cyan-200 text-cyan-700 border border-cyan-300"}`}
                     >
                         {genPerPollen}
                     </span>
                 </div>
             </td>
-            <td className="py-2 px-2 text-sm text-center">
+            <td className={`py-2 px-2 text-sm text-center ${borderClass}`}>
                 {genPerPollen === "—" ? (
                     <span className="text-gray-400">—</span>
                 ) : (
-                    <div className="flex flex-wrap gap-1 justify-center">
+                    <div className="flex flex-col gap-1 items-center">
                         <PriceBadge
-                            prices={[
-                                model.promptTextPrice,
-                                model.promptCachedPrice,
-                            ]}
+                            prices={[model.promptTextPrice]}
                             emoji="💬"
-                            subEmojis={["💬", "💾"]}
+                            subEmojis={["💬"]}
                             perToken={model.perToken}
+                            className={
+                                showPaidOnly
+                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                            }
+                        />
+                        <PriceBadge
+                            prices={[model.promptCachedPrice]}
+                            emoji="�"
+                            subEmojis={["💾"]}
+                            perToken={model.perToken}
+                            className={
+                                showPaidOnly
+                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                            }
                         />
                         <PriceBadge
                             prices={[model.promptAudioPrice]}
                             emoji="🔊"
                             subEmojis={["🔊"]}
                             perToken={model.perToken}
+                            className={
+                                showPaidOnly
+                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                            }
                         />
                         <PriceBadge
                             prices={[model.promptImagePrice]}
                             emoji="🖼️"
                             subEmojis={["🖼️"]}
                             perToken={model.perToken}
+                            className={
+                                showPaidOnly
+                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                            }
                         />
                     </div>
                 )}
             </td>
-            <td className="py-2 px-2 text-sm text-center">
+            <td className={`py-2 px-2 text-sm text-center ${borderClass}`}>
                 {genPerPollen === "—" ? (
                     <span className="text-gray-400">—</span>
                 ) : (
-                    <div className="flex flex-wrap gap-1 justify-center">
+                    <div className="flex flex-col gap-1 items-center">
                         <PriceBadge
                             prices={[model.completionTextPrice]}
                             emoji="💬"
                             subEmojis={["💬"]}
                             perToken={model.perToken}
+                            className={
+                                showPaidOnly
+                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                            }
                         />
                         <PriceBadge
                             prices={[model.completionAudioPrice]}
                             emoji="🔊"
                             subEmojis={["🔊"]}
                             perToken={model.perToken}
+                            className={
+                                showPaidOnly
+                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                            }
                         />
                         {model.perSecondPrice ? (
                             <>
@@ -160,12 +219,22 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                     emoji="🎬"
                                     subEmojis={["🎬"]}
                                     perSecond
+                                    className={
+                                        showPaidOnly
+                                            ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                            : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                                    }
                                 />
                                 <PriceBadge
                                     prices={[model.perAudioSecondPrice]}
                                     emoji="🔊"
                                     subEmojis={["🔊"]}
                                     perSecond
+                                    className={
+                                        showPaidOnly
+                                            ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                            : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                                    }
                                 />
                             </>
                         ) : model.perTokenPrice ? (
@@ -174,6 +243,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 emoji="🎬"
                                 subEmojis={["🎬"]}
                                 perToken
+                                className={
+                                    showPaidOnly
+                                        ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                        : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                                }
                             />
                         ) : model.perImagePrice ? (
                             <PriceBadge
@@ -181,6 +255,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 emoji="🖼️"
                                 subEmojis={["🖼️"]}
                                 perImage
+                                className={
+                                    showPaidOnly
+                                        ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                        : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                                }
                             />
                         ) : (
                             <PriceBadge
@@ -188,6 +267,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 emoji="🖼️"
                                 subEmojis={["🖼️"]}
                                 perToken={model.perToken}
+                                className={
+                                    showPaidOnly
+                                        ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+                                        : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
+                                }
                             />
                         )}
                     </div>

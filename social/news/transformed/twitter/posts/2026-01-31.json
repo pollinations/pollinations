@@ -1,0 +1,30 @@
+{
+  "date": "2026-01-31",
+  "generated_at": "2026-01-31T15:06:09.893904+00:00",
+  "platform": "twitter",
+  "tweet_type": "shipped",
+  "tweet": "turbo is dead, long live the heavy hitters 👑\n\npremium models (claude-large, veo) now have their own vip section (paid balance required).\n\nsecurity hardened. secrets organized. 9 PRs merged.\n\nwe are so back. 🌸",
+  "alt_tweet": "gave the big models a vip pass today 🎫\n\npaid balance now needed for claude-large & veo. turbo model has left the chat.\n\nsecuring the bag (and the api keys).\n\nbuild something cool: pollinations.ai",
+  "full_tweet": "turbo is dead, long live the heavy hitters 👑\n\npremium models (claude-large, veo) now have their own vip section (paid balance required).\n\nsecurity hardened. secrets organized. 9 PRs merged.\n\nwe are so back. 🌸 #OpenSource #AI",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image": {
+    "url": "https://gen.pollinations.ai/image/A%20narrative%20pixel%20art%20scene%20at%20an%20exclusive%20nightclub%20entrance%20at%20night.%20Foreground%3A%20A%20cool%20pixel%20bee%20bouncer%20in%20a%20tuxedo%20and%20sunglasses%20holding%20a%20velvet%20rope%2C%20checking%20a%20%27PAID%27%20ID%20card.%20Background%3A%20Through%20the%20open%20door%2C%20a%20vibrant%20party%20with%20glowing%20text%20entities%20%27CLAUDE%27%20and%20%27VEO%27%20dancing%20under%20lime%20green%20%23ecf874%20disco%20lights.%20To%20the%20side%3A%20a%20translucent%2C%20ghostly%20%27TURBO%27%20model%20floating%20away%20into%20the%20starry%20night%20sky%2C%20looking%20nostalgic.%20Style%3A%20Cyberpunk%20pixel%20art%20meets%20cozy%20Stardew%20Valley%20vibes.%20Atmosphere%3A%20Exclusive%2C%20energetic%2C%20neon-soaked.%20Avoid%3A%20scary%20vibes%2C%20realistic%20rendering%2C%20messy%20composition.?model=nanobanana-pro&width=1200&height=675&quality=hd&nologo=true&private=true&nofeed=true&seed=117886841",
+    "prompt": "A narrative pixel art scene at an exclusive nightclub entrance at night. Foreground: A cool pixel bee bouncer in a tuxedo and sunglasses holding a velvet rope, checking a 'PAID' ID card. Background: Through the open door, a vibrant party with glowing text entities 'CLAUDE' and 'VEO' dancing under lime green #ecf874 disco lights. To the side: a translucent, ghostly 'TURBO' model floating away into the starry night sky, looking nostalgic. Style: Cyberpunk pixel art meets cozy Stardew Valley vibes. Atmosphere: Exclusive, energetic, neon-soaked. Avoid: scary vibes, realistic rendering, messy composition."
+  },
+  "reasoning": "Highlights the biggest user-facing change (paid gating) with a 'VIP' metaphor that translates well to a fun image. Acknowledges the removal of Turbo and the security updates without getting bogged down in technical jargon. Uses the 'we are so back' energy consistent with the persona.",
+  "pr_references": [
+    "#7719",
+    "#7821",
+    "#7801",
+    "#7819",
+    "#7708",
+    "#7779",
+    "#7818",
+    "#7807",
+    "#7799"
+  ],
+  "char_count": 224
+}

@@ -1,5 +1,7 @@
 # Flux Schnell Server Dependencies
-# Note: PyTorch is installed separately with CUDA support via setup.sh
+# Note: PyTorch is installed separately with CUDA support
+# Note: nunchaku must be built from source for RTX 5090 (Blackwell/sm_120)
+#       See VASTAI_INSTANCES.md for instructions
 
 # Core ML
 accelerate>=1.9

@@ -22,18 +22,21 @@
 
 ---
 
-## 📈 TRACTION METRICS (Validated)
+## 📈 TRACTION METRICS
 
-| Metric | Value | Validation |
-|--------|-------|------------|
-| New developers/day | **600+** | HIGH - aligns with 51% of devs using AI daily |
-| Monthly Active Users | **3M+** | Strong platform adoption |
-| Live apps | **800+** | STRONG - comparable to successful no-code platforms |
-| Discord community | **17K+** | Same tier as TensorFlow community |
-| New apps published/day | **20** | Active ecosystem |
-| Youngest developer | **11 years old** | Global reach |
-| Breakout hit | **51M Roblox visits, $12K/month** | Realistic - top games have billions |
-| Revenue growth | **229% WoW** | Plausible for early stage (not sustainable) |
+> ⚠️ **Clarification Needed**: "3M+ MAU" = end-users of apps built on Pollinations, not platform users. See DATA_VERIFICATION_REPORT.md
+
+| Metric | Value | Trend | Notes |
+|--------|-------|-------|-------|
+| **End-users across apps** | 3M+ | ↗ | Indirect users via 800+ apps |
+| **Platform developers** | ~20K | ↗ | Direct platform users |
+| **WAU (developers)** | ~4K | ↗ | Weekly active (Jan 2026) |
+| **Discord Community** | 17K+ | ↗ | Verified |
+| **Apps Live** | ~1,000 | ↗ | |
+| **New Devs/Day** | 600+ | ↗ | *(Verify current rate)* |
+| **New Apps/Day** | ~20 | ↗ | Active ecosystem |
+| **Roblox Hit** | 51M visits, $12K | ↗ | Validated revenue |
+| **Revenue Growth** | 229% WoW | ↗ | Token usage spike |
 
 ---
 

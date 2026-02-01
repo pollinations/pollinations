@@ -96,15 +96,19 @@ For Pollinations' €1.5M-€2.5M seed round, based on 2025 market data:
 
 ## Antler SAFE Context
 
-**Existing Antler Investment**:
-- Amount: €300K
-- Post-money cap: €5.07M
-- Pre-money: ~€4.7M
-- Implied ownership: ~5.9%
+> ⚠️ **ACTION REQUIRED**: Verify exact terms from legal documents
+
+**Existing Antler Investment** *(NEEDS VERIFICATION)*:
+- Amount: €300K *(VERIFY)*
+- Post-money cap: €5.07M *(VERIFY)*
+- Pre-money: ~€4.7M *(CALCULATED)*
+- Implied ownership: ~5.9% *(CALCULATED)*
+
+**⚠️ Thomas**: Please confirm these figures from the actual SAFE agreement before using in investor materials.
 
 **Implications for New Round**:
-- New cap should be higher than Antler's €5.07M (reflects growth)
-- 2x-2.5x increase (€10M-€12M) is reasonable given traction
+- New cap should be higher than Antler's cap (reflects growth)
+- 2x-2.5x increase is reasonable given traction
 - Antler's SAFE will convert at their cap, not the new higher cap
 
 ---

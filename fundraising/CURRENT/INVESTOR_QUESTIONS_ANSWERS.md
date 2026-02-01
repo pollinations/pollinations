@@ -209,15 +209,17 @@ GROWTH                    │                     GROWTH
                     LOW MARKET SHARE
 ```
 
-**Detailed Competitor Comparison**:
+**Detailed Competitor Comparison** *(Updated Feb 2026)*:
 
-| Competitor | Focus | Funding | Strength | Weakness vs Us |
-|------------|-------|---------|----------|----------------|
-| **FAL.ai** | Enterprise | $500M | Scale, SLAs | No community, enterprise-only |
-| **Replicate** | ML Ops | $40M | Model hosting | Complex, requires backend |
-| **OpenRouter** | API routing | $10M | Model variety | No community, no user-pays |
-| **Together.ai** | Inference | $100M+ | Performance | Enterprise focus |
-| **Hugging Face** | ML platform | $235M | Model hub | Not focused on apps |
+| Competitor | Focus | Funding | Valuation | Strength | Weakness vs Us |
+|------------|-------|---------|-----------|----------|----------------|
+| **FAL.ai** | Enterprise multimodal | **$447M** | **$4.5B** | Scale, SLAs, $200M+ rev | No community, enterprise-only |
+| **Replicate** | ML Ops | $58M | $350M | Model hosting | **ACQUIRED BY CLOUDFLARE (Nov 2025)** |
+| **OpenRouter** | LLM routing | **$40M** | — | **$100M+ ARR**, 1M devs | No community, no user-pays, LLM-only |
+| **Together.ai** | Inference | $100M+ | — | Performance | Enterprise focus |
+| **Hugging Face** | ML platform | $235M | — | Model hub | Not focused on apps |
+
+> ⚠️ **Market Signal**: Replicate's acquisition by Cloudflare (Nov 2025) validates the market. FAL's $4.5B valuation shows infrastructure premium. OpenRouter's $100M ARR proves aggregator model works.
 
 **Our Unique Position**:
 - **Only** platform with user-pays model

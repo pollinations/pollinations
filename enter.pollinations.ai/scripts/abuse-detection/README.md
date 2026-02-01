@@ -166,7 +166,7 @@ flowchart TB
         
         D2{githubIdCluster<br/>size > 0?}
         D2 --> |Yes| D2A["sizeAmplifier = min(2, 1 + log2(size)/10)<br/>densityMult = min(1, density × 10)<br/>points = 40 × sizeAmplifier × densityMult"]
-        D2A --> D2B{density ≥ 0.1?}
+        D2A --> D2B{density ≥ 0.02?}
         D2B --> |Yes| D2C["signalCount++<br/>(strong cluster)"]
         D2B --> |No| D3
         D2C --> D3
@@ -284,8 +284,20 @@ flowchart TB
 | Band | Criteria | Action |
 |------|----------|--------|
 | `enforce` | (Hard signals + behavior ≥30) OR (combined ≥70 + behavior ≥30), NOT allowlisted | Auto-downgrade |
-| `review` | Allowlisted with flags, OR hard signal alone, OR combined ≥40, OR 2+ signals | Manual review |
+| `review` | Allowlisted with flags, OR hard signal alone, OR combined ≥40, OR 2+ signals, OR **cost override** | Manual review |
 | `watch` | Low score, single weak signal | Monitor only |
+
+### Cost Override Rule
+
+Users initially classified as `watch` are escalated to `review` when they have **high usage impact** with Tinybird telemetry:
+
+| Threshold | Value | Rationale |
+|-----------|-------|-----------|
+| Pollen consumed (30d) | ≥ 50 | High resource cost |
+| Tier usage % | ≥ 100% | Over-quota usage |
+| Requests (30d) | ≥ 10,000 | High API volume |
+
+**Any one** of these thresholds triggers escalation. This ensures expensive "context-only" users get manual review.
 
 ---
 
@@ -339,7 +351,26 @@ The pipeline generates **two CSV files**:
 | File | Columns | Audience |
 |------|---------|----------|
 | `flagged-users-actions.csv` | 20 | Ops (triage) - Review + Enforce only |
-| `flagged-users-debug.csv` | 36 | Engineers - All flagged users with full detail |
+| `flagged-users-debug.csv` | 38 | Engineers - All flagged users with full detail |
+| `flagged-users-summary.md` | - | Markdown report with stats and triage lists |
+
+### Markdown Summary Sections
+
+The `flagged-users-summary.md` includes:
+
+- **Overview**: Total/flagged user counts
+- **Risk Band Breakdown**: Separate enforce/review/watch counts + cost override count
+- **Tinybird Coverage**: Telemetry availability stats
+- **Usage Overview**: Pollen, requests, tier% stats (median, P95) + count of tier% > 100 users
+  - *Tier % = 30d pollen consumed ÷ 30d tier allowance (can exceed 100%)*
+- **Usage by Risk Band**: Per-band usage breakdown with coverage bias note
+- **Signal Breakdown**: Detection signal distribution
+- **Cluster Analysis**: Burst and GHID cluster stats
+- **Impact Triage**: Top 20 lists for ops prioritization
+  - By Pollen Consumed
+  - By Requests
+  - By Behavior Score (≥30 only)
+  - **Watch → Review (Cost Overrides)**: Escalated users marked with `*`
 
 ### Key Columns
 - **Decision**: `risk_band`, `combined_score`, `behavior_score`, `identity_score`, `flag_reasons`
@@ -363,4 +394,4 @@ The pipeline generates **two CSV files**:
 
 - [ ] IP/ASN clustering
 - [ ] GitHub account age verification
-- [ ] Pre-indexed lookup maps for O(1) duplicate detection
+- [x] Pre-indexed lookup maps for O(1) duplicate detection (implemented)

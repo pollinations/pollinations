@@ -10,27 +10,37 @@ Vast.ai instances running RTX 5090 GPUs for image generation:
 
 ## Active Instances
 
-| Instance ID | Public IP | SSH Port | GPUs | GPU Type | Services |
-|-------------|-----------|----------|------|----------|----------|
-| 30822975 | 211.72.13.201 | 43062 | 4 | RTX 5090 | Flux (GPU 0), Z-Image (GPU 2, 3) |
-| 30822967 | 120.238.149.205 | 20676 | 1 | RTX 5090 | Flux |
+| Instance ID | Public IP | SSH Port | GPUs | GPU Type | Location | Services |
+|-------------|-----------|----------|------|----------|----------|----------|
+| 30822975 | 211.72.13.201 | 43062 | 4 | RTX 5090 | Taiwan | Flux (GPU 0,1), Z-Image (GPU 2,3) |
+| 30826995 | 76.69.188.175 | 21085 | 4 | RTX 5090 | Quebec, CA | Flux (GPU 0,1,2,3) |
 
-### Port Mappings (Instance 30822975)
+### Port Mappings
 
+**Instance 30822975 (Taiwan)**
 | Internal Port | External Port | Service |
 |---------------|---------------|---------|
 | 8765 | 43096 | Flux (GPU 0) |
+| 8766 | 43078 | Flux (GPU 1) |
 | 8767 | 43060 | Z-Image (GPU 2) |
 | 8768 | 43066 | Z-Image (GPU 3) |
+
+**Instance 30826995 (Quebec)**
+| Internal Port | External Port | Service |
+|---------------|---------------|---------|  
+| 8765 | 21011 | Flux (GPU 0) |
+| 8766 | 21057 | Flux (GPU 1) |
+| 8767 | 21050 | Flux (GPU 2) |
+| 8768 | 21059 | Flux (GPU 3) |
 
 ## SSH Access
 
 ```bash
-# Instance 1 (30822967)
-ssh -p 20676 -i ~/.ssh/pollinations_services_2026 root@120.238.149.205
-
-# Instance 2 (30822975)
+# Instance 30822975 (Taiwan)
 ssh -p 43062 -i ~/.ssh/pollinations_services_2026 root@211.72.13.201
+
+# Instance 30826995 (Quebec)
+ssh -p 21085 -i ~/.ssh/pollinations_services_2026 root@76.69.188.175
 ```
 
 ## Setup Instructions
@@ -73,13 +83,36 @@ pip install --pre torch torchvision --index-url https://download.pytorch.org/whl
 python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.cuda.is_available()}, GPU: {torch.cuda.get_device_name(0)}')"
 ```
 
-### 3. Build Nunchaku from Source
+### 3. Install CUDA 12.8 Toolkit (Required for Building Nunchaku)
+
+The system may have CUDA 13.0, but PyTorch nightly uses CUDA 12.8. To build nunchaku, you need CUDA 12.8 toolkit:
+
+```bash
+# Download and install CUDA 12.8 toolkit (toolkit only, no driver)
+wget https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda_12.8.0_570.86.10_linux.run -O /tmp/cuda_12.8.run
+chmod +x /tmp/cuda_12.8.run
+/tmp/cuda_12.8.run --toolkit --silent --override
+
+# Verify installation
+/usr/local/cuda-12.8/bin/nvcc --version
+# Should show: Cuda compilation tools, release 12.8
+
+# Set PATH for building (add to your shell or run before building)
+export PATH=/usr/local/cuda-12.8/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda-12.8/lib64:$LD_LIBRARY_PATH
+```
+
+### 4. Build Nunchaku from Source
 
 RTX 5090 (Blackwell, sm_120) requires building nunchaku from source:
 
 ```bash
 cd /workspace/flux
 source venv/bin/activate
+
+# Ensure CUDA 12.8 is in PATH (must match PyTorch's CUDA version)
+export PATH=/usr/local/cuda-12.8/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda-12.8/lib64:$LD_LIBRARY_PATH
 
 # Install build dependencies
 pip install ninja
@@ -96,7 +129,7 @@ export NUNCHAKU_INSTALL_SM='120'
 pip install --no-build-isolation .
 ```
 
-### 4. Install Server Dependencies
+### 5. Install Server Dependencies
 
 ```bash
 cd /workspace/flux
@@ -105,7 +138,7 @@ source venv/bin/activate
 pip install fastapi uvicorn pydantic aiohttp pillow python-multipart diffusers transformers accelerate safetensors
 ```
 
-### 5. Copy Server Files
+### 6. Copy Server Files
 
 From your local machine:
 
@@ -121,7 +154,7 @@ scp -P <SSH_PORT> -i ~/.ssh/pollinations_services_2026 -r \
   root@<PUBLIC_IP>:/workspace/flux/
 ```
 
-### 6. Configure server.py for RTX 5090
+### 7. Configure server.py for RTX 5090
 
 The server needs a few modifications for Blackwell GPUs:
 
@@ -141,7 +174,7 @@ The server needs a few modifications for Blackwell GPUs:
    # Replace check_safety call with: concepts, has_nsfw = [], [False]
    ```
 
-### 7. Start the Server
+### 8. Start the Server
 
 Use `screen` to keep the server running after SSH disconnect:
 
@@ -163,7 +196,7 @@ screen -ls
 curl http://localhost:8765/docs
 ```
 
-### 8. Verify External Access
+### 9. Verify External Access
 
 ```bash
 # From your local machine
@@ -345,7 +378,11 @@ screen -dmS zimage-gpu3 bash -c 'cd /workspace/zimage && source venv/bin/activat
 
 ### "CUDA version mismatch" when building nunchaku
 - The system CUDA (13.0) differs from PyTorch CUDA (12.8)
-- Solution: Build nunchaku from source (it uses PyTorch's CUDA, not system CUDA)
+- Solution: Install CUDA 12.8 toolkit and set PATH before building:
+  ```bash
+  export PATH=/usr/local/cuda-12.8/bin:$PATH
+  export LD_LIBRARY_PATH=/usr/local/cuda-12.8/lib64:$LD_LIBRARY_PATH
+  ```
 
 ### Server exits immediately
 - Check logs: `tail /tmp/flux-gpu0.log`
@@ -360,11 +397,14 @@ screen -dmS zimage-gpu3 bash -c 'cd /workspace/zimage && source venv/bin/activat
 | Instance | GPU | Service | VRAM Used | External Port |
 |----------|-----|---------|-----------|---------------|
 | 30822975 | 0 | Flux | ~21 GB | 43096 |
-| 30822975 | 1 | *free* | - | - |
+| 30822975 | 1 | Flux | ~21 GB | 43078 |
 | 30822975 | 2 | Z-Image | ~24 GB | 43060 |
 | 30822975 | 3 | Z-Image | ~23 GB | 43066 |
-| 30822967 | 0 | Flux | ~21 GB | 20704 |
-| **Total** | **5** | | ~89 GB | |
+| 30826995 | 0 | Flux | ~21 GB | 21011 |
+| 30826995 | 1 | Flux | ~21 GB | 21057 |
+| 30826995 | 2 | Flux | ~21 GB | 21050 |
+| 30826995 | 3 | Flux | ~21 GB | 21059 |
+| **Total** | **8** | | ~173 GB | |
 
 ## Notes
 

@@ -122,7 +122,12 @@ export const adminRoutes = new Hono<Env>()
             ? authHeader.slice(7)
             : null;
 
-        if (providedKey !== c.env.PLN_ENTER_TOKEN) {
+        const isRefillEndpoint = c.req.path.endsWith("/trigger-refill");
+        const isValidFullToken = providedKey === c.env.PLN_ENTER_TOKEN;
+        const isValidRefillToken =
+            isRefillEndpoint && providedKey === c.env.REFILL_TOKEN;
+
+        if (!isValidFullToken && !isValidRefillToken) {
             throw new HTTPException(401, { message: "Unauthorized" });
         }
 

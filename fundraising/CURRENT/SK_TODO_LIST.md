@@ -69,9 +69,9 @@
 | Task | Type | Prio | Status | Owner | Output |
 |------|------|------|--------|-------|--------|
 | Define business model clearly | Deliverable | P0 | ✅ Done | | See `COMPREHENSIVE_STATUS_REPORT.md` + `mycel-extract/04_business_model.md` |
-| Define pricing logic & assumptions | Deliverable | P0 | ⬜ | | Pricing-Logik |
-| Draft unit economics (high-level) | Deliverable | P0 | ⬜ | | Unit-Economics-Sheet |
-| Draft GTM hypotheses (Go-To-Market) | Deliverable | P0 | ⬜ | | 2–3 GTM-Hypothesen |
+| Define pricing logic & assumptions | Deliverable | P0 | ✅ Done | | See `PRICING_LOGIC.md` |
+| Draft unit economics (high-level) | Deliverable | P0 | ✅ Done | | See `UNIT_ECONOMICS.md` |
+| Draft GTM hypotheses (Go-To-Market) | Deliverable | P0 | ✅ Done | | See `GTM_HYPOTHESES.md` |
 | Build 24–36 month financial model | Deliverable | P0 | ✅ Done | | See `financial-model.md` + `36_MONTH_MILESTONES.md` |
 | Define use of funds breakdown | Deliverable | P0 | ✅ Done | | See `36_MONTH_MILESTONES.md` (Use of Funds section) |
 
@@ -135,9 +135,9 @@
 - [ ] Iterate Pitch Deck after feedback
 - [ ] Prepare short pitch (2–3 minutes)
 - [x] Define business model clearly ✅ `COMPREHENSIVE_STATUS_REPORT.md`
-- [ ] Define pricing logic & assumptions
-- [ ] Draft unit economics (high-level)
-- [ ] Draft GTM hypotheses (Go-To-Market)
+- [x] Define pricing logic & assumptions ✅ `PRICING_LOGIC.md`
+- [x] Draft unit economics (high-level) ✅ `UNIT_ECONOMICS.md`
+- [x] Draft GTM hypotheses (Go-To-Market) ✅ `GTM_HYPOTHESES.md`
 - [x] Build 24–36 month financial model ✅ `financial-model.md`
 - [x] Define use of funds breakdown ✅ `36_MONTH_MILESTONES.md`
 - [ ] Select standard SAFE / CLA template

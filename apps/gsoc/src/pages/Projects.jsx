@@ -390,6 +390,10 @@ const ProjectsPage = () => {
                                                     xs: "center",
                                                     md: "flex-start",
                                                 },
+                                                justifyContent: {
+                                                    lg: "center",
+                                                    md: "space-between",
+                                                },
                                             }}
                                         >
                                             {/* Left: All content */}
@@ -555,7 +559,6 @@ const ProjectsPage = () => {
                                                         ),
                                                     )}
                                                 </Stack>
-
                                             </Box>
 
                                             <Box

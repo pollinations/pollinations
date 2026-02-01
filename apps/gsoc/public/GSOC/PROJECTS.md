@@ -7,14 +7,14 @@ category: Game Dev
 difficulty: Intermediate
 duration: 175
 mentor: 0xmnt01
-technologies: Lua, C#, GDScript, Rest API, Reinforcement Learning, Transfer Learning
+technologies: Lua, C#, GDScript, Rest API, Reinforcement Learning, Fine-tuning
 ---
 
 Create **plug-and-play SDKs** to bring generative AI into popular game engines.
 
-The *'Roblox for AI'* vision needs concrete tools. This project involves building and documenting easy-to-use SDKs or "starter kits" for **Roblox**, **Godot**, or **Unity**. The goal is to allow a *vibe coder* (a teenager with no credit card) to add generative AI NPCs, textures, or dialogue to their game in **one line of code**.
+This project involves building and documenting easy-to-use SDKs or "starter kits" for **Roblox**, **Godot**, or **Unity**. The goal is to allow a *vibe coder* (a teenager with no credit card) to add generative AI NPCs, textures, or dialogue to their game in **one line of code**.
 
-**Extensions:** AI NPC behavior using **reinforcement learning** and **transfer learning** for characters that learn from player interactions, adapt dialogue style, and maintain consistent personalities. This approach has extensive ML community recipes, cloud provider fine-tuning APIs, and benchmark comparisons for performance evaluation.
+**Extensions:** AI NPC behavior using **reinforcement learning** and **fine-tuning** for characters that learn from player interactions, adapt dialogue style, and maintain consistent personalities. This approach has extensive ML community recipes, cloud provider fine-tuning APIs, and benchmark comparisons for performance evaluation.
 
 ---
 id: 0xprj06
@@ -60,7 +60,7 @@ Create a multi-agent system that monitors pollinations.ai infrastructure around 
 
 ---
 id: 0xprj02
-title: Universal Semantic Cache
+title: Universal Multimodal Semantic Cache
 category: Infrastructure
 difficulty: Advanced
 duration: 350
@@ -68,9 +68,9 @@ mentor: 0xmnt01
 technologies: CLIP, Cloudflare Vectorize, FAISS, TypeScript
 ---
 
-**CLIP embeddings** for images, **text embeddings** for prompts — cache hits *before* generation to save compute.
+**CLIP embeddings** for images, **text embeddings** for prompts, **audio embeddings** for speech — cache hits *before* generation to save compute across all modalities.
 
-Build a semantic caching layer that uses embeddings to enable cache hits before generation, significantly reducing compute costs. The system will support **configurable similarity thresholds** per model.
+Build a semantic caching layer for multimodal AI interactions that uses embeddings to enable cache hits before generation, significantly reducing compute costs. The system will support **configurable similarity thresholds** per model and modality.
 
 **Extensions:** Cache analytics dashboards and per-user/per-app isolation.
 
@@ -104,24 +104,3 @@ Build a single chat endpoint that routes to all pollinations.ai models. Supports
 
 **Extensions:** Real-time streaming canvas via WebSocket and voice-first mode with duplex audio.
 
----
-id: 0xprj03
-title: Pluggable Memory Layer
-category: AI/ML
-difficulty: Advanced
-duration: 350
-mentor: 0xmnt01
-technologies: TypeScript, Cloudflare KV, GitHub API, SQLite, MCP
----
-
-Memory-as-tools with `remember()`, `recall()`, `forget()` and **pluggable backends**.
-
-Build a memory-as-a-service system exposing these functions as tools. Supports pluggable backends:
-- **Cloudflare KV** (hosted)
-- **GitHub repos**
-- **Local SQLite**
-- Custom adapters (MCP supported)
-
-Features *auto-extraction* of memories from conversations.
-
-**Extensions:** "Connect your GitHub" for coding context and cross-app sharing with OAuth-like scopes.

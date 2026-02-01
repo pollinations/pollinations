@@ -1,10 +1,10 @@
 # 💰 SAFE Cap & Discount Research
 
-> **⚠️ DRAFT - For Internal Review Only**
+> **⚠️ DRAFT - For Internal Review**
 
-**Created**: February 1, 2026  
+**Updated**: February 2, 2026  
 **Purpose**: Prepare cap & discount recommendation for seed round  
-**Sources**: Carta Q3 2025, Equidam, Flowjam, industry benchmarks
+**Sources**: Carta Q3 2025, Pitchbook-NVCA, Zeni, Equidam, Flowjam, industry benchmarks
 
 ---
 
@@ -37,7 +37,7 @@ For Pollinations' €1.5M-€2.5M seed round, based on 2025 market data:
 
 | Region | Avg Pre-Seed Valuation | Typical Dilution |
 |--------|------------------------|------------------|
-| **United States** | $5.27M | 19.69% |
+| **United States** | $7.7M | 19.69% |
 | **Middle East** | $3.70M | 24.80% |
 | **Europe** | $3.24M | 21.00% |
 | **Oceania** | $3.32M | 11.67% |

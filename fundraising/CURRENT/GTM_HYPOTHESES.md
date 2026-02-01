@@ -17,7 +17,14 @@
 - 1,000+ apps published (Discord bots, creative tools, games, web apps)
 - Zero marketing spend to date
 
-**Use Cases**: Discord bots, Roblox games, web apps, creative tools, YouTube integrations, Minecraft mods
+**App Distribution** (464 apps from APPS.md):
+- Creative tools: 40%
+- Chat apps: 24%
+- Dev tools: 11%
+- Games (incl. Roblox): 8%
+- Learning: 6%
+- Social bots: 5%
+- Vibes: 5%
 
 ---
 

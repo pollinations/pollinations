@@ -1,17 +1,27 @@
-# Vast.ai GPU Instances - Flux Deployment
+# Vast.ai GPU Instances - Flux & Z-Image Deployment
 
 Last updated: 2026-02-01
 
 ## Overview
 
-Vast.ai instances running RTX 5090 GPUs for Flux image generation. These use **nunchaku quantization** (FP4 for Blackwell GPUs) to run Flux Schnell efficiently.
+Vast.ai instances running RTX 5090 GPUs for image generation:
+- **Flux**: Uses nunchaku quantization (FP4 for Blackwell GPUs) to run Flux Schnell
+- **Z-Image**: Tongyi Z-Image-Turbo with SPAN 2x upscaler
 
 ## Active Instances
 
-| Instance ID | Public IP | SSH Port | Flux Port (8765) | GPUs | GPU Type | Status |
-|-------------|-----------|----------|------------------|------|----------|--------|
-| 30822975 | 211.72.13.201 | 43062 | 43096 | 1 | RTX 5090 | ✅ Working |
-| 30822967 | 120.238.149.205 | 20676 | 20704 | 1 | RTX 5090 | 🔧 Setup |
+| Instance ID | Public IP | SSH Port | GPUs | GPU Type | Services |
+|-------------|-----------|----------|------|----------|----------|
+| 30822975 | 211.72.13.201 | 43062 | 4 | RTX 5090 | Flux (GPU 0), Z-Image (GPU 2, 3) |
+| 30822967 | 120.238.149.205 | 20676 | 1 | RTX 5090 | Flux |
+
+### Port Mappings (Instance 30822975)
+
+| Internal Port | External Port | Service |
+|---------------|---------------|---------|
+| 8765 | 43096 | Flux (GPU 0) |
+| 8767 | 43060 | Z-Image (GPU 2) |
+| 8768 | 43066 | Z-Image (GPU 3) |
 
 ## SSH Access
 
@@ -212,6 +222,121 @@ screen -dmS flux-gpu0 bash -c '... CUDA_VISIBLE_DEVICES=0 PORT=8765 PUBLIC_PORT=
 screen -dmS flux-gpu1 bash -c '... CUDA_VISIBLE_DEVICES=1 PORT=8766 PUBLIC_PORT=<port1> ...'
 ```
 
+---
+
+## Z-Image Setup
+
+Z-Image uses Tongyi Z-Image-Turbo with SPAN 2x upscaler. It's simpler than Flux as it doesn't require building from source.
+
+### 1. Initial Setup
+
+```bash
+# SSH into the instance
+ssh -p <SSH_PORT> -i ~/.ssh/pollinations_services_2026 root@<PUBLIC_IP>
+
+# Create workspace
+mkdir -p /workspace/zimage
+cd /workspace/zimage
+
+# Create Python virtual environment
+python3.12 -m venv venv
+source venv/bin/activate
+
+# Install PyTorch nightly with CUDA 12.8 (required for RTX 5090 / sm_120)
+pip install --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/cu128
+
+# Verify sm_120 support
+python -c "import torch; print('Arch list:', torch.cuda.get_arch_list())"
+# Should include 'sm_120'
+```
+
+### 2. Clone Z-Image Repository
+
+```bash
+cd /workspace/zimage
+git clone https://github.com/pollinations/pollinations.git --depth 1 --sparse
+cd pollinations
+git sparse-checkout set image.pollinations.ai/z-image
+cp -r image.pollinations.ai/z-image/* /workspace/zimage/
+cd /workspace/zimage
+rm -rf pollinations
+```
+
+Or copy files directly from local:
+
+```bash
+scp -P <SSH_PORT> -i ~/.ssh/pollinations_services_2026 \
+  image.pollinations.ai/z-image/server.py \
+  image.pollinations.ai/z-image/requirements.txt \
+  root@<PUBLIC_IP>:/workspace/zimage/
+```
+
+### 3. Install Dependencies
+
+```bash
+cd /workspace/zimage
+source venv/bin/activate
+
+# Install requirements (torch/torchvision already installed)
+pip install -r requirements.txt
+```
+
+### 4. Download SPAN Upscaler Model
+
+```bash
+mkdir -p /workspace/zimage/model_cache/span
+cd /workspace/zimage/model_cache/span
+wget https://github.com/the-database/traiNNer-redux/releases/download/pretrained-models/2x-NomosUni_span_multijpg.pth
+```
+
+### 5. Start Z-Image Server
+
+```bash
+cd /workspace/zimage
+source venv/bin/activate
+
+# Set environment variables
+export CUDA_VISIBLE_DEVICES=<GPU_NUMBER>  # e.g., 2 or 3
+export PORT=<INTERNAL_PORT>               # e.g., 8767 or 8768
+export PUBLIC_IP=<INSTANCE_PUBLIC_IP>
+export PUBLIC_PORT=<MAPPED_EXTERNAL_PORT> # e.g., 43060 or 43066
+export SERVICE_TYPE=zimage
+export PLN_IMAGE_BACKEND_TOKEN=<your_backend_token>
+
+# Start in screen session
+screen -dmS zimage-gpu<N> bash -c 'cd /workspace/zimage && source venv/bin/activate && \
+  export CUDA_VISIBLE_DEVICES=<GPU> PORT=<PORT> PUBLIC_IP=<IP> PUBLIC_PORT=<EXT_PORT> \
+  SERVICE_TYPE=zimage PLN_IMAGE_BACKEND_TOKEN=<TOKEN> && \
+  python server.py 2>&1 | tee /tmp/zimage-gpu<N>.log'
+```
+
+### 6. Verify Z-Image
+
+```bash
+# Check health endpoint
+curl http://localhost:<PORT>/health
+# Expected: {"status":"healthy","model":"Tongyi-MAI/Z-Image-Turbo"}
+
+# From external
+curl http://<PUBLIC_IP>:<EXTERNAL_PORT>/health
+```
+
+### Z-Image Example (Instance 30822975)
+
+```bash
+# GPU 2 on port 8767 -> external 43060
+screen -dmS zimage-gpu2 bash -c 'cd /workspace/zimage && source venv/bin/activate && \
+  export CUDA_VISIBLE_DEVICES=2 PORT=8767 PUBLIC_IP=211.72.13.201 PUBLIC_PORT=43060 \
+  SERVICE_TYPE=zimage PLN_IMAGE_BACKEND_TOKEN=<your_backend_token> && \
+  python server.py 2>&1 | tee /tmp/zimage-gpu2.log'
+
+# GPU 3 on port 8768 -> external 43066
+screen -dmS zimage-gpu3 bash -c 'cd /workspace/zimage && source venv/bin/activate && \
+  export CUDA_VISIBLE_DEVICES=3 PORT=8768 PUBLIC_IP=211.72.13.201 PUBLIC_PORT=43066 \
+  SERVICE_TYPE=zimage PLN_IMAGE_BACKEND_TOKEN=<your_backend_token> && \
+  python server.py 2>&1 | tee /tmp/zimage-gpu3.log'
+```
+
 ## Troubleshooting
 
 ### "No kernel image available for sm_120"
@@ -232,15 +357,19 @@ screen -dmS flux-gpu1 bash -c '... CUDA_VISIBLE_DEVICES=1 PORT=8766 PUBLIC_PORT=
 
 ## Capacity Summary
 
-| Instance | GPUs | GPU Type | VRAM | Model |
-|----------|------|----------|------|-------|
-| 30822975 | 1 | RTX 5090 | 32GB | Flux (FP4) |
-| 30822967 | 1 | RTX 5090 | 32GB | Flux (FP4) |
-| **Total** | **2** | RTX 5090 | 64GB | |
+| Instance | GPU | Service | VRAM Used | External Port |
+|----------|-----|---------|-----------|---------------|
+| 30822975 | 0 | Flux | ~21 GB | 43096 |
+| 30822975 | 1 | *free* | - | - |
+| 30822975 | 2 | Z-Image | ~24 GB | 43060 |
+| 30822975 | 3 | Z-Image | ~23 GB | 43066 |
+| 30822967 | 0 | Flux | ~21 GB | 20704 |
+| **Total** | **5** | | ~89 GB | |
 
 ## Notes
 
 - RTX 5090 uses Blackwell architecture (sm_120, CUDA 13.0)
-- Must use **FP4 quantization** (not INT4) for Blackwell GPUs
-- PyTorch nightly required until stable release supports sm_120
-- Nunchaku must be built from source for sm_120 support
+- **Flux**: Must use FP4 quantization (not INT4) for Blackwell GPUs; nunchaku must be built from source
+- **Z-Image**: Simpler setup, just needs PyTorch nightly cu128 with sm_120 support
+- PyTorch nightly with CUDA 12.8 (`cu128`) required until stable release supports sm_120
+- Use `python -c "import torch; print(torch.cuda.get_arch_list())"` to verify sm_120 is in the list

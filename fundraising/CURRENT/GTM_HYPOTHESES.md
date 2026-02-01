@@ -6,30 +6,29 @@
 
 ## Three Primary Hypotheses
 
-### 1. Roblox/Gaming Distribution (High Confidence)
+### 1. Developer Community Flywheel (High Confidence)
 
-**Bet**: Games on Pollinations convert players into Pollen buyers.
-
-**Evidence**:
-- Paas's game: 51M visits, $12K earned
-- 7+ Roblox games integrated
-- User-pays model validated
-
-**Roblox Market Context** (Roblox Economic Impact Report 2025):
-- Creators earned $1B+ in 2025
-- 2.7M creators monetized in past 12 months
-
----
-
-### 2. Developer Community Flywheel (High Confidence)
-
-**Bet**: 17K Discord + open-source ethos drives organic growth at zero CAC.
+**Bet**: Zero-friction API + open-source ethos drives organic growth at zero CAC.
 
 **Evidence**:
 - 600+ developers joining daily (organic)
 - 17K Discord members
 - 3.8K GitHub stars
+- 1,000+ apps published (Discord bots, creative tools, games, web apps)
 - Zero marketing spend to date
+
+**Use Cases**: Discord bots, Roblox games, web apps, creative tools, YouTube integrations, Minecraft mods
+
+---
+
+### 2. User-Pays Model (High Confidence)
+
+**Bet**: End-users pay for their own AI usage within apps, scaling revenue without developer cost.
+
+**Evidence**:
+- Paas's Roblox game: 51M visits, $12K earned
+- Model validated across multiple app types
+- Roblox creator economy: $1B+ payouts in 2025
 
 ---
 

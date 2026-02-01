@@ -11,9 +11,9 @@ import numpy as np
 from PIL import Image
 from diffusers import ZImagePipeline
 import time
-from fastapi import FastAPI, HTTPException, Header, Depends
+from fastapi import FastAPI, HTTPException, Header, Depends, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, field_validator, ValidationInfo
+from pydantic import BaseModel, Field
 import threading
 import warnings
 from contextlib import asynccontextmanager
@@ -80,8 +80,8 @@ MODEL_ID = "inclusionAI/TwinFlow-Z-Image-Turbo"
 MODEL_SUBFOLDER = "TwinFlow-Z-Image-Turbo-exp"
 MODEL_CACHE = "model_cache"
 
-# No upscaling - generate at full resolution
-MAX_PIXELS = 1024 * 1024  # Max 1 megapixel (1024x1024)
+# Scale down to max 1280x1280 total pixels, maintaining aspect ratio
+MAX_PIXELS = 1280 * 1280  # Max ~1.6 megapixels
 
 # Default inference steps (4-NFE is good balance of speed/quality)
 DEFAULT_NUM_STEPS = 5  # 5 steps = 4 NFE (actual forward passes)
@@ -90,24 +90,13 @@ generate_lock = threading.Lock()
 
 
 class ImageRequest(BaseModel):
-    prompts: list[str] = Field(default=["a photo of an astronaut riding a horse on mars"], min_length=1)
-    width: int = Field(default=1024, ge=256, le=2048)
-    height: int = Field(default=1024, ge=256, le=2048)
-    seed: int | None = None
+    model_config = {"extra": "ignore"}  # Ignore extra fields like negative_prompt, steps
     
-    @field_validator('height')
-    @classmethod
-    def validate_total_pixels(cls, height: int, info: ValidationInfo) -> int:
-        """Validate total pixel count doesn't exceed MAX_PIXELS"""
-        if 'width' in info.data:
-            width = info.data['width']
-            total_pixels = width * height
-            if total_pixels > MAX_PIXELS:
-                raise ValueError(
-                    f"Requested {width}x{height} = {total_pixels:,} pixels exceeds limit of {MAX_PIXELS:,} pixels. "
-                    f"Max: 1024x1024 or equivalent area."
-                )
-        return height
+    prompts: list[str] = Field(default=["a photo of an astronaut riding a horse on mars"], min_length=1)
+    width: int = Field(default=1024, ge=256, le=4096)
+    height: int = Field(default=1024, ge=256, le=4096)
+    seed: int | None = None
+    # No pixel validation here - calculate_generation_dimensions handles scaling
 
 
 def calc_time(start, end, msg):
@@ -224,15 +213,28 @@ def verify_backend_token(
 
 
 @app.post("/generate")
-def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token)):
-    logger.info(f"Request: {request}")
+async def generate(request: Request, _auth: bool = Depends(verify_backend_token)):
+    # Log raw request body for debugging
+    try:
+        raw_body = await request.body()
+        body_json = raw_body.decode('utf-8')
+        logger.info(f"Raw request body: {body_json[:500]}")
+        import json
+        body_data = json.loads(body_json)
+        parsed_request = ImageRequest(**body_data)
+    except Exception as e:
+        logger.error(f"Failed to parse request: {e}")
+        logger.error(f"Raw body was: {raw_body[:500] if raw_body else 'empty'}")
+        raise HTTPException(status_code=422, detail=str(e))
+    
+    logger.info(f"Request: {parsed_request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
-    seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(8), "big")
+    seed = parsed_request.seed if parsed_request.seed is not None else int.from_bytes(os.urandom(8), "big")
     logger.info(f"Using seed: {seed}")
     generator = torch.Generator("cuda").manual_seed(seed)
-    gen_w, gen_h = calculate_generation_dimensions(request.width, request.height)
-    logger.info(f"Requested: {request.width}x{request.height} -> Generation: {gen_w}x{gen_h}")
+    gen_w, gen_h = calculate_generation_dimensions(parsed_request.width, parsed_request.height)
+    logger.info(f"Requested: {parsed_request.width}x{parsed_request.height} -> Generation: {gen_w}x{gen_h}")
     
     num_steps = int(os.getenv("NUM_INFERENCE_STEPS", str(DEFAULT_NUM_STEPS)))
     
@@ -240,7 +242,7 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token))
         with generate_lock:
             with torch.inference_mode():
                 output = pipe(
-                    prompt=request.prompts[0],
+                    prompt=parsed_request.prompts[0],
                     generator=generator,
                     width=gen_w,
                     height=gen_h,
@@ -262,7 +264,7 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token))
             "width": pil_image.width,
             "height": pil_image.height,
             "seed": seed,
-            "prompt": request.prompts[0]
+            "prompt": parsed_request.prompts[0]
         }]
         return JSONResponse(content=response_content)
     except torch.cuda.OutOfMemoryError as e:

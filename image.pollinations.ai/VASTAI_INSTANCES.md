@@ -515,13 +515,42 @@ TwinFlow-Z-Image-Turbo offers **~25% faster** generation than standard Z-Image-T
 - **Model**: TwinFlow-Z-Image-Turbo (4-NFE, ~1.8s per 1024x1024)
 - **Registers as**: `zimage` type at `127.0.0.1:10002`
 
-### SSH Tunnel (from enter-services)
+### SSH Tunnel (Systemd Service on enter-services)
 
-The Vast.ai instance doesn't expose port 10002 directly. An SSH tunnel from enter-services forwards traffic:
+The Vast.ai instance doesn't expose port 10002 directly. A **permanent systemd service** on enter-services maintains the SSH tunnel:
 
+**Service**: `/etc/systemd/system/twinflow-tunnel.service`
+
+```ini
+[Unit]
+Description=SSH Tunnel to TwinFlow Vast.ai Instance
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+ExecStart=/usr/bin/ssh -i /home/ubuntu/.ssh/pollinations_services_2026 -p 29798 -L 10002:localhost:10002 -N -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no root@ssh4.vast.ai
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**Tunnel Management Commands (on enter-services)**:
 ```bash
-# On enter-services (3.80.56.235)
-ssh -i ~/.ssh/pollinations_services_2026 -p 29798 -L 10002:localhost:10002 -fN root@ssh4.vast.ai
+# Check tunnel status
+sudo systemctl status twinflow-tunnel
+
+# Restart tunnel
+sudo systemctl restart twinflow-tunnel
+
+# View tunnel logs
+sudo journalctl -u twinflow-tunnel -f
+
+# Verify tunnel is working
+curl http://localhost:10002/health
 ```
 
 ### Management Commands

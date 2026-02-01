@@ -11,7 +11,7 @@ from diffusers import FluxPipeline
 from nunchaku import NunchakuFluxTransformer2dModel
 # Safety checker disabled for Vast.ai deployment
 # from safety_checker.censor import check_safety
-def check_safety(x, y, z): return [], [False]  # Disabled
+def check_safety(x, y): return [None], [False]  # Disabled - returns safe result
 import requests
 import logging
 import asyncio

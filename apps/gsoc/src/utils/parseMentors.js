@@ -1,8 +1,4 @@
 import fm from "front-matter";
-
-/**
- * Parse mentors from MENTORS.md using front-matter
- */
 export async function parseMentors(url = "/GSOC/MENTORS.md") {
     const response = await fetch(url);
     const text = await response.text();

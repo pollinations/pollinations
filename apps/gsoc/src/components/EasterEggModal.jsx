@@ -11,9 +11,9 @@ import { colors, gradients } from "../theme";
 
 const easterEggMessages = [
     {
-        title: "🎉 You Found It!",
+        title: "You Found It!",
         message:
-            "Use the code 0x3yrTEAPlln with your gsoc application to get a special surprise! Keep exploring!",
+            "Use the code 0x3yrTEAPlln in our chat channel tagging @thomash for a surprise. Keep exploring!",
         emoji: "🐝",
     },
 ];
@@ -28,7 +28,7 @@ const EasterEggModal = ({ open, onClose }) => {
             onClose={onClose}
             PaperProps={{
                 sx: {
-                    background: `linear-gradient(135deg, ${colors.lime.dim} 0%, ${colors.lavender.dim} 100%)`,
+                    background: `radial-gradient(135deg, ${colors.lime.dim} 0%, ${colors.lavender.dim} 100%)`,
                     backdropFilter: "blur(20px)",
                     border: `1px solid ${colors.lime.border}`,
                     borderRadius: "20px",
@@ -66,7 +66,7 @@ const EasterEggModal = ({ open, onClose }) => {
                                 rotate: [0, 10, -10, 0],
                             }}
                             transition={{ duration: 2, repeat: Infinity }}
-                            style={{ fontSize: "3rem", marginBottom: "1rem" }}
+                            style={{ fontSize: "2rem", marginBottom: "1rem" }}
                         >
                             {message.emoji}
                         </motion.div>
@@ -79,7 +79,7 @@ const EasterEggModal = ({ open, onClose }) => {
                                 background: gradients.textAccent,
                                 WebkitBackgroundClip: "text",
                                 WebkitTextFillColor: "transparent",
-                                fontSize: "1.8rem",
+                                fontSize: "1.6rem",
                             }}
                         >
                             {message.title}

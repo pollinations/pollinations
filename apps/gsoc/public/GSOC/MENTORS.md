@@ -18,6 +18,7 @@ email: thomas@pollinations.ai
 Computer Science and AI graduate from the University of Edinburgh with a background spanning interactive art, research, and technology. Spent nine years in São Paulo founding an art collective and building large-scale interactive installations, followed by AI foresight research for the World Government Summit in Germany. Subsequently focused on data-driven generative audio modeling and founded pollinations.ai, an open-source platform making generative machine learning accessible to over 100,000 monthly users.
 
 ---
+
 id: 0xmnt02
 name: Ayushman Bhattacharya
 title: Developer @pollinations.ai
@@ -33,3 +34,12 @@ email: ayushman@pollinations.ai
 ---
 
 Ayushman is a GDG Campus Organizer and developer at pollinations.ai, building real-world systems at the intersection of AI, community, and open source. National-level SOF NCO awardee, multi-time hackathon winner, and active mentor across OSCI and GSSoC, focused on scaling talent, research-driven engineering, and developer ecosystems.
+
+
+---
+
+
+
+
+
+

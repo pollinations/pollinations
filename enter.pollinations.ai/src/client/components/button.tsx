@@ -4,10 +4,10 @@ import { cn } from "../../util.ts";
 
 const colors = {
     green: {
-        light: "bg-green-200 text-green-900",
-        strong: "bg-green-950 text-green-100",
+        light: "bg-green-200 text-green-900 hover:bg-green-300",
+        strong: "bg-green-950 text-green-100 hover:bg-green-800",
         outline:
-            "border border-green-950 text-green-950 hover:bg-green-950 hover:text-green-100 transition-colors",
+            "border-2 border-green-950 text-green-950 hover:bg-green-950 hover:text-green-100 transition-colors",
     },
     pink: {
         light: "bg-fuchsia-200 text-fuchsia-900",
@@ -25,9 +25,10 @@ const colors = {
         outline: "border-2 border-indigo-900 text-indigo-900",
     },
     red: {
-        light: "bg-red-200 text-red-900",
-        strong: "bg-red-900 text-red-50",
-        outline: "border-2 border-red-900 text-red-900",
+        light: "bg-red-200 text-red-900 hover:bg-red-300",
+        strong: "bg-red-900 text-red-50 hover:bg-red-700",
+        outline:
+            "border-2 border-red-700 text-red-700 hover:bg-red-700 hover:text-white transition-colors",
     },
     amber: {
         light: "bg-amber-200 text-amber-900",

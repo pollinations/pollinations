@@ -186,7 +186,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                         }
                                         disabled={isSubmitting}
                                     >
-                                        Delete Key
+                                        Delete
                                     </Button>
                                     <div className="flex gap-2">
                                         <Button
@@ -204,7 +204,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                         >
                                             {isSubmitting
                                                 ? "Saving..."
-                                                : "Save Changes"}
+                                                : "Save"}
                                         </Button>
                                     </div>
                                 </>

@@ -29,7 +29,7 @@ const shortLocale = {
 };
 
 import type { FC } from "react";
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import {
     adjectives,
     animals,
@@ -64,14 +64,6 @@ interface ApiKeyManagerProps {
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
 }
-
-const Cell: FC<React.ComponentProps<"div">> = ({ children, ...props }) => {
-    return (
-        <span className="flex items-center" {...props}>
-            {children}
-        </span>
-    );
-};
 
 const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
     fullKey,
@@ -269,165 +261,130 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </div>
                 </div>
                 {apiKeys.length ? (
-                    <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-300 overflow-hidden">
-                        <div className="flex">
-                            {/* Scrollable content area */}
-                            <div
-                                className="flex-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-                                style={{ overflowY: "clip" }}
-                            >
-                                <div className="grid grid-cols-[auto_auto_auto_auto_auto_auto] gap-x-3 gap-y-2 text-sm min-w-max">
-                                    <span className="font-bold text-pink-400 text-sm">
-                                        Type
-                                    </span>
-                                    <span className="font-bold text-pink-400 text-sm">
-                                        Name
-                                    </span>
-                                    <span className="font-bold text-pink-400 text-sm">
-                                        Key
-                                    </span>
-                                    <span className="font-bold text-pink-400 text-sm">
-                                        Created / Used
-                                    </span>
-                                    <span className="font-bold text-pink-400 text-sm">
-                                        Expiry / Budget
-                                    </span>
-                                    <span className="font-bold text-pink-400 text-sm">
-                                        Models
-                                    </span>
-                                    {sortedKeys.map((apiKey) => {
-                                        const keyType = apiKey.metadata?.[
-                                            "keyType"
-                                        ] as string | undefined;
-                                        const isPublishable =
-                                            keyType === "publishable";
-                                        const plaintextKey = apiKey.metadata?.[
-                                            "plaintextKey"
-                                        ] as string | undefined;
+                    <div className="bg-blue-50/30 rounded-2xl p-4 border border-blue-300">
+                        <div className="flex flex-col gap-3">
+                            {sortedKeys.map((apiKey) => {
+                                const keyType = apiKey.metadata?.["keyType"] as
+                                    | string
+                                    | undefined;
+                                const isPublishable = keyType === "publishable";
+                                const plaintextKey = apiKey.metadata?.[
+                                    "plaintextKey"
+                                ] as string | undefined;
 
-                                        return (
-                                            <Fragment key={apiKey.id}>
-                                                <Cell>
-                                                    <span
-                                                        className={cn(
-                                                            "px-2 py-1 rounded text-xs font-medium",
-                                                            isPublishable
-                                                                ? "bg-blue-100 text-blue-700"
-                                                                : "bg-purple-100 text-purple-700",
-                                                        )}
-                                                    >
-                                                        {isPublishable
-                                                            ? "🌐 Publishable"
-                                                            : "🔒 Secret"}
-                                                    </span>
-                                                </Cell>
-                                                <Cell>
-                                                    <span
-                                                        className="text-xs truncate block"
-                                                        title={
-                                                            apiKey.name ??
-                                                            undefined
-                                                        }
-                                                    >
-                                                        {apiKey.name}
-                                                    </span>
-                                                </Cell>
-                                                <Cell>
-                                                    {isPublishable &&
-                                                    plaintextKey ? (
-                                                        <KeyDisplay
-                                                            fullKey={
-                                                                plaintextKey
-                                                            }
-                                                            start={
-                                                                apiKey.start ??
-                                                                ""
-                                                            }
-                                                        />
-                                                    ) : (
-                                                        <span className="font-mono text-xs text-gray-500">
-                                                            {apiKey.start}
-                                                            ...
-                                                        </span>
+                                return (
+                                    <div
+                                        key={apiKey.id}
+                                        className="bg-white/40 rounded-xl p-3 hover:bg-white/60 transition-colors"
+                                    >
+                                        {/* Row 1: Type, Name, Key, Actions */}
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span
+                                                className={cn(
+                                                    "px-2 py-0.5 rounded text-xs font-medium shrink-0",
+                                                    isPublishable
+                                                        ? "bg-blue-100 text-blue-700"
+                                                        : "bg-purple-100 text-purple-700",
+                                                )}
+                                            >
+                                                {isPublishable
+                                                    ? "🌐 Publishable"
+                                                    : "🔒 Secret"}
+                                            </span>
+                                            <span
+                                                className="text-sm font-medium truncate"
+                                                title={apiKey.name ?? undefined}
+                                            >
+                                                {apiKey.name}
+                                            </span>
+                                            <span className="flex-1" />
+                                            {isPublishable && plaintextKey ? (
+                                                <KeyDisplay
+                                                    fullKey={plaintextKey}
+                                                    start={apiKey.start ?? ""}
+                                                />
+                                            ) : (
+                                                <span className="font-mono text-xs text-gray-500 shrink-0">
+                                                    {apiKey.start}...
+                                                </span>
+                                            )}
+                                            <div className="flex gap-1 shrink-0 ml-2">
+                                                <button
+                                                    type="button"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                                    onClick={() =>
+                                                        setEditingKey(apiKey)
+                                                    }
+                                                    title="Edit key"
+                                                >
+                                                    ✎
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
+                                                    onClick={() =>
+                                                        setDeleteId(apiKey.id)
+                                                    }
+                                                    title="Delete key"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {/* Row 2: Created/Used, Expiry/Budget, Models */}
+                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-pink-400 font-medium">
+                                                    Created/Used:
+                                                </span>
+                                                <span title="Created">
+                                                    {formatDistanceToNowStrict(
+                                                        apiKey.createdAt,
+                                                        {
+                                                            addSuffix: false,
+                                                            locale: shortLocale,
+                                                        },
                                                     )}
-                                                </Cell>
-                                                <Cell>
-                                                    <div className="flex items-center text-xs whitespace-nowrap">
-                                                        <span className="text-gray-600">
-                                                            {formatDistanceToNowStrict(
-                                                                apiKey.createdAt,
-                                                                {
-                                                                    addSuffix: false,
-                                                                    locale: shortLocale,
-                                                                },
-                                                            )}
-                                                        </span>
-                                                        <span className="text-gray-400 mx-1">
-                                                            /
-                                                        </span>
-                                                        <span className="text-gray-500">
-                                                            {apiKey.lastRequest
-                                                                ? formatDistanceToNowStrict(
-                                                                      new Date(
-                                                                          apiKey.lastRequest,
-                                                                      ),
-                                                                      {
-                                                                          addSuffix: false,
-                                                                          locale: shortLocale,
-                                                                      },
-                                                                  )
-                                                                : "—"}
-                                                        </span>
-                                                    </div>
-                                                </Cell>
-                                                <Cell>
-                                                    <LimitsBadge
-                                                        expiresAt={
-                                                            apiKey.expiresAt
-                                                        }
-                                                        pollenBudget={
-                                                            apiKey.pollenBalance
-                                                        }
-                                                    />
-                                                </Cell>
-                                                <Cell>
-                                                    <ModelsBadge
-                                                        permissions={
-                                                            apiKey.permissions
-                                                        }
-                                                    />
-                                                </Cell>
-                                                <Cell className="flex gap-1">
-                                                    <button
-                                                        type="button"
-                                                        className="w-6 h-6 flex items-center justify-center rounded hover:bg-blue-100 text-gray-400 hover:text-blue-600 transition-colors cursor-pointer"
-                                                        onClick={() =>
-                                                            setEditingKey(
-                                                                apiKey,
-                                                            )
-                                                        }
-                                                        title="Manage key"
-                                                    >
-                                                        ⚙
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="w-6 h-6 flex items-center justify-center rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
-                                                        onClick={() =>
-                                                            setDeleteId(
-                                                                apiKey.id,
-                                                            )
-                                                        }
-                                                        title="Delete key"
-                                                    >
-                                                        ×
-                                                    </button>
-                                                </Cell>
-                                            </Fragment>
-                                        );
-                                    })}
-                                </div>
-                            </div>
+                                                </span>
+                                                <span className="text-gray-400">
+                                                    /
+                                                </span>
+                                                <span title="Last used">
+                                                    {apiKey.lastRequest
+                                                        ? formatDistanceToNowStrict(
+                                                              new Date(
+                                                                  apiKey.lastRequest,
+                                                              ),
+                                                              {
+                                                                  addSuffix: false,
+                                                                  locale: shortLocale,
+                                                              },
+                                                          )
+                                                        : "—"}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-pink-400 font-medium">
+                                                    Expiry/Budget:
+                                                </span>
+                                                <LimitsBadge
+                                                    expiresAt={apiKey.expiresAt}
+                                                    pollenBudget={
+                                                        apiKey.pollenBalance
+                                                    }
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <ModelsBadge
+                                                    permissions={
+                                                        apiKey.permissions
+                                                    }
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                         {apiKeys.some(
                             (k) => k.metadata?.["keyType"] === "publishable",
@@ -435,8 +392,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <div className="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl p-4 border border-blue-300 mt-4">
                                 <p className="text-sm font-medium text-blue-900">
                                     🌐 <strong>Publishable keys:</strong> Beta -
-                                    actively improving stability. For production
-                                    apps, we recommend secret keys.
+                                    actively improving stability.
+                                </p>
+                                <p className="text-sm text-blue-800">
+                                    For production apps, we recommend secret
+                                    keys.
                                 </p>
                             </div>
                         )}

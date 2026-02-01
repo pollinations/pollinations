@@ -36,9 +36,9 @@
 | Define target raise amount | Decision | P0 | ⬜ | Thomas | Zielbetrag inkl. Range |
 | Define target runway (months) | Decision | P0 | ⬜ | Thomas | z.B. „18 Monate Runway" |
 | Define success criteria of the round (KPIs) | Decision | P1 | ⬜ | | 3–5 klare KPIs |
-| **Define milestones enabled by this round (12–18 months)** | Decision | P0 | ⬜ | Thomas | Priorisierte Milestone-Liste |
+| **Define milestones enabled by this round (12–18 months)** | Decision | P0 | ✅ Done | Thomas | See `36_MONTH_MILESTONES.md` |
 | Create high-level dilution model (pre/post) | Deliverable | P1 | ✅ Done | | Einfache Tabelle / Spreadsheet |
-| Define valuation expectations & guardrails | Decision | P1 | ⬜ | | Min / Target / Max Valuation |
+| Define valuation expectations & guardrails | Decision | P1 | ✅ Done | | See `SAFE_CAP_DISCOUNT_RESEARCH.md` |
 | Define target lead investor profile | Decision | P1 | ⬜ | Kalam | Profilbeschreibung |
 | Develop historical investor outreach strategy | Decision | P1 | ⬜ | | Konkreter Outreach-Ansatz |
 | Define first close strategy | Decision | P1 | ⬜ | | Klarer Ablaufplan |
@@ -51,15 +51,15 @@
 | Task | Type | Prio | Status | Owner | Output |
 |------|------|------|--------|-------|--------|
 | Draft written equity story (internal) | Deliverable | P0 | ⬜ | | 1–2 Seiten internes Equity-Story-Dokument |
-| Define core problem narrative | Deliverable | P0 | ⬜ | | Konsistenter Problem-Absatz |
-| Define "Why now" narrative | Deliverable | P0 | ⬜ | | Nachvollziehbare Why-now-Argumentation |
-| Define unique insight / unfair advantage | Deliverable | P0 | ⬜ | | Unique-Insight-Statement |
+| Define core problem narrative | Deliverable | P0 | ✅ Done | | See `SCQA_FRAMEWORK_DETAILED.md` |
+| Define "Why now" narrative | Deliverable | P0 | ✅ Done | | See `INVESTOR_QUESTIONS_ANSWERS.md` Q8 |
+| Define unique insight / unfair advantage | Deliverable | P0 | ✅ Done | | See `SCQA_FRAMEWORK_DETAILED.md` |
 | **Finalise founder story / personal motivation** | Deliverable | P0 | ⬜ | | Founder-Story-Slide |
 | Align verbal pitch with equity story | Execution | P0 | ⬜ | | Abgestimmter Talk-Track |
 | **Draft One Pager & positioning** | Deliverable | P0 | ⬜ | | 1-Pager (PDF) |
 | Draft Pitch Deck v1 | Deliverable | P0 | ⬜ | | Pitch Deck v1 |
 | Iterate Pitch Deck after feedback | Execution | P0 | ⬜ | | Pitch Deck v2+ |
-| Create pitch FAQ / objection handling doc | Deliverable | P1 | ⬜ | | Internes Q&A-Dokument |
+| Create pitch FAQ / objection handling doc | Deliverable | P1 | ✅ Done | | See `INVESTOR_QUESTIONS_ANSWERS.md` |
 | Prepare short pitch (2–3 minutes) | Deliverable | P0 | ⬜ | | Ausformulierter Kurz-Pitch |
 
 ---
@@ -68,12 +68,12 @@
 
 | Task | Type | Prio | Status | Owner | Output |
 |------|------|------|--------|-------|--------|
-| Define business model clearly | Deliverable | P0 | ⬜ | | Business-Model |
+| Define business model clearly | Deliverable | P0 | ✅ Done | | See `COMPREHENSIVE_STATUS_REPORT.md` + `mycel-extract/04_business_model.md` |
 | Define pricing logic & assumptions | Deliverable | P0 | ⬜ | | Pricing-Logik |
 | Draft unit economics (high-level) | Deliverable | P0 | ⬜ | | Unit-Economics-Sheet |
 | Draft GTM hypotheses (Go-To-Market) | Deliverable | P0 | ⬜ | | 2–3 GTM-Hypothesen |
-| Build 24–36 month financial model | Deliverable | P0 | ⬜ | | Finanzmodell (Sheet) |
-| Define use of funds breakdown | Deliverable | P0 | ⬜ | | Use-of-Funds-Slide |
+| Build 24–36 month financial model | Deliverable | P0 | ✅ Done | | See `financial-model.md` + `36_MONTH_MILESTONES.md` |
+| Define use of funds breakdown | Deliverable | P0 | ✅ Done | | See `36_MONTH_MILESTONES.md` (Use of Funds section) |
 
 ---
 
@@ -83,7 +83,7 @@
 |------|------|------|--------|-------|--------|
 | Select standard SAFE / CLA template | Decision | P0 | ⬜ | | Festgelegtes Template |
 | **Review CLA documents incl. MFN clauses** | Research | P1 | ⬜ | | Kommentierte Dokumente |
-| **Prepare cap & discount recommendation** | Deliverable | P1 | ⬜ | | Internes Memo |
+| **Prepare cap & discount recommendation** | Deliverable | P1 | ✅ Done | | See `SAFE_CAP_DISCOUNT_RESEARCH.md` |
 | Myceli <> Pollinations legal structure | Decision | P1 | ⬜ | | Klare Legal Structure |
 | Myceli GmbH setup | Research | P1 | ⬜ | | Fördergelder, Investoren Absicherung |
 | Historical investor relations | Decision | P1 | ⬜ | | Wie verfahren wir mit früheren Investoren |
@@ -123,23 +123,23 @@
 - [ ] Define round type (SAFE / CLA / priced seed)
 - [ ] Define target raise amount
 - [ ] Define target runway (months)
-- [ ] Define milestones enabled by this round (12–18 months)
+- [x] Define milestones enabled by this round (12–18 months) ✅ `36_MONTH_MILESTONES.md`
 - [ ] Draft written equity story (internal)
-- [ ] Define core problem narrative
-- [ ] Define "Why now" narrative
-- [ ] Define unique insight / unfair advantage
+- [x] Define core problem narrative ✅ `SCQA_FRAMEWORK_DETAILED.md`
+- [x] Define "Why now" narrative ✅ `INVESTOR_QUESTIONS_ANSWERS.md`
+- [x] Define unique insight / unfair advantage ✅ `SCQA_FRAMEWORK_DETAILED.md`
 - [ ] Finalise founder story / personal motivation
 - [ ] Align verbal pitch with equity story
 - [ ] Draft One Pager & positioning
 - [ ] Draft Pitch Deck v1
 - [ ] Iterate Pitch Deck after feedback
 - [ ] Prepare short pitch (2–3 minutes)
-- [ ] Define business model clearly
+- [x] Define business model clearly ✅ `COMPREHENSIVE_STATUS_REPORT.md`
 - [ ] Define pricing logic & assumptions
 - [ ] Draft unit economics (high-level)
 - [ ] Draft GTM hypotheses (Go-To-Market)
-- [ ] Build 24–36 month financial model
-- [ ] Define use of funds breakdown
+- [x] Build 24–36 month financial model ✅ `financial-model.md`
+- [x] Define use of funds breakdown ✅ `36_MONTH_MILESTONES.md`
 - [ ] Select standard SAFE / CLA template
 - [ ] Build investor list
 - [ ] Prepare investor contact list (Notion)
@@ -150,12 +150,12 @@
 ### P1 (Important)
 - [ ] Define success criteria of the round (KPIs)
 - [x] Create high-level dilution model (pre/post) ✅
-- [ ] Define valuation expectations & guardrails
-- [ ] Define target lead investor profile
+- [x] Define valuation expectations & guardrails ✅ `SAFE_CAP_DISCOUNT_RESEARCH.md`
+- [ ] Define target lead investor profile (Kalam)
 - [ ] Develop historical investor outreach strategy
-- [ ] Create pitch FAQ / objection handling doc
+- [x] Create pitch FAQ / objection handling doc ✅ `INVESTOR_QUESTIONS_ANSWERS.md`
 - [ ] Review CLA documents incl. MFN clauses
-- [ ] Prepare cap & discount recommendation
+- [x] Prepare cap & discount recommendation ✅ `SAFE_CAP_DISCOUNT_RESEARCH.md`
 - [ ] Myceli <> Pollinations legal structure
 - [ ] Myceli GmbH setup
 - [ ] Historical investor relations

@@ -8,16 +8,16 @@ Vast.ai instances running RTX 5090 GPUs for Flux image generation. These use **n
 
 ## Active Instances
 
-| Instance ID | Public IP | SSH Port | Flux Port | GPUs | GPU Type | Status |
-|-------------|-----------|----------|-----------|------|----------|--------|
+| Instance ID | Public IP | SSH Port | Flux Port (8765) | GPUs | GPU Type | Status |
+|-------------|-----------|----------|------------------|------|----------|--------|
 | 30822975 | 211.72.13.201 | 43062 | 43096 | 1 | RTX 5090 | ✅ Working |
-| 30822967 | 120.238.149.205 | 43098 | TBD | 1 | RTX 5090 | 🔧 Setup |
+| 30822967 | 120.238.149.205 | 20676 | 20704 | 1 | RTX 5090 | 🔧 Setup |
 
 ## SSH Access
 
 ```bash
 # Instance 1 (30822967)
-ssh -p 43098 -i ~/.ssh/pollinations_services_2026 root@120.238.149.205
+ssh -p 20676 -i ~/.ssh/pollinations_services_2026 root@120.238.149.205
 
 # Instance 2 (30822975)
 ssh -p 43062 -i ~/.ssh/pollinations_services_2026 root@211.72.13.201

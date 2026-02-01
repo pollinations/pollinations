@@ -1,17 +1,37 @@
 # Story & Vision - Two Final Versions
 
+---
+
+## Opening Hooks (Choose Based on Audience)
+
+### Community/Platform Hooks
+1. **"Thousands of developers are building our platform with us."**
+2. **"Our community deploys new AI models before we even know they exist."**
+
+### Personal Journey Hooks
+3. **"Started coding at 13. Took me years to build anything real. Today's teens don't have to wait."**
+
+### Economic/Problem Hooks
+4. **"Young developers have ideas but no credit cards. We became their funding."**
+5. **"Every ChatGPT conversation is coding. Most people don't realize. We turn conversations into products."**
+
+### Global Impact Hooks
+6. **"A kid in Brazil gets the same AI access as Silicon Valley. That's the point."**
+
+### Clever/Memorable Hooks
+7. **"GitHub commits are the new pitch deck. We're the VC that accepts them."**
+8. **"Our API levels up with you."**
+
+---
+
 ## Version A: The Exponential Builders Platform
 **Focus: Personal journey to enabling massive creator community**
 
 ## Story (~50 sec)
 
-### Opening Hook
-- "Started coding young. Took me years to build anything real. Today's generation shouldn't wait."
-
 ### The Journey
 - Obsessed with AI since teenage years → Top university → Published paper → Amazon AI
 - Built creative community for 9 years - saw how communities create exponential value
-- At Amazon: Great tech, terrible access. Free tiers hit walls fast
 
 ### The Solution
 - Built Pollinations: One line of code, no signup, instant AI
@@ -33,11 +53,9 @@
 
 ### The Shift
 - Every ChatGPT conversation = coding (most don't realize)
-- 70% of teens use AI, "vibe coding" is Word of Year 2025
 - We help turn conversations into products
 
 ### Our Position
-- Not competing on models - we're the economic layer
 - Mini VC for next generation developers
 - Zero marketing/R&D: Community creates and validates
 
@@ -55,11 +73,7 @@
 
 ## Story (~50 sec)
 
-### Opening Hook
-- "Thousands of young developers building on our platform. They found us on Discord."
-
 ### The Problem
-- Amazon AI engineer → saw broken economics everywhere
 - Developers build → go viral → costs explode
 - Free tiers with rate limits aren't enough for production
 
@@ -72,26 +86,23 @@
 - Open sourced everything - backend, billing, pricing
 - 5K developers now building WITH us
 - 1K apps published: Roblox games, Discord bots, creative tools
-- Indian students refusing payment - just want to build
 
 ### Proof
-- $820 weekly revenue → 229% WoW growth
 - 10.9B tokens/week, 600+ developers joining daily
 
 ## Vision (~30 sec)
 
 ### Market Reality
-- 83% of Gen Z are creators, $250B→$480B market
+- Gen Z is the creator generation, $250B→$480B market
 - Every ChatGPT conversation = coding
 - Infrastructure wasn't built for this generation
 
 ### Our Unique Position
-- Economic infrastructure layer for AI apps
 - Mini VC for teen developers worldwide
 - Gamified proof-of-work: GitHub activity = Pollen credits
 
 ### Global Impact
-- Kid in Nigeria = same opportunity as Silicon Valley
+- Kid in Brazil = same opportunity as Silicon Valley
 - Million AI micro-apps coming online
 - "Enabling a new creative class where geography doesn't determine destiny"
 

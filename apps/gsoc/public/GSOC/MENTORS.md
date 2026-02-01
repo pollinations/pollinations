@@ -38,6 +38,28 @@ Ayushman is a GDG Campus Organizer and developer at pollinations.ai, building re
 
 ---
 
+id: nihalgazi
+name: Nihal Gazi
+title: AI Researcher & GSoC Mentor
+bio: AI Researcher focused on Physics-Informed ML, Model Optimization, and making complex AI concepts accessible.
+expertise: AI Research, Deep Learning, Physics-Informed ML, Algorithms
+skills: Python, PyTorch, C/C++, Model Optimization, Research Implementation, Mathematics, Fine-tuning
+yearsExperience: 7
+projects: 10
+imageUrl: /MENTORS/nihal_pfp.jpg
+linkedin: https://www.linkedin.com/in/nihal-gazi-b97361307/
+github: https://github.com/nihal-gazi
+email: nihal@pollinations.ai
+---
+
+Nihal is an AI researcher specializing in physics-informed ML and model optimization. He converts theoretical papers into efficient open-source implementations — notable work includes a Realistic Text-To-Speech model on Hugging Face (288K+ visits, featured as "Space of the Week", #21 on the global TCTF leaderboard). National Topper (Top 10) in SCNTSE'25 and Gold Medallist at IEMPHYS-26. As a mentor, he focuses on bridging research mathematics and practical, shippable code.
+
+---
+
+
+
+
+
 
 
 

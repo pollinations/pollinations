@@ -40,7 +40,7 @@ Ayushman is a GDG Campus Organizer and developer at pollinations.ai, building re
 
 id: 0xmnt03
 name: Nihal Gazi
-title: AI Researcher & GSoC Mentor
+title: Mentor @pollinations.ai
 bio: AI Researcher focused on Physics-Informed ML, Model Optimization, and making complex AI concepts accessible.
 expertise: AI Research, Deep Learning, Physics-Informed ML, Algorithms
 skills: Python, PyTorch, C/C++, Model Optimization, Research Implementation, Mathematics, Fine-tuning

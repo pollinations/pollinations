@@ -53,16 +53,46 @@ ssh -p 21085 -i ~/.ssh/pollinations_services_2026 root@76.69.188.175
   - `PLN_IMAGE_BACKEND_TOKEN`
   - `HF_TOKEN`
 
-### 1. Create Instance with Exposed Ports
+### 1. Create Instance via CLI
 
-When creating a Vast.ai instance, you must configure port mappings. Create a template with:
+**Important**: Use `--ssh --direct` flags for proper SSH access:
+
+```bash
+# Search for available RTX 5090 instances with good reliability
+vastai search offers 'gpu_name=RTX_5090 num_gpus=1 reliability>0.95' --order 'dph' --limit 10
+
+# Create instance with direct SSH access
+vastai create instance <OFFER_ID> \
+  --image "vastai/base-image:cuda-13.0.2-cudnn-devel-ubuntu24.04-py312" \
+  --disk 50 \
+  --ssh --direct \
+  --onstart-cmd "apt update && apt install -y git"
+```
+
+**Critical: Attach SSH Key After Creation**
+
+New instances do NOT automatically have your SSH key. You must attach it:
+
+```bash
+# Attach your SSH key to the instance
+vastai attach ssh <INSTANCE_ID> "$(cat ~/.ssh/pollinations_services_2026.pub)"
+
+# Verify the key was attached
+vastai show ssh-keys
+```
+
+Without this step, SSH will fail with `Permission denied (publickey)`.
+
+### 2. Configure Port Mappings (Optional)
+
+For multi-service instances, configure port mappings via template:
 - Ports 8765-8768 exposed (for Flux servers)
 - Port 22 for SSH
 - Port 8080 for Jupyter (optional)
 
 Use the Vast.ai CLI or web UI to apply the template before starting the instance.
 
-### 2. Initial Setup (Run on Instance)
+### 3. Initial Setup (Run on Instance)
 
 ```bash
 # SSH into the instance
@@ -83,7 +113,7 @@ pip install --pre torch torchvision --index-url https://download.pytorch.org/whl
 python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.cuda.is_available()}, GPU: {torch.cuda.get_device_name(0)}')"
 ```
 
-### 3. Install CUDA 12.8 Toolkit (Required for Building Nunchaku)
+### 4. Install CUDA 12.8 Toolkit (Required for Building Nunchaku)
 
 The system may have CUDA 13.0, but PyTorch nightly uses CUDA 12.8. To build nunchaku, you need CUDA 12.8 toolkit:
 
@@ -102,7 +132,7 @@ export PATH=/usr/local/cuda-12.8/bin:$PATH
 export LD_LIBRARY_PATH=/usr/local/cuda-12.8/lib64:$LD_LIBRARY_PATH
 ```
 
-### 4. Build Nunchaku from Source
+### 5. Build Nunchaku from Source
 
 RTX 5090 (Blackwell, sm_120) requires building nunchaku from source:
 
@@ -129,7 +159,7 @@ export NUNCHAKU_INSTALL_SM='120'
 pip install --no-build-isolation .
 ```
 
-### 5. Install Server Dependencies
+### 6. Install Server Dependencies
 
 ```bash
 cd /workspace/flux
@@ -138,7 +168,7 @@ source venv/bin/activate
 pip install fastapi uvicorn pydantic aiohttp pillow python-multipart diffusers transformers accelerate safetensors
 ```
 
-### 6. Copy Server Files
+### 7. Copy Server Files
 
 From your local machine:
 
@@ -154,7 +184,7 @@ scp -P <SSH_PORT> -i ~/.ssh/pollinations_services_2026 -r \
   root@<PUBLIC_IP>:/workspace/flux/
 ```
 
-### 7. Configure server.py for RTX 5090
+### 8. Configure server.py for RTX 5090
 
 The server needs a few modifications for Blackwell GPUs:
 
@@ -174,7 +204,7 @@ The server needs a few modifications for Blackwell GPUs:
    # Replace check_safety call with: concepts, has_nsfw = [], [False]
    ```
 
-### 8. Start the Server
+### 9. Start the Server
 
 Use `screen` to keep the server running after SSH disconnect:
 
@@ -196,7 +226,7 @@ screen -ls
 curl http://localhost:8765/docs
 ```
 
-### 9. Verify External Access
+### 10. Verify External Access
 
 ```bash
 # From your local machine
@@ -413,3 +443,108 @@ screen -dmS zimage-gpu3 bash -c 'cd /workspace/zimage && source venv/bin/activat
 - **Z-Image**: Simpler setup, just needs PyTorch nightly cu128 with sm_120 support
 - PyTorch nightly with CUDA 12.8 (`cu128`) required until stable release supports sm_120
 - Use `python -c "import torch; print(torch.cuda.get_arch_list())"` to verify sm_120 is in the list
+
+---
+
+## TwinFlow-Z-Image-Turbo Benchmark Results (2026-02-01)
+
+Tested on Instance 30829799 (single RTX 5090, Czechia)
+
+### Performance at 1024x1024
+
+| NFE (Steps) | Average Time | Images/sec | Notes |
+|-------------|--------------|------------|-------|
+| 2-NFE | **1.37s** | 0.73 | Fastest, lower quality |
+| 4-NFE | **2.12s** | 0.47 | Good balance |
+| 8-NFE | **3.63s** | 0.28 | Recommended quality |
+
+### Comparison with Current Setup
+
+| Model | Steps | Time (1024x1024) | Notes |
+|-------|-------|------------------|-------|
+| **TwinFlow-Z-Image-Turbo** | 2 | ~1.4s | New distilled model |
+| **TwinFlow-Z-Image-Turbo** | 8 | ~3.6s | Recommended |
+| Z-Image-Turbo (current) | 8 | ~4-5s | Current production |
+| Flux Schnell (nunchaku FP4) | 4 | ~2-3s | Current production |
+
+### Key Findings
+
+1. **TwinFlow-Z-Image-Turbo** is a distilled version of Z-Image that achieves similar quality with fewer steps
+2. Uses standard `ZImagePipeline` from diffusers (no custom code needed)
+3. Flash Attention not available due to CUDA 13.0 vs PyTorch CUDA 12.8 mismatch
+4. Model size: ~12GB VRAM usage (fits easily on RTX 5090's 32GB)
+
+### Setup Instructions
+
+```bash
+# Install diffusers from git (required for ZImagePipeline)
+pip install git+https://github.com/huggingface/diffusers
+
+# Download and run
+from diffusers import ZImagePipeline
+import torch
+
+pipe = ZImagePipeline.from_pretrained(
+    "inclusionAI/TwinFlow-Z-Image-Turbo",
+    subfolder="TwinFlow-Z-Image-Turbo-exp",
+    torch_dtype=torch.bfloat16,
+)
+pipe.to("cuda")
+
+image = pipe(
+    prompt="your prompt",
+    height=1024, width=1024,
+    num_inference_steps=9,  # 8 actual forwards
+    guidance_scale=0.0,
+).images[0]
+```
+
+### Recommendation
+
+TwinFlow-Z-Image-Turbo offers **~25% faster** generation than standard Z-Image-Turbo at equivalent quality. Consider deploying alongside or replacing current Z-Image setup for improved throughput.
+
+---
+
+## TwinFlow Deployment on Instance 30829799 (2026-02-01)
+
+### Current Setup
+
+- **Instance**: 30829799 (RTX 5090, Czechia)
+- **Server**: Running in screen session `twinflow`
+- **Port**: 10002 (accessible via SSH tunnel from enter-services)
+- **Model**: TwinFlow-Z-Image-Turbo (4-NFE, ~1.8s per 1024x1024)
+- **Registers as**: `zimage` type at `127.0.0.1:10002`
+
+### SSH Tunnel (from enter-services)
+
+The Vast.ai instance doesn't expose port 10002 directly. An SSH tunnel from enter-services forwards traffic:
+
+```bash
+# On enter-services (3.80.56.235)
+ssh -i ~/.ssh/pollinations_services_2026 -p 29798 -L 10002:localhost:10002 -fN root@ssh4.vast.ai
+```
+
+### Management Commands
+
+```bash
+# SSH to instance
+ssh -i ~/.ssh/pollinations_services_2026 -p 29798 root@ssh4.vast.ai
+
+# Attach to screen session
+screen -r twinflow
+
+# Check logs
+tail -f /tmp/twinflow.log
+
+# Restart server
+screen -X -S twinflow quit
+cd /workspace/twinflow && source venv/bin/activate
+screen -dmS twinflow bash -c 'PORT=10002 python server.py 2>&1 | tee /tmp/twinflow.log'
+
+# Verify health (from enter-services)
+curl http://localhost:10002/health
+```
+
+### Server Code
+
+Located at `image_gen_twinflow/server.py` in this repository.

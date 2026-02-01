@@ -10,11 +10,11 @@ mentor: 0xmnt01
 technologies: Lua, C#, GDScript, Rest API, Reinforcement Learning, Fine-tuning
 ---
 
-Create **plug-and-play SDKs** to bring generative AI into popular game engines.
+Create **plug-and-play SDKs** for building conversational AI agents that can perform actions in game worlds.
 
-This project involves building and documenting easy-to-use SDKs or "starter kits" for **Roblox**, **Godot**, or **Unity**. The goal is to allow a *vibe coder* (a teenager with no credit card) to add generative AI NPCs, textures, or dialogue to their game in **one line of code**.
+This project involves building and documenting easy-to-use SDKs or "starter kits" for **Roblox**, **Godot**, or **Unity**. The goal is to allow a *vibe coder* (a teenager with no credit card) to add AI NPCs that can **converse with players** and **take actions in the game world** in just a few lines of code.
 
-**Extensions:** AI NPC behavior using **reinforcement learning** and **fine-tuning** for characters that learn from player interactions, adapt dialogue style, and maintain consistent personalities. This approach has extensive ML community recipes, cloud provider fine-tuning APIs, and benchmark comparisons for performance evaluation.
+**Extensions:** AI NPC behavior using **reinforcement learning** and **fine-tuning** — improving roleplay quality, increasing player engagement, and enabling smaller models with shorter prompts to reduce costs at scale.
 
 ---
 id: 0xprj06
@@ -80,7 +80,7 @@ title: Semantic Steganography for AI Generated Synthetic Media
 category: AI/ML
 difficulty: Advanced
 duration: 350
-mentor: 0xmnt01
+mentor: 0xmnt02
 technologies: Python, TensorFlow/PyTorch, Steganography Techniques
 ---
 

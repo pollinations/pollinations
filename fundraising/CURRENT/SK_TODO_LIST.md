@@ -94,8 +94,8 @@
 
 | Task | Type | Prio | Status | Owner | Output |
 |------|------|------|--------|-------|--------|
-| **Build investor list** | Research | P0 | ⬜ | | Strukturierte Investorenliste |
-| **Prepare investor contact list (Notion)** | Deliverable | P0 | ⬜ | | Gepflegte Notion-Datenbank |
+| **Build investor list** | Research | P0 | ✅ Done | Thomas | See `INVESTOR_TARGET_LIST_DRAFT.md` (90+ investors) |
+| **Prepare investor contact list (Notion)** | Deliverable | P0 | ✅ Done | Thomas | Notion Investor Target List page |
 
 ---
 
@@ -112,8 +112,25 @@
 
 | Task | Type | Prio | Status | Owner | Output |
 |------|------|------|--------|-------|--------|
-| **Review & clean Notion setup** | Execution | P1 | ⬜ | | Saubere, konsistente Struktur |
+| **Review & clean Notion setup** | Execution | P1 | ⬜ | Kalam | Saubere, konsistente Struktur |
 | Align founders on fundraising roles | Decision | P0 | ✅ Done | | See `FOUNDER_ROLES.md` |
+| **Corporate Identity (CI) basics** | Deliverable | P1 | 🔄 In Progress | Susanne | Logo, colors for pitch deck |
+| **Vision alignment** (docs.myceli.ai ↔ Notion) | Deliverable | P1 | ⬜ | Thomas | Consistent vision across docs |
+
+---
+
+## New Tasks from Susanne (Jan 30 - Feb 2)
+
+| Task | Type | Prio | Status | Owner | Output |
+|------|------|------|--------|-------|--------|
+| **BCG Matrix / Competitor Overview** | Research | P1 | ⬜ | Kalam | Visual competitive positioning |
+| **Deep competitor analysis** | Research | P1 | ⬜ | Kalam | Talking points for investor meetings |
+| **Add dev hours to milestones** | Deliverable | P1 | ⬜ | Thomas/Elliot | Update `36_MONTH_MILESTONES.md` |
+| **Find Pollinations GmbH CLA** | Research | P1 | ⬜ | Thomas | For personal safety / repayment terms |
+| **Find Outlier Ventures CLA** | Research | P1 | ⬜ | Thomas | Due diligence prep |
+| **Churn definition for KPIs** | Decision | P1 | ⬜ | Elliot | Cohort analysis |
+| **ARPA with decimal numbers** | Execution | P0 | ⬜ | Elliot | Quick fix on KPI board |
+| **Answer Susanne's pitch questions** | Deliverable | P1 | ⬜ | Thomas/Kalam | Feed into pitch FAQ |
 
 ---
 

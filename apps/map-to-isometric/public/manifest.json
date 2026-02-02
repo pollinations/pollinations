@@ -1,7 +1,7 @@
 {
-  "name": "GSoC 2026 × Pollinations",
-  "short_name": "gsoc",
-  "description": "Join Google Summer of Code 2026 and build the future of open-source AI",
+  "name": "Map to Isometric",
+  "short_name": "map-to-isometric",
+  "description": "Transform flat maps into beautiful isometric views with AI",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#a3e635",

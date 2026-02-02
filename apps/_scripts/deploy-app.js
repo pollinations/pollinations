@@ -81,7 +81,7 @@ async function deployApp(appName) {
     }
 
     const subdomain = appConfig.subdomain || appName;
-    const projectName = `pollinations-${subdomain}`;
+    const projectName = `apps-${subdomain}`;
     const customDomain = `${subdomain}.pollinations.ai`;
 
     console.log(`📦 Project: ${projectName}`);

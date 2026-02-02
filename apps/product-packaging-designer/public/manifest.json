@@ -1,7 +1,7 @@
 {
-  "name": "GSoC 2026 × Pollinations",
-  "short_name": "gsoc",
-  "description": "Join Google Summer of Code 2026 and build the future of open-source AI",
+  "name": "AI Packaging Designer",
+  "short_name": "product-packaging-designer",
+  "description": "Design stunning product packaging with AI assistance",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#a3e635",

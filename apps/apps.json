@@ -1,72 +1,83 @@
 {
+    "_defaults": {
+        "themeColor": "#a3e635",
+        "backgroundColor": "#110518"
+    },
     "catgpt": {
         "subdomain": "catgpt",
         "buildCommand": null,
         "outputDir": ".",
-        "description": "Simple HTML/CSS/JS cat chatbot"
+        "title": "CatGPT",
+        "description": "A cat-themed AI chatbot that responds like a feline friend"
     },
     "ai-dungeon-master": {
         "subdomain": "ai-dungeon-master",
         "buildCommand": "npm run build",
         "outputDir": "dist",
-        "description": "React-based AI dungeon master game",
-        "notes": "Vite base path must be '/' for Cloudflare Pages (not '/pollinations/')"
+        "title": "AI Dungeon Master",
+        "description": "Play tabletop RPGs with an AI-powered dungeon master"
     },
     "sirius-cybernetics-elevator-challenge": {
         "subdomain": "sirius-cybernetics-elevator-challenge",
         "buildCommand": "npm run build",
         "outputDir": "dist",
-        "description": "Sirius Cybernetics elevator personality challenge (React + TypeScript + Vite)",
-        "notes": "Uses base: './' in vite.config.ts"
+        "title": "Sirius Cybernetics Elevator Challenge",
+        "description": "Can you convince a depressed elevator to take you to your floor?"
     },
     "map-to-isometric": {
         "subdomain": "map-to-isometric",
         "buildCommand": "npm run build",
         "outputDir": "dist",
-        "description": "Map to isometric view converter (React + Vite)",
-        "notes": "Uses base: '' in vite.config.js"
+        "title": "Map to Isometric",
+        "description": "Transform flat maps into beautiful isometric views with AI"
     },
     "product-packaging-designer": {
         "subdomain": "product-packaging-designer",
         "buildCommand": "npm run build",
         "outputDir": "dist",
-        "description": "AI-powered product packaging designer (React + TypeScript + Vite + Supabase)"
+        "title": "AI Packaging Designer",
+        "description": "Design stunning product packaging with AI assistance"
     },
     "virtual-makeup": {
         "subdomain": "virtual-makeup",
         "buildCommand": "npm run build",
         "outputDir": "dist",
-        "description": "Virtual makeup studio with AI (React + Vite)"
+        "title": "Virtual Makeup Studio",
+        "description": "Try on makeup looks virtually with AI-powered beauty tools"
     },
     "opposite-prompt-generator": {
         "subdomain": "opposite-prompt-generator",
         "buildCommand": "npm run build",
         "outputDir": "dist",
-        "description": "Transform prompts into semantic opposites and generate images (React + Vite)"
+        "title": "Opposite Prompt Generator",
+        "description": "Transform prompts into semantic opposites and generate contrasting images"
     },
     "chat": {
         "subdomain": "chat",
         "buildCommand": "npm run build",
         "outputDir": "dist",
-        "description": "Pollinations AI chat interface (React + Vite)",
-        "notes": "From PR #5144 - uses base: '/' for Cloudflare Pages"
+        "title": "Pollinations Chat",
+        "description": "Chat with multiple AI models in one interface"
     },
     "model-monitor": {
         "subdomain": "model-monitor",
         "buildCommand": "npm run build",
         "outputDir": "dist",
-        "description": "Real-time model health monitoring dashboard (React + Vite + Tinybird)"
+        "title": "Model Monitor",
+        "description": "Real-time health monitoring for Pollinations AI models"
     },
     "changelog-generator": {
         "subdomain": "changelog-generator",
         "buildCommand": "npm run build",
         "outputDir": "dist",
-        "description": "AI-powered changelog generator (React + Vite)"
+        "title": "Changelog Generator",
+        "description": "Generate beautiful changelogs from your git commits with AI"
     },
     "gsoc": {
         "subdomain": "gsoc",
         "buildCommand": "npm run build",
         "outputDir": "dist",
-        "description": "Google Summer of Code 2026 landing page"
+        "title": "GSoC 2026 × Pollinations",
+        "description": "Join Google Summer of Code 2026 and build the future of open-source AI"
     }
 }

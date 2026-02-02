@@ -34,15 +34,15 @@ We spend **$0** on marketing. Our growth is fueled by an open-source flywheel.
 *   **17K+** Discord members (Real-time support & co-creation)
 *   **$1B+** market analog (Roblox) validates the "creator economy" thesis
 
-## 💰 Business Model: The Pollen Economy
+## 💰 Business Model
 
-| Layer | Description | Status |
-|-------|-------------|--------|
-| **1. Developer Pays** | Devs buy Pollen to power AI features. $1 = 5000 images. | ✅ Live |
-| **2. User Pays** | End-users buy Pollen directly inside apps. Devs don't absorb AI costs. | 🟡 Piloting |
-| **3. Pollen as Currency** | Pollen becomes rewards, incentives, in-app economy across ecosystem. | 🔜 Planned |
+| Revenue Stream | Description | Status |
+|----------------|-------------|--------|
+| **1. Developer Top-Ups** | Devs buy credits to power AI features. $1 = 5000 images. | ✅ Live |
+| **2. User-Pays** | End-users pay for premium features inside apps. Devs don't absorb AI costs. | 🟡 Piloting |
+| **3. Model Partnerships** | AI providers sponsor credits for distribution (e.g., Mistral, Together AI). | � Active |
 
-**Why This Matters**: Roblox didn't just sell games — they created an economy where players earn, spend, and trade Robux. Pollen follows the same path.
+**Why This Matters**: We flip the infrastructure model. Instead of devs paying for users, users pay for themselves — like Roblox's creator economy.
 
 **Unit Economics**:
 *   **Gross Margin**: Target 75%
@@ -69,7 +69,7 @@ We spend **$0** on marketing. Our growth is fueled by an open-source flywheel.
 Just as Roblox democratized game creation for kids, Pollinations democratizes AI app creation.
 *   **Gen Z Creators**: 83% of Gen Z identify as creators.
 *   **Market Gap**: Enterprise infra ignores the long tail of indie creators. We own this segment.
-*   **End State**: Mycelial network of millions of AI micro-apps, each with their own Pollen-powered economy.
+*   **End State**: Mycelial network of millions of AI micro-apps with sustainable unit economics.
 
 **Position**: Not a foundational model company — the open access layer. Permissionless. Interoperable. Community-run.
 
@@ -99,4 +99,4 @@ Just as Roblox democratized game creation for kids, Pollinations democratizes AI
 
 *Berlin-based. Open Source. Community-First.*
 
-> "Technical moats are disappearing — anyone can build AI apps now. But the ecosystem is messy and isolating. We're the one API with a real community: free to start, with an emerging virtual economy where AI compute becomes currency."
+> "Technical moats are disappearing — anyone can build AI apps now. But the ecosystem is messy and isolating. We're the one API with a real community: free to start, with a path to sustainable revenue for every creator."

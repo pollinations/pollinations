@@ -30,7 +30,16 @@
 | **Connect Ventures**| London | Product-Led Growth | Loves strong UX/Product founders. |
 | **Creandum** | Stockholm | Consumer/Viral | Backed Spotify. They get the "Music/Art" roots of Pollinations. |
 
-## 🥉 Tier 3: Strategic / Reach
+## � Strategic Partnerships (Non-Investment)
+*Model providers who benefit from our distribution. Not investors, but potential sponsors/partners.*
+
+| Company | Type | Why Them? | Outreach |
+|---------|------|-----------|----------|
+| **Mistral AI** | Model Provider | **European AI champion.** We distribute their models to 3M+ users. They have "Mistralship" startup program (30K credits, 1:1 support, early access). | Apply to next Mistralship cohort OR pitch as distribution partner via mistral.ai/contact |
+| **Together AI** | Model Provider | Open model hosting. We're already integrated. Could sponsor credits for distribution. | Existing relationship - deepen partnership |
+| **Black Forest Labs** | Model Provider | Flux creators. Air Street portfolio. We're their biggest indie distribution channel. | Leverage Air Street connection |
+
+## �🥉 Tier 3: Strategic / Reach
 *US-based or later stage, but worth a "shoot your shot".*
 
 | VC Firm | HQ | Angle |

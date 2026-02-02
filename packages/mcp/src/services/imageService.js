@@ -8,7 +8,7 @@ import {
     arrayBufferToBase64,
     API_BASE_URL,
 } from "../utils/coreUtils.js";
-import { getImageModels, validateImageModel } from "../utils/modelCache.js";
+import { getImageModels, validateImageModel } from "../utils/models.js";
 import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
 import { z } from "zod";
 

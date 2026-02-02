@@ -4,7 +4,7 @@ import {
     API_BASE_URL,
     parseApiError,
 } from "../utils/coreUtils.js";
-import { getTextModels, validateTextModel } from "../utils/modelCache.js";
+import { getTextModels, validateTextModel } from "../utils/models.js";
 import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
 import { z } from "zod";
 

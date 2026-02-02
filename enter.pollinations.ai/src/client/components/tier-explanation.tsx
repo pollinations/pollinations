@@ -40,7 +40,8 @@ const SeedTooltipContent = () => (
 );
 
 export const TierExplanation: FC = () => {
-    const tierBoxStyle = "rounded-lg p-3 border border-teal-200 bg-teal-50/30";
+    const tierBoxStyle =
+        "rounded-lg p-3 bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200";
     const requirementLabelStyle =
         "text-[9px] font-semibold text-gray-400 uppercase tracking-wide";
 
@@ -50,7 +51,24 @@ export const TierExplanation: FC = () => {
                 📈 <strong>Grow Your Tier:</strong> For developers building with
                 pollinations.ai. Level up to earn more daily pollen.
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {/* Microbe */}
+                <div className={tierBoxStyle}>
+                    <div className="flex items-center gap-1.5">
+                        <span>{TIER_EMOJIS.microbe}</span>
+                        <strong className="text-gray-800 text-sm">
+                            Microbe
+                        </strong>
+                    </div>
+                    <p className="text-xs font-mono text-gray-600 mt-1">
+                        {TIER_POLLEN.microbe} pollen/day
+                    </p>
+                    <div className="mt-1.5 border-t border-gray-200 pt-1.5">
+                        <p className={requirementLabelStyle}>To unlock</p>
+                        <p className="text-xs text-gray-500">Sign up</p>
+                    </div>
+                </div>
+
                 {/* Spore */}
                 <div className={tierBoxStyle}>
                     <div className="flex items-center gap-1.5">
@@ -62,7 +80,10 @@ export const TierExplanation: FC = () => {
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <p className={requirementLabelStyle}>To unlock</p>
-                        <p className="text-xs text-gray-500">Sign up</p>
+                        <p className="text-xs text-gray-500">Auto-verified</p>
+                        <p className="text-[10px] text-emerald-600 mt-0.5">
+                            Checked on signup
+                        </p>
                     </div>
                 </div>
 

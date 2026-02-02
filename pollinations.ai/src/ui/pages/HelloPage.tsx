@@ -11,7 +11,6 @@ import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { RoadmapItem } from "../components/ui/roadmap-item";
 import { SubCard } from "../components/ui/sub-card";
-import { TierCard } from "../components/ui/tier-card";
 import { Body, Heading, Title } from "../components/ui/typography";
 
 function HelloPage() {
@@ -163,31 +162,57 @@ function HelloPage() {
                             >
                                 {pageCopy.tiersSubtitle}
                             </Heading>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <TierCard
-                                    tier="spore"
-                                    emoji="🦠"
-                                    title={pageCopy.tierSporeTitle}
-                                    description={pageCopy.tierSporeDescription}
-                                />
-                                <TierCard
-                                    tier="seed"
-                                    emoji="🌱"
-                                    title={pageCopy.tierSeedTitle}
-                                    description={pageCopy.tierSeedDescription}
-                                />
-                                <TierCard
-                                    tier="flower"
-                                    emoji="🌸"
-                                    title={pageCopy.tierFlowerTitle}
-                                    description={pageCopy.tierFlowerDescription}
-                                />
-                                <TierCard
-                                    tier="nectar"
-                                    emoji="🍯"
-                                    title={pageCopy.tierNectarTitle}
-                                    description={pageCopy.tierNectarDescription}
-                                />
+                            <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+                                {[
+                                    {
+                                        emoji: "🦠",
+                                        name: pageCopy.tierMicrobeTitle,
+                                        pollen: pageCopy.tierMicrobePollen,
+                                        desc: pageCopy.tierMicrobeDescription,
+                                    },
+                                    {
+                                        emoji: "🍄",
+                                        name: pageCopy.tierSporeTitle,
+                                        pollen: pageCopy.tierSporePollen,
+                                        desc: pageCopy.tierSporeDescription,
+                                    },
+                                    {
+                                        emoji: "🌱",
+                                        name: pageCopy.tierSeedTitle,
+                                        pollen: pageCopy.tierSeedPollen,
+                                        desc: pageCopy.tierSeedDescription,
+                                    },
+                                    {
+                                        emoji: "🌸",
+                                        name: pageCopy.tierFlowerTitle,
+                                        pollen: pageCopy.tierFlowerPollen,
+                                        desc: pageCopy.tierFlowerDescription,
+                                    },
+                                    {
+                                        emoji: "🍯",
+                                        name: pageCopy.tierNectarTitle,
+                                        pollen: pageCopy.tierNectarPollen,
+                                        desc: pageCopy.tierNectarDescription,
+                                    },
+                                ].map((tier) => (
+                                    <div
+                                        key={tier.name}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-card border border-border-subtle"
+                                    >
+                                        <span className="text-xl">
+                                            {tier.emoji}
+                                        </span>
+                                        <div className="text-left">
+                                            <p className="text-sm font-semibold text-text-body-main">
+                                                {tier.name}
+                                            </p>
+                                            <p className="text-xs text-text-body-secondary">
+                                                {tier.pollen} pollen/day ·{" "}
+                                                {tier.desc}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                             {/* Beta note */}
                             <p className="text-sm text-text-highlight mt-4">

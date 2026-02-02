@@ -16,12 +16,16 @@
 
 import { execSync } from "node:child_process";
 import { boolean, command, run, string } from "@drizzle-team/brocli";
+import {
+    TIER_POLLEN as TIER_POLLEN_CONFIG,
+    type TierName,
+} from "../src/tier-config.ts";
 
-type TierName = "spore" | "seed" | "flower" | "nectar" | "router";
 type Environment = "staging" | "production";
 
 // Tier hierarchy for comparison (higher index = higher tier)
 const TIER_HIERARCHY: TierName[] = [
+    "microbe",
     "spore",
     "seed",
     "flower",
@@ -92,14 +96,8 @@ function getD1User(env: Environment, githubUsername: string): D1User | null {
     }
 }
 
-// Tier pollen amounts (must match tier-config.ts)
-const TIER_POLLEN: Record<TierName, number> = {
-    spore: 1,
-    seed: 3,
-    flower: 10,
-    nectar: 20,
-    router: 500,
-};
+// Use pollen amounts from central config
+const TIER_POLLEN = TIER_POLLEN_CONFIG;
 
 /**
  * Update tier directly in D1 database.
@@ -128,7 +126,7 @@ const updateTierCommand = command({
     options: {
         githubUsername: string().required().desc("GitHub username of the user"),
         tier: string()
-            .enum("spore", "seed", "flower", "nectar", "router")
+            .enum("microbe", "spore", "seed", "flower", "nectar", "router")
             .required()
             .desc("Target tier to assign"),
         env: string().enum("staging", "production").default("production"),
@@ -234,7 +232,7 @@ const verifyTierCommand = command({
     options: {
         githubUsername: string().required().desc("GitHub username to verify"),
         tier: string()
-            .enum("spore", "seed", "flower", "nectar", "router")
+            .enum("microbe", "spore", "seed", "flower", "nectar", "router")
             .required()
             .desc("Expected tier to verify"),
         env: string().enum("staging", "production").default("production"),

@@ -626,11 +626,11 @@ https://myapp.com/callback#api_key=pk_xxxxx
 
 | Tier   | Emoji | Pollen/Day | Criteria                 |
 | ------ | ----- | ---------- | ------------------------ |
-| spore  | 🍄    | 5          | Default (new accounts)   |
-| seed   | 🌱    | 10         | GitHub engagement        |
-| flower | 🌸    | 15         | Contributed code/project |
-| nectar | 🍯    | 20         | Strategic partners       |
-| router | 🔌    | 100        | Infrastructure partners  |
+| microbe| 🦠    | 0.1        | Entry tier (auto-upgrades once verified) |
+| spore  | 🍄    | 1          | Verified accounts        |
+| seed   | 🌱    | 3          | GitHub engagement        |
+| flower | 🌸    | 10         | Contributor              |
+| nectar | 🍯    | 20         | Coming soon              |
 
 ### Quick Tier Update
 

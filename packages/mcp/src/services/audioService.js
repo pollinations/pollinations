@@ -1,18 +1,18 @@
-import fs from "fs";
-import path from "path";
-import os from "os";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { z } from "zod";
+import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
 import {
+    API_BASE_URL,
+    arrayBufferToBase64,
+    buildUrl,
+    createAudioContent,
     createMCPResponse,
     createTextContent,
-    createAudioContent,
-    buildUrl,
     fetchBinaryWithAuth,
-    arrayBufferToBase64,
-    API_BASE_URL,
 } from "../utils/coreUtils.js";
 import { getAudioVoices } from "../utils/models.js";
-import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
-import { z } from "zod";
 
 async function respondAudio(params) {
     requireApiKey();
@@ -138,7 +138,7 @@ async function sayText(params) {
     }
 }
 
-async function listAudioVoices(params) {
+async function listAudioVoices(_params) {
     try {
         const voices = await getAudioVoices();
 

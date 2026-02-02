@@ -1,16 +1,16 @@
+import { z } from "zod";
+import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
 import {
+    API_BASE_URL,
+    arrayBufferToBase64,
+    buildShareableUrl,
+    buildUrl,
+    createImageContent,
     createMCPResponse,
     createTextContent,
-    createImageContent,
-    buildUrl,
-    buildShareableUrl,
     fetchBinaryWithAuth,
-    arrayBufferToBase64,
-    API_BASE_URL,
 } from "../utils/coreUtils.js";
 import { getImageModels, validateImageModel } from "../utils/models.js";
-import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
-import { z } from "zod";
 
 function buildQueryParams(params) {
     const result = {};
@@ -663,7 +663,7 @@ async function analyzeVideo(params) {
     }
 }
 
-async function listImageModels(params) {
+async function listImageModels(_params) {
     try {
         const models = await getImageModels();
 

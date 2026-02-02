@@ -1,12 +1,12 @@
+import { z } from "zod";
+import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
 import {
+    API_BASE_URL,
     createMCPResponse,
     createTextContent,
-    API_BASE_URL,
     parseApiError,
 } from "../utils/coreUtils.js";
 import { getTextModels, validateTextModel } from "../utils/models.js";
-import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
-import { z } from "zod";
 
 async function generateText(params) {
     requireApiKey();
@@ -298,7 +298,7 @@ async function chatCompletion(params) {
     }
 }
 
-async function listTextModels(params) {
+async function listTextModels(_params) {
     try {
         const models = await getTextModels();
 

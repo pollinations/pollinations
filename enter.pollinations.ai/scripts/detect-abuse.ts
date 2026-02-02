@@ -6,63 +6,31 @@
  *
  * USAGE:
  *   cd enter.pollinations.ai
- *   npx tsx scripts/abuse-detection/detect-abuse.ts --limit 2000   # Analyze 2000 users
- *   npx tsx scripts/abuse-detection/detect-abuse.ts --single-chunk # Test with first chunk only
- *   npx tsx scripts/abuse-detection/detect-abuse.ts --model claude # Use specific model
+ *   npx tsx scripts/detect-abuse.ts --limit 2000   # Analyze 2000 users
+ *   npx tsx scripts/detect-abuse.ts --single-chunk  # Test with first chunk only
+ *   npx tsx scripts/detect-abuse.ts --model claude  # Use specific model
  *
  * OPTIONS:
  *   --limit N         Max users to analyze (default: 5000)
- *   --chunk-size N    Users per API call (default: 300)
+ *   --chunk-size N    Users per API call (default: 100)
  *   --model NAME      LLM model to use (default: gemini)
  *   --single-chunk    Only process first chunk (for testing)
- *
- * HOW IT WORKS:
- *   1. Fetch users from D1 database (email, github_username, created_at, tier)
- *   2. Send overlapping chunks to LLM for scoring (20% overlap catches sequential patterns)
- *   3. LLM assigns 0-100 score based on abuse signals
- *   4. Export CSV: abuse-report.csv
- *
- * SCORING (assigned by LLM - cross-user patterns are highest priority):
- *   +50  Cluster pattern (3+ users share prefix/suffix/structure) - HIGHEST
- *   +40  Burst registrations (5+ accounts close together)
- *   +25  Disposable email domain (tempmail, guerrilla, etc.)
- *   +20  Sequential numbers in usernames
- *   +15  Random/gibberish username
- *
- * ACTIONS:
- *   80-100  🔴 Block   - Review immediately
- *   60-79   🟡 Review  - Manual verification needed
- *   30-59   🟠 Monitor - Watch activity
- *   0-29    🟢 OK      - Normal user
+ *   --parallel N      Process N chunks in parallel (default: 1)
  *
  * OUTPUT:
  *   abuse-report.csv - All users sorted by score (action, score, email, github, signals, date)
- *
- * COST: ~$0.10 per 5000 users (minimal token usage with CSV format)
  */
 
 import { execSync } from "node:child_process";
-import { writeFileSync, readFileSync, existsSync } from "node:fs";
-
-// Parse arguments
-const args = process.argv.slice(2);
-const limitIndex = args.indexOf("--limit");
-const chunkIndex = args.indexOf("--chunk-size");
-const modelIndex = args.indexOf("--model");
-const parallelIndex = args.indexOf("--parallel");
-const singleChunk = args.includes("--single-chunk");
-
-const userLimit = limitIndex >= 0 ? parseInt(args[limitIndex + 1]) : 5000;
-const chunkSize = chunkIndex >= 0 ? parseInt(args[chunkIndex + 1]) : 100;
-const modelName = modelIndex >= 0 ? args[modelIndex + 1] : "gemini";
-const parallelism = parallelIndex >= 0 ? parseInt(args[parallelIndex + 1]) : 1;
-const overlapSize = 20; // fixed 20 user overlap
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 // Configuration
 const SCORE_THRESHOLDS = {
     block: 70,
     review: 40,
-};
+} as const;
+
+const OVERLAP_SIZE = 20; // Fixed 20 user overlap
 
 interface User {
     email: string;
@@ -77,8 +45,44 @@ interface ScoredUser extends User {
     action: "block" | "review" | "ok";
 }
 
+interface ParsedArgs {
+    userLimit: number;
+    chunkSize: number;
+    modelName: string;
+    parallelism: number;
+    singleChunk: boolean;
+}
+
 /**
- * Load API key
+ * Parse command line arguments
+ */
+function parseArguments(): ParsedArgs {
+    const args = process.argv.slice(2);
+
+    function getArgValue(
+        flag: string,
+        defaultValue: number | string,
+    ): number | string {
+        const index = args.indexOf(flag);
+        if (index >= 0 && args[index + 1]) {
+            return typeof defaultValue === "number"
+                ? parseInt(args[index + 1], 10)
+                : args[index + 1];
+        }
+        return defaultValue;
+    }
+
+    return {
+        userLimit: getArgValue("--limit", 5000) as number,
+        chunkSize: getArgValue("--chunk-size", 100) as number,
+        modelName: getArgValue("--model", "gemini") as string,
+        parallelism: getArgValue("--parallel", 1) as number,
+        singleChunk: args.includes("--single-chunk"),
+    };
+}
+
+/**
+ * Load API key from .testingtokens file
  */
 function loadApiKey(): string {
     const tokenFile = ".testingtokens";
@@ -101,7 +105,7 @@ function loadApiKey(): string {
 }
 
 /**
- * Fetch users from D1
+ * Fetch users from D1 database
  */
 function fetchUsers(limit: number): User[] {
     console.log(`📊 Fetching ${limit} most recent users...`);
@@ -130,120 +134,64 @@ function fetchUsers(limit: number): User[] {
 }
 
 /**
- * Score users with overlap for pattern detection
+ * Format date to human-readable string
  */
-async function scoreUsers(users: User[]): Promise<ScoredUser[]> {
-    const apiKey = loadApiKey();
-    const mode = parallelism > 1 ? `${parallelism} parallel` : "sequential";
-    console.log(
-        `\n🤖 Scoring ${users.length} users (chunks of ${chunkSize}, ${mode})...`,
-    );
-
-    const allScores = new Map<string, { score: number; signals: string[] }>();
-
-    // Build all chunk ranges
-    const chunkRanges: { start: number; end: number }[] = [];
-    const maxIterations = singleChunk ? 1 : users.length;
-    for (let i = 0; i < maxIterations; i += chunkSize - overlapSize) {
-        const end = Math.min(i + chunkSize, users.length);
-        if (i >= users.length) break;
-        chunkRanges.push({ start: i, end });
-    }
-
-    // Process chunks in parallel batches
-    let completedChunks = 0;
-    for (
-        let batchStart = 0;
-        batchStart < chunkRanges.length;
-        batchStart += parallelism
-    ) {
-        const batch = chunkRanges.slice(batchStart, batchStart + parallelism);
-
-        console.log(
-            `\n⚡ Processing batch ${Math.floor(batchStart / parallelism) + 1}/${Math.ceil(chunkRanges.length / parallelism)} (${batch.length} chunks in parallel)...`,
-        );
-
-        const promises = batch.map(async (range) => {
-            const chunk = users.slice(range.start, range.end);
-            console.log(
-                `   🤖 Chunk ${range.start + 1}-${range.end} of ${users.length}`,
-            );
-            const scores = await callScoringAPI(chunk, apiKey);
-            return { range, chunk, scores };
-        });
-
-        const results = await Promise.all(promises);
-
-        // Merge all results from this batch
-        for (const { chunk, scores } of results) {
-            for (let j = 0; j < chunk.length && j < scores.length; j++) {
-                const user = chunk[j];
-                const existing = allScores.get(user.email);
-                if (!existing || scores[j].score > existing.score) {
-                    allScores.set(user.email, scores[j]);
-                }
-            }
-            completedChunks++;
-        }
-
-        // Print running stats after batch (only count processed users)
-        const processedUsers = Array.from(allScores.entries());
-        const stats = {
-            block: processedUsers.filter(
-                ([_, s]) => s.score >= SCORE_THRESHOLDS.block,
-            ).length,
-            review: processedUsers.filter(
-                ([_, s]) =>
-                    s.score >= SCORE_THRESHOLDS.review &&
-                    s.score < SCORE_THRESHOLDS.block,
-            ).length,
-            ok: processedUsers.filter(
-                ([_, s]) => s.score < SCORE_THRESHOLDS.review,
-            ).length,
-        };
-        console.log(
-            `   📊 Progress: ${completedChunks}/${chunkRanges.length} chunks (${allScores.size} users) | 🔴 ${stats.block} block | 🟡 ${stats.review} review | 🟢 ${stats.ok} ok`,
-        );
-    }
-
-    // Build final scored users list
-    const scoredUsers: ScoredUser[] = users.map((user) => {
-        const scoreData = allScores.get(user.email) || {
-            score: 0,
-            signals: [],
-        };
-        return {
-            ...user,
-            score: scoreData.score,
-            signals: scoreData.signals,
-            action: getAction(scoreData.score),
-        };
-    });
-
-    console.log(`\n✅ Scoring complete`);
-    return scoredUsers;
+function formatDate(timestamp: number): string {
+    const d = new Date(Number(timestamp) * 1000);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
 /**
- * Call Pollinations API for scoring
+ * Build chunk ranges with overlap
  */
-async function callScoringAPI(
-    chunk: User[],
-    apiKey: string,
-): Promise<{ score: number; signals: string[] }[]> {
-    // Prepare data (privacy-conscious)
-    // Build a map from github username to chunk index for parsing response
+function buildChunkRanges(
+    totalUsers: number,
+    chunkSize: number,
+    singleChunk: boolean,
+): Array<{ start: number; end: number }> {
+    const ranges: Array<{ start: number; end: number }> = [];
+    const maxIterations = singleChunk ? 1 : totalUsers;
+
+    for (let i = 0; i < maxIterations; i += chunkSize - OVERLAP_SIZE) {
+        const end = Math.min(i + chunkSize, totalUsers);
+        if (i >= totalUsers) break;
+        ranges.push({ start: i, end });
+    }
+
+    return ranges;
+}
+
+/**
+ * Prepare CSV data for API prompt
+ */
+function prepareChunkData(chunk: User[]): {
+    csvRows: string[];
+    githubToIndex: Map<string, number>;
+} {
     const githubToIndex = new Map<string, number>();
-    const csvRows = chunk.map((u, idx) => {
-        const date = new Date(Number(u.created_at) * 1000);
-        const humanDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-        const github = u.github_username || `user_${idx}`;
-        const upgraded = u.tier !== "spore";
+
+    const csvRows = chunk.map((user, idx) => {
+        const github = user.github_username || `user_${idx}`;
+        const humanDate = formatDate(user.created_at);
+        const upgraded = user.tier !== "spore" && user.tier !== "microbe";
+
         githubToIndex.set(github, idx);
-        return `${github},${u.email},${humanDate},${upgraded}`;
+        return `${github},${user.email},${humanDate},${upgraded}`;
     });
 
-    const prompt = `Detect coordinated abuse by analyzing PATTERNS ACROSS MULTIPLE USERS. Score 0-100.
+    return { csvRows, githubToIndex };
+}
+
+/**
+ * Build the scoring prompt for the LLM
+ */
+function buildScoringPrompt(csvRows: string[]): string {
+    return `Detect coordinated abuse by analyzing PATTERNS ACROSS MULTIPLE USERS. Score 0-100.
 
 FOCUS: Cross-user patterns are the strongest signals. Look for:
 - Common prefixes/suffixes shared by multiple users (e.g., "john_dev1", "john_dev2", "john_test3")
@@ -272,13 +220,63 @@ Use + to combine. Empty if clean. Focus on GROUPS, not individuals.
 
 Data (github,email,registered,upgraded):
 ${csvRows.join("\n")}`;
+}
 
-    // Log the complete prompt (commented for cleaner output)
-    // console.log("\n" + "=".repeat(80));
-    // console.log("📝 PROMPT TO LLM:");
-    // console.log("=".repeat(80));
-    // console.log(prompt);
-    // console.log("=".repeat(80) + "\n");
+/**
+ * Parse LLM response into scores
+ */
+function parseLLMResponse(
+    content: string,
+    githubToIndex: Map<string, number>,
+    chunkLength: number,
+): Array<{ score: number; signals: string[] }> {
+    const results: Array<{ score: number; signals: string[] }> = new Array(
+        chunkLength,
+    )
+        .fill(null)
+        .map(() => ({ score: 0, signals: [] }));
+
+    const lines = content.split("\n").filter((line) => line.trim());
+
+    for (const line of lines) {
+        // Skip header if present
+        if (line.startsWith("github,") || !line.includes(",")) continue;
+
+        const parts = line.split(",");
+        if (parts.length >= 2) {
+            const github = parts[0]?.trim();
+            const score = parseInt(parts[1], 10) || 0;
+            const reason = parts[2]?.trim() || "";
+
+            const idx = githubToIndex.get(github);
+            if (idx !== undefined) {
+                // Convert reason to signals array (split on +)
+                const signals =
+                    reason === "ok" || reason === ""
+                        ? []
+                        : reason.split("+").filter((s) => s.trim());
+
+                results[idx] = {
+                    score: Math.min(100, Math.max(0, score)),
+                    signals,
+                };
+            }
+        }
+    }
+
+    return results;
+}
+
+/**
+ * Call Pollinations API for scoring a single chunk
+ */
+async function callScoringAPI(
+    chunk: User[],
+    apiKey: string,
+    modelName: string,
+): Promise<Array<{ score: number; signals: string[] }>> {
+    const { csvRows, githubToIndex } = prepareChunkData(chunk);
+    const prompt = buildScoringPrompt(csvRows);
 
     try {
         const response = await fetch(
@@ -305,58 +303,152 @@ ${csvRows.join("\n")}`;
         const data = await response.json();
         const content = data.choices?.[0]?.message?.content || "";
 
-        // Log the model output and token usage (commented for cleaner output)
-        // console.log("\n" + "=".repeat(80));
-        // console.log("🤖 LLM OUTPUT:");
-        // console.log("=".repeat(80));
-        // console.log(content);
-        // console.log("=".repeat(80));
-        // if (data.usage) {
-        //     console.log(
-        //         `📊 Tokens: prompt=${data.usage.prompt_tokens}, completion=${data.usage.completion_tokens}, total=${data.usage.total_tokens}`,
-        //     );
-        // }
-        // console.log("");
-
-        // Parse CSV response (github username as key)
-        const lines = content.split("\n").filter((line: string) => line.trim());
-        const results: { score: number; signals: string[] }[] = new Array(
-            chunk.length,
-        )
-            .fill(null)
-            .map(() => ({ score: 0, signals: [] }));
-
-        for (const line of lines) {
-            // Skip header if present
-            if (line.startsWith("github,") || !line.includes(",")) continue;
-
-            const parts = line.split(",");
-            if (parts.length >= 2) {
-                const github = parts[0]?.trim();
-                const score = parseInt(parts[1]) || 0;
-                const reason = parts[2]?.trim() || "";
-
-                const idx = githubToIndex.get(github);
-                if (idx !== undefined) {
-                    // Convert reason to signals array (split on +)
-                    const signals =
-                        reason === "ok" || reason === ""
-                            ? []
-                            : reason.split("+").filter((s: string) => s.trim());
-                    results[idx] = {
-                        score: Math.min(100, Math.max(0, score)),
-                        signals,
-                    };
-                }
-            }
-        }
-
-        return results;
+        return parseLLMResponse(content, githubToIndex, chunk.length);
     } catch (error) {
         console.error("\n⚠️  API call failed:", error);
+        return chunk.map(() => ({ score: 0, signals: [] }));
+    }
+}
+
+/**
+ * Process a batch of chunks in parallel
+ */
+async function processBatch(
+    batch: Array<{ start: number; end: number }>,
+    users: User[],
+    apiKey: string,
+    modelName: string,
+    batchIndex: number,
+    totalBatches: number,
+): Promise<
+    Array<{
+        range: { start: number; end: number };
+        chunk: User[];
+        scores: Array<{ score: number; signals: string[] }>;
+    }>
+> {
+    console.log(
+        `\n⚡ Processing batch ${batchIndex}/${totalBatches} (${batch.length} chunks in parallel)...`,
+    );
+
+    const promises = batch.map(async (range) => {
+        const chunk = users.slice(range.start, range.end);
+        console.log(
+            `   🤖 Chunk ${range.start + 1}-${range.end} of ${users.length}`,
+        );
+        const scores = await callScoringAPI(chunk, apiKey, modelName);
+        return { range, chunk, scores };
+    });
+
+    return Promise.all(promises);
+}
+
+/**
+ * Print progress statistics
+ */
+function printProgress(
+    completedChunks: number,
+    totalChunks: number,
+    allScores: Map<string, { score: number; signals: string[] }>,
+): void {
+    const processedUsers = Array.from(allScores.entries());
+    const stats = {
+        block: processedUsers.filter(
+            ([_, s]) => s.score >= SCORE_THRESHOLDS.block,
+        ).length,
+        review: processedUsers.filter(
+            ([_, s]) =>
+                s.score >= SCORE_THRESHOLDS.review &&
+                s.score < SCORE_THRESHOLDS.block,
+        ).length,
+        ok: processedUsers.filter(([_, s]) => s.score < SCORE_THRESHOLDS.review)
+            .length,
+    };
+
+    console.log(
+        `   📊 Progress: ${completedChunks}/${totalChunks} chunks (${allScores.size} users) | ` +
+            `🔴 ${stats.block} block | 🟡 ${stats.review} review | 🟢 ${stats.ok} ok`,
+    );
+}
+
+/**
+ * Score users with overlap for pattern detection
+ */
+async function scoreUsers(
+    users: User[],
+    config: ParsedArgs,
+): Promise<ScoredUser[]> {
+    const apiKey = loadApiKey();
+    const mode =
+        config.parallelism > 1
+            ? `${config.parallelism} parallel`
+            : "sequential";
+    console.log(
+        `\n🤖 Scoring ${users.length} users (chunks of ${config.chunkSize}, ${mode})...`,
+    );
+
+    const allScores = new Map<string, { score: number; signals: string[] }>();
+    const chunkRanges = buildChunkRanges(
+        users.length,
+        config.chunkSize,
+        config.singleChunk,
+    );
+
+    let completedChunks = 0;
+    const totalBatches = Math.ceil(chunkRanges.length / config.parallelism);
+
+    // Process chunks in parallel batches
+    for (
+        let batchStart = 0;
+        batchStart < chunkRanges.length;
+        batchStart += config.parallelism
+    ) {
+        const batch = chunkRanges.slice(
+            batchStart,
+            batchStart + config.parallelism,
+        );
+        const batchIndex = Math.floor(batchStart / config.parallelism) + 1;
+
+        const results = await processBatch(
+            batch,
+            users,
+            apiKey,
+            config.modelName,
+            batchIndex,
+            totalBatches,
+        );
+
+        // Merge results from this batch
+        for (const { chunk, scores } of results) {
+            for (let j = 0; j < chunk.length && j < scores.length; j++) {
+                const user = chunk[j];
+                const existing = allScores.get(user.email);
+                if (!existing || scores[j].score > existing.score) {
+                    allScores.set(user.email, scores[j]);
+                }
+            }
+            completedChunks++;
+        }
+
+        printProgress(completedChunks, chunkRanges.length, allScores);
     }
 
-    return chunk.map(() => ({ score: 0, signals: [] }));
+    // Build final scored users list
+    const scoredUsers: ScoredUser[] = users.map((user) => {
+        const scoreData = allScores.get(user.email) || {
+            score: 0,
+            signals: [],
+        };
+        return {
+            ...user,
+            score: scoreData.score,
+            signals: scoreData.signals,
+            action: getAction(scoreData.score),
+        };
+    });
+
+    console.log(`\n✅ Scoring complete`);
+    return scoredUsers;
 }
 
 /**
@@ -369,16 +461,10 @@ function getAction(score: number): "block" | "review" | "ok" {
 }
 
 /**
- * Export results - single CSV with all data
+ * Export results to CSV
  */
 function exportResults(users: ScoredUser[]): void {
     const sorted = [...users].sort((a, b) => b.score - a.score);
-
-    // Helper to format date
-    const formatDate = (ts: number) => {
-        const d = new Date(Number(ts) * 1000);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-    };
 
     // Single CSV with action column
     const csv = [
@@ -408,6 +494,7 @@ function exportResults(users: ScoredUser[]): void {
     const topSuspicious = sorted
         .filter((u) => u.score >= SCORE_THRESHOLDS.review)
         .slice(0, 10);
+
     if (topSuspicious.length > 0) {
         console.log("\n🎯 Top suspicious accounts:");
         topSuspicious.forEach((u) => {
@@ -418,21 +505,25 @@ function exportResults(users: ScoredUser[]): void {
     }
 }
 
-// Main
-async function main() {
+/**
+ * Main entry point
+ */
+async function main(): Promise<void> {
+    const config = parseArguments();
+
     console.log("🚀 Abuse Detection");
     console.log("=".repeat(50));
     console.log(
-        `📋 Config: ${userLimit} users, chunks of ${chunkSize}, model: ${modelName}`,
+        `📋 Config: ${config.userLimit} users, chunks of ${config.chunkSize}, model: ${config.modelName}`,
     );
 
-    const users = fetchUsers(userLimit);
+    const users = fetchUsers(config.userLimit);
     if (users.length === 0) {
         console.log("⚠️  No users found");
         return;
     }
 
-    const scored = await scoreUsers(users);
+    const scored = await scoreUsers(users, config);
     exportResults(scored);
 }
 

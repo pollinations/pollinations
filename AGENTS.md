@@ -162,6 +162,7 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 - **No speculative abstractions** - If we need it later, we'll add it then
 - **No "just in case" helpers** - Don't create test utilities or wrappers preemptively
 - **Keep the codebase minimal** - Less code = fewer bugs = easier maintenance
+- **No fallbacks for backward compatibility** - Clean breaks are better than complexity bloat. When changing tokens, headers, or APIs, update all consumers at once rather than supporting both old and new patterns
 
 ## Code Style
 

@@ -47,6 +47,15 @@ Think of Pollen like buying in bulk — the more efficient the model, the more y
 
 **Pro tip:** Mix efficient models for high-volume tasks with premium models when quality matters most.
 
+## How is my pollen spent?
+
+Your daily tier pollen is always used first, then your purchased pollen:
+
+1. **Daily grants** — Used first for most models
+2. **Purchased pollen** — Used after daily is depleted
+
+**Exception:** Some premium models are marked with a 💎 **Paid Only** badge. These require purchased pollen and cannot use daily tier grants. This ensures sustainable access to high-cost models while keeping daily pollen available for experimentation.
+
 ## How does my Pollen wallet work?
 
 You get one central Pollen wallet for all your applications. Top it up anytime and use it across the entire Pollinations ecosystem.

@@ -47,9 +47,11 @@ export const callFluxKleinAPI = async (
             variant === "klein-large" ? "Klein Large (9B)" : "Klein (4B)";
         logOps(`Calling Flux ${variantName} API with prompt:`, prompt);
 
-        const enterToken = process.env.PLN_ENTER_TOKEN;
-        if (!enterToken) {
-            throw new Error("PLN_ENTER_TOKEN environment variable is required");
+        const backendToken = process.env.PLN_IMAGE_BACKEND_TOKEN;
+        if (!backendToken) {
+            throw new Error(
+                "PLN_IMAGE_BACKEND_TOKEN environment variable is required",
+            );
         }
 
         progress.updateBar(
@@ -69,7 +71,7 @@ export const callFluxKleinAPI = async (
                 safeParams,
                 progress,
                 requestId,
-                enterToken,
+                backendToken,
                 variant,
             );
         }
@@ -79,7 +81,7 @@ export const callFluxKleinAPI = async (
             safeParams,
             progress,
             requestId,
-            enterToken,
+            backendToken,
             variant,
         );
     } catch (error) {
@@ -100,7 +102,7 @@ async function generateTextToImage(
     safeParams: ImageParams,
     progress: ProgressManager,
     requestId: string,
-    enterToken: string,
+    backendToken: string,
     variant: KleinVariant = "klein",
 ): Promise<ImageGenerationResult> {
     logOps("Using text-to-image mode (GET)");
@@ -124,7 +126,7 @@ async function generateTextToImage(
             fetch(url, {
                 method: "GET",
                 headers: {
-                    "x-enter-token": enterToken,
+                    "x-backend-token": backendToken,
                 },
                 signal,
             }),
@@ -177,7 +179,7 @@ async function generateWithEditing(
     safeParams: ImageParams,
     progress: ProgressManager,
     requestId: string,
-    enterToken: string,
+    backendToken: string,
     variant: KleinVariant = "klein",
 ): Promise<ImageGenerationResult> {
     logOps(
@@ -261,7 +263,7 @@ async function generateWithEditing(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-enter-token": enterToken,
+                    "x-backend-token": backendToken,
                 },
                 body: JSON.stringify(base64Images),
                 signal,

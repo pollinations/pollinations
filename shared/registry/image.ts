@@ -21,20 +21,6 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
-    "turbo": {
-        aliases: [],
-        modelId: "turbo",
-        provider: "scaleway",
-        cost: [
-            {
-                date: COST_START_DATE,
-                completionImageTokens: 0.0003,
-            },
-        ],
-        description: "SDXL Turbo - Single-step real-time generation",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-    },
     "nanobanana": {
         aliases: [],
         modelId: "nanobanana",
@@ -56,6 +42,7 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "nanobanana-pro",
         provider: "google",
+        paidOnly: true,
         cost: [
             // Gemini 3 Pro Image via Vertex AI
             // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
@@ -90,6 +77,7 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "seedream-pro",
         provider: "bytedance",
+        paidOnly: true,
         cost: [
             // ByteDance ARK Seedream 4.5 - $0.04 per image
             {
@@ -123,6 +111,7 @@ export const IMAGE_SERVICES = {
         aliases: ["gpt-image-1.5", "gpt-image-large"],
         modelId: "gptimage-large",
         provider: "azure",
+        paidOnly: true,
         cost: [
             // Azure GPT Image 1.5 (via AI Foundry)
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
@@ -173,6 +162,7 @@ export const IMAGE_SERVICES = {
         aliases: ["veo-3.1-fast", "video"],
         modelId: "veo",
         provider: "google",
+        paidOnly: true,
         cost: [
             // Veo 3.1 Fast - $0.15 per second of video
             // We bill by "video seconds" - each second is counted like a token

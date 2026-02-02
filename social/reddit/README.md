@@ -1,4 +1,4 @@
-# polly-ai 🤖
+# Automated Reddit Posting Bot Pipeline for Reddit
 
 Automated Reddit bot for r/pollinations_ai subreddit that posts updates about pollinations.ai.
 

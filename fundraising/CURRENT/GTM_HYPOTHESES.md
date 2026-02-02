@@ -35,8 +35,10 @@
 **Important nuance**: Roblox is a strong *analog* for user-pays at scale, but in our Roblox examples users pay **Roblox**, not Pollinations.
 
 **Evidence**:
-- Roblox creator economy: $1B+ payouts in 2025 (shows user spend in creator platforms)
-- Our ecosystem already has consumer-facing surfaces beyond games (Creative 40%, Chat 24%) where end-user pay is a natural fit
+- **Pictify**: Creative tool with live "paid extra credits" model (validates willingness to pay)
+- **PolliVision**: Video generator implementing Pollen credit system
+- **Roblox**: $1B+ creator economy serves as the *scale analog* for our user-pays thesis
+- **Ecosystem**: 40% Creative / 24% Chat apps are natural fits for per-generation micropayments
 
 ---
 

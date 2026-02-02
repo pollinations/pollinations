@@ -42,17 +42,17 @@ This document outlines the key milestones for Pollinations over the next 36 mont
 ### Milestone 1.2: User-Pays Model Launch
 **Target**: Mar 2026  
 **KPIs**:
-- [ ] Roblox Pollen integration live
-- [ ] 3+ games using user-pays
+- [ ] Pollen payment integration live (Web/Discord/Game)
+- [ ] 3+ pilot apps using user-pays
 - [ ] End-users buying Pollen directly
 
 **Developer Hours**: ~600 hours
 | Task | Hours | Owner |
 |------|-------|-------|
-| Roblox SDK development | 200 | Backend |
-| In-game purchase flow | 150 | Backend |
+| Payment SDK development | 200 | Backend |
+| User purchase flow | 150 | Backend |
 | Developer documentation | 100 | DevRel |
-| Partner onboarding (Paas game) | 150 | DevRel |
+| Partner onboarding (Pilot apps) | 150 | DevRel |
 
 ---
 

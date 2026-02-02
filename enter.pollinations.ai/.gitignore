@@ -14,3 +14,4 @@ scripts/abuse-detection/flagged-users*.csv
 scripts/abuse-detection/flagged-users*.md
 scripts/flagged-users*.csv
 scripts/flagged-users*.md
+abuse-report*.csv

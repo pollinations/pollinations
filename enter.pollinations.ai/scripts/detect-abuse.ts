@@ -49,16 +49,18 @@ const args = process.argv.slice(2);
 const limitIndex = args.indexOf("--limit");
 const chunkIndex = args.indexOf("--chunk-size");
 const modelIndex = args.indexOf("--model");
+const parallelIndex = args.indexOf("--parallel");
 const singleChunk = args.includes("--single-chunk");
 
 const userLimit = limitIndex >= 0 ? parseInt(args[limitIndex + 1]) : 5000;
-const chunkSize = chunkIndex >= 0 ? parseInt(args[chunkIndex + 1]) : 300;
+const chunkSize = chunkIndex >= 0 ? parseInt(args[chunkIndex + 1]) : 100;
 const modelName = modelIndex >= 0 ? args[modelIndex + 1] : "gemini";
-const overlapSize = Math.floor(chunkSize * 0.2); // 20% overlap
+const parallelism = parallelIndex >= 0 ? parseInt(args[parallelIndex + 1]) : 1;
+const overlapSize = 20; // fixed 20 user overlap
 
 // Configuration
 const SCORE_THRESHOLDS = {
-    block: 80,
+    block: 70,
     review: 40,
 };
 
@@ -114,7 +116,7 @@ function fetchUsers(limit: number): User[] {
     try {
         const result = execSync(
             `npx wrangler d1 execute DB --remote --env production --json --command "${query}"`,
-            { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] },
+            { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 },
         );
 
         const data = JSON.parse(result);
@@ -132,37 +134,76 @@ function fetchUsers(limit: number): User[] {
  */
 async function scoreUsers(users: User[]): Promise<ScoredUser[]> {
     const apiKey = loadApiKey();
+    const mode = parallelism > 1 ? `${parallelism} parallel` : "sequential";
     console.log(
-        `\n🤖 Scoring ${users.length} users (chunks of ${chunkSize} with ${overlapSize} overlap)...`,
+        `\n🤖 Scoring ${users.length} users (chunks of ${chunkSize}, ${mode})...`,
     );
 
     const allScores = new Map<string, { score: number; signals: string[] }>();
 
-    // Process with overlapping chunks (or single chunk if --single-chunk)
+    // Build all chunk ranges
+    const chunkRanges: { start: number; end: number }[] = [];
     const maxIterations = singleChunk ? 1 : users.length;
     for (let i = 0; i < maxIterations; i += chunkSize - overlapSize) {
-        const chunk = users.slice(i, Math.min(i + chunkSize, users.length));
-        if (chunk.length === 0) break;
+        const end = Math.min(i + chunkSize, users.length);
+        if (i >= users.length) break;
+        chunkRanges.push({ start: i, end });
+    }
 
-        process.stdout.write(
-            `\r🤖 Analyzing users ${i + 1}-${Math.min(i + chunk.length, users.length)} of ${users.length}...`,
+    // Process chunks in parallel batches
+    let completedChunks = 0;
+    for (
+        let batchStart = 0;
+        batchStart < chunkRanges.length;
+        batchStart += parallelism
+    ) {
+        const batch = chunkRanges.slice(batchStart, batchStart + parallelism);
+
+        console.log(
+            `\n⚡ Processing batch ${Math.floor(batchStart / parallelism) + 1}/${Math.ceil(chunkRanges.length / parallelism)} (${batch.length} chunks in parallel)...`,
         );
 
-        const scores = await callScoringAPI(chunk, apiKey);
+        const promises = batch.map(async (range) => {
+            const chunk = users.slice(range.start, range.end);
+            console.log(
+                `   🤖 Chunk ${range.start + 1}-${range.end} of ${users.length}`,
+            );
+            const scores = await callScoringAPI(chunk, apiKey);
+            return { range, chunk, scores };
+        });
 
-        // Merge scores (keep highest score if user appears in multiple chunks)
-        for (let j = 0; j < chunk.length && j < scores.length; j++) {
-            const user = chunk[j];
-            const existing = allScores.get(user.email);
-            if (!existing || scores[j].score > existing.score) {
-                allScores.set(user.email, scores[j]);
+        const results = await Promise.all(promises);
+
+        // Merge all results from this batch
+        for (const { chunk, scores } of results) {
+            for (let j = 0; j < chunk.length && j < scores.length; j++) {
+                const user = chunk[j];
+                const existing = allScores.get(user.email);
+                if (!existing || scores[j].score > existing.score) {
+                    allScores.set(user.email, scores[j]);
+                }
             }
+            completedChunks++;
         }
 
-        // Add delay between API calls (skip if single chunk)
-        if (!singleChunk && i + chunkSize < users.length) {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
+        // Print running stats after batch (only count processed users)
+        const processedUsers = Array.from(allScores.entries());
+        const stats = {
+            block: processedUsers.filter(
+                ([_, s]) => s.score >= SCORE_THRESHOLDS.block,
+            ).length,
+            review: processedUsers.filter(
+                ([_, s]) =>
+                    s.score >= SCORE_THRESHOLDS.review &&
+                    s.score < SCORE_THRESHOLDS.block,
+            ).length,
+            ok: processedUsers.filter(
+                ([_, s]) => s.score < SCORE_THRESHOLDS.review,
+            ).length,
+        };
+        console.log(
+            `   📊 Progress: ${completedChunks}/${chunkRanges.length} chunks (${allScores.size} users) | 🔴 ${stats.block} block | 🟡 ${stats.review} review | 🟢 ${stats.ok} ok`,
+        );
     }
 
     // Build final scored users list
@@ -232,12 +273,12 @@ Use + to combine. Empty if clean. Focus on GROUPS, not individuals.
 Data (github,email,registered,upgraded):
 ${csvRows.join("\n")}`;
 
-    // Log the complete prompt
-    console.log("\n" + "=".repeat(80));
-    console.log("📝 PROMPT TO LLM:");
-    console.log("=".repeat(80));
-    console.log(prompt);
-    console.log("=".repeat(80) + "\n");
+    // Log the complete prompt (commented for cleaner output)
+    // console.log("\n" + "=".repeat(80));
+    // console.log("📝 PROMPT TO LLM:");
+    // console.log("=".repeat(80));
+    // console.log(prompt);
+    // console.log("=".repeat(80) + "\n");
 
     try {
         const response = await fetch(
@@ -264,18 +305,18 @@ ${csvRows.join("\n")}`;
         const data = await response.json();
         const content = data.choices?.[0]?.message?.content || "";
 
-        // Log the model output and token usage
-        console.log("\n" + "=".repeat(80));
-        console.log("🤖 LLM OUTPUT:");
-        console.log("=".repeat(80));
-        console.log(content);
-        console.log("=".repeat(80));
-        if (data.usage) {
-            console.log(
-                `📊 Tokens: prompt=${data.usage.prompt_tokens}, completion=${data.usage.completion_tokens}, total=${data.usage.total_tokens}`,
-            );
-        }
-        console.log("");
+        // Log the model output and token usage (commented for cleaner output)
+        // console.log("\n" + "=".repeat(80));
+        // console.log("🤖 LLM OUTPUT:");
+        // console.log("=".repeat(80));
+        // console.log(content);
+        // console.log("=".repeat(80));
+        // if (data.usage) {
+        //     console.log(
+        //         `📊 Tokens: prompt=${data.usage.prompt_tokens}, completion=${data.usage.completion_tokens}, total=${data.usage.total_tokens}`,
+        //     );
+        // }
+        // console.log("");
 
         // Parse CSV response (github username as key)
         const lines = content.split("\n").filter((line: string) => line.trim());

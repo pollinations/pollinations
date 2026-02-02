@@ -68,32 +68,4 @@
 
 ---
 
-## 📝 Draft Email to Antler
-
-**Subject**: Pollinations Seed Round - CLA & Benchmark Questions
-
-Hi [Name],
-
-As we prepare for our seed round, we have some concrete questions about CLA structure and market benchmarks. Could you help us with the following?
-
-**CLA Template**
-- Which CLA templates do you see most frequently for comparable seed rounds? Could you share one?
-- Are there specific clauses (e.g., MFN) you'd want as our first investor?
-
-**Cap & Discount Benchmarks**
-- What cap ranges are you seeing for comparable seed rounds?
-- What discount ranges are market standard?
-- Do CLAs work better with cap only or cap + discount?
-
-**MFN Clause**
-- How do you typically handle MFN clauses?
-- Would you recommend time-limiting MFN (e.g., until first close)?
-
-We'd love to discuss positioning, pitch feedback, and investor targeting in our Wednesday call.
-
-Best,
-Thomas
-
----
-
-*Created: Feb 2, 2026*
+*Updated: Feb 2, 2026*

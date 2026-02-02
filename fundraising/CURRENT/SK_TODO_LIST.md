@@ -32,9 +32,9 @@
 
 | Task | Type | Prio | Status | Owner | Output |
 |------|------|------|--------|-------|--------|
-| Define round type (SAFE / CLA / priced seed) | Decision | P0 | ⚠️ Needs Decision | | See `DECISION_BRIEFING_SEED_ROUND.md` |
-| Define target raise amount | Decision | P0 | ⚠️ Needs Decision | Thomas | See `DECISION_BRIEFING_SEED_ROUND.md` |
-| Define target runway (months) | Decision | P0 | ⚠️ Needs Decision | Thomas | See `DECISION_BRIEFING_SEED_ROUND.md` |
+| Define round type (SAFE / CLA / priced seed) | Decision | P0 | ⚠️ Needs Decision | | See `ROUND_TERMS_CHECKLIST.md` |
+| Define target raise amount | Decision | P0 | ⚠️ Needs Decision | Thomas | See `ROUND_TERMS_CHECKLIST.md` |
+| Define target runway (months) | Decision | P0 | ⚠️ Needs Decision | Thomas | See `ROUND_TERMS_CHECKLIST.md` |
 | Define success criteria of the round (KPIs) | Decision | P1 | ⬜ | | 3–5 klare KPIs |
 | **Define milestones enabled by this round (12–18 months)** | Decision | P0 | ✅ Done | Thomas | See `36_MONTH_MILESTONES.md` |
 | Create high-level dilution model (pre/post) | Deliverable | P1 | ✅ Done | | Einfache Tabelle / Spreadsheet |

@@ -8,7 +8,7 @@
 ---
 
 ## 🎯 **Core Strategy & Decisions**
-*   [`DECISION_BRIEFING_SEED_ROUND_DRAFT.md`](./DECISION_BRIEFING_SEED_ROUND_DRAFT.md) - **Start Here**: P0 decisions on Round Size, Cap, and Structure.
+*   [`ROUND_TERMS_CHECKLIST_DRAFT.md`](./ROUND_TERMS_CHECKLIST_DRAFT.md) - **Start Here**: P0 decisions on Round Size, Cap, and Structure.
 *   [`SK_TODO_LIST.md`](./SK_TODO_LIST.md) - Master task tracker for the entire raise.
 *   [`SEED_ROUND_TASKS.md`](./SEED_ROUND_TASKS.md) - Simplified task view for Notion sync.
 *   [`HISTORICAL_INVESTOR_STRATEGY_DRAFT.md`](./HISTORICAL_INVESTOR_STRATEGY_DRAFT.md) - Strategy for Antler & Outlier Ventures.
@@ -42,6 +42,6 @@
 ---
 
 **Next Steps**:
-1.  Review and approve decisions in `DECISION_BRIEFING_SEED_ROUND_DRAFT.md`.
+1.  Review and approve decisions in `ROUND_TERMS_CHECKLIST_DRAFT.md`.
 2.  Send One Pager to Antler for feedback.
 3.  Start outreach to Tier 2 investors using `EMAIL_OUTREACH_TEMPLATES_DRAFT.md`.

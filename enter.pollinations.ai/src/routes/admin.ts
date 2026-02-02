@@ -122,11 +122,24 @@ export const adminRoutes = new Hono<Env>()
             ? authHeader.slice(7)
             : null;
 
-        if (providedKey !== c.env.PLN_ENTER_TOKEN) {
+        if (!providedKey) {
             throw new HTTPException(401, { message: "Unauthorized" });
         }
 
-        return await next();
+        // Full admin token has access to all endpoints
+        if (providedKey === c.env.PLN_ENTER_TOKEN) {
+            return await next();
+        }
+
+        // Refill token only has access to /trigger-refill endpoint
+        if (
+            providedKey === c.env.REFILL_TOKEN &&
+            c.req.path.endsWith("/trigger-refill")
+        ) {
+            return await next();
+        }
+
+        throw new HTTPException(401, { message: "Unauthorized" });
     })
     .post("/update-tier", async (c) => {
         // D1-only tier update - no Polar sync

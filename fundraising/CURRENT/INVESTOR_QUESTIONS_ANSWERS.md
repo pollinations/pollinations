@@ -7,6 +7,25 @@
 
 ---
 
+## Business Model: B2B2C Creator Platform
+
+### What type of business is Pollinations?
+
+**We're a B2B2C creator platform** - we serve creators who serve end-users. Similar to:
+
+- **TikTok/YouTube**: Creators make content, platform monetizes via ads + creator fund
+- **Twitch**: Streamers build audiences, viewers pay via subs/bits
+- **Unity/Unreal**: Game devs build games, players pay inside games
+
+**Revenue Model**:
+- **Today (B2B)**: Developers buy Pollen credits to power their apps (~$6K/month)
+- **March 2026 (B2C via B2B)**: End-users buy Pollen directly inside apps. We take 4% of GMV.
+
+**Are our creators "businesses"?**
+Not legally, but functionally yes - they're **creators** like YouTubers, Twitch streamers, or indie game devs. Some monetize, some just want to build cool stuff and go viral. Our creators range from 16-year-old hobbyists making viral AI chatbots to small studios building commercial apps.
+
+---
+
 ## Core Positioning & Product Clarity
 
 ### Q1: Who is Pollinations' primary customer today, and who is it NOT for?

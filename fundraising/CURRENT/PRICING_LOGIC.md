@@ -4,12 +4,24 @@
 
 ---
 
+## Business Model: B2B2C Creator Platform
+
+We're a **creator platform** - we serve creators who serve end-users. Similar to:
+- **TikTok/YouTube**: Creators make content, platform monetizes
+- **Twitch**: Streamers build audiences, viewers pay via subs
+- **Unity/Unreal**: Game devs build games, players pay inside games
+
+Our creators range from teens making viral AI chatbots to small studios building commercial apps.
+
+---
+
 ## Core Model
 
 - **Product**: AI services (image, text, audio, video)
 - **Unit**: Pollen credits (prepaid, per-use, USD-denominated)
 - **Philosophy (target)**: User-pays - end-users cover their own AI usage inside apps
-- **Today**: Developer-paid top-ups are the active revenue stream
+- **Today (B2B)**: Developer-paid top-ups (~$6K/month)
+- **March 2026 (B2C via B2B)**: End-users buy Pollen directly inside apps
 
 ## Pricing Principles (from Notion)
 

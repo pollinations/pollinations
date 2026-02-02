@@ -4,6 +4,17 @@
 
 ---
 
+## Business Model: B2B2C Creator Platform
+
+We're a **creator platform** - we serve creators who serve end-users. Similar to:
+- **TikTok/YouTube**: Creators make content, platform monetizes
+- **Twitch**: Streamers build audiences, viewers pay via subs
+- **Unity/Unreal**: Game devs build games, players pay inside games
+
+Our creators range from teens making viral AI chatbots to small studios building commercial apps. Some monetize, some just want to build cool stuff and go viral.
+
+---
+
 ## Three Primary Hypotheses
 
 ### 1. Developer Community Flywheel (High Confidence)

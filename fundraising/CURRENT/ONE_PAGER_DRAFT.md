@@ -34,15 +34,20 @@ We spend **$0** on marketing. Our growth is fueled by an open-source flywheel.
 *   **17K+** Discord members (Real-time support & co-creation)
 *   **$1B+** market analog (Roblox) validates the "creator economy" thesis
 
-## 💰 Business Model
+## 💰 Business Model: B2B2C Creator Platform
+
+**We're a creator platform** - we serve creators who serve end-users. Similar to:
+- **TikTok/YouTube**: Creators make content, platform monetizes
+- **Twitch**: Streamers build audiences, viewers pay via subs
+- **Unity/Unreal**: Game devs build games, players pay inside games
 
 | Revenue Stream | Description | Status |
 |----------------|-------------|--------|
-| **1. Developer Top-Ups** | Devs buy credits to power AI features. $1 = 5000 images. | ✅ Live |
-| **2. User-Pays** | End-users pay for premium features inside apps. Devs don't absorb AI costs. | 🟡 Piloting |
-| **3. Model Partnerships** | AI providers sponsor credits for distribution (e.g., Mistral, Together AI). | � Active |
+| **1. Developer Top-Ups (B2B)** | Devs buy credits to power AI features. $1 = 5000 images. | ✅ Live (~$6K/mo) |
+| **2. User-Pays (B2C via B2B)** | End-users pay for AI usage inside apps. We take 4% GMV. | 🟡 Mar 2026 |
+| **3. Model Partnerships** | AI providers sponsor credits for distribution. | 🔄 Active |
 
-**Why This Matters**: We flip the infrastructure model. Instead of devs paying for users, users pay for themselves — like Roblox's creator economy.
+**Why This Matters**: We flip the infrastructure model. Instead of devs paying for users, users pay for themselves. Our creators range from teens making viral chatbots to small studios building commercial apps.
 
 **Unit Economics**:
 *   **Gross Margin**: Target 75%

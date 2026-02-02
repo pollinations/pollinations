@@ -55,6 +55,7 @@ declare namespace Cloudflare {
         TINYBIRD_ACCESS_TOKEN: string;
         TESTING_REFERRER: string;
         PLN_ENTER_TOKEN: string;
+        REFILL_TOKEN: string;
         POLAR_WEBHOOK_SECRET: string;
         TINYBIRD_INGEST_TOKEN: string;
         TINYBIRD_POLAR_INGEST_URL: string;
@@ -106,6 +107,7 @@ declare namespace NodeJS {
                 | "TINYBIRD_ACCESS_TOKEN"
                 | "TESTING_REFERRER"
                 | "PLN_ENTER_TOKEN"
+                | "REFILL_TOKEN"
                 | "POLAR_WEBHOOK_SECRET"
                 | "TINYBIRD_INGEST_TOKEN"
                 | "TINYBIRD_POLAR_INGEST_URL"

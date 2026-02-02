@@ -91,6 +91,6 @@ Each app gets:
 ## Resources
 
 - [API Docs](../APIDOCS.md)
-- [App Ideas](./APP_IDEAS.md)
+- [App Ideas](IDEAS.md)
 - [App Showcase](./APPS.md)
 - [Discord](https://discord.gg/pollinations-ai-885844321461485618)

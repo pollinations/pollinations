@@ -11,9 +11,6 @@ on:
     branches: [main]
     paths:
       - 'apps/**'
-      - '!apps/_scripts/**'
-      - '!apps/_templates/**'
-      - '!apps/operations/**'
 
 jobs:
   deploy:
@@ -33,17 +30,26 @@ jobs:
         id: app
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "app_name=${{ github.event.inputs.app_name }}" >> $GITHUB_OUTPUT
+            APP_NAME="${{ github.event.inputs.app_name }}"
           else
             git fetch origin main --depth=2
-            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null | grep '^apps/' | grep -v '_scripts\|_templates\|operations' | head -1 || \
-                      git diff --name-only origin/main~1 HEAD | grep '^apps/' | grep -v '_scripts\|_templates\|operations' | head -1)
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null | grep '^apps/' | head -1 || \
+                      git diff --name-only origin/main~1 HEAD | grep '^apps/' | head -1)
             APP_NAME=$(echo "$CHANGED" | sed 's|^apps/\([^/]*\)/.*|\1|')
-            [ -z "$APP_NAME" ] && echo "❌ Could not detect app" && exit 1
-            echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
           fi
+          
+          # Check if app is in apps.json (source of truth)
+          if [ -z "$APP_NAME" ] || ! node -e "const c=require('./apps/apps.json'); if(!c['$APP_NAME']) process.exit(1);" 2>/dev/null; then
+            echo "⏭️ $APP_NAME not in apps.json, skipping deploy"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
+          echo "skip=false" >> $GITHUB_OUTPUT
 
       - name: Deploy
+        if: steps.app.outputs.skip != 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

@@ -5,6 +5,7 @@ import { TierExplanation } from "./tier-explanation";
 // Badge colors for each tier level
 const TIER_BADGE_COLORS: Record<TierStatus, string> = {
     none: "bg-gray-100 border border-gray-400 text-gray-800",
+    microbe: "bg-gray-100 border border-gray-400 text-gray-800",
     seed: "bg-emerald-100 border border-emerald-400 text-emerald-800",
     flower: "bg-fuchsia-100 border border-fuchsia-400 text-fuchsia-800",
     nectar: "bg-amber-100 border border-amber-400 text-amber-800",

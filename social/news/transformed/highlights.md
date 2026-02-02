@@ -1,3 +1,7 @@
+- **2026-02-02** – **🚀 Kimi K2.5** Upgraded model with vision support and improved reasoning capabilities.
+- **2026-02-02** – **🧠 Web Research** Claude can now use `perplexity` and `gemini-search` tools for real-time answers.
+- **2026-02-02** – **💎 Premium Access** High-end models `veo`, `claude-large`, and `seedream-pro` are now available for credit holders.
+- **2026-02-02** – **📱 Moltbot Integration** Use Pollinations on Telegram & WhatsApp via the new Moltbot provider.
 - **2026-01-30** – **💎 Paid-Only Models** `claude-large`, `gemini-large`, `veo`, `seedream-pro`, and `nanobanana-pro` will require purchased pollen. Free credits work for all other models.
 - **2026-01-30** – **🆕 Kimi K2.5 Thinking** New open-source reasoning model rivaling Claude Opus at ~1/8th the cost.
 - **2026-01-30** – **💳 New Payment Methods** PayPal, Apple Pay, and Google Pay now accepted via Stripe.

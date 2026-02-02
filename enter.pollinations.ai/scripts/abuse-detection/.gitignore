@@ -1,4 +1,0 @@
-# Abuse detection outputs
-*.csv
-*-summary.md
-.DS_Store

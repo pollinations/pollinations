@@ -9,11 +9,11 @@
  *    or: node install.js
  */
 
-import { execSync } from "child_process";
-import { writeFileSync, mkdirSync, existsSync } from "fs";
-import { homedir, platform } from "os";
-import { join } from "path";
-import { createInterface } from "readline";
+import { execSync } from "node:child_process";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { homedir, platform } from "node:os";
+import { join } from "node:path";
+import { createInterface } from "node:readline";
 
 const rl = createInterface({
     input: process.stdin,

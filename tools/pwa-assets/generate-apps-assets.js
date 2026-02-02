@@ -3,7 +3,7 @@
  * Generate PWA assets for all apps in apps.json
  * Uses a single global theme color (#a3e635 - lime green)
  */
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";

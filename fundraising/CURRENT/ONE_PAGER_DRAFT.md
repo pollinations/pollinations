@@ -2,24 +2,29 @@
 
 > **⚠️ DRAFT v1 - For Internal Review Only**
 
-**The simplest compute layer for the AI generation.**  
-*Infrastructure for the "Vibe Coding" Era.*
+**The simplest compute layer for AI-powered apps.**  
+*One API. Free to start. Community that levels up with you.*
 
 ---
 
 ## 📉 The Problem
-**AI creation is gatekept by complexity and credit cards.**
-A new generation of millions of "vibe coders" (teens, indie devs, creators) wants to build AI apps, but they face three walls:
-1.  **Fragmentation**: Managing API keys for OpenAI, Anthropic, and Replicate is a mess.
-2.  **Financial Barrier**: Most APIs require a credit card upfront. A 16-year-old in Brazil can't even start.
-3.  **Isolation**: No community support or path to "level up" their reputation.
+**AI is everywhere. Technical moats are disappearing. Everyone can build apps now.**
+
+But the ecosystem is messy and isolating:
+1.  **API Fragmentation**: Each provider has different APIs, keys, billing. Managing OpenAI + Anthropic + Replicate is a mess.
+2.  **Credit Card Barrier**: A 16-year-old in Brazil or Indonesia can't even start. Most APIs require payment upfront.
+3.  **Financial Risk**: App goes viral → massive unexpected bill. No cost controls.
+4.  **No Support System**: You're alone with docs and YouTube. No community, no path to level up.
 
 ## 🚀 The Solution
-**One API. Free to start. A community that pays you back.**
+**One API. Free to start. A community that levels up with you.**
+
 Pollinations is the unified API gateway that aggregates open-source and proprietary models into a single, permissionless interface.
+
 *   **Zero Friction**: No signup, no API keys, one line of code to generate images/text.
-*   **User-Pays Model**: We are shifting the cost from developers to end-users (pilot live).
-*   **Pollen Economy**: A gamified rewards system where GitHub contributions earn compute credits.
+*   **User-Pays Model**: Shifting cost from developers to end-users. Pilot apps already live.
+*   **Pollen Economy**: Gamified rewards where contributions earn compute credits.
+*   **Community Pipeline**: End User → App Modifier → Publisher → Community Leader → Core Contributor
 
 ## ⚡ Traction (Organic)
 We spend **$0** on marketing. Our growth is fueled by an open-source flywheel.
@@ -29,33 +34,69 @@ We spend **$0** on marketing. Our growth is fueled by an open-source flywheel.
 *   **17K+** Discord members (Real-time support & co-creation)
 *   **$1B+** market analog (Roblox) validates the "creator economy" thesis
 
-## 💰 Business Model
-**1. Developer Top-Ups (Live)**: B2B credit purchases for power users.  
-**2. User-Pays (Piloting)**: End-users pay micropayments (Pollen) inside apps for premium features. Pilot apps like *Pictify* and *PolliVision* are already testing this.  
-**3. Partnerships**: Model providers (e.g., Together AI) sponsor credits to get distribution.
+## 💰 Business Model: The Pollen Economy
+
+| Layer | Description | Status |
+|-------|-------------|--------|
+| **1. Developer Pays** | Devs buy Pollen to power AI features. $1 = 5000 images. | ✅ Live |
+| **2. User Pays** | End-users buy Pollen directly inside apps. Devs don't absorb AI costs. | 🟡 Piloting |
+| **3. Pollen as Currency** | Pollen becomes rewards, incentives, in-app economy across ecosystem. | 🔜 Planned |
+
+**Why This Matters**: Roblox didn't just sell games — they created an economy where players earn, spend, and trade Robux. Pollen follows the same path.
 
 **Unit Economics**:
 *   **Gross Margin**: Target 75%
 *   **CAC**: ~$0 (Community-led growth)
+*   **Pricing**: $1 = 5,000 images (no subscriptions, no minimums)
+
+---
+
+## 🏆 Why Us vs. Competitors
+
+| Factor | Pollinations | FAL / Replicate / OpenRouter |
+|--------|--------------|------------------------------|
+| **Target User** | Indie devs, hobbyists, teens | Enterprise, production devs |
+| **Entry Barrier** | No signup required | Credit card, API keys |
+| **Pricing** | $1 = 5000 images | Higher minimums, subscriptions |
+| **Community** | 17K+ Discord, active support | Minimal (docs only) |
+| **User Journey** | Consumer → contributor pipeline | One-way customer relationship |
+
+---
 
 ## 🌍 Market & Vision
-We are building **"Roblox for AI"**.
+**We are building "Roblox for AI".**
+
 Just as Roblox democratized game creation for kids, Pollinations democratizes AI app creation.
 *   **Gen Z Creators**: 83% of Gen Z identify as creators.
-*   **Market Gap**: Enterprise infra (FAL, Replicate) ignores the long tail of indie creators. We own this segment.
+*   **Market Gap**: Enterprise infra ignores the long tail of indie creators. We own this segment.
+*   **End State**: Mycelial network of millions of AI micro-apps, each with their own Pollen-powered economy.
+
+**Position**: Not a foundational model company — the open access layer. Permissionless. Interoperable. Community-run.
 
 ---
 
 ## 💸 The Ask
 **Raising €1.5M - €2.5M Seed Round**
+*   **Valuation**: ~€12M pre-money (17-22% dilution)
 *   **Runway**: 24+ months
 *   **Milestones**: Launch User-Pays at scale, reach 150K active devs, break even.
 
 ---
 
-**Team**
-*   **Thomas Haferlach (CEO)**: Ex-Amazon AI, Neural Networks Researcher.
-*   **Elliot (COO)**: [Bio placeholder]
-*   **Kalam (Growth)**: [Bio placeholder]
+## 👥 Team
+
+**Thomas Haferlach (CEO)**
+*   Edinburgh AI degree (top of class), published peer-reviewed neural networks paper
+*   Amazon AI engineer — built recommendation systems at scale
+*   9 years building VoodooHop art collective in Brazil
+*   *"Built what I wished I had at 16"*
+
+**Elliot (COO)**: [Bio placeholder]
+
+**Kalam (Growth)**: [Bio placeholder]
+
+---
 
 *Berlin-based. Open Source. Community-First.*
+
+> "Technical moats are disappearing — anyone can build AI apps now. But the ecosystem is messy and isolating. We're the one API with a real community: free to start, with an emerging virtual economy where AI compute becomes currency."

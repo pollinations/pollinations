@@ -12,9 +12,9 @@
 | Define target raise amount | Decision | P0 | ⬜ | | Zielbetrag inkl. Range |
 | Define target runway (months) | Decision | P0 | ⬜ | | z.B. „18 Monate Runway" |
 | Define success criteria of the round (KPIs) | Decision | P1 | ⬜ | | 3–5 klare KPIs |
-| **Define milestones enabled by this round (12–18 months)** | Decision | P0 | ⬜ | | Priorisierte Milestone-Liste |
-| Create high-level dilution model (pre/post) | Deliverable | P1 | ⬜ | | Einfache Tabelle / Spreadsheet |
-| Define valuation expectations & guardrails | Decision | P1 | ⬜ | | Min / Target / Max Valuation |
+| **Define milestones enabled by this round (12–18 months)** | Decision | P0 | ✅ Done | Thomas | See `36_MONTH_MILESTONES.md` |
+| Create high-level dilution model (pre/post) | Deliverable | P1 | ✅ Done | | See `SAFE_CAP_DISCOUNT_RESEARCH.md` |
+| Define valuation expectations & guardrails | Decision | P1 | ✅ Done | | See `SAFE_CAP_DISCOUNT_RESEARCH.md` |
 | Define target lead investor profile | Decision | P1 | ⬜ | | Profilbeschreibung |
 | **Develop historical investor outreach strategy** | Decision | P1 | ⬜ | | Konkreter Outreach-Ansatz |
 | Define first close strategy | Decision | P1 | ⬜ | | Klarer Ablaufplan |
@@ -44,12 +44,12 @@
 
 | Task | Type | Priority | Status | Owner | Output |
 |------|------|----------|--------|-------|--------|
-| Define business model clearly | Deliverable | P0 | ⬜ | | Business-Model |
-| Define pricing logic & assumptions | Deliverable | P0 | ⬜ | | Pricing-Logik |
-| Draft unit economics (high-level) | Deliverable | P0 | ⬜ | | Unit-Economics-Sheet |
-| Draft GTM hypotheses (Go-To-Market) | Deliverable | P0 | ⬜ | | 2–3 GTM-Hypothesen |
-| Build 24–36 month financial model | Deliverable | P0 | ⬜ | | Finanzmodell (Sheet) |
-| Define use of funds breakdown | Deliverable | P0 | ⬜ | | Use-of-Funds-Slide |
+| Define business model clearly | Deliverable | P0 | ✅ Done | | See `mycel-extract/04_business_model.md` |
+| Define pricing logic & assumptions | Deliverable | P0 | ✅ Done | | See `PRICING_LOGIC.md` |
+| Draft unit economics (high-level) | Deliverable | P0 | ✅ Done | | See `UNIT_ECONOMICS.md` |
+| Draft GTM hypotheses (Go-To-Market) | Deliverable | P0 | ✅ Done | | See `GTM_HYPOTHESES.md` |
+| Build 24–36 month financial model | Deliverable | P0 | ✅ Done | | See `financial-model.md` |
+| Define use of funds breakdown | Deliverable | P0 | ✅ Done | | See `36_MONTH_MILESTONES.md` |
 
 ---
 
@@ -59,7 +59,7 @@
 |------|------|----------|--------|-------|--------|
 | Select standard SAFE / CLA template | Decision | P0 | ⬜ | | Festgelegtes Template |
 | **Review CLA documents incl. MFN clauses** | Research | P1 | ⬜ | | Kommentierte Dokumente |
-| **Prepare cap & discount recommendation** | Deliverable | P1 | ⬜ | | Internes Memo |
+| **Prepare cap & discount recommendation** | Deliverable | P1 | ✅ Done | | See `SAFE_CAP_DISCOUNT_RESEARCH.md` |
 | Myceli <> Pollinations legal structure | Decision | P1 | ⬜ | | Klare Legal Structure |
 | Myceli GmbH setup | Research | P1 | ⬜ | | Fördergelder, Investoren Absicherung |
 

@@ -34,7 +34,7 @@
 | **Index Ventures** | London/SF | Generalist Powerhouse | Early to growth. Backed Figma, Notion. High bar but huge signal. |
 
 ## 🇩🇪 Tier 2b: DACH-Focused (Berlin Advantage)
-*German/Austrian VCs who value local founders.*
+*German/Austrian/Swiss VCs who value local founders.*
 
 | VC Firm | HQ | Angle | Notes |
 |---------|----|-------|-------|
@@ -42,6 +42,17 @@
 | **HTGF (High-Tech Gründerfonds)** | Bonn | German Seed Specialist | Up to €1M seed, €4M total. Must have German HQ. Government-backed. |
 | **Smart Infrastructure Ventures** | Leipzig | B2B AI/Software | €30M SIVentures II Fund. DACH focus. Early-stage B2B. |
 | **Lakestar** | Zurich | Growth-minded Seed | Backed Spotify, Revolut. $265M continuation fund. |
+| **La Famiglia** | Berlin | ML/AI + Enterprise | €250M (€165M seed + €90M growth). Backed Y42, Sweep. €1-3M initial. |
+| **Fly Ventures** | Berlin | Technical Founders | €80M Fund III. Enterprise + Deeptech. €1-4M tickets. Day-zero to seed. |
+| **Project A** | Berlin | Operational VC | €325M Fund V. Pre-seed/Seed. Defence, AI, climate. 120+ experts. |
+| **Earlybird** | Berlin | Multi-stage | Pre-seed to Series A. Fintech to nuclear fusion. Strong AI portfolio. |
+| **Cavalry Ventures** | Berlin | Enterprise + Consumer | Pre-seed/Seed. B2B SaaS focus. Entrepreneurial DNA. |
+| **HV Capital** | Munich | German Winners | Deep track record. Backed first-gen German unicorns. Seed to growth. |
+| **Picus Capital** | Munich | Long-term Philosophy | €250M Fund II. Pre-seed to Series A. AI, cybersecurity, climate. |
+| **468 Capital** | Berlin | Systematic Approach | Founded 2020. AI, fintech focus. Growing portfolio. |
+| **Merantix Capital** | Berlin | AI Venture Studio | Pre-seed/Seed AI-native only. €100M fund. B2B industry applications. |
+| **Redalpine** | Zurich | Pan-European | $200M Fund VII. Seed/early-stage. AI, energy transition, health. |
+| **btov Partners** | St. Gallen | Deeptech | €450M AUM. Seed focus. AI, industrial tech. Entrepreneur-backed. |
 
 ## 🇫🇷 Tier 2c: French VCs (European AI Hub)
 *Paris is becoming Europe's AI capital. Good connections for Mistral ecosystem.*
@@ -52,6 +63,8 @@
 | **Elaia** | Paris | B2B Deeptech | €850M AUM. €300K-€15M tickets. 20-year track record. |
 | **Serena** | Paris | Applied AI | €200M Fund IV. Up to €15M per company. Energy + AI focus. |
 | **Eurazeo** | Paris | AI Growth | €650M AI-focused fund. €20-100M tickets (later stage but good signal). |
+| **Ring Capital** | Paris | Seed to Series B | Climate, Edtech, Fintech. €100K-€30M tickets. Founded 2017. |
+| **Cathay Innovation** | Paris | Global Multi-stage | $5-100M tickets. Sustainable impact focus. Strong global reach. |
 
 ## 🇬🇧 Tier 2d: UK Specialists
 *London seed ecosystem - strong for follow-on.*
@@ -64,6 +77,12 @@
 | **MMC Ventures** | London | AI/Data Science | Up to £10M. Series A focus but selective seed. Strong AI expertise. |
 | **IQ Capital** | Cambridge | Deeptech | £500K-£10M. Generative AI, cybersecurity. Strong IP focus. |
 | **Backed VC** | London | Frontier Tech | $100M Fund III. $500K-$5M tickets. Pre-seed/Seed. |
+| **Frontline Ventures** | Dublin/London | B2B US Expansion | €500K-€3M seed. Helps European B2B expand to US. Strong network. |
+| **Atomico** | London | Multi-stage Powerhouse | Skype founders. Pre-seed to growth. Enterprise AI focus. |
+| **Accel** | London/Palo Alto | Global Leader | €650M Europe/Israel fund (2024). AI + security focus. Backed Synthesia. |
+| **General Catalyst** | London/Cambridge | Applied AI | Global firm. Backed Portia AI (agents). Strong AI thesis. |
+| **83North** | London/Tel Aviv | Europe + Israel | Pre-seed to Series E. Health, Fintech, AI. $100K-$1B range. |
+| **Bessemer Venture Partners** | London/SF | Century-old VC | Pre-seed to growth. Health, Edtech, Fintech. Strong AI portfolio. |
 
 ## 🌍 Tier 2e: Nordics & CEE
 *Emerging ecosystems with fresh capital.*
@@ -76,6 +95,9 @@
 | **GapMinder** | Amsterdam | SEE AI/Deeptech | €130M. Leads seed rounds. 85% portfolio gets follow-on. |
 | **OTB Ventures** | Amsterdam/Warsaw | B2B Deeptech | $350M AUM. €1-7M initial. AI, fintech infra, cybersecurity. |
 | **Flyer One Ventures** | Kyiv | Software Seed | €500K avg ticket. Post-MVP focus. Strong CEE network. |
+| **Tera Ventures** | Tallinn | AI Enterprise SaaS | 15+ years AI investing. Baltics/Nordics/CEE. Fintech + Security focus. |
+| **AI Seed Fund** | London | Pure-Play AI Only | Europe's largest AI-only portfolio. Founded by exited founders. US expansion support. |
+| **PSV** | Copenhagen | Nordic AI/Software | €70M Fund II. Pre-seed stage. Digital infrastructure focus. |
 
 ## 🥉 Tier 3: US Reach & High-Volume
 *US-based or high-volume. Worth a "shoot your shot".*

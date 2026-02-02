@@ -1,5 +1,7 @@
 # 🕵️ Lead Investor Profile (Scouting Guide for Kalam)
 
+> **⚠️ DRAFT - For Internal Review Only**
+
 **Goal**: Find the "Champion" who will lead the €2M Seed Round.
 **Ideal Profile**: A Partner who "gets it" immediately—someone who understands that *Community is the new Moat* and *Vibe Coding* is the next big wave.
 

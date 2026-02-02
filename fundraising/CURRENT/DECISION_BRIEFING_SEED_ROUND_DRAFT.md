@@ -1,5 +1,7 @@
 # 🗳️ Decision Briefing: Seed Round Structure
 
+> **⚠️ DRAFT - For Internal Review Only**
+
 **Purpose**: Fast-track P0 decisions for Thomas & Elliot.
 **Goal**: Lock these parameters by Feb 5 to start investor meetings.
 

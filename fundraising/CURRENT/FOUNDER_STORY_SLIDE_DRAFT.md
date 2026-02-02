@@ -1,5 +1,7 @@
 # 🧙‍♂️ Founder Story Slide Content
 
+> **⚠️ DRAFT v1 - For Internal Review Only**
+
 **Goal**: Establish deep credibility + emotional connection ("Why you?").
 **Theme**: "The Builder's Journey" (From outsider to enabler).
 

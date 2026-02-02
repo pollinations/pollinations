@@ -1,5 +1,7 @@
 # 📧 Email Outreach Templates (Seed Round)
 
+> **⚠️ DRAFT - For Internal Review Only**
+
 **Goal**: Secure first meetings with Tier 1 partners.
 **Strategy**: Cold/Warm hybrid. Short, metric-heavy, low-friction.
 **Attachments**: Include the **One Pager** (PDF). Do not attach the full deck yet (send on request).

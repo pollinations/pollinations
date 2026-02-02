@@ -1,5 +1,7 @@
 # 📊 Pollinations Seed Pitch Deck Structure (10 Slides)
 
+> **⚠️ DRAFT v1 - For Internal Review Only**
+
 **Theme**: "The Roblox for AI"
 **Goal**: Raise €1.5M-€2.5M
 **Audience**: Seed Investors (Antler, Angels, Pre-Seed VCs)

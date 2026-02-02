@@ -1,5 +1,7 @@
 # 🎙️ Verbal Pitch Script (3 Minutes)
 
+> **⚠️ DRAFT v1 - For Internal Review Only**
+
 **Goal**: Deliver a compelling narrative for the seed round.
 **Tone**: Authentic, visionary, grounded in metrics.
 **Audience**: Seed Investors (Antler, Angels, VCs).

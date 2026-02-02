@@ -1,5 +1,7 @@
 # 🌸 Pollinations.ai | Seed Round One Pager
 
+> **⚠️ DRAFT v1 - For Internal Review Only**
+
 **The simplest compute layer for the AI generation.**  
 *Infrastructure for the "Vibe Coding" Era.*
 

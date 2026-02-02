@@ -1,5 +1,7 @@
 # 🎯 Investor Target List (Seed Round 2026)
 
+> **⚠️ DRAFT - For Internal Review Only**
+
 **Goal**: Raise €1.5M - €2.5M
 **Focus**: European VCs + Specialists (AI/DevTools/Open Source)
 **Last Updated**: Feb 2, 2026

@@ -1,5 +1,7 @@
 # 🏛️ Historical Investor Strategy (Antler & Outlier)
 
+> **⚠️ DRAFT - For Internal Review Only**
+
 **Goal**: Leverage existing investors for momentum, bridge capital, and signaling.
 **Status**: Critical / P0 (Influence on new round).
 

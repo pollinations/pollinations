@@ -24,29 +24,90 @@
 
 | VC Firm | HQ | Angle | Notes |
 |---------|----|-------|-------|
-| **Speedinvest** | Vienna/Berlin | Network Effects | Very active in marketplaces/platforms. |
-| **EQT Ventures** | Stockholm | "Motherbrain" (Data-driven) | They use AI to find deals; our metrics (GitHub stars, discord growth) will flag us. |
-| **LocalGlobe** | London | Serial Seed Investors | High volume, fast decisions. |
-| **Connect Ventures**| London | Product-Led Growth | Loves strong UX/Product founders. |
-| **Creandum** | Stockholm | Consumer/Viral | Backed Spotify. They get the "Music/Art" roots of Pollinations. |
+| **Speedinvest** | Vienna/Berlin | Network Effects | Very active in marketplaces/platforms. Fresh €30M fund (H2 2025). |
+| **EQT Ventures** | Stockholm | "Motherbrain" (Data-driven) | They use AI to find deals; our metrics will flag us. €2-50M tickets. |
+| **LocalGlobe** | London | Serial Seed Investors | High volume, fast decisions. Strong B2B/AI focus. |
+| **Connect Ventures** | London | Product-Led Growth | Loves strong UX/Product founders. |
+| **Creandum** | Stockholm | Consumer/Viral | Backed Spotify. They get the "Music/Art" roots. |
+| **Balderton Capital** | London | AI-Native Platforms | $1.3B new funds (2024). Pre-seed to Series A. Backed Contentful. |
+| **Northzone** | Stockholm | Seed to Growth | €1-40M tickets. Sector-agnostic but loves category leaders. |
+| **Index Ventures** | London/SF | Generalist Powerhouse | Early to growth. Backed Figma, Notion. High bar but huge signal. |
 
-## � Strategic Partnerships (Non-Investment)
+## 🇩🇪 Tier 2b: DACH-Focused (Berlin Advantage)
+*German/Austrian VCs who value local founders.*
+
+| VC Firm | HQ | Angle | Notes |
+|---------|----|-------|-------|
+| **Atlantic Labs** | Berlin | Pre-seed AI/Deeptech | First believer in bold ideas. Backed Mago (AI video). Fast decisions. |
+| **HTGF (High-Tech Gründerfonds)** | Bonn | German Seed Specialist | Up to €1M seed, €4M total. Must have German HQ. Government-backed. |
+| **Smart Infrastructure Ventures** | Leipzig | B2B AI/Software | €30M SIVentures II Fund. DACH focus. Early-stage B2B. |
+| **Lakestar** | Zurich | Growth-minded Seed | Backed Spotify, Revolut. $265M continuation fund. |
+
+## 🇫🇷 Tier 2c: French VCs (European AI Hub)
+*Paris is becoming Europe's AI capital. Good connections for Mistral ecosystem.*
+
+| VC Firm | HQ | Angle | Notes |
+|---------|----|-------|-------|
+| **Partech** | Paris | Seed to Growth | Dedicated €100M seed fund. Strong AI/SaaS focus. |
+| **Elaia** | Paris | B2B Deeptech | €850M AUM. €300K-€15M tickets. 20-year track record. |
+| **Serena** | Paris | Applied AI | €200M Fund IV. Up to €15M per company. Energy + AI focus. |
+| **Eurazeo** | Paris | AI Growth | €650M AI-focused fund. €20-100M tickets (later stage but good signal). |
+
+## 🇬🇧 Tier 2d: UK Specialists
+*London seed ecosystem - strong for follow-on.*
+
+| VC Firm | HQ | Angle | Notes |
+|---------|----|-------|-------|
+| **Notion Capital** | London | B2B SaaS Only | Former entrepreneurs. AI + SaaS thesis. Avg seed: $3.7M. |
+| **Hoxton Ventures** | London | Silicon Valley Mindset | $500K-$5M tickets. Pre-seed/Seed. Disruptive tech focus. |
+| **Firstminute Capital** | London | Unicorn Founders Network | 130+ unicorn founder LPs. 10% in dev tools. Richard Branson backed. |
+| **MMC Ventures** | London | AI/Data Science | Up to £10M. Series A focus but selective seed. Strong AI expertise. |
+| **IQ Capital** | Cambridge | Deeptech | £500K-£10M. Generative AI, cybersecurity. Strong IP focus. |
+| **Backed VC** | London | Frontier Tech | $100M Fund III. $500K-$5M tickets. Pre-seed/Seed. |
+
+## 🌍 Tier 2e: Nordics & CEE
+*Emerging ecosystems with fresh capital.*
+
+| VC Firm | HQ | Angle | Notes |
+|---------|----|-------|-------|
+| **Lifeline Ventures** | Helsinki | Early-Stage Legend | €400M Fund VI. Backed Supercell, Wolt, Oura. Day-zero investors. |
+| **Vendep Capital** | Helsinki | B2B SaaS | €80M Fund IV. Nordics/Baltics. AI-era SaaS focus. |
+| **Look AI Ventures** | Prague | AI-Only Fund | First Czech AI-focused VC. 7,400+ startups evaluated. Hands-on support. |
+| **GapMinder** | Amsterdam | SEE AI/Deeptech | €130M. Leads seed rounds. 85% portfolio gets follow-on. |
+| **OTB Ventures** | Amsterdam/Warsaw | B2B Deeptech | $350M AUM. €1-7M initial. AI, fintech infra, cybersecurity. |
+| **Flyer One Ventures** | Kyiv | Software Seed | €500K avg ticket. Post-MVP focus. Strong CEE network. |
+
+## 🥉 Tier 3: US Reach & High-Volume
+*US-based or high-volume. Worth a "shoot your shot".*
+
+| VC Firm | HQ | Angle | Notes |
+|---------|----|-------|-------|
+| **a16z (Consumer)** | SF | "Vibe Coding" thesis | Justine Moore / Consumer partners. Hard to reach but huge signal. |
+| **Sequoia (Arc)** | SF | Developer ecosystem | If they are scouting Europe. ⚠️ Led FAL's round (conflict?). |
+| **Kima Ventures** | Paris | High Volume Angel-VC | 2-3 investments/week. €150K tickets. Good for filling round. |
+| **Entrepreneur First** | London | Talent Investor | Up to $250K initial, $5M follow-on. Pre-idea to seed. Strong network. |
+| **Baobab Ventures** | London/Barcelona | AI/Robotics/Defence | $15M solo GP fund. Early ElevenLabs backer. $500K-$2M tickets. |
+| **DN Capital** | London | Transatlantic | $1B+ AUM. 20+ years. Up to €20M per company. 58 exits, 7 IPOs. |
+
+## 🤝 Strategic Partnerships (Non-Investment)
 *Model providers who benefit from our distribution. Not investors, but potential sponsors/partners.*
 
 | Company | Type | Why Them? | Outreach |
 |---------|------|-----------|----------|
-| **Mistral AI** | Model Provider | **European AI champion.** We distribute their models to 3M+ users. They have "Mistralship" startup program (30K credits, 1:1 support, early access). | Apply to next Mistralship cohort OR pitch as distribution partner via mistral.ai/contact |
-| **Together AI** | Model Provider | Open model hosting. We're already integrated. Could sponsor credits for distribution. | Existing relationship - deepen partnership |
-| **Black Forest Labs** | Model Provider | Flux creators. Air Street portfolio. We're their biggest indie distribution channel. | Leverage Air Street connection |
+| **Mistral AI** | Model Provider | European AI champion. We distribute their models to 3M+ users. "Mistralship" program. | Apply to next cohort OR pitch as distribution partner |
+| **Together AI** | Model Provider | Open model hosting. Already integrated. Could sponsor credits. | Deepen existing relationship |
+| **Black Forest Labs** | Model Provider | Flux creators. Air Street portfolio. We're their biggest indie channel. | Leverage Air Street connection |
 
-## �🥉 Tier 3: Strategic / Reach
-*US-based or later stage, but worth a "shoot your shot".*
+## 👼 Angel Investors & Syndicates
+*Individual angels and networks for smaller checks or warm intros.*
 
-| VC Firm | HQ | Angle |
-|---------|----|-------|
-| **a16z (Consumer)**| SF | "Vibe Coding" thesis | (Justine Moore / Consumer partners). Hard to reach but huge signal. |
-| **Sequoia (Arc)** | SF | Developer ecosystem | If they are scouting Europe. |
-| **Kima Ventures** | Paris | High volume | "The most active angel-VC in the world". Good for filling the round. |
+| Name/Network | Focus | Notes |
+|--------------|-------|-------|
+| **AISeed** | AI-focused angels | European AI angel network. Good for syndicate rounds. |
+| **COREangels Big Data & AI** | AI/Data | Syndicate focused on AI investments. |
+| **Shizune AI Fund** | AI Specialist | Dedicated AI angel fund. |
+| **Angel Invest Ventures** | German Angels | Berlin-based angel network. Good local connections. |
+| **Super Angels Club** | European Tech | AI, Cybersecurity, Fintech focus. Strategic partnerships with VCs. |
 
 ---
 

@@ -51,8 +51,10 @@ export function KPITrendTable({ weeklyData, title }) {
     const formatValue = (value, format) => {
         if (value === null || value === undefined || Number.isNaN(value))
             return "—";
-        if (format === "currency")
+        if (format === "currency") {
+            if (Math.abs(value) < 1) return `$${value.toFixed(2)}`;
             return `$${Math.round(value).toLocaleString()}`;
+        }
         if (format === "percent") return `${Math.round(value)}%`;
         if (format === "compact") {
             if (value >= 1000000000)
@@ -178,6 +180,38 @@ export function KPITrendTable({ weeklyData, title }) {
             format: "percent",
             tooltip:
                 "% of requests without server errors (5xx). User errors (4xx) don't count as downtime. Formula: (total - 5xx) / total × 100",
+        },
+        {
+            key: "enduserUserPct",
+            name: "End-user %",
+            category: "Segments",
+            format: "percent",
+            tooltip:
+                "% of active users using temporary keys (end-users via BYOP). Developer = secret/publishable keys.",
+        },
+        {
+            key: "enduserPollenPct",
+            name: "End-user Pollen %",
+            category: "Segments",
+            format: "percent",
+            tooltip:
+                "% of pollen consumed by end-users (temporary keys). Shows B2C vs B2B revenue split.",
+        },
+        {
+            key: "churnRate",
+            name: "Churn Rate",
+            category: "Retention",
+            format: "percent",
+            tooltip:
+                "% of users from 4 weeks ago who haven't used the API in the last 2 weeks. Lower is better.",
+        },
+        {
+            key: "churnedUsers",
+            name: "Churned Users",
+            category: "Retention",
+            format: "number",
+            tooltip:
+                "Count of users active 4 weeks ago but inactive in the last 2 weeks.",
         },
     ];
 

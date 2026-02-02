@@ -1,0 +1,49 @@
+{
+  "date": "2026-02-02",
+  "generated_at": "2026-02-02T16:13:37.640128+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art",
+  "linked_images": true,
+  "strategy_reasoning": "Using a 'Retro Game Patch Notes' metaphor fits the technical nature of the updates (cache removal, new models, deployment guides) while maintaining the cozy, non-intimidating brand voice. The pixel art style softens the 'hard tech' of RTX 5090s and API refactors into something nostalgic and warm, inviting engagement from both devs and casual creators.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20scene%20of%20a%20vintage%20computer%20monitor%20sitting%20in%20a%20lush%20digital%20garden.%20Screen%20glowing%20with%20text%20%27PATCH%20NOTES%27.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20gradient%20background.%20Chunky%20pixels%2C%20warm%20lighting%2C%20lo-fi%20aesthetic.%208-bit%20flowers%20blooming%20around%20the%20screen.%20Like%20Stardew%20Valley%20meets%20coding.%20Emotionally%20warm%2C%20nostalgic.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=508908591",
+      "prompt": "Cozy pixel art scene of a vintage computer monitor sitting in a lush digital garden. Screen glowing with text 'PATCH NOTES'. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. 8-bit flowers blooming around the screen. Like Stardew Valley meets coding. Emotionally warm, nostalgic.",
+      "description": "Cover image establishing the cozy 'digital garden' update theme."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%208-bit%20pixel%20art%20RPG%20inventory%20screen.%20Two%20glowing%20new%20item%20slots%20unlocked.%20Item%201%3A%20A%20pixelated%20robot%20eye%20labeled%20%27Kimi%20K2.5%27.%20Item%202%3A%20A%20pixelated%20magnifying%20glass%20labeled%20%27Web%20Research%27.%20Soft%20pastel%20mint%20and%20peach%20gradient%20background.%20Chunky%20retro%20sprites%2C%20warm%20lighting.%20Cozy%20gaming%20interface%20vibes%20like%20Unpacking.%20Lime%20green%20accents.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1662805502",
+      "prompt": "Retro 8-bit pixel art RPG inventory screen. Two glowing new item slots unlocked. Item 1: A pixelated robot eye labeled 'Kimi K2.5'. Item 2: A pixelated magnifying glass labeled 'Web Research'. Soft pastel mint and peach gradient background. Chunky retro sprites, warm lighting. Cozy gaming interface vibes like Unpacking. Lime green accents.",
+      "description": "Visualizing the new AI model capabilities as unlockable game items."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20illustration%20of%20a%20chunky%20%27RTX%205090%27%20graphics%20card%20sitting%20on%20a%20wooden%20desk%20next%20to%20a%20pixelated%20coffee%20mug%20and%20a%20%27Speed%20Up%27%20arrow%20icon.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20ambient%20lighting.%208-bit%20aesthetic%2C%20warm%20and%20nostalgic.%20Represents%20new%20deployment%20guides%20and%20faster%20API%20calls.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1618389170",
+      "prompt": "Cozy pixel art illustration of a chunky 'RTX 5090' graphics card sitting on a wooden desk next to a pixelated coffee mug and a 'Speed Up' arrow icon. Soft lime green (#ecf874) and lavender ambient lighting. 8-bit aesthetic, warm and nostalgic. Represents new deployment guides and faster API calls.",
+      "description": "Representing the hardware guides and cache removal as a cozy workspace upgrade."
+    }
+  ],
+  "caption": "New week, new loot! 🎒✨ We've pushed some cozy updates to the garden.\n\nHere’s what’s blooming:\n\n👁️ **Vision Upgrade:** Kimi K2.5 is here with better vision & reasoning.\n🧠 **Brain Boost:** Claude can now browse the web (via perplexity) for smarter answers.\n⚡ **Speed Run:** Refactored our model fetching (bye-bye cache) for direct API speed.\n🛠️ **Heavy Lifting:** Added docs for deploying Flux & Z-Image on RTX 5090s (Vast.ai).\n\nBuilding with heart and pixels. 🌸👾\n\n#pollinations #opensource #pixelart #indiedev #aiart #retrogaming #8bit #cozyvibes #buildinpublic",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#indiedev",
+    "#aiart",
+    "#retrogaming",
+    "#8bit",
+    "#cozyvibes",
+    "#buildinpublic"
+  ],
+  "alt_text": "A series of cozy 8-bit pixel art images featuring a vintage computer in a garden, an RPG inventory screen showing new AI skills, and a retro graphics card on a desk, all in soft pastel and lime green colors.",
+  "pr_references": [
+    "#7858",
+    "#7850",
+    "#7855",
+    "#7854",
+    "#7845",
+    "#7269",
+    "#7846",
+    "#7843"
+  ]
+}

@@ -45,14 +45,18 @@ This document outlines the key milestones for Pollinations over the next 36 mont
 - [ ] Pollen payment integration live (Web/Discord/Game)
 - [ ] 3+ pilot apps using user-pays
 - [ ] End-users buying Pollen directly
+- [ ] Pollinations Login (OAuth) GA - stable, documented
+- [ ] Secure front-end Pollen spending enabled
 
-**Developer Hours**: ~600 hours
+**Developer Hours**: ~800 hours
 | Task | Hours | Owner |
 |------|-------|-------|
 | Payment SDK development | 200 | Backend |
-| User purchase flow | 150 | Backend |
+| User purchase flow (checkout + top-up UX) | 150 | Backend |
+| Pollinations Login (OAuth) GA rollout | 150 | Backend |
+| Secure front-end Pollen spending | 100 | Backend |
 | Developer documentation | 100 | DevRel |
-| Partner onboarding (Pilot apps) | 150 | DevRel |
+| Partner onboarding (Pilot apps) | 100 | DevRel |
 
 ---
 
@@ -115,13 +119,18 @@ This document outlines the key milestones for Pollinations over the next 36 mont
 - [ ] €463K monthly GMV
 - [ ] Pollen rewards system live
 - [ ] Developer earnings dashboard
+- [ ] Quests & bounties system launched
+- [ ] Widget for apps (login, balance, 1-click top-up)
+- [ ] Early developer earnings in Pollen (rev-share framework)
 
-**Developer Hours**: ~1,000 hours
+**Developer Hours**: ~1,400 hours
 | Task | Hours | Owner |
 |------|-------|-------|
 | Rewards engine | 300 | Backend |
 | Earnings dashboard | 200 | Frontend |
 | Payout system | 250 | Backend |
+| Quests & bounties system | 200 | Backend |
+| Widget SDK (login, balance, top-up) | 200 | Frontend |
 | Analytics & reporting | 150 | Backend |
 | Testing & security audit | 100 | All |
 

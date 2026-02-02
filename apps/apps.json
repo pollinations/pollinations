@@ -62,5 +62,11 @@
         "buildCommand": "npm run build",
         "outputDir": "dist",
         "description": "AI-powered changelog generator (React + Vite)"
+    },
+    "gsoc": {
+        "subdomain": "gsoc",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "description": "Google Summer of Code 2026 landing page"
     }
 }

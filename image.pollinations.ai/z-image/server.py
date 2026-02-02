@@ -14,7 +14,7 @@ from spandrel import ImageModelDescriptor, ModelLoader
 import time
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 import threading
 import warnings
 from contextlib import asynccontextmanager
@@ -53,9 +53,11 @@ async def send_heartbeat():
             port = int(os.getenv("PUBLIC_PORT", os.getenv("PORT", "10002")))
             url = f"http://{public_ip}:{port}"
             service_type = os.getenv("SERVICE_TYPE", "zimage")
+            # Use direct EC2 endpoint to bypass Cloudflare (some io.net IPs are blocked)
+            register_url = os.getenv("REGISTER_URL", "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register")
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    'https://image.pollinations.ai/register',
+                    register_url,
                     json={'url': url, 'type': service_type}
                 ) as response:
                     if response.status == 200:
@@ -84,18 +86,32 @@ MODEL_CACHE = "model_cache"
 SPAN_MODEL_PATH = "model_cache/span/2x-NomosUni_span_multijpg.pth"
 SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
 UPSCALE_FACTOR = 2
-MAX_GEN_PIXELS = 768 * 768  # Generate natively up to this size (limited for IO.net deployment)
+MAX_GEN_PIXELS = 768 * 768  # Generate natively up to this size
 MAX_FINAL_PIXELS = 768 * 768 * 4  # Max output size with 2x upscaling
-ENABLE_SPAN_UPSCALER = True  # Feature flag for SPAN upscaling
+ENABLE_SPAN_UPSCALER = True
 
 generate_lock = threading.Lock()
 
 
 class ImageRequest(BaseModel):
     prompts: list[str] = Field(default=["a photo of an astronaut riding a horse on mars"], min_length=1)
-    width: int = Field(default=1024, le=4096)
-    height: int = Field(default=1024, le=4096)
+    width: int = Field(default=1024, ge=256, le=4096)
+    height: int = Field(default=1024, ge=256, le=4096)
     seed: int | None = None
+    
+    @field_validator('height')
+    @classmethod
+    def validate_total_pixels(cls, height: int, info: ValidationInfo) -> int:
+        """Validate total pixel count doesn't exceed MAX_FINAL_PIXELS"""
+        if 'width' in info.data:
+            width = info.data['width']
+            total_pixels = width * height
+            if total_pixels > MAX_FINAL_PIXELS:
+                raise ValueError(
+                    f"Requested {width}x{height} = {total_pixels:,} pixels exceeds limit of {MAX_FINAL_PIXELS:,} pixels. "
+                    f"Max: 1536x1536 or equivalent area."
+                )
+        return height
 
 
 def calc_time(start, end, msg):
@@ -107,38 +123,41 @@ def calculate_generation_dimensions(requested_width: int, requested_height: int)
     """Calculate generation dimensions with SPAN 2x upscaling support.
     
     Returns: (gen_w, gen_h, final_w, final_h, should_upscale)
-    - Cap final size to MAX_FINAL_PIXELS (preserving aspect ratio)
-    - If request > MAX_GEN_PIXELS: generate at half resolution, then upscale 2x
     """
-    # Cap final pixels to MAX_FINAL_PIXELS, preserving aspect ratio
+    # Cap final size to MAX_FINAL_PIXELS, preserving aspect ratio
     final_w, final_h = requested_width, requested_height
     total_pixels = final_w * final_h
+    
     if total_pixels > MAX_FINAL_PIXELS:
         scale = math.sqrt(MAX_FINAL_PIXELS / total_pixels)
-        final_w = int(final_w * scale)
-        final_h = int(final_h * scale)
+        final_w = round(final_w * scale)
+        final_h = round(final_h * scale)
     
+    # Determine if upscaling needed
     final_pixels = final_w * final_h
+    should_upscale = final_pixels > MAX_GEN_PIXELS
     
-    if final_pixels > MAX_GEN_PIXELS:
-        # Large request: generate at half resolution, then upscale 2x
+    # Calculate generation dimensions
+    if should_upscale:
         gen_w = final_w // UPSCALE_FACTOR
         gen_h = final_h // UPSCALE_FACTOR
-        should_upscale = True
     else:
-        # Small request: generate at full resolution, no upscaling
         gen_w, gen_h = final_w, final_h
-        should_upscale = False
     
-    # Align to 16px multiples (required by model)
-    if gen_w % 16 != 0:
-        gen_w = math.ceil(gen_w / 16) * 16
-    if gen_h % 16 != 0:
-        gen_h = math.ceil(gen_h / 16) * 16
+    # Align to 16px multiples (model requirement)
+    gen_w = round(gen_w / 16) * 16
+    gen_h = round(gen_h / 16) * 16
     
-    # Minimum generation size
+    # Enforce minimum generation size
     gen_w = max(gen_w, 256)
     gen_h = max(gen_h, 256)
+    
+    # Calculate actual final dimensions
+    if should_upscale:
+        final_w = gen_w * UPSCALE_FACTOR
+        final_h = gen_h * UPSCALE_FACTOR
+    else:
+        final_w, final_h = gen_w, gen_h
     
     return gen_w, gen_h, final_w, final_h, should_upscale
 
@@ -252,13 +271,20 @@ def is_safety_checker_enabled() -> bool:
     return _truthy_env(enable_value)
 
 
-def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token")):
-    expected_token = os.getenv("PLN_ENTER_TOKEN")
+def verify_backend_token(
+    x_backend_token: str = Header(None, alias="x-backend-token"),
+):
+    """Verify backend authentication token.
+    
+    Requires x-backend-token header validated against PLN_IMAGE_BACKEND_TOKEN env var.
+    """
+    expected_token = os.getenv("PLN_IMAGE_BACKEND_TOKEN")
     if not expected_token:
-        logger.warning("PLN_ENTER_TOKEN not configured - allowing request")
+        logger.warning("PLN_IMAGE_BACKEND_TOKEN not configured - allowing request")
         return True
-    if x_enter_token != expected_token:
-        logger.warning("Invalid or missing PLN_ENTER_TOKEN")
+    
+    if x_backend_token != expected_token:
+        logger.warning("Invalid or missing backend token")
         raise HTTPException(status_code=403, detail="Unauthorized")
     return True
 
@@ -292,7 +318,7 @@ def check_nsfw(image_array, safety_checker_adj: float = 0.0):
 
 
 @app.post("/generate")
-def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
+def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token)):
     logger.info(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
@@ -329,13 +355,6 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
                 result = upscale_with_span(image_np)
             else:
                 result = image_np
-            
-            # Crop to final dimensions
-            h_current, w_current = result.shape[:2]
-            if h_current > final_h or w_current > final_w:
-                y_start = (h_current - final_h) // 2
-                x_start = (w_current - final_w) // 2
-                result = result[y_start:y_start + final_h, x_start:x_start + final_w]
             
             upscaled_image = Image.fromarray(result)
         

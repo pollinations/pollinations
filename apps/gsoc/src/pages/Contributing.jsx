@@ -63,7 +63,10 @@ const Contributing = () => {
                     justifyContent: "center",
                 }}
             >
-                <Typography variant="h6" sx={{ color: colors.status.error.main }}>
+                <Typography
+                    variant="h6"
+                    sx={{ color: colors.status.error.main }}
+                >
                     Error: {error}
                 </Typography>
             </Box>

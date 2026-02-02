@@ -1,0 +1,61 @@
+name: Twitter Generate Post
+
+on:
+  schedule:
+    - cron: '0 15 * * *'  # Daily at 15:00 UTC (16:00 Berlin)
+  workflow_dispatch:
+    inputs:
+      source_repo:
+        description: 'Source repo for PRs (default: pollinations/pollinations)'
+        required: false
+        default: 'pollinations/pollinations'
+        type: string
+      days_back:
+        description: 'Days to look back for PRs (default: 1)'
+        required: false
+        default: '1'
+        type: string
+      force_engagement:
+        description: 'Force engagement content (ignore PRs)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  generate-twitter-post:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Generate Twitter Post and Create PR
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SOURCE_REPO: ${{ inputs.source_repo || 'pollinations/pollinations' }}
+          DAYS_BACK: ${{ inputs.days_back || '1' }}
+          FORCE_ENGAGEMENT: ${{ inputs.force_engagement || 'false' }}
+          PR_LABELS: NEWS
+        run: python social/scripts/twitter_generate_post.py

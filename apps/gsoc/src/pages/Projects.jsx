@@ -15,9 +15,9 @@ import {
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { colors, getCategoryColor, gradients } from "../theme";
 import { parseMentors } from "../utils/parseMentors";
 import { parseProjects } from "../utils/parseProjects";
-import { colors, getCategoryColor, gradients } from "../theme";
 
 const cardVariants = {
     hidden: { opacity: 0, y: 20 },

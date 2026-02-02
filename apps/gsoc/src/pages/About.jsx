@@ -4,11 +4,11 @@ import {
     GitHub,
     Groups,
     Language,
+    MenuBook,
     OpenInNew,
     Psychology,
     RocketLaunch,
     School,
-    MenuBook,
 } from "@mui/icons-material";
 import {
     Avatar,
@@ -18,13 +18,13 @@ import {
     CardContent,
     Grid,
     Stack,
-    Typography
+    Typography,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { parseMentors } from "../utils/parseMentors";
 import { colors, gradients } from "../theme";
+import { parseMentors } from "../utils/parseMentors";
 
 // Animation variants
 const cardVariants = {
@@ -226,9 +226,7 @@ const AboutPage = () => {
                                         backgroundColor: colors.lime.dim,
                                     },
                                 }}
-                                endIcon={
-                                        <OpenInNew sx={{ fontSize: 14 }} />
-                                    }
+                                endIcon={<OpenInNew sx={{ fontSize: 14 }} />}
                             >
                                 How GSoC Works
                             </Button>

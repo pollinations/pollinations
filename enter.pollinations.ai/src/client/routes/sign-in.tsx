@@ -3,6 +3,7 @@ import { useState } from "react";
 import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
 import { FAQ } from "../components/faq.tsx";
+import { Footer } from "../components/footer.tsx";
 import { Header } from "../components/header.tsx";
 import { NewsBanner } from "../components/news-banner.tsx";
 import { Pricing } from "../components/pricing/index.ts";
@@ -53,7 +54,6 @@ function RouteComponent() {
 
     return (
         <div className="flex flex-col gap-6">
-            <NewsBanner />
             <div className="flex flex-col gap-20">
                 <Header>
                     <div className="relative">
@@ -82,8 +82,10 @@ function RouteComponent() {
                         API Ref.
                     </Button>
                 </Header>
+                <NewsBanner />
                 <FAQ />
                 <Pricing />
+                <Footer />
             </div>
         </div>
     );

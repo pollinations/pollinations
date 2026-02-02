@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
-    createBedrockLambdaModelConfig,
     createBedrockNativeConfig,
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
@@ -91,7 +90,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     // AWS Bedrock - claude-fast, claude, claude-large, chickytutor, nova-fast
     // ============================================================================
     "us.anthropic.claude-3-5-haiku-20241022-v1:0": () =>
-        createBedrockLambdaModelConfig({
+        createBedrockNativeConfig({
             model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
         }),
     "us.anthropic.claude-haiku-4-5-20251001-v1:0": () =>
@@ -133,6 +132,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     // ============================================================================
     "claude-sonnet-4-5-fallback": () => ({
         strategy: { mode: "fallback" },
+        defaultOptions: { max_tokens: 16384 },
         targets: [
             // Primary: AWS Bedrock (native)
             {
@@ -158,6 +158,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     }),
     "claude-opus-4-5-fallback": () => ({
         strategy: { mode: "fallback" },
+        defaultOptions: { max_tokens: 16384 },
         targets: [
             // Primary: AWS Bedrock (native)
             {
@@ -182,9 +183,35 @@ export const portkeyConfig: PortkeyConfigMap = {
         ],
     }),
     "amazon.nova-micro-v1:0": () =>
-        createBedrockLambdaModelConfig({
+        createBedrockNativeConfig({
             model: "amazon.nova-micro-v1:0",
         }),
+    // Nova Micro with Nova Lite fallback for rate limiting
+    "nova-micro-fallback": () => ({
+        strategy: { mode: "fallback" },
+        targets: [
+            // Primary: Nova Micro (cheapest)
+            {
+                provider: "bedrock",
+                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
+                aws_region: process.env.AWS_REGION || "us-east-1",
+                override_params: {
+                    model: "amazon.nova-micro-v1:0",
+                },
+            },
+            // Fallback: Nova Lite (multimodal, slightly more expensive but still cheap)
+            {
+                provider: "bedrock",
+                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
+                aws_region: process.env.AWS_REGION || "us-east-1",
+                override_params: {
+                    model: "amazon.nova-lite-v1:0",
+                },
+            },
+        ],
+    }),
 
     // ============================================================================
     // Google Vertex AI - gemini, gemini-fast, gemini-large, gemini-search, kimi-k2-thinking
@@ -211,6 +238,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
         "vertex-region": "global",
         "vertex-model-id": "gemini-3-pro-preview",
+        "strict-openai-compliance": "false",
+    }),
+    "gemini-2.5-pro": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
+        "vertex-region": "us-central1",
+        "vertex-model-id": "gemini-2.5-pro",
         "strict-openai-compliance": "false",
     }),
     "kimi-k2-thinking-maas": () => ({
@@ -246,8 +281,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // Fireworks AI - glm-4.7, minimax-m2.1, deepseek-v3.2
+    // Fireworks AI - glm-4.7, minimax-m2.1, deepseek-v3.2, kimi-k2.5
     // ============================================================================
+    "accounts/fireworks/models/kimi-k2p5": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k2p5",
+        }),
     "accounts/fireworks/models/glm-4p7": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-4p7",

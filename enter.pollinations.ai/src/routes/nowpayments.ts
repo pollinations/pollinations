@@ -1,11 +1,11 @@
+import { getLogger } from "@logtape/logtape";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { getLogger } from "@logtape/logtape";
+import { describeRoute } from "hono-openapi";
 import z from "zod";
+import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
-import type { Env } from "../env.ts";
-import { describeRoute } from "hono-openapi";
 
 const log = getLogger(["hono", "nowpayments"]);
 
@@ -79,11 +79,17 @@ export const nowpaymentsRoutes = new Hono<Env>()
             tags: ["Payments"],
             description:
                 "Create a NOWPayments crypto invoice for a pollen pack.",
-            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+            hide: true,
         }),
         validator("param", invoiceParamsSchema),
         validator("query", redirectQuerySchema),
         async (c) => {
+            // Crypto payments are temporarily disabled
+            throw new HTTPException(503, {
+                message: "Crypto payments are temporarily unavailable",
+            });
+
+            // biome-ignore lint/correctness/noUnreachable: Code preserved for future re-enablement
             const user = c.var.auth.requireUser();
             const { pack } = c.req.valid("param");
             const { redirect } = c.req.valid("query");

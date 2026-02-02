@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import { TIER_EMOJIS, TIER_POLLEN } from "@/tier-config.ts";
 import { Tooltip } from "./pricing/Tooltip";
 
 const SeedTooltipContent = () => (
@@ -39,25 +40,25 @@ const SeedTooltipContent = () => (
 );
 
 export const TierExplanation: FC = () => {
-    const tierBoxStyle = "rounded-lg p-3 border border-gray-200 bg-gray-50/30";
+    const tierBoxStyle = "rounded-lg p-3 border border-teal-200 bg-teal-50/30";
     const requirementLabelStyle =
         "text-[9px] font-semibold text-gray-400 uppercase tracking-wide";
 
     return (
-        <div className="px-3 py-2 border border-gray-200 rounded-lg">
+        <div className="px-3 py-2 border border-teal-200 rounded-lg">
             <p className="text-sm text-gray-900 leading-relaxed mb-3">
                 📈 <strong>Grow Your Tier:</strong> For developers building with
-                Pollinations. Level up to earn more daily pollen.
+                pollinations.ai. Level up to earn more daily pollen.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {/* Spore */}
                 <div className={tierBoxStyle}>
                     <div className="flex items-center gap-1.5">
-                        <span>🦠</span>
+                        <span>{TIER_EMOJIS.spore}</span>
                         <strong className="text-gray-800 text-sm">Spore</strong>
                     </div>
                     <p className="text-xs font-mono text-gray-600 mt-1">
-                        1 pollen/day
+                        {TIER_POLLEN.spore} pollen/day
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <p className={requirementLabelStyle}>To unlock</p>
@@ -68,11 +69,11 @@ export const TierExplanation: FC = () => {
                 {/* Seed */}
                 <div className={tierBoxStyle}>
                     <div className="flex items-center gap-1.5">
-                        <span>🌱</span>
+                        <span>{TIER_EMOJIS.seed}</span>
                         <strong className="text-gray-800 text-sm">Seed</strong>
                     </div>
                     <p className="text-xs font-mono text-gray-600 mt-1">
-                        3 pollen/day
+                        {TIER_POLLEN.seed} pollen/day
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <p className={requirementLabelStyle}>To unlock</p>
@@ -92,13 +93,13 @@ export const TierExplanation: FC = () => {
                 {/* Flower */}
                 <div className={tierBoxStyle}>
                     <div className="flex items-center gap-1.5">
-                        <span>🌸</span>
+                        <span>{TIER_EMOJIS.flower}</span>
                         <strong className="text-gray-800 text-sm">
                             Flower
                         </strong>
                     </div>
                     <p className="text-xs font-mono text-gray-600 mt-1">
-                        10 pollen/day
+                        {TIER_POLLEN.flower} pollen/day
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <p className={requirementLabelStyle}>To unlock</p>
@@ -111,7 +112,7 @@ export const TierExplanation: FC = () => {
                             </a>
                         </p>
                         <p className="text-[10px] text-amber-600 mt-0.5">
-                            🌱 Must be Seed first
+                            {TIER_EMOJIS.seed} Must be Seed first
                         </p>
                     </div>
                 </div>
@@ -119,20 +120,18 @@ export const TierExplanation: FC = () => {
                 {/* Nectar */}
                 <div className={tierBoxStyle}>
                     <div className="flex items-center gap-1.5">
-                        <span>🍯</span>
+                        <span>{TIER_EMOJIS.nectar}</span>
                         <strong className="text-gray-800 text-sm">
                             Nectar
                         </strong>
-                        <span className="text-[10px] text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full font-medium">
-                            soon 🔮
-                        </span>
                     </div>
                     <p className="text-xs font-mono text-gray-600 mt-1">
-                        20 pollen/day
+                        {TIER_POLLEN.nectar} pollen/day
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
-                        <p className={requirementLabelStyle}>To unlock</p>
-                        <p className="text-xs text-gray-500">Coming soon</p>
+                        <span className="text-[10px] text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full font-medium">
+                            Coming soon 🔮
+                        </span>
                     </div>
                 </div>
             </div>

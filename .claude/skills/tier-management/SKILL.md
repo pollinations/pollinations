@@ -72,78 +72,65 @@ gh api 'search/issues?q=repo:pollinations/pollinations+involves:USERNAME' --jq '
 
 # Update User Tier
 
-> ⚠️ **IMPORTANT**: You MUST update BOTH the database AND Polar subscription. 
-> The DB tier controls what tier the user CAN activate. The Polar subscription is what they HAVE activated.
+## How Tiers Work Now
 
-## Recommended: Use the Script
+- **Tier balance refills daily** at midnight UTC via Cloudflare cron trigger
+- **No rollover** - balance resets to tier amount each day
+- **Just update D1** - no external subscription system needed
 
-```bash
-.claude/skills/tier-management/scripts/update-tier.sh USERNAME TIER
-```
-
-**Example:**
-```bash
-.claude/skills/tier-management/scripts/update-tier.sh s0974092 flower
-```
-
-This script automatically:
-1. Finds the user by username or email
-2. Updates the database tier
-3. Updates the Polar subscription (via sops for auth)
-4. Verifies the change
-
-## Manual Method
+## Quick Update
 
 ### Step 1: Find user
 ```bash
 cd enter.pollinations.ai
 npx wrangler d1 execute DB --remote --env production \
-  --command "SELECT id, github_username, email, tier FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
+  --command "SELECT id, github_username, email, tier, tier_balance FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
 ```
 
-### Step 2: Update database
+### Step 2: Update tier
 ```bash
 npx wrangler d1 execute DB --remote --env production \
   --command "UPDATE user SET tier='TIER' WHERE github_username='USERNAME';"
 ```
 
-### Step 3: Update Polar subscription
-```bash
-export POLAR_ACCESS_TOKEN=$(sops -d secrets/prod.vars.json | grep POLAR_ACCESS_TOKEN | cut -d'"' -f4)
-npx tsx scripts/manage-polar.ts user update-tier --email USER_EMAIL --tier TIER
-```
+Balance will update automatically at next midnight UTC refill.
 
-Add `--dryRun` to preview changes without applying.
+### Step 3 (Optional): Immediate balance update
+```bash
+# Set balance immediately (e.g., flower = 10 pollen)
+npx wrangler d1 execute DB --remote --env production \
+  --command "UPDATE user SET tier='flower', tier_balance=10 WHERE github_username='USERNAME';"
 
 ## Step 4: Notify user on GitHub
 ```
-🎉 **Tier Upgrade Complete!**
+🎉 **Tier Upgrade!**
 
 Hey @USERNAME! You've been upgraded to **[EMOJI] [TIER] tier**! ✨
 
 Your benefits:
-- [POLLEN] pollen/day
-- ⚡ Priority queue
+- [POLLEN] pollen/day (refills daily at midnight UTC)
 - 🎨 All standard models
 
-Thanks for being part of Pollinations! 🚀
+Thanks for being part of pollinations.ai! 🚀
 ```
 
 ---
 
 # Batch Processing
 
-## Find Users with Quota Issues
+## Find Users with Billing Issues
 
-Use the model-debugging skill to find users hitting 403 errors:
+Use the model-debugging skill to find users hitting 402 errors (billing/quota):
 
 ```bash
-# Find spore-tier users with >10 403 errors in last 24 hours
-.claude/skills/model-debugging/scripts/find-403-users.sh 24 10 spore
+# Find spore-tier users with >10 402 errors in last 24 hours
+.claude/skills/model-debugging/scripts/find-402-users.sh 24 10 spore
 
 # Save to file for batch processing
-.claude/skills/model-debugging/scripts/find-403-users.sh 24 10 spore | cut -f1 > /tmp/users.txt
+.claude/skills/model-debugging/scripts/find-402-users.sh 24 10 spore | cut -f1 > /tmp/users.txt
 ```
+
+> **Note**: 402 = billing issues (pollen balance, key budget). 403 = permission issues (model access denied).
 
 ## Check if User is a Developer
 
@@ -185,20 +172,19 @@ export TIER_EVAL_GIST_ID=your_gist_id  # optional
 
 ---
 
-# Polar Product IDs (Production)
+# Key Files
 
-| Tier | Product ID |
-|------|------------|
-| Spore | `01a31c1a-7af7-4958-9b73-c10e2fac5f70` |
-| Seed | `fe32ee28-c7c4-4e7a-87fa-6ffc062e3658` |
-| Flower | `dfb4c4f6-2004-4205-a358-b1f7bb3b310e` |
-| Nectar | `066f91a4-8ed1-4329-b5f7-3f71e992ed28` |
-| Router | `0286ea62-540f-4b19-954f-b8edb9095c43` |
+| File | Purpose |
+|------|---------|
+| `enter.pollinations.ai/src/tier-config.ts` | Tier → pollen mapping (source of truth) |
+| `enter.pollinations.ai/src/scheduled.ts` | Cron handler: daily refill |
+| `enter.pollinations.ai/src/auth.ts` | Sets tier on new user registration |
+| `enter.pollinations.ai/wrangler.toml` | Cron schedule: `0 0 * * *` |
 
 ---
 
 # Notes
 
-- DB tier = what user CAN activate
-- Polar subscription = what user HAS activated
-- If no Polar subscription, user must click "Activate" at enter.pollinations.ai
+- **Tier balance resets daily** at midnight UTC (no rollover)
+- New users get `spore` tier + 1 pollen immediately
+- Tier upgrades take effect on next refill (or set `tier_balance` manually)

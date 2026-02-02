@@ -23,8 +23,8 @@ import {
 } from "@mui/material";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { parseMentors } from "../utils/parseMentors";
 import { colors, gradients } from "../theme";
+import { parseMentors } from "../utils/parseMentors";
 
 const cardVariants = {
     hidden: { opacity: 0, y: 30 },

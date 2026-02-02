@@ -70,9 +70,9 @@ function parseAppsMarkdown() {
             .map((c) => c.trim())
             .filter(Boolean);
 
-        if (cols.length < 13) continue;
+        if (cols.length < 15) continue;
 
-        // Format: Emoji | Name | Web_URL | Description | Language | Category | GitHub | GitHub_ID | Repo | Stars | Discord | Other | Submitted
+        // Format: Emoji | Name | Web_URL | Description | Language | Category | GitHub | GitHub_ID | Repo | Stars | Discord | Other | Submitted_Date | Issue_URL | Approved_Date
         const name = cols[1];
         const url = cols[2];
 
@@ -90,7 +90,9 @@ function parseAppsMarkdown() {
             stars: cols[9],
             discord: cols[10],
             other: cols[11],
-            submitted: cols[12],
+            submittedDate: cols[12],
+            issueUrl: cols[13],
+            approvedDate: cols[14],
             rawLine: row,
         });
     }

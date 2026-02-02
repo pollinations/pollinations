@@ -401,9 +401,9 @@ const HomePage = () => {
                                             >
                                                 Google Summer of Code
                                             </Box>{" "}
-                                            is a global program
-                                            focused on bringing new contributors
-                                            into open source.
+                                            is a global program focused on
+                                            bringing new contributors into open
+                                            source.
                                         </Typography>
 
                                         <Box

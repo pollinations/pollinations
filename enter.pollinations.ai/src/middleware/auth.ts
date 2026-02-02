@@ -66,7 +66,7 @@ function extractApiKey(c: Context<AuthEnv>): string | null {
 export const auth = (options: AuthOptions) =>
     createMiddleware<AuthEnv>(async (c, next) => {
         const log = c.get("log").getChild("auth");
-        const client = createAuth(c.env);
+        const client = createAuth(c.env, c.executionCtx);
 
         const authenticateSession = async (): Promise<AuthResult | null> => {
             if (!options.allowSessionCookie) return null;
@@ -96,7 +96,19 @@ export const auth = (options: AuthOptions) =>
             log.debug("API key verification result: {valid}", {
                 valid: keyResult.valid,
             });
-            if (!keyResult.valid || !keyResult.key) return null;
+            if (!keyResult.valid || !keyResult.key) {
+                // Check for rate limit error (better-auth bug: returns 401 instead of 429)
+                if (keyResult.error?.code === "RATE_LIMITED") {
+                    throw new HTTPException(429, {
+                        message: "Rate limit exceeded. Please try again later.",
+                    });
+                }
+                // API key was provided but is invalid - throw specific error
+                throw new HTTPException(401, {
+                    message:
+                        "Invalid API key. Please check your key and try again.",
+                });
+            }
             const db = drizzle(c.env.DB, { schema });
 
             // Use permissions from verifyApiKey (set via createApiKey)
@@ -131,8 +143,12 @@ export const auth = (options: AuthOptions) =>
             };
         };
 
-        const { user, session, apiKey } =
-            (await authenticateSession()) || (await authenticateApiKey()) || {};
+        // Try session authentication first, then API key
+        let authResult = await authenticateSession();
+        if (!authResult) {
+            authResult = await authenticateApiKey();
+        }
+        const { user, session, apiKey } = authResult || {};
 
         log.debug("Authentication result: {authenticated}", {
             authenticated: !!user,
@@ -193,7 +209,7 @@ export const auth = (options: AuthOptions) =>
             const pollenBalance = apiKey.pollenBalance;
 
             // No budget set = unlimited
-            if (pollenBalance === null || pollenBalance === undefined) return;
+            if (pollenBalance == null) return;
 
             // Budget exhausted
             if (pollenBalance <= 0) {

@@ -25,8 +25,8 @@ import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
 import "highlight.js/styles/github-dark.css";
 import socBotAPI from "../api/socBot.ts";
-import { parseFaq } from "../utils/parseFaq";
 import { colors } from "../theme";
+import { parseFaq } from "../utils/parseFaq";
 
 const MarkdownComponents = {
     h1: ({ children }) => (

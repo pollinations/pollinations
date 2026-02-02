@@ -9,11 +9,21 @@ import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 const logOps = debug("pollinations:flux-klein:ops");
 const logError = debug("pollinations:flux-klein:error");
 
-// Modal endpoints for Flux Klein
-const FLUX_KLEIN_GENERATE_URL =
-    "https://myceli-ai--flux-klein-fluxklein-generate-web.modal.run";
-const FLUX_KLEIN_EDIT_URL =
-    "https://myceli-ai--flux-klein-fluxklein-edit-web.modal.run";
+// Modal endpoints for Flux Klein variants
+const KLEIN_ENDPOINTS = {
+    klein: {
+        generate:
+            "https://myceli-ai--flux-klein-fluxklein-generate-web.modal.run",
+        edit: "https://myceli-ai--flux-klein-fluxklein-edit-web.modal.run",
+    },
+    "klein-large": {
+        generate:
+            "https://myceli-ai--flux-klein-9b-fluxklein9b-generate-web.modal.run",
+        edit: "https://myceli-ai--flux-klein-9b-fluxklein9b-edit-web.modal.run",
+    },
+} as const;
+
+type KleinVariant = keyof typeof KLEIN_ENDPOINTS;
 
 /**
  * Calls the Flux Klein Modal API for image generation
@@ -22,6 +32,7 @@ const FLUX_KLEIN_EDIT_URL =
  * @param safeParams - The parameters for image generation (supports image array for editing)
  * @param progress - Progress manager for updates
  * @param requestId - Request ID for progress tracking
+ * @param variant - Model variant: "klein" (4B) or "klein-large" (9B)
  * @returns Promise<ImageGenerationResult>
  */
 export const callFluxKleinAPI = async (
@@ -29,20 +40,25 @@ export const callFluxKleinAPI = async (
     safeParams: ImageParams,
     progress: ProgressManager,
     requestId: string,
+    variant: KleinVariant = "klein",
 ): Promise<ImageGenerationResult> => {
     try {
-        logOps("Calling Flux Klein API with prompt:", prompt);
+        const variantName =
+            variant === "klein-large" ? "Klein Large (9B)" : "Klein (4B)";
+        logOps(`Calling Flux ${variantName} API with prompt:`, prompt);
 
-        const enterToken = process.env.PLN_ENTER_TOKEN;
-        if (!enterToken) {
-            throw new Error("PLN_ENTER_TOKEN environment variable is required");
+        const backendToken = process.env.PLN_IMAGE_BACKEND_TOKEN;
+        if (!backendToken) {
+            throw new Error(
+                "PLN_IMAGE_BACKEND_TOKEN environment variable is required",
+            );
         }
 
         progress.updateBar(
             requestId,
             35,
             "Processing",
-            "Generating with Flux Klein...",
+            `Generating with Flux ${variantName}...`,
         );
 
         // Check if we have reference images for editing mode
@@ -55,7 +71,8 @@ export const callFluxKleinAPI = async (
                 safeParams,
                 progress,
                 requestId,
-                enterToken,
+                backendToken,
+                variant,
             );
         }
 
@@ -64,7 +81,8 @@ export const callFluxKleinAPI = async (
             safeParams,
             progress,
             requestId,
-            enterToken,
+            backendToken,
+            variant,
         );
     } catch (error) {
         logError("Error calling Flux Klein API:", error);
@@ -84,7 +102,8 @@ async function generateTextToImage(
     safeParams: ImageParams,
     progress: ProgressManager,
     requestId: string,
-    enterToken: string,
+    backendToken: string,
+    variant: KleinVariant = "klein",
 ): Promise<ImageGenerationResult> {
     logOps("Using text-to-image mode (GET)");
 
@@ -99,7 +118,7 @@ async function generateTextToImage(
         params.append("seed", String(safeParams.seed));
     }
 
-    const url = `${FLUX_KLEIN_GENERATE_URL}?${params.toString()}`;
+    const url = `${KLEIN_ENDPOINTS[variant].generate}?${params.toString()}`;
     logOps("Flux Klein GET URL:", url);
 
     const response = await withTimeoutSignal(
@@ -107,7 +126,7 @@ async function generateTextToImage(
             fetch(url, {
                 method: "GET",
                 headers: {
-                    "x-enter-token": enterToken,
+                    "x-backend-token": backendToken,
                 },
                 signal,
             }),
@@ -143,7 +162,7 @@ async function generateTextToImage(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "flux-klein",
+            actualModel: variant,
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,
@@ -160,7 +179,8 @@ async function generateWithEditing(
     safeParams: ImageParams,
     progress: ProgressManager,
     requestId: string,
-    enterToken: string,
+    backendToken: string,
+    variant: KleinVariant = "klein",
 ): Promise<ImageGenerationResult> {
     logOps(
         "Using image editing mode (POST) with",
@@ -215,7 +235,7 @@ async function generateWithEditing(
 
     logOps("Image editing mode with", base64Images.length, "processed images");
 
-    // Build query parameters for edit endpoint
+    // Build query parameters for edit endpoint (prompt + dimensions in URL)
     const params = new URLSearchParams({
         prompt: prompt,
         width: String(safeParams.width || 1024),
@@ -226,7 +246,7 @@ async function generateWithEditing(
         params.append("seed", String(safeParams.seed));
     }
 
-    const editUrl = `${FLUX_KLEIN_EDIT_URL}?${params.toString()}`;
+    const editUrl = `${KLEIN_ENDPOINTS[variant].edit}?${params.toString()}`;
     logOps("Flux Klein POST URL:", editUrl);
     logOps("Sending", base64Images.length, "images in body");
 
@@ -243,7 +263,7 @@ async function generateWithEditing(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-enter-token": enterToken,
+                    "x-backend-token": backendToken,
                 },
                 body: JSON.stringify(base64Images),
                 signal,
@@ -280,7 +300,7 @@ async function generateWithEditing(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "flux-klein",
+            actualModel: variant,
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,

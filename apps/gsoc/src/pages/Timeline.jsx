@@ -2,8 +2,8 @@ import { Box, Paper, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { format, parseISO } from "date-fns";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { parseTimeline } from "../utils/parseTimeline";
 import { colors, gradients } from "../theme";
+import { parseTimeline } from "../utils/parseTimeline";
 
 const cardVariants = {
     hidden: { opacity: 0, y: 50 },
@@ -34,7 +34,7 @@ const TimelinePage = () => {
                 block: "center",
             });
         }
-    }, [gsocTimeline]);
+    }, []);
 
     return (
         <Box
@@ -119,8 +119,14 @@ const TimelinePage = () => {
                 />
 
                 {gsocTimeline.map((phase, index) => {
-                    const startDate = phase.startDate instanceof Date ? phase.startDate : parseISO(phase.startDate);
-                    const endDate = phase.endDate instanceof Date ? phase.endDate : parseISO(phase.endDate);
+                    const startDate =
+                        phase.startDate instanceof Date
+                            ? phase.startDate
+                            : parseISO(phase.startDate);
+                    const endDate =
+                        phase.endDate instanceof Date
+                            ? phase.endDate
+                            : parseISO(phase.endDate);
                     const isActive =
                         phase.isCurrent ||
                         (today >= startDate && today <= endDate);

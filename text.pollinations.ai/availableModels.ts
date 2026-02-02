@@ -133,7 +133,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi",
-        config: portkeyConfig["kimi-k2-thinking-maas"],
+        config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -148,8 +148,19 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "gemini-legacy",
+        config: portkeyConfig["gemini-2.5-pro"],
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
+            createGeminiThinkingTransform("v2.5"),
+        ),
+    },
+    {
         name: "nova-fast",
-        config: portkeyConfig["amazon.nova-micro-v1:0"],
+        config: portkeyConfig["nova-micro-fallback"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {

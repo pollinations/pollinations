@@ -8,7 +8,8 @@ contactPoints:
         type: discord
         settings:
           url: ${DISCORD_WEBHOOK_URL}
-          use_discord_username: false
+          use_discord_username: true
+          title: " "
           message: |
             {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}
-        disableResolveMessage: false
+        disableResolveMessage: true

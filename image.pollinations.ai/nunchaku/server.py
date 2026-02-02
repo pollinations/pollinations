@@ -8,8 +8,10 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import torch
 from diffusers import FluxPipeline
-from nunchaku.models.transformer_flux import NunchakuFluxTransformer2dModel
-from safety_checker.censor import check_safety
+from nunchaku import NunchakuFluxTransformer2dModel
+# Safety checker disabled for Vast.ai deployment
+# from safety_checker.censor import check_safety
+def check_safety(x, y): return [None], [False]  # Disabled - returns safe result
 import requests
 import logging
 import asyncio
@@ -24,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 MODEL_ID = "black-forest-labs/FLUX.1-schnell"
 MODEL_CACHE = "model-cache"
-QUANT_MODEL_PATH = "mit-han-lab/svdq-int4-flux.1-schnell"
+QUANT_MODEL_PATH = "mit-han-lab/svdq-fp4-flux.1-schnell"
 
 class ImageRequest(BaseModel):
     prompts: List[str] = ["a photo of an astronaut riding a horse on mars"]

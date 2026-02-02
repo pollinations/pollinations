@@ -102,7 +102,7 @@
         "type": "yesoreyeram-infinity-datasource",
         "uid": "P33A123E5D474E8F3"
       },
-      "description": "Breakdown of registered users by their subscription tier. Tiers determine daily free usage limits: Spore ($1), Seed ($3), Flower ($10), Nectar ($20).",
+      "description": "Breakdown of registered users by their subscription tier. Tiers determine daily free usage limits: Microbe ($0.10), Spore ($1), Seed ($3), Flower ($10), Nectar ($20).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -184,7 +184,7 @@
         "url_options": {
           "body_content_type": "application/json",
           "body_type": "raw",
-          "data": "{\"sql\":\"SELECT COALESCE(tier, 'unknown') as tier, COUNT(*) as user_count FROM user GROUP BY tier ORDER BY CASE tier WHEN 'nectar' THEN 1 WHEN 'flower' THEN 2 WHEN 'seed' THEN 3 WHEN 'spore' THEN 4 ELSE 5 END\"}",
+          "data": "{\"sql\":\"SELECT COALESCE(tier, 'unknown') as tier, COUNT(*) as user_count FROM user GROUP BY tier ORDER BY CASE tier WHEN 'nectar' THEN 1 WHEN 'flower' THEN 2 WHEN 'seed' THEN 3 WHEN 'spore' THEN 4 WHEN 'microbe' THEN 5 ELSE 6 END\"}",
           "method": "POST"
         }
       }],
@@ -273,7 +273,7 @@
         "type": "yesoreyeram-infinity-datasource",
         "uid": "P33A123E5D474E8F3"
       },
-      "description": "THEORETICAL MAXIMUM daily cost if every user fully consumed their tier allowance. Calculated as: (Spore users × $1) + (Seed × $3) + (Flower × $10) + (Nectar × $20). In practice, actual costs are much lower.",
+      "description": "THEORETICAL MAXIMUM daily cost if every user fully consumed their tier allowance. Calculated as: (Microbe users × $0.10) + (Spore × $1) + (Seed × $3) + (Flower × $10) + (Nectar × $20). In practice, actual costs are much lower.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -335,7 +335,7 @@
         "url_options": {
           "body_content_type": "application/json",
           "body_type": "raw",
-          "data": "{\"sql\":\"SELECT SUM(CASE tier WHEN 'spore' THEN 1 WHEN 'seed' THEN 3 WHEN 'flower' THEN 10 WHEN 'nectar' THEN 20 ELSE 0 END) as max_daily_liability FROM user\"}",
+          "data": "{\"sql\":\"SELECT SUM(CASE tier WHEN 'microbe' THEN 0.1 WHEN 'spore' THEN 1 WHEN 'seed' THEN 3 WHEN 'flower' THEN 10 WHEN 'nectar' THEN 20 ELSE 0 END) as max_daily_liability FROM user\"}",
           "method": "POST"
         }
       }],
@@ -476,6 +476,22 @@
         "overrides": [{
             "matcher": {
               "id": "byName",
+              "options": "microbe"
+            },
+            "properties": [{
+              "id": "displayName",
+              "value": "Microbe ($0.10/day)"
+            }, {
+              "id": "color",
+              "value": {
+                "fixedColor": "light-green",
+                "mode": "fixed"
+              }
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
               "options": "spore"
             },
             "properties": [{
@@ -566,7 +582,7 @@
         },
         "format": 0,
         "range": true,
-        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  sumIf(total_price, user_tier = 'spore') as spore,\n  sumIf(total_price, user_tier = 'seed') as seed,\n  sumIf(total_price, user_tier = 'flower') as flower,\n  sumIf(total_price, user_tier = 'nectar') as nectar\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('spore', 'seed', 'flower', 'nectar')\nGROUP BY time\nORDER BY time",
+        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  sumIf(total_price, user_tier = 'microbe') as microbe,\n  sumIf(total_price, user_tier = 'spore') as spore,\n  sumIf(total_price, user_tier = 'seed') as seed,\n  sumIf(total_price, user_tier = 'flower') as flower,\n  sumIf(total_price, user_tier = 'nectar') as nectar\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\nGROUP BY time\nORDER BY time",
         "refId": "A"
       }],
       "title": "Daily Tier Consumption by Tier",
@@ -602,6 +618,16 @@
           "unit": "percent"
         },
         "overrides": [{
+            "matcher": {
+              "id": "byName",
+              "options": "Microbe"
+            },
+            "properties": [{
+              "id": "displayName",
+              "value": "Microbe ($0.10/day)"
+            }]
+          },
+          {
             "matcher": {
               "id": "byName",
               "options": "Spore"
@@ -668,6 +694,16 @@
       },
       "pluginVersion": "12.4.0",
       "targets": [{
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 0.1)) * 100 as Microbe FROM generation_event WHERE $__timeFilter(start_time) AND user_tier = 'microbe' AND is_billed_usage = true AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')",
+          "refId": "E"
+        },
+        {
           "datasource": {
             "type": "grafana-clickhouse-datasource",
             "uid": "PAD1A0A25CD30D456"

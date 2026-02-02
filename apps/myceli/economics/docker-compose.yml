@@ -13,6 +13,7 @@ services:
       - CLOUDFLARE_D1_DATABASE_ID=${CLOUDFLARE_D1_DATABASE_ID}
       - TINYBIRD_ACCESS_TOKEN=${TINYBIRD_ACCESS_TOKEN}
       - TINYBIRD_GENERATION_EVENT_READ=${TINYBIRD_GENERATION_EVENT_READ}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
     volumes:
       - grafana-storage:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning

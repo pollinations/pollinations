@@ -15,9 +15,11 @@ import { getGitHubStats } from "./api/github";
 import { getWeeklyRevenue } from "./api/polar";
 import {
     getWeeklyActiveUsers,
+    getWeeklyChurn,
     getWeeklyHealthStats,
     getWeeklyRetention,
     getWeeklyUsageStats,
+    getWeeklyUserSegments,
 } from "./api/tinybird";
 import { FunnelChart } from "./components/FunnelChart";
 import { KPITrendTable } from "./components/KPITrendTable";
@@ -51,6 +53,8 @@ export default function App() {
                     tinybirdRetention,
                     tinybirdHealth,
                     polarRevenue,
+                    tinybirdSegments,
+                    tinybirdChurn,
                 ] = await Promise.all([
                     getGitHubStats(),
                     getWeeklyRegistrations(12),
@@ -59,6 +63,8 @@ export default function App() {
                     getWeeklyRetention(8),
                     getWeeklyHealthStats(12),
                     getWeeklyRevenue(12),
+                    getWeeklyUserSegments(12),
+                    getWeeklyChurn(12),
                 ]);
 
                 // Check for missing data
@@ -67,7 +73,7 @@ export default function App() {
                 if (!tinybirdWAU) missing.push("Tinybird (WAU)");
                 if (!tinybirdUsage) missing.push("Tinybird (usage)");
                 if (!polarRevenue || polarRevenue.length === 0)
-                    missing.push("Polar (revenue)");
+                    missing.push("Revenue (Stripe/Polar)");
 
                 if (missing.length > 0) {
                     setError(
@@ -147,6 +153,39 @@ export default function App() {
                             serverErrors5xx: row.server_errors_5xx,
                             latencyP50: row.latency_p50_ms,
                             latencyP95: row.latency_p95_ms,
+                        });
+                    }
+                }
+
+                // Tinybird: user segments (B2B vs B2C)
+                if (tinybirdSegments) {
+                    for (const row of tinybirdSegments) {
+                        const existing = weekMap.get(row.week) || {
+                            week: row.week,
+                        };
+                        weekMap.set(row.week, {
+                            ...existing,
+                            developerUsers: row.developer_users,
+                            developerPollen: row.developer_pollen,
+                            enduserUsers: row.enduser_users,
+                            enduserPollen: row.enduser_pollen,
+                            enduserUserPct: row.enduser_user_pct,
+                            enduserPollenPct: row.enduser_pollen_pct,
+                        });
+                    }
+                }
+
+                // Tinybird: churn metrics
+                if (tinybirdChurn) {
+                    for (const row of tinybirdChurn) {
+                        const existing = weekMap.get(row.week) || {
+                            week: row.week,
+                        };
+                        weekMap.set(row.week, {
+                            ...existing,
+                            churnedUsers: row.churned_users,
+                            churnRate: row.churn_rate,
+                            users4wAgo: row.users_4w_ago,
                         });
                     }
                 }
@@ -449,7 +488,7 @@ export default function App() {
                         )}
                         icon={DollarSign}
                         format="currency"
-                        tooltip="Pollen pack purchases from Polar"
+                        tooltip="Pollen pack purchases (Stripe + Polar legacy)"
                     />
                     <StatCard
                         title="GitHub Stars"
@@ -516,7 +555,7 @@ export default function App() {
                             <span>Myceli.AI</span>
                         </div>
                         <div className="flex items-center gap-4">
-                            <span>Sources: D1 · Tinybird · Polar · GitHub</span>
+                            <span>Sources: D1 · Tinybird · Stripe · GitHub</span>
                             <span>Updated {format(new Date(), "PP")}</span>
                         </div>
                     </div>

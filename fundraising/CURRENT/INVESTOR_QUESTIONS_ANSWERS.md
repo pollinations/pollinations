@@ -154,7 +154,7 @@ At that point, they move to FAL, Replicate, or direct provider APIs. **This is i
 **Phase 1: Monetization Foundation (Feb-Mar 2026)**
 - [ ] Gate expensive models (video) to paid tiers
 - [ ] Reduce free tier (10 → 5 daily Pollen)
-- [ ] Launch user-pays in Roblox games
+- [ ] Launch user-pays in pilot apps (e.g. Pictify, PolliVision)
 - [ ] Target: 1,000 paying end-users at €80 ARPU
 
 **Phase 2: Growth Optimization (Q2 2026)**

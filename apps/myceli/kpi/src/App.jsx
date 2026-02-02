@@ -555,7 +555,9 @@ export default function App() {
                             <span>Myceli.AI</span>
                         </div>
                         <div className="flex items-center gap-4">
-                            <span>Sources: D1 · Tinybird · Stripe · GitHub</span>
+                            <span>
+                                Sources: D1 · Tinybird · Stripe · GitHub
+                            </span>
                             <span>Updated {format(new Date(), "PP")}</span>
                         </div>
                     </div>

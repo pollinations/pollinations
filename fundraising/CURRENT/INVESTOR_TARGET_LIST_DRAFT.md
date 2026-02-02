@@ -111,14 +111,51 @@
 | **Baobab Ventures** | London/Barcelona | AI/Robotics/Defence | $15M solo GP fund. Early ElevenLabs backer. $500K-$2M tickets. |
 | **DN Capital** | London | Transatlantic | $1B+ AUM. 20+ years. Up to €20M per company. 58 exits, 7 IPOs. |
 
-## 🤝 Strategic Partnerships (Non-Investment)
-*Model providers who benefit from our distribution. Not investors, but potential sponsors/partners.*
+## 🏢 Strategic / Corporate VCs
+*Corporate venture arms with strategic interest in AI infrastructure and developer tools.*
+
+| Investor | Parent | Focus | Notes |
+|----------|--------|-------|-------|
+| **NVentures** | NVIDIA | AI Infrastructure | 67+ deals in 2025. Inception program for startups. GPU credits + strategic support. |
+| **GV (Google Ventures)** | Alphabet | AI/DevTools | $1B+/year. Backed Stackblitz (Bolt), Weights & Biases. Strong dev tools thesis. |
+| **M12** | Microsoft | Cloud/AI | $150-250M/year. Early-stage focus. Azure integration opportunities. |
+| **Salesforce Ventures** | Salesforce | Enterprise AI | $1B AI fund. 35+ AI investments. Enterprise ecosystem access. |
+| **Intel Capital** | Intel | AI Compute | Spun off Jan 2025. Cloud, AI infrastructure, edge computing focus. |
+| **Amazon (Alexa Fund)** | Amazon | AI/Voice | Venture funding for AI, hardware, entertainment. AWS credits potential. |
+| **Qualcomm Ventures** | Qualcomm | Edge AI | On-device AI focus. Strong in mobile/edge computing. Global reach. |
+| **Cisco Investments** | Cisco | AI Infrastructure | $1B AI fund (2024). Networking, security, AI integration. |
+| **Samsung NEXT** | Samsung | AI/Consumer | $150M fund. Q Fund for long-term AI bets. Consumer + enterprise. |
+| **Adobe Ventures** | Adobe | Creative AI | Strategic focus on creative tools, AI, immersive media. |
+| **Databricks Ventures** | Databricks | Data/AI | AI Accelerator Program. Up to $250K + credits + mentorship. |
+| **Snowflake Ventures** | Snowflake | Data/AI | $200M for startups. AI infrastructure focus. |
+| **Bosch Ventures** | Bosch | Industrial AI | €250M Fund VI (2025). AI, energy efficiency, industrial applications. |
+| **Siemens Energy Ventures** | Siemens | Energy/AI | Berlin-based. Energy transition + AI focus. |
+| **T.Capital** | Deutsche Telekom | AI/Cloud | €2.3B AUM. Invested in n8n. Industrial AI Cloud with NVIDIA. |
+
+## 🚀 Accelerators & Startup Programs
+*Non-equity or low-equity programs with strategic value.*
+
+| Program | Sponsor | Benefits | Notes |
+|---------|---------|----------|-------|
+| **NVIDIA Inception** | NVIDIA | GPU credits, VC intros, technical support | Free to join. Good for credibility + compute. |
+| **Mistralship** | Mistral AI | 30K credits, 1:1 support, early access | European AI champion. Apply to next cohort. |
+| **Databricks AI Accelerator** | Databricks | $250K funding + credits + mentorship | Pre-seed/Seed focus. |
+| **Snowflake for Startups** | Snowflake | Credits + VC intros | AI infrastructure focus. |
+| **Scaleway AI Program** | Scaleway/Meta/HF | Compute, mentorship, STATION F access | European AI accelerator with Hugging Face. |
+| **Cloudflare for Startups** | Cloudflare | Up to $250K in credits | Developer platform focus. |
+| **AWS Activate** | Amazon | Up to $100K credits | Standard startup program. |
+| **Google for Startups Cloud** | Google | Up to $200K credits | Cloud + AI credits. |
+| **Microsoft for Startups** | Microsoft | Up to $150K Azure credits | Founders Hub program. |
+
+## 🤝 Model Provider Partnerships (Non-Investment)
+*Model providers who benefit from our distribution. Potential sponsors/partners.*
 
 | Company | Type | Why Them? | Outreach |
 |---------|------|-----------|----------|
 | **Mistral AI** | Model Provider | European AI champion. We distribute their models to 3M+ users. "Mistralship" program. | Apply to next cohort OR pitch as distribution partner |
 | **Together AI** | Model Provider | Open model hosting. Already integrated. Could sponsor credits. | Deepen existing relationship |
 | **Black Forest Labs** | Model Provider | Flux creators. Air Street portfolio. We're their biggest indie channel. | Leverage Air Street connection |
+| **Hugging Face** | Model Hub | Open source AI hub. Scaleway partnership. STATION F accelerator. | Explore partnership via Scaleway program |
 
 ## 👼 Angel Investors & Syndicates
 *Individual angels and networks for smaller checks or warm intros.*

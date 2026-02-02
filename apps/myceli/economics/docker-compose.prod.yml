@@ -16,6 +16,7 @@ services:
       - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource,yesoreyeram-infinity-datasource
       - TINYBIRD_GENERATION_EVENT_READ=${TINYBIRD_GENERATION_EVENT_READ}
       - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
     volumes:
       - grafana-data:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning:ro

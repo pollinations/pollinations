@@ -48,6 +48,7 @@ Secrets are stored in `.env` (gitignored) locally and on the production server.
 | `CLOUDFLARE_TUNNEL_TOKEN` | Cloudflare Tunnel token (prod) |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API token for D1 |
 | `TINYBIRD_GENERATION_EVENT_READ` | Read token for generation_event |
+| `DISCORD_WEBHOOK_URL` | Discord webhook for alerts |
 
 **Security:** `.env` is gitignored. Share secrets securely via 1Password or similar.
 

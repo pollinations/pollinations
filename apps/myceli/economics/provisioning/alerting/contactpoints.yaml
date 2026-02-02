@@ -1,0 +1,15 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: Discord Critical
+    receivers:
+      - uid: discord-critical
+        type: discord
+        settings:
+          url: ${DISCORD_WEBHOOK_URL}
+          use_discord_username: true
+          title: " "
+          message: |
+            {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}
+        disableResolveMessage: true

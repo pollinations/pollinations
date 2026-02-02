@@ -222,7 +222,7 @@ GROWTH                    │                     GROWTH
 > ⚠️ **Market Signal**: Replicate's acquisition by Cloudflare (Nov 2025) validates the market. FAL's $4.5B valuation shows infrastructure premium. OpenRouter's $100M ARR proves aggregator model works.
 
 **Our Unique Position**:
-- **Only** platform with user-pays model
+- **First AI** platform with user-pays model (bringing the Roblox model to GenAI)
 - **Only** platform targeting teens/indie devs
 - **Only** platform with 17K+ active community
 - **Only** platform with no-signup-required API

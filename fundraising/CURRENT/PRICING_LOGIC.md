@@ -8,7 +8,8 @@
 
 - **Product**: AI services (image, text, audio, video)
 - **Unit**: Pollen credits (prepaid, per-use, USD-denominated)
-- **Philosophy**: User-pays - end-users cover their own AI usage
+- **Philosophy (target)**: User-pays - end-users cover their own AI usage inside apps
+- **Today**: Developer-paid top-ups are the active revenue stream
 
 ## Pricing Principles (from Notion)
 
@@ -22,7 +23,7 @@
 | Stream | Current | Mechanism |
 |--------|---------|-----------|
 | **Dev Top-Ups** | ~$6K/mo | B2B credit purchases |
-| **End-User Pollen** | Launching Mar 2026 | User-pays via apps |
+| **End-User Pollen** | Planned (Mar 2026) | User-pays via apps |
 | **Ads/Sponsorship** | Exploring | Model provider placements |
 
 ## Take Rates (from Financial Model)

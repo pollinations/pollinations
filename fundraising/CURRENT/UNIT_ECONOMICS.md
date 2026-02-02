@@ -40,6 +40,8 @@ Per Roblox 2025 Economic Impact Report:
 - Top 1,000 creators averaged **$1.1M**
 - Developers receive **~29 cents** per dollar spent on platform
 
+Note: This is a reference point for *user spend in creator platforms*, not direct Pollinations revenue.
+
 ---
 
 *Sources: mycel-extract/04_business_model.md, Roblox Economic Impact Report 2025*

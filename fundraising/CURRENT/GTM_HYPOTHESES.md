@@ -30,12 +30,13 @@
 
 ### 2. User-Pays Model (High Confidence)
 
-**Bet**: End-users pay for their own AI usage within apps, scaling revenue without developer cost.
+**Bet**: We shift monetization from "developers paying infra" to "end-users paying per-use" inside apps.
+
+**Important nuance**: Roblox is a strong *analog* for user-pays at scale, but in our Roblox examples users pay **Roblox**, not Pollinations.
 
 **Evidence**:
-- Paas's Roblox game: 51M visits, $12K earned
-- Model validated across multiple app types
-- Roblox creator economy: $1B+ payouts in 2025
+- Roblox creator economy: $1B+ payouts in 2025 (shows user spend in creator platforms)
+- Our ecosystem already has consumer-facing surfaces beyond games (Creative 40%, Chat 24%) where end-user pay is a natural fit
 
 ---
 

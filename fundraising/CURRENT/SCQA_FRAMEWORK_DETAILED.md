@@ -84,7 +84,7 @@
 | MAU | **3M+** |
 | Apps live | **800+** |
 | Discord | **17K+** |
-| Roblox hit | **51M visits, $12K/mo** |
+| Roblox hit | **51M visits** (Creator earned $12K) |
 | New apps/day | **20** |
 | Youngest dev | **11 years old** |
 

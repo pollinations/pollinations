@@ -32,17 +32,17 @@
 
 | Task | Type | Prio | Status | Owner | Output |
 |------|------|------|--------|-------|--------|
-| Define round type (SAFE / CLA / priced seed) | Decision | P0 | ⬜ | | Klare Festlegung inkl. Begründung |
-| Define target raise amount | Decision | P0 | ⬜ | Thomas | Zielbetrag inkl. Range |
-| Define target runway (months) | Decision | P0 | ⬜ | Thomas | z.B. „18 Monate Runway" |
+| Define round type (SAFE / CLA / priced seed) | Decision | P0 | ⚠️ Needs Decision | | See `DECISION_BRIEFING_SEED_ROUND.md` |
+| Define target raise amount | Decision | P0 | ⚠️ Needs Decision | Thomas | See `DECISION_BRIEFING_SEED_ROUND.md` |
+| Define target runway (months) | Decision | P0 | ⚠️ Needs Decision | Thomas | See `DECISION_BRIEFING_SEED_ROUND.md` |
 | Define success criteria of the round (KPIs) | Decision | P1 | ⬜ | | 3–5 klare KPIs |
 | **Define milestones enabled by this round (12–18 months)** | Decision | P0 | ✅ Done | Thomas | See `36_MONTH_MILESTONES.md` |
 | Create high-level dilution model (pre/post) | Deliverable | P1 | ✅ Done | | Einfache Tabelle / Spreadsheet |
 | Define valuation expectations & guardrails | Decision | P1 | ✅ Done | | See `SAFE_CAP_DISCOUNT_RESEARCH.md` |
-| Define target lead investor profile | Decision | P1 | ⬜ | Kalam | Profilbeschreibung |
-| Develop historical investor outreach strategy | Decision | P1 | ⬜ | | Konkreter Outreach-Ansatz |
+| Define target lead investor profile | Decision | P1 | ✅ Done | Kalam | See `LEAD_INVESTOR_PROFILE.md` |
+| Develop historical investor outreach strategy | Decision | P1 | ✅ Done | | See `HISTORICAL_INVESTOR_STRATEGY.md` |
 | Define first close strategy | Decision | P1 | ⬜ | | Klarer Ablaufplan |
-| Document overall fundraising strategy (1–2 pages) | Deliverable | | ⬜ | | Internes Strategy-Dokument |
+| Document overall fundraising strategy (1–2 pages) | Deliverable | | ✅ Done | | See `00_FUNDRAISING_INDEX.md` |
 
 ---
 
@@ -113,7 +113,7 @@
 | Task | Type | Prio | Status | Owner | Output |
 |------|------|------|--------|-------|--------|
 | **Review & clean Notion setup** | Execution | P1 | ⬜ | | Saubere, konsistente Struktur |
-| Align founders on fundraising roles | Decision | P0 | ⬜ | | Abgestimmte Verantwortlichkeiten |
+| Align founders on fundraising roles | Decision | P0 | ✅ Done | | See `FOUNDER_ROLES.md` |
 
 ---
 
@@ -128,12 +128,12 @@
 - [x] Define core problem narrative ✅ `SCQA_FRAMEWORK_DETAILED.md`
 - [x] Define "Why now" narrative ✅ `INVESTOR_QUESTIONS_ANSWERS.md`
 - [x] Define unique insight / unfair advantage ✅ `SCQA_FRAMEWORK_DETAILED.md`
-- [ ] Finalise founder story / personal motivation
-- [ ] Align verbal pitch with equity story
-- [ ] Draft One Pager & positioning
-- [ ] Draft Pitch Deck v1
+- [x] Finalise founder story / personal motivation ✅ `FOUNDER_STORY_SLIDE.md`
+- [x] Align verbal pitch with equity story ✅ `VERBAL_PITCH_SCRIPT.md`
+- [x] Draft One Pager & positioning ✅ `ONE_PAGER_DRAFT.md`
+- [x] Draft Pitch Deck v1 ✅ `PITCH_DECK_STRUCTURE.md` (Structure & Content)
 - [ ] Iterate Pitch Deck after feedback
-- [ ] Prepare short pitch (2–3 minutes)
+- [x] Prepare short pitch (2–3 minutes) ✅ `VERBAL_PITCH_SCRIPT.md`
 - [x] Define business model clearly ✅ `COMPREHENSIVE_STATUS_REPORT.md`
 - [x] Define pricing logic & assumptions ✅ `PRICING_LOGIC.md`
 - [x] Draft unit economics (high-level) ✅ `UNIT_ECONOMICS.md`
@@ -141,8 +141,8 @@
 - [x] Build 24–36 month financial model ✅ `financial-model.md`
 - [x] Define use of funds breakdown ✅ `36_MONTH_MILESTONES.md`
 - [ ] Select standard SAFE / CLA template
-- [ ] Build investor list
-- [ ] Prepare investor contact list (Notion)
+- [x] Build investor list ✅ `INVESTOR_TARGET_LIST.md`
+- [x] Prepare investor contact list (Notion) ✅ `INVESTOR_TARGET_LIST.md` (Source)
 - [ ] Run first investor meetings
 - [ ] Coordinate first close
 - [ ] Align founders on fundraising roles

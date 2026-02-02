@@ -32,7 +32,7 @@
 | Define unique insight / unfair advantage | Deliverable | P0 | ⬜ | | Unique-Insight-Statement |
 | **Finalise founder story / personal motivation** | Deliverable | P0 | ⬜ | | Founder-Story-Slide |
 | Align verbal pitch with equity story | Execution | P0 | ⬜ | | Abgestimmter Talk-Track |
-| **Draft One Pager & positioning** | Deliverable | P0 | ⬜ | | 1-Pager (PDF) |
+| **Draft One Pager & positioning** | Deliverable | P0 | ✅ Done | | See `ONE_PAGER_DRAFT.md` |
 | Draft Pitch Deck v1 | Deliverable | P0 | ⬜ | | Pitch Deck v1 |
 | Iterate Pitch Deck after feedback | Execution | P0 | ⬜ | | Pitch Deck v2+ |
 | Create pitch FAQ / objection handling doc | Deliverable | P1 | ⬜ | | Internes Q&A-Dokument |
@@ -60,8 +60,8 @@
 | Select standard SAFE / CLA template | Decision | P0 | ⬜ | | Festgelegtes Template |
 | **Review CLA documents incl. MFN clauses** | Research | P1 | ⬜ | | Kommentierte Dokumente |
 | **Prepare cap & discount recommendation** | Deliverable | P1 | ✅ Done | | See `SAFE_CAP_DISCOUNT_RESEARCH.md` |
-| Myceli <> Pollinations legal structure | Decision | P1 | ⬜ | | Klare Legal Structure |
-| Myceli GmbH setup | Research | P1 | ⬜ | | Fördergelder, Investoren Absicherung |
+| Myceli <> Pollinations legal structure | Decision | P1 | ✅ Done | | See `LEGAL_ENTITY_STRATEGY.md` |
+| Myceli GmbH setup | Research | P1 | ✅ Done | | See `LEGAL_ENTITY_STRATEGY.md` |
 
 ---
 
@@ -69,8 +69,8 @@
 
 | Task | Type | Priority | Status | Owner | Output |
 |------|------|----------|--------|-------|--------|
-| **Build investor list** | Research | P0 | ⬜ | | Strukturierte Investorenliste |
-| **Prepare investor contact list (Notion)** | Deliverable | P0 | ⬜ | | Gepflegte Notion-Datenbank |
+| **Build investor list** | Research | P0 | ✅ Done | | See `INVESTOR_TARGET_LIST.md` |
+| **Prepare investor contact list (Notion)** | Deliverable | P0 | ✅ Done | | See `INVESTOR_TARGET_LIST.md` |
 
 ---
 
@@ -88,7 +88,7 @@
 | Task | Type | Priority | Status | Owner | Output |
 |------|------|----------|--------|-------|--------|
 | **Review & clean Notion setup** | Execution | P1 | ⬜ | | Saubere, konsistente Struktur |
-| Align founders on fundraising roles | Decision | P0 | ⬜ | | Abgestimmte Verantwortlichkeiten |
+| Align founders on fundraising roles | Decision | P0 | ✅ Done | | See `FOUNDER_ROLES.md` |
 
 ---
 

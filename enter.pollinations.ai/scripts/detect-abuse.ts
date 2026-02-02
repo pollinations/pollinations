@@ -42,7 +42,7 @@
  */
 
 import { execSync } from "node:child_process";
-import { writeFileSync, readFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 // Parse arguments
 const args = process.argv.slice(2);
@@ -52,10 +52,11 @@ const modelIndex = args.indexOf("--model");
 const parallelIndex = args.indexOf("--parallel");
 const singleChunk = args.includes("--single-chunk");
 
-const userLimit = limitIndex >= 0 ? parseInt(args[limitIndex + 1]) : 5000;
-const chunkSize = chunkIndex >= 0 ? parseInt(args[chunkIndex + 1]) : 100;
+const userLimit = limitIndex >= 0 ? parseInt(args[limitIndex + 1], 10) : 5000;
+const chunkSize = chunkIndex >= 0 ? parseInt(args[chunkIndex + 1], 10) : 100;
 const modelName = modelIndex >= 0 ? args[modelIndex + 1] : "gemini";
-const parallelism = parallelIndex >= 0 ? parseInt(args[parallelIndex + 1]) : 1;
+const parallelism =
+    parallelIndex >= 0 ? parseInt(args[parallelIndex + 1], 10) : 1;
 const overlapSize = 20; // fixed 20 user overlap
 
 // Configuration
@@ -333,7 +334,7 @@ ${csvRows.join("\n")}`;
             const parts = line.split(",");
             if (parts.length >= 2) {
                 const github = parts[0]?.trim();
-                const score = parseInt(parts[1]) || 0;
+                const score = parseInt(parts[1], 10) || 0;
                 const reason = parts[2]?.trim() || "";
 
                 const idx = githubToIndex.get(github);

@@ -379,6 +379,86 @@ describe("API Key Management", () => {
             expect(response.status).toBe(401);
         });
 
+        test("should enable and disable API key", async ({
+            auth,
+            sessionToken,
+        }) => {
+            // Create a new key
+            const createResponse = await auth.apiKey.create({
+                name: "enable-disable-test",
+                fetchOptions: {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            });
+            const keyId = createResponse.data!.id;
+
+            // Disable the key
+            const disableResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        enabled: false,
+                    }),
+                },
+            );
+
+            expect(disableResponse.status).toBe(200);
+            const disableResult = await disableResponse.json();
+            expect(disableResult.enabled).toBe(false);
+
+            // Verify in list
+            const listResponse1 = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const keys1 = await listResponse1.json();
+            const disabledKey = keys1.data.find((k: any) => k.id === keyId);
+            expect(disabledKey.enabled).toBe(false);
+
+            // Re-enable the key
+            const enableResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        enabled: true,
+                    }),
+                },
+            );
+
+            expect(enableResponse.status).toBe(200);
+            const enableResult = await enableResponse.json();
+            expect(enableResult.enabled).toBe(true);
+
+            // Verify in list
+            const listResponse2 = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const keys2 = await listResponse2.json();
+            const enabledKey = keys2.data.find((k: any) => k.id === keyId);
+            expect(enabledKey.enabled).toBe(true);
+        });
+
         test("should handle multiple updates in sequence", async ({
             auth,
             sessionToken,
@@ -464,6 +544,60 @@ describe("API Key Management", () => {
     });
 
     describe("Permission enforcement", () => {
+        test("should reject requests with disabled keys", async ({
+            auth,
+            sessionToken,
+            mocks,
+        }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            // Create a key
+            const createResponse = await auth.apiKey.create({
+                name: "disabled-key-test",
+                fetchOptions: {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            });
+            const keyId = createResponse.data!.id;
+            const apiKey = createResponse.data!.key;
+
+            // Disable the key
+            const disableResp = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        enabled: false,
+                    }),
+                },
+            );
+            expect(disableResp.status).toBe(200);
+
+            // Try to use the disabled key
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "openai",
+                        messages: [{ role: "user", content: "Hello" }],
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(401);
+        });
+
         test("should reject requests with expired keys", async ({
             auth,
             sessionToken,

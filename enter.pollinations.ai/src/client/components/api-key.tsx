@@ -42,6 +42,7 @@ interface ApiKey {
     id: string;
     name?: string | null;
     start?: string | null;
+    enabled?: boolean;
     createdAt: string;
     lastRequest?: string | null;
     expiresAt?: string | null;
@@ -52,6 +53,7 @@ interface ApiKey {
 
 interface ApiKeyUpdateParams {
     name?: string;
+    enabled?: boolean;
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
@@ -272,13 +274,21 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     "plaintextKey"
                                 ] as string | undefined;
 
+                                const isDisabled = apiKey.enabled === false;
+
                                 return (
                                     <div
                                         key={apiKey.id}
-                                        className="bg-white/40 rounded-xl p-3 hover:bg-white/60 transition-colors"
+                                        className={cn(
+                                            "bg-white/40 rounded-xl p-3 transition-colors relative",
+                                            !isDisabled && "hover:bg-white/60",
+                                        )}
                                     >
                                         {/* Row 1: Type, Name, Key, Actions */}
-                                        <div className="flex items-center gap-2 mb-2">
+                                        <div className={cn(
+                                            "flex items-center gap-2 mb-2 pl-12",
+                                            isDisabled && "opacity-30",
+                                        )}>
                                             <span
                                                 className={cn(
                                                     "px-2 py-0.5 rounded text-xs font-medium shrink-0",
@@ -308,7 +318,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                     {apiKey.start}...
                                                 </span>
                                             )}
-                                            <div className="flex gap-1 shrink-0 ml-2">
+                                            <div className="flex gap-1 shrink-0 ml-2 items-center">
                                                 <button
                                                     type="button"
                                                     className="w-6 h-6 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
@@ -332,7 +342,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             </div>
                                         </div>
                                         {/* Row 2: Created/Used, Expiry/Budget, Models */}
-                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                                        <div className={cn(
+                                            "flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500",
+                                            isDisabled && "opacity-30",
+                                        )}>
                                             <div className="flex items-center gap-1">
                                                 <span className="text-pink-400 font-medium">
                                                     Created/Used:
@@ -382,6 +395,35 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                 />
                                             </div>
                                         </div>
+                                        {/* Toggle button - outside opacity-affected content, on the left */}
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                onUpdate(apiKey.id, {
+                                                    enabled: isDisabled,
+                                                })
+                                            }
+                                            className={cn(
+                                                "absolute top-[13px] left-3 inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer border",
+                                                isDisabled
+                                                    ? "bg-red-50 border-red-200 hover:bg-red-100"
+                                                    : "bg-green-100 border-green-300 hover:bg-green-200",
+                                            )}
+                                            title={
+                                                isDisabled
+                                                    ? "Enable key"
+                                                    : "Disable key"
+                                            }
+                                        >
+                                            <span
+                                                className={cn(
+                                                    "inline-block h-3.5 w-3.5 transform rounded-full transition-transform",
+                                                    isDisabled
+                                                        ? "translate-x-1 bg-red-400"
+                                                        : "translate-x-[18px] bg-green-600",
+                                                )}
+                                            />
+                                        </button>
                                     </div>
                                 );
                             })}
@@ -441,7 +483,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 <EditApiKeyDialog
                     apiKey={editingKey}
                     onUpdate={onUpdate}
-                    onDelete={onDelete}
                     onClose={() => setEditingKey(null)}
                 />
             )}

@@ -9,8 +9,10 @@ interface ApiKey {
     id: string;
     name?: string | null;
     start?: string | null;
+    enabled?: boolean;
     pollenBalance?: number | null;
     permissions: Record<string, string[]> | null;
+    metadata?: Record<string, unknown> | null;
     expiresAt?: string | null;
 }
 
@@ -26,20 +28,32 @@ interface EditApiKeyDialogProps {
             expiresAt?: Date | null;
         },
     ) => Promise<void>;
-    onDelete: (id: string) => Promise<void>;
     onClose: () => void;
 }
 
 export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
     onUpdate,
-    onDelete,
     onClose,
 }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [name, setName] = useState(apiKey.name || "");
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [copied, setCopied] = useState(false);
+
+    const isPublishable = apiKey.metadata?.keyType === "publishable";
+    const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
+
+    const handleCopyKey = async () => {
+        if (!plaintextKey) return;
+        try {
+            await navigator.clipboard.writeText(plaintextKey);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (_err) {
+            // Silently fail
+        }
+    };
 
     const keyPermissions = useKeyPermissions({
         allowedModels: apiKey.permissions?.models ?? null,
@@ -78,16 +92,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         }
     }
 
-    async function handleDelete() {
-        setIsSubmitting(true);
-        try {
-            await onDelete(apiKey.id);
-            onClose();
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
-
     return (
         <Dialog.Root open onOpenChange={({ open }) => !open && onClose()}>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
@@ -103,6 +107,36 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         Edit API Key
                     </Dialog.Title>
 
+                    <div className="flex items-center gap-3 mb-6">
+                        <span
+                            className={`px-2 py-0.5 rounded text-xs font-medium shrink-0 ${
+                                isPublishable
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-purple-100 text-purple-700"
+                            }`}
+                        >
+                            {isPublishable ? "🌐 Publishable" : "🔒 Secret"}
+                        </span>
+                        {isPublishable && plaintextKey ? (
+                            <button
+                                type="button"
+                                onClick={handleCopyKey}
+                                className={`font-mono text-sm cursor-pointer transition-all ${
+                                    copied
+                                        ? "text-green-600 font-semibold"
+                                        : "text-blue-600 hover:text-blue-800 hover:underline"
+                                }`}
+                                title={copied ? "Copied!" : "Click to copy"}
+                            >
+                                {copied ? "✓ Copied!" : plaintextKey}
+                            </button>
+                        ) : (
+                            <span className="font-mono text-sm text-gray-600">
+                                {apiKey.start}...
+                            </span>
+                        )}
+                    </div>
+
                     {error && (
                         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                             {error}
@@ -110,22 +144,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     )}
 
                     <div className="space-y-6">
-                        <Field.Root>
-                            <Field.Label className="block text-sm font-semibold mb-2">
-                                Current Key
-                            </Field.Label>
-                            <div className="p-3 rounded-lg border-2 border-gray-200 bg-gray-50">
-                                <div className="font-medium text-gray-800 mb-1">
-                                    {apiKey.start?.startsWith("pk_")
-                                        ? "🌐 Publishable Key"
-                                        : "🔒 Secret Key"}
-                                </div>
-                                <div className="font-mono text-xs text-gray-600">
-                                    {apiKey.start}...
-                                </div>
-                            </div>
-                        </Field.Root>
-
                         <Field.Root>
                             <Field.Label className="block text-sm font-semibold mb-2">
                                 Name
@@ -145,70 +163,22 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                             disabled={isSubmitting}
                         />
 
-                        <div className="flex gap-2 justify-between pt-4 border-t border-gray-300">
-                            {showDeleteConfirm ? (
-                                <>
-                                    <div className="text-sm text-red-600 font-medium">
-                                        Delete this key permanently?
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            type="button"
-                                            weight="outline"
-                                            onClick={() =>
-                                                setShowDeleteConfirm(false)
-                                            }
-                                            disabled={isSubmitting}
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            color="red"
-                                            weight="strong"
-                                            onClick={handleDelete}
-                                            disabled={isSubmitting}
-                                        >
-                                            {isSubmitting
-                                                ? "Deleting..."
-                                                : "Confirm Delete"}
-                                        </Button>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <Button
-                                        type="button"
-                                        color="red"
-                                        weight="outline"
-                                        onClick={() =>
-                                            setShowDeleteConfirm(true)
-                                        }
-                                        disabled={isSubmitting}
-                                    >
-                                        Delete
-                                    </Button>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            type="button"
-                                            weight="outline"
-                                            onClick={onClose}
-                                            disabled={isSubmitting}
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            onClick={handleSave}
-                                            disabled={isSubmitting}
-                                        >
-                                            {isSubmitting
-                                                ? "Saving..."
-                                                : "Save"}
-                                        </Button>
-                                    </div>
-                                </>
-                            )}
+                        <div className="flex gap-2 justify-end pt-4 border-t border-gray-300">
+                            <Button
+                                type="button"
+                                weight="outline"
+                                onClick={onClose}
+                                disabled={isSubmitting}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={handleSave}
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? "Saving..." : "Save"}
+                            </Button>
                         </div>
                     </div>
                 </Dialog.Content>

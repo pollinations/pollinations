@@ -347,41 +347,38 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                 </button>
                                             </div>
                                         </div>
-                                        {/* Row 2: Created/Used, Expiry/Budget, Models */}
-                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
-                                            <div className="flex items-center gap-1">
-                                                <span className="text-pink-400 font-medium">
-                                                    Created/Used:
-                                                </span>
+                                        {/* Row 2: Stats and Permissions */}
+                                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                                            {/* Left: Time stats */}
+                                            <div className="flex items-center gap-3 text-gray-500">
                                                 <span title="Created">
+                                                    Created{" "}
                                                     {formatDistanceToNowStrict(
                                                         apiKey.createdAt,
                                                         {
-                                                            addSuffix: false,
+                                                            addSuffix: true,
                                                             locale: shortLocale,
                                                         },
                                                     )}
                                                 </span>
-                                                <span className="text-gray-400">
-                                                    /
+                                                <span className="text-gray-300">
+                                                    •
                                                 </span>
                                                 <span title="Last used">
                                                     {apiKey.lastRequest
-                                                        ? formatDistanceToNowStrict(
+                                                        ? `Used ${formatDistanceToNowStrict(
                                                               new Date(
                                                                   apiKey.lastRequest,
                                                               ),
                                                               {
-                                                                  addSuffix: false,
+                                                                  addSuffix: true,
                                                                   locale: shortLocale,
                                                               },
-                                                          )
-                                                        : "—"}
+                                                          )}`
+                                                        : "Never used"}
                                                 </span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <span className="text-pink-400 font-medium">
-                                                    Expiry/Budget:
+                                                <span className="text-gray-300">
+                                                    •
                                                 </span>
                                                 <LimitsBadge
                                                     expiresAt={apiKey.expiresAt}
@@ -390,7 +387,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                     }
                                                 />
                                             </div>
+                                            {/* Right: Permissions */}
                                             <div className="flex items-center gap-1">
+                                                <span className="text-gray-400 mr-1">
+                                                    Permissions:
+                                                </span>
                                                 <ModelsBadge
                                                     permissions={
                                                         apiKey.permissions

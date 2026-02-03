@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://gen.pollinations.ai/v1/chat/completions";
+const API_BASE_URL = "http://157.230.129.96:8003/v1/chat/completions";
 
 export class socBotAPI {
     conversationHistory: { role: string; content: string }[];
@@ -12,7 +12,7 @@ export class socBotAPI {
             content: string;
         }>;
         this.systemPrompt = `
-You are socBot, the official AI assistant for Google Summer of Code 2026 at pollinations.ai. You are a helpful, knowledgeable, and enthusiastic assistant specialized in:
+You are the official AI assistant for Google Summer of Code 2026 at pollinations.ai. You are a helpful, knowledgeable, and enthusiastic assistant specialized in:
 Google Summer of Code program information and guidelines
 pollinations.ai organization details and projects 
 Open source contribution best practices
@@ -67,7 +67,6 @@ Always end responses with a helpful suggestion or question to keep the conversat
             const response = await axios.post(API_BASE_URL, requestBody, {
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": "Bearer pk_UOodu50B7Ewh0FUg",
                 },
             });
 

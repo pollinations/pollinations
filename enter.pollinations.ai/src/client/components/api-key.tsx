@@ -147,6 +147,26 @@ function formatBudget(pollenBudget: number | null | undefined): string {
         : `${pollenBudget.toFixed(2)}p`;
 }
 
+const AccountBadge: FC<{
+    permissions: { [key: string]: string[] } | null;
+}> = ({ permissions }) => {
+    const account = permissions?.account ?? null;
+    if (!account || account.length === 0) return null;
+
+    const label =
+        account.length === 2 ? "B+U" : account[0] === "balance" ? "B" : "U";
+    const title = account.join(", ");
+
+    return (
+        <span
+            className="text-xs px-1.5 py-0.5 rounded-full border bg-violet-100 text-violet-700 border-violet-300"
+            title={`Account: ${title}`}
+        >
+            {label}
+        </span>
+    );
+};
+
 const ModelsBadge: FC<{
     permissions: { [key: string]: string[] } | null;
 }> = ({ permissions }) => {
@@ -372,6 +392,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <ModelsBadge
+                                                    permissions={
+                                                        apiKey.permissions
+                                                    }
+                                                />
+                                                <AccountBadge
                                                     permissions={
                                                         apiKey.permissions
                                                     }

@@ -12,7 +12,7 @@ Prod:    Browser → economics.myceli.ai → Cloudflare Tunnel → Grafana → T
 ## Quick Start (Local)
 
 ```bash
-cd apps/myceli/economics
+cd apps/operation/economics
 
 # 1. Create .env with secrets (get from team)
 cp /path/to/shared/.env .env
@@ -70,7 +70,7 @@ Secrets are stored in `.env` (gitignored) locally and on the production server.
 ### Architecture on Production
 
 The production server has two paths:
-- **Source code:** `/opt/pollinations/apps/myceli/economics/` (from git)
+- **Source code:** `/opt/pollinations/apps/operation/economics/` (from git)
 - **Running container mounts:** `/opt/pollinations/apps/economics-dashboard/provisioning/`
 
 The Grafana container mounts provisioning files from the `economics-dashboard` path, so updates require copying files there.
@@ -87,7 +87,7 @@ git clone https://github.com/pollinations/pollinations.git
 mkdir -p /opt/pollinations/apps/economics-dashboard/provisioning/{dashboards,datasources}
 
 # Copy provisioning files
-cp -r /opt/pollinations/apps/myceli/economics/provisioning/* \
+cp -r /opt/pollinations/apps/operation/economics/provisioning/* \
    /opt/pollinations/apps/economics-dashboard/provisioning/
 
 # Create .env with secrets
@@ -95,7 +95,7 @@ cd /opt/pollinations/apps/economics-dashboard
 nano .env  # Add GF_ADMIN_PASSWORD, TINYBIRD_*, CLOUDFLARE_* tokens
 
 # Start
-docker compose -f /opt/pollinations/apps/myceli/economics/docker-compose.prod.yml up -d
+docker compose -f /opt/pollinations/apps/operation/economics/docker-compose.prod.yml up -d
 ```
 
 ### Update Dashboards (Most Common)
@@ -107,7 +107,7 @@ ssh root@207.154.253.25
 cd /opt/pollinations && git fetch origin && git reset --hard origin/main
 
 # Copy updated provisioning files to mount path
-cp -r /opt/pollinations/apps/myceli/economics/provisioning/* \
+cp -r /opt/pollinations/apps/operation/economics/provisioning/* \
    /opt/pollinations/apps/economics-dashboard/provisioning/
 
 # Restart Grafana to pick up changes
@@ -117,7 +117,7 @@ docker restart economics-grafana
 ### One-Liner Deploy
 
 ```bash
-ssh root@207.154.253.25 "cd /opt/pollinations && git fetch origin && git reset --hard origin/main && cp -r apps/myceli/economics/provisioning/* apps/economics-dashboard/provisioning/ && docker restart economics-grafana"
+ssh root@207.154.253.25 "cd /opt/pollinations && git fetch origin && git reset --hard origin/main && cp -r apps/operation/economics/provisioning/* apps/economics-dashboard/provisioning/ && docker restart economics-grafana"
 ```
 
 ## Common Commands

@@ -65,7 +65,6 @@ function parseMetadata(metadata: string): Record<string, unknown> | null {
  */
 const UpdateApiKeySchema = z.object({
     name: z.string().optional().describe("Name for the API key"),
-    enabled: z.boolean().optional().describe("Whether the key is enabled"),
     allowedModels: z
         .array(z.string())
         .nullable()
@@ -123,7 +122,6 @@ export const apiKeysRoutes = new Hono<Env>()
                     id: key.id,
                     name: key.name,
                     start: key.start,
-                    enabled: key.enabled ?? true,
                     createdAt: key.createdAt,
                     lastRequest: key.lastRequest,
                     expiresAt: key.expiresAt,
@@ -154,7 +152,6 @@ export const apiKeysRoutes = new Hono<Env>()
             const { id } = c.req.param();
             const {
                 name,
-                enabled,
                 allowedModels,
                 pollenBudget,
                 accountPermissions,
@@ -194,9 +191,8 @@ export const apiKeysRoutes = new Hono<Env>()
                 });
             }
 
-            const d1Updates: Record<string, string | boolean | number | Date | null> = {};
+            const d1Updates: Record<string, string | number | Date | null> = {};
             if (name !== undefined) d1Updates.name = name;
-            if (enabled !== undefined) d1Updates.enabled = enabled;
             if (pollenBudget !== undefined)
                 d1Updates.pollenBalance = pollenBudget;
             if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
@@ -227,7 +223,6 @@ export const apiKeysRoutes = new Hono<Env>()
             return c.json({
                 id: finalKey?.id ?? id,
                 name: finalKey?.name,
-                enabled: finalKey?.enabled ?? true,
                 permissions: finalKey?.permissions,
                 pollenBalance: finalKey?.pollenBalance ?? null,
                 expiresAt: finalKey?.expiresAt ?? null,

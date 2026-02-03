@@ -268,11 +268,11 @@ export const IMAGE_SERVICES = {
         provider: "modal",
         cost: [
             // LTX-2 on Modal H200 GPU
-            // Half of Replicate's price (~$0.08/8s = $0.01/s, half = $0.005/s)
-            // $0.025 per 5-second video
+            // Replicate's price (~$0.08/8s = $0.01/s)
+            // $0.05 per 5-second video
             {
                 date: new Date("2026-02-03").getTime(), // Launch date
-                completionVideoSeconds: 0.005, // $0.005/sec (half of Replicate)
+                completionVideoSeconds: 0.01, // $0.01/sec (Replicate's rate)
             },
         ],
         description:

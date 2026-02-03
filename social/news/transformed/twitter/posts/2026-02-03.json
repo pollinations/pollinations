@@ -1,0 +1,31 @@
+{
+  "date": "2026-02-03",
+  "generated_at": "2026-02-03T15:17:59.887421+00:00",
+  "platform": "twitter",
+  "tweet_type": "shipped",
+  "tweet": "fixed the daily refill glitch. everyone gets their pollen now 🌸\n\n+ added a new Microbe tier 🦠\n+ hardcoded some webhooks (don't judge)\n+ gpt-5 mini updates\n\nnature is healing.",
+  "alt_tweet": "daily pollen refill fixed. 23k users actually getting credits now.\n\nalso welcome to the Microbe tier 🦠\n\nwe are so back.",
+  "full_tweet": "fixed the daily refill glitch. everyone gets their pollen now 🌸\n\n+ added a new Microbe tier 🦠\n+ hardcoded some webhooks (don't judge)\n+ gpt-5 mini updates\n\nnature is healing. #OpenSource #AI",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image": {
+    "url": "https://gen.pollinations.ai/image/A%20vibrant%20pixel%20art%20scene%20featuring%20a%20tiny%2C%20adorable%20green%20microbe%20character%20%F0%9F%A6%A0%20holding%20a%20tiny%20sign%20that%20says%20%27I%20EXIST%27.%20It%20stands%20next%20to%20a%20massive%2C%20glowing%20lime%20green%20%28%23ecf874%29%20flower%20for%20scale.%20The%20background%20is%20a%20digital%20garden%20with%20floating%20code%20symbols%20and%20sparkles.%20Style%3A%2016-bit%20retro%20RPG%2C%20cute%20and%20colorful.%20Lighting%3A%20neon%20glow%20from%20the%20flower%20illuminating%20the%20microbe.%20Composition%3A%20clear%20size%20contrast%2C%20funny%20and%20wholesome%20energy.%20Avoid%3A%20scary%20germs%2C%20realistic%20biology%2C%20dull%20colors.?model=nanobanana-pro&width=1200&height=675&quality=hd&nologo=true&private=true&nofeed=true&seed=48154411",
+    "prompt": "A vibrant pixel art scene featuring a tiny, adorable green microbe character 🦠 holding a tiny sign that says 'I EXIST'. It stands next to a massive, glowing lime green (#ecf874) flower for scale. The background is a digital garden with floating code symbols and sparkles. Style: 16-bit retro RPG, cute and colorful. Lighting: neon glow from the flower illuminating the microbe. Composition: clear size contrast, funny and wholesome energy. Avoid: scary germs, realistic biology, dull colors."
+  },
+  "reasoning": "Highlights the most user-impacting fix (refill) while using the funny 'Microbe tier' name for visual engagement. 'Nature is healing' connects the bug fix to the biological branding.",
+  "pr_references": [
+    "#7857",
+    "#7889",
+    "#7862",
+    "#7870",
+    "#7875",
+    "#7867",
+    "#7869",
+    "#7874",
+    "#7866",
+    "#7861"
+  ],
+  "char_count": 190
+}

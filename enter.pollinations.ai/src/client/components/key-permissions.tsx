@@ -38,45 +38,7 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
         setPollenBudget,
         setExpiryDays,
         setAccountPermissions,
-        updatePermissions: (keyId: string) =>
-            updateKeyPermissions(keyId, {
-                allowedModels,
-                pollenBudget,
-                accountPermissions,
-            }),
     };
-}
-
-/**
- * Update API key permissions via the backend
- */
-async function updateKeyPermissions(
-    keyId: string,
-    permissions: Partial<KeyPermissions>,
-): Promise<void> {
-    const { allowedModels, pollenBudget, accountPermissions } = permissions;
-
-    const updates = {
-        ...(allowedModels !== undefined && { allowedModels }),
-        ...(pollenBudget !== undefined && { pollenBudget }),
-        ...(accountPermissions?.length && { accountPermissions }),
-    };
-
-    if (!Object.keys(updates).length) return;
-
-    const response = await fetch(`/api/api-keys/${keyId}/update`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(updates),
-    });
-
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-            `Failed to update permissions: ${(error as { message?: string }).message || "Unknown error"}`,
-        );
-    }
 }
 
 interface KeyPermissionsInputsProps {

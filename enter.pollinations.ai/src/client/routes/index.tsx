@@ -128,19 +128,17 @@ function RouteComponent() {
         }
 
         // Set permissions and budget if provided
-        const permissionUpdates = {
-            allowedModels: formState.allowedModels,
-            pollenBudget: formState.pollenBudget,
-            accountPermissions: formState.accountPermissions?.length
-                ? formState.accountPermissions
-                : undefined,
-        };
-
-        const hasUpdates = Object.values(permissionUpdates).some(
-            (v) => v !== undefined,
+        const permissionUpdates = Object.fromEntries(
+            Object.entries({
+                allowedModels: formState.allowedModels,
+                pollenBudget: formState.pollenBudget,
+                accountPermissions: formState.accountPermissions?.length
+                    ? formState.accountPermissions
+                    : undefined,
+            }).filter(([_, v]) => v !== undefined),
         );
 
-        if (hasUpdates) {
+        if (Object.keys(permissionUpdates).length > 0) {
             const response = await fetch(`/api/api-keys/${apiKey.id}/update`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

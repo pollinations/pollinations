@@ -28,7 +28,7 @@ export const TEXT_SERVICES = {
     "openai": {
         aliases: [],
         modelId: "gpt-5-mini",
-        provider: "azure",
+        provider: "azure-2",
         cost: [
             {
                 date: COST_START_DATE,

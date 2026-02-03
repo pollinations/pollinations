@@ -84,7 +84,7 @@ groups:
         execErrState: Error
         for: 5m
         annotations:
-          summary: "🔴 {{ $labels.model }} {{ printf \"%.0f\" $values.B.Value }}%"
+          summary: "• {{ $labels.model }}: 5xx error rate at {{ printf \"%.1f\" $values.B.Value }}% 🔴"
         labels:
           alert_type: server_error
           severity: critical
@@ -169,7 +169,7 @@ groups:
         execErrState: Error
         for: 5m
         annotations:
-          summary: "🟠 {{ $labels.model }} {{ printf \"%.0f\" $values.B.Value }}%"
+          summary: "• {{ $labels.model }}: 5xx error rate at {{ printf \"%.1f\" $values.B.Value }}% 🟠"
         labels:
           alert_type: server_error
           severity: warning

@@ -15,6 +15,8 @@ export interface KeyPermissions {
 /**
  * Hook to manage API key permission state
  */
+const DEFAULT_ACCOUNT_PERMISSIONS = ["profile", "balance"];
+
 export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
     const [allowedModels, setAllowedModels] = useState(
         initial.allowedModels ?? null,
@@ -24,7 +26,7 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
     );
     const [expiryDays, setExpiryDays] = useState(initial.expiryDays ?? null);
     const [accountPermissions, setAccountPermissions] = useState(
-        initial.accountPermissions ?? null,
+        initial.accountPermissions ?? DEFAULT_ACCOUNT_PERMISSIONS,
     );
 
     return {

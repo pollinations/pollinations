@@ -1,7 +1,7 @@
 {
-  "name": "GSoC 2026 × POLLINATIONS.AI",
-  "short_name": "gsoc",
-  "description": "Join Google Summer of Code 2026 and build the future of open-source AI",
+  "name": "Sirius Cybernetics Elevator Challenge",
+  "short_name": "sirius-cybernetics-elevator-challenge",
+  "description": "Can you convince a depressed elevator to take you to your floor?",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#a3e635",

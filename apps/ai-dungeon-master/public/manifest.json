@@ -1,7 +1,7 @@
 {
-  "name": "GSoC 2026 × POLLINATIONS.AI",
-  "short_name": "gsoc",
-  "description": "Join Google Summer of Code 2026 and build the future of open-source AI",
+  "name": "AI Dungeon Master",
+  "short_name": "ai-dungeon-master",
+  "description": "Play tabletop RPGs with an AI-powered dungeon master",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#a3e635",

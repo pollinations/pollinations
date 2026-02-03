@@ -70,7 +70,7 @@ Always end responses with a helpful suggestion or question to keep the conversat
                 },
             });
 
-            const assistantMessage = response.data.choices[0].message.content;
+            const assistantMessage = response.data.content;
 
             this.conversationHistory.push({
                 role: "assistant",

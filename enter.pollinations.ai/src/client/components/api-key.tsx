@@ -107,16 +107,21 @@ const LimitsBadge: FC<{
     const isExhausted = pollenBudget != null && pollenBudget <= 0;
 
     return (
-        <div className="flex items-center text-xs whitespace-nowrap">
-            <span className="text-gray-600">{expiryStr}</span>
-            <span className="text-gray-400 mx-1">/</span>
-            <span
-                className={cn(
-                    "text-gray-600",
-                    isExhausted && "text-red-500 font-medium",
-                )}
-            >
-                {budgetStr}
+        <div className="flex items-center gap-3 text-xs whitespace-nowrap">
+            <span>
+                <span className="text-gray-400">Expires: </span>
+                <span className="text-gray-600">{expiryStr}</span>
+            </span>
+            <span>
+                <span className="text-gray-400">Budget: </span>
+                <span
+                    className={cn(
+                        "text-gray-600",
+                        isExhausted && "text-red-500 font-medium",
+                    )}
+                >
+                    {budgetStr}
+                </span>
             </span>
         </div>
     );

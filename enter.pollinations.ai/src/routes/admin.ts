@@ -1,7 +1,6 @@
 import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
 import { eq, sql } from "drizzle-orm";
-import type { D1Database } from "drizzle-orm/d1";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -17,20 +16,25 @@ import type { Env } from "../env.ts";
 
 const log = getLogger(["hono", "admin"]);
 
+// KV key for tracking bulk refill timestamp (separate from individual user refills)
+const BULK_REFILL_KV_KEY = "tier:bulk_refill:last_timestamp";
+
 // Helper functions for tier refill
 function getTodayStartMs(): number {
     const now = new Date();
     return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
 }
 
-async function getLastRefillTime(
-    db: ReturnType<typeof drizzle<D1Database>>,
-): Promise<number> {
-    const [result] = await db
-        .select({ lastGrant: sql<number>`MAX(last_tier_grant)` })
-        .from(userTable)
-        .where(sql`tier IS NOT NULL`);
-    return result?.lastGrant ?? 0;
+async function getLastBulkRefillTime(kv: KVNamespace): Promise<number> {
+    const value = await kv.get(BULK_REFILL_KV_KEY);
+    return value ? Number.parseInt(value, 10) : 0;
+}
+
+async function setLastBulkRefillTime(
+    kv: KVNamespace,
+    timestamp: number,
+): Promise<void> {
+    await kv.put(BULK_REFILL_KV_KEY, timestamp.toString());
 }
 
 function calculateTierBreakdown(
@@ -122,11 +126,24 @@ export const adminRoutes = new Hono<Env>()
             ? authHeader.slice(7)
             : null;
 
-        if (providedKey !== c.env.PLN_ENTER_TOKEN) {
+        if (!providedKey) {
             throw new HTTPException(401, { message: "Unauthorized" });
         }
 
-        return await next();
+        // Full admin token has access to all endpoints
+        if (providedKey === c.env.PLN_ENTER_TOKEN) {
+            return await next();
+        }
+
+        // Refill token only has access to /trigger-refill endpoint
+        if (
+            providedKey === c.env.REFILL_TOKEN &&
+            c.req.path.endsWith("/trigger-refill")
+        ) {
+            return await next();
+        }
+
+        throw new HTTPException(401, { message: "Unauthorized" });
     })
     .post("/update-tier", async (c) => {
         // D1-only tier update - no Polar sync
@@ -205,13 +222,15 @@ export const adminRoutes = new Hono<Env>()
     })
     .post("/trigger-refill", async (c) => {
         const db = drizzle(c.env.DB);
+        const kv = c.env.KV;
 
-        // Check idempotency: has refill already run today?
+        // Check idempotency: has BULK refill already run today?
+        // Uses KV to track bulk refill time separately from individual user refills
         const todayStartMs = getTodayStartMs();
-        const lastRefillMs = await getLastRefillTime(db);
+        const lastBulkRefillMs = await getLastBulkRefillTime(kv);
 
-        if (lastRefillMs >= todayStartMs) {
-            const lastRefillDate = new Date(lastRefillMs).toISOString();
+        if (lastBulkRefillMs >= todayStartMs) {
+            const lastRefillDate = new Date(lastBulkRefillMs).toISOString();
             log.info("TIER_REFILL_SKIPPED: already ran today at {lastRefill}", {
                 eventType: "tier_refill_skipped",
                 lastRefill: lastRefillDate,
@@ -239,6 +258,7 @@ export const adminRoutes = new Hono<Env>()
             UPDATE user
             SET
                 tier_balance = CASE tier
+                    WHEN 'microbe' THEN ${TIER_POLLEN.microbe}
                     WHEN 'spore' THEN ${TIER_POLLEN.spore}
                     WHEN 'seed' THEN ${TIER_POLLEN.seed}
                     WHEN 'flower' THEN ${TIER_POLLEN.flower}
@@ -251,7 +271,11 @@ export const adminRoutes = new Hono<Env>()
         `);
 
         const refillCount = result.meta.changes ?? 0;
-        const timestamp = new Date().toISOString();
+        const refillTimestamp = Date.now();
+        const timestamp = new Date(refillTimestamp).toISOString();
+
+        // Store bulk refill timestamp in KV for idempotency
+        await setLastBulkRefillTime(kv, refillTimestamp);
 
         // Calculate tier breakdown for response
         const tierBreakdown = calculateTierBreakdown(usersToRefill);

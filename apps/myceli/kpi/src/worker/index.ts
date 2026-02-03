@@ -168,23 +168,53 @@ app.get("/api/kpi/health", async (c) => {
     return c.json({ data: data.data });
 });
 
-// Polar: Revenue (one-time pollen purchases only)
-app.get("/api/kpi/revenue", async (c) => {
-    // Paginate through all one-time purchases
+// Helper: Get Monday of the week for a date (ISO week starts on Monday)
+function getWeekStart(date: Date): string {
+    const dayOfWeek = date.getUTCDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(
+        Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate() + mondayOffset,
+        ),
+    );
+    return monday.toISOString().split("T")[0];
+}
+
+// Tinybird: Daily Stripe revenue (aggregated from checkout events)
+app.get("/api/kpi/stripe-revenue", async (c) => {
+    const daysBack = 90; // ~12 weeks
+    const res = await fetch(
+        `${c.env.TINYBIRD_API}/v0/pipes/daily_stripe_revenue.json?days_back=${daysBack}`,
+        { headers: { Authorization: `Bearer ${c.env.TINYBIRD_TOKEN}` } },
+    );
+
+    if (!res.ok) return c.json({ error: "Tinybird error", data: [] }, 500);
+    const data = (await res.json()) as {
+        data: Array<{ date: string; revenue: number; purchases: number }>;
+    };
+    return c.json({ data: data.data });
+});
+
+// Polar: Revenue (one-time pollen purchases only) - legacy, being phased out
+async function fetchPolarRevenue(
+    env: Env,
+): Promise<Array<{ week: string; revenue: number; purchases: number }>> {
     const allOrders: Array<{
         status: string;
         created_at: string;
         amount: number;
     }> = [];
     let page = 1;
-    const maxPages = 5; // Safety limit
+    const maxPages = 5;
 
     while (page <= maxPages) {
         const res = await fetch(
-            `${c.env.POLAR_API}/v1/orders?limit=100&product_billing_type=one_time&page=${page}`,
+            `${env.POLAR_API}/v1/orders?limit=100&product_billing_type=one_time&page=${page}`,
             {
                 headers: {
-                    Authorization: `Bearer ${c.env.POLAR_ACCESS_TOKEN}`,
+                    Authorization: `Bearer ${env.POLAR_ACCESS_TOKEN}`,
                     "Content-Type": "application/json",
                 },
                 redirect: "follow",
@@ -204,7 +234,6 @@ app.get("/api/kpi/revenue", async (c) => {
 
         allOrders.push(...(data.items || []));
 
-        // Stop if we got all orders or no more items
         if (
             allOrders.length >= data.pagination.total_count ||
             data.items.length === 0
@@ -213,30 +242,17 @@ app.get("/api/kpi/revenue", async (c) => {
         page++;
     }
 
-    const orders = allOrders;
-
-    // Group by week
     const weeklyData: Record<string, { revenue: number; purchases: number }> =
         {};
 
-    for (const order of orders) {
+    for (const order of allOrders) {
         if (order.status !== "paid") continue;
         if (order.amount === 0) continue;
 
         const date = new Date(order.created_at);
-        if (date < new Date(DATA_START_DATE)) continue; // Filter by start date
+        if (date < new Date(DATA_START_DATE)) continue;
 
-        // Get Monday of the week (ISO week starts on Monday)
-        const dayOfWeek = date.getUTCDay();
-        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-        const monday = new Date(
-            Date.UTC(
-                date.getUTCFullYear(),
-                date.getUTCMonth(),
-                date.getUTCDate() + mondayOffset,
-            ),
-        );
-        const weekStart = monday.toISOString().split("T")[0];
+        const weekStart = getWeekStart(date);
 
         if (!weeklyData[weekStart]) {
             weeklyData[weekStart] = { revenue: 0, purchases: 0 };
@@ -245,11 +261,149 @@ app.get("/api/kpi/revenue", async (c) => {
         weeklyData[weekStart].purchases += 1;
     }
 
-    const result = Object.entries(weeklyData)
+    return Object.entries(weeklyData)
         .map(([week, d]) => ({ week, ...d }))
+        .sort((a, b) => a.week.localeCompare(b.week));
+}
+
+// Tinybird: Fetch and aggregate daily Stripe revenue into weekly
+async function fetchStripeRevenue(
+    env: Env,
+): Promise<Array<{ week: string; revenue: number; purchases: number }>> {
+    const daysBack = 90;
+    const res = await fetch(
+        `${env.TINYBIRD_API}/v0/pipes/daily_stripe_revenue.json?days_back=${daysBack}`,
+        { headers: { Authorization: `Bearer ${env.TINYBIRD_TOKEN}` } },
+    );
+
+    if (!res.ok) return [];
+
+    const data = (await res.json()) as {
+        data: Array<{ date: string; revenue: number; purchases: number }>;
+    };
+
+    // Aggregate daily data into weekly
+    const weeklyData: Record<string, { revenue: number; purchases: number }> =
+        {};
+
+    for (const row of data.data) {
+        const date = new Date(row.date);
+        const weekStart = getWeekStart(date);
+
+        if (!weeklyData[weekStart]) {
+            weeklyData[weekStart] = { revenue: 0, purchases: 0 };
+        }
+        weeklyData[weekStart].revenue += row.revenue;
+        weeklyData[weekStart].purchases += row.purchases;
+    }
+
+    return Object.entries(weeklyData)
+        .map(([week, d]) => ({ week, ...d }))
+        .sort((a, b) => a.week.localeCompare(b.week));
+}
+
+// Combined Revenue: Stripe (primary) + Polar (legacy)
+app.get("/api/kpi/revenue", async (c) => {
+    // Fetch both sources in parallel
+    const [stripeRevenue, polarRevenue] = await Promise.all([
+        fetchStripeRevenue(c.env),
+        fetchPolarRevenue(c.env),
+    ]);
+
+    // Merge by week, summing revenue and purchases
+    const weeklyData: Record<string, { revenue: number; purchases: number }> =
+        {};
+
+    for (const row of stripeRevenue) {
+        if (!weeklyData[row.week]) {
+            weeklyData[row.week] = { revenue: 0, purchases: 0 };
+        }
+        weeklyData[row.week].revenue += row.revenue;
+        weeklyData[row.week].purchases += row.purchases;
+    }
+
+    for (const row of polarRevenue) {
+        if (!weeklyData[row.week]) {
+            weeklyData[row.week] = { revenue: 0, purchases: 0 };
+        }
+        weeklyData[row.week].revenue += row.revenue;
+        weeklyData[row.week].purchases += row.purchases;
+    }
+
+    const result = Object.entries(weeklyData)
+        .map(([week, d]) => ({
+            week,
+            revenue: Math.round(d.revenue * 100) / 100,
+            purchases: d.purchases,
+        }))
         .sort((a, b) => a.week.localeCompare(b.week));
 
     return c.json({ data: result });
+});
+
+// Churn metrics derived from retention data
+// Churn = 100 - w4_retention (% of users from 4 weeks ago who didn't return)
+app.get("/api/kpi/churn", async (c) => {
+    const weeksBack = 8; // retention data has limited weeks
+    const res = await fetch(
+        `${c.env.TINYBIRD_API}/v0/pipes/weekly_retention.json?weeks_back=${weeksBack}`,
+        { headers: { Authorization: `Bearer ${c.env.TINYBIRD_TOKEN}` } },
+    );
+
+    if (!res.ok) return c.json({ error: "Tinybird error", data: [] }, 500);
+    const data = (await res.json()) as {
+        data: Array<{
+            cohort: string;
+            cohort_size: number;
+            w4_retained: number;
+            w4_retention: number;
+        }>;
+    };
+
+    // Transform retention data to churn data
+    // Each cohort's w4_retention tells us what % returned after 4 weeks
+    // Churn = 100 - w4_retention
+    const churnData = data.data
+        .filter(
+            (row) =>
+                row.w4_retention !== null && row.w4_retention !== undefined,
+        )
+        .map((row) => ({
+            week: row.cohort,
+            users_4w_ago: row.cohort_size,
+            churned_users: row.cohort_size - row.w4_retained,
+            churn_rate: Math.round((100 - row.w4_retention) * 10) / 10,
+        }));
+
+    return c.json({ data: churnData });
+});
+
+// Tinybird: B2B/B2C User Segments (developer vs end-user)
+app.get("/api/kpi/user-segments", async (c) => {
+    const weeksBack = 12;
+    const res = await fetch(
+        `${c.env.TINYBIRD_API}/v0/pipes/weekly_user_segment.json?weeks_back=${weeksBack}`,
+        { headers: { Authorization: `Bearer ${c.env.TINYBIRD_TOKEN}` } },
+    );
+
+    if (!res.ok) return c.json({ error: "Tinybird error", data: [] }, 500);
+    const data = (await res.json()) as {
+        data: Array<{
+            week: string;
+            developer_users: number;
+            developer_pollen: number;
+            developer_requests: number;
+            enduser_users: number;
+            enduser_pollen: number;
+            enduser_requests: number;
+            total_users: number;
+            total_pollen: number;
+            total_requests: number;
+            enduser_user_pct: number;
+            enduser_pollen_pct: number;
+        }>;
+    };
+    return c.json({ data: data.data });
 });
 
 // GitHub: Stars

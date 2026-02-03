@@ -9,6 +9,9 @@ dist/
 backups/
 prod_data*.sql
 
-# Sensitive data - never commit
+# Abuse detection outputs (contain PII)
+scripts/abuse-detection/flagged-users*.csv
+scripts/abuse-detection/flagged-users*.md
 scripts/flagged-users*.csv
 scripts/flagged-users*.md
+abuse-report*.csv

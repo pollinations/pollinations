@@ -30,7 +30,7 @@ interface ModelDefinition {
 const models: ModelDefinition[] = [
     {
         name: "openai",
-        config: portkeyConfig["gpt-5-mini-2025-08-07"],
+        config: portkeyConfig["gpt-5-mini"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {

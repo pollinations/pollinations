@@ -22,13 +22,13 @@ export const portkeyConfig: PortkeyConfigMap = {
     // ============================================================================
     // Azure (Myceli) - openai, openai-large, openai-audio
     // ============================================================================
-    "gpt-5-mini-2025-08-07": () => ({
+    "gpt-5-mini": () => ({
         ...createAzureModelConfig(
-            process.env.AZURE_MYCELI_GPT5MINI_API_KEY,
-            process.env.AZURE_MYCELI_GPT5MINI_ENDPOINT,
-            "gpt-5-mini-2025-08-07",
+            process.env.AZURE_PF_GPT5MINI_API_KEY,
+            process.env.AZURE_PF_GPT5MINI_ENDPOINT,
+            "gpt-5-mini",
         ),
-        "max-completion-tokens": 1024,
+        "max-completion-tokens": 16384,
     }),
     "gpt-5.2-2025-12-11": () => ({
         ...createAzureModelConfig(

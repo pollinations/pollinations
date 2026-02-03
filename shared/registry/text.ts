@@ -27,7 +27,7 @@ export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
 export const TEXT_SERVICES = {
     "openai": {
         aliases: [],
-        modelId: "gpt-5-mini-2025-08-07",
+        modelId: "gpt-5-mini",
         provider: "azure",
         cost: [
             {

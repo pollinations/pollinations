@@ -1,4 +1,4 @@
-import type { Usage, UsageType } from "./registry.js";
+import type { Usage, UsageType } from "./registry.ts";
 
 /**
  * Mapping from Usage field names to HTTP header names

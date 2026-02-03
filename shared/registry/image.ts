@@ -262,4 +262,22 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "ltx-2": {
+        aliases: ["ltx2", "ltxvideo", "ltx-video"],
+        modelId: "ltx-2",
+        provider: "modal",
+        cost: [
+            // LTX-2 on Modal H200 GPU
+            // Half of Replicate's price (~$0.08/8s = $0.01/s, half = $0.005/s)
+            // $0.025 per 5-second video
+            {
+                date: new Date("2026-02-03").getTime(), // Launch date
+                completionVideoSeconds: 0.005, // $0.005/sec (half of Replicate)
+            },
+        ],
+        description:
+            "LTX-2 - Fast text-to-video generation with audio on Modal",
+        inputModalities: ["text"],
+        outputModalities: ["video"],
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

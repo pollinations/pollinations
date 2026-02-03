@@ -1,7 +1,7 @@
 {
-  "name": "GSoC 2026 × POLLINATIONS.AI",
-  "short_name": "gsoc",
-  "description": "Join Google Summer of Code 2026 and build the future of open-source AI",
+  "name": "CatGPT",
+  "short_name": "catgpt",
+  "description": "A cat-themed AI chatbot that responds like a feline friend",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#a3e635",

@@ -106,19 +106,17 @@ const LimitsBadge: FC<{
 }> = ({ expiresAt, pollenBudget }) => {
     const expiryStr = formatExpiry(expiresAt);
     const budgetStr = formatBudget(pollenBudget);
-    const isExhausted =
-        pollenBudget !== null &&
-        pollenBudget !== undefined &&
-        pollenBudget <= 0;
+    const isExhausted = pollenBudget != null && pollenBudget <= 0;
 
     return (
         <div className="flex items-center text-xs whitespace-nowrap">
             <span className="text-gray-600">{expiryStr}</span>
             <span className="text-gray-400 mx-1">/</span>
             <span
-                className={
-                    isExhausted ? "text-red-500 font-medium" : "text-gray-600"
-                }
+                className={cn(
+                    "text-gray-600",
+                    isExhausted && "text-red-500 font-medium",
+                )}
             >
                 {budgetStr}
             </span>
@@ -134,22 +132,21 @@ function formatExpiry(expiresAt: Date | null | undefined): string {
         (expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
     );
 
-    return daysLeft <= 0
-        ? "expired"
-        : formatDistanceToNowStrict(expiresDate, {
-              addSuffix: false,
-              locale: shortLocale,
-          });
+    if (daysLeft <= 0) return "expired";
+
+    return formatDistanceToNowStrict(expiresDate, {
+        addSuffix: false,
+        locale: shortLocale,
+    });
 }
 
 function formatBudget(pollenBudget: number | null | undefined): string {
-    if (pollenBudget === null || pollenBudget === undefined) return "∞";
+    if (pollenBudget == null) return "∞";
     if (pollenBudget <= 0) return "empty";
 
-    const formatted = Number.isInteger(pollenBudget)
-        ? pollenBudget.toString()
-        : pollenBudget.toFixed(2);
-    return `${formatted}p`;
+    return Number.isInteger(pollenBudget)
+        ? `${pollenBudget}p`
+        : `${pollenBudget.toFixed(2)}p`;
 }
 
 const ModelsBadge: FC<{
@@ -160,22 +157,33 @@ const ModelsBadge: FC<{
     const isAllModels = models === null;
     const modelCount = models?.length ?? 0;
 
+    const handleInteraction = (e: React.MouseEvent | React.KeyboardEvent) => {
+        e.stopPropagation();
+        if ("key" in e && e.key !== "Enter" && e.key !== " ") return;
+        if ("key" in e) e.preventDefault();
+        setShowTooltip((prev) => !prev);
+    };
+
+    const tooltipContent = () => {
+        if (isAllModels) return "Access to all models";
+        if (modelCount === 0) return "No models allowed";
+        return (
+            <div className="font-mono text-[11px] leading-relaxed text-left whitespace-nowrap">
+                {models?.map((model) => (
+                    <div key={model}>{model}</div>
+                ))}
+            </div>
+        );
+    };
+
     return (
         <button
             type="button"
             className="relative inline-flex items-center"
-            onClick={(e) => {
-                e.stopPropagation();
-                setShowTooltip((prev) => !prev);
-            }}
+            onClick={handleInteraction}
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
-            onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setShowTooltip((prev) => !prev);
-                }
-            }}
+            onKeyDown={handleInteraction}
             aria-label="Show allowed models"
         >
             <span
@@ -196,33 +204,21 @@ const ModelsBadge: FC<{
                         left: "var(--tooltip-left)",
                     }}
                     ref={(el) => {
-                        if (el) {
-                            const btn = el.parentElement;
-                            if (btn) {
-                                const rect = btn.getBoundingClientRect();
-                                el.style.setProperty(
-                                    "--tooltip-top",
-                                    `${rect.bottom + 4}px`,
-                                );
-                                el.style.setProperty(
-                                    "--tooltip-left",
-                                    `${rect.left}px`,
-                                );
-                            }
-                        }
+                        if (!el) return;
+                        const btn = el.parentElement;
+                        if (!btn) return;
+                        const rect = btn.getBoundingClientRect();
+                        el.style.setProperty(
+                            "--tooltip-top",
+                            `${rect.bottom + 4}px`,
+                        );
+                        el.style.setProperty(
+                            "--tooltip-left",
+                            `${rect.left}px`,
+                        );
                     }}
                 >
-                    {isAllModels ? (
-                        "Access to all models"
-                    ) : modelCount === 0 ? (
-                        "No models allowed"
-                    ) : (
-                        <div className="font-mono text-[11px] leading-relaxed text-left whitespace-nowrap">
-                            {models?.map((model) => (
-                                <div key={model}>{model}</div>
-                            ))}
-                        </div>
-                    )}
+                    {tooltipContent()}
                 </div>
             )}
         </button>
@@ -548,10 +544,13 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const handleKeyTypeChange = (newKeyType: "secret" | "publishable") => {
         setKeyType(newKeyType);
         setName(generateFunName());
+        const dateStr = new Date().toLocaleDateString("en-US", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "2-digit",
+        });
         setDescription(
-            newKeyType === "publishable"
-                ? ""
-                : `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
+            newKeyType === "publishable" ? "" : `Created on ${dateStr}`,
         );
     };
 
@@ -759,18 +758,23 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 </Button>
                             )}
                             {(() => {
+                                const { allowedModels } =
+                                    keyPermissions.permissions;
                                 const noModelsSelected =
-                                    Array.isArray(
-                                        keyPermissions.permissions
-                                            .allowedModels,
-                                    ) &&
-                                    keyPermissions.permissions.allowedModels
-                                        .length === 0;
+                                    Array.isArray(allowedModels) &&
+                                    allowedModels.length === 0;
                                 const isDisabled =
                                     !createdKey &&
                                     (!name.trim() ||
                                         isSubmitting ||
                                         noModelsSelected);
+
+                                const buttonText = () => {
+                                    if (copied) return "✓ Copied! Closing...";
+                                    if (createdKey) return "Copy and Close";
+                                    if (isSubmitting) return "Creating...";
+                                    return "Create";
+                                };
 
                                 return (
                                     <span
@@ -792,13 +796,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                             className="disabled:opacity-50"
                                             disabled={isDisabled}
                                         >
-                                            {copied
-                                                ? "✓ Copied! Closing..."
-                                                : createdKey
-                                                  ? "Copy and Close"
-                                                  : isSubmitting
-                                                    ? "Creating..."
-                                                    : "Create"}
+                                            {buttonText()}
                                         </Button>
                                     </span>
                                 );

@@ -2,6 +2,7 @@ import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import type { FC } from "react";
 import { useState } from "react";
+import { cn } from "@/util.ts";
 import { Button } from "./button.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 
@@ -55,16 +56,18 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         }
     };
 
+    const expiryDays = apiKey.expiresAt
+        ? Math.ceil(
+              (new Date(apiKey.expiresAt).getTime() - Date.now()) /
+                  (1000 * 60 * 60 * 24),
+          )
+        : null;
+
     const keyPermissions = useKeyPermissions({
         allowedModels: apiKey.permissions?.models ?? null,
         pollenBudget: apiKey.pollenBalance ?? null,
         accountPermissions: apiKey.permissions?.account ?? null,
-        expiryDays: apiKey.expiresAt
-            ? Math.ceil(
-                  (new Date(apiKey.expiresAt).getTime() - Date.now()) /
-                      (1000 * 60 * 60 * 24),
-              )
-            : null,
+        expiryDays,
     });
 
     async function handleSave() {
@@ -109,11 +112,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
                     <div className="flex items-center gap-3 mb-6">
                         <span
-                            className={`px-2 py-0.5 rounded text-xs font-medium shrink-0 ${
+                            className={cn(
+                                "px-2 py-0.5 rounded text-xs font-medium shrink-0",
                                 isPublishable
                                     ? "bg-blue-100 text-blue-700"
-                                    : "bg-purple-100 text-purple-700"
-                            }`}
+                                    : "bg-purple-100 text-purple-700",
+                            )}
                         >
                             {isPublishable ? "🌐 Publishable" : "🔒 Secret"}
                         </span>
@@ -121,11 +125,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                             <button
                                 type="button"
                                 onClick={handleCopyKey}
-                                className={`font-mono text-sm cursor-pointer transition-all ${
+                                className={cn(
+                                    "font-mono text-sm cursor-pointer transition-all",
                                     copied
                                         ? "text-green-600 font-semibold"
-                                        : "text-blue-600 hover:text-blue-800 hover:underline"
-                                }`}
+                                        : "text-blue-600 hover:text-blue-800 hover:underline",
+                                )}
                                 title={copied ? "Copied!" : "Click to copy"}
                             >
                                 {copied ? "✓ Copied!" : plaintextKey}

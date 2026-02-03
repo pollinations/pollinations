@@ -20,19 +20,23 @@ function buildUpdatedPermissions(
     const updated = { ...existing };
     let hasChanges = false;
 
-    if (allowedModels === null) {
-        delete updated.models;
-        hasChanges = true;
-    } else if (allowedModels?.length) {
-        updated.models = allowedModels;
+    // Update models permission
+    if (allowedModels !== undefined) {
+        if (allowedModels === null || allowedModels.length === 0) {
+            delete updated.models;
+        } else {
+            updated.models = allowedModels;
+        }
         hasChanges = true;
     }
 
-    if (accountPermissions === null) {
-        delete updated.account;
-        hasChanges = true;
-    } else if (accountPermissions?.length) {
-        updated.account = accountPermissions;
+    // Update account permissions
+    if (accountPermissions !== undefined) {
+        if (accountPermissions === null || accountPermissions.length === 0) {
+            delete updated.account;
+        } else {
+            updated.account = accountPermissions;
+        }
         hasChanges = true;
     }
 
@@ -124,12 +128,7 @@ export const apiKeysRoutes = new Hono<Env>()
                     lastRequest: key.lastRequest,
                     expiresAt: key.expiresAt,
                     permissions: key.permissions
-                        ? (() => {
-                              const parsed = JSON.parse(key.permissions);
-                              return Object.keys(parsed).length > 0
-                                  ? parsed
-                                  : null;
-                          })()
+                        ? JSON.parse(key.permissions)
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
@@ -195,13 +194,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 });
             }
 
-            const d1Updates: {
-                name?: string;
-                enabled?: boolean;
-                pollenBalance?: number | null;
-                expiresAt?: Date | null;
-            } = {};
-
+            const d1Updates: Record<string, string | boolean | number | Date | null> = {};
             if (name !== undefined) d1Updates.name = name;
             if (enabled !== undefined) d1Updates.enabled = enabled;
             if (pollenBudget !== undefined)

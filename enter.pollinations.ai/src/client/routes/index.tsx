@@ -174,7 +174,6 @@ function RouteComponent() {
         id: string,
         updates: {
             name?: string;
-            enabled?: boolean;
             allowedModels?: string[] | null;
             pollenBudget?: number | null;
             accountPermissions?: string[] | null;

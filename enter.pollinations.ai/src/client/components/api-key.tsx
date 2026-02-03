@@ -153,14 +153,24 @@ const AccountBadge: FC<{
     const account = permissions?.account ?? null;
     if (!account || account.length === 0) return null;
 
-    const label =
-        account.length === 2 ? "B+U" : account[0] === "balance" ? "B" : "U";
-    const title = account.join(", ");
+    const hasBalance = account.includes("balance");
+    const hasUsage = account.includes("usage");
+
+    let label: string;
+    if (hasBalance && hasUsage) {
+        label = "Bal+Use";
+    } else if (hasBalance) {
+        label = "Bal";
+    } else if (hasUsage) {
+        label = "Use";
+    } else {
+        label = account.join("+");
+    }
 
     return (
         <span
             className="text-xs px-1.5 py-0.5 rounded-full border bg-violet-100 text-violet-700 border-violet-300"
-            title={`Account: ${title}`}
+            title={`Account permissions: ${account.join(", ")}`}
         >
             {label}
         </span>

@@ -27,3 +27,17 @@ export async function getWeeklyHealthStats(weeksBack = 12) {
     const data = await res.json();
     return data.data || [];
 }
+
+export async function getWeeklyUserSegments(weeksBack = 12) {
+    const res = await fetch(`/api/kpi/user-segments?weeks_back=${weeksBack}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.data || [];
+}
+
+export async function getWeeklyChurn(weeksBack = 12) {
+    const res = await fetch(`/api/kpi/churn?weeks_back=${weeksBack}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.data || [];
+}

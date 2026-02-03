@@ -50,6 +50,22 @@ export const APP_CONFIGS = {
             url: "https://chat.pollinations.ai",
         },
     },
+
+    gsoc: {
+        name: "gsoc.pollinations.ai",
+        outputDir: "apps/gsoc/public",
+        sourceSvg: "../../assets/logo.svg",
+        ogSourceSvg: "../../assets/logo-text.svg",
+        themeColor: "#a3e635",
+        backgroundColor: "#a3e635",
+        iconBackground: "transparent",
+        seo: {
+            title: "GSoC 2026 × pollinations.ai",
+            description:
+                "Join Google Summer of Code 2026 with pollinations.ai! Work on cutting-edge open-source AI projects and build the future of generative AI.",
+            url: "https://gsoc.pollinations.ai",
+        },
+    },
 };
 
 /**

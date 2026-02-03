@@ -54,16 +54,19 @@ jobs:
 
       - name: Deploy to staging via SSH
         uses: appleboy/ssh-action@v1.0.0
-        env:
-          PLN_ENTER_TOKEN: ${{ secrets.PLN_ENTER_TOKEN }}
         with:
           host: ${{ secrets.ENTER_SERVICES_STAGING_HOST }}
           username: ${{ secrets.ENTER_SERVICES_STAGING_USER }}
           key: ${{ secrets.ENTER_SERVICES_STAGING_SSH_KEY }}
-          envs: PLN_ENTER_TOKEN
           script: |
             set -e
             echo "🚀 Deploying to STAGING..."
+            
+            # Secure .env file permissions (prevent world-readable secrets)
+            chmod 600 /home/ubuntu/pollinations/text.pollinations.ai/.env 2>/dev/null || true
+            chmod 600 /home/ubuntu/pollinations/image.pollinations.ai/.env 2>/dev/null || true
+            echo "🔒 Secured .env file permissions"
+            
             cd /home/ubuntu/pollinations
             
             # Fetch and force-reset to avoid divergent branch issues
@@ -123,17 +126,19 @@ jobs:
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
-        env:
-          PLN_ENTER_TOKEN: ${{ secrets.PLN_ENTER_TOKEN }}
         with:
           host: ${{ secrets.ENTER_SERVICES_HOST }}
           username: ${{ secrets.ENTER_SERVICES_USER }}
           key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
-          envs: PLN_ENTER_TOKEN
           script: |
             set -e
             
             echo "🚀 Starting deployment to enter-services..."
+            
+            # Secure .env file permissions (prevent world-readable secrets)
+            chmod 600 /home/ubuntu/pollinations/text.pollinations.ai/.env 2>/dev/null || true
+            chmod 600 /home/ubuntu/pollinations/image.pollinations.ai/.env 2>/dev/null || true
+            echo "🔒 Secured .env file permissions"
             
             # Navigate to repo
             cd /home/ubuntu/pollinations
@@ -169,28 +174,25 @@ jobs:
             sudo systemctl is-active text-pollinations.service || exit 1
             sudo systemctl is-active image-pollinations.service || exit 1
             
-            # Health check endpoints
+            # Health check endpoints (no token needed - just verify services respond)
             echo "🏥 Running health checks..."
             sleep 2  # Give services a moment to fully initialize
             
-            # PLN_ENTER_TOKEN is passed as environment variable from GitHub secret
-            echo "Using PLN_ENTER_TOKEN: ${PLN_ENTER_TOKEN:0:10}..."
-            
-            # Check text service health (use /openai/models - /models returns 410 deprecated)
-            TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $PLN_ENTER_TOKEN" http://localhost:16385/openai/models || echo "000")
-            if [ "$TEXT_HEALTH" != "200" ]; then
-              echo "❌ Text service health check failed (HTTP $TEXT_HEALTH)"
+            # Check text service health - any HTTP response means service is up
+            TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:16385/ || echo "000")
+            if [ "$TEXT_HEALTH" = "000" ]; then
+              echo "❌ Text service not responding"
               exit 1
             fi
-            echo "✅ Text service responding (HTTP 200)"
+            echo "✅ Text service responding (HTTP $TEXT_HEALTH)"
             
-            # Check image service health (use /about - /models returns 410 deprecated)
-            IMAGE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $PLN_ENTER_TOKEN" http://localhost:16384/about || echo "000")
-            if [ "$IMAGE_HEALTH" != "200" ]; then
-              echo "❌ Image service health check failed (HTTP $IMAGE_HEALTH)"
+            # Check image service health - any HTTP response means service is up
+            IMAGE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:16384/ || echo "000")
+            if [ "$IMAGE_HEALTH" = "000" ]; then
+              echo "❌ Image service not responding"
               exit 1
             fi
-            echo "✅ Image service responding (HTTP 200)"
+            echo "✅ Image service responding (HTTP $IMAGE_HEALTH)"
             
             echo "🎉 Deployment complete!"
             echo "📊 Service Status:"

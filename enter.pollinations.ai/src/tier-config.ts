@@ -1,4 +1,5 @@
 export const TIERS = {
+    microbe: { pollen: 0.1, emoji: "🦠" },
     spore: { pollen: 1, emoji: "🍄" },
     seed: { pollen: 3, emoji: "🌱" },
     flower: { pollen: 10, emoji: "🌸" },

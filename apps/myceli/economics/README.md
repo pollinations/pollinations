@@ -12,17 +12,16 @@ Prod:    Browser → economics.myceli.ai → Cloudflare Tunnel → Grafana → T
 ## Quick Start (Local)
 
 ```bash
-cd apps/economics-dashboard
+cd apps/myceli/economics
 
-# 1. Decrypt secrets and generate .env
-sops -d secrets/secrets.vars.json | jq -r 'to_entries | .[] | select(.key != "sops") | "\(.key)=\(.value)"' > .env
+# 1. Create .env with secrets (get from team)
+cp /path/to/shared/.env .env
 
 # 2. Start Grafana
 docker compose up -d
 
 # 3. Access Grafana
 open http://localhost:3000
-# Login: see secrets/secrets.vars.json (decrypt with sops)
 ```
 
 ## Data Sources
@@ -40,23 +39,18 @@ open http://localhost:3000
 
 ## Secrets Management
 
-All secrets are SOPS-encrypted with age:
+Secrets are stored in `.env` (gitignored) locally and on the production server.
 
 | Variable | Purpose |
-|----------|---------|
+|----------|--------|
 | `GF_ADMIN_USER` | Grafana admin username |
 | `GF_ADMIN_PASSWORD` | Grafana admin password |
 | `CLOUDFLARE_TUNNEL_TOKEN` | Cloudflare Tunnel token (prod) |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API token for D1 |
 | `TINYBIRD_GENERATION_EVENT_READ` | Read token for generation_event |
+| `DISCORD_WEBHOOK_URL` | Discord webhook for alerts |
 
-```bash
-# Edit secrets
-sops secrets/secrets.vars.json
-
-# Regenerate .env
-sops -d secrets/secrets.vars.json | jq -r 'to_entries | .[] | select(.key != "sops") | "\(.key)=\(.value)"' > .env
-```
+**Security:** `.env` is gitignored. Share secrets securely via 1Password or similar.
 
 ## Creating/Editing Panels
 
@@ -71,30 +65,59 @@ sops -d secrets/secrets.vars.json | jq -r 'to_entries | .[] | select(.key != "so
 ### Prerequisites
 - DigitalOcean Droplet (Ubuntu 24.04, $6/mo)
 - Cloudflare Tunnel configured for `economics.myceli.ai`
+- Droplet IP: `207.154.253.25`
 
-### Deploy
+### Architecture on Production
+
+The production server has two paths:
+- **Source code:** `/opt/pollinations/apps/myceli/economics/` (from git)
+- **Running container mounts:** `/opt/pollinations/apps/economics-dashboard/provisioning/`
+
+The Grafana container mounts provisioning files from the `economics-dashboard` path, so updates require copying files there.
+
+### First Time Setup
 
 ```bash
-ssh root@YOUR_DROPLET_IP
+ssh root@207.154.253.25
 
-# First time setup
 cd /opt
 git clone https://github.com/pollinations/pollinations.git
-cd pollinations/apps/economics-dashboard
 
-# Create .env from secrets or copy from local
-nano .env
+# Create provisioning directory structure
+mkdir -p /opt/pollinations/apps/economics-dashboard/provisioning/{dashboards,datasources}
+
+# Copy provisioning files
+cp -r /opt/pollinations/apps/myceli/economics/provisioning/* \
+   /opt/pollinations/apps/economics-dashboard/provisioning/
+
+# Create .env with secrets
+cd /opt/pollinations/apps/economics-dashboard
+nano .env  # Add GF_ADMIN_PASSWORD, TINYBIRD_*, CLOUDFLARE_* tokens
 
 # Start
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f /opt/pollinations/apps/myceli/economics/docker-compose.prod.yml up -d
 ```
 
-### Update
+### Update Dashboards (Most Common)
 
 ```bash
-cd /opt/pollinations/apps/economics-dashboard
-git pull origin main
-docker compose -f docker-compose.prod.yml restart grafana
+ssh root@207.154.253.25
+
+# Pull latest code
+cd /opt/pollinations && git fetch origin && git reset --hard origin/main
+
+# Copy updated provisioning files to mount path
+cp -r /opt/pollinations/apps/myceli/economics/provisioning/* \
+   /opt/pollinations/apps/economics-dashboard/provisioning/
+
+# Restart Grafana to pick up changes
+docker restart economics-grafana
+```
+
+### One-Liner Deploy
+
+```bash
+ssh root@207.154.253.25 "cd /opt/pollinations && git fetch origin && git reset --hard origin/main && cp -r apps/myceli/economics/provisioning/* apps/economics-dashboard/provisioning/ && docker restart economics-grafana"
 ```
 
 ## Common Commands

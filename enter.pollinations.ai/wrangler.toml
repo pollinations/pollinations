@@ -168,9 +168,6 @@ NOWPAYMENTS_ENV = "production"
 STRIPE_MODE = "live"
 STRIPE_SUCCESS_URL = "https://enter.pollinations.ai"
 
-[env.production.triggers]
-crons = ["0 0 * * *"]
-
 [env.staging]
 
 [[env.staging.routes]]
@@ -286,9 +283,6 @@ TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 # Stripe payments (sandbox for dev)
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "https://dev.enter.pollinations.ai"
-
-[env.staging.triggers]
-crons = ["0 0 * * *"]
 
 [env.test]
 

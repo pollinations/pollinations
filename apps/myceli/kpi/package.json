@@ -4,8 +4,8 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "secrets": "./scripts/load-secrets.sh",
-        "dev": "npm run secrets && npx wrangler dev",
+        "decrypt-vars": "sops decrypt secrets/env.json --output-type dotenv > .dev.vars",
+        "dev": "npm run decrypt-vars && npx wrangler dev",
         "dev:vite": "vite",
         "build": "vite build",
         "deploy": "npm run build && npx wrangler deploy",

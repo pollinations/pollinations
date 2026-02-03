@@ -8,7 +8,7 @@ const POLLINATIONS_API = 'https://gen.pollinations.ai/v1/chat/completions';
 const MAX_RETRIES = 2;
 const INITIAL_RETRY_DELAY = 5;
 const githubToken = process.env.GITHUB_TOKEN
-const pollinationsToken = process.env.POLLINATIONS_TOKEN
+const pollinationsToken = process.env.PLN_REDDIT_NEWS_KEY
 
 if (!githubToken) {
 throw new Error('GitHub token not configured. Please set it in app settings.');
@@ -19,8 +19,8 @@ throw new Error('Pollinations token not configured. Please set it in app setting
 
 function getPreviousDayRange() {
     const now = new Date();
-    const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
+    const endDate = now;
+    const startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
     return {
         startDate,
@@ -36,7 +36,7 @@ function getTodayDate() {
     return `${year}-${month}-${day}`;
 }
 
-async function getMergedPRsFromPreviousDay(owner : string = 'pollinations', repo : string = 'pollinations', githubToken : string) {
+async function getMergedPRsFromPreviousDay(owner : any = 'pollinations', repo : any = 'pollinations', githubToken : string) {
     if (!githubToken) {
         throw new Error('GitHub token is required');
     }
@@ -241,10 +241,9 @@ ${highlights.map(h => `• ${h}`).join('\n')}
             prs: prs.map(p => ({ number: p.number, title: p.title, url: p.url })),
             dateString,
         };
-        
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.warn(`Prompt generation failed: ${message}`);
+        console.warn(`Prompt generation failed: ${(error as any).message}`);
+        console.log('Falling back to local prompt generation...\n');
 
         const comicPrompt = `Flat vector editorial infographic celebrating ${prs.length} Pollinations updates. Headline: 'POLLINATIONS - WEEKLY UPDATES'. Content includes: ${prs.slice(0, 5).map(p => p.title).join(', ')}. Style: minimal tech infographic. Color palette: cream background, navy text, lime green (#ecf874) accents. No decorative elements.`;
 
@@ -312,8 +311,7 @@ async function generateTitleFromPRs(prs : any[],  pollinationsToken : string, da
 
         return title;
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.warn(`Prompt generation failed: ${message}`);
+        console.error('PR title generation failed:', (error as any).message);
         return `You're gonna want to see what Pollinations shipped`;
     }
 }
@@ -345,8 +343,7 @@ async function generateImage(prompt : string, pollinationsToken : string, attemp
         }
     } catch (error) {
         if (attempt < MAX_RETRIES - 1) {
-            const message = error instanceof Error ? error.message : String(error);
-            console.log(`  ✗ Attempt ${attempt + 1} failed: ${message}`);
+            console.log(`  ✗ Attempt ${attempt + 1} failed: ${(error as any).message}`);
             return generateImage(prompt, pollinationsToken, attempt + 1);
         }
         throw error;
@@ -361,7 +358,7 @@ async function pipeline(githubToken : string, pollinationsToken : string) {
         
         if (!result || !result.prs || result.prs.length === 0) {
             console.log('ℹ️  No merged PRs found in the previous day. Exiting pipeline.');
-            process.exit(0);
+            return null;
         }
         
         const { prs, dateString } = result;
@@ -396,6 +393,12 @@ async function pipeline(githubToken : string, pollinationsToken : string) {
 
 (async () => {
 const promptData = await pipeline(githubToken as string, pollinationsToken as string);
+
+if (!promptData) {
+    console.log('No PRs to process. Pipeline complete.');
+    process.exit(0);
+}
+
 console.log(promptData)
 console.log('Final Results:');
 console.log(`Image URL: ${promptData.LINK}`);

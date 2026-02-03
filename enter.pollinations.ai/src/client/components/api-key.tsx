@@ -285,10 +285,12 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                         )}
                                     >
                                         {/* Row 1: Type, Name, Key, Actions */}
-                                        <div className={cn(
-                                            "flex items-center gap-2 mb-2 pl-12",
-                                            isDisabled && "opacity-30",
-                                        )}>
+                                        <div
+                                            className={cn(
+                                                "flex items-center gap-2 mb-2 pl-12",
+                                                isDisabled && "opacity-30",
+                                            )}
+                                        >
                                             <span
                                                 className={cn(
                                                     "px-2 py-0.5 rounded text-xs font-medium shrink-0",
@@ -342,10 +344,12 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             </div>
                                         </div>
                                         {/* Row 2: Created/Used, Expiry/Budget, Models */}
-                                        <div className={cn(
-                                            "flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500",
-                                            isDisabled && "opacity-30",
-                                        )}>
+                                        <div
+                                            className={cn(
+                                                "flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500",
+                                                isDisabled && "opacity-30",
+                                            )}
+                                        >
                                             <div className="flex items-center gap-1">
                                                 <span className="text-pink-400 font-medium">
                                                     Created/Used:

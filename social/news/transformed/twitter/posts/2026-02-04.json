@@ -1,0 +1,27 @@
+{
+  "date": "2026-02-04",
+  "generated_at": "2026-02-04T15:17:41.793165+00:00",
+  "platform": "twitter",
+  "tweet_type": "shipped",
+  "tweet": "finally added a manage dialog for api keys so you can toggle them off before you accidentally burn your whole budget 💸\n\nplus midijourney is running on gpt-5.2 now. the vibes are immaculate.\n\nship ship ship 🚢🌸",
+  "alt_tweet": "pov: you can finally set limits on your api keys so the gpu bills don't hurt you anymore 📉\n\nalso midijourney -> gpt-5.2 upgrade is live. we are so back.",
+  "full_tweet": "finally added a manage dialog for api keys so you can toggle them off before you accidentally burn your whole budget 💸\n\nplus midijourney is running on gpt-5.2 now. the vibes are immaculate.\n\nship ship ship 🚢🌸 #OpenSource #ShipIt",
+  "hashtags": [
+    "#OpenSource",
+    "#ShipIt"
+  ],
+  "image": {
+    "url": "https://gen.pollinations.ai/image/A%20cozy%20yet%20high-stakes%20pixel%20art%20scene.%20Center%20stage%3A%20a%20cute%20bee%20developer%20sweating%20nervously%20but%20looking%20relieved%2C%20hand%20hovering%20over%20a%20massive%2C%20glowing%20industrial%20toggle%20switch%20labeled%20%27API%20BUDGET%27.%20The%20switch%20is%20firmly%20set%20to%20%27SAFE%20MODE%27%20in%20electric%20lime%20green%20%28%23ecf874%29.%20Background%20shows%20a%20holographic%20dashboard%20where%20a%20red%20%27spending%27%20line%20was%20skyrocketing%20but%20has%20now%20flatlined%20safely.%20Style%3A%20detailed%208-bit%20aesthetic%20like%20a%20sci-fi%20indie%20game%20UI.%20Lighting%3A%20dramatic%20monitor%20glow%20against%20deep%20purple%20shadows.%20Composition%3A%20close-up%20focus%20on%20the%20satisfying%20click%20of%20the%20switch%20to%20emphasize%20control.%20Avoid%3A%20realistic%20hands%2C%20boring%20spreadsheets%2C%20corporate%20minimalism.?model=nanobanana-pro&width=1200&height=675&quality=hd&nologo=true&private=true&nofeed=true&seed=948974913",
+    "prompt": "A cozy yet high-stakes pixel art scene. Center stage: a cute bee developer sweating nervously but looking relieved, hand hovering over a massive, glowing industrial toggle switch labeled 'API BUDGET'. The switch is firmly set to 'SAFE MODE' in electric lime green (#ecf874). Background shows a holographic dashboard where a red 'spending' line was skyrocketing but has now flatlined safely. Style: detailed 8-bit aesthetic like a sci-fi indie game UI. Lighting: dramatic monitor glow against deep purple shadows. Composition: close-up focus on the satisfying click of the switch to emphasize control. Avoid: realistic hands, boring spreadsheets, corporate minimalism."
+  },
+  "reasoning": "Focuses on the most relatable 'pain point' feature (budget control/safety) which drives engagement from devs who fear unexpected bills. Mentions the GPT-5.2 upgrade to show technical progress. Uses the 'ship ship ship' mantra to maintain momentum.",
+  "pr_references": [
+    "#7917",
+    "#7537",
+    "#7907",
+    "#7905",
+    "#7904",
+    "#7900"
+  ],
+  "char_count": 228
+}

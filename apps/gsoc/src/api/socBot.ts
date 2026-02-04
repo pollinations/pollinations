@@ -67,7 +67,7 @@ Always end responses with a helpful suggestion or question to keep the conversat
             const response = await axios.post(API_BASE_URL, requestBody, {
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": "Bearer pk_UOodu50B7Ewh0FUg",
+                    "Authorization": "Bearer pk_n6m9ghhNIlqzUvBp",
                 },
             });
 

@@ -153,7 +153,8 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         className="flex-1 overflow-y-auto p-6 py-4"
                         style={{
                             scrollbarWidth: "thin",
-                            scrollbarColor: "rgba(156, 163, 175, 0.5) transparent",
+                            scrollbarColor:
+                                "rgba(156, 163, 175, 0.5) transparent",
                             overscrollBehavior: "contain",
                         }}
                     >

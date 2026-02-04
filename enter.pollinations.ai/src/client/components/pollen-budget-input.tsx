@@ -26,7 +26,9 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
     return (
         <Field.Root className={inline ? "flex items-center gap-3" : ""}>
             {!compact && (
-                <Field.Label className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0" : "mb-2"}`}>
+                <Field.Label
+                    className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0" : "mb-2"}`}
+                >
                     Budget
                     <button
                         type="button"

@@ -26,6 +26,7 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "nanobanana",
         provider: "google",
+        paidOnly: true,
         cost: [
             // Gemini 2.5 Flash Image via Vertex AI
             {

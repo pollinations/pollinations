@@ -85,7 +85,7 @@ const SectionHeader: FC<SectionHeaderProps> = ({
                 </div>
             </td>
             <td
-                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[90px] align-middle`}
+                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap align-middle`}
             >
                 <Tooltip content="Based on average community usage. Actual costs vary with modality and output.">
                     <div className="cursor-help text-center">
@@ -103,7 +103,7 @@ const SectionHeader: FC<SectionHeaderProps> = ({
                 </Tooltip>
             </td>
             <td
-                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[130px] align-middle`}
+                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap align-middle`}
             >
                 <div>Input</div>
                 <div
@@ -113,7 +113,7 @@ const SectionHeader: FC<SectionHeaderProps> = ({
                 </div>
             </td>
             <td
-                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[90px] align-middle`}
+                className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap align-middle`}
             >
                 <div>Output</div>
                 <div
@@ -141,10 +141,21 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     );
     const personaModels = sortedTextModels.filter((m) => isPersona(m.name));
 
+    // Shared colgroup for consistent column widths across all tables
+    const TableColGroup = () => (
+        <colgroup>
+            <col style={{ width: "auto" }} />
+            <col style={{ width: "90px" }} />
+            <col style={{ width: "100px" }} />
+            <col style={{ width: "100px" }} />
+        </colgroup>
+    );
+
     return (
         <div className="flex flex-col gap-6">
             {/* Image Section */}
-            <table className="w-full min-w-[540px] border-separate border-spacing-0 rounded-2xl">
+            <table className="w-full min-w-[540px] table-fixed border-separate border-spacing-0 rounded-2xl">
+                <TableColGroup />
                 <tbody>
                     <SectionHeader label="Image" type="image" isFirst />
                     {sortedImageModels.map((model, index) => (
@@ -159,7 +170,8 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             </table>
 
             {/* Video Section */}
-            <table className="w-full min-w-[540px] border-separate border-spacing-0 rounded-2xl">
+            <table className="w-full min-w-[540px] table-fixed border-separate border-spacing-0 rounded-2xl">
+                <TableColGroup />
                 <tbody>
                     <SectionHeader label="Video" type="video" isFirst />
                     {sortedVideoModels.map((model, index) => (
@@ -174,7 +186,8 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             </table>
 
             {/* Text Section */}
-            <table className="w-full min-w-[540px] border-separate border-spacing-0 rounded-2xl">
+            <table className="w-full min-w-[540px] table-fixed border-separate border-spacing-0 rounded-2xl">
+                <TableColGroup />
                 <tbody>
                     <SectionHeader label="Text" type="text" isFirst />
                     {regularTextModels.map((model, index) => (

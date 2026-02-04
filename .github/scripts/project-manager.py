@@ -255,14 +255,15 @@ Body: {ISSUE_BODY[:2000]}
             log_debug(f"AI raw response: {content}")
 
             raw = json.loads(content)
-            
+
             is_app_submission = raw.get("is_app_submission", False)
-            
+            is_polly_fixable = raw.get("is_polly_fixable", False)
+
             project = raw.get("project", "").lower()
             if project not in ["dev", "support", "news"]:
                 log_error(f"AI returned invalid project: {project}")
                 return get_fallback_classification(is_internal)
-            
+
             priority = raw.get("priority")
             if project == "support":
                 valid_priorities = {"Urgent", "High", "Medium", "Low"}
@@ -271,25 +272,26 @@ Body: {ISSUE_BODY[:2000]}
                     priority = "Medium"
             else:
                 priority = None
-            
+
             labels = raw.get("labels", [])
             if not isinstance(labels, list):
                 labels = []
-            
+
             valid_labels_by_project = VALID_LABELS
-            
+
             valid_for_project = valid_labels_by_project.get(project, set())
             filtered_labels = [l.upper() for l in labels if l.upper() in valid_for_project]
             if len(filtered_labels) < len(labels):
                 invalid = [l for l in labels if l.upper() not in valid_for_project]
                 log_error(f"AI returned invalid labels for {project}: {invalid}")
-            
+
             classification = {
                 "project": project,
                 "priority": priority,
                 "labels": filtered_labels,
                 "reasoning": raw.get("reasoning", ""),
                 "is_app_submission": is_app_submission,
+                "is_polly_fixable": is_polly_fixable,
             }
 
             log_debug(f"AI parsed classification: {classification}")
@@ -515,6 +517,11 @@ def main():
     
     labels = normalize_labels(project_key, classification.get("labels", []))
     log_debug(f"Normalized labels: {labels}")
+
+    # Add "polly" label if AI determined issue is auto-fixable
+    if classification.get("is_polly_fixable", False):
+        log_debug("AI determined issue is Polly-fixable, adding 'polly' label")
+        labels.append("polly")
 
     item_id = add_to_project(project["id"])
     if not item_id:

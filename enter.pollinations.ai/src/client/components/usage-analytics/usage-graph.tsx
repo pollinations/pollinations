@@ -65,7 +65,7 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
 
     return (
         <div className="flex flex-col gap-2">
-            <Panel color="violet">
+            <Panel color="purple">
                 {loading && (
                     <div className="flex items-center justify-center h-[180px]">
                         <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
@@ -187,7 +187,7 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
 
                         {/* Chart */}
                         <Card
-                            color="violet"
+                            color="purple"
                             bg="bg-white"
                             className="relative mb-4"
                         >

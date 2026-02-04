@@ -5,6 +5,7 @@ const panelColors = {
     blue: "border-blue-300 bg-blue-50/30",
     teal: "border-teal-200 bg-teal-50/30",
     violet: "border-violet-300 bg-violet-50/30",
+    purple: "border-purple-300 bg-purple-50/30",
     amber: "border-amber-300 bg-amber-50/30",
     green: "border-green-200 bg-green-50/30",
 } as const;

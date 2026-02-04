@@ -230,10 +230,10 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     value={createdKey ? createdKey.key : name}
                                     onChange={(e) => setName(e.target.value)}
                                     className={cn(
-                                        "flex-1 px-3 py-2 border rounded",
+                                        "flex-1 px-3 py-2 border rounded-lg",
                                         createdKey
                                             ? "border-green-300 bg-green-200 font-mono text-xs"
-                                            : "border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500",
+                                            : "border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-600",
                                     )}
                                     placeholder={
                                         createdKey ? "" : "Enter API key name"

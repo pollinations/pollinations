@@ -40,6 +40,12 @@ const colors = {
         strong: "bg-violet-600 text-white",
         outline: "border-2 border-violet-600 text-violet-900",
     },
+    teal: {
+        light: "bg-teal-200 text-teal-900 hover:bg-teal-300",
+        strong: "bg-teal-600 text-white hover:bg-teal-500",
+        outline:
+            "border-2 border-teal-600 text-teal-900 hover:bg-teal-600 hover:text-white transition-colors",
+    },
 } as const;
 
 const sizes = {

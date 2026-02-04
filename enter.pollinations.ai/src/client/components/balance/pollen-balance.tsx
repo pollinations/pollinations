@@ -1,7 +1,8 @@
-import type { FC } from "react";
+import { type FC, useState } from "react";
 import { getTierEmoji } from "@/tier-config.ts";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
+import { Tooltip } from "../ui/tooltip.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 
 type PollenBalanceProps = {
@@ -61,18 +62,33 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     cryptoBalance,
     tier = "spore",
 }) => {
+    const [emailCopied, setEmailCopied] = useState(false);
     const tierEmoji = getTierEmoji(tier);
+
+    const copyEmail = () => {
+        navigator.clipboard.writeText("billing@pollinations.ai");
+        setEmailCopied(true);
+        setTimeout(() => setEmailCopied(false), 2000);
+    };
     const paidBalance = packBalance + cryptoBalance;
     const totalPollen = Math.max(0, tierBalance + paidBalance);
-    const freePercentage = calculatePercentage(tierBalance, totalPollen);
-    const paidPercentage = calculatePercentage(paidBalance, totalPollen);
 
     function calculatePercentage(value: number, total: number): number {
         return total > 0 ? (value / total) * 100 : 0;
     }
 
+    const rawPaidPercentage = calculatePercentage(paidBalance, totalPollen);
+    const rawFreePercentage = calculatePercentage(tierBalance, totalPollen);
+
+    // Ensure paid segment is always visible (min 18% width to fit label)
+    const MIN_SEGMENT = 18;
+    const paidPercentage =
+        totalPollen > 0 ? Math.max(MIN_SEGMENT, rawPaidPercentage) : 50;
+    const freePercentage =
+        totalPollen > 0 ? Math.min(100 - MIN_SEGMENT, rawFreePercentage) : 50;
+
     return (
-        <Panel color="violet" className="sm:p-8">
+        <Panel color="purple" className="sm:p-8">
             <div className="flex flex-row justify-center text-center pb-1">
                 {/* Combined Pollen Gauge */}
                 <div className="flex flex-col items-center gap-4 w-full">
@@ -107,21 +123,35 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 </div>
             </div>
             {/* Purchase info */}
-            <Card color="violet" className="mt-4">
-                <p className="text-sm font-medium text-violet-900">
+            <Card color="purple" className="mt-4">
+                <p className="text-sm font-medium text-purple-900">
                     🎁 During beta, we double your pollen! ($5 → 10💎, $10 →
                     20💎, $20 → 40💎, $50 → 100💎)
                 </p>
-                <p className="text-sm font-medium text-violet-900 mt-2">
+                <p className="text-sm font-medium text-purple-900 mt-2">
                     💳 Want to pay with a different method?{" "}
                     <a
                         href="https://github.com/pollinations/pollinations/issues/4826"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="underline hover:text-violet-700"
+                        className="underline hover:text-purple-700"
                     >
-                        Please vote
+                        Vote for your preferred option
                     </a>
+                </p>
+                <p className="text-sm text-purple-800 mt-2">
+                    💬 Payment issue or missing pollen?{" "}
+                    <Tooltip
+                        content={emailCopied ? "Copied!" : "Click to copy"}
+                        onClick={copyEmail}
+                    >
+                        <span className="underline hover:text-purple-700">
+                            {emailCopied
+                                ? "Copied!"
+                                : "billing@pollinations.ai"}
+                        </span>
+                    </Tooltip>{" "}
+                    — we reply same day.
                 </p>
             </Card>
             <PaymentTrustBadge />

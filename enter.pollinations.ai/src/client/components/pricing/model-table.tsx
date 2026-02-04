@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { calculatePerPollen } from "./calculations.ts";
 import { isPersona } from "./model-info.ts";
 import { ModelRow } from "./model-row.tsx";
+import { Tooltip } from "./tooltip.tsx";
 import type { ModelPrice } from "./types.ts";
 
 type ModelTableProps = {
@@ -86,16 +87,20 @@ const SectionHeader: FC<SectionHeaderProps> = ({
             <td
                 className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[90px] align-middle`}
             >
-                <div>1 pollen ≈</div>
-                <div
-                    className={`text-xs font-normal ${sectionColors.subtext} opacity-70 italic`}
-                >
-                    {type === "text"
-                        ? "responses"
-                        : type === "image"
-                          ? "images"
-                          : "videos"}
-                </div>
+                <Tooltip content="Based on average community usage. Actual costs vary with modality and output.">
+                    <div className="cursor-help text-center">
+                        <div>1 pollen ≈</div>
+                        <div
+                            className={`text-xs font-normal ${sectionColors.subtext} opacity-70 italic`}
+                        >
+                            {type === "text"
+                                ? "responses"
+                                : type === "image"
+                                  ? "images"
+                                  : "videos"}
+                        </div>
+                    </div>
+                </Tooltip>
             </td>
             <td
                 className={`text-center text-sm font-bold ${sectionColors.text} pt-3 pb-2 px-2 whitespace-nowrap w-[130px] align-middle`}
@@ -139,7 +144,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     return (
         <div className="flex flex-col gap-6">
             {/* Image Section */}
-            <table className="w-full border-separate border-spacing-0 bg-white/50 rounded-2xl shadow-sm">
+            <table className="w-full border-separate border-spacing-0 rounded-2xl">
                 <tbody>
                     <SectionHeader label="Image" type="image" isFirst />
                     {sortedImageModels.map((model, index) => (
@@ -154,7 +159,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             </table>
 
             {/* Video Section */}
-            <table className="w-full border-separate border-spacing-0 bg-white/50 rounded-2xl shadow-sm">
+            <table className="w-full border-separate border-spacing-0 rounded-2xl">
                 <tbody>
                     <SectionHeader label="Video" type="video" isFirst />
                     {sortedVideoModels.map((model, index) => (
@@ -169,7 +174,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             </table>
 
             {/* Text Section */}
-            <table className="w-full border-separate border-spacing-0 bg-white/50 rounded-2xl shadow-sm">
+            <table className="w-full border-separate border-spacing-0 rounded-2xl">
                 <tbody>
                     <SectionHeader label="Text" type="text" isFirst />
                     {regularTextModels.map((model, index) => (

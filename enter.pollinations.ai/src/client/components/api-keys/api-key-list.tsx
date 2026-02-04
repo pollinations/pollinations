@@ -2,7 +2,6 @@ import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
-import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
 import { AccountBadge } from "./account-badge.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
@@ -159,17 +158,21 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             />
                                             <span className="flex items-center gap-1">
                                                 <span className="text-gray-400">
-                                                    Models:
+                                                    Permissions:
                                                 </span>
-                                                <ModelsBadge
-                                                    permissions={
-                                                        apiKey.permissions
-                                                    }
-                                                />
+                                                <span className="flex items-center gap-1">
+                                                    <ModelsBadge
+                                                        permissions={
+                                                            apiKey.permissions
+                                                        }
+                                                    />
+                                                    <AccountBadge
+                                                        permissions={
+                                                            apiKey.permissions
+                                                        }
+                                                    />
+                                                </span>
                                             </span>
-                                            <AccountBadge
-                                                permissions={apiKey.permissions}
-                                            />
                                         </div>
                                     </div>
                                 );
@@ -178,16 +181,12 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         {apiKeys.some(
                             (k) => k.metadata?.["keyType"] === "publishable",
                         ) && (
-                            <Card color="blue" className="mt-4">
-                                <p className="text-sm font-medium text-blue-900">
-                                    🌐 <strong>Publishable keys:</strong> Beta -
-                                    actively improving stability.
+                            <div className="flex justify-center mt-4">
+                                <p className="text-xs text-blue-700 bg-blue-100/60 px-4 py-2 rounded-full text-center">
+                                    ⚠️ <strong>Publishable keys</strong> are in
+                                    beta — for production apps, use secret keys.
                                 </p>
-                                <p className="text-sm text-blue-800">
-                                    For production apps, we recommend secret
-                                    keys.
-                                </p>
-                            </Card>
+                            </div>
                         )}
                     </Panel>
                 ) : null}

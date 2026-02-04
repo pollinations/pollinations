@@ -49,91 +49,95 @@ export const ModelRow: FC<ModelRowProps> = ({
     const isDisabled = showPaidOnly && packBalance <= 0;
 
     const borderClass = isLast ? "" : "border-b border-gray-200";
-    const priceColor = showPaidOnly ? "purple" : ("cyan" as const);
+    const priceColor = showPaidOnly ? "purple" : ("teal" as const);
 
     return (
-        <tr className={isDisabled ? "opacity-50" : ""}>
+        <tr>
             <td
                 className={`py-2 px-2 text-sm text-gray-700 relative group ${borderClass}`}
             >
-                <div className="flex items-center gap-2">
-                    <div className="flex flex-col">
-                        <span className={showNew ? "font-bold" : "font-medium"}>
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2.5">
+                        <span
+                            className={`${showNew ? "font-bold" : "font-medium"} ${isDisabled ? "opacity-50" : ""}`}
+                        >
                             {modelDisplayName || model.name}
                         </span>
+                        {showNew && (
+                            <Badge
+                                color="green"
+                                size="sm"
+                                className="font-semibold shadow-[0_0_6px_rgba(34,197,94,0.5)] animate-[glow_2s_ease-in-out_infinite]"
+                            >
+                                NEW
+                            </Badge>
+                        )}
+                        {showPaidOnly && (
+                            <Tooltip
+                                content={
+                                    isDisabled
+                                        ? "Top up your 💎 pollen balance to unlock this model."
+                                        : "This model uses your purchased pollen 💎 only."
+                                }
+                            >
+                                <span className="text-[10px] text-purple-700 bg-transparent px-1.5 py-0.5 rounded-full font-semibold border border-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.5)] animate-[glow-purple_2s_ease-in-out_infinite]">
+                                    💎 PAID ONLY
+                                </span>
+                            </Tooltip>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
                         <button
                             type="button"
                             onClick={copyModelName}
-                            className="text-xs text-gray-500 font-mono hover:text-gray-700 cursor-pointer text-left"
+                            className={`text-xs text-gray-500 font-mono hover:text-gray-700 cursor-pointer text-left ${isDisabled ? "opacity-50" : ""}`}
                             title="Click to copy"
                         >
                             {copied ? "✓ copied" : model.name}
                         </button>
+                        {showVision && (
+                            <Tooltip
+                                content={
+                                    model.type === "image"
+                                        ? "Vision (image-to-image)"
+                                        : "Vision input"
+                                }
+                            >
+                                <span className="text-base">👁️</span>
+                            </Tooltip>
+                        )}
+                        {showAudioInput && (
+                            <Tooltip content="Audio input">
+                                <span className="text-base">🎙️</span>
+                            </Tooltip>
+                        )}
+                        {showAudioOutput && (
+                            <Tooltip content="Audio output">
+                                <span className="text-base">🔊</span>
+                            </Tooltip>
+                        )}
+                        {showReasoning && (
+                            <Tooltip content="Reasoning">
+                                <span className="text-base">🧠</span>
+                            </Tooltip>
+                        )}
+                        {showSearch && (
+                            <Tooltip content="Web search">
+                                <span className="text-base">🔍</span>
+                            </Tooltip>
+                        )}
+                        {showCodeExecution && (
+                            <Tooltip content="Code execution">
+                                <span className="text-base">💻</span>
+                            </Tooltip>
+                        )}
                     </div>
-                    {showVision && (
-                        <Tooltip
-                            content={
-                                model.type === "image"
-                                    ? "Vision (image-to-image)"
-                                    : "Vision input"
-                            }
-                        >
-                            <span className="text-base">👁️</span>
-                        </Tooltip>
-                    )}
-                    {showAudioInput && (
-                        <Tooltip content="Audio input">
-                            <span className="text-base">🎙️</span>
-                        </Tooltip>
-                    )}
-                    {showAudioOutput && (
-                        <Tooltip content="Audio output">
-                            <span className="text-base">🔊</span>
-                        </Tooltip>
-                    )}
-                    {showReasoning && (
-                        <Tooltip content="Reasoning">
-                            <span className="text-base">🧠</span>
-                        </Tooltip>
-                    )}
-                    {showSearch && (
-                        <Tooltip content="Web search">
-                            <span className="text-base">🔍</span>
-                        </Tooltip>
-                    )}
-                    {showCodeExecution && (
-                        <Tooltip content="Code execution">
-                            <span className="text-base">💻</span>
-                        </Tooltip>
-                    )}
-                    {showNew && (
-                        <Badge
-                            color="green"
-                            size="sm"
-                            className="font-semibold shadow-[0_0_6px_rgba(34,197,94,0.5)] animate-[glow_2s_ease-in-out_infinite]"
-                        >
-                            NEW
-                        </Badge>
-                    )}
-                    {showPaidOnly && (
-                        <Tooltip
-                            content={
-                                isDisabled
-                                    ? "Top up your 💎 pollen balance to unlock this model."
-                                    : "This model uses your purchased pollen 💎 only."
-                            }
-                        >
-                            <span className="text-[10px] text-purple-700 bg-transparent px-1.5 py-0.5 rounded-full font-semibold border border-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.5)] animate-[glow-purple_2s_ease-in-out_infinite]">
-                                💎 PAID ONLY
-                            </span>
-                        </Tooltip>
-                    )}
                 </div>
             </td>
             <td className={`py-2 px-2 text-sm ${borderClass}`}>
                 <div className="flex justify-center">
                     <Badge
-                        color={showPaidOnly ? "purple" : "cyan"}
+                        color={showPaidOnly ? "purple" : "teal"}
                         className={model.type === "image" ? "uppercase" : ""}
                     >
                         {genPerPollen}

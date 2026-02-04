@@ -2,7 +2,6 @@ import type { FC } from "react";
 import { useState } from "react";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { ExpiryDaysInput } from "./expiry-days-input.tsx";
-import { ModelPermissions } from "./model-permissions.tsx";
 import { PollenBudgetInput } from "./pollen-budget-input.tsx";
 
 export interface KeyPermissions {
@@ -46,7 +45,6 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
 interface KeyPermissionsInputsProps {
     value: ReturnType<typeof useKeyPermissions>;
     disabled?: boolean;
-    compact?: boolean;
     inline?: boolean;
 }
 
@@ -56,7 +54,6 @@ interface KeyPermissionsInputsProps {
 export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     value,
     disabled = false,
-    compact = false,
     inline = false,
 }) => {
     const {
@@ -81,15 +78,12 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 disabled={disabled}
                 inline={inline}
             />
-            <ModelPermissions
-                value={permissions.allowedModels}
-                onChange={setAllowedModels}
-                compact={compact}
-            />
             <AccountPermissionsInput
                 value={permissions.accountPermissions}
                 onChange={setAccountPermissions}
                 disabled={disabled}
+                allowedModels={permissions.allowedModels}
+                onModelsChange={setAllowedModels}
             />
         </div>
     );

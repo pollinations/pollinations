@@ -1,7 +1,15 @@
 import type { FC } from "react";
 import { TIER_EMOJIS, TIER_POLLEN } from "@/tier-config.ts";
 import { Tooltip } from "../pricing/tooltip.tsx";
-import { Card } from "../ui/card.tsx";
+
+const tierBoxBase = "rounded-lg p-3";
+const tierColors = {
+    microbe: `${tierBoxBase} bg-gray-100/60`,
+    spore: `${tierBoxBase} bg-teal-100/60`,
+    seed: `${tierBoxBase} bg-amber-100/60`,
+    flower: `${tierBoxBase} bg-pink-100/60`,
+    nectar: `${tierBoxBase} bg-purple-100/60`,
+} as const;
 
 const SeedTooltipContent = () => (
     <div className="w-56">
@@ -41,19 +49,18 @@ const SeedTooltipContent = () => (
 );
 
 export const TierExplanation: FC = () => {
-    const tierBoxStyle = "rounded-lg p-3 bg-white/50 border border-teal-200";
     const requirementLabelStyle =
         "text-[9px] font-semibold text-gray-400 uppercase tracking-wide";
 
     return (
-        <Card color="teal" className="px-3 py-2">
+        <div>
             <p className="text-sm text-gray-900 leading-relaxed mb-3">
                 📈 <strong>Grow Your Tier:</strong> For developers building with
                 pollinations.ai. Level up to earn more daily pollen.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 {/* Microbe */}
-                <div className={tierBoxStyle}>
+                <div className={tierColors.microbe}>
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.microbe}</span>
                         <strong className="text-gray-800 text-sm">
@@ -70,7 +77,7 @@ export const TierExplanation: FC = () => {
                 </div>
 
                 {/* Spore */}
-                <div className={tierBoxStyle}>
+                <div className={tierColors.spore}>
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.spore}</span>
                         <strong className="text-gray-800 text-sm">Spore</strong>
@@ -88,7 +95,7 @@ export const TierExplanation: FC = () => {
                 </div>
 
                 {/* Seed */}
-                <div className={tierBoxStyle}>
+                <div className={tierColors.seed}>
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.seed}</span>
                         <strong className="text-gray-800 text-sm">Seed</strong>
@@ -112,7 +119,7 @@ export const TierExplanation: FC = () => {
                 </div>
 
                 {/* Flower */}
-                <div className={tierBoxStyle}>
+                <div className={tierColors.flower}>
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.flower}</span>
                         <strong className="text-gray-800 text-sm">
@@ -139,7 +146,7 @@ export const TierExplanation: FC = () => {
                 </div>
 
                 {/* Nectar */}
-                <div className={tierBoxStyle}>
+                <div className={tierColors.nectar}>
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.nectar}</span>
                         <strong className="text-gray-800 text-sm">
@@ -156,6 +163,6 @@ export const TierExplanation: FC = () => {
                     </div>
                 </div>
             </div>
-        </Card>
+        </div>
     );
 };

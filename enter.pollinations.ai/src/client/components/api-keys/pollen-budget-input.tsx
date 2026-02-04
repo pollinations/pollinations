@@ -48,7 +48,7 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
                         const val = e.target.value;
                         onChange(val === "" ? null : Number(val));
                     }}
-                    className={`w-32 rounded-lg ${compact ? "text-sm" : ""}`}
+                    className={`w-32 ${compact ? "text-sm" : ""}`}
                     placeholder="Unlimited"
                     disabled={disabled}
                 />

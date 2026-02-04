@@ -41,6 +41,7 @@ export const ModelsBadge: FC<{
         >
             <Badge
                 color={isAllModels ? "green" : "amber"}
+                size="sm"
                 className="cursor-pointer transition-colors hover:brightness-95"
             >
                 {isAllModels ? "All" : modelCount}

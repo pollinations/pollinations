@@ -18,20 +18,18 @@ const TIER_BADGE_COLOR: Record<
     spore: "yellow",
 };
 
-const BetaNotice = () => (
-    <Card color="teal" className="mt-3">
-        <p className="text-sm font-medium text-gray-900">
-            ✨ <strong>We're in beta!</strong> We're learning what works best
-            for our community and may adjust pollen values and tier rules as we
-            go. Thanks for being part of the journey!
-        </p>
-    </Card>
+const BetaNoticeText = () => (
+    <p className="text-sm font-medium text-gray-900 mt-3 pt-3 border-t border-amber-200">
+        ✨ <strong>We're in beta!</strong> We're learning what works best for
+        our community and may adjust pollen values and tier rules as we go.
+        Thanks for being part of the journey!
+    </p>
 );
 
 const NoTierScreen: FC<{ has_polar_error?: boolean }> = ({
     has_polar_error,
 }) => (
-    <Panel color="teal">
+    <Panel color="amber">
         <div className="flex flex-col gap-3">
             {has_polar_error ? (
                 <Card color="red" bg="bg-red-50">
@@ -50,8 +48,10 @@ const NoTierScreen: FC<{ has_polar_error?: boolean }> = ({
                     </p>
                 </Card>
             )}
-            <BetaNotice />
-            <TierExplanation />
+            <Card color="amber">
+                <TierExplanation />
+                <BetaNoticeText />
+            </Card>
         </div>
     </Panel>
 );
@@ -64,7 +64,7 @@ const TierScreen: FC<{
     const tierEmoji = getTierEmoji(tier);
 
     return (
-        <Panel color="teal">
+        <Panel color="amber">
             <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-3xl font-bold text-gray-900">
@@ -83,8 +83,10 @@ const TierScreen: FC<{
                     Refills daily at 00:00 UTC. Unused pollen does not carry
                     over.
                 </p>
-                <BetaNotice />
-                <TierExplanation />
+                <Card color="amber">
+                    <TierExplanation />
+                    <BetaNoticeText />
+                </Card>
             </div>
         </Panel>
     );

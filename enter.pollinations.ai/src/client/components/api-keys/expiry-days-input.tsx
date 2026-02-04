@@ -48,7 +48,7 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                         const val = e.target.value;
                         onChange(val === "" ? null : Number(val));
                     }}
-                    className={`w-32 rounded-lg ${compact ? "text-sm" : ""}`}
+                    className={`w-32 ${compact ? "text-sm" : ""}`}
                     placeholder="Never"
                     disabled={disabled}
                 />

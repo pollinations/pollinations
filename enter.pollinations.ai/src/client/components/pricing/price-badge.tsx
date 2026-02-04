@@ -4,7 +4,7 @@ import { cn } from "../../../util.ts";
 const priceBadgeColors = {
     gray: "bg-gray-100 text-gray-700",
     purple: "bg-purple-200 text-purple-700",
-    cyan: "bg-cyan-200 text-cyan-700",
+    teal: "bg-teal-200 text-teal-700",
 } as const;
 
 export const PriceBadge: FC<{

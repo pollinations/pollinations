@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import faqMarkdown from "../../../POLLEN_FAQ.md?raw";
 import { Button } from "./button.tsx";
 import { PollenExamples } from "./pricing/pollen-examples.tsx";
+import { Card } from "./ui/card.tsx";
 import { Panel } from "./ui/panel.tsx";
 
 type FAQItem = {
@@ -77,20 +78,21 @@ export const FAQ: FC = () => {
                         href="https://github.com/pollinations/pollinations/blob/master/enter.pollinations.ai/POLLEN_FAQ.md"
                         target="_blank"
                         rel="noopener noreferrer"
-                        color="green"
+                        color="violet"
                         weight="light"
                     >
                         View on GitHub
                     </Button>
                 </div>
             </div>
-            <Panel color="green" className="p-8">
+            <Panel color="violet" className="p-8">
                 <div className="flex flex-col gap-4">
                     {faqData.map((item, index) => (
-                        <div key={index} className="pb-4 last:pb-0">
+                        <div key={item.question} className="pb-4 last:pb-0">
                             <button
+                                type="button"
                                 onClick={() => toggleQuestion(index)}
-                                className="w-full text-left flex justify-between items-start gap-4 text-green-950 hover:text-green-800 transition-colors"
+                                className="w-full text-left flex justify-between items-start gap-4 text-violet-950 hover:text-violet-800 transition-colors"
                             >
                                 <span
                                     className="flex-1 text-pink-500"
@@ -103,15 +105,18 @@ export const FAQ: FC = () => {
                                 </span>
                             </button>
                             {openIndices.has(index) && (
-                                <div className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 prose-p:mb-3 prose-a:text-purple-600 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800">
+                                <Card
+                                    color="violet"
+                                    bg="bg-white/30"
+                                    className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 prose-p:mb-3 prose-a:text-purple-600 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800"
+                                >
                                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {item.answer}
                                     </ReactMarkdown>
-                                    {item.question ===
-                                        "What can I create with Pollen?" && (
-                                        <PollenExamples />
-                                    )}
-                                </div>
+                                    {item.question.includes(
+                                        "What can I create with Pollen",
+                                    ) && <PollenExamples />}
+                                </Card>
                             )}
                         </div>
                     ))}

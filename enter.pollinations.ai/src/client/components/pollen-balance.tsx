@@ -13,10 +13,11 @@ type GaugeSegmentProps = {
     percentage: number;
     value: number;
     label: string;
-    color: "purple" | "teal";
+    color: "purple" | "teal" | "red";
     title: string;
     position: "left" | "right";
     offset?: number;
+    alwaysShowLabel?: boolean;
 };
 
 const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
@@ -27,14 +28,27 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
     title,
     position,
     offset = 0,
+    alwaysShowLabel = false,
 }) => {
-    const bgColor = color === "purple" ? "bg-purple-200" : "bg-teal-200";
-    const textColor = color === "purple" ? "text-purple-900" : "text-gray-900";
+    const bgColors = {
+        purple: "bg-purple-200",
+        teal: "bg-teal-200",
+        red: "bg-red-200",
+    };
+    const textColors = {
+        purple: "text-purple-900",
+        teal: "text-gray-900",
+        red: "text-red-900",
+    };
+    const bgColor = bgColors[color];
+    const textColor = textColors[color];
 
     const style =
         position === "left"
             ? { width: `${percentage}%` }
             : { left: `${offset}%`, width: `${percentage}%` };
+
+    const showLabel = alwaysShowLabel || percentage > 15;
 
     return (
         <div
@@ -42,7 +56,7 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
             style={style}
             title={title}
         >
-            {percentage > 15 && (
+            {showLabel && (
                 <div className="absolute inset-0 flex items-center justify-center gap-1">
                     <span className={`${textColor} font-bold text-sm`}>
                         {label} {value.toFixed(1)}
@@ -62,11 +76,30 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     const tierEmoji = getTierEmoji(tier);
     const paidBalance = packBalance + cryptoBalance;
     const totalPollen = Math.max(0, tierBalance + paidBalance);
-    const freePercentage = calculatePercentage(tierBalance, totalPollen);
-    const paidPercentage = calculatePercentage(paidBalance, totalPollen);
+
+    // Always show paid segment (min 20% width for visibility)
+    // Use absolute values for percentage calculation, but show actual value
+    const minPaidWidth = 20;
+    const isNegativePaid = paidBalance < 0;
+    const isPaidZeroOrNegative = paidBalance <= 0;
 
     function calculatePercentage(value: number, total: number): number {
         return total > 0 ? (value / total) * 100 : 0;
+    }
+
+    // Calculate display percentages
+    let paidPercentage: number;
+    let freePercentage: number;
+
+    if (isPaidZeroOrNegative) {
+        // Always show paid segment with minimum width when zero or negative
+        paidPercentage = minPaidWidth;
+        freePercentage = Math.max(0, 100 - minPaidWidth);
+    } else {
+        // Normal calculation when paid is positive
+        const rawPaidPct = calculatePercentage(paidBalance, totalPollen);
+        paidPercentage = Math.max(rawPaidPct, minPaidWidth);
+        freePercentage = 100 - paidPercentage;
     }
 
     return (
@@ -81,14 +114,15 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     {/* Gauge */}
                     <div className="w-full max-w-[540px]">
                         <div className="relative h-8 bg-gray-200 rounded-full overflow-hidden border border-purple-400">
-                            {/* Paid Pollen - Soft purple for paid (pack + crypto) */}
+                            {/* Paid Pollen - Soft purple for paid (pack + crypto), red if negative */}
                             <PollenGaugeSegment
                                 percentage={paidPercentage}
                                 value={paidBalance}
                                 label="💎"
-                                color="purple"
-                                title={`💎 Purchased: ${paidBalance.toFixed(2)} pollen\nFrom packs you've bought\nRequired for 💎 Paid Only models; used after daily grants for others`}
+                                color={isNegativePaid ? "red" : "purple"}
+                                title={`💎 Purchased: ${paidBalance.toFixed(2)} pollen\nFrom packs you've bought\nRequired for 💎 Paid Only models; used after daily grants for others${isNegativePaid ? "\n⚠️ Negative balance will be settled from next daily refill" : ""}`}
                                 position="left"
+                                alwaysShowLabel={isPaidZeroOrNegative}
                             />
                             {/* Free Pollen - Soft teal for free */}
                             <PollenGaugeSegment

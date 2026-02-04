@@ -105,17 +105,23 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div className="bg-white/50 rounded-lg px-4 py-3 border border-amber-300 shadow-sm">
                             <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
-                                💡 How Pollen is Spent
+                                💡 How Pollen Works
                             </div>
                             <div className="space-y-1 text-xs text-gray-600">
-                                <div>1. Daily tier grants are used first</div>
+                                <div>1. Daily grants are used first</div>
                                 <div>
-                                    2. Purchased pollen is used after daily is
-                                    depleted
+                                    2. Purchased pollen (💎) is used when daily
+                                    runs out
+                                </div>
+                                <div>
+                                    3. 💎 Paid Only models skip daily and use
+                                    purchased only
                                 </div>
                                 <div className="text-purple-700 mt-2">
-                                    ⚠️ <strong>Exception:</strong> 💎 Paid Only
-                                    models require purchased pollen only
+                                    ⚠️ If a request costs more than your
+                                    remaining balance, it completes but your 💎
+                                    goes negative. This debt is automatically
+                                    paid from your next daily refill.
                                 </div>
                             </div>
                         </div>

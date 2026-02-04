@@ -155,6 +155,53 @@ describe("Tier Balance Management", () => {
             expect(user[0]?.packBalance).toBe(50); // Unchanged
             expect(user[0]?.cryptoBalance).toBe(25); // Unchanged
         });
+
+        test("should settle negative pack balance from tier refill", async () => {
+            const db = drizzle(env.DB);
+
+            // Create user with negative pack balance (debt from overspending)
+            await db
+                .insert(userTable)
+                .values({
+                    id: "user-debt-settlement",
+                    email: "debt@test.com",
+                    name: "Debt Settlement",
+                    tier: "flower",
+                    tierBalance: 0,
+                    packBalance: -2, // $2 debt
+                    cryptoBalance: 0,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                })
+                .onConflictDoUpdate({
+                    target: userTable.id,
+                    set: {
+                        tier: "flower",
+                        tierBalance: 0,
+                        packBalance: -2,
+                        cryptoBalance: 0,
+                    },
+                });
+
+            // Execute the scheduled handler
+            await triggerTierRefill();
+
+            // Check that debt was settled from tier refill
+            const user = await db
+                .select({
+                    tierBalance: userTable.tierBalance,
+                    packBalance: userTable.packBalance,
+                    cryptoBalance: userTable.cryptoBalance,
+                })
+                .from(userTable)
+                .where(sql`${userTable.id} = 'user-debt-settlement'`)
+                .limit(1);
+
+            // Flower tier is $10, minus $2 debt = $8 tier balance
+            expect(user[0]?.tierBalance).toBe(TIER_POLLEN.flower - 2); // 10 - 2 = 8
+            expect(user[0]?.packBalance).toBe(0); // Debt cleared
+            expect(user[0]?.cryptoBalance).toBe(0); // Unchanged
+        });
     });
 
     describe("Atomic Balance Deduction", () => {

@@ -111,6 +111,29 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     const isModelSelected = (modelId: string) =>
         (allowedModels ?? []).includes(modelId);
 
+    const toggleCategory = (categoryModels: { id: string }[]) => {
+        if (disabled || isUnrestricted) return;
+        const categoryIds = categoryModels.map((m) => m.id);
+        const currentModels = allowedModels ?? [];
+        const allSelected = categoryIds.every((id) =>
+            currentModels.includes(id),
+        );
+        if (allSelected) {
+            onModelsChange(
+                currentModels.filter((id) => !categoryIds.includes(id)),
+            );
+        } else {
+            const newModels = [...currentModels];
+            for (const id of categoryIds) {
+                if (!newModels.includes(id)) newModels.push(id);
+            }
+            onModelsChange(newModels);
+        }
+    };
+
+    const isCategoryAllSelected = (categoryModels: { id: string }[]) =>
+        categoryModels.every((m) => (allowedModels ?? []).includes(m.id));
+
     return (
         <div>
             <div className="text-sm font-semibold mb-4">Permissions</div>
@@ -164,8 +187,22 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                         <div className="px-3 pb-3 space-y-3 border-t border-gray-200 pt-3">
                             {/* Text models */}
                             <div>
-                                <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                                    Text
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs font-semibold text-gray-500 tracking-wide">
+                                        Text
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            toggleCategory(textModels)
+                                        }
+                                        disabled={disabled}
+                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                    >
+                                        {isCategoryAllSelected(textModels)
+                                            ? "Deselect all"
+                                            : "Select all"}
+                                    </button>
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     {textModels.map((model) => (
@@ -185,8 +222,22 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
 
                             {/* Image models */}
                             <div>
-                                <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                                    Image
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs font-semibold text-gray-500 tracking-wide">
+                                        Image
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            toggleCategory(imageModels)
+                                        }
+                                        disabled={disabled}
+                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                    >
+                                        {isCategoryAllSelected(imageModels)
+                                            ? "Deselect all"
+                                            : "Select all"}
+                                    </button>
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     {imageModels.map((model) => (
@@ -206,8 +257,22 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
 
                             {/* Video models */}
                             <div>
-                                <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                                    Video
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs font-semibold text-gray-500 tracking-wide">
+                                        Video
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            toggleCategory(videoModels)
+                                        }
+                                        disabled={disabled}
+                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                    >
+                                        {isCategoryAllSelected(videoModels)
+                                            ? "Deselect all"
+                                            : "Select all"}
+                                    </button>
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     {videoModels.map((model) => (

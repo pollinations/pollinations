@@ -1,0 +1,104 @@
+# Pollinations AI - Auto-fix issues labeled "polly"
+# Trigger: Add "polly" label | Whitelist: voodoohop, ElliotEtag, eulervoid, Circuit-Overtime, Itachi-1824, pollinations-ai bot to an issue
+
+name: Polly Auto Fix
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  auto-fix:
+    if: github.event.label.name == 'polly'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    env:
+      POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: token
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Check Authorization
+        id: whitelist
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const whitelist = ['voodoohop', 'ElliotEtag', 'eulervoid', 'Circuit-Overtime', 'Itachi-1824'];
+            const labeledBy = context.payload.sender.login;
+
+            // Allow if labeled by whitelisted user or by pollinations-ai bot (project-manager workflow)
+            const isAuthorized = whitelist.includes(labeledBy) || labeledBy.includes('pollinations-ai');
+
+            if (!isAuthorized) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: 'polly'
+              });
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `Sorry @${labeledBy}, only maintainers can trigger Polly auto-fix by adding the \`polly\` label.`
+              });
+              core.setOutput('authorized', 'false');
+            } else {
+              core.setOutput('authorized', 'true');
+            }
+
+      - name: Setup Bun
+        if: steps.whitelist.outputs.authorized == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Router
+        if: steps.whitelist.outputs.authorized == 'true'
+        id: setup
+        run: |
+          BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
+          echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
+          mkdir -p $HOME/.claude-code-router
+          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"${POLLINATIONS_TOKEN}","models":["claude-large","claude","kimi-k2-thinking","perplexity-reasoning","openai-large","openai"]}],"Router":{"default":"pollinations,claude-large","background":"pollinations,claude","think":"pollinations,kimi-k2-thinking","longContext":"pollinations,claude-large","longContextThreshold":60000,"webSearch":"pollinations,perplexity-reasoning"}}' > $HOME/.claude-code-router/config.json
+          bunx @musistudio/claude-code-router start &
+          until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+
+      - uses: actions/checkout@v4
+        if: steps.whitelist.outputs.authorized == 'true'
+        with:
+          fetch-depth: 0
+          token: ${{ steps.token.outputs.token }}
+
+      - uses: anthropics/claude-code-action@v1
+        if: steps.whitelist.outputs.authorized == 'true'
+        env:
+          ANTHROPIC_BASE_URL: http://localhost:3456
+          GIT_AUTHOR_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
+          GIT_AUTHOR_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
+          GIT_COMMITTER_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
+          GIT_COMMITTER_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
+        with:
+          anthropic_api_key: "ccr-pollinations"
+          github_token: ${{ steps.token.outputs.token }}
+          prompt: |
+            Fix this issue and create a PR:
+
+            Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
+
+            ${{ github.event.issue.body }}
+
+            Create a PR that fixes this issue and include "Fixes #${{ github.event.issue.number }}" in the PR description.
+          additional_permissions: |
+            actions: read

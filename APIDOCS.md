@@ -2506,3 +2506,36 @@ Union type for message content parts. Can be one of:
   }
 }
 ```
+## ❗ Common Error Responses
+
+### 401 — Invalid API Key
+Occurs when the API key is missing or incorrect.
+
+```json
+{
+  "error": "Invalid API key",
+  "status": 401
+}
+
+
+#### 403 — Model Not Allowed
+Occurs when the API key does not have permission to access the requested model.
+
+```json
+{
+  "error": "Model not allowed for this key",
+  "status": 403
+}
+
+
+
+{
+  "error": "Rate limit exceeded",
+  "status": 429
+}
+
+
+{
+  "error": "Bad request",
+  "status": 400
+}

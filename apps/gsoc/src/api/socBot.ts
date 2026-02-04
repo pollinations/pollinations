@@ -53,7 +53,7 @@ Always end responses with a helpful suggestion or question to keep the conversat
             });
 
             const requestBody = {
-                model: "openai",
+                model: "gemini-fast",
                 messages: [
                     {
                         role: "system",

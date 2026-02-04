@@ -57,7 +57,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                 className={`py-2 px-2 text-sm text-gray-700 relative group ${borderClass}`}
             >
                 <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 whitespace-nowrap">
                         <span
                             className={`${showNew ? "font-bold" : "font-medium"} ${isDisabled ? "opacity-50" : ""}`}
                         >
@@ -80,13 +80,13 @@ export const ModelRow: FC<ModelRowProps> = ({
                                         : "This model uses your purchased pollen 💎 only."
                                 }
                             >
-                                <span className="text-[10px] text-purple-700 bg-transparent px-1.5 py-0.5 rounded-full font-semibold border border-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.5)] animate-[glow-purple_2s_ease-in-out_infinite]">
+                                <span className="text-[10px] text-purple-700 bg-transparent px-1.5 py-0.5 rounded-full font-semibold border border-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.5)] animate-[glow-purple_2s_ease-in-out_infinite] whitespace-nowrap">
                                     💎 PAID ONLY
                                 </span>
                             </Tooltip>
                         )}
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 whitespace-nowrap">
                         <button
                             type="button"
                             onClick={copyModelName}

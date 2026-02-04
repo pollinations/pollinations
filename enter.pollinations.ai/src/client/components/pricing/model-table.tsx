@@ -144,7 +144,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     return (
         <div className="flex flex-col gap-6">
             {/* Image Section */}
-            <table className="w-full border-separate border-spacing-0 rounded-2xl">
+            <table className="w-full min-w-[540px] border-separate border-spacing-0 rounded-2xl">
                 <tbody>
                     <SectionHeader label="Image" type="image" isFirst />
                     {sortedImageModels.map((model, index) => (
@@ -159,7 +159,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             </table>
 
             {/* Video Section */}
-            <table className="w-full border-separate border-spacing-0 rounded-2xl">
+            <table className="w-full min-w-[540px] border-separate border-spacing-0 rounded-2xl">
                 <tbody>
                     <SectionHeader label="Video" type="video" isFirst />
                     {sortedVideoModels.map((model, index) => (
@@ -174,7 +174,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             </table>
 
             {/* Text Section */}
-            <table className="w-full border-separate border-spacing-0 rounded-2xl">
+            <table className="w-full min-w-[540px] border-separate border-spacing-0 rounded-2xl">
                 <tbody>
                     <SectionHeader label="Text" type="text" isFirst />
                     {regularTextModels.map((model, index) => (

@@ -57,7 +57,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                 className={`py-2 px-2 text-sm text-gray-700 relative group ${borderClass}`}
             >
                 <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2.5 whitespace-nowrap">
+                    <div className="flex items-center gap-4 whitespace-nowrap">
                         <span
                             className={`${showNew ? "font-bold" : "font-medium"} ${isDisabled ? "opacity-50" : ""}`}
                         >
@@ -86,7 +86,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                             </Tooltip>
                         )}
                     </div>
-                    <div className="flex items-center gap-1.5 whitespace-nowrap">
+                    <div className="flex items-center gap-3 whitespace-nowrap">
                         <button
                             type="button"
                             onClick={copyModelName}

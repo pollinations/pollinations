@@ -84,6 +84,27 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
     const isModelSelected = (modelId: string) =>
         (value ?? []).includes(modelId);
 
+    const toggleCategory = (categoryModels: { id: string }[]) => {
+        if (disabled || isUnrestricted) return;
+        const categoryIds = categoryModels.map((m) => m.id);
+        const currentModels = value ?? [];
+        const allSelected = categoryIds.every((id) =>
+            currentModels.includes(id),
+        );
+        if (allSelected) {
+            onChange(currentModels.filter((id) => !categoryIds.includes(id)));
+        } else {
+            const newModels = [...currentModels];
+            for (const id of categoryIds) {
+                if (!newModels.includes(id)) newModels.push(id);
+            }
+            onChange(newModels);
+        }
+    };
+
+    const isCategoryAllSelected = (categoryModels: { id: string }[]) =>
+        categoryModels.every((m) => (value ?? []).includes(m.id));
+
     const totalModels =
         textModels.length + imageModels.length + videoModels.length;
     const selectedCount = isUnrestricted ? totalModels : (value ?? []).length;
@@ -162,8 +183,20 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                     <div className="space-y-4">
                         {/* Text models */}
                         <div>
-                            <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                                Text
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-semibold text-gray-500 tracking-wide">
+                                    Text
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => toggleCategory(textModels)}
+                                    disabled={disabled}
+                                    className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                >
+                                    {isCategoryAllSelected(textModels)
+                                        ? "Deselect all"
+                                        : "Select all"}
+                                </button>
                             </div>
                             <div className="flex flex-col gap-1">
                                 {textModels.map((model) => (
@@ -181,8 +214,20 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
 
                         {/* Image models */}
                         <div>
-                            <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                                Image
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-semibold text-gray-500 tracking-wide">
+                                    Image
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => toggleCategory(imageModels)}
+                                    disabled={disabled}
+                                    className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                >
+                                    {isCategoryAllSelected(imageModels)
+                                        ? "Deselect all"
+                                        : "Select all"}
+                                </button>
                             </div>
                             <div className="flex flex-col gap-1">
                                 {imageModels.map((model) => (
@@ -200,8 +245,20 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
 
                         {/* Video models */}
                         <div>
-                            <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                                Video
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-semibold text-gray-500 tracking-wide">
+                                    Video
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => toggleCategory(videoModels)}
+                                    disabled={disabled}
+                                    className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                >
+                                    {isCategoryAllSelected(videoModels)
+                                        ? "Deselect all"
+                                        : "Select all"}
+                                </button>
                             </div>
                             <div className="flex flex-col gap-1">
                                 {videoModels.map((model) => (

@@ -2,6 +2,8 @@ import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
+import { Card } from "../ui/card.tsx";
+import { Panel } from "../ui/panel.tsx";
 import { AccountBadge } from "./account-badge.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { DeleteConfirmation } from "./delete-confirmation.tsx";
@@ -45,7 +47,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </div>
                 </div>
                 {apiKeys.length ? (
-                    <div className="bg-blue-50/30 rounded-2xl p-4 border border-blue-300">
+                    <Panel color="blue" compact>
                         <div className="flex flex-col gap-3">
                             {sortedKeys.map((apiKey) => {
                                 const keyType = apiKey.metadata?.["keyType"] as
@@ -176,7 +178,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         {apiKeys.some(
                             (k) => k.metadata?.["keyType"] === "publishable",
                         ) && (
-                            <div className="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl p-4 border border-blue-300 mt-4">
+                            <Card color="blue" className="mt-4">
                                 <p className="text-sm font-medium text-blue-900">
                                     🌐 <strong>Publishable keys:</strong> Beta -
                                     actively improving stability.
@@ -185,9 +187,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     For production apps, we recommend secret
                                     keys.
                                 </p>
-                            </div>
+                            </Card>
                         )}
-                    </div>
+                    </Panel>
                 ) : null}
             </div>
             <DeleteConfirmation

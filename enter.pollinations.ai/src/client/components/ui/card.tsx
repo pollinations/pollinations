@@ -3,6 +3,7 @@ import { cn } from "../../../util.ts";
 
 const cardColors = {
     amber: "border-amber-300",
+    blue: "border-blue-300",
     violet: "border-violet-200",
     teal: "border-teal-200",
     red: "border-red-300",

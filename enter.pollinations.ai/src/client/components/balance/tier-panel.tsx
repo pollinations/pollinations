@@ -19,11 +19,7 @@ const TIER_BADGE_COLOR: Record<
 };
 
 const BetaNotice = () => (
-    <Card
-        color="teal"
-        bg="bg-gradient-to-r from-teal-50 to-cyan-50"
-        className="mt-3"
-    >
+    <Card color="teal" className="mt-3">
         <p className="text-sm font-medium text-gray-900">
             ✨ <strong>We're in beta!</strong> We're learning what works best
             for our community and may adjust pollen values and tier rules as we

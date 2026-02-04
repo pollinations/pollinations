@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import faqMarkdown from "../../../POLLEN_FAQ.md?raw";
 import { Button } from "./button.tsx";
 import { PollenExamples } from "./pricing/pollen-examples.tsx";
+import { Panel } from "./ui/panel.tsx";
 
 type FAQItem = {
     question: string;
@@ -83,7 +84,7 @@ export const FAQ: FC = () => {
                     </Button>
                 </div>
             </div>
-            <div className="bg-green-50/30 rounded-2xl p-8 border border-green-300">
+            <Panel color="green" className="p-8">
                 <div className="flex flex-col gap-4">
                     {faqData.map((item, index) => (
                         <div key={index} className="pb-4 last:pb-0">
@@ -115,7 +116,7 @@ export const FAQ: FC = () => {
                         </div>
                     ))}
                 </div>
-            </div>
+            </Panel>
         </div>
     );
 };

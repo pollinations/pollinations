@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { TIER_EMOJIS, TIER_POLLEN } from "@/tier-config.ts";
 import { Tooltip } from "../pricing/tooltip.tsx";
+import { Card } from "../ui/card.tsx";
 
 const SeedTooltipContent = () => (
     <div className="w-56">
@@ -40,13 +41,12 @@ const SeedTooltipContent = () => (
 );
 
 export const TierExplanation: FC = () => {
-    const tierBoxStyle =
-        "rounded-lg p-3 bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200";
+    const tierBoxStyle = "rounded-lg p-3 bg-white/50 border border-teal-200";
     const requirementLabelStyle =
         "text-[9px] font-semibold text-gray-400 uppercase tracking-wide";
 
     return (
-        <div className="px-3 py-2 border border-teal-200 rounded-lg">
+        <Card color="teal" className="px-3 py-2">
             <p className="text-sm text-gray-900 leading-relaxed mb-3">
                 📈 <strong>Grow Your Tier:</strong> For developers building with
                 pollinations.ai. Level up to earn more daily pollen.
@@ -156,6 +156,6 @@ export const TierExplanation: FC = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </Card>
     );
 };

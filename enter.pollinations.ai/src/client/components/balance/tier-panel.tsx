@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { getTierEmoji, type TierName, type TierStatus } from "@/tier-config.ts";
+import { getTierEmoji, type TierStatus } from "@/tier-config.ts";
 import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
@@ -93,7 +93,6 @@ const TierScreen: FC<{
 };
 
 type TierPanelProps = {
-    target: TierName;
     active: {
         tier: TierStatus;
         displayName: string;

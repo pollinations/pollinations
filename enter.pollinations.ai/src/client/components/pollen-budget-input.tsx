@@ -6,6 +6,7 @@ type PollenBudgetInputProps = {
     onChange: (value: number | null) => void;
     disabled?: boolean;
     compact?: boolean;
+    inline?: boolean;
 };
 
 /**
@@ -18,13 +19,16 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
     onChange,
     disabled = false,
     compact = false,
+    inline = false,
 }) => {
     const [showTooltip, setShowTooltip] = useState(false);
 
     return (
-        <Field.Root>
+        <Field.Root className={inline ? "flex items-center gap-3" : ""}>
             {!compact && (
-                <Field.Label className="flex items-center gap-1.5 text-sm font-semibold mb-2">
+                <Field.Label
+                    className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0" : "mb-2"}`}
+                >
                     Budget
                     <button
                         type="button"

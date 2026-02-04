@@ -145,8 +145,31 @@ function AuthorizeComponent() {
 
             const data = result.data;
 
-            // Set permissions using hook's method
-            await keyPermissions.updatePermissions(data.id);
+            // Set permissions via API
+            const { allowedModels, pollenBudget, accountPermissions } =
+                keyPermissions.permissions;
+            const updates = {
+                ...(allowedModels !== null && { allowedModels }),
+                ...(pollenBudget !== null && { pollenBudget }),
+                ...(accountPermissions?.length && { accountPermissions }),
+            };
+            if (Object.keys(updates).length > 0) {
+                const response = await fetch(
+                    `/api/api-keys/${data.id}/update`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify(updates),
+                    },
+                );
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(
+                        `Key created but failed to set permissions: ${(error as { message?: string }).message || "Unknown error"}`,
+                    );
+                }
+            }
 
             // Redirect back to the app with the key in URL fragment (not query param)
             // Using fragment prevents key from leaking to server logs/Referer headers

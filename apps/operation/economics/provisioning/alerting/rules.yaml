@@ -21,6 +21,7 @@ groups:
                 WITH error_counts AS (
                   SELECT
                     resolved_model_requested AS model,
+                    model_provider_used AS provider,
                     count() AS server_errors
                   FROM generation_event
                   WHERE
@@ -29,24 +30,26 @@ groups:
                     AND response_status < 600
                     AND resolved_model_requested != ''
                     AND resolved_model_requested IS NOT NULL
-                  GROUP BY model
+                  GROUP BY model, provider
                 ),
                 total_counts AS (
                   SELECT
                     resolved_model_requested AS model,
+                    model_provider_used AS provider,
                     count() AS total_requests
                   FROM generation_event
                   WHERE
                     start_time >= now() - INTERVAL 10 MINUTE
                     AND resolved_model_requested != ''
                     AND resolved_model_requested IS NOT NULL
-                  GROUP BY model
+                  GROUP BY model, provider
                 )
                 SELECT
                   COALESCE(e.model, t.model) AS model,
+                  COALESCE(e.provider, t.provider) AS provider,
                   (COALESCE(e.server_errors, 0) * 100.0 / COALESCE(t.total_requests, 1)) AS value
                 FROM error_counts e
-                FULL OUTER JOIN total_counts t ON e.model = t.model
+                FULL OUTER JOIN total_counts t ON e.model = t.model AND e.provider = t.provider
                 WHERE COALESCE(t.total_requests, 0) > 10
                   AND COALESCE(e.model, t.model) != ''
                   AND COALESCE(e.model, t.model) IS NOT NULL
@@ -84,7 +87,7 @@ groups:
         execErrState: Error
         for: 5m
         annotations:
-          summary: "• {{ $labels.model }}: 5xx error rate at {{ printf \"%.1f\" $values.B.Value }}% 🔴"
+          summary: "🔴 {{ $labels.model }} ({{ $labels.provider }}) {{ $values.B.Value | printf \"%.0f\" }}%"
         labels:
           alert_type: server_error
           severity: critical
@@ -104,6 +107,7 @@ groups:
                 WITH error_counts AS (
                   SELECT
                     resolved_model_requested AS model,
+                    model_provider_used AS provider,
                     count() AS server_errors
                   FROM generation_event
                   WHERE
@@ -112,24 +116,26 @@ groups:
                     AND response_status < 600
                     AND resolved_model_requested != ''
                     AND resolved_model_requested IS NOT NULL
-                  GROUP BY model
+                  GROUP BY model, provider
                 ),
                 total_counts AS (
                   SELECT
                     resolved_model_requested AS model,
+                    model_provider_used AS provider,
                     count() AS total_requests
                   FROM generation_event
                   WHERE
                     start_time >= now() - INTERVAL 10 MINUTE
                     AND resolved_model_requested != ''
                     AND resolved_model_requested IS NOT NULL
-                  GROUP BY model
+                  GROUP BY model, provider
                 )
                 SELECT
                   COALESCE(e.model, t.model) AS model,
+                  COALESCE(e.provider, t.provider) AS provider,
                   (COALESCE(e.server_errors, 0) * 100.0 / COALESCE(t.total_requests, 1)) AS value
                 FROM error_counts e
-                FULL OUTER JOIN total_counts t ON e.model = t.model
+                FULL OUTER JOIN total_counts t ON e.model = t.model AND e.provider = t.provider
                 WHERE COALESCE(t.total_requests, 0) > 10
                   AND COALESCE(e.model, t.model) != ''
                   AND COALESCE(e.model, t.model) IS NOT NULL
@@ -169,7 +175,7 @@ groups:
         execErrState: Error
         for: 5m
         annotations:
-          summary: "• {{ $labels.model }}: 5xx error rate at {{ printf \"%.1f\" $values.B.Value }}% 🟠"
+          summary: "🟠 {{ $labels.model }} ({{ $labels.provider }}) {{ $values.B.Value | printf \"%.0f\" }}%"
         labels:
           alert_type: server_error
           severity: warning

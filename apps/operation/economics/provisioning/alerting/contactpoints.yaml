@@ -10,5 +10,5 @@ contactPoints:
           url: "https://discord.com/api/webhooks/1436470273002967204/f5PguEco_KbrDjPGamUwKymprGTVRVtegvfOAWiMR9iQ4wSMoN9bgqa1DKxhaA6jt1e6"
           httpMethod: POST
           body: |
-            {"content": "{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}"}
+            {"content": "{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}", "embeds": []}
         disableResolveMessage: true

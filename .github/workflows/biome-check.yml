@@ -58,3 +58,25 @@ jobs:
           else
             echo "✅ All files are properly formatted"
           fi
+
+      - name: Check if enter.pollinations.ai changed
+        id: enter-changed
+        run: |
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '^enter.pollinations.ai/' || true)
+          if [ -n "$FILES" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install enter.pollinations.ai dependencies
+        if: steps.enter-changed.outputs.changed == 'true'
+        working-directory: enter.pollinations.ai
+        run: npm install
+
+      - name: Typecheck enter.pollinations.ai
+        if: steps.enter-changed.outputs.changed == 'true'
+        working-directory: enter.pollinations.ai
+        run: |
+          echo "Running typecheck (catches case-sensitivity issues on Linux)..."
+          npm run typecheck

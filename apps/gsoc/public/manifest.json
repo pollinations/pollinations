@@ -1,22 +1,27 @@
 {
-    "name": "GSoC 2026 × pollinations.ai",
-    "short_name": "GSoC 2026",
-    "description": "Join Google Summer of Code 2026 with pollinations.ai! Work on cutting-edge open-source AI projects.",
-    "theme_color": "#7AB8FF",
-    "background_color": "#7AB8FF",
-    "display": "standalone",
-    "start_url": "/",
-    "icons": [{
-            "src": "/icon-192.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "any maskable"
-        }
-    ]
+  "name": "GSoC 2026 × POLLINATIONS.AI",
+  "short_name": "gsoc",
+  "description": "Join Google Summer of Code 2026 and build the future of open-source AI",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#a3e635",
+  "background_color": "#110518",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }

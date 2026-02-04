@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
-import { Button } from "../components/button.tsx";
 import {
     KeyPermissionsInputs,
     useKeyPermissions,
-} from "../components/key-permissions.tsx";
+} from "../components/api-keys";
+import { Button } from "../components/button.tsx";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
@@ -247,7 +247,8 @@ function AuthorizeComponent() {
                         as="button"
                         onClick={handleSignIn}
                         disabled={isSigningIn || !!error}
-                        className="w-full bg-gray-900 text-white hover:!brightness-90"
+                        color="dark"
+                        className="w-full"
                     >
                         {isSigningIn ? "Signing in..." : "Sign in with GitHub"}
                     </Button>

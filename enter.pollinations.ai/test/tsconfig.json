@@ -3,7 +3,7 @@
     "compilerOptions": {
         "moduleResolution": "bundler",
         "types": [
-            "@cloudflare/vitest-pool-workers", "dom", "dom.iterable"
+            "@cloudflare/vitest-pool-workers"
         ]
     },
     "include": [

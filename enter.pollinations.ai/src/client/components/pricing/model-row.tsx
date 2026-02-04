@@ -13,7 +13,7 @@ import {
     isPaidOnly,
 } from "./model-info.ts";
 import { PriceBadge } from "./price-badge.tsx";
-import { Tooltip } from "./tooltip.tsx";
+import { Tooltip } from "./Tooltip.tsx";
 import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {

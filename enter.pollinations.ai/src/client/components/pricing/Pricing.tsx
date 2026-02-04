@@ -121,14 +121,16 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                         2x pollen on every purchase!
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-2 flex-wrap">
+                                <div className="flex items-center gap-3 flex-wrap">
                                     <a
                                         href="#buy-pollen"
-                                        className="inline-flex items-center gap-1 text-teal-600 hover:text-teal-800 font-medium underline"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-500 to-teal-500 text-white font-semibold text-xs shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
                                     >
-                                        Buy Pollen ↑
+                                        <span>🌸</span>
+                                        <span>Buy Pollen</span>
+                                        <span className="text-white/80">↑</span>
                                     </a>
-                                    <span className="text-gray-400">
+                                    <span className="text-gray-400 text-[10px]">
                                         powered by
                                     </span>
                                     <svg

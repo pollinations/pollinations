@@ -1,5 +1,12 @@
 // Calls worker API (no secrets in frontend)
 
+export async function getWeeklyActivations(weeksBack = 12) {
+    const res = await fetch(`/api/kpi/activations?weeks_back=${weeksBack}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.data || [];
+}
+
 export async function getWeeklyActiveUsers(weeksBack = 12) {
     const res = await fetch(`/api/kpi/wau?weeks_back=${weeksBack}`);
     if (!res.ok) return [];

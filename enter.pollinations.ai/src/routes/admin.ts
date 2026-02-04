@@ -254,8 +254,11 @@ export const adminRoutes = new Hono<Env>()
             .where(sql`tier IS NOT NULL`);
 
         // Bulk update all tier balances
-        // If pack_balance is negative, use part of the tier refill to top it up to 0
-        // This settles any "debt" from overspending the previous day
+        // Debt settlement logic:
+        // 1. If pack_balance is negative, that debt is moved to tier_balance (pack reset to 0)
+        // 2. If tier_balance is already negative (from previous debt), carry it forward
+        // 3. Daily tier refill chips away at the total debt until fully recovered
+        // Example: microbe user with -$0.3 debt takes 3 days to recover (0.1/day)
         const result = await db.run(sql`
             UPDATE user
             SET
@@ -267,7 +270,9 @@ export const adminRoutes = new Hono<Env>()
                     WHEN 'nectar' THEN ${TIER_POLLEN.nectar}
                     WHEN 'router' THEN ${TIER_POLLEN.router}
                     ELSE ${TIER_POLLEN.spore}
-                END + MIN(COALESCE(pack_balance, 0), 0),
+                END
+                + CASE WHEN tier_balance < 0 THEN tier_balance ELSE 0 END
+                + MIN(COALESCE(pack_balance, 0), 0),
                 pack_balance = CASE WHEN pack_balance < 0 THEN 0 ELSE pack_balance END,
                 last_tier_grant = ${Date.now()}
             WHERE tier IS NOT NULL

@@ -12,8 +12,14 @@ import {
 } from "@/utils/balance-deduction.ts";
 import { test } from "../fixtures.ts";
 
+// KV key used by admin.ts for idempotency
+const BULK_REFILL_KV_KEY = "tier:bulk_refill:last_timestamp";
+
 // Helper to trigger tier refill via admin API
 async function triggerTierRefill() {
+    // Reset the idempotency key to simulate a new day
+    await env.KV.delete(BULK_REFILL_KV_KEY);
+
     const response = await SELF.fetch(
         "https://enter.pollinations.ai/api/admin/trigger-refill",
         {
@@ -201,6 +207,102 @@ describe("Tier Balance Management", () => {
             expect(user[0]?.tierBalance).toBe(TIER_POLLEN.flower - 2); // 10 - 2 = 8
             expect(user[0]?.packBalance).toBe(0); // Debt cleared
             expect(user[0]?.cryptoBalance).toBe(0); // Unchanged
+        });
+
+        test("should carry forward negative tier balance for multi-day debt recovery", async () => {
+            const db = drizzle(env.DB);
+
+            // Microbe user with -$0.3 debt (exceeds daily 0.1 refill)
+            // This simulates debt that takes multiple days to recover
+            await db
+                .insert(userTable)
+                .values({
+                    id: "user-multiday-debt",
+                    email: "multiday@test.com",
+                    name: "Multi-day Debt",
+                    tier: "microbe",
+                    tierBalance: 0,
+                    packBalance: -0.3, // $0.30 debt
+                    cryptoBalance: 0,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                })
+                .onConflictDoUpdate({
+                    target: userTable.id,
+                    set: {
+                        tier: "microbe",
+                        tierBalance: 0,
+                        packBalance: -0.3,
+                        cryptoBalance: 0,
+                    },
+                });
+
+            // Day 1: First refill moves debt to tier_balance
+            await triggerTierRefill();
+
+            let user = await db
+                .select({
+                    tierBalance: userTable.tierBalance,
+                    packBalance: userTable.packBalance,
+                })
+                .from(userTable)
+                .where(sql`${userTable.id} = 'user-multiday-debt'`)
+                .limit(1);
+
+            // Microbe tier is 0.1, minus 0.3 debt = -0.2 tier balance
+            expect(user[0]?.tierBalance).toBeCloseTo(
+                TIER_POLLEN.microbe - 0.3,
+                5,
+            ); // 0.1 - 0.3 = -0.2
+            expect(user[0]?.packBalance).toBe(0); // Debt moved to tier
+
+            // Day 2: Second refill should carry forward negative tier_balance
+            await triggerTierRefill();
+
+            user = await db
+                .select({
+                    tierBalance: userTable.tierBalance,
+                    packBalance: userTable.packBalance,
+                })
+                .from(userTable)
+                .where(sql`${userTable.id} = 'user-multiday-debt'`)
+                .limit(1);
+
+            // 0.1 (refill) + (-0.2) (carried debt) = -0.1
+            expect(user[0]?.tierBalance).toBeCloseTo(-0.1, 5);
+            expect(user[0]?.packBalance).toBe(0);
+
+            // Day 3: Third refill should bring balance to 0
+            await triggerTierRefill();
+
+            user = await db
+                .select({
+                    tierBalance: userTable.tierBalance,
+                    packBalance: userTable.packBalance,
+                })
+                .from(userTable)
+                .where(sql`${userTable.id} = 'user-multiday-debt'`)
+                .limit(1);
+
+            // 0.1 (refill) + (-0.1) (carried debt) = 0
+            expect(user[0]?.tierBalance).toBeCloseTo(0, 5);
+            expect(user[0]?.packBalance).toBe(0);
+
+            // Day 4: Fourth refill should give positive balance
+            await triggerTierRefill();
+
+            user = await db
+                .select({
+                    tierBalance: userTable.tierBalance,
+                    packBalance: userTable.packBalance,
+                })
+                .from(userTable)
+                .where(sql`${userTable.id} = 'user-multiday-debt'`)
+                .limit(1);
+
+            // 0.1 (refill) + 0 (no debt) = 0.1
+            expect(user[0]?.tierBalance).toBeCloseTo(TIER_POLLEN.microbe, 5);
+            expect(user[0]?.packBalance).toBe(0);
         });
     });
 

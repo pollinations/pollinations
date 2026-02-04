@@ -31,9 +31,10 @@ const colors = {
             "border-2 border-red-700 text-red-700 hover:bg-red-700 hover:text-white transition-colors",
     },
     amber: {
-        light: "bg-amber-200 text-amber-900",
-        strong: "bg-amber-500 text-white",
-        outline: "border-2 border-amber-500 text-amber-900",
+        light: "bg-amber-200 text-amber-900 hover:bg-amber-300",
+        strong: "bg-amber-500 text-white hover:bg-amber-400",
+        outline:
+            "border-2 border-amber-500 text-amber-900 hover:bg-amber-500 hover:text-white transition-colors",
     },
     violet: {
         light: "bg-violet-200 text-violet-900",
@@ -45,6 +46,12 @@ const colors = {
         strong: "bg-teal-600 text-white hover:bg-teal-500",
         outline:
             "border-2 border-teal-600 text-teal-900 hover:bg-teal-600 hover:text-white transition-colors",
+    },
+    dark: {
+        light: "bg-gray-200 text-gray-900 hover:bg-gray-300",
+        strong: "bg-gray-900 text-white hover:bg-gray-700",
+        outline:
+            "border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white transition-colors",
     },
 } as const;
 

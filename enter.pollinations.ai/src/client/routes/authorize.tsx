@@ -247,7 +247,8 @@ function AuthorizeComponent() {
                         as="button"
                         onClick={handleSignIn}
                         disabled={isSigningIn || !!error}
-                        className="w-full bg-gray-900 text-white hover:!brightness-90"
+                        color="dark"
+                        className="w-full"
                     >
                         {isSigningIn ? "Signing in..." : "Sign in with GitHub"}
                     </Button>

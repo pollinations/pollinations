@@ -61,7 +61,9 @@ function RouteComponent() {
                             as="button"
                             onClick={handleSignIn}
                             disabled={loading}
-                            className="bg-amber-200 text-amber-900 hover:brightness-105 whitespace-nowrap"
+                            color="amber"
+                            weight="light"
+                            className="whitespace-nowrap"
                         >
                             {loading ? "Signing in..." : "Sign in with Github"}
                         </Button>

@@ -332,7 +332,7 @@ const ChatMessage = ({ message, isBot, timestamp, isTyping }) => {
                                 variant="body2"
                                 sx={{ color: "rgba(255,255,255,0.8)" }}
                             >
-                                Processing... gimmie around 15s
+                                Processing... Just 15s or so!
                             </Typography>
                         </Box>
                     ) : isBot ? (

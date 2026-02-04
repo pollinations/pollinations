@@ -61,7 +61,7 @@ We're looking for talented developers to contribute to our open-source AI platfo
 
 **Website:** [Pollinations GSOC 2026](https://gsoc.pollinations.ai)
 
-**Mentors:** Thomash Haferlach, Ayushman Bhattacharya, Nihal Gazi.
+**Mentors:** Thomas Haferlach, Ayushman Bhattacharya, Nihal Gazi.
 
 **Projects:** Check out our [Project Ideas](https://gsoc.pollinations.ai/projects).
 

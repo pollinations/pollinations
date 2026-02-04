@@ -10,19 +10,19 @@ This is the official GSoC information hub for [pollinations.ai](https://pollinat
 
 ## 📋 Quick Links
 
-- **[Project Ideas](https://gsoc.pollinations/projects)** — Browse available project proposals
-- **[Timeline](https://gsoc.pollinations/timeline)** — GSoC important dates and milestones
-- **[Mentors](https://gsoc.pollinations/mentors)** — Meet the mentors and their focus areas
-- **[Contributor Guide](https://gsoc.pollinations/contributing)** — How to write a strong proposal
-- **[Code of Conduct](https://gsoc.pollinations/coc)** — Community standards
-- **[FAQ](https://gsoc.pollinations/faq)** — Common questions answered
+- **[Project Ideas](https://gsoc.pollinations.ai/projects)** — Browse available project proposals
+- **[Timeline](https://gsoc.pollinations.ai/timeline)** — GSoC important dates and milestones
+- **[Mentors](https://gsoc.pollinations.ai/mentors)** — Meet the mentors and their focus areas
+- **[Contributor Guide](https://gsoc.pollinations.ai/contributing)** — How to write a strong proposal
+- **[Code of Conduct](https://gsoc.pollinations.ai/coc)** — Community standards
+- **[FAQ](https://gsoc.pollinations.ai/faq)** — Common questions answered
 
 ## 🚀 Getting Started
 
-1. Read the **[Contributor Guide](https://gsoc.pollinations/contributing)** for proposal requirements
-2. Review **[Project Ideas](https://gsoc.pollinations/projects)** and pick an area that interests you
-3. Check the **[Timeline](https://gsoc.pollinations/timeline)** to understand deadlines
-4. Connect with **[Mentors](https://gsoc.pollinations/mentors)** in our community channels
+1. Read the **[Contributor Guide](https://gsoc.pollinations.ai/contributing)** for proposal requirements
+2. Review **[Project Ideas](https://gsoc.pollinations.ai/projects)** and pick an area that interests you
+3. Check the **[Timeline](https://gsoc.pollinations.ai/timeline)** to understand deadlines
+4. Connect with **[Mentors](https://gsoc.pollinations.ai/mentors)** in our community channels
 5. Submit your proposal before the deadline
 
 

@@ -29,7 +29,7 @@ const shortLocale = {
 };
 
 import type { FC } from "react";
-import { Fragment, useState } from "react";
+import { useEffect, useState } from "react";
 import {
     adjectives,
     animals,
@@ -42,11 +42,11 @@ interface ApiKey {
     id: string;
     name?: string | null;
     start?: string | null;
-    createdAt: Date;
-    lastRequest?: Date | null;
-    expiresAt?: Date | null;
-    permissions: Record<string, string[]> | null;
-    metadata: Record<string, unknown> | null;
+    createdAt: string;
+    lastRequest?: string | null;
+    expiresAt?: string | null;
+    permissions: { [key: string]: string[] } | null;
+    metadata: { [key: string]: unknown } | null;
     pollenBalance?: number | null;
 }
 
@@ -64,14 +64,6 @@ interface ApiKeyManagerProps {
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
 }
-
-const Cell: FC<React.ComponentProps<"div">> = ({ children, ...props }) => {
-    return (
-        <span className="flex items-center" {...props}>
-            {children}
-        </span>
-    );
-};
 
 const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
     fullKey,
@@ -112,23 +104,26 @@ const LimitsBadge: FC<{
 }> = ({ expiresAt, pollenBudget }) => {
     const expiryStr = formatExpiry(expiresAt);
     const budgetStr = formatBudget(pollenBudget);
-    const isExhausted =
-        pollenBudget !== null &&
-        pollenBudget !== undefined &&
-        pollenBudget <= 0;
+    const isExhausted = pollenBudget != null && pollenBudget <= 0;
 
     return (
-        <div className="flex items-center text-xs whitespace-nowrap">
-            <span className="text-gray-600">{expiryStr}</span>
-            <span className="text-gray-400 mx-1">/</span>
-            <span
-                className={
-                    isExhausted ? "text-red-500 font-medium" : "text-gray-600"
-                }
-            >
-                {budgetStr}
+        <>
+            <span>
+                <span className="text-gray-400">Expires: </span>
+                <span className="text-gray-500">{expiryStr}</span>
             </span>
-        </div>
+            <span>
+                <span className="text-gray-400">Budget: </span>
+                <span
+                    className={cn(
+                        "text-gray-500",
+                        isExhausted && "text-red-500 font-medium",
+                    )}
+                >
+                    {budgetStr}
+                </span>
+            </span>
+        </>
     );
 };
 
@@ -140,23 +135,42 @@ function formatExpiry(expiresAt: Date | null | undefined): string {
         (expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
     );
 
-    return daysLeft <= 0
-        ? "expired"
-        : formatDistanceToNowStrict(expiresDate, {
-              addSuffix: false,
-              locale: shortLocale,
-          });
+    if (daysLeft <= 0) return "expired";
+
+    return formatDistanceToNowStrict(expiresDate, {
+        addSuffix: false,
+        locale: shortLocale,
+    });
 }
 
 function formatBudget(pollenBudget: number | null | undefined): string {
-    if (pollenBudget === null || pollenBudget === undefined) return "∞";
+    if (pollenBudget == null) return "∞";
     if (pollenBudget <= 0) return "empty";
 
-    const formatted = Number.isInteger(pollenBudget)
-        ? pollenBudget.toString()
-        : pollenBudget.toFixed(2);
-    return `${formatted}p`;
+    return Number.isInteger(pollenBudget)
+        ? `${pollenBudget}p`
+        : `${pollenBudget.toFixed(2)}p`;
 }
+
+const AccountBadge: FC<{
+    permissions: { [key: string]: string[] } | null;
+}> = ({ permissions }) => {
+    const account = permissions?.account ?? null;
+    if (!account || account.length === 0) return null;
+
+    return (
+        <>
+            {account.map((perm) => (
+                <span
+                    key={perm}
+                    className="text-xs px-1.5 py-0.5 rounded-full border bg-violet-100 text-violet-700 border-violet-300"
+                >
+                    {perm}
+                </span>
+            ))}
+        </>
+    );
+};
 
 const ModelsBadge: FC<{
     permissions: { [key: string]: string[] } | null;
@@ -166,22 +180,33 @@ const ModelsBadge: FC<{
     const isAllModels = models === null;
     const modelCount = models?.length ?? 0;
 
+    const handleInteraction = (e: React.MouseEvent | React.KeyboardEvent) => {
+        e.stopPropagation();
+        if ("key" in e && e.key !== "Enter" && e.key !== " ") return;
+        if ("key" in e) e.preventDefault();
+        setShowTooltip((prev) => !prev);
+    };
+
+    const tooltipContent = () => {
+        if (isAllModels) return "Access to all models";
+        if (modelCount === 0) return "No models allowed";
+        return (
+            <div className="font-mono text-[11px] leading-relaxed text-left whitespace-nowrap">
+                {models?.map((model) => (
+                    <div key={model}>{model}</div>
+                ))}
+            </div>
+        );
+    };
+
     return (
         <button
             type="button"
             className="relative inline-flex items-center"
-            onClick={(e) => {
-                e.stopPropagation();
-                setShowTooltip((prev) => !prev);
-            }}
+            onClick={handleInteraction}
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
-            onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setShowTooltip((prev) => !prev);
-                }
-            }}
+            onKeyDown={handleInteraction}
             aria-label="Show allowed models"
         >
             <span
@@ -202,33 +227,21 @@ const ModelsBadge: FC<{
                         left: "var(--tooltip-left)",
                     }}
                     ref={(el) => {
-                        if (el) {
-                            const btn = el.parentElement;
-                            if (btn) {
-                                const rect = btn.getBoundingClientRect();
-                                el.style.setProperty(
-                                    "--tooltip-top",
-                                    `${rect.bottom + 4}px`,
-                                );
-                                el.style.setProperty(
-                                    "--tooltip-left",
-                                    `${rect.left}px`,
-                                );
-                            }
-                        }
+                        if (!el) return;
+                        const btn = el.parentElement;
+                        if (!btn) return;
+                        const rect = btn.getBoundingClientRect();
+                        el.style.setProperty(
+                            "--tooltip-top",
+                            `${rect.bottom + 4}px`,
+                        );
+                        el.style.setProperty(
+                            "--tooltip-left",
+                            `${rect.left}px`,
+                        );
                     }}
                 >
-                    {isAllModels ? (
-                        "Access to all models"
-                    ) : modelCount === 0 ? (
-                        "No models allowed"
-                    ) : (
-                        <div className="font-mono text-[11px] leading-relaxed text-left whitespace-nowrap">
-                            {models?.map((model) => (
-                                <div key={model}>{model}</div>
-                            ))}
-                        </div>
-                    )}
+                    {tooltipContent()}
                 </div>
             )}
         </button>
@@ -251,6 +264,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         }
     };
 
+    const sortedKeys = [...apiKeys].sort(
+        (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
     return (
         <>
             <div className="flex flex-col gap-2">
@@ -264,168 +282,129 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </div>
                 </div>
                 {apiKeys.length ? (
-                    <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-300 overflow-hidden">
-                        <div
-                            className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-                            style={{ overflowY: "clip" }}
-                        >
-                            <div className="grid grid-cols-[auto_auto_auto_auto_auto_auto_auto] gap-x-3 gap-y-2 text-sm min-w-max">
-                                <span className="font-bold text-pink-400 text-sm">
-                                    Type
-                                </span>
-                                <span className="font-bold text-pink-400 text-sm">
-                                    Name
-                                </span>
-                                <span className="font-bold text-pink-400 text-sm">
-                                    Key
-                                </span>
-                                <span className="font-bold text-pink-400 text-sm">
-                                    Created / Used
-                                </span>
-                                <span className="font-bold text-pink-400 text-sm">
-                                    Expiry / Budget
-                                </span>
-                                <span className="font-bold text-pink-400 text-sm">
-                                    Models
-                                </span>
-                                <span></span>
-                                {[...apiKeys]
-                                    .sort(
-                                        (a, b) =>
-                                            new Date(b.createdAt).getTime() -
-                                            new Date(a.createdAt).getTime(),
-                                    )
-                                    .map((apiKey) => {
-                                        const keyType = apiKey.metadata?.[
-                                            "keyType"
-                                        ] as string | undefined;
-                                        const isPublishable =
-                                            keyType === "publishable";
-                                        const plaintextKey = apiKey.metadata?.[
-                                            "plaintextKey"
-                                        ] as string | undefined;
+                    <div className="bg-blue-50/30 rounded-2xl p-4 border border-blue-300">
+                        <div className="flex flex-col gap-3">
+                            {sortedKeys.map((apiKey) => {
+                                const keyType = apiKey.metadata?.["keyType"] as
+                                    | string
+                                    | undefined;
+                                const isPublishable = keyType === "publishable";
+                                const plaintextKey = apiKey.metadata?.[
+                                    "plaintextKey"
+                                ] as string | undefined;
 
-                                        return (
-                                            <Fragment key={apiKey.id}>
-                                                <Cell>
-                                                    <span
-                                                        className={cn(
-                                                            "px-2 py-1 rounded text-xs font-medium",
-                                                            isPublishable
-                                                                ? "bg-blue-100 text-blue-700"
-                                                                : "bg-purple-100 text-purple-700",
-                                                        )}
-                                                    >
-                                                        {isPublishable
-                                                            ? "🌐 Publishable"
-                                                            : "🔒 Secret"}
-                                                    </span>
-                                                </Cell>
-                                                <Cell>
-                                                    <span
-                                                        className="text-xs truncate block"
-                                                        title={
-                                                            apiKey.name ??
-                                                            undefined
-                                                        }
-                                                    >
-                                                        {apiKey.name}
-                                                    </span>
-                                                </Cell>
-                                                <Cell>
-                                                    {isPublishable &&
-                                                    plaintextKey ? (
-                                                        <KeyDisplay
-                                                            fullKey={
-                                                                plaintextKey
-                                                            }
-                                                            start={
-                                                                apiKey.start ??
-                                                                ""
-                                                            }
-                                                        />
-                                                    ) : (
-                                                        <span className="font-mono text-xs text-gray-500">
-                                                            {apiKey.start}...
-                                                        </span>
+                                return (
+                                    <div
+                                        key={apiKey.id}
+                                        className="bg-white/40 rounded-xl p-3 transition-colors hover:bg-white/60"
+                                    >
+                                        {/* Row 1: Type, Name, Key, Actions */}
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span
+                                                className={cn(
+                                                    "px-2 py-0.5 rounded text-xs font-medium shrink-0",
+                                                    isPublishable
+                                                        ? "bg-blue-100 text-blue-700"
+                                                        : "bg-purple-100 text-purple-700",
+                                                )}
+                                            >
+                                                {isPublishable
+                                                    ? "🌐 Publishable"
+                                                    : "🔒 Secret"}
+                                            </span>
+                                            <span
+                                                className="text-sm font-medium truncate"
+                                                title={apiKey.name ?? undefined}
+                                            >
+                                                {apiKey.name}
+                                            </span>
+                                            <span className="flex-1" />
+                                            {isPublishable && plaintextKey ? (
+                                                <KeyDisplay
+                                                    fullKey={plaintextKey}
+                                                    start={apiKey.start ?? ""}
+                                                />
+                                            ) : (
+                                                <span className="font-mono text-xs text-gray-500 shrink-0">
+                                                    {apiKey.start}...
+                                                </span>
+                                            )}
+                                            <div className="flex gap-1 shrink-0 ml-2 items-center">
+                                                <button
+                                                    type="button"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                                    onClick={() =>
+                                                        setEditingKey(apiKey)
+                                                    }
+                                                    title="Edit key"
+                                                >
+                                                    ✎
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
+                                                    onClick={() =>
+                                                        setDeleteId(apiKey.id)
+                                                    }
+                                                    title="Delete key"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {/* Row 2: Stats and Permissions */}
+                                        <div className="flex flex-wrap items-center gap-4 text-xs">
+                                            <span title="Created">
+                                                <span className="text-gray-400">Created: </span>
+                                                <span className="text-gray-500">
+                                                    {formatDistanceToNowStrict(
+                                                        apiKey.createdAt,
+                                                        {
+                                                            addSuffix: false,
+                                                            locale: shortLocale,
+                                                        },
                                                     )}
-                                                </Cell>
-                                                <Cell>
-                                                    <div className="flex items-center text-xs whitespace-nowrap">
-                                                        <span className="text-gray-600">
-                                                            {formatDistanceToNowStrict(
-                                                                apiKey.createdAt,
-                                                                {
-                                                                    addSuffix: false,
-                                                                    locale: shortLocale,
-                                                                },
-                                                            )}
-                                                        </span>
-                                                        <span className="text-gray-400 mx-1">
-                                                            /
-                                                        </span>
-                                                        <span className="text-gray-500">
-                                                            {apiKey.lastRequest
-                                                                ? formatDistanceToNowStrict(
-                                                                      new Date(
-                                                                          apiKey.lastRequest,
-                                                                      ),
-                                                                      {
-                                                                          addSuffix: false,
-                                                                          locale: shortLocale,
-                                                                      },
-                                                                  )
-                                                                : "—"}
-                                                        </span>
-                                                    </div>
-                                                </Cell>
-                                                <Cell>
-                                                    <LimitsBadge
-                                                        expiresAt={
-                                                            apiKey.expiresAt
-                                                        }
-                                                        pollenBudget={
-                                                            apiKey.pollenBalance
-                                                        }
-                                                    />
-                                                </Cell>
-                                                <Cell>
-                                                    <ModelsBadge
-                                                        permissions={
-                                                            apiKey.permissions
-                                                        }
-                                                    />
-                                                </Cell>
-                                                <Cell className="flex gap-1">
-                                                    <button
-                                                        type="button"
-                                                        className="w-6 h-6 flex items-center justify-center rounded hover:bg-blue-100 text-gray-400 hover:text-blue-600 transition-colors cursor-pointer"
-                                                        onClick={() =>
-                                                            setEditingKey(
-                                                                apiKey,
-                                                            )
-                                                        }
-                                                        title="Manage key"
-                                                    >
-                                                        ⚙
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="w-6 h-6 flex items-center justify-center rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
-                                                        onClick={() =>
-                                                            setDeleteId(
-                                                                apiKey.id,
-                                                            )
-                                                        }
-                                                        title="Delete key"
-                                                    >
-                                                        ×
-                                                    </button>
-                                                </Cell>
-                                            </Fragment>
-                                        );
-                                    })}
-                            </div>
+                                                </span>
+                                            </span>
+                                            <span title="Last used">
+                                                <span className="text-gray-400">Used: </span>
+                                                <span className="text-gray-500">
+                                                    {apiKey.lastRequest
+                                                        ? formatDistanceToNowStrict(
+                                                              new Date(
+                                                                  apiKey.lastRequest,
+                                                              ),
+                                                              {
+                                                                  addSuffix: false,
+                                                                  locale: shortLocale,
+                                                              },
+                                                          )
+                                                        : "never"}
+                                                </span>
+                                            </span>
+                                            <LimitsBadge
+                                                expiresAt={apiKey.expiresAt}
+                                                pollenBudget={
+                                                    apiKey.pollenBalance
+                                                }
+                                            />
+                                            <span className="flex items-center gap-1">
+                                                <span className="text-gray-400">Models:</span>
+                                                <ModelsBadge
+                                                    permissions={
+                                                        apiKey.permissions
+                                                    }
+                                                />
+                                            </span>
+                                            <AccountBadge
+                                                permissions={
+                                                    apiKey.permissions
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                         {apiKeys.some(
                             (k) => k.metadata?.["keyType"] === "publishable",
@@ -433,8 +412,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <div className="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl p-4 border border-blue-300 mt-4">
                                 <p className="text-sm font-medium text-blue-900">
                                     🌐 <strong>Publishable keys:</strong> Beta -
-                                    actively improving stability. For production
-                                    apps, we recommend secret keys.
+                                    actively improving stability.
+                                </p>
+                                <p className="text-sm text-blue-800">
+                                    For production apps, we recommend secret
+                                    keys.
                                 </p>
                             </div>
                         )}
@@ -479,7 +461,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 <EditApiKeyDialog
                     apiKey={editingKey}
                     onUpdate={onUpdate}
-                    onDelete={onDelete}
                     onClose={() => setEditingKey(null)}
                 />
             )}
@@ -538,13 +519,28 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
 
+    useEffect(() => {
+        if (!isOpen) return;
+        const originalBodyOverflow = document.body.style.overflow;
+        const originalHtmlOverflow = document.documentElement.style.overflow;
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = originalBodyOverflow;
+            document.documentElement.style.overflow = originalHtmlOverflow;
+        };
+    }, [isOpen]);
+
     const handleKeyTypeChange = (newKeyType: "secret" | "publishable") => {
         setKeyType(newKeyType);
         setName(generateFunName());
+        const dateStr = new Date().toLocaleDateString("en-US", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "2-digit",
+        });
         setDescription(
-            newKeyType === "publishable"
-                ? ""
-                : `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
+            newKeyType === "publishable" ? "" : `Created on ${dateStr}`,
         );
     };
 
@@ -589,29 +585,30 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             </Dialog.Trigger>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
-                <Dialog.Content
-                    className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto"
-                    style={{
-                        scrollbarWidth: "thin",
-                        scrollbarColor: "rgba(156, 163, 175, 0.5) transparent",
-                    }}
-                >
-                    <Dialog.Title className="text-lg font-semibold mb-6">
-                        Create New API Key
-                    </Dialog.Title>
+                <Dialog.Content className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full max-h-[85vh] flex flex-col">
+                    <div className="shrink-0 p-6 pb-4">
+                        <Dialog.Title className="text-lg font-semibold">
+                            Create New API Key
+                        </Dialog.Title>
+                    </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+                        <div
+                            className="flex-1 overflow-y-auto px-6 py-2 space-y-4"
+                            style={{
+                                scrollbarWidth: "thin",
+                                scrollbarColor: "rgba(156, 163, 175, 0.5) transparent",
+                                overscrollBehavior: "contain",
+                            }}
+                        >
                         <Field.Root>
-                            <Field.Label className="block text-sm font-semibold mb-2">
-                                Type
-                            </Field.Label>
-                            <div className="space-y-2">
+                            <div className="grid grid-cols-2 gap-3">
                                 <label
                                     className={cn(
-                                        "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
+                                        "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
                                         keyType === "publishable"
-                                            ? "border-blue-500 bg-blue-50"
-                                            : "border-gray-200 hover:border-gray-300",
+                                            ? "bg-blue-100 ring-2 ring-blue-500"
+                                            : "bg-gray-50 hover:bg-gray-100",
                                         createdKey &&
                                             keyType !== "publishable" &&
                                             "opacity-40",
@@ -627,52 +624,25 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                                 e.target.value as "publishable",
                                             )
                                         }
-                                        className="mt-1 w-4 h-4 text-blue-600"
+                                        className="sr-only"
                                         disabled={isSubmitting || !!createdKey}
                                     />
-                                    <div className="flex-1">
-                                        <div className="font-medium text-blue-800">
-                                            🌐 Publishable Key
-                                        </div>
-                                        <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
-                                            <li className="font-semibold">
-                                                Always visible in your dashboard
-                                            </li>
-                                            <li>
-                                                Safe to use in client-side code
-                                                (React, Vue, etc.)
-                                            </li>
-                                            <li>
-                                                Pollen-based rate limiting: 1
-                                                pollen/hour refill per IP+key
-                                            </li>
-                                        </ul>
-                                        <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs">
-                                            <div className="font-semibold text-amber-900 mb-1">
-                                                ⚠️ Beta Feature
-                                            </div>
-                                            <ul className="space-y-0.5 list-disc pl-4 text-amber-800">
-                                                <li>
-                                                    Still working out some bugs
-                                                </li>
-                                                <li>
-                                                    For stable production → use
-                                                    secret keys (no rate limits)
-                                                </li>
-                                                <li>
-                                                    Secret keys must be hidden
-                                                    in your backend
-                                                </li>
-                                            </ul>
-                                        </div>
+                                    <div className="font-semibold text-sm mb-2">🌐 Publishable Key</div>
+                                    <ul className="text-xs text-gray-600 space-y-1 flex-1 list-disc pl-4">
+                                        <li>Always visible in dashboard</li>
+                                        <li>For client-side code (React, Vue)</li>
+                                        <li>Rate limited: 1p/hour per IP</li>
+                                    </ul>
+                                    <div className="mt-3 text-[10px] text-amber-700 bg-amber-50 px-2 py-1 rounded">
+                                        ⚠️ Beta – still working out bugs
                                     </div>
                                 </label>
                                 <label
                                     className={cn(
-                                        "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
+                                        "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
                                         keyType === "secret"
-                                            ? "border-purple-500 bg-purple-50"
-                                            : "border-gray-200 hover:border-gray-300",
+                                            ? "bg-purple-100 ring-2 ring-purple-500"
+                                            : "bg-gray-50 hover:bg-gray-100",
                                         createdKey &&
                                             keyType !== "secret" &&
                                             "opacity-40",
@@ -688,30 +658,24 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                                 e.target.value as "secret",
                                             )
                                         }
-                                        className="mt-1 w-4 h-4 text-purple-600"
+                                        className="sr-only"
                                         disabled={isSubmitting || !!createdKey}
                                     />
-                                    <div className="flex-1">
-                                        <div className="font-medium text-purple-800">
-                                            🔒 Secret Key
-                                        </div>
-                                        <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
-                                            <li className="font-semibold text-amber-900">
-                                                Only shown once - copy it now!
-                                            </li>
-                                            <li>
-                                                For server-side apps - never
-                                                expose publicly
-                                            </li>
-                                            <li>No rate limits</li>
-                                        </ul>
+                                    <div className="font-semibold text-sm mb-2">🔒 Secret Key</div>
+                                    <ul className="text-xs text-gray-600 space-y-1 flex-1 list-disc pl-4">
+                                        <li className="text-amber-700 font-medium">Only shown once – copy it!</li>
+                                        <li>Never expose publicly (must be hidden in your backend)</li>
+                                        <li>No rate limits</li>
+                                    </ul>
+                                    <div className="mt-3 text-[10px] text-green-700 bg-green-50 px-2 py-1 rounded">
+                                        ✓ Recommended for production
                                     </div>
                                 </label>
                             </div>
                         </Field.Root>
 
-                        <Field.Root>
-                            <Field.Label className="block text-sm font-semibold mb-2">
+                        <Field.Root className="flex items-center gap-3">
+                            <Field.Label className="text-sm font-semibold shrink-0">
                                 {createdKey ? "Your API Key" : "Name"}
                             </Field.Label>
                             <Field.Input
@@ -719,7 +683,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 value={createdKey ? createdKey.key : name}
                                 onChange={(e) => setName(e.target.value)}
                                 className={cn(
-                                    "w-full px-3 py-2 border rounded",
+                                    "flex-1 px-3 py-2 border rounded",
                                     createdKey
                                         ? "border-green-300 bg-green-200 font-mono text-xs"
                                         : "border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500",
@@ -737,9 +701,12 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             <KeyPermissionsInputs
                                 value={keyPermissions}
                                 disabled={isSubmitting}
+                                inline
                             />
                         )}
-                        <div className="flex gap-2 justify-end pt-4">
+                        </div>
+
+                        <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
                             {!createdKey && (
                                 <Button
                                     type="button"
@@ -752,18 +719,23 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 </Button>
                             )}
                             {(() => {
+                                const { allowedModels } =
+                                    keyPermissions.permissions;
                                 const noModelsSelected =
-                                    Array.isArray(
-                                        keyPermissions.permissions
-                                            .allowedModels,
-                                    ) &&
-                                    keyPermissions.permissions.allowedModels
-                                        .length === 0;
+                                    Array.isArray(allowedModels) &&
+                                    allowedModels.length === 0;
                                 const isDisabled =
                                     !createdKey &&
                                     (!name.trim() ||
                                         isSubmitting ||
                                         noModelsSelected);
+
+                                const buttonText = () => {
+                                    if (copied) return "✓ Copied! Closing...";
+                                    if (createdKey) return "Copy and Close";
+                                    if (isSubmitting) return "Creating...";
+                                    return "Create";
+                                };
 
                                 return (
                                     <span
@@ -785,13 +757,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                             className="disabled:opacity-50"
                                             disabled={isDisabled}
                                         >
-                                            {copied
-                                                ? "✓ Copied! Closing..."
-                                                : createdKey
-                                                  ? "Copy and Close"
-                                                  : isSubmitting
-                                                    ? "Creating..."
-                                                    : "Create"}
+                                            {buttonText()}
                                         </Button>
                                     </span>
                                 );

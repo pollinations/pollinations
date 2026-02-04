@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { TIER_EMOJIS, TIER_POLLEN } from "@/tier-config.ts";
-import { Tooltip } from "../pricing/tooltip.tsx";
+import { Tooltip } from "../pricing/Tooltip.tsx";
 
 const tierBoxBase = "rounded-lg p-3";
 const tierColors = {

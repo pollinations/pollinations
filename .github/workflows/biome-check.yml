@@ -58,3 +58,55 @@ jobs:
           else
             echo "✅ All files are properly formatted"
           fi
+
+      - name: Get changed TypeScript files in enter.pollinations.ai
+        id: enter-ts-files
+        run: |
+          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep '^enter.pollinations.ai/.*\.\(ts\|tsx\)$' | sed 's|^enter.pollinations.ai/||' || true)
+          echo "Changed TypeScript files:"
+          echo "$FILES"
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          if [ -n "$FILES" ]; then
+            echo "any_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "any_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install enter.pollinations.ai dependencies
+        if: steps.enter-ts-files.outputs.any_changed == 'true'
+        working-directory: enter.pollinations.ai
+        run: npm install
+
+      - name: Typecheck changed files only
+        if: steps.enter-ts-files.outputs.any_changed == 'true'
+        working-directory: enter.pollinations.ai
+        run: |
+          echo "Running typecheck and filtering for changed files..."
+
+          # Run typecheck, capture output (don't fail yet)
+          npx tsc --noEmit 2>&1 | tee /tmp/typecheck-output.txt || true
+
+          # Check if any errors are in the changed files
+          CHANGED_FILES="${{ steps.enter-ts-files.outputs.files }}"
+          FOUND_ERROR=false
+
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            # Look for this file in the typecheck output
+            if grep -q "src/$file\|$file" /tmp/typecheck-output.txt 2>/dev/null; then
+              echo "❌ Type error in changed file: $file"
+              grep -E "(src/)?$file" /tmp/typecheck-output.txt || true
+              FOUND_ERROR=true
+            fi
+          done <<< "$CHANGED_FILES"
+
+          if [ "$FOUND_ERROR" = true ]; then
+            echo ""
+            echo "❌ Type errors found in changed files. Please fix them."
+            exit 1
+          else
+            echo "✅ No type errors in changed files"
+          fi
+

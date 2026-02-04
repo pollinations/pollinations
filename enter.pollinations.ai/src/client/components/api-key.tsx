@@ -29,7 +29,7 @@ const shortLocale = {
 };
 
 import type { FC } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     adjectives,
     animals,
@@ -107,23 +107,23 @@ const LimitsBadge: FC<{
     const isExhausted = pollenBudget != null && pollenBudget <= 0;
 
     return (
-        <div className="flex items-center gap-3 text-xs whitespace-nowrap">
+        <>
             <span>
                 <span className="text-gray-400">Expires: </span>
-                <span className="text-gray-600">{expiryStr}</span>
+                <span className="text-gray-500">{expiryStr}</span>
             </span>
             <span>
                 <span className="text-gray-400">Budget: </span>
                 <span
                     className={cn(
-                        "text-gray-600",
+                        "text-gray-500",
                         isExhausted && "text-red-500 font-medium",
                     )}
                 >
                     {budgetStr}
                 </span>
             </span>
-        </div>
+        </>
     );
 };
 
@@ -353,61 +353,54 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             </div>
                                         </div>
                                         {/* Row 2: Stats and Permissions */}
-                                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                                            {/* Left: Time stats */}
-                                            <div className="flex items-center gap-3 text-gray-500">
-                                                <span title="Created">
-                                                    Created{" "}
+                                        <div className="flex flex-wrap items-center gap-4 text-xs">
+                                            <span title="Created">
+                                                <span className="text-gray-400">Created: </span>
+                                                <span className="text-gray-500">
                                                     {formatDistanceToNowStrict(
                                                         apiKey.createdAt,
                                                         {
-                                                            addSuffix: true,
+                                                            addSuffix: false,
                                                             locale: shortLocale,
                                                         },
                                                     )}
                                                 </span>
-                                                <span className="text-gray-300">
-                                                    •
-                                                </span>
-                                                <span title="Last used">
+                                            </span>
+                                            <span title="Last used">
+                                                <span className="text-gray-400">Used: </span>
+                                                <span className="text-gray-500">
                                                     {apiKey.lastRequest
-                                                        ? `Used ${formatDistanceToNowStrict(
+                                                        ? formatDistanceToNowStrict(
                                                               new Date(
                                                                   apiKey.lastRequest,
                                                               ),
                                                               {
-                                                                  addSuffix: true,
+                                                                  addSuffix: false,
                                                                   locale: shortLocale,
                                                               },
-                                                          )}`
-                                                        : "Never used"}
+                                                          )
+                                                        : "never"}
                                                 </span>
-                                                <span className="text-gray-300">
-                                                    •
-                                                </span>
-                                                <LimitsBadge
-                                                    expiresAt={apiKey.expiresAt}
-                                                    pollenBudget={
-                                                        apiKey.pollenBalance
-                                                    }
-                                                />
-                                            </div>
-                                            {/* Right: Permissions */}
-                                            <div className="flex items-center gap-1">
-                                                <span className="text-gray-400 mr-1">
-                                                    Permissions:
-                                                </span>
+                                            </span>
+                                            <LimitsBadge
+                                                expiresAt={apiKey.expiresAt}
+                                                pollenBudget={
+                                                    apiKey.pollenBalance
+                                                }
+                                            />
+                                            <span className="flex items-center gap-1">
+                                                <span className="text-gray-400">Models:</span>
                                                 <ModelsBadge
                                                     permissions={
                                                         apiKey.permissions
                                                     }
                                                 />
-                                                <AccountBadge
-                                                    permissions={
-                                                        apiKey.permissions
-                                                    }
-                                                />
-                                            </div>
+                                            </span>
+                                            <AccountBadge
+                                                permissions={
+                                                    apiKey.permissions
+                                                }
+                                            />
                                         </div>
                                     </div>
                                 );
@@ -526,6 +519,18 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
 
+    useEffect(() => {
+        if (!isOpen) return;
+        const originalBodyOverflow = document.body.style.overflow;
+        const originalHtmlOverflow = document.documentElement.style.overflow;
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = originalBodyOverflow;
+            document.documentElement.style.overflow = originalHtmlOverflow;
+        };
+    }, [isOpen]);
+
     const handleKeyTypeChange = (newKeyType: "secret" | "publishable") => {
         setKeyType(newKeyType);
         setName(generateFunName());
@@ -580,29 +585,30 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             </Dialog.Trigger>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
-                <Dialog.Content
-                    className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto"
-                    style={{
-                        scrollbarWidth: "thin",
-                        scrollbarColor: "rgba(156, 163, 175, 0.5) transparent",
-                    }}
-                >
-                    <Dialog.Title className="text-lg font-semibold mb-6">
-                        Create New API Key
-                    </Dialog.Title>
+                <Dialog.Content className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full max-h-[85vh] flex flex-col">
+                    <div className="shrink-0 p-6 pb-4">
+                        <Dialog.Title className="text-lg font-semibold">
+                            Create New API Key
+                        </Dialog.Title>
+                    </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+                        <div
+                            className="flex-1 overflow-y-auto px-6 py-2 space-y-4"
+                            style={{
+                                scrollbarWidth: "thin",
+                                scrollbarColor: "rgba(156, 163, 175, 0.5) transparent",
+                                overscrollBehavior: "contain",
+                            }}
+                        >
                         <Field.Root>
-                            <Field.Label className="block text-sm font-semibold mb-2">
-                                Type
-                            </Field.Label>
-                            <div className="space-y-2">
+                            <div className="grid grid-cols-2 gap-3">
                                 <label
                                     className={cn(
-                                        "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
+                                        "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
                                         keyType === "publishable"
-                                            ? "border-blue-500 bg-blue-50"
-                                            : "border-gray-200 hover:border-gray-300",
+                                            ? "bg-blue-100 ring-2 ring-blue-500"
+                                            : "bg-gray-50 hover:bg-gray-100",
                                         createdKey &&
                                             keyType !== "publishable" &&
                                             "opacity-40",
@@ -618,52 +624,25 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                                 e.target.value as "publishable",
                                             )
                                         }
-                                        className="mt-1 w-4 h-4 text-blue-600"
+                                        className="sr-only"
                                         disabled={isSubmitting || !!createdKey}
                                     />
-                                    <div className="flex-1">
-                                        <div className="font-medium text-blue-800">
-                                            🌐 Publishable Key
-                                        </div>
-                                        <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
-                                            <li className="font-semibold">
-                                                Always visible in your dashboard
-                                            </li>
-                                            <li>
-                                                Safe to use in client-side code
-                                                (React, Vue, etc.)
-                                            </li>
-                                            <li>
-                                                Pollen-based rate limiting: 1
-                                                pollen/hour refill per IP+key
-                                            </li>
-                                        </ul>
-                                        <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs">
-                                            <div className="font-semibold text-amber-900 mb-1">
-                                                ⚠️ Beta Feature
-                                            </div>
-                                            <ul className="space-y-0.5 list-disc pl-4 text-amber-800">
-                                                <li>
-                                                    Still working out some bugs
-                                                </li>
-                                                <li>
-                                                    For stable production → use
-                                                    secret keys (no rate limits)
-                                                </li>
-                                                <li>
-                                                    Secret keys must be hidden
-                                                    in your backend
-                                                </li>
-                                            </ul>
-                                        </div>
+                                    <div className="font-semibold text-sm mb-2">🌐 Publishable Key</div>
+                                    <ul className="text-xs text-gray-600 space-y-1 flex-1 list-disc pl-4">
+                                        <li>Always visible in dashboard</li>
+                                        <li>For client-side code (React, Vue)</li>
+                                        <li>Rate limited: 1p/hour per IP</li>
+                                    </ul>
+                                    <div className="mt-3 text-[10px] text-amber-700 bg-amber-50 px-2 py-1 rounded">
+                                        ⚠️ Beta – still working out bugs
                                     </div>
                                 </label>
                                 <label
                                     className={cn(
-                                        "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
+                                        "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
                                         keyType === "secret"
-                                            ? "border-purple-500 bg-purple-50"
-                                            : "border-gray-200 hover:border-gray-300",
+                                            ? "bg-purple-100 ring-2 ring-purple-500"
+                                            : "bg-gray-50 hover:bg-gray-100",
                                         createdKey &&
                                             keyType !== "secret" &&
                                             "opacity-40",
@@ -679,30 +658,24 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                                 e.target.value as "secret",
                                             )
                                         }
-                                        className="mt-1 w-4 h-4 text-purple-600"
+                                        className="sr-only"
                                         disabled={isSubmitting || !!createdKey}
                                     />
-                                    <div className="flex-1">
-                                        <div className="font-medium text-purple-800">
-                                            🔒 Secret Key
-                                        </div>
-                                        <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
-                                            <li className="font-semibold text-amber-900">
-                                                Only shown once - copy it now!
-                                            </li>
-                                            <li>
-                                                For server-side apps - never
-                                                expose publicly
-                                            </li>
-                                            <li>No rate limits</li>
-                                        </ul>
+                                    <div className="font-semibold text-sm mb-2">🔒 Secret Key</div>
+                                    <ul className="text-xs text-gray-600 space-y-1 flex-1 list-disc pl-4">
+                                        <li className="text-amber-700 font-medium">Only shown once – copy it!</li>
+                                        <li>Never expose publicly (must be hidden in your backend)</li>
+                                        <li>No rate limits</li>
+                                    </ul>
+                                    <div className="mt-3 text-[10px] text-green-700 bg-green-50 px-2 py-1 rounded">
+                                        ✓ Recommended for production
                                     </div>
                                 </label>
                             </div>
                         </Field.Root>
 
-                        <Field.Root>
-                            <Field.Label className="block text-sm font-semibold mb-2">
+                        <Field.Root className="flex items-center gap-3">
+                            <Field.Label className="text-sm font-semibold shrink-0">
                                 {createdKey ? "Your API Key" : "Name"}
                             </Field.Label>
                             <Field.Input
@@ -710,7 +683,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 value={createdKey ? createdKey.key : name}
                                 onChange={(e) => setName(e.target.value)}
                                 className={cn(
-                                    "w-full px-3 py-2 border rounded",
+                                    "flex-1 px-3 py-2 border rounded",
                                     createdKey
                                         ? "border-green-300 bg-green-200 font-mono text-xs"
                                         : "border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500",
@@ -728,9 +701,12 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             <KeyPermissionsInputs
                                 value={keyPermissions}
                                 disabled={isSubmitting}
+                                inline
                             />
                         )}
-                        <div className="flex gap-2 justify-end pt-4">
+                        </div>
+
+                        <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
                             {!createdKey && (
                                 <Button
                                     type="button"

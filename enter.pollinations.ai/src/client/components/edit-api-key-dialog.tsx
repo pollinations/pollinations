@@ -1,7 +1,7 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import type { FC } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/util.ts";
 import { Button } from "./button.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
@@ -44,6 +44,17 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
     const isPublishable = apiKey.metadata?.keyType === "publishable";
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
+
+    useEffect(() => {
+        const originalBodyOverflow = document.body.style.overflow;
+        const originalHtmlOverflow = document.documentElement.style.overflow;
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = originalBodyOverflow;
+            document.documentElement.style.overflow = originalHtmlOverflow;
+        };
+    }, []);
 
     const handleCopyKey = async () => {
         if (!plaintextKey) return;
@@ -99,92 +110,98 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         <Dialog.Root open onOpenChange={({ open }) => !open && onClose()}>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
-                <Dialog.Content
-                    className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-2xl w-full p-6 max-h-[85vh] overflow-y-auto"
-                    style={{
-                        scrollbarWidth: "thin",
-                        scrollbarColor: "rgba(156, 163, 175, 0.5) transparent",
-                    }}
-                >
-                    <Dialog.Title className="text-xl font-bold mb-6">
-                        Edit API Key
-                    </Dialog.Title>
+                <Dialog.Content className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full max-h-[85vh] flex flex-col">
+                    <div className="shrink-0 p-6 pb-4">
+                        <Dialog.Title className="text-xl font-bold mb-4">
+                            Edit API Key
+                        </Dialog.Title>
 
-                    <div className="flex items-center gap-3 mb-6">
-                        <span
-                            className={cn(
-                                "px-2 py-0.5 rounded text-xs font-medium shrink-0",
-                                isPublishable
-                                    ? "bg-blue-100 text-blue-700"
-                                    : "bg-purple-100 text-purple-700",
-                            )}
-                        >
-                            {isPublishable ? "🌐 Publishable" : "🔒 Secret"}
-                        </span>
-                        {isPublishable && plaintextKey ? (
-                            <button
-                                type="button"
-                                onClick={handleCopyKey}
+                        <div className="flex items-center gap-3">
+                            <span
                                 className={cn(
-                                    "font-mono text-sm cursor-pointer transition-all",
-                                    copied
-                                        ? "text-green-600 font-semibold"
-                                        : "text-blue-600 hover:text-blue-800 hover:underline",
+                                    "px-2 py-0.5 rounded text-xs font-medium shrink-0",
+                                    isPublishable
+                                        ? "bg-blue-100 text-blue-700"
+                                        : "bg-purple-100 text-purple-700",
                                 )}
-                                title={copied ? "Copied!" : "Click to copy"}
                             >
-                                {copied ? "✓ Copied!" : plaintextKey}
-                            </button>
-                        ) : (
-                            <span className="font-mono text-sm text-gray-600">
-                                {apiKey.start}...
+                                {isPublishable ? "🌐 Publishable" : "🔒 Secret"}
                             </span>
-                        )}
+                            {isPublishable && plaintextKey ? (
+                                <button
+                                    type="button"
+                                    onClick={handleCopyKey}
+                                    className={cn(
+                                        "font-mono text-sm cursor-pointer transition-all",
+                                        copied
+                                            ? "text-green-600 font-semibold"
+                                            : "text-blue-600 hover:text-blue-800 hover:underline",
+                                    )}
+                                    title={copied ? "Copied!" : "Click to copy"}
+                                >
+                                    {copied ? "✓ Copied!" : plaintextKey}
+                                </button>
+                            ) : (
+                                <span className="font-mono text-sm text-gray-600">
+                                    {apiKey.start}...
+                                </span>
+                            )}
+                        </div>
                     </div>
 
-                    {error && (
-                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                            {error}
-                        </div>
-                    )}
+                    <div
+                        className="flex-1 overflow-y-auto p-6 py-4"
+                        style={{
+                            scrollbarWidth: "thin",
+                            scrollbarColor: "rgba(156, 163, 175, 0.5) transparent",
+                            overscrollBehavior: "contain",
+                        }}
+                    >
+                        {error && (
+                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                                {error}
+                            </div>
+                        )}
 
-                    <div className="space-y-6">
-                        <Field.Root>
-                            <Field.Label className="block text-sm font-semibold mb-2">
-                                Name
-                            </Field.Label>
-                            <Field.Input
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Enter API key name"
+                        <div className="space-y-4">
+                            <Field.Root className="flex items-center gap-3">
+                                <Field.Label className="text-sm font-semibold shrink-0">
+                                    Name
+                                </Field.Label>
+                                <Field.Input
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Enter API key name"
+                                    disabled={isSubmitting}
+                                />
+                            </Field.Root>
+
+                            <KeyPermissionsInputs
+                                value={keyPermissions}
                                 disabled={isSubmitting}
+                                inline
                             />
-                        </Field.Root>
-
-                        <KeyPermissionsInputs
-                            value={keyPermissions}
-                            disabled={isSubmitting}
-                        />
-
-                        <div className="flex gap-2 justify-end pt-4 border-t border-gray-300">
-                            <Button
-                                type="button"
-                                weight="outline"
-                                onClick={onClose}
-                                disabled={isSubmitting}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={handleSave}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? "Saving..." : "Save"}
-                            </Button>
                         </div>
+                    </div>
+
+                    <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
+                        <Button
+                            type="button"
+                            weight="outline"
+                            onClick={onClose}
+                            disabled={isSubmitting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={handleSave}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? "Saving..." : "Save"}
+                        </Button>
                     </div>
                 </Dialog.Content>
             </Dialog.Positioner>

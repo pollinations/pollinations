@@ -47,6 +47,7 @@ interface KeyPermissionsInputsProps {
     value: ReturnType<typeof useKeyPermissions>;
     disabled?: boolean;
     compact?: boolean;
+    inline?: boolean;
 }
 
 /**
@@ -56,6 +57,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     value,
     disabled = false,
     compact = false,
+    inline = false,
 }) => {
     const {
         permissions,
@@ -67,20 +69,22 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
 
     return (
         <div className="space-y-6">
-            <ModelPermissions
-                value={permissions.allowedModels}
-                onChange={setAllowedModels}
-                compact={compact}
-            />
             <PollenBudgetInput
                 value={permissions.pollenBudget}
                 onChange={setPollenBudget}
                 disabled={disabled}
+                inline={inline}
             />
             <ExpiryDaysInput
                 value={permissions.expiryDays}
                 onChange={setExpiryDays}
                 disabled={disabled}
+                inline={inline}
+            />
+            <ModelPermissions
+                value={permissions.allowedModels}
+                onChange={setAllowedModels}
+                compact={compact}
             />
             <AccountPermissionsInput
                 value={permissions.accountPermissions}

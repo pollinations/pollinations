@@ -3,32 +3,16 @@ import { Field } from "@ark-ui/react/field";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 import { cn } from "@/util.ts";
-import { Button } from "./button.tsx";
+import { Button } from "../button.tsx";
+import { Badge } from "../ui/badge.tsx";
+import { Card } from "../ui/card.tsx";
+import { Input } from "../ui/input.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
-
-interface ApiKey {
-    id: string;
-    name?: string | null;
-    start?: string | null;
-    enabled?: boolean;
-    pollenBalance?: number | null;
-    permissions: Record<string, string[]> | null;
-    metadata?: Record<string, unknown> | null;
-    expiresAt?: string | null;
-}
+import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 interface EditApiKeyDialogProps {
     apiKey: ApiKey;
-    onUpdate: (
-        id: string,
-        updates: {
-            name?: string;
-            allowedModels?: string[] | null;
-            pollenBudget?: number | null;
-            accountPermissions?: string[] | null;
-            expiresAt?: Date | null;
-        },
-    ) => Promise<void>;
+    onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onClose: () => void;
 }
 
@@ -117,16 +101,9 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         </Dialog.Title>
 
                         <div className="flex items-center gap-3">
-                            <span
-                                className={cn(
-                                    "px-2 py-0.5 rounded text-xs font-medium shrink-0",
-                                    isPublishable
-                                        ? "bg-blue-100 text-blue-700"
-                                        : "bg-purple-100 text-purple-700",
-                                )}
-                            >
+                            <Badge color={isPublishable ? "blue" : "purple"}>
                                 {isPublishable ? "🌐 Publishable" : "🔒 Secret"}
-                            </span>
+                            </Badge>
                             {isPublishable && plaintextKey ? (
                                 <button
                                     type="button"
@@ -142,7 +119,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                     {copied ? "✓ Copied!" : plaintextKey}
                                 </button>
                             ) : (
-                                <span className="font-mono text-sm text-gray-600">
+                                <span className="font-mono text-sm text-gray-500">
                                     {apiKey.start}...
                                 </span>
                             )}
@@ -150,18 +127,20 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     </div>
 
                     <div
-                        className="flex-1 overflow-y-auto p-6 py-4"
+                        className="flex-1 overflow-y-auto p-6 py-4 scrollbar-subtle"
                         style={{
                             scrollbarWidth: "thin",
-                            scrollbarColor:
-                                "rgba(156, 163, 175, 0.5) transparent",
                             overscrollBehavior: "contain",
                         }}
                     >
                         {error && (
-                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                            <Card
+                                color="red"
+                                bg="bg-red-100"
+                                className="mb-4 text-red-700"
+                            >
                                 {error}
-                            </div>
+                            </Card>
                         )}
 
                         <div className="space-y-4">
@@ -169,11 +148,11 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 <Field.Label className="text-sm font-semibold shrink-0">
                                     Name
                                 </Field.Label>
-                                <Field.Input
+                                <Input
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="flex-1"
                                     placeholder="Enter API key name"
                                     disabled={isSubmitting}
                                 />

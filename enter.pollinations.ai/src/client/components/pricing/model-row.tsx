@@ -1,4 +1,5 @@
 import { type FC, useState } from "react";
+import { Badge } from "../ui/badge.tsx";
 import { calculatePerPollen } from "./calculations.ts";
 import {
     getModelDisplayName,
@@ -11,8 +12,8 @@ import {
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
-import { PriceBadge } from "./PriceBadge.tsx";
-import { Tooltip } from "./Tooltip.tsx";
+import { PriceBadge } from "./price-badge.tsx";
+import { Tooltip } from "./tooltip.tsx";
 import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
@@ -48,6 +49,7 @@ export const ModelRow: FC<ModelRowProps> = ({
     const isDisabled = showPaidOnly && packBalance <= 0;
 
     const borderClass = isLast ? "" : "border-b border-gray-200";
+    const priceColor = showPaidOnly ? "purple" : ("cyan" as const);
 
     return (
         <tr className={isDisabled ? "opacity-50" : ""}>
@@ -105,9 +107,13 @@ export const ModelRow: FC<ModelRowProps> = ({
                         </Tooltip>
                     )}
                     {showNew && (
-                        <span className="text-[10px] text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full font-semibold border border-green-400 shadow-[0_0_6px_rgba(34,197,94,0.5)] animate-[glow_2s_ease-in-out_infinite]">
+                        <Badge
+                            color="green"
+                            size="sm"
+                            className="font-semibold shadow-[0_0_6px_rgba(34,197,94,0.5)] animate-[glow_2s_ease-in-out_infinite]"
+                        >
                             NEW
-                        </span>
+                        </Badge>
                     )}
                     {showPaidOnly && (
                         <Tooltip
@@ -126,11 +132,12 @@ export const ModelRow: FC<ModelRowProps> = ({
             </td>
             <td className={`py-2 px-2 text-sm ${borderClass}`}>
                 <div className="flex justify-center">
-                    <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${model.type === "image" ? "uppercase" : ""} ${showPaidOnly ? "bg-purple-200 text-purple-700 border border-purple-300" : "bg-cyan-200 text-cyan-700 border border-cyan-300"}`}
+                    <Badge
+                        color={showPaidOnly ? "purple" : "cyan"}
+                        className={model.type === "image" ? "uppercase" : ""}
                     >
                         {genPerPollen}
-                    </span>
+                    </Badge>
                 </div>
             </td>
             <td className={`py-2 px-2 text-sm text-center ${borderClass}`}>
@@ -143,44 +150,28 @@ export const ModelRow: FC<ModelRowProps> = ({
                             emoji="💬"
                             subEmojis={["💬"]}
                             perToken={model.perToken}
-                            className={
-                                showPaidOnly
-                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
-                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
-                            }
+                            color={priceColor}
                         />
                         <PriceBadge
                             prices={[model.promptCachedPrice]}
                             emoji="�"
                             subEmojis={["💾"]}
                             perToken={model.perToken}
-                            className={
-                                showPaidOnly
-                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
-                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
-                            }
+                            color={priceColor}
                         />
                         <PriceBadge
                             prices={[model.promptAudioPrice]}
                             emoji="🔊"
                             subEmojis={["🔊"]}
                             perToken={model.perToken}
-                            className={
-                                showPaidOnly
-                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
-                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
-                            }
+                            color={priceColor}
                         />
                         <PriceBadge
                             prices={[model.promptImagePrice]}
                             emoji="🖼️"
                             subEmojis={["🖼️"]}
                             perToken={model.perToken}
-                            className={
-                                showPaidOnly
-                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
-                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
-                            }
+                            color={priceColor}
                         />
                     </div>
                 )}
@@ -195,22 +186,14 @@ export const ModelRow: FC<ModelRowProps> = ({
                             emoji="💬"
                             subEmojis={["💬"]}
                             perToken={model.perToken}
-                            className={
-                                showPaidOnly
-                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
-                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
-                            }
+                            color={priceColor}
                         />
                         <PriceBadge
                             prices={[model.completionAudioPrice]}
                             emoji="🔊"
                             subEmojis={["🔊"]}
                             perToken={model.perToken}
-                            className={
-                                showPaidOnly
-                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
-                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
-                            }
+                            color={priceColor}
                         />
                         {model.perSecondPrice ? (
                             <>
@@ -219,22 +202,14 @@ export const ModelRow: FC<ModelRowProps> = ({
                                     emoji="🎬"
                                     subEmojis={["🎬"]}
                                     perSecond
-                                    className={
-                                        showPaidOnly
-                                            ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
-                                            : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
-                                    }
+                                    color={priceColor}
                                 />
                                 <PriceBadge
                                     prices={[model.perAudioSecondPrice]}
                                     emoji="🔊"
                                     subEmojis={["🔊"]}
                                     perSecond
-                                    className={
-                                        showPaidOnly
-                                            ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
-                                            : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
-                                    }
+                                    color={priceColor}
                                 />
                             </>
                         ) : model.perTokenPrice ? (
@@ -243,11 +218,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 emoji="🎬"
                                 subEmojis={["🎬"]}
                                 perToken
-                                className={
-                                    showPaidOnly
-                                        ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
-                                        : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
-                                }
+                                color={priceColor}
                             />
                         ) : model.perImagePrice ? (
                             <PriceBadge
@@ -255,11 +226,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 emoji="🖼️"
                                 subEmojis={["🖼️"]}
                                 perImage
-                                className={
-                                    showPaidOnly
-                                        ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
-                                        : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
-                                }
+                                color={priceColor}
                             />
                         ) : (
                             <PriceBadge
@@ -267,11 +234,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 emoji="🖼️"
                                 subEmojis={["🖼️"]}
                                 perToken={model.perToken}
-                                className={
-                                    showPaidOnly
-                                        ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
-                                        : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
-                                }
+                                color={priceColor}
                             />
                         )}
                     </div>

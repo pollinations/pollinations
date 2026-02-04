@@ -1,5 +1,7 @@
 import type { FC } from "react";
 import { getTierEmoji } from "@/tier-config.ts";
+import { Card } from "../ui/card.tsx";
+import { Panel } from "../ui/panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 
 type PollenBalanceProps = {
@@ -70,7 +72,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     }
 
     return (
-        <div className="bg-violet-50/30 rounded-2xl p-4 sm:p-8 border border-violet-300">
+        <Panel color="violet" className="sm:p-8">
             <div className="flex flex-row justify-center text-center pb-1">
                 {/* Combined Pollen Gauge */}
                 <div className="flex flex-col items-center gap-4 w-full">
@@ -105,7 +107,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 </div>
             </div>
             {/* Purchase info */}
-            <div className="bg-gradient-to-r from-violet-100/40 to-purple-100/40 rounded-xl p-4 border border-violet-200 mt-4">
+            <Card
+                color="violet"
+                bg="bg-gradient-to-r from-violet-100/40 to-purple-100/40"
+                className="mt-4"
+            >
                 <p className="text-sm font-medium text-violet-900">
                     🎁 During beta, we double your pollen! ($5 → 10💎, $10 →
                     20💎, $20 → 40💎, $50 → 100💎)
@@ -121,8 +127,8 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         Please vote
                     </a>
                 </p>
-            </div>
+            </Card>
             <PaymentTrustBadge />
-        </div>
+        </Panel>
     );
 };

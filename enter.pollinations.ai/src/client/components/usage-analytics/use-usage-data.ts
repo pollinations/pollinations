@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ALL_MODELS, MS_PER_30_DAYS, MS_PER_WEEK } from "../constants";
+import { ALL_MODELS, MS_PER_30_DAYS, MS_PER_WEEK } from "./constants";
 import type {
     DailyUsageRecord,
     DataPoint,
     FilterState,
     ModelBreakdown,
-} from "../types";
+} from "./types";
 
 type UsageDataResult = {
     dailyUsage: DailyUsageRecord[];

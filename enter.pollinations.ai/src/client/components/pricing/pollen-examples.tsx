@@ -7,7 +7,7 @@ import type { FC } from "react";
 import { calculatePerPollen } from "./calculations.ts";
 import { getModelPrices } from "./data.ts";
 import type { ModelPrice } from "./types.ts";
-import { type ModelStats, useModelStats } from "./useModelStats.ts";
+import { type ModelStats, useModelStats } from "./use-model-stats.ts";
 
 type ExampleModel = {
     name: string;

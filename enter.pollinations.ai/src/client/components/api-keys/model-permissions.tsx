@@ -1,7 +1,9 @@
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
-import { type FC, useState } from "react";
+import type { FC } from "react";
 import { cn } from "@/util.ts";
+import { Badge } from "../ui/badge.tsx";
+import { InfoTip } from "../ui/info-tip.tsx";
 import { getModelDisplayName } from "./model-utils.ts";
 
 // Build model lists from the shared registry (same source as pricing table)
@@ -57,7 +59,6 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
     disabled = false,
     compact = false,
 }) => {
-    const [showTooltip, setShowTooltip] = useState(false);
     // null means unrestricted (all models allowed)
     const isUnrestricted = value === null;
 
@@ -93,27 +94,10 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
             {!compact && (
                 <span className="flex items-center gap-1.5 text-sm font-semibold mb-2">
                     Models
-                    <button
-                        type="button"
-                        className="relative inline-flex items-center"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setShowTooltip((prev) => !prev);
-                        }}
-                        onMouseEnter={() => setShowTooltip(true)}
-                        onMouseLeave={() => setShowTooltip(false)}
-                        aria-label="Show model access information"
-                    >
-                        <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold cursor-pointer">
-                            i
-                        </span>
-                        <span
-                            className={`${showTooltip ? "visible" : "invisible"} absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs font-normal rounded-lg shadow-lg border border-pink-200 w-max max-w-[200px] sm:max-w-none z-50 pointer-events-none`}
-                        >
-                            Limit this key to specific models
-                        </span>
-                    </button>
+                    <InfoTip
+                        text="Limit this key to specific models"
+                        label="Show model access information"
+                    />
                 </span>
             )}
             <div
@@ -143,18 +127,18 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                     <span className="text-sm font-medium">
                         Allow all models
                     </span>
-                    <span
-                        className={cn(
-                            "text-xs px-2 py-0.5 rounded-full ml-auto border",
+                    <Badge
+                        color={
                             isUnrestricted
-                                ? "bg-green-100 text-green-700 border-green-300"
+                                ? "green"
                                 : selectedCount === 0
-                                  ? "bg-red-100 text-red-700 border-red-300"
-                                  : "bg-amber-100 text-amber-700 border-amber-300",
-                        )}
+                                  ? "gray"
+                                  : "amber"
+                        }
+                        className="ml-auto"
                     >
                         {`${selectedCount} selected`}
-                    </span>
+                    </Badge>
                 </label>
 
                 {/* Show model chips when restricting to specific models */}

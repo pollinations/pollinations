@@ -3,10 +3,10 @@ import { useState } from "react";
 import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
 import { FAQ } from "../components/faq.tsx";
-import { Footer } from "../components/footer.tsx";
-import { Header } from "../components/header.tsx";
-import { NewsBanner } from "../components/news-banner.tsx";
-import { Pricing } from "../components/pricing/index.ts";
+import { Footer } from "../components/layout/footer.tsx";
+import { Header } from "../components/layout/header.tsx";
+import { NewsBanner } from "../components/layout/news-banner.tsx";
+import { Pricing } from "../components/pricing";
 
 export const Route = createFileRoute("/sign-in")({
     component: RouteComponent,

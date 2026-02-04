@@ -1,5 +1,6 @@
 import { Field } from "@ark-ui/react";
-import { type FC, useState } from "react";
+import type { FC } from "react";
+import { InfoTip } from "../ui/info-tip.tsx";
 
 type AccountPermissionsInputProps = {
     value: string[] | null;
@@ -35,8 +36,6 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     onChange,
     disabled = false,
 }) => {
-    const [showTooltip, setShowTooltip] = useState(false);
-
     const handleToggle = (permissionId: string) => {
         const currentPermissions = value ?? [];
         const hasPermission = currentPermissions.includes(permissionId);
@@ -55,27 +54,10 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
         <Field.Root>
             <Field.Label className="flex items-center gap-1.5 text-sm font-semibold mb-2">
                 Permissions
-                <button
-                    type="button"
-                    className="relative inline-flex items-center"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setShowTooltip((prev) => !prev);
-                    }}
-                    onMouseEnter={() => setShowTooltip(true)}
-                    onMouseLeave={() => setShowTooltip(false)}
-                    aria-label="Permissions information"
-                >
-                    <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold cursor-pointer">
-                        i
-                    </span>
-                    <span
-                        className={`${showTooltip ? "visible" : "invisible"} absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs font-normal rounded-lg shadow-lg border border-pink-200 w-max max-w-[200px] sm:max-w-none z-50 pointer-events-none`}
-                    >
-                        Grant this key read access to your account data
-                    </span>
-                </button>
+                <InfoTip
+                    text="Grant this key read access to your account data"
+                    label="Permissions information"
+                />
             </Field.Label>
             <div className="space-y-2">
                 {ACCOUNT_PERMISSIONS.map((permission) => {

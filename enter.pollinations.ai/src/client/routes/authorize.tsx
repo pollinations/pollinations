@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
-import { Button } from "../components/button.tsx";
 import {
     KeyPermissionsInputs,
     useKeyPermissions,
-} from "../components/key-permissions.tsx";
+} from "../components/api-keys";
+import { Button } from "../components/button.tsx";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 

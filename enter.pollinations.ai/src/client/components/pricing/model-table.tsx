@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import { calculatePerPollen } from "./calculations.ts";
-import { ModelRow } from "./ModelRow.tsx";
 import { isPersona } from "./model-info.ts";
+import { ModelRow } from "./model-row.tsx";
 import type { ModelPrice } from "./types.ts";
 
 type ModelTableProps = {

@@ -1,4 +1,11 @@
 import type { FC } from "react";
+import { cn } from "../../../util.ts";
+
+const priceBadgeColors = {
+    gray: "bg-gray-100 text-gray-700",
+    purple: "bg-purple-200 text-purple-700",
+    cyan: "bg-cyan-200 text-cyan-700",
+} as const;
 
 export const PriceBadge: FC<{
     prices: (string | undefined)[];
@@ -7,6 +14,7 @@ export const PriceBadge: FC<{
     perImage?: boolean;
     perToken?: boolean;
     perSecond?: boolean;
+    color?: keyof typeof priceBadgeColors;
     className?: string;
 }> = ({
     prices,
@@ -15,6 +23,7 @@ export const PriceBadge: FC<{
     perImage,
     perToken,
     perSecond,
+    color = "gray",
     className,
 }) => {
     const validPrices = prices.filter((p) => p && p !== "—");
@@ -31,10 +40,11 @@ export const PriceBadge: FC<{
 
     return (
         <span
-            className={
-                className ||
-                "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-gray-100 text-gray-700"
-            }
+            className={cn(
+                "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap",
+                priceBadgeColors[color],
+                className,
+            )}
         >
             <span>{subEmojis[0] || emoji}</span>
             <span>

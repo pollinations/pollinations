@@ -1,4 +1,5 @@
 import { type FC, useEffect, useState } from "react";
+import { Panel } from "../ui/panel.tsx";
 
 const HIGHLIGHTS_RAW_URL =
     "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/highlights.md";
@@ -43,7 +44,7 @@ export const NewsBanner: FC = () => {
     if (highlights.length === 0) return null;
 
     return (
-        <div className="bg-violet-50/60 border border-violet-200 rounded-lg p-4 text-sm">
+        <Panel color="violet" compact>
             <div className="flex flex-col gap-2">
                 <span className="text-xs text-gray-500">What's new</span>
                 <ul className="text-xs space-y-1.5">
@@ -63,6 +64,6 @@ export const NewsBanner: FC = () => {
                     More...
                 </a>
             </div>
-        </div>
+        </Panel>
     );
 };

@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { TIER_EMOJIS, TIER_POLLEN } from "@/tier-config.ts";
-import { Tooltip } from "./pricing/Tooltip";
+import { Tooltip } from "../pricing/tooltip.tsx";
 
 const SeedTooltipContent = () => (
     <div className="w-56">

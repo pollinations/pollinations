@@ -1,6 +1,16 @@
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { DataPoint, Metric } from "../types";
+import type { DataPoint, Metric } from "./types";
+
+const CHART_COLORS = {
+    grid: "#e5e7eb", // gray-200
+    tierBar: "#99f6e4", // teal-200
+    tierBarHover: "#5eead4", // teal-300
+    paidBar: "#ddd6fe", // violet-200
+    paidBarHover: "#c4b5fd", // violet-300
+    tooltipBg: "#18181b", // zinc-950
+    tooltipSep: "#374151", // gray-700
+} as const;
 
 type ChartProps = {
     data: DataPoint[];
@@ -159,7 +169,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                             y1={t.y}
                             x2={width - pad.right}
                             y2={t.y}
-                            stroke="#e5e7eb"
+                            stroke={CHART_COLORS.grid}
                             strokeDasharray="4 4"
                         />
                         <text
@@ -232,7 +242,9 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                 rx={bar.paidHeight > 0 ? 0 : 2}
                                 style={{
                                     fill:
-                                        hovered === idx ? "#5eead4" : "#99f6e4",
+                                        hovered === idx
+                                            ? CHART_COLORS.tierBarHover
+                                            : CHART_COLORS.tierBar,
                                     transition: "fill 0.15s ease-out",
                                 }}
                             />
@@ -254,7 +266,9 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                 rx={2}
                                 style={{
                                     fill:
-                                        hovered === idx ? "#c4b5fd" : "#ddd6fe",
+                                        hovered === idx
+                                            ? CHART_COLORS.paidBarHover
+                                            : CHART_COLORS.paidBar,
                                     transition: "fill 0.15s ease-out",
                                 }}
                             />
@@ -326,7 +340,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                     width={tooltipWidth}
                                     height={tooltipHeight}
                                     rx="8"
-                                    fill="#18181b"
+                                    fill={CHART_COLORS.tooltipBg}
                                     opacity="0.95"
                                 />
                                 <text
@@ -354,7 +368,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
                                         y1={tooltipY + headerHeight + 2}
                                         x2={tooltipX + tooltipWidth - 12}
                                         y2={tooltipY + headerHeight + 2}
-                                        stroke="#374151"
+                                        stroke={CHART_COLORS.tooltipSep}
                                         strokeWidth="1"
                                     />
                                 )}

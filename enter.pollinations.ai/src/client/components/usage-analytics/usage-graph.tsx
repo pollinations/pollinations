@@ -1,11 +1,13 @@
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 import type { TierStatus } from "../../../tier-config";
-import { Chart } from "./components/Chart";
-import { FilterButton } from "./components/FilterButton";
-import { MultiSelect } from "./components/MultiSelect";
-import { useUsageData } from "./hooks/useUsageData";
+import { Card } from "../ui/card.tsx";
+import { Panel } from "../ui/panel.tsx";
+import { Chart } from "./chart";
+import { FilterButton } from "./filter-button";
+import { MultiSelect } from "./multi-select";
 import type { FilterState, Metric, TimeRange } from "./types";
+import { useUsageData } from "./use-usage-data";
 
 const TIER_EMOJIS: Record<TierStatus, string> = {
     none: "🦠",
@@ -63,7 +65,7 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
 
     return (
         <div className="flex flex-col gap-2">
-            <div className="bg-violet-50/30 rounded-2xl p-6 border border-violet-300">
+            <Panel color="violet">
                 {loading && (
                     <div className="flex items-center justify-center h-[180px]">
                         <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
@@ -72,7 +74,11 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
                     </div>
                 )}
                 {error && !loading && (
-                    <div className="flex items-center justify-center h-[180px] rounded-xl bg-red-50 border border-dashed border-red-200">
+                    <Card
+                        color="red"
+                        bg="bg-red-50"
+                        className="flex items-center justify-center h-[180px] border-dashed"
+                    >
                         <div className="text-center">
                             <p className="text-sm text-red-500 font-medium">
                                 {error}
@@ -85,7 +91,7 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
                                 Try again
                             </button>
                         </div>
-                    </div>
+                    </Card>
                 )}
                 {!loading && !error && (
                     <>
@@ -180,13 +186,17 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
                         </div>
 
                         {/* Chart */}
-                        <div className="relative bg-white rounded-xl p-4 border border-violet-200 mb-4">
+                        <Card
+                            color="violet"
+                            bg="bg-white"
+                            className="relative mb-4"
+                        >
                             <Chart
                                 data={chartData}
                                 metric={filters.metric}
                                 showModelBreakdown={showModelBreakdown}
                             />
-                        </div>
+                        </Card>
 
                         {/* Stats */}
                         <div className="space-y-1">
@@ -219,7 +229,7 @@ export const UsageGraph: FC<{ tier?: TierStatus }> = ({ tier }) => {
                         </p>
                     </>
                 )}
-            </div>
+            </Panel>
         </div>
     );
 };

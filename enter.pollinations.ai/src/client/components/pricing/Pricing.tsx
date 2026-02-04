@@ -1,8 +1,10 @@
 import type { FC } from "react";
 import { Button } from "../button.tsx";
+import { Card } from "../ui/card.tsx";
+import { Panel } from "../ui/panel.tsx";
 import { getModelPrices } from "./data.ts";
-import { UnifiedModelTable } from "./ModelTable.tsx";
-import { useModelStats } from "./useModelStats.ts";
+import { UnifiedModelTable } from "./model-table.tsx";
+import { useModelStats } from "./use-model-stats.ts";
 
 type PricingProps = {
     packBalance?: number;
@@ -32,7 +34,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                     Vote on next models
                 </Button>
             </div>
-            <div className="bg-amber-50/30 rounded-2xl p-6 border border-amber-300 space-y-6">
+            <Panel color="amber" className="space-y-6">
                 <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <UnifiedModelTable
                         imageModels={imageModels}
@@ -44,13 +46,13 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
 
                 <div className="pt-4 space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                        <div className="bg-white/50 rounded-lg p-4 border border-amber-300 shadow-sm">
+                        <Card color="amber">
                             <div className="flex gap-4">
                                 <div className="flex-1">
                                     <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
                                         Model Capabilities
                                     </div>
-                                    <div className="space-y-1 text-gray-600">
+                                    <div className="space-y-1 text-gray-500">
                                         <div>👁️ vision</div>
                                         <div>🎙️ audio input</div>
                                         <div>🔊 audio output</div>
@@ -64,7 +66,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                     <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
                                         Token Types
                                     </div>
-                                    <div className="space-y-1 text-gray-600">
+                                    <div className="space-y-1 text-gray-500">
                                         <div>💬 text input/output</div>
                                         <div>💾 cached input</div>
                                         <div>🔊 audio input/output</div>
@@ -73,12 +75,12 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div className="bg-white/50 rounded-lg p-4 border border-amber-300 shadow-sm">
+                        </Card>
+                        <Card color="amber">
                             <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
                                 Pricing Metrics
                             </div>
-                            <div className="space-y-1 text-gray-600">
+                            <div className="space-y-1 text-gray-500">
                                 <div>
                                     <strong>/img</strong> = flat rate per image
                                 </div>
@@ -100,14 +102,14 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                     Actual costs vary with modality and output.
                                 </div>
                             </div>
-                        </div>
+                        </Card>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="bg-white/50 rounded-lg px-4 py-3 border border-amber-300 shadow-sm">
+                        <Card color="amber">
                             <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
                                 💡 How Pollen is Spent
                             </div>
-                            <div className="space-y-1 text-xs text-gray-600">
+                            <div className="space-y-1 text-xs text-gray-500">
                                 <div>1. Daily tier grants are used first</div>
                                 <div>
                                     2. Purchased pollen is used after daily is
@@ -118,12 +120,12 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                     models require purchased pollen only
                                 </div>
                             </div>
-                        </div>
-                        <div className="bg-white/50 rounded-lg px-4 py-3 border border-amber-300 shadow-sm">
+                        </Card>
+                        <Card color="amber">
                             <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
                                 🎁 Beta Bonus
                             </div>
-                            <div className="space-y-2 text-xs text-gray-600">
+                            <div className="space-y-2 text-xs text-gray-500">
                                 <div className="flex items-center gap-1">
                                     <span>💎</span>
                                     <span className="font-medium">
@@ -156,10 +158,10 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                     Prices may adjust during beta.
                                 </div>
                             </div>
-                        </div>
+                        </Card>
                     </div>
                 </div>
-            </div>
+            </Panel>
         </div>
     );
 };

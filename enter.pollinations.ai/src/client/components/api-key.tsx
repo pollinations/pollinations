@@ -1,6 +1,7 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import { type FormatDistanceToken, formatDistanceToNowStrict } from "date-fns";
+import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 
 const shortFormatDistance: Record<FormatDistanceToken, string> = {
@@ -28,7 +29,7 @@ const shortLocale = {
 };
 
 import type { FC } from "react";
-import { Fragment, useState } from "react";
+import { useEffect, useState } from "react";
 import {
     adjectives,
     animals,
@@ -37,7 +38,7 @@ import {
 import { cn } from "@/util.ts";
 import { Button } from "../components/button.tsx";
 
-type ApiKey = {
+interface ApiKey {
     id: string;
     name?: string | null;
     start?: string | null;
@@ -47,21 +48,22 @@ type ApiKey = {
     permissions: { [key: string]: string[] } | null;
     metadata: { [key: string]: unknown } | null;
     pollenBalance?: number | null;
-};
+}
 
-type ApiKeyManagerProps = {
+interface ApiKeyUpdateParams {
+    name?: string;
+    allowedModels?: string[] | null;
+    pollenBudget?: number | null;
+    accountPermissions?: string[] | null;
+    expiresAt?: Date | null;
+}
+
+interface ApiKeyManagerProps {
     apiKeys: ApiKey[];
     onCreate: (formData: CreateApiKey) => Promise<CreateApiKeyResponse>;
+    onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
-};
-
-const Cell: FC<React.ComponentProps<"div">> = ({ children, ...props }) => {
-    return (
-        <span className="flex items-center" {...props}>
-            {children}
-        </span>
-    );
-};
+}
 
 const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
     fullKey,
@@ -74,8 +76,8 @@ const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
             await navigator.clipboard.writeText(fullKey);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error("Failed to copy:", err);
+        } catch (_err) {
+            // Silently fail
         }
     };
 
@@ -100,50 +102,73 @@ const LimitsBadge: FC<{
     expiresAt: Date | null | undefined;
     pollenBudget: number | null | undefined;
 }> = ({ expiresAt, pollenBudget }) => {
-    const hasExpiry = expiresAt !== null && expiresAt !== undefined;
-    const hasBudget = pollenBudget !== null && pollenBudget !== undefined;
-
-    // Format expiry
-    let expiryStr = "∞";
-    if (hasExpiry) {
-        const expiresDate = new Date(expiresAt);
-        const now = new Date();
-        const daysLeft = Math.ceil(
-            (expiresDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-        );
-        if (daysLeft <= 0) {
-            expiryStr = "expired";
-        } else {
-            const timeLeft = formatDistanceToNowStrict(expiresDate, {
-                addSuffix: false,
-                locale: shortLocale,
-            });
-            expiryStr = timeLeft;
-        }
-    }
-
-    // Format budget - show decimals only when needed
-    let budgetStr = "∞";
-    const isExhausted = hasBudget && pollenBudget <= 0;
-    if (hasBudget) {
-        const formatted = Number.isInteger(pollenBudget)
-            ? pollenBudget.toString()
-            : pollenBudget.toFixed(2);
-        budgetStr = pollenBudget <= 0 ? "empty" : `${formatted}p`;
-    }
+    const expiryStr = formatExpiry(expiresAt);
+    const budgetStr = formatBudget(pollenBudget);
+    const isExhausted = pollenBudget != null && pollenBudget <= 0;
 
     return (
-        <div className="flex items-center text-xs whitespace-nowrap">
-            <span className="text-gray-600">{expiryStr}</span>
-            <span className="text-gray-400 mx-1">/</span>
-            <span
-                className={
-                    isExhausted ? "text-red-500 font-medium" : "text-gray-600"
-                }
-            >
-                {budgetStr}
+        <>
+            <span>
+                <span className="text-gray-400">Expires: </span>
+                <span className="text-gray-500">{expiryStr}</span>
             </span>
-        </div>
+            <span>
+                <span className="text-gray-400">Budget: </span>
+                <span
+                    className={cn(
+                        "text-gray-500",
+                        isExhausted && "text-red-500 font-medium",
+                    )}
+                >
+                    {budgetStr}
+                </span>
+            </span>
+        </>
+    );
+};
+
+function formatExpiry(expiresAt: Date | null | undefined): string {
+    if (!expiresAt) return "∞";
+
+    const expiresDate = new Date(expiresAt);
+    const daysLeft = Math.ceil(
+        (expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+    );
+
+    if (daysLeft <= 0) return "expired";
+
+    return formatDistanceToNowStrict(expiresDate, {
+        addSuffix: false,
+        locale: shortLocale,
+    });
+}
+
+function formatBudget(pollenBudget: number | null | undefined): string {
+    if (pollenBudget == null) return "∞";
+    if (pollenBudget <= 0) return "empty";
+
+    return Number.isInteger(pollenBudget)
+        ? `${pollenBudget}p`
+        : `${pollenBudget.toFixed(2)}p`;
+}
+
+const AccountBadge: FC<{
+    permissions: { [key: string]: string[] } | null;
+}> = ({ permissions }) => {
+    const account = permissions?.account ?? null;
+    if (!account || account.length === 0) return null;
+
+    return (
+        <>
+            {account.map((perm) => (
+                <span
+                    key={perm}
+                    className="text-xs px-1.5 py-0.5 rounded-full border bg-violet-100 text-violet-700 border-violet-300"
+                >
+                    {perm}
+                </span>
+            ))}
+        </>
     );
 };
 
@@ -155,22 +180,33 @@ const ModelsBadge: FC<{
     const isAllModels = models === null;
     const modelCount = models?.length ?? 0;
 
+    const handleInteraction = (e: React.MouseEvent | React.KeyboardEvent) => {
+        e.stopPropagation();
+        if ("key" in e && e.key !== "Enter" && e.key !== " ") return;
+        if ("key" in e) e.preventDefault();
+        setShowTooltip((prev) => !prev);
+    };
+
+    const tooltipContent = () => {
+        if (isAllModels) return "Access to all models";
+        if (modelCount === 0) return "No models allowed";
+        return (
+            <div className="font-mono text-[11px] leading-relaxed text-left whitespace-nowrap">
+                {models?.map((model) => (
+                    <div key={model}>{model}</div>
+                ))}
+            </div>
+        );
+    };
+
     return (
         <button
             type="button"
             className="relative inline-flex items-center"
-            onClick={(e) => {
-                e.stopPropagation();
-                setShowTooltip((prev) => !prev);
-            }}
+            onClick={handleInteraction}
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
-            onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setShowTooltip((prev) => !prev);
-                }
-            }}
+            onKeyDown={handleInteraction}
             aria-label="Show allowed models"
         >
             <span
@@ -191,33 +227,21 @@ const ModelsBadge: FC<{
                         left: "var(--tooltip-left)",
                     }}
                     ref={(el) => {
-                        if (el) {
-                            const btn = el.parentElement;
-                            if (btn) {
-                                const rect = btn.getBoundingClientRect();
-                                el.style.setProperty(
-                                    "--tooltip-top",
-                                    `${rect.bottom + 4}px`,
-                                );
-                                el.style.setProperty(
-                                    "--tooltip-left",
-                                    `${rect.left}px`,
-                                );
-                            }
-                        }
+                        if (!el) return;
+                        const btn = el.parentElement;
+                        if (!btn) return;
+                        const rect = btn.getBoundingClientRect();
+                        el.style.setProperty(
+                            "--tooltip-top",
+                            `${rect.bottom + 4}px`,
+                        );
+                        el.style.setProperty(
+                            "--tooltip-left",
+                            `${rect.left}px`,
+                        );
                     }}
                 >
-                    {isAllModels ? (
-                        "Access to all models"
-                    ) : modelCount === 0 ? (
-                        "No models allowed"
-                    ) : (
-                        <div className="font-mono text-[11px] leading-relaxed text-left whitespace-nowrap">
-                            {models?.map((model) => (
-                                <div key={model}>{model}</div>
-                            ))}
-                        </div>
-                    )}
+                    {tooltipContent()}
                 </div>
             )}
         </button>
@@ -227,9 +251,11 @@ const ModelsBadge: FC<{
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     apiKeys,
     onCreate,
+    onUpdate,
     onDelete,
 }) => {
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
 
     const handleDelete = async () => {
         if (deleteId) {
@@ -256,158 +282,133 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </div>
                 </div>
                 {apiKeys.length ? (
-                    <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-300 overflow-hidden">
-                        <div className="flex">
-                            {/* Scrollable content area */}
-                            <div
-                                className="flex-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-                                style={{ overflowY: "clip" }}
-                            >
-                                <div className="grid grid-cols-[auto_auto_auto_auto_auto_auto] gap-x-3 gap-y-2 text-sm min-w-max">
-                                    <span className="font-bold text-pink-400 text-sm">
-                                        Type
-                                    </span>
-                                    <span className="font-bold text-pink-400 text-sm">
-                                        Name
-                                    </span>
-                                    <span className="font-bold text-pink-400 text-sm">
-                                        Key
-                                    </span>
-                                    <span className="font-bold text-pink-400 text-sm">
-                                        Created / Used
-                                    </span>
-                                    <span className="font-bold text-pink-400 text-sm">
-                                        Expiry / Budget
-                                    </span>
-                                    <span className="font-bold text-pink-400 text-sm">
-                                        Models
-                                    </span>
-                                    {sortedKeys.map((apiKey) => {
-                                        const keyType = apiKey.metadata?.[
-                                            "keyType"
-                                        ] as string | undefined;
-                                        const isPublishable =
-                                            keyType === "publishable";
-                                        const plaintextKey = apiKey.metadata?.[
-                                            "plaintextKey"
-                                        ] as string | undefined;
+                    <div className="bg-blue-50/30 rounded-2xl p-4 border border-blue-300">
+                        <div className="flex flex-col gap-3">
+                            {sortedKeys.map((apiKey) => {
+                                const keyType = apiKey.metadata?.["keyType"] as
+                                    | string
+                                    | undefined;
+                                const isPublishable = keyType === "publishable";
+                                const plaintextKey = apiKey.metadata?.[
+                                    "plaintextKey"
+                                ] as string | undefined;
 
-                                        return (
-                                            <Fragment key={apiKey.id}>
-                                                <Cell>
-                                                    <span
-                                                        className={cn(
-                                                            "px-2 py-1 rounded text-xs font-medium",
-                                                            isPublishable
-                                                                ? "bg-blue-100 text-blue-700"
-                                                                : "bg-purple-100 text-purple-700",
-                                                        )}
-                                                    >
-                                                        {isPublishable
-                                                            ? "🌐 Publishable"
-                                                            : "🔒 Secret"}
-                                                    </span>
-                                                </Cell>
-                                                <Cell>
-                                                    <span
-                                                        className="text-xs truncate block"
-                                                        title={
-                                                            apiKey.name ??
-                                                            undefined
-                                                        }
-                                                    >
-                                                        {apiKey.name}
-                                                    </span>
-                                                </Cell>
-                                                <Cell>
-                                                    {isPublishable &&
-                                                    plaintextKey ? (
-                                                        <KeyDisplay
-                                                            fullKey={
-                                                                plaintextKey
-                                                            }
-                                                            start={
-                                                                apiKey.start ??
-                                                                ""
-                                                            }
-                                                        />
-                                                    ) : (
-                                                        <span className="font-mono text-xs text-gray-500">
-                                                            {apiKey.start}
-                                                            ...
-                                                        </span>
+                                return (
+                                    <div
+                                        key={apiKey.id}
+                                        className="bg-white/40 rounded-xl p-3 transition-colors hover:bg-white/60"
+                                    >
+                                        {/* Row 1: Type, Name, Key, Actions */}
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span
+                                                className={cn(
+                                                    "px-2 py-0.5 rounded text-xs font-medium shrink-0",
+                                                    isPublishable
+                                                        ? "bg-blue-100 text-blue-700"
+                                                        : "bg-purple-100 text-purple-700",
+                                                )}
+                                            >
+                                                {isPublishable
+                                                    ? "🌐 Publishable"
+                                                    : "🔒 Secret"}
+                                            </span>
+                                            <span
+                                                className="text-sm font-medium truncate"
+                                                title={apiKey.name ?? undefined}
+                                            >
+                                                {apiKey.name}
+                                            </span>
+                                            <span className="flex-1" />
+                                            {isPublishable && plaintextKey ? (
+                                                <KeyDisplay
+                                                    fullKey={plaintextKey}
+                                                    start={apiKey.start ?? ""}
+                                                />
+                                            ) : (
+                                                <span className="font-mono text-xs text-gray-500 shrink-0">
+                                                    {apiKey.start}...
+                                                </span>
+                                            )}
+                                            <div className="flex gap-1 shrink-0 ml-2 items-center">
+                                                <button
+                                                    type="button"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                                    onClick={() =>
+                                                        setEditingKey(apiKey)
+                                                    }
+                                                    title="Edit key"
+                                                >
+                                                    ✎
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
+                                                    onClick={() =>
+                                                        setDeleteId(apiKey.id)
+                                                    }
+                                                    title="Delete key"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {/* Row 2: Stats and Permissions */}
+                                        <div className="flex flex-wrap items-center gap-4 text-xs">
+                                            <span title="Created">
+                                                <span className="text-gray-400">
+                                                    Created:{" "}
+                                                </span>
+                                                <span className="text-gray-500">
+                                                    {formatDistanceToNowStrict(
+                                                        apiKey.createdAt,
+                                                        {
+                                                            addSuffix: false,
+                                                            locale: shortLocale,
+                                                        },
                                                     )}
-                                                </Cell>
-                                                <Cell>
-                                                    <div className="flex items-center text-xs whitespace-nowrap">
-                                                        <span className="text-gray-600">
-                                                            {formatDistanceToNowStrict(
-                                                                apiKey.createdAt,
-                                                                {
-                                                                    addSuffix: false,
-                                                                    locale: shortLocale,
-                                                                },
-                                                            )}
-                                                        </span>
-                                                        <span className="text-gray-400 mx-1">
-                                                            /
-                                                        </span>
-                                                        <span className="text-gray-500">
-                                                            {apiKey.lastRequest
-                                                                ? formatDistanceToNowStrict(
-                                                                      new Date(
-                                                                          apiKey.lastRequest,
-                                                                      ),
-                                                                      {
-                                                                          addSuffix: false,
-                                                                          locale: shortLocale,
-                                                                      },
-                                                                  )
-                                                                : "—"}
-                                                        </span>
-                                                    </div>
-                                                </Cell>
-                                                <Cell>
-                                                    <LimitsBadge
-                                                        expiresAt={
-                                                            apiKey.expiresAt
-                                                        }
-                                                        pollenBudget={
-                                                            apiKey.pollenBalance
-                                                        }
-                                                    />
-                                                </Cell>
-                                                <Cell>
-                                                    <ModelsBadge
-                                                        permissions={
-                                                            apiKey.permissions
-                                                        }
-                                                    />
-                                                </Cell>
-                                            </Fragment>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                            {/* Fixed delete column - outside scroll area */}
-                            <div className="flex-shrink-0 pl-3 flex flex-col gap-y-2">
-                                {/* h-5 matches the header row height for alignment */}
-                                <span className="h-5"></span>
-                                {sortedKeys.map((apiKey) => (
-                                    <Cell key={apiKey.id}>
-                                        <button
-                                            type="button"
-                                            className="w-6 h-6 flex items-center justify-center rounded bg-red-50 hover:bg-red-100 text-red-300 hover:text-red-600 transition-colors text-lg cursor-pointer"
-                                            onClick={() =>
-                                                setDeleteId(apiKey.id)
-                                            }
-                                            title="Delete key"
-                                        >
-                                            ×
-                                        </button>
-                                    </Cell>
-                                ))}
-                            </div>
+                                                </span>
+                                            </span>
+                                            <span title="Last used">
+                                                <span className="text-gray-400">
+                                                    Used:{" "}
+                                                </span>
+                                                <span className="text-gray-500">
+                                                    {apiKey.lastRequest
+                                                        ? formatDistanceToNowStrict(
+                                                              new Date(
+                                                                  apiKey.lastRequest,
+                                                              ),
+                                                              {
+                                                                  addSuffix: false,
+                                                                  locale: shortLocale,
+                                                              },
+                                                          )
+                                                        : "never"}
+                                                </span>
+                                            </span>
+                                            <LimitsBadge
+                                                expiresAt={apiKey.expiresAt}
+                                                pollenBudget={
+                                                    apiKey.pollenBalance
+                                                }
+                                            />
+                                            <span className="flex items-center gap-1">
+                                                <span className="text-gray-400">
+                                                    Models:
+                                                </span>
+                                                <ModelsBadge
+                                                    permissions={
+                                                        apiKey.permissions
+                                                    }
+                                                />
+                                            </span>
+                                            <AccountBadge
+                                                permissions={apiKey.permissions}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                         {apiKeys.some(
                             (k) => k.metadata?.["keyType"] === "publishable",
@@ -415,8 +416,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <div className="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl p-4 border border-blue-300 mt-4">
                                 <p className="text-sm font-medium text-blue-900">
                                     🌐 <strong>Publishable keys:</strong> Beta -
-                                    actively improving stability. For production
-                                    apps, we recommend secret keys.
+                                    actively improving stability.
+                                </p>
+                                <p className="text-sm text-blue-800">
+                                    For production apps, we recommend secret
+                                    keys.
                                 </p>
                             </div>
                         )}
@@ -457,6 +461,13 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </Dialog.Content>
                 </Dialog.Positioner>
             </Dialog.Root>
+            {editingKey && (
+                <EditApiKeyDialog
+                    apiKey={editingKey}
+                    onUpdate={onUpdate}
+                    onClose={() => setEditingKey(null)}
+                />
+            )}
         </>
     );
 };
@@ -512,17 +523,32 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
 
+    useEffect(() => {
+        if (!isOpen) return;
+        const originalBodyOverflow = document.body.style.overflow;
+        const originalHtmlOverflow = document.documentElement.style.overflow;
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = originalBodyOverflow;
+            document.documentElement.style.overflow = originalHtmlOverflow;
+        };
+    }, [isOpen]);
+
     const handleKeyTypeChange = (newKeyType: "secret" | "publishable") => {
         setKeyType(newKeyType);
         setName(generateFunName());
+        const dateStr = new Date().toLocaleDateString("en-US", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "2-digit",
+        });
         setDescription(
-            newKeyType === "publishable"
-                ? ""
-                : `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
+            newKeyType === "publishable" ? "" : `Created on ${dateStr}`,
         );
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setIsSubmitting(true);
         try {
@@ -533,29 +559,26 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 ...keyPermissions.permissions,
             });
             setCreatedKey(newKey);
-        } catch (error) {
-            console.error("Failed to create API key:", error);
         } finally {
             setIsSubmitting(false);
         }
-    };
+    }
 
-    const handleCopyAndClose = async () => {
-        if (createdKey) {
-            try {
-                await navigator.clipboard.writeText(createdKey.key);
-                setCopied(true);
-                setTimeout(() => {
-                    onComplete();
-                    setIsOpen(false);
-                }, 500);
-            } catch (err) {
-                console.error("Failed to copy:", err);
+    async function handleCopyAndClose() {
+        if (!createdKey) return;
+
+        try {
+            await navigator.clipboard.writeText(createdKey.key);
+            setCopied(true);
+            setTimeout(() => {
                 onComplete();
                 setIsOpen(false);
-            }
+            }, 500);
+        } catch (_err) {
+            onComplete();
+            setIsOpen(false);
         }
-    };
+    }
 
     return (
         <Dialog.Root open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>
@@ -566,157 +589,151 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             </Dialog.Trigger>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
-                <Dialog.Content
-                    className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto"
-                    style={{
-                        scrollbarWidth: "thin",
-                        scrollbarColor: "rgba(156, 163, 175, 0.5) transparent",
-                    }}
-                >
-                    <Dialog.Title className="text-lg font-semibold mb-6">
-                        Create New API Key
-                    </Dialog.Title>
+                <Dialog.Content className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full max-h-[85vh] flex flex-col">
+                    <div className="shrink-0 p-6 pb-4">
+                        <Dialog.Title className="text-lg font-semibold">
+                            Create New API Key
+                        </Dialog.Title>
+                    </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <Field.Root>
-                            <Field.Label className="block text-sm font-semibold mb-2">
-                                Type
-                            </Field.Label>
-                            <div className="space-y-2">
-                                <label
-                                    className={cn(
-                                        "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
-                                        keyType === "publishable"
-                                            ? "border-blue-500 bg-blue-50"
-                                            : "border-gray-200 hover:border-gray-300",
-                                        createdKey &&
-                                            keyType !== "publishable" &&
-                                            "opacity-40",
-                                    )}
-                                >
-                                    <input
-                                        type="radio"
-                                        name="keyType"
-                                        value="publishable"
-                                        checked={keyType === "publishable"}
-                                        onChange={(e) =>
-                                            handleKeyTypeChange(
-                                                e.target.value as "publishable",
-                                            )
-                                        }
-                                        className="mt-1 w-4 h-4 text-blue-600"
-                                        disabled={isSubmitting || !!createdKey}
-                                    />
-                                    <div className="flex-1">
-                                        <div className="font-medium text-blue-800">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="flex flex-col flex-1 min-h-0"
+                    >
+                        <div
+                            className="flex-1 overflow-y-auto px-6 py-2 space-y-4"
+                            style={{
+                                scrollbarWidth: "thin",
+                                scrollbarColor:
+                                    "rgba(156, 163, 175, 0.5) transparent",
+                                overscrollBehavior: "contain",
+                            }}
+                        >
+                            <Field.Root>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <label
+                                        className={cn(
+                                            "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
+                                            keyType === "publishable"
+                                                ? "bg-blue-100 ring-2 ring-blue-500"
+                                                : "bg-gray-50 hover:bg-gray-100",
+                                            createdKey &&
+                                                keyType !== "publishable" &&
+                                                "opacity-40",
+                                        )}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="keyType"
+                                            value="publishable"
+                                            checked={keyType === "publishable"}
+                                            onChange={(e) =>
+                                                handleKeyTypeChange(
+                                                    e.target
+                                                        .value as "publishable",
+                                                )
+                                            }
+                                            className="sr-only"
+                                            disabled={
+                                                isSubmitting || !!createdKey
+                                            }
+                                        />
+                                        <div className="font-semibold text-sm mb-2">
                                             🌐 Publishable Key
                                         </div>
-                                        <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
-                                            <li className="font-semibold">
-                                                Always visible in your dashboard
+                                        <ul className="text-xs text-gray-600 space-y-1 flex-1 list-disc pl-4">
+                                            <li>Always visible in dashboard</li>
+                                            <li>
+                                                For client-side code (React,
+                                                Vue)
                                             </li>
                                             <li>
-                                                Safe to use in client-side code
-                                                (React, Vue, etc.)
-                                            </li>
-                                            <li>
-                                                Pollen-based rate limiting: 1
-                                                pollen/hour refill per IP+key
+                                                Rate limited: 1p/hour per IP
                                             </li>
                                         </ul>
-                                        <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs">
-                                            <div className="font-semibold text-amber-900 mb-1">
-                                                ⚠️ Beta Feature
-                                            </div>
-                                            <ul className="space-y-0.5 list-disc pl-4 text-amber-800">
-                                                <li>
-                                                    Still working out some bugs
-                                                </li>
-                                                <li>
-                                                    For stable production → use
-                                                    secret keys (no rate limits)
-                                                </li>
-                                                <li>
-                                                    Secret keys must be hidden
-                                                    in your backend
-                                                </li>
-                                            </ul>
+                                        <div className="mt-3 text-[10px] text-amber-700 bg-amber-50 px-2 py-1 rounded">
+                                            ⚠️ Beta – still working out bugs
                                         </div>
-                                    </div>
-                                </label>
-                                <label
-                                    className={cn(
-                                        "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
-                                        keyType === "secret"
-                                            ? "border-purple-500 bg-purple-50"
-                                            : "border-gray-200 hover:border-gray-300",
-                                        createdKey &&
-                                            keyType !== "secret" &&
-                                            "opacity-40",
-                                    )}
-                                >
-                                    <input
-                                        type="radio"
-                                        name="keyType"
-                                        value="secret"
-                                        checked={keyType === "secret"}
-                                        onChange={(e) =>
-                                            handleKeyTypeChange(
-                                                e.target.value as "secret",
-                                            )
-                                        }
-                                        className="mt-1 w-4 h-4 text-purple-600"
-                                        disabled={isSubmitting || !!createdKey}
-                                    />
-                                    <div className="flex-1">
-                                        <div className="font-medium text-purple-800">
+                                    </label>
+                                    <label
+                                        className={cn(
+                                            "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
+                                            keyType === "secret"
+                                                ? "bg-purple-100 ring-2 ring-purple-500"
+                                                : "bg-gray-50 hover:bg-gray-100",
+                                            createdKey &&
+                                                keyType !== "secret" &&
+                                                "opacity-40",
+                                        )}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="keyType"
+                                            value="secret"
+                                            checked={keyType === "secret"}
+                                            onChange={(e) =>
+                                                handleKeyTypeChange(
+                                                    e.target.value as "secret",
+                                                )
+                                            }
+                                            className="sr-only"
+                                            disabled={
+                                                isSubmitting || !!createdKey
+                                            }
+                                        />
+                                        <div className="font-semibold text-sm mb-2">
                                             🔒 Secret Key
                                         </div>
-                                        <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
-                                            <li className="font-semibold text-amber-900">
-                                                Only shown once - copy it now!
+                                        <ul className="text-xs text-gray-600 space-y-1 flex-1 list-disc pl-4">
+                                            <li className="text-amber-700 font-medium">
+                                                Only shown once – copy it!
                                             </li>
                                             <li>
-                                                For server-side apps - never
-                                                expose publicly
+                                                Never expose publicly (must be
+                                                hidden in your backend)
                                             </li>
                                             <li>No rate limits</li>
                                         </ul>
-                                    </div>
-                                </label>
-                            </div>
-                        </Field.Root>
+                                        <div className="mt-3 text-[10px] text-green-700 bg-green-50 px-2 py-1 rounded">
+                                            ✓ Recommended for production
+                                        </div>
+                                    </label>
+                                </div>
+                            </Field.Root>
 
-                        <Field.Root>
-                            <Field.Label className="block text-sm font-semibold mb-2">
-                                {createdKey ? "Your API Key" : "Name"}
-                            </Field.Label>
-                            <Field.Input
-                                type="text"
-                                value={createdKey ? createdKey.key : name}
-                                onChange={(e) => setName(e.target.value)}
-                                className={cn(
-                                    "w-full px-3 py-2 border rounded",
-                                    createdKey
-                                        ? "border-green-300 bg-green-200 font-mono text-xs"
-                                        : "border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500",
-                                )}
-                                placeholder={
-                                    createdKey ? "" : "Enter API key name"
-                                }
-                                required={!createdKey}
-                                disabled={isSubmitting || !!createdKey}
-                                readOnly={!!createdKey}
-                            />
-                        </Field.Root>
+                            <Field.Root className="flex items-center gap-3">
+                                <Field.Label className="text-sm font-semibold shrink-0">
+                                    {createdKey ? "Your API Key" : "Name"}
+                                </Field.Label>
+                                <Field.Input
+                                    type="text"
+                                    value={createdKey ? createdKey.key : name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    className={cn(
+                                        "flex-1 px-3 py-2 border rounded",
+                                        createdKey
+                                            ? "border-green-300 bg-green-200 font-mono text-xs"
+                                            : "border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500",
+                                    )}
+                                    placeholder={
+                                        createdKey ? "" : "Enter API key name"
+                                    }
+                                    required={!createdKey}
+                                    disabled={isSubmitting || !!createdKey}
+                                    readOnly={!!createdKey}
+                                />
+                            </Field.Root>
 
-                        {!createdKey && (
-                            <KeyPermissionsInputs
-                                value={keyPermissions}
-                                disabled={isSubmitting}
-                            />
-                        )}
-                        <div className="flex gap-2 justify-end pt-4">
+                            {!createdKey && (
+                                <KeyPermissionsInputs
+                                    value={keyPermissions}
+                                    disabled={isSubmitting}
+                                    inline
+                                />
+                            )}
+                        </div>
+
+                        <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
                             {!createdKey && (
                                 <Button
                                     type="button"
@@ -729,18 +746,23 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 </Button>
                             )}
                             {(() => {
+                                const { allowedModels } =
+                                    keyPermissions.permissions;
                                 const noModelsSelected =
-                                    Array.isArray(
-                                        keyPermissions.permissions
-                                            .allowedModels,
-                                    ) &&
-                                    keyPermissions.permissions.allowedModels
-                                        .length === 0;
+                                    Array.isArray(allowedModels) &&
+                                    allowedModels.length === 0;
                                 const isDisabled =
                                     !createdKey &&
                                     (!name.trim() ||
                                         isSubmitting ||
                                         noModelsSelected);
+
+                                const buttonText = () => {
+                                    if (copied) return "✓ Copied! Closing...";
+                                    if (createdKey) return "Copy and Close";
+                                    if (isSubmitting) return "Creating...";
+                                    return "Create";
+                                };
 
                                 return (
                                     <span
@@ -762,13 +784,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                             className="disabled:opacity-50"
                                             disabled={isDisabled}
                                         >
-                                            {copied
-                                                ? "✓ Copied! Closing..."
-                                                : createdKey
-                                                  ? "Copy and Close"
-                                                  : isSubmitting
-                                                    ? "Creating..."
-                                                    : "Create"}
+                                            {buttonText()}
                                         </Button>
                                     </span>
                                 );

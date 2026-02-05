@@ -1,0 +1,46 @@
+{
+  "date": "2026-02-05",
+  "generated_at": "2026-02-05T17:11:34.361638+00:00",
+  "post_type": "carousel",
+  "content_type": "retro_infographic",
+  "linked_images": true,
+  "strategy_reasoning": "A carousel format allows us to highlight the major visual overhaul and the functional 'Select All' feature separately while maintaining the cozy narrative. The pixel art style unifies these technical updates into a 'game patch' vibe.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20scene%20of%20the%20Pollinations%20bee%20mascot%20holding%20a%20large%20pixel%20paintbrush%2C%20finishing%20a%20painting%20of%20a%20perfect%20lime%20green%20square.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20pastel%20peach%20gradient%20background.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20aesthetic%20like%20Stardew%20Valley.%20Text%20in%20pixel%20font%3A%20%27Visual%20Update%27.%20Nostalgic%20and%20cute.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=2145238319",
+      "prompt": "Cozy pixel art scene of the Pollinations bee mascot holding a large pixel paintbrush, finishing a painting of a perfect lime green square. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'Visual Update'. Nostalgic and cute.",
+      "description": "Announcing the unified visual identity and square image standardization."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Close-up%20of%20a%20cozy%20retro%20game%20UI%20menu%20screen%20floating%20in%20a%20soft%20cloud.%20Menu%20lists%20%27Text%27%2C%20%27Image%27%2C%20%27Video%27.%20A%20pixel%20cursor%20hand%20hovers%20over%20a%20glowing%20lime%20green%20%27Select%20All%27%20button.%20Soft%20pastel%20colors%2C%20mint%20and%20lavender%20background.%20Cozy%208-bit%20aesthetic.%20Clean%20and%20satisfying%20UI.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=734840247",
+      "prompt": "Close-up of a cozy retro game UI menu screen floating in a soft cloud. Menu lists 'Text', 'Image', 'Video'. A pixel cursor hand hovers over a glowing lime green 'Select All' button. Soft pastel colors, mint and lavender background. Cozy 8-bit aesthetic. Clean and satisfying UI.",
+      "description": "Visualizing the new 'Select All' category toggles for model permissions."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20tiny%20pixel%20adventurer%20character%20reading%20a%20large%20open%20scroll%20labeled%20%27GSOC%27%20in%20a%20peaceful%20digital%20garden.%20Pixel%20flowers%20blooming%20around%20them.%20Soft%20lighting%2C%20lavender%20and%20cream%20background.%20Warm%2C%20inviting%20atmosphere%20like%20A%20Short%20Hike.%20Text%20in%20pixel%20font%3A%20%27Docs%20Updated%27.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1258614557",
+      "prompt": "A tiny pixel adventurer character reading a large open scroll labeled 'GSOC' in a peaceful digital garden. Pixel flowers blooming around them. Soft lighting, lavender and cream background. Warm, inviting atmosphere like A Short Hike. Text in pixel font: 'Docs Updated'.",
+      "description": "Highlighting the GSOC Readme and Contributing guide updates."
+    }
+  ],
+  "caption": "New patch just dropped and it’s giving major glow up ✨👾\n\nWe’ve unified our visual style across all platforms (yes, everything is square and aesthetic now 🟩). plus, some huge QoL updates for the devs:\n\n✅ Added 'Select All' toggles for model permissions (so satisfying)\n📚 Updated GSOC docs & contributing guides for our summer coders\n🐛 Squashed some bugs & fixed mentor contacts\n\nKeep building cool stuff. We’ll handle the pixels. 🐝💛\n\n#pollinations #opensource #pixelart #gamedev #gsoc #buildinpublic #cozyvibes #8bit",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#retrogaming",
+    "#gsoc",
+    "#indiedev",
+    "#cozyvibes"
+  ],
+  "alt_text": "Pixel art carousel: 1. A bee mascot painting a lime green square. 2. A retro game menu showing a 'Select All' button. 3. A pixel character reading a scroll in a garden.",
+  "pr_references": [
+    "#7973",
+    "#7959",
+    "#7877",
+    "#7949",
+    "#7926",
+    "#7947",
+    "#7943"
+  ]
+}

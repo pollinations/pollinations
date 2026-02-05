@@ -1,0 +1,51 @@
+{
+  "date": "2026-02-04",
+  "generated_at": "2026-02-04T16:18:27.683959+00:00",
+  "post_type": "carousel",
+  "content_type": "retro_infographic",
+  "linked_images": true,
+  "strategy_reasoning": "Using a 'Village Patch Notes' metaphor within a cozy RPG aesthetic perfectly bridges the gap between technical updates (Azure cleanup, API keys) and our friendly, community-driven brand. The pixel art style softens the 'boring' backend news into something nostalgic and engaging.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20scene%20of%20a%20tiny%208-bit%20bee%20character%20organizing%20a%20retro%20inventory%20chest%20in%20a%20sunlit%20wooden%20room.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20peach%20gradient%20background.%20Chunky%20pixels%2C%20warm%20lighting%2C%20lo-fi%20aesthetic.%20Like%20Stardew%20Valley%20meets%20coding.%20Text%20in%20pixel%20font%3A%20%27VILLAGE%20PATCH%20NOTES%27.%20Emotionally%20warm%2C%20nostalgic%20but%20beautiful.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1552369921",
+      "prompt": "Cozy pixel art scene of a tiny 8-bit bee character organizing a retro inventory chest in a sunlit wooden room. Soft lime green (#ecf874) and peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Like Stardew Valley meets coding. Text in pixel font: 'VILLAGE PATCH NOTES'. Emotionally warm, nostalgic but beautiful.",
+      "description": "Cover image introducing the updates as 'Village Patch Notes' with a cozy cleaning vibe."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%20RPG%20style%20inventory%20UI%20screen%20in%208-bit%20pixel%20art.%20A%20dialogue%20box%20labeled%20%27API%20KEY%20MANAGER%27%20with%20pixelated%20toggle%20switches%20and%20a%20gold%20coin%20bag%20icon%20for%20%27Budget%27.%20Soft%20lavender%20and%20mint%20background.%20Lime%20green%20cursor%20hand%20hovering%20over%20an%20%27Enable%27%20button.%20Cozy%2C%20clean%20UI%20like%20the%20game%20Unpacking.%20Warm%20lighting.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1671691017",
+      "prompt": "Retro RPG style inventory UI screen in 8-bit pixel art. A dialogue box labeled 'API KEY MANAGER' with pixelated toggle switches and a gold coin bag icon for 'Budget'. Soft lavender and mint background. Lime green cursor hand hovering over an 'Enable' button. Cozy, clean UI like the game Unpacking. Warm lighting.",
+      "description": "Visualizing the new API key management features (toggle/budget) as an RPG inventory screen."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20illustration%20of%20magical%20blue%20energy%20leylines%20being%20rerouted%20between%20two%20ancient%20stone%20server%20towers.%208-bit%20style.%20One%20tower%20labeled%20%27Azure%201%27%2C%20the%20other%20%27Azure%202%27.%20Soft%20pastel%20glow%2C%20lime%20green%20vines%20growing%20on%20the%20stone.%20Represents%20backend%20routing%20updates.%20Lo-fi%2C%20magical%20realism%2C%20chunky%20pixels.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=553798376",
+      "prompt": "Pixel art illustration of magical blue energy leylines being rerouted between two ancient stone server towers. 8-bit style. One tower labeled 'Azure 1', the other 'Azure 2'. Soft pastel glow, lime green vines growing on the stone. Represents backend routing updates. Lo-fi, magical realism, chunky pixels.",
+      "description": "Abstracting the Azure/OpenAI provider updates as magical energy routing in a fantasy setting."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20pixel%20art%20merchant%27s%20ledger%20or%20quest%20board%20showing%20graphs%20and%20stats.%20Header%20says%20%27COSTS%20%26%20ALERTS%27.%208-bit%20icons%20of%20coins%20and%20warning%20bells.%20Soft%20lime%20green%20%28%23ecf874%29%20highlights%20on%20the%20data%20lines.%20Cozy%20wooden%20texture%20background.%20Retro%20gaming%20UI%20aesthetic.%20Warm%20and%20readable.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1468980598",
+      "prompt": "A pixel art merchant's ledger or quest board showing graphs and stats. Header says 'COSTS & ALERTS'. 8-bit icons of coins and warning bells. Soft lime green (#ecf874) highlights on the data lines. Cozy wooden texture background. Retro gaming UI aesthetic. Warm and readable.",
+      "description": "Depicting the provider costs dashboard and alerting updates as a game economy screen."
+    }
+  ],
+  "caption": "Village maintenance complete! 🧹✨ We've been tidying up the backend and adding new tools to your inventory.\n\nHere’s what’s new in the patch notes:\n\n🔑 **New Item: API Key Manager**\nYou can now toggle keys on/off and set budget limits directly in the UI! No more deleting keys just to pause them.\n\n🗺️ **Routing Updates**\nMigrated midijourney to GPT-5.2 and moved some heavy lifting to Azure-2 for better stability.\n\n📊 **Merchant Stats**\nUpdated the provider costs dashboard with better alerting and daily net balance views.\n\nPlus, we fixed a path in the README so your map actually leads somewhere. 🗺️\n\nStay cozy and keep building! 🌸🐝\n\n#pollinations #opensource #pixelart #indiedev #retrogaming #8bit #buildinpublic #cozyvibes",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#indiedev",
+    "#retrogaming",
+    "#8bit",
+    "#buildinpublic",
+    "#cozyvibes"
+  ],
+  "alt_text": "A series of cozy 8-bit pixel art images depicting software updates as retro RPG game elements. 1. A bee organizing a chest. 2. An RPG inventory screen for API keys. 3. Magical energy lines connecting stone towers. 4. A pixelated merchant ledger showing cost stats. Dominant colors are lime green and soft pastels.",
+  "pr_references": [
+    "#7917",
+    "#7537",
+    "#7907",
+    "#7905",
+    "#7904",
+    "#7900"
+  ]
+}

@@ -1,8 +1,10 @@
 import type { FC } from "react";
 import { Button } from "../button.tsx";
+import { Card } from "../ui/card.tsx";
+import { Panel } from "../ui/panel.tsx";
 import { getModelPrices } from "./data.ts";
-import { UnifiedModelTable } from "./ModelTable.tsx";
-import { useModelStats } from "./useModelStats.ts";
+import { UnifiedModelTable } from "./model-table.tsx";
+import { useModelStats } from "./use-model-stats.ts";
 
 type PricingProps = {
     packBalance?: number;
@@ -25,14 +27,13 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                     href="https://github.com/pollinations/pollinations/issues/5321"
                     target="_blank"
                     rel="noopener noreferrer"
-                    color="amber"
+                    color="teal"
                     weight="light"
-                    className="!text-green-900"
                 >
                     Vote on next models
                 </Button>
             </div>
-            <div className="bg-amber-50/30 rounded-2xl p-6 border border-amber-300 space-y-6">
+            <Panel color="teal" className="space-y-6">
                 <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <UnifiedModelTable
                         imageModels={imageModels}
@@ -43,71 +44,61 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                 </div>
 
                 <div className="pt-4 space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                        <div className="bg-white/50 rounded-lg p-4 border border-amber-300 shadow-sm">
-                            <div className="flex gap-4">
-                                <div className="flex-1">
-                                    <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
-                                        Model Capabilities
-                                    </div>
-                                    <div className="space-y-1 text-gray-600">
-                                        <div>👁️ vision</div>
-                                        <div>🎙️ audio input</div>
-                                        <div>🔊 audio output</div>
-                                        <div>🧠 reasoning</div>
-                                        <div>🔍 search</div>
-                                        <div>💻 code execution</div>
-                                    </div>
+                    <Card color="teal" className="text-xs">
+                        <div className="flex">
+                            <div className="flex-1 flex flex-col items-center text-center">
+                                <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
+                                    Model Capabilities
                                 </div>
-                                <div className="w-px bg-amber-300" />
-                                <div className="flex-1">
-                                    <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
-                                        Token Types
+                                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-gray-500 text-left">
+                                    <div>👁️ vision</div>
+                                    <div>🧠 reasoning</div>
+                                    <div>🎙️ audio in</div>
+                                    <div>🔍 search</div>
+                                    <div>🔊 audio out</div>
+                                    <div>💻 code exec</div>
+                                </div>
+                            </div>
+                            <div className="w-px bg-teal-300 mx-4 self-stretch" />
+                            <div className="flex-1 flex flex-col items-center text-center">
+                                <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
+                                    Token Types
+                                </div>
+                                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-gray-500 text-left">
+                                    <div>💬 text</div>
+                                    <div>🖼️ image</div>
+                                    <div>💾 cached</div>
+                                    <div>🎬 video</div>
+                                    <div>🔊 audio</div>
+                                </div>
+                            </div>
+                            <div className="w-px bg-teal-300 mx-4 self-stretch" />
+                            <div className="flex-1 flex flex-col items-center text-center">
+                                <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
+                                    Pricing Metrics
+                                </div>
+                                <div className="space-y-1 text-gray-500 text-left">
+                                    <div>
+                                        <strong>/img</strong> = flat rate per
+                                        image
                                     </div>
-                                    <div className="space-y-1 text-gray-600">
-                                        <div>💬 text input/output</div>
-                                        <div>💾 cached input</div>
-                                        <div>🔊 audio input/output</div>
-                                        <div>🖼️ image</div>
-                                        <div>🎬 video</div>
+                                    <div>
+                                        <strong>/M</strong> = per million tokens
+                                    </div>
+                                    <div>
+                                        <strong>/sec</strong> = per second of
+                                        video
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-white/50 rounded-lg p-4 border border-amber-300 shadow-sm">
-                            <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
-                                Pricing Metrics
-                            </div>
-                            <div className="space-y-1 text-gray-600">
-                                <div>
-                                    <strong>/img</strong> = flat rate per image
-                                </div>
-                                <div>
-                                    <strong>/M</strong> = cost per million
-                                    tokens
-                                </div>
-                                <div>
-                                    <strong>/sec</strong> = cost per second of
-                                    video
-                                </div>
-                            </div>
-                            <div className="text-xs text-purple-700 mt-3 pt-3 border-t border-amber-300">
-                                <div>
-                                    <span className="font-semibold">*</span> 1
-                                    pollen ≈ based on average community usage.
-                                </div>
-                                <div>
-                                    Actual costs vary with modality and output.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="bg-white/50 rounded-lg px-4 py-3 border border-amber-300 shadow-sm">
+                    </Card>
+                    <div className="flex flex-col md:flex-row justify-center gap-3">
+                        <Card color="teal">
                             <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
                                 💡 How Pollen is Spent
                             </div>
-                            <div className="space-y-1 text-xs text-gray-600">
+                            <div className="space-y-1 text-xs text-gray-500">
                                 <div>1. Daily tier grants are used first</div>
                                 <div>
                                     2. Purchased pollen is used after daily is
@@ -118,26 +109,28 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                     models require purchased pollen only
                                 </div>
                             </div>
-                        </div>
-                        <div className="bg-white/50 rounded-lg px-4 py-3 border border-amber-300 shadow-sm">
+                        </Card>
+                        <Card color="teal">
                             <div className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
                                 🎁 Beta Bonus
                             </div>
-                            <div className="space-y-2 text-xs text-gray-600">
+                            <div className="space-y-2 text-xs text-gray-500">
                                 <div className="flex items-center gap-1">
                                     <span>💎</span>
                                     <span className="font-medium">
                                         2x pollen on every purchase!
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-2 flex-wrap">
+                                <div className="flex items-center gap-3 flex-wrap">
                                     <a
                                         href="#buy-pollen"
-                                        className="inline-flex items-center gap-1 text-violet-600 hover:text-violet-800 font-medium underline"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-500 to-teal-500 text-white font-semibold text-xs shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
                                     >
-                                        Buy Pollen ↑
+                                        <span>🌸</span>
+                                        <span>Buy Pollen</span>
+                                        <span className="text-white/80">↑</span>
                                     </a>
-                                    <span className="text-gray-400">
+                                    <span className="text-gray-400 text-[10px]">
                                         powered by
                                     </span>
                                     <svg
@@ -156,10 +149,10 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                     Prices may adjust during beta.
                                 </div>
                             </div>
-                        </div>
+                        </Card>
                     </div>
                 </div>
-            </div>
+            </Panel>
         </div>
     );
 };

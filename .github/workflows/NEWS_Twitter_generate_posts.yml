@@ -2,7 +2,7 @@ name: Twitter Generate Post
 
 on:
   schedule:
-    - cron: '0 15 * * *'  # Daily at 15:00 UTC (16:00 Berlin)
+    - cron: '0 0 * * *'  # Daily at midnight UTC (recaps the day's PRs)
   workflow_dispatch:
     inputs:
       source_repo:

@@ -23,8 +23,8 @@ from common import (
 )
 
 # LinkedIn-specific image dimensions
-LINKEDIN_IMAGE_WIDTH = 1200
-LINKEDIN_IMAGE_HEIGHT = 627
+LINKEDIN_IMAGE_WIDTH = 2048
+LINKEDIN_IMAGE_HEIGHT = 2048
 
 
 def generate_linkedin_post(prs: List[Dict], token: str) -> Optional[Dict]:

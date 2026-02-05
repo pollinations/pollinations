@@ -2,6 +2,5 @@
 
 Create a cozy pixel art post about these updates: {pr_titles}
 
-Remember: Use RETRO 8-BIT PIXEL ART style - cozy, warm, nostalgic but beautiful. Like Stardew Valley or A Short Hike.
-Lime green (#ecf874), soft pastel gradients, chunky pixels, warm lighting.
+Focus on mood and scene — the shared visual style handles colors and art direction.
 Output valid JSON only.

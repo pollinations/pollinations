@@ -116,6 +116,92 @@ app.get("/api/kpi/tiers", async (c) => {
     }
 });
 
+// D7 Activations: Join D1 registrations with Tinybird first activity
+// A user is "activated" if they made their first API request within 7 days of registration
+app.get("/api/kpi/activations", async (c) => {
+    try {
+        const weeksBack = getWeeksSinceStart();
+
+        // 1. Get all user registrations from D1 (id, created_at, week_start)
+        const registrations = (await queryD1(
+            c.env,
+            `
+            SELECT 
+                id as user_id,
+                created_at,
+                date(datetime(created_at, 'unixepoch'), '-' || ((strftime('%w', datetime(created_at, 'unixepoch')) + 6) % 7) || ' days') AS registration_week
+            FROM user 
+            WHERE created_at >= ?1
+        `,
+            [DATA_START_TIMESTAMP_SEC],
+        )) as Array<{
+            user_id: string;
+            created_at: number;
+            registration_week: string;
+        }>;
+
+        // 2. Get first activity per user from Tinybird
+        const tinybirdRes = await fetch(
+            `${c.env.TINYBIRD_API}/v0/pipes/weekly_activations.json?weeks_back=${weeksBack}`,
+            { headers: { Authorization: `Bearer ${c.env.TINYBIRD_TOKEN}` } },
+        );
+
+        if (!tinybirdRes.ok) {
+            return c.json({ error: "Tinybird error", data: [] }, 500);
+        }
+
+        const tinybirdData = (await tinybirdRes.json()) as {
+            data: Array<{
+                user_id: string;
+                first_activity_date: string;
+                first_activity_week: string;
+            }>;
+        };
+
+        // 3. Create lookup map for first activity by user_id
+        const firstActivityMap = new Map<string, string>();
+        for (const row of tinybirdData.data) {
+            firstActivityMap.set(row.user_id, row.first_activity_date);
+        }
+
+        // 4. Calculate D7 activations per registration week
+        const weeklyActivations: Record<string, number> = {};
+
+        for (const reg of registrations) {
+            const regWeek = reg.registration_week;
+            if (!weeklyActivations[regWeek]) {
+                weeklyActivations[regWeek] = 0;
+            }
+
+            // Check if user has any activity
+            const firstActivityDate = firstActivityMap.get(reg.user_id);
+            if (firstActivityDate) {
+                // Calculate days between registration and first activity
+                const regDate = new Date(reg.created_at * 1000);
+                const activityDate = new Date(firstActivityDate);
+                const daysDiff = Math.floor(
+                    (activityDate.getTime() - regDate.getTime()) /
+                        (1000 * 60 * 60 * 24),
+                );
+
+                // D7 activation: first activity within 7 days of registration
+                if (daysDiff >= 0 && daysDiff <= 7) {
+                    weeklyActivations[regWeek]++;
+                }
+            }
+        }
+
+        // 5. Convert to array format
+        const result = Object.entries(weeklyActivations)
+            .map(([week, activations]) => ({ week, activations }))
+            .sort((a, b) => a.week.localeCompare(b.week));
+
+        return c.json({ data: result });
+    } catch (e) {
+        return c.json({ error: String(e), data: [] }, 500);
+    }
+});
+
 // Tinybird: WAU (from Oct 1, 2025)
 app.get("/api/kpi/wau", async (c) => {
     const weeksBack = getWeeksSinceStart();

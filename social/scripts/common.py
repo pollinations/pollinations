@@ -447,6 +447,53 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
     return None, None
 
 
+def commit_image_to_branch(
+    image_bytes: bytes,
+    file_path: str,
+    branch: str,
+    github_token: str,
+    owner: str,
+    repo: str,
+) -> Optional[str]:
+    """Commit an image file to a GitHub branch and return a raw URL.
+
+    Returns the raw.githubusercontent.com URL on success, None on failure.
+    """
+    import base64 as _b64
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {github_token}",
+    }
+
+    encoded = _b64.b64encode(image_bytes).decode()
+
+    # Check if file already exists on this branch
+    sha = get_file_sha(github_token, owner, repo, file_path, branch)
+
+    payload = {
+        "message": f"add image {file_path.split('/')[-1]}",
+        "content": encoded,
+        "branch": branch,
+    }
+    if sha:
+        payload["sha"] = sha
+
+    resp = requests.put(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
+        headers=headers,
+        json=payload,
+    )
+
+    if resp.status_code in [200, 201]:
+        raw_url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{file_path}"
+        print(f"  Committed image to {file_path}")
+        return raw_url
+
+    print(f"  Failed to commit image: {resp.status_code} {resp.text[:200]}")
+    return None
+
+
 def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branch: str = "main") -> str:
     """Get the SHA of an existing file"""
     headers = {

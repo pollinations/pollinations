@@ -18,6 +18,7 @@ from common import (
     get_file_sha,
     call_pollinations_api,
     generate_image,
+    commit_image_to_branch,
     GITHUB_API_BASE,
     GITHUB_GRAPHQL_API,
 )
@@ -320,12 +321,18 @@ def create_post_pr(strategy: Dict, images: List[bytes], image_urls: List[str], p
 
     print(f"Created branch: {branch_name}")
 
-    # Prepare image data using the actual generated URLs (without key)
+    # Commit images to branch and build image data with stable URLs
     image_data = []
     for i, img_info in enumerate(strategy.get('images', [])):
         if i < len(images) and images[i] and i < len(image_urls) and image_urls[i]:
+            # Commit image to branch for a stable URL
+            image_path = f"social/news/transformed/instagram/posts/{today}-image-{i+1}.jpg"
+            raw_url = commit_image_to_branch(images[i], image_path, branch_name, github_token, owner, repo)
+            if not raw_url:
+                print(f"Warning: Image {i+1} using generation URL as fallback — Buffer may fail to fetch it")
+            url = raw_url if raw_url else image_urls[i]
             image_data.append({
-                "url": image_urls[i],
+                "url": url,
                 "prompt": img_info.get('prompt', ''),
                 "description": img_info.get('description', '')
             })

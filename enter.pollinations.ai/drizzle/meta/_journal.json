@@ -120,6 +120,20 @@
       "when": 1769255535655,
       "tag": "0016_migrate-temporary-keytype-to-secret",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1764416249722,
+      "tag": "0005_fast_luckman",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1764425765438,
+      "tag": "0006_groovy_sprite",
+      "breakpoints": true
     }
   ]
 }

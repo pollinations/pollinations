@@ -1,12 +1,18 @@
 # Twitter User Prompt - Engagement
 
-No code updates today - create engagement content with meme image.
+No code updates today - create engagement content for AI Twitter.
 
-Options:
-- Relatable dev meme
-- Question to spark replies
-- Celebrate community/open source
-- Mild chaos posting
+Pick ONE approach:
+- A genuine question about AI/dev tools that invites technical discussion
+- A hot take backed by your experience building open-source AI infra
+- A milestone or community stat that speaks for itself
+- An observation about the AI builder ecosystem
 
-Make it good. Under 280 chars. Include meme image prompt.
+**Key guidance:**
+- Earn replies by saying something worth responding to
+- Avoid generic "what do you think about AI?" energy
+- Be specific and opinionated — bland takes get ignored
+- Reference your building experience to add credibility
+
+Make it under 280 chars. Include a pixel art image prompt.
 Output valid JSON only.

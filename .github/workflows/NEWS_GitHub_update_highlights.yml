@@ -1,17 +1,20 @@
-name: PR Create Weekly News
+name: GitHub Update Highlights
 
 on:
-  schedule:
-    - cron: '0 0 * * 1'  # Every Monday at midnight UTC
-  workflow_dispatch:
+  pull_request:
+    types: [closed]
+    paths:
+      - 'social/news/*.md'
+  workflow_dispatch: 
 
 jobs:
-  generate-news:
+  create-highlights:
+    # Only run if PR was merged (not just closed) and targeted main
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
-      issues: write  # Required for adding labels via REST API
 
     steps:
       - name: Generate Pollinations AI Token
@@ -23,6 +26,8 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: main  # Checkout main to get the merged NEWS file
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -33,10 +38,10 @@ jobs:
         run: |
           pip install requests
 
-      - name: Generate NEWS.md and Create PR
+      - name: Create Highlights and PR
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_LABELS: NEWS
-        run: python social/scripts/github_create_weekly_news.py
+        run: python social/scripts/github_update_highlights.py

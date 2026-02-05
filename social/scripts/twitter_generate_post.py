@@ -24,8 +24,8 @@ from common import (
 
 # Twitter-specific constants
 TWITTER_CHAR_LIMIT = 280
-TWITTER_IMAGE_WIDTH = 1200
-TWITTER_IMAGE_HEIGHT = 675
+TWITTER_IMAGE_WIDTH = 2048
+TWITTER_IMAGE_HEIGHT = 2048
 
 
 def generate_twitter_post(prs: List[Dict], token: str) -> Optional[Dict]:

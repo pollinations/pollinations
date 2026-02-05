@@ -1324,6 +1324,459 @@
       }],
       "title": "Growth-Adjusted Projections",
       "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 49
+      },
+      "id": 400,
+      "panels": [],
+      "title": "Model Usage by Tier",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Top models used by Nectar tier users ($20/day allowance). Shows request count and cost breakdown by tier vs pack meters.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }]
+          }
+        },
+        "overrides": [{
+          "matcher": {
+            "id": "byName",
+            "options": "Tier_Cost"
+          },
+          "properties": [{
+            "id": "unit",
+            "value": "currencyUSD"
+          }, {
+            "id": "displayName",
+            "value": "Tier Cost"
+          }]
+        }, {
+          "matcher": {
+            "id": "byName",
+            "options": "Pack_Cost"
+          },
+          "properties": [{
+            "id": "unit",
+            "value": "currencyUSD"
+          }, {
+            "id": "displayName",
+            "value": "Pack Cost"
+          }]
+        }]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 5,
+        "x": 0,
+        "y": 50
+      },
+      "id": 401,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": ["Requests", "Tier_Cost", "Pack_Cost"],
+          "reducer": ["sum"],
+          "show": true
+        },
+        "showHeader": true,
+        "sortBy": [{
+          "desc": true,
+          "displayName": "Tier Cost"
+        }]
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "format": 1,
+        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  COUNT(*) as Requests,\n  sumIf(total_cost, selected_meter_slug LIKE '%tier%') as Tier_Cost,\n  sumIf(total_cost, selected_meter_slug LIKE '%pack%') as Pack_Cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'nectar'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
+        "refId": "A"
+      }],
+      "title": "Nectar ($20/day)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Top models used by Flower tier users ($10/day allowance). Shows request count and cost breakdown by tier vs pack meters.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }]
+          }
+        },
+        "overrides": [{
+          "matcher": {
+            "id": "byName",
+            "options": "Tier_Cost"
+          },
+          "properties": [{
+            "id": "unit",
+            "value": "currencyUSD"
+          }, {
+            "id": "displayName",
+            "value": "Tier Cost"
+          }]
+        }, {
+          "matcher": {
+            "id": "byName",
+            "options": "Pack_Cost"
+          },
+          "properties": [{
+            "id": "unit",
+            "value": "currencyUSD"
+          }, {
+            "id": "displayName",
+            "value": "Pack Cost"
+          }]
+        }]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 5,
+        "x": 5,
+        "y": 50
+      },
+      "id": 402,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": ["Requests", "Tier_Cost", "Pack_Cost"],
+          "reducer": ["sum"],
+          "show": true
+        },
+        "showHeader": true,
+        "sortBy": [{
+          "desc": true,
+          "displayName": "Tier Cost"
+        }]
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "format": 1,
+        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  COUNT(*) as Requests,\n  sumIf(total_cost, selected_meter_slug LIKE '%tier%') as Tier_Cost,\n  sumIf(total_cost, selected_meter_slug LIKE '%pack%') as Pack_Cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'flower'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
+        "refId": "A"
+      }],
+      "title": "Flower ($10/day)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Top models used by Seed tier users ($3/day allowance). Shows request count and cost breakdown by tier vs pack meters.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }]
+          }
+        },
+        "overrides": [{
+          "matcher": {
+            "id": "byName",
+            "options": "Tier_Cost"
+          },
+          "properties": [{
+            "id": "unit",
+            "value": "currencyUSD"
+          }, {
+            "id": "displayName",
+            "value": "Tier Cost"
+          }]
+        }, {
+          "matcher": {
+            "id": "byName",
+            "options": "Pack_Cost"
+          },
+          "properties": [{
+            "id": "unit",
+            "value": "currencyUSD"
+          }, {
+            "id": "displayName",
+            "value": "Pack Cost"
+          }]
+        }]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 5,
+        "x": 10,
+        "y": 50
+      },
+      "id": 403,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": ["Requests", "Tier_Cost", "Pack_Cost"],
+          "reducer": ["sum"],
+          "show": true
+        },
+        "showHeader": true,
+        "sortBy": [{
+          "desc": true,
+          "displayName": "Tier Cost"
+        }]
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "format": 1,
+        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  COUNT(*) as Requests,\n  sumIf(total_cost, selected_meter_slug LIKE '%tier%') as Tier_Cost,\n  sumIf(total_cost, selected_meter_slug LIKE '%pack%') as Pack_Cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'seed'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
+        "refId": "A"
+      }],
+      "title": "Seed ($3/day)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Top models used by Spore tier users ($1/day allowance). Shows request count and cost breakdown by tier vs pack meters.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }]
+          }
+        },
+        "overrides": [{
+          "matcher": {
+            "id": "byName",
+            "options": "Tier_Cost"
+          },
+          "properties": [{
+            "id": "unit",
+            "value": "currencyUSD"
+          }, {
+            "id": "displayName",
+            "value": "Tier Cost"
+          }]
+        }, {
+          "matcher": {
+            "id": "byName",
+            "options": "Pack_Cost"
+          },
+          "properties": [{
+            "id": "unit",
+            "value": "currencyUSD"
+          }, {
+            "id": "displayName",
+            "value": "Pack Cost"
+          }]
+        }]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 5,
+        "x": 15,
+        "y": 50
+      },
+      "id": 404,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": ["Requests", "Tier_Cost", "Pack_Cost"],
+          "reducer": ["sum"],
+          "show": true
+        },
+        "showHeader": true,
+        "sortBy": [{
+          "desc": true,
+          "displayName": "Tier Cost"
+        }]
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "format": 1,
+        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  COUNT(*) as Requests,\n  sumIf(total_cost, selected_meter_slug LIKE '%tier%') as Tier_Cost,\n  sumIf(total_cost, selected_meter_slug LIKE '%pack%') as Pack_Cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'spore'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
+        "refId": "A"
+      }],
+      "title": "Spore ($1/day)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Top models used by Microbe tier users ($0.10/day allowance). Shows request count and cost breakdown by tier vs pack meters.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "green",
+              "value": null
+            }]
+          }
+        },
+        "overrides": [{
+          "matcher": {
+            "id": "byName",
+            "options": "Tier_Cost"
+          },
+          "properties": [{
+            "id": "unit",
+            "value": "currencyUSD"
+          }, {
+            "id": "displayName",
+            "value": "Tier Cost"
+          }]
+        }, {
+          "matcher": {
+            "id": "byName",
+            "options": "Pack_Cost"
+          },
+          "properties": [{
+            "id": "unit",
+            "value": "currencyUSD"
+          }, {
+            "id": "displayName",
+            "value": "Pack Cost"
+          }]
+        }]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 4,
+        "x": 20,
+        "y": 50
+      },
+      "id": 405,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": ["Requests", "Tier_Cost", "Pack_Cost"],
+          "reducer": ["sum"],
+          "show": true
+        },
+        "showHeader": true,
+        "sortBy": [{
+          "desc": true,
+          "displayName": "Tier Cost"
+        }]
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "format": 1,
+        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  COUNT(*) as Requests,\n  sumIf(total_cost, selected_meter_slug LIKE '%tier%') as Tier_Cost,\n  sumIf(total_cost, selected_meter_slug LIKE '%pack%') as Pack_Cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'microbe'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
+        "refId": "A"
+      }],
+      "title": "Microbe ($0.10/day)",
+      "type": "table"
     }
   ],
   "refresh": "5m",

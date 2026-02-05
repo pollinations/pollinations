@@ -1,36 +1,86 @@
-# 🐜 Antler Questions - Split by Channel
+# 🐜 Antler Questions & Answers
 
-> **Email**: Send today (Feb 2) - Data/benchmark questions  
-> **Meeting**: Wednesday biweekly call - Soft/strategic questions
+> **Meeting**: Wednesday Feb 5, 2026 - Antler biweekly call
+> **Status**: ✅ Answered (from meeting transcript)
 
 ---
 
-## 📧 EMAIL TODAY - Data & Benchmark Questions
+## � KEY TAKEAWAYS
 
-*These are concrete, factual questions that Antler can prepare answers for.*
+1. **Lead investor sets the terms** - Don't spend time deciding CLA vs SAFE vs priced round. The lead investor will tell you.
+2. **Your job**: Know your ask (€1.5-3M), say "market standard valuation", let investors propose terms.
+3. **Typical dilution**: 17-22% for seed rounds at this size.
+4. **Don't run angel + institutional in parallel** - Word travels. Do one or the other.
+5. **Focus all intensity on getting a lead investor first**, then fill remaining allocation with angels.
+
+---
+
+## 💬 Q&A FROM MEETING
 
 ### CLA / Contract Structure
-1. Which CLA templates do you currently see most frequently for seed rounds like Pollinations? Can you provide us with one?
-2. Are there clauses (e.g. MFN) that you absolutely want to have as our first investor?
+**Q1: Which CLA templates do you see most frequently?**
+> **A**: Depends on round size. For €3M territory in Germany → likely notarized priced round. For €1.5M → more likely convertible or SAFE. Convertible is more common. **The lead investor will determine the legal shape.**
 
-### Cap & Discount (Benchmarks)
-3. What cap ranges do you currently see for comparable seed rounds?
-4. What discount ranges do you consider market standard?
-5. In practice, do CLAs work better with cap only or with cap + discount?
-6. At what cap would you say it becomes problematic for the next round?
-
-### MFN Clause
-7. How do you typically handle MFN clauses in CLAs?
-8. Do you see MFN more as standard or as a negotiation point?
-9. Would you prefer to limit MFN in time (e.g. until first close)?
-10. Are there MFN formulations that you would clearly not recommend?
-
-### Estonian Setup
-11. Any concerns or considerations regarding the Estonian legal structure?
+**Q2: Are there clauses (e.g. MFN) you want as first investor?**
+> **A**: Not yours to set at this point. Antler has pro-rata rights in existing CLA. That's the extent of it. **Wait for the term sheet** - don't pre-negotiate terms.
 
 ---
 
-## 🗓️ WEDNESDAY MEETING - Soft & Strategic Questions
+### Cap & Discount (Benchmarks)
+**Q3: What cap ranges for comparable seed rounds?**
+> **A**: Cap = valuation (in convertible context). **Don't set this yourself.** When asked "what valuation are you shooting for?", say: *"I'm looking to raise €2M at typical market standard valuation levels."* Investors know: 17-22% dilution is standard. For €2M at 20% dilution = €10M post-money valuation.
+
+**Q4: What discount ranges are market standard?**
+> **A**: **Only relevant for angel rounds**, not institutional. For quick angel rounds (€300-600K):
+> - 10% discount = very founder-friendly
+> - 20% discount = market standard  
+> - 30% = also seen
+> 
+> For €1.5M+ institutional rounds, this question is irrelevant.
+
+**Q5: Do CLAs work better with cap only or cap + discount?**
+> **A**: *"Spend zero time on whether CLA or SAFE is better right now - that's a luxury problem to have."*
+
+**Q6: At what cap does it become problematic for next round?**
+> **A**: Not discussed - but implied: let investors set the cap/valuation.
+
+---
+
+### MFN Clause
+**Q7-10: MFN questions**
+> **A**: Not discussed in detail. Key point: **Antler has pro-rata rights** in existing agreement. Other terms are set by lead investor.
+
+---
+
+### Estonian Setup
+**Q11: Any concerns about Estonian legal structure?**
+> **A**: Not discussed in this meeting.
+
+---
+
+## 🎯 FUNDRAISING STRATEGY (from meeting)
+
+### The Process
+1. Investors meet you → assess people + business + storyline
+2. If interested → "We'll go into DD, can you share the data room?"
+3. Data room = financial model, cap table, existing documents (Antler CLA)
+4. Before/after investment committee → due diligence on existing docs
+5. **Term sheet** → includes valuation, round size, legal structure, expiry (1-2 weeks)
+6. Then you negotiate
+
+### Round Structure (typical €2M example)
+- Lead fund: €1.2-1.5M (they want 15%+ ownership minimum)
+- Antler pro-rata: ~€150K
+- Remaining €350K: Fill with angels (often lead helps with intros)
+
+### If Fundraise Drags
+- Can do "first close" with angels who committed earlier
+- But **don't run angel + institutional rounds in parallel**
+- If no traction after 50 conversations → go "code red" → pivot to angel round, pause institutional
+
+---
+
+## 🗓️ REMAINING QUESTIONS (for future meetings)
 
 *These benefit from discussion and back-and-forth.*
 
@@ -68,4 +118,4 @@
 
 ---
 
-*Updated: Feb 2, 2026*
+*Updated: Feb 5, 2026*

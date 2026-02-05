@@ -1,84 +1,82 @@
-import {
-    createFileRoute,
-    redirect,
-    useRouter,
-    Link,
-} from "@tanstack/react-router";
-import { hc } from "hono/client";
-import { useState } from "react";
-import type { PolarRoutes } from "../../routes/polar.ts";
-import type { TiersRoutes } from "../../routes/tiers.ts";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { apiClient } from "../api.ts";
+import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
     ApiKeyList,
     type CreateApiKey,
     type CreateApiKeyResponse,
-} from "../components/api-key.tsx";
+} from "../components/api-keys";
+import { PollenBalance, TierPanel } from "../components/balance";
 import { Button } from "../components/button.tsx";
-import { config } from "../config.ts";
-import { User } from "../components/user.tsx";
-import { PollenBalance } from "../components/pollen-balance.tsx";
-import { TierPanel } from "../components/tier-panel.tsx";
 import { FAQ } from "../components/faq.tsx";
-import { Header } from "../components/header.tsx";
-import { Pricing } from "../components/pricing/index.ts";
-import { NewsBanner } from "../components/news-banner.tsx";
+import { Footer } from "../components/layout/footer.tsx";
+import { Header } from "../components/layout/header.tsx";
+import { NewsBanner } from "../components/layout/news-banner.tsx";
+import { User } from "../components/layout/user.tsx";
+import { Pricing } from "../components/pricing";
+import { UsageGraph } from "../components/usage-analytics";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
-    beforeLoad: async ({ context }) => {
-        const result = await context.auth.getSession();
-        if (result.error) throw new Error("Autentication failed.");
-        else if (!result.data?.user) throw redirect({ to: "/sign-in" });
-        else return { user: result.data.user };
-    },
+    beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
-        const honoPolar = hc<PolarRoutes>("/api/polar");
-        const honoTiers = hc<TiersRoutes>("/api/tiers");
-
         // Parallelize independent API calls for faster loading
-        const [customer, tierData, apiKeysResult] = await Promise.all([
-            honoPolar.customer.state
+        const [tierData, apiKeysResult, d1BalanceResult] = await Promise.all([
+            apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
+            apiClient["api-keys"]
+                .$get()
+                .then((r) => (r.ok ? r.json() : { data: [] })),
+            apiClient.customer.balance
                 .$get()
                 .then((r) => (r.ok ? r.json() : null)),
-            honoTiers.view.$get().then((r) => (r.ok ? r.json() : null)),
-            context.auth.apiKey.list(),
         ]);
         const apiKeys = apiKeysResult.data || [];
+        const tierBalance = d1BalanceResult?.tierBalance ?? 0;
+        const packBalance = d1BalanceResult?.packBalance ?? 0;
+        const cryptoBalance = d1BalanceResult?.cryptoBalance ?? 0;
 
         return {
-            auth: context.auth,
             user: context.user,
-            customer,
             apiKeys,
             tierData,
+            tierBalance,
+            packBalance,
+            cryptoBalance,
         };
     },
 });
 
 function RouteComponent() {
     const router = useRouter();
-    const { auth, user, customer, apiKeys, tierData } = Route.useLoaderData();
-
-    const balances = {
-        pack:
-            customer?.activeMeters.find(
-                (m) => m.meterId === config.pollenPackMeterId,
-            )?.balance || 0,
-        tier:
-            customer?.activeMeters.find(
-                (m) => m.meterId === config.pollenTierMeterId,
-            )?.balance || 0,
-    };
+    const { user, apiKeys, tierData, tierBalance, packBalance, cryptoBalance } =
+        Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
-    const [isActivating, setIsActivating] = useState(false);
-    const [activationError, setActivationError] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<"balance" | "usage">("balance");
+    const [downloadOpen, setDownloadOpen] = useState(false);
+    const [downloadingDetailed, setDownloadingDetailed] = useState(false);
+    const downloadRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (
+                downloadRef.current &&
+                !downloadRef.current.contains(e.target as Node)
+            ) {
+                setDownloadOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     const handleSignOut = async () => {
         if (isSigningOut) return; // Prevent double-clicks
         setIsSigningOut(true);
         try {
-            await auth.signOut();
+            await authClient.signOut();
             window.location.href = "/";
         } catch (error) {
             console.error("Sign out failed:", error);
@@ -87,214 +85,386 @@ function RouteComponent() {
         }
     };
 
-    const handleCreateApiKey = async (formState: CreateApiKey) => {
+    async function handleCreateApiKey(
+        formState: CreateApiKey,
+    ): Promise<CreateApiKeyResponse> {
         const keyType = formState.keyType || "secret";
-        const result = await auth.apiKey.create({
+        const isPublishable = keyType === "publishable";
+
+        // Create key via better-auth's native API
+        const SECONDS_PER_DAY = 24 * 60 * 60;
+        const createResult = await authClient.apiKey.create({
             name: formState.name,
-            prefix: keyType === "publishable" ? "plln_pk" : "plln_sk",
-            metadata: { description: formState.description, keyType },
+            prefix: isPublishable ? "pk" : "sk",
+            expiresIn: formState.expiryDays
+                ? formState.expiryDays * SECONDS_PER_DAY
+                : undefined,
+            metadata: {
+                description: formState.description,
+                keyType,
+                ...(isPublishable && { plaintextKey: "" }), // Placeholder, updated below
+            },
         });
-        if (result.error) {
-            // TODO: handle it
-            console.error(result.error);
+
+        if (createResult.error || !createResult.data) {
+            throw new Error(
+                createResult.error?.message || "Failed to create API key",
+            );
         }
 
-        // For publishable keys, store the plaintext key in metadata for easy retrieval
-        if (keyType === "publishable" && result.data) {
-            const apiKey = result.data as CreateApiKeyResponse;
-            await auth.apiKey.update({
+        const apiKey = createResult.data;
+
+        // Store plaintext key for publishable keys
+        if (isPublishable) {
+            await authClient.apiKey.update({
                 keyId: apiKey.id,
                 metadata: {
-                    plaintextKey: apiKey.key, // Store plaintext key in metadata
+                    description: formState.description,
                     keyType,
+                    plaintextKey: apiKey.key,
                 },
             });
         }
 
-        router.invalidate();
-        return result.data as CreateApiKeyResponse;
-    };
+        // Set permissions and budget if provided
+        const permissionUpdates = Object.fromEntries(
+            Object.entries({
+                allowedModels: formState.allowedModels,
+                pollenBudget: formState.pollenBudget,
+                accountPermissions: formState.accountPermissions?.length
+                    ? formState.accountPermissions
+                    : undefined,
+            }).filter(([_, v]) => v !== undefined),
+        );
 
-    const handleDeleteApiKey = async (id: string) => {
-        const result = await auth.apiKey.delete({ keyId: id });
+        if (Object.keys(permissionUpdates).length > 0) {
+            const response = await fetch(`/api/api-keys/${apiKey.id}/update`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(permissionUpdates),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(
+                    `Key created but failed to set permissions: ${(error as { message?: string }).message || "Unknown error"}`,
+                );
+            }
+        }
+
+        router.invalidate();
+        return {
+            id: apiKey.id,
+            key: apiKey.key,
+            name: apiKey.name,
+        } as CreateApiKeyResponse;
+    }
+
+    async function handleDeleteApiKey(id: string): Promise<void> {
+        const result = await authClient.apiKey.delete({ keyId: id });
         if (result.error) {
             console.error(result.error);
         }
         router.invalidate();
-    };
+    }
 
-    const handleActivateTier = async () => {
-        if (isActivating || !tierData) return;
-        setIsActivating(true);
-        setActivationError(null);
-
-        try {
-            const response = await fetch("/api/tiers/activate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ target_tier: tierData.target_tier }),
-            });
-
-            if (!response.ok) {
-                const error = (await response.json()) as { message?: string };
-                setActivationError(error.message || "Unknown error");
-                setIsActivating(false);
-                return;
-            }
-
-            const data = (await response.json()) as { checkout_url: string };
-            window.location.href = data.checkout_url;
-        } catch (error) {
-            setActivationError(String(error));
-            setIsActivating(false);
+    async function handleUpdateApiKey(
+        id: string,
+        updates: {
+            name?: string;
+            allowedModels?: string[] | null;
+            pollenBudget?: number | null;
+            accountPermissions?: string[] | null;
+            expiresAt?: Date | null;
+        },
+    ): Promise<void> {
+        const response = await fetch(`/api/api-keys/${id}/update`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(updates),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(
+                (error as { message?: string }).message || "Update failed",
+            );
         }
+        router.invalidate();
+    }
+
+    const handleBuyPollen = (amount: number) => {
+        // Navigate to Stripe checkout endpoint with amount in USD
+        window.location.href = `/api/stripe/checkout/${amount}`;
     };
 
-    const handleBuyPollen = (slug: string) => {
-        // Navigate directly to checkout endpoint - server will handle redirect
-        window.location.href = `/api/polar/checkout/${encodeURIComponent(slug)}?redirect=true`;
-    };
     return (
         <div className="flex flex-col gap-6">
-            <NewsBanner />
             <div className="flex flex-col gap-20">
                 <Header>
                     <User
                         githubUsername={user?.githubUsername || ""}
                         githubAvatarUrl={user?.image || ""}
                         onSignOut={handleSignOut}
-                        onUserPortal={() => {
-                            window.location.href = "/api/polar/customer/portal";
-                        }}
                     />
                     <Button
                         as="a"
                         href="/api/docs"
-                        className="bg-gray-900 text-white hover:!brightness-90"
+                        className="bg-gray-900 text-white hover:!brightness-90 whitespace-nowrap"
                     >
                         API Reference
                     </Button>
                 </Header>
+                <NewsBanner />
                 <div className="flex flex-col gap-2">
-                    <div className="flex flex-col sm:flex-row justify-between gap-3">
-                        <h2 className="font-bold flex-1">Balance</h2>
-                        <div className="flex flex-wrap gap-3 items-center">
-                            <Button
-                                as="button"
-                                color="purple"
-                                weight="light"
-                                onClick={() =>
-                                    handleBuyPollen("v1:product:pack:5x2")
-                                }
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                        <h2 className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("balance")}
+                                className={`font-bold ${
+                                    activeTab === "balance"
+                                        ? "text-green-950"
+                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
+                                }`}
                             >
-                                + $5
-                            </Button>
-                            <Button
-                                as="button"
-                                color="purple"
-                                weight="light"
-                                onClick={() =>
-                                    handleBuyPollen("v1:product:pack:10x2")
-                                }
+                                Balance
+                            </button>
+                            <span className="text-gray-300">·</span>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("usage")}
+                                className={`font-bold ${
+                                    activeTab === "usage"
+                                        ? "text-green-950"
+                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
+                                }`}
                             >
-                                + $10
-                            </Button>
-                            <Button
-                                as="button"
-                                color="purple"
-                                weight="light"
-                                onClick={() =>
-                                    handleBuyPollen("v1:product:pack:20x2")
-                                }
+                                Usage
+                                {activeTab === "balance" && (
+                                    <img
+                                        src="/stats-icon.svg"
+                                        alt="stats"
+                                        className="emoji-pulse ml-1 w-7 h-7 inline-block"
+                                    />
+                                )}
+                            </button>
+                        </h2>
+                        {activeTab === "balance" && (
+                            <div
+                                id="buy-pollen"
+                                className="flex flex-wrap gap-2"
                             >
-                                + $20
-                            </Button>
-                            <Button
-                                as="button"
-                                color="purple"
-                                weight="light"
-                                onClick={() =>
-                                    handleBuyPollen("v1:product:pack:50x2")
-                                }
-                            >
-                                + $50
-                            </Button>
-                            <Button
-                                as="a"
-                                href="https://github.com/pollinations/pollinations/issues/4826"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="!bg-purple-200 !text-purple-900"
-                                color="purple"
-                                weight="light"
-                            >
-                                💳 Vote on payment methods
-                            </Button>
-                        </div>
+                                <Button
+                                    as="button"
+                                    color="violet"
+                                    weight="light"
+                                    onClick={() => handleBuyPollen(5)}
+                                    className="btn-shimmer"
+                                >
+                                    💎 $5
+                                </Button>
+                                <Button
+                                    as="button"
+                                    color="violet"
+                                    weight="light"
+                                    onClick={() => handleBuyPollen(10)}
+                                    className="btn-shimmer"
+                                >
+                                    💎 $10
+                                </Button>
+                                <Button
+                                    as="button"
+                                    color="violet"
+                                    weight="light"
+                                    onClick={() => handleBuyPollen(20)}
+                                    className="btn-shimmer"
+                                >
+                                    💎 $20
+                                </Button>
+                                <Button
+                                    as="button"
+                                    color="violet"
+                                    weight="light"
+                                    onClick={() => handleBuyPollen(50)}
+                                    className="btn-shimmer"
+                                >
+                                    💎 $50
+                                </Button>
+                            </div>
+                        )}
+                        {activeTab === "usage" && (
+                            <div ref={downloadRef} className="relative">
+                                <Button
+                                    as="button"
+                                    color="violet"
+                                    weight="light"
+                                    onClick={() =>
+                                        setDownloadOpen(!downloadOpen)
+                                    }
+                                    className="flex items-center gap-1.5"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="14"
+                                        height="14"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <title>Download</title>
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="7 10 12 15 17 10" />
+                                        <line x1="12" y1="15" x2="12" y2="3" />
+                                    </svg>
+                                    Download
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="12"
+                                        height="12"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className={`transition-transform ${downloadOpen ? "rotate-180" : ""}`}
+                                    >
+                                        <title>Toggle</title>
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                </Button>
+                                {downloadOpen && (
+                                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                try {
+                                                    const res = await fetch(
+                                                        "/api/account/usage/daily?format=csv",
+                                                    );
+                                                    if (!res.ok)
+                                                        throw new Error(
+                                                            "Failed to fetch",
+                                                        );
+                                                    const blob =
+                                                        await res.blob();
+                                                    const url =
+                                                        URL.createObjectURL(
+                                                            blob,
+                                                        );
+                                                    const a =
+                                                        document.createElement(
+                                                            "a",
+                                                        );
+                                                    a.href = url;
+                                                    a.download =
+                                                        "usage-daily.csv";
+                                                    a.click();
+                                                    URL.revokeObjectURL(url);
+                                                } catch (e) {
+                                                    console.error(
+                                                        "Download failed:",
+                                                        e,
+                                                    );
+                                                } finally {
+                                                    setDownloadOpen(false);
+                                                }
+                                            }}
+                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                        >
+                                            Daily Summary
+                                            <span className="block text-xs text-gray-400">
+                                                Aggregated by day
+                                            </span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                setDownloadingDetailed(true);
+                                                try {
+                                                    const res = await fetch(
+                                                        "/api/account/usage?format=csv&limit=50000",
+                                                    );
+                                                    if (!res.ok)
+                                                        throw new Error(
+                                                            "Failed to fetch",
+                                                        );
+                                                    const blob =
+                                                        await res.blob();
+                                                    const url =
+                                                        URL.createObjectURL(
+                                                            blob,
+                                                        );
+                                                    const a =
+                                                        document.createElement(
+                                                            "a",
+                                                        );
+                                                    a.href = url;
+                                                    a.download =
+                                                        "usage-detailed.csv";
+                                                    a.click();
+                                                    URL.revokeObjectURL(url);
+                                                } catch (e) {
+                                                    console.error(
+                                                        "Download failed:",
+                                                        e,
+                                                    );
+                                                } finally {
+                                                    setDownloadingDetailed(
+                                                        false,
+                                                    );
+                                                    setDownloadOpen(false);
+                                                }
+                                            }}
+                                            disabled={downloadingDetailed}
+                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                        >
+                                            {downloadingDetailed
+                                                ? "Downloading..."
+                                                : "Detailed Usage"}
+                                            <span className="block text-xs text-gray-400">
+                                                Per-request data
+                                            </span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
-                    <PollenBalance
-                        balances={balances}
-                        dailyPollen={tierData?.daily_pollen}
-                    />
+                    {activeTab === "balance" && (
+                        <PollenBalance
+                            tierBalance={tierBalance}
+                            packBalance={packBalance}
+                            cryptoBalance={cryptoBalance}
+                            tier={tierData?.active?.tier}
+                        />
+                    )}
+                    {activeTab === "usage" && (
+                        <UsageGraph tier={tierData?.active?.tier} />
+                    )}
                 </div>
                 {tierData && (
                     <div className="flex flex-col gap-2">
                         <div className="flex flex-col sm:flex-row justify-between gap-3">
                             <h2 className="font-bold flex-1">Tier</h2>
-                            {tierData.should_show_activate_button && (
-                                <div className="flex gap-3">
-                                    <Button
-                                        onClick={handleActivateTier}
-                                        disabled={isActivating}
-                                        color="green"
-                                        weight="light"
-                                        className="!bg-gray-50"
-                                    >
-                                        {isActivating
-                                            ? "Processing..."
-                                            : `Activate ${tierData.target_tier_name}`}
-                                    </Button>
-                                </div>
-                            )}
                         </div>
-                        {activationError && (
-                            <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-                                <p className="text-sm text-red-900">
-                                    ❌ <strong>Activation Failed:</strong>{" "}
-                                    {activationError}
-                                </p>
-                            </div>
-                        )}
-                        <TierPanel
-                            status={tierData.active_tier}
-                            next_refill_at_utc={tierData.next_refill_at_utc}
-                            active_tier_name={tierData.active_tier_name}
-                            daily_pollen={tierData.daily_pollen}
-                            subscription_status={tierData.subscription_status}
-                            subscription_ends_at={tierData.subscription_ends_at}
-                            subscription_canceled_at={
-                                tierData.subscription_canceled_at
-                            }
-                            has_polar_error={tierData.has_polar_error}
-                        />
+                        <TierPanel {...tierData} />
                     </div>
                 )}
                 <ApiKeyList
                     apiKeys={apiKeys}
                     onCreate={handleCreateApiKey}
+                    onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
                 />
+                <Pricing packBalance={packBalance} />
                 <FAQ />
-                <Pricing />
-                <div className="text-center py-8">
-                    <Link
-                        to="/terms"
-                        className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                    >
-                        Terms & Conditions
-                    </Link>
-                </div>
+                <Footer />
             </div>
         </div>
     );

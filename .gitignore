@@ -340,3 +340,14 @@ debugsession_*/
 
 # Testing tokens
 .testingtokens
+
+# Claude skills mutable data (sensitive/local)
+.claude/skills/*/data/
+
+# Vim swap files
+*.swp
+*.swo
+*~
+
+# Agent communication file (temporary)
+agent-communication.md

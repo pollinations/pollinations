@@ -1,6 +1,6 @@
 import { SELF } from "cloudflare:test";
-import { test } from "../fixtures.ts";
 import { describe, expect } from "vitest";
+import { test } from "../fixtures.ts";
 
 /**
  * Video Generation Integration Tests
@@ -183,6 +183,119 @@ describe("Video Generation Integration Tests", () => {
 });
 
 /**
+ * Wan (Alibaba) Video Generation Tests
+ *
+ * Cost considerations:
+ * - wan with audio: $0.05/sec (720P)
+ * - wan without audio: $0.025/sec (720P)
+ */
+describe("Wan Video Generation", () => {
+    /**
+     * Test wan image-to-video (I2V) with default audio
+     * Wan 2.6 requires an image for I2V generation
+     */
+    test(
+        "wan I2V should return video/mp4",
+        { timeout: 180000 }, // Wan takes 1-2 minutes
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const imageUrl =
+                "https://image.pollinations.ai/prompt/simple%20landscape?width=512&height=512&nologo=true&seed=42";
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/animate%20this%20scenic%20landscape?model=wan&duration=5&image=${encodeURIComponent(imageUrl)}`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("Wan I2V response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("video/mp4");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    /**
+     * Test wan I2V without audio (cost optimization)
+     */
+    test(
+        "wan I2V without audio should return video/mp4",
+        { timeout: 180000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const imageUrl =
+                "https://image.pollinations.ai/prompt/abstract%20pattern?width=512&height=512&nologo=true&seed=42";
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/make%20it%20move?model=wan&duration=5&audio=false&image=${encodeURIComponent(imageUrl)}`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("Wan no-audio response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("video/mp4");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    /**
+     * Test wan without image (should fail - I2V requires image)
+     */
+    test(
+        "wan without image should fail with appropriate error",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/create%20a%20video?model=wan&duration=5`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            // Should fail since Wan requires an image for I2V
+            expect([400, 500]).toContain(response.status);
+
+            if (response.status !== 200) {
+                const body = await response.text();
+                expect(body.toLowerCase()).toMatch(/image|img_url|i2v/);
+            }
+        },
+    );
+});
+
+/**
  * Expensive video tests - skipped by default
  * Run manually with: npm test -- --grep "Veo"
  */
@@ -202,6 +315,96 @@ describe("Veo Video Generation", () => {
                     },
                 },
             );
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("video/mp4");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    /**
+     * Test veo image-to-video (I2V) - PR #6068
+     * Provides an image URL to test the I2V functionality
+     */
+    test(
+        "veo I2V should return video/mp4",
+        { timeout: 180000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            // Use a simple white image - results in smaller compressed video
+            const imageUrl =
+                "https://image.pollinations.ai/prompt/pure%20white%20background?width=512&height=512&nologo=true&seed=42";
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/animate%20this%20image?model=veo&duration=4&image=${encodeURIComponent(imageUrl)}`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            // Log response for debugging if it fails
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("Veo I2V response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("video/mp4");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    /**
+     * Test veo first/last frame interpolation - Issue #6252
+     * Provides two images via pipe separator: image[0]=first frame, image[1]=last frame
+     */
+    test(
+        "veo interpolation with first and last frame should return video/mp4",
+        { timeout: 180000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            // First frame: white background
+            const firstFrame =
+                "https://image.pollinations.ai/prompt/pure%20white%20background?width=512&height=512&nologo=true&seed=42";
+            // Last frame: black background
+            const lastFrame =
+                "https://image.pollinations.ai/prompt/pure%20black%20background?width=512&height=512&nologo=true&seed=42";
+
+            // Use pipe separator for multiple images
+            const imageParam = `${firstFrame}|${lastFrame}`;
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/transition%20between%20frames?model=veo&duration=4&image=${encodeURIComponent(imageParam)}`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            // Log response for debugging if it fails
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log(
+                    "Veo interpolation response:",
+                    response.status,
+                    body,
+                );
+            }
 
             expect(response.status).toBe(200);
 

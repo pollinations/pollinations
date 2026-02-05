@@ -1,9 +1,8 @@
 {
     "name": "pollinations.ai - beta",
-    "short_name": "pollinations",
-    "description": "authentication and API gateway for pollinations.ai",
-    "icons": [
-        {
+    "short_name": "enter.pollinations.ai",
+    "description": "Developer console for APIs, pollen grants, and usage",
+    "icons": [{
             "src": "/icon-192.png",
             "sizes": "192x192",
             "type": "image/png"

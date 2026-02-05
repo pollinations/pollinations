@@ -47,10 +47,10 @@ export const callSeedreamAPI = async (
     try {
         logOps("Calling Seedream 4.0 API with prompt:", prompt);
 
-        const apiKey = process.env.SEEDREAM_API_KEY;
+        const apiKey = process.env.BYTEDANCE_API_KEY;
         if (!apiKey) {
             throw new Error(
-                "SEEDREAM_API_KEY environment variable is required",
+                "BYTEDANCE_API_KEY environment variable is required",
             );
         }
 
@@ -104,10 +104,10 @@ export const callSeedreamProAPI = async (
     try {
         logOps("Calling Seedream 4.5 Pro API with prompt:", prompt);
 
-        const apiKey = process.env.SEEDREAM_API_KEY;
+        const apiKey = process.env.BYTEDANCE_API_KEY;
         if (!apiKey) {
             throw new Error(
-                "SEEDREAM_API_KEY environment variable is required",
+                "BYTEDANCE_API_KEY environment variable is required",
             );
         }
 
@@ -153,7 +153,9 @@ export const callSeedreamProAPI = async (
         if (error instanceof HttpError) {
             throw error;
         }
-        throw new Error(`Seedream 4.5 Pro API generation failed: ${error.message}`);
+        throw new Error(
+            `Seedream 4.5 Pro API generation failed: ${error.message}`,
+        );
     }
 };
 
@@ -180,14 +182,20 @@ async function generateWithSeedream(
         size: sizeParam,
         stream: false,
         watermark: false,
+        seed: safeParams.seed,
     };
 
     // Add image-to-image support if reference images are provided
+    // Note: In image-to-image mode, Seedream API may ignore width/height parameters
+    // and use the input image dimensions instead (API limitation)
     if (safeParams.image && safeParams.image.length > 0) {
         logOps(
             "Adding reference images for image-to-image generation:",
             safeParams.image.length,
             "images",
+        );
+        logOps(
+            "Note: In image-to-image mode, output dimensions may be determined by input image, not requested size",
         );
 
         // Update progress for image processing
@@ -286,7 +294,7 @@ async function generateWithSeedream(
         );
     }
 
-    const data: SeedreamResponse = await response.json();
+    const data = (await response.json()) as SeedreamResponse;
     logOps("Seedream API response:", JSON.stringify(data, null, 2));
 
     if (!data.data || !data.data[0] || !data.data[0].url) {

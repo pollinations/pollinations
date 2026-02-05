@@ -1,0 +1,77 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-large",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "494",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Mon, 05 Jan 2026 14:41:43 GMT",
+      "etag": "W/\"1ee-m8Z+MVbxlcuFx+zLrrwPcAeAvjw\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-3-pro-preview",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "93",
+      "x-usage-prompt-text-tokens": "265",
+      "x-usage-total-tokens": "358"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_37e34adc8e2fcf72b82210700951b678",
+        "object": "chat.completion",
+        "created": 1767624103,
+        "model": "gemini-3-pro-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "Yes.",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "Yes."
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 265,
+          "completion_tokens": 2,
+          "total_tokens": 360,
+          "completion_tokens_details": {
+            "reasoning_tokens": 93,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

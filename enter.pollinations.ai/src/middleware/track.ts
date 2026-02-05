@@ -1,64 +1,63 @@
-import { processEvents, storeEvents } from "@/events.ts";
-import { HTTPException } from "hono/http-exception";
+import { getLogger } from "@logtape/logtape";
+import type { Usage } from "@shared/registry/registry.ts";
 import {
-    resolveServiceId,
-    getActivePriceDefinition,
     calculateCost,
     calculatePrice,
-    ServiceId,
-    ModelId,
-    UsageCost,
-    UsagePrice,
-    PriceDefinition,
+    getActivePriceDefinition,
     getServiceDefinition,
+    type ModelId,
+    type PriceDefinition,
+    type ServiceId,
+    type UsageCost,
+    type UsagePrice,
 } from "@shared/registry/registry.ts";
 import {
-    openaiUsageToTokenUsage,
+    openaiUsageToUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
-import { routePath, baseRoutePath } from "hono/route";
-import {
-    CompletionUsage,
-    CompletionUsageSchema,
-    ContentFilterResult,
-    ContentFilterResultSchema,
-    ContentFilterSeveritySchema,
-} from "@/schemas/openai.ts";
-import { generateRandomId } from "@/util.ts";
-import { createMiddleware } from "hono/factory";
-import {
-    contentFilterResultsToEventParams,
-    priceToEventParams,
-    usageToEventParams,
-} from "@/db/schema/event.ts";
 import { drizzle } from "drizzle-orm/d1";
-import { HonoRequest } from "hono";
+import { EventSourceParserStream } from "eventsource-parser/stream";
+import type { HonoRequest } from "hono";
+import { createMiddleware } from "hono/factory";
+import { routePath } from "hono/route";
+import { z } from "zod";
+import { mergeContentFilterResults } from "@/content-filter.ts";
 import type {
     ApiKeyType,
     EventType,
     GenerationEventContentFilterParams,
     InsertGenerationEvent,
 } from "@/db/schema/event.ts";
-import type { AuthVariables } from "@/middleware/auth.ts";
-import { PolarVariables } from "./polar.ts";
-import { z } from "zod";
-import { TokenUsage } from "../../../shared/registry/registry.js";
-import { removeUnset } from "@/util.ts";
-import { EventSourceParserStream } from "eventsource-parser/stream";
-import { mergeContentFilterResults } from "@/content-filter.ts";
+import {
+    contentFilterResultsToEventParams,
+    priceToEventParams,
+    usageToEventParams,
+} from "@/db/schema/event.ts";
+import type { ErrorVariables } from "@/env.ts";
 import {
     getDefaultErrorMessage,
     getErrorCode,
     UpstreamError,
 } from "@/error.ts";
+import { sendToTinybird } from "@/events.ts";
+import type { AuthVariables } from "@/middleware/auth.ts";
+import {
+    type CompletionUsage,
+    CompletionUsageSchema,
+    type ContentFilterResult,
+    ContentFilterResultSchema,
+    ContentFilterSeveritySchema,
+} from "@/schemas/openai.ts";
+import { generateRandomId, removeUnset } from "@/util.ts";
+import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
+import type { BalanceVariables } from "./balance.ts";
 import type { LoggerVariables } from "./logger.ts";
-import type { ErrorVariables } from "@/env.ts";
+import type { ModelVariables } from "./model.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
-import { getLogger } from "@logtape/logtape";
 
 export type ModelUsage = {
     model: ModelId;
-    usage: TokenUsage;
+    usage: Usage;
 };
 
 type RequestTrackingData = {
@@ -76,7 +75,7 @@ type ResponseTrackingData = {
     cacheData: CacheData;
     isBilledUsage: boolean;
     modelUsed?: string;
-    usage?: TokenUsage;
+    usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
     contentFilterResults?: GenerationEventContentFilterParams;
@@ -96,17 +95,32 @@ export type TrackEnv = {
     Variables: ErrorVariables &
         LoggerVariables &
         AuthVariables &
-        PolarVariables &
+        BalanceVariables &
         FrontendKeyRateLimitVariables &
-        TrackVariables;
+        TrackVariables &
+        ModelVariables;
 };
 
 export const track = (eventType: EventType) =>
     createMiddleware<TrackEnv>(async (c, next) => {
-        const log = c.get("log");
+        const log = getLogger(["hono", "track"]);
         const startTime = new Date();
+        const db = drizzle(c.env.DB);
 
-        const requestTracking = await trackRequest(eventType, c.req);
+        // Get model from resolveModel middleware
+        const modelInfo = c.var.model;
+        const requestTracking = await trackRequest(modelInfo, c.req);
+
+        const userTracking: UserData = {
+            userId: c.var.auth.user?.id,
+            userTier: c.var.auth.user?.tier,
+            userGithubId: `${c.var.auth.user?.githubId}`,
+            userGithubUsername: c.var.auth.user?.githubUsername,
+            apiKeyId: c.var.auth.apiKey?.id,
+            apiKeyType: c.var.auth.apiKey?.metadata?.keyType as ApiKeyType,
+            apiKeyName: c.var.auth.apiKey?.name,
+        } satisfies UserData;
+
         let responseOverride = null;
 
         c.set("track", {
@@ -136,33 +150,19 @@ export const track = (eventType: EventType) =>
                     responseTracking.price?.totalPrice || 0,
                 );
 
-                const userTracking: UserData = {
-                    userId: c.var.auth.user?.id,
-                    userTier: c.var.auth.user?.tier,
-                    userGithubId: `${c.var.auth.user?.githubId}`,
-                    userGithubUsername: c.var.auth.user?.githubUsername,
-                    apiKeyId: c.var.auth.apiKey?.id,
-                    apiKeyType: c.var.auth.apiKey?.metadata
-                        ?.keyType as ApiKeyType,
-                    apiKeyName: c.var.auth.apiKey?.name,
-                } satisfies UserData;
-
+                // Capture balance tracking AFTER next() so balanceCheckResult is set
                 const balanceTracking = {
                     selectedMeterId:
-                        c.var.polar.balanceCheckResult?.selectedMeterId,
+                        c.var.balance.balanceCheckResult?.selectedMeterId,
                     selectedMeterSlug:
-                        c.var.polar.balanceCheckResult?.selectedMeterSlug,
-                    balances: Object.fromEntries(
-                        c.var.polar.balanceCheckResult?.meters.map((meter) => [
-                            meter.metadata.slug,
-                            meter.balance,
-                        ]) || [],
-                    ),
+                        c.var.balance.balanceCheckResult?.selectedMeterSlug,
+                    balances: c.var.balance.balanceCheckResult?.balances || {},
                 } satisfies BalanceData;
 
-                const event = createTrackingEvent({
+                const finalEvent = createTrackingEvent({
+                    id: generateRandomId(),
                     requestId: c.get("requestId"),
-                    requestPath: `${baseRoutePath(c)}${routePath(c)}`,
+                    requestPath: `${routePath(c)}`,
                     startTime,
                     endTime,
                     environment: c.env.ENVIRONMENT,
@@ -174,42 +174,47 @@ export const track = (eventType: EventType) =>
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
 
-                log.trace("Event: {event}", { event });
-                const db = drizzle(c.env.DB);
-                await storeEvents(db, c.var.log, [event]);
+                log.trace(
+                    [
+                        "Tracking event:",
+                        "  isBilledUsage={event.isBilledUsage}",
+                        "  balances[v1:meter:tier]={event.balances[v1:meter:tier]}",
+                        "  balances[v1:meter:pack]={event.balances[v1:meter:pack]}",
+                        '  selectedMeterSlug="{event.selectedMeterSlug}"',
+                        "  totalCost={event.totalCost}",
+                        "  totalPrice={event.totalPrice}",
+                    ].join("\n"),
+                    { event: finalEvent },
+                );
 
-                // process events immediately in development/testing
-                if (
-                    ["test", "development", "local"].includes(c.env.ENVIRONMENT)
-                ) {
-                    log.trace("Processing events immediately");
-                    await processEvents(db, c.var.log, {
-                        polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
-                        polarServer: c.env.POLAR_SERVER,
-                        tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
-                        tinybirdAccessToken: c.env.TINYBIRD_ACCESS_TOKEN,
-                        minBatchSize: 0, // process all events immediately
-                    });
-                }
+                await sendToTinybird(
+                    finalEvent,
+                    c.env.TINYBIRD_INGEST_URL,
+                    c.env.TINYBIRD_INGEST_TOKEN,
+                    log,
+                );
+
+                // Handle balance deduction for both API keys and users
+                await handleBalanceDeduction({
+                    db,
+                    isBilledUsage: responseTracking.isBilledUsage,
+                    totalPrice: responseTracking.price?.totalPrice,
+                    userId: userTracking.userId,
+                    apiKeyId: c.var.auth?.apiKey?.id,
+                    apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
+                    modelResolved: c.var.model?.resolved,
+                });
             })(),
         );
     });
 
 async function trackRequest(
-    eventType: EventType,
+    modelInfo: ModelVariables["model"],
     request: HonoRequest,
 ): Promise<RequestTrackingData> {
-    const modelRequested = await extractModelRequested(request);
-
-    let resolvedModelRequested: ServiceId | undefined;
-    try {
-        resolvedModelRequested = resolveServiceId(modelRequested, eventType);
-    } catch (error) {
-        throw new HTTPException(400, {
-            message:
-                error instanceof Error ? error.message : "Invalid model name",
-        });
-    }
+    // Model is already resolved by the resolveModel middleware
+    const modelRequested = modelInfo.requested;
+    const resolvedModelRequested = modelInfo.resolved;
 
     const modelProvider = getServiceDefinition(resolvedModelRequested).provider;
     const modelPriceDefinition = getActivePriceDefinition(
@@ -249,6 +254,27 @@ async function trackResponse(
             isBilledUsage: false,
         };
     }
+
+    // For image generation, verify the response is actually an image
+    // Don't bill if the response is JSON/text (error response with HTTP 200)
+    if (eventType === "generate.image") {
+        const contentType = response.headers.get("content-type") || "";
+        if (
+            !contentType.startsWith("image/") &&
+            !contentType.startsWith("video/")
+        ) {
+            log.warn(
+                "Image generation returned non-image content-type: {contentType}",
+                { contentType },
+            );
+            return {
+                responseOk: response.ok,
+                responseStatus: response.status,
+                cacheData: cacheInfo,
+                isBilledUsage: false,
+            };
+        }
+    }
     const { modelUsage, contentFilterResults } =
         await extractUsageAndContentFilterResults(
             eventType,
@@ -265,7 +291,11 @@ async function trackResponse(
             contentFilterResults,
         };
     }
-    const cost = calculateCost(modelUsage.model as ModelId, modelUsage.usage);
+    // Use service's canonical modelId for cost (not the provider's model ID from response)
+    const serviceModelId = getServiceDefinition(
+        resolvedModelRequested as ServiceId,
+    ).modelId;
+    const cost = calculateCost(serviceModelId as ModelId, modelUsage.usage);
     const price = calculatePrice(
         resolvedModelRequested as ServiceId,
         modelUsage.usage,
@@ -332,6 +362,7 @@ type BalanceData = {
 };
 
 type TrackingEventInput = {
+    id: string;
     requestId: string;
     requestPath: string;
     startTime: Date;
@@ -346,6 +377,7 @@ type TrackingEventInput = {
 };
 
 function createTrackingEvent({
+    id,
     requestId,
     requestPath,
     startTime,
@@ -359,7 +391,7 @@ function createTrackingEvent({
     errorTracking,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
-        id: generateRandomId(),
+        id,
         requestId,
         requestPath,
         startTime,
@@ -376,6 +408,7 @@ function createTrackingEvent({
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
+        modelProviderUsed: requestTracking.modelProvider,
 
         isBilledUsage: responseTracking.isBilledUsage,
 
@@ -390,19 +423,6 @@ function createTrackingEvent({
         ...responseTracking.contentFilterResults,
         ...errorTracking,
     };
-}
-
-async function extractModelRequested(
-    request: HonoRequest,
-): Promise<string | null> {
-    if (request.method === "GET") {
-        return request.query("model") || null;
-    }
-    if (request.method === "POST") {
-        const body = await request.json();
-        return body.model || null;
-    }
-    return null;
 }
 
 async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
@@ -474,8 +494,8 @@ async function extractUsageAndContentFilterResultsStream(
             .nullish(),
     });
 
-    let model = undefined;
-    let usage: CompletionUsage | undefined = undefined;
+    let model: string | undefined;
+    let usage: CompletionUsage | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
 
@@ -525,7 +545,7 @@ async function extractUsageAndContentFilterResultsStream(
     return {
         modelUsage: {
             model: model as ModelId,
-            usage: openaiUsageToTokenUsage(usage),
+            usage: openaiUsageToUsage(usage),
         },
         contentFilterResults,
     };

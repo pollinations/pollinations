@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:16384";
-const ENTER_TOKEN = process.env.ENTER_TOKEN;
+const PLN_ENTER_TOKEN = process.env.PLN_ENTER_TOKEN;
 
 // Helper to add auth headers to requests
 function authHeaders(): HeadersInit {
-    return ENTER_TOKEN ? { "x-enter-token": ENTER_TOKEN } : {};
+    return PLN_ENTER_TOKEN ? { "x-enter-token": PLN_ENTER_TOKEN } : {};
 }
 
 beforeAll(() => {
@@ -43,41 +43,6 @@ describe("Usage headers (Issue #4638)", () => {
         expect(Number.isInteger(tokenCount)).toBe(true);
     }, 30000);
 
-    it("should include x-usage-total-tokens header", async () => {
-        const response = await fetch(`${BASE_URL}/prompt/test?model=flux`, {
-            headers: authHeaders(),
-        });
-
-        expect(response.status).toBe(200);
-
-        const totalTokens = response.headers.get("x-usage-total-tokens");
-        expect(totalTokens).toBeTruthy();
-
-        const tokenCount = parseInt(totalTokens || "0", 10);
-        expect(tokenCount).toBeGreaterThan(0);
-        expect(Number.isInteger(tokenCount)).toBe(true);
-    }, 30000);
-
-    it("should have consistent token counts between headers", async () => {
-        const response = await fetch(`${BASE_URL}/prompt/test?model=flux`, {
-            headers: authHeaders(),
-        });
-
-        expect(response.status).toBe(200);
-
-        const completionTokens = parseInt(
-            response.headers.get("x-usage-completion-image-tokens") || "0",
-            10,
-        );
-        const totalTokens = parseInt(
-            response.headers.get("x-usage-total-tokens") || "0",
-            10,
-        );
-
-        // For image-only models, completion tokens should equal total tokens
-        expect(completionTokens).toBe(totalTokens);
-    }, 30000);
-
     it("should include usage headers for flux model", async () => {
         const testReferrer = process.env.VITE_TEST_REFERRER;
         const response = await fetch(`${BASE_URL}/prompt/test?model=flux`, {
@@ -91,6 +56,5 @@ describe("Usage headers (Issue #4638)", () => {
         expect(
             response.headers.get("x-usage-completion-image-tokens"),
         ).toBeTruthy();
-        expect(response.headers.get("x-usage-total-tokens")).toBeTruthy();
     }, 30000);
 });

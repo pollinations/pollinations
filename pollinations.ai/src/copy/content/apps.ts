@@ -1,0 +1,26 @@
+// AppsPage content configuration
+
+export const APPS_PAGE = {
+    title: "Ecosystem",
+
+    subtitle:
+        "Paradise-built apps, tools, and experiments—pollinations.ai-powered. Browse, try, ship.",
+
+    // Submit app CTA
+    submitCtaTitle: "🚀 Built something cool?",
+    submitCtaDescription: "Get featured in the showcase and earn Pollen!",
+    submitCtaButton: "✨ Submit App",
+    noAppsMessage: "No apps found in this category yet.",
+};
+
+// Category mapping for display
+// IDs must match APPS.md Category column values (lowercased)
+export const CATEGORIES = [
+    { id: "creative", label: "Creative" },
+    { id: "chat", label: "Chat" },
+    { id: "games", label: "Games" },
+    { id: "dev_tools", label: "Dev Tools" },
+    { id: "vibes", label: "Vibes" },
+    { id: "social_bots", label: "Social Bots" },
+    { id: "learn", label: "Learn" },
+];

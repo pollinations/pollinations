@@ -2,8 +2,9 @@
  * Pollen calculation utilities
  */
 
+import millify from "millify";
+import { hasReasoning, hasVision } from "./model-info.ts";
 import type { ModelPrice } from "./types.ts";
-import { getModalities, hasReasoning, hasVision } from "./model-info.ts";
 
 // ============================================================================
 // WORKLOAD PROFILES
@@ -47,58 +48,41 @@ const MODEL_IMAGE_TOKENS: Record<string, number> = {
     "nanobanana": 1290, // 1290 tokens (Vertex AI Gemini actual usage)
 };
 
-/**
- * Audio pricing per minute (OpenAI realtime API rates)
- * Fixed per-minute costs, not token-based
- * Source: https://platform.openai.com/docs/guides/realtime
- */
-const AUDIO_COST_PER_MIN = {
-    input: 0.06, // USD per minute of input audio
-    output: 0.24, // USD per minute of output audio (TTS)
+/** Format number as coarse estimate (not precise - it's an average) */
+const formatCount = (num: number): string => {
+    if (num < 1) return "1";
+    if (num < 10) return Math.round(num).toString(); // 1, 2, 5
+    if (num < 100) return (Math.round(num / 5) * 5).toString(); // 10, 15, 50
+    if (num < 1000) return (Math.round(num / 50) * 50).toString(); // 100, 150, 500
+    return millify(Math.round(num / 100) * 100, { precision: 1 }); // 1.5K, 2K
 };
 
-/** Format large numbers with K/M abbreviations */
-function formatLargeNumber(num: number): string {
-    // Less aggressive rounding for smaller numbers
-    let rounded: number;
-    if (num < 50) {
-        // Round to nearest 5 for numbers under 50
-        rounded = Math.round(num / 5) * 5;
-    } else {
-        // Round to nearest 10 for larger numbers
-        rounded = Math.round(num / 10) * 10;
-    }
-
-    if (rounded >= 1_000_000) {
-        const millions = rounded / 1_000_000;
-        return `${millions.toFixed(millions >= 10 ? 0 : 1)}M`;
-    }
-
-    if (rounded >= 1_000) {
-        const thousands = rounded / 1_000;
-        return `${thousands.toFixed(thousands >= 10 ? 0 : 1)}K`;
-    }
-
-    return `${rounded}`;
-}
-
 /**
- * Calculate "Per Pollen" value for a model using workload profiles.
- * Automatically selects profile based on model capabilities.
+ * Calculate "Per Pollen" value for a model.
+ * Uses real average cost from Tinybird when available (rolling 7-day average),
+ * falls back to theoretical workload profiles for new/low-usage models.
  *
- * Returns human-readable capacity:
- * - Text models: "500" (responses)
- * - Image models: "50" (images)
- * - Audio models: "25.3 min" (minutes of audio)
+ * Returns human-readable capacity (requests per pollen)
  */
 export const calculatePerPollen = (model: ModelPrice): string => {
-    const modalities = getModalities(model.name);
-    const primaryOutput = modalities.output[0];
+    // ========================================================================
+    // REAL USAGE DATA (from Tinybird - rolling 7-day average)
+    // ========================================================================
+    // Use real avg cost when available (preferred over theoretical calculations)
+    if (model.realAvgCost && model.realAvgCost > 0) {
+        const unitsPerPollen = 1 / model.realAvgCost;
+        return formatCount(unitsPerPollen);
+    }
+
+    // ========================================================================
+    // FALLBACK: THEORETICAL CALCULATIONS
+    // ========================================================================
+    // Used for new models or models with insufficient usage data
 
     // ========================================================================
     // TEXT MODELS
     // ========================================================================
-    if (model.type === "text" && primaryOutput === "text") {
+    if (model.type === "text") {
         const inputPrice = parseFloat(model.promptTextPrice || "0");
         const outputPrice = parseFloat(model.completionTextPrice || "0");
 
@@ -129,16 +113,7 @@ export const calculatePerPollen = (model: ModelPrice): string => {
         if (costPerRequest === 0) return "—";
 
         const requestsPerPollen = 1 / costPerRequest;
-        return formatLargeNumber(requestsPerPollen);
-    }
-
-    // ========================================================================
-    // AUDIO MODELS (TTS/Realtime)
-    // ========================================================================
-    if (model.type === "text" && primaryOutput === "audio") {
-        // Use per-minute pricing directly
-        const minutesPerPollen = 1 / AUDIO_COST_PER_MIN.output;
-        return `${minutesPerPollen.toFixed(1)} min`;
+        return formatCount(requestsPerPollen);
     }
 
     // ========================================================================
@@ -156,7 +131,7 @@ export const calculatePerPollen = (model: ModelPrice): string => {
             const costPerVideo =
                 (tokenPrice * SEEDANCE_TOKENS_2S_720P) / 1_000_000;
             const videosPerPollen = 1 / costPerVideo;
-            return formatLargeNumber(videosPerPollen);
+            return formatCount(videosPerPollen);
         }
 
         // Second-based video pricing (e.g., veo)
@@ -164,9 +139,9 @@ export const calculatePerPollen = (model: ModelPrice): string => {
             const costPerSecond = parseFloat(model.perSecondPrice);
             if (costPerSecond === 0) return "—";
 
-            // Show seconds per pollen
+            // Show seconds per pollen (no suffix - column header shows "seconds")
             const secondsPerPollen = 1 / costPerSecond;
-            return `${secondsPerPollen.toFixed(1)} sec`;
+            return secondsPerPollen.toFixed(1);
         }
     }
 
@@ -180,7 +155,7 @@ export const calculatePerPollen = (model: ModelPrice): string => {
             if (costPerImage === 0) return "—";
 
             const imagesPerPollen = 1 / costPerImage;
-            return formatLargeNumber(imagesPerPollen);
+            return formatCount(imagesPerPollen);
         }
 
         // Case 2: Per-token pricing (e.g., gptimage, nanobanana)
@@ -195,7 +170,7 @@ export const calculatePerPollen = (model: ModelPrice): string => {
             if (costPerImage === 0) return "—";
 
             const imagesPerPollen = 1 / costPerImage;
-            return formatLargeNumber(imagesPerPollen);
+            return formatCount(imagesPerPollen);
         }
     }
 

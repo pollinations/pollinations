@@ -1,0 +1,46 @@
+{
+  "date": "2026-01-02",
+  "generated_at": "2026-01-02T16:09:35.009181+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art",
+  "linked_images": false,
+  "strategy_reasoning": "Using the 'cozy pixel art' aesthetic allows us to turn technical updates (API tables, server moves, bug fixes) into a narrative about digital gardening and exploration. The VisionAI feature is visualized as a character gaining sight, while the Sweden server move becomes a cute travel moment. This aligns perfectly with the Stardew Valley/Unpacking vibe requested.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%208-bit%20pixel%20art%20close-up.%20A%20cute%20tiny%20robot%20character%20with%20a%20CRT%20monitor%20head%20holding%20a%20pixelated%20polaroid%20photo.%20A%20glowing%20pixel%20eye%20icon%20floats%20above%20it.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20gradient%20background.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20aesthetic.%20Text%20in%20pixel%20font%3A%20%27I%20CAN%20SEE%21%27.%20Wholesome%2C%20nostalgic%2C%20Stardew%20Valley%20vibes.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=950043254",
+      "prompt": "Cozy 8-bit pixel art close-up. A cute tiny robot character with a CRT monitor head holding a pixelated polaroid photo. A glowing pixel eye icon floats above it. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic. Text in pixel font: 'I CAN SEE!'. Wholesome, nostalgic, Stardew Valley vibes.",
+      "description": "Announcing VisionAI - the AI can now 'see' images in chat."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%208-bit%20pixel%20art%20landscape.%20A%20tiny%20cute%20server%20box%20character%20wearing%20a%20cozy%20winter%20scarf%20and%20knit%20hat%2C%20standing%20in%20a%20minimalist%20snowy%20pixel%20field%20%28Sweden%29.%20Soft%20pastel%20blue%20and%20lime%20green%20%28%23ecf874%29%20aurora%20sky.%20Chunky%20pixels%2C%20serene%20vibes%20like%20A%20Short%20Hike.%20Text%20in%20pixel%20font%3A%20%27GPT-5.2%20moved%20to%20Sweden%27.%20Warm%20and%20inviting.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1945888730",
+      "prompt": "Retro 8-bit pixel art landscape. A tiny cute server box character wearing a cozy winter scarf and knit hat, standing in a minimalist snowy pixel field (Sweden). Soft pastel blue and lime green (#ecf874) aurora sky. Chunky pixels, serene vibes like A Short Hike. Text in pixel font: 'GPT-5.2 moved to Sweden'. Warm and inviting.",
+      "description": "Visualizing the GPT-5.2 endpoint move to Sweden Central."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%208-bit%20pixel%20art%20interior%20scene.%20A%20tidy%20retro%20workspace%20with%20a%20CRT%20computer.%20On%20screen%3A%20a%20clean%2C%20compact%20inventory%20list%20%28representing%20API%20keys%29.%20A%20tiny%20pixel%20bee%20is%20sweeping%20away%20%27glitch%27%20dust%20bunnies.%20Warm%20sunset%20lighting%20through%20the%20window.%20Unpacking%20game%20aesthetic.%20Soft%20pastels%20and%20lime%20green%20%28%23ecf874%29.%20Organized%20and%20calm.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1748711072",
+      "prompt": "Cozy 8-bit pixel art interior scene. A tidy retro workspace with a CRT computer. On screen: a clean, compact inventory list (representing API keys). A tiny pixel bee is sweeping away 'glitch' dust bunnies. Warm sunset lighting through the window. Unpacking game aesthetic. Soft pastels and lime green (#ecf874). Organized and calm.",
+      "description": "Representing the UI cleanup for API keys and bug fixes."
+    }
+  ],
+  "caption": "New eyes, new travels, and a tidy workspace! 🌸✨\n\nUpdates from the digital garden:\n\n👁️ **VisionAI is here:** Our chat models just got a major upgrade—they can now see! Send images and let the AI analyze them. \n\n🇸🇪 **Hej Sweden:** We moved our GPT-5.2 endpoint to Sweden Central. Better vibes, no content blocks on the 'openai-large' model. \n\n🧹 **Spring Cleaning:** We tidied up the API keys table (no more weird scrolling!) and squashed some bugs in the tier workflows. \n\nEverything is looking cozy and pixel-perfect. Try it out! \n\nLink in bio to build 🌿\n\n#pollinations #aiart #opensource #pixelart #retrogaming #indiedev #8bit #cozyvibes #genzdev",
+  "hashtags": [
+    "#pollinations",
+    "#aiart",
+    "#opensource",
+    "#pixelart",
+    "#retrogaming",
+    "#indiedev",
+    "#8bit",
+    "#cozyvibes",
+    "#genzdev"
+  ],
+  "alt_text": "Series of cozy 8-bit pixel art images. 1: A cute robot holding a photo with text 'I CAN SEE!'. 2: A pixel server wearing a scarf in a snowy landscape. 3: A tidy retro workspace with a pixel bee cleaning up.",
+  "pr_references": [
+    "#6726",
+    "#6722",
+    "#6631",
+    "#6699",
+    "#6694"
+  ]
+}

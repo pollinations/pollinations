@@ -1,0 +1,50 @@
+{
+  "date": "2026-02-05",
+  "generated_at": "2026-02-05T17:43:07.317744+00:00",
+  "post_type": "carousel",
+  "content_type": "retro_infographic",
+  "linked_images": true,
+  "strategy_reasoning": "This update batch is heavy on 'visual identity' and 'stability' (fixing broken images on Discord/Buffer). The best way to communicate this is to show, not just tell. We're using the 'New Skin Unlocked' metaphor to celebrate the unified pixel art style while treating the technical fixes (Buffer/Discord) as 'infrastructure upgrades' to our cozy digital village.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/A%20cute%208-bit%20pixel%20art%20bee%20mascot%20holding%20a%20large%20paintbrush%2C%20putting%20the%20finishing%20touches%20on%20a%20glowing%20canvas.%20The%20canvas%20shows%20a%20perfect%20lime%20green%20%28%23ecf874%29%20square.%20Background%20is%20a%20cozy%20artist%20studio%20with%20soft%20pastel%20lavender%20and%20peach%20gradients.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20aesthetic%20like%20Unpacking.%20Text%20in%20pixel%20font%20on%20the%20wall%3A%20%27NEW%20LOOK%27.%20Nostalgic%20and%20creative.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1818896977",
+      "prompt": "A cute 8-bit pixel art bee mascot holding a large paintbrush, putting the finishing touches on a glowing canvas. The canvas shows a perfect lime green (#ecf874) square. Background is a cozy artist studio with soft pastel lavender and peach gradients. Chunky retro sprites, warm lighting, lo-fi aesthetic like Unpacking. Text in pixel font on the wall: 'NEW LOOK'. Nostalgic and creative.",
+      "description": "Announcing the unified visual identity"
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20pixel%20art%20scene%20showing%20a%20delivery%20drone%20%28cute%2C%20retro%20style%29%20successfully%20dropping%20a%20package%20labeled%20%27IMG%27%20into%20a%20mailbox%20with%20a%20Discord%20logo%20on%20it.%20No%20glitches%2C%20just%20smooth%20delivery.%20Soft%20lime%20green%20%28%23ecf874%29%20glow%20around%20the%20package.%20Background%20is%20a%20peaceful%20pixel%20village%20with%20soft%20mint%20sky.%208-bit%20aesthetic%2C%20warm%20and%20satisfying.%20Text%20in%20pixel%20font%3A%20%27DELIVERY%20FIXED%27.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1884677042",
+      "prompt": "A pixel art scene showing a delivery drone (cute, retro style) successfully dropping a package labeled 'IMG' into a mailbox with a Discord logo on it. No glitches, just smooth delivery. Soft lime green (#ecf874) glow around the package. Background is a peaceful pixel village with soft mint sky. 8-bit aesthetic, warm and satisfying. Text in pixel font: 'DELIVERY FIXED'.",
+      "description": "Visualizing the Discord/Buffer image fix as a successful package delivery"
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20wide%20shot%20of%20a%20cozy%20pixel%20art%20community%20garden.%20Tiny%208-bit%20characters%20are%20tending%20to%20plants%2C%20one%20is%20putting%20a%20letter%20in%20a%20mailbox%20%28referencing%20the%20email%20fix%29.%20The%20garden%20is%20lush%20with%20lime%20green%20%28%23ecf874%29%20plants%20and%20colorful%20pixel%20flowers.%20Soft%2C%20dreamy%20lighting%20like%20A%20Short%20Hike.%20Atmospheric%2C%20peaceful%2C%20thriving%20community%20vibes.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=2023830556",
+      "prompt": "A wide shot of a cozy pixel art community garden. Tiny 8-bit characters are tending to plants, one is putting a letter in a mailbox (referencing the email fix). The garden is lush with lime green (#ecf874) plants and colorful pixel flowers. Soft, dreamy lighting like A Short Hike. Atmospheric, peaceful, thriving community vibes.",
+      "description": "General community vibes + subtle nod to the email patch"
+    }
+  ],
+  "caption": "New skin unlocked! 🎨✨ We’ve officially unified our visual identity across the verse—expect way more cozy pixel vibes on your feed (and in your Discord embeds). \n\nPATCH NOTES:\n✨ Unified Pixel Art Style (it’s giving cozy)\n🐛 Fixed Discord image uploads (no more broken links!)\n🛠️ Stabilized Buffer posting\n💌 Updated mentor contacts\n\nWe’re tidying up the garden so your creations can bloom. 🌸🐝\n\n#pollinations #pixelart #opensource #buildinpublic #cozyvibes #devlog #indiedev #8bitart",
+  "hashtags": [
+    "#pollinations",
+    "#pixelart",
+    "#opensource",
+    "#buildinpublic",
+    "#cozyvibes",
+    "#devlog",
+    "#indiedev",
+    "#8bitart"
+  ],
+  "alt_text": "Carousel of cozy pixel art images. 1: A bee mascot painting a lime green canvas. 2: A retro drone delivering a file to a mailbox. 3: A peaceful digital garden with tiny characters.",
+  "pr_references": [
+    "#7976",
+    "#7972",
+    "#7974",
+    "#7973",
+    "#7959",
+    "#7877",
+    "#7949",
+    "#7926",
+    "#7947",
+    "#7943"
+  ]
+}

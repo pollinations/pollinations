@@ -1,0 +1,27 @@
+# Social Media Posting Schedule
+# All times in UTC
+# Used by buffer_publish_post.py to schedule posts via Buffer's customScheduled mode
+#
+# Each post is generated once, reviewed via PR, and delivered once at the preferred time.
+# Generation frequency = delivery frequency. Lookback window matches the gap between generations.
+
+linkedin:
+  # Twice weekly — Wed + Fri
+  days: [3, 5]  # Wednesday + Friday (1=Monday, 7=Sunday)
+  preferred: "14:00"  # 2pm UTC (3pm CET, 9am ET) — EU afternoon + US East morning
+
+twitter:
+  # Daily
+  days: [1, 2, 3, 4, 5, 6, 7]
+  preferred: "17:00"  # 12pm ET — US lunch + EU evening overlap
+
+instagram:
+  # Daily
+  days: [1, 2, 3, 4, 5, 6, 7]
+  preferred: "15:00"  # 3pm UTC (4pm CET, 10am ET) — EU afternoon + US morning
+
+# How it works:
+# 1. Cron generates post → creates PR for review
+# 2. PR merged → Buffer publish workflow triggers
+# 3. buffer_publish_post.py reads this schedule, picks next valid day at preferred time
+# 4. Buffer delivers the post at that scheduled time

@@ -486,7 +486,7 @@ def commit_image_to_branch(
     )
 
     if resp.status_code in [200, 201]:
-        raw_url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{file_path}"
+        raw_url = f"https://raw.githubusercontent.com/{owner}/{repo}/main/{file_path}"
         print(f"  Committed image to {file_path}")
         return raw_url
 

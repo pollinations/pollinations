@@ -12,7 +12,6 @@ import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import type { Env } from "../env.ts";
 
-// Usage tracking helper - inline to avoid import path issues with Vite
 function buildAudioUsageHeaders(
     modelUsed: string,
     completionAudioTokens: number,
@@ -24,18 +23,24 @@ function buildAudioUsageHeaders(
     };
 }
 
-// Voice name → ElevenLabs voice_id mapping
-// Includes OpenAI-compatible names and native ElevenLabs voices
 const VOICE_MAPPING: Record<string, string> = {
-    // OpenAI-compatible voice names (mapped to similar ElevenLabs voices)
+
+    // These are the new voices mapped to ElevenLabs voices from OpenAI TTS
+
     alloy: "21m00Tcm4TlvDq8ikWAM", // Rachel
     echo: "29vD33N1CtxCmqQRPOHJ", // Drew
     fable: "EXAVITQu4vr4xnSDxMaL", // Bella
     onyx: "ErXwobaYiN019PkySvjV", // Antoni
     nova: "MF3mGyEYCl7XYWbV9V6O", // Elli
     shimmer: "ThT5KcBeYPX3keUQqHPh", // Dorothy
+    ash: "dXtC3XhB9GtPusIpNtQx", // Hale
+    ballad: "q0IMILNRPxOgtBTS4taI", // Drew
+    coral: "gJx1vCzNCD1EQHT212Ls", // Coral
+    sage: "wJqPPQ618aTW29mptyoc", // ana rita
+    verse: "eXpIbVcVbLo8ZJQDlDnl", // Siren
 
-    // ElevenLabs Default Voices - Female
+    // These are the original voices from ElevenLabs
+
     rachel: "21m00Tcm4TlvDq8ikWAM", // Calm, conversational
     domi: "AZnzlk1XvdvUeBnXmlld", // Strong, confident
     bella: "EXAVITQu4vr4xnSDxMaL", // Soft, gentle
@@ -45,8 +50,6 @@ const VOICE_MAPPING: Record<string, string> = {
     sarah: "EXAVITQu4vr4xnSDxMaL", // Soft, news anchor
     emily: "LcfcDJNUP1GQjkzn1xUU", // Calm, gentle
     lily: "pFZP5JQG7iQjIQuC4Bku", // Warm, British narrator
-
-    // ElevenLabs Default Voices - Male
     adam: "pNInz6obpgDQGcFmaJgB", // Deep, natural
     antoni: "ErXwobaYiN019PkySvjV", // Well-rounded, calm
     arnold: "VR6AewLTigWG4xSOukaG", // Crisp, deep
@@ -64,10 +67,8 @@ const VOICE_MAPPING: Record<string, string> = {
     matilda: "XrExE9yKIg1WjnnlVkGX", // Warm, friendly
 };
 
-// Default ElevenLabs model
 const DEFAULT_ELEVENLABS_MODEL = "eleven_multilingual_v2";
 
-// OpenAI TTS request schema
 const CreateSpeechRequestSchema = z
     .object({
         model: z.string().default("tts-1").meta({
@@ -81,13 +82,14 @@ const CreateSpeechRequestSchema = z
             example: "Hello, welcome to Pollinations!",
         }),
         voice: z
-            .string()
+            .enum(Object.keys(VOICE_MAPPING) as [string, ...string[]])
             .default("alloy")
             .meta({
                 description:
                     "The voice to use. OpenAI voices: alloy, echo, fable, onyx, nova, shimmer. " +
                     "ElevenLabs voices: rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, " +
-                    "adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill, matilda.",
+                    "adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill, matilda, " +
+                    "ash, ballad, coral, sage, verse.",
                 example: "rachel",
             }),
         response_format: z
@@ -107,7 +109,6 @@ const CreateSpeechRequestSchema = z
 
 type CreateSpeechRequest = z.infer<typeof CreateSpeechRequestSchema>;
 
-// Map OpenAI response_format to ElevenLabs output_format
 function mapOutputFormat(format: string): string {
     const formatMap: Record<string, string> = {
         mp3: "mp3_44100_128",
@@ -120,11 +121,7 @@ function mapOutputFormat(format: string): string {
     return formatMap[format] || "mp3_44100_128";
 }
 
-// Map OpenAI speed to ElevenLabs stability (inverse relationship)
-// Higher speed = lower stability for faster, more dynamic speech
 function mapSpeedToStability(speed: number): number {
-    // OpenAI speed 0.25-4.0 → ElevenLabs stability 0.0-1.0
-    // Slower speed = higher stability, faster = lower stability
     return Math.max(0, Math.min(1, 1.5 - speed * 0.5));
 }
 
@@ -175,7 +172,6 @@ export const audioRoutes = new Hono<Env>()
             const log = c.get("log").getChild("tts");
             await c.var.auth.requireAuthorization();
 
-            // Check pollen balance
             if (c.var.auth.user?.id) {
                 await c.var.polar.requirePositiveBalance(
                     c.var.auth.user.id,
@@ -186,8 +182,18 @@ export const audioRoutes = new Hono<Env>()
             const body: CreateSpeechRequest = await c.req.json();
             const { input, voice, response_format, speed } = body;
 
-            // Map OpenAI voice to ElevenLabs voice_id
-            const voiceId = VOICE_MAPPING[voice] || VOICE_MAPPING.alloy;
+            const voiceId = VOICE_MAPPING[voice];
+            if (!voiceId) {
+                log.warn("Invalid voice requested: {voice}", { voice });
+                return c.json(
+                    {
+                        error: "invalid_request_error",
+                        message: `Invalid voice: ${voice}. Available voices: ${Object.keys(VOICE_MAPPING).join(", ")}.`,
+                    },
+                    400,
+                );
+            }
+
             const outputFormat = mapOutputFormat(response_format);
             const stability = mapSpeedToStability(speed);
 
@@ -200,7 +206,6 @@ export const audioRoutes = new Hono<Env>()
                 },
             );
 
-            // Build ElevenLabs request
             const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=${outputFormat}`;
 
             const elevenLabsBody = {
@@ -242,15 +247,13 @@ export const audioRoutes = new Hono<Env>()
                 );
             }
 
-            // Get content type from ElevenLabs response
             const contentType =
                 response.headers.get("content-type") || "audio/mpeg";
 
-            // Build usage headers for billing (character count as audio tokens)
             const usageHeaders = {
                 ...buildAudioUsageHeaders("elevenlabs", input.length),
                 "x-tts-voice": voice,
-                "x-usage-characters": String(input.length), // Keep for backward compatibility
+                "x-usage-characters": String(input.length),
             };
 
             log.info("TTS success: {chars} characters", {

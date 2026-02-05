@@ -1,10 +1,6 @@
+import type { ModelId, Usage } from "@shared/registry/registry.ts";
+import { calculateCost } from "@shared/registry/registry.ts";
 import { expect, test } from "vitest";
-import { calculateCost, calculatePrice } from "@shared/registry/registry.ts";
-import type {
-    TokenUsage,
-    ModelId,
-    ServiceId,
-} from "@shared/registry/registry.ts";
 
 // Test image model cost tracking
 // Tests cost calculation properties without hardcoding specific values
@@ -19,12 +15,10 @@ test("Image models should calculate costs proportionally to token count", () => 
     ];
 
     for (const model of models) {
-        const usage1: TokenUsage = {
-            unit: "TOKENS",
+        const usage1: Usage = {
             completionImageTokens: 1,
         };
-        const usage10: TokenUsage = {
-            unit: "TOKENS",
+        const usage10: Usage = {
             completionImageTokens: 10,
         };
 
@@ -41,8 +35,7 @@ test("Image models should calculate costs proportionally to token count", () => 
 });
 
 test("Models with API costs should have non-zero operational costs", () => {
-    const usage: TokenUsage = {
-        unit: "TOKENS",
+    const usage: Usage = {
         completionImageTokens: 1,
     };
 
@@ -63,8 +56,7 @@ test("Cost should be non-negative for all models", () => {
         "turbo",
         "seedream",
     ];
-    const usage: TokenUsage = {
-        unit: "TOKENS",
+    const usage: Usage = {
         completionImageTokens: 1,
     };
 
@@ -74,4 +66,46 @@ test("Cost should be non-negative for all models", () => {
         expect(cost.totalCost).toBeGreaterThanOrEqual(0);
         expect(cost.completionImageTokens || 0).toBeGreaterThanOrEqual(0);
     }
+});
+
+test("gptimage-large should calculate costs for image output tokens", () => {
+    const usage: Usage = {
+        completionImageTokens: 1000,
+    };
+    const cost = calculateCost("gptimage-large", usage);
+    // $32 per 1M tokens = $0.032 per 1K tokens
+    expect(cost.completionImageTokens).toBeCloseTo(0.032, 4);
+    expect(cost.totalCost).toBeCloseTo(0.032, 4);
+});
+
+test("gptimage-large should calculate costs for text input tokens", () => {
+    const usage: Usage = {
+        promptTextTokens: 1000,
+    };
+    const cost = calculateCost("gptimage-large", usage);
+    // $8 per 1M tokens = $0.008 per 1K tokens
+    expect(cost.promptTextTokens).toBeCloseTo(0.008, 4);
+    expect(cost.totalCost).toBeCloseTo(0.008, 4);
+});
+
+test("gptimage-large should calculate costs for image input tokens", () => {
+    const usage: Usage = {
+        promptImageTokens: 1000,
+    };
+    const cost = calculateCost("gptimage-large", usage);
+    // $8 per 1M tokens = $0.008 per 1K tokens
+    expect(cost.promptImageTokens).toBeCloseTo(0.008, 4);
+    expect(cost.totalCost).toBeCloseTo(0.008, 4);
+});
+
+test("gptimage-large combined input + output costs", () => {
+    const usage: Usage = {
+        promptTextTokens: 500,
+        promptImageTokens: 3000, // Typical resized input ~3K tokens
+        completionImageTokens: 1000,
+    };
+    const cost = calculateCost("gptimage-large", usage);
+    // Input: 500*$8/1M + 3000*$8/1M = $0.028
+    // Output: 1000*$32/1M = $0.032
+    expect(cost.totalCost).toBeCloseTo(0.06, 4);
 });

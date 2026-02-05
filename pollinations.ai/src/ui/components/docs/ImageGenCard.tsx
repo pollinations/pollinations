@@ -1,0 +1,269 @@
+import { useEffect, useState } from "react";
+import { API_BASE, API_KEY } from "../../../api.config";
+import { COPY_CONSTANTS } from "../../../copy/constants";
+import { DOCS_PAGE } from "../../../copy/content/docs";
+import { EXAMPLE_PROMPTS } from "../../../copy/examples";
+import { usePageCopy } from "../../../hooks/usePageCopy";
+import { fetchWithRetry } from "../../../utils/fetchWithRetry";
+import { Button } from "../ui/button";
+import { Heading, Label } from "../ui/typography";
+
+/**
+ * Image Generation Card Component
+ * Interactive demo for the image generation API
+ */
+export function ImageGenCard() {
+    // Get translated copy
+    const { copy } = usePageCopy(DOCS_PAGE);
+
+    // Example prompts (not translated)
+    const imagePrompts = EXAMPLE_PROMPTS.image;
+
+    // Track by index
+    const [selectedPromptIndex, setSelectedPromptIndex] = useState(0);
+    const selectedPrompt = imagePrompts[selectedPromptIndex] || imagePrompts[0];
+
+    const [selectedModel, setSelectedModel] = useState("flux");
+    const [params, setParams] = useState<Set<string>>(new Set());
+    const [imageUrl, setImageUrl] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [models, setModels] = useState<string[]>([]);
+
+    // Fetch available models from API
+    useEffect(() => {
+        const fetchModels = async () => {
+            try {
+                const response = await fetch(`${API_BASE}/image/models`, {
+                    headers: { Authorization: `Bearer ${API_KEY}` },
+                });
+                const data = await response.json();
+                const modelIds = data.map((m: { name?: string } | string) =>
+                    typeof m === "string" ? m : m.name || "",
+                );
+                setModels(modelIds);
+                if (modelIds.length > 0 && !modelIds.includes("flux")) {
+                    setSelectedModel(modelIds[0]);
+                }
+            } catch (err) {
+                console.error("Failed to fetch image models:", err);
+            }
+        };
+        fetchModels();
+    }, []);
+
+    const toggleParam = (param: string) => {
+        const newParams = new Set(params);
+        if (newParams.has(param)) {
+            newParams.delete(param);
+        } else {
+            newParams.add(param);
+        }
+        setParams(newParams);
+    };
+
+    const buildUrl = () => {
+        let url = `${API_BASE}/image/${encodeURIComponent(selectedPrompt)}`;
+        const urlParams = new URLSearchParams();
+        urlParams.append("model", selectedModel);
+        if (params.size > 0) {
+            Array.from(params).forEach((p) => {
+                const [key, value] = p.split("=");
+                urlParams.append(key, value);
+            });
+        }
+        const paramString = urlParams.toString();
+        if (paramString) {
+            url += "?" + paramString;
+        }
+        return url;
+    };
+
+    useEffect(() => {
+        const buildImageUrl = () => {
+            let url = `${API_BASE}/image/${encodeURIComponent(selectedPrompt)}`;
+            const urlParams = new URLSearchParams();
+            urlParams.append("model", selectedModel);
+            if (params.size > 0) {
+                Array.from(params).forEach((p) => {
+                    const [key, value] = p.split("=");
+                    urlParams.append(key, value);
+                });
+            }
+            const paramString = urlParams.toString();
+            if (paramString) {
+                url += "?" + paramString;
+            }
+            return url;
+        };
+
+        const fetchImage = async () => {
+            setIsLoading(true);
+            try {
+                const url = buildImageUrl();
+                const response = await fetchWithRetry(url, {
+                    headers: { Authorization: `Bearer ${API_KEY}` },
+                });
+                const blob = await response.blob();
+                const imageURL = URL.createObjectURL(blob);
+                setImageUrl(imageURL);
+            } catch (error) {
+                console.error("Image fetch error:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchImage();
+    }, [selectedPrompt, selectedModel, params]);
+
+    // Cleanup blob URLs
+    useEffect(() => {
+        return () => {
+            if (imageUrl?.startsWith("blob:")) {
+                URL.revokeObjectURL(imageUrl);
+            }
+        };
+    }, [imageUrl]);
+
+    return (
+        <div>
+            <Heading variant="section">{copy.imageGenerationTitle}</Heading>
+
+            {/* Prompts/Parameters and Image Preview - Side by Side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* Left side: Prompts, Model, and Parameters */}
+                <div className="space-y-4">
+                    {/* Prompt Selection */}
+                    <div>
+                        <Label>{copy.pickPromptLabel}</Label>
+                        <div className="flex flex-wrap gap-2">
+                            {imagePrompts.map(
+                                (prompt: string, index: number) => (
+                                    <button
+                                        key={prompt}
+                                        type="button"
+                                        onClick={() =>
+                                            setSelectedPromptIndex(index)
+                                        }
+                                        className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                            selectedPromptIndex === index
+                                                ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
+                                                : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
+                                        }`}
+                                    >
+                                        {prompt}
+                                    </button>
+                                ),
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Model Selection */}
+                    <div>
+                        <Label>{copy.modelSelectLabel}</Label>
+                        <div className="flex flex-wrap gap-2">
+                            {models.map((model) => (
+                                <button
+                                    key={model}
+                                    type="button"
+                                    onClick={() => setSelectedModel(model)}
+                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                        selectedModel === model
+                                            ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
+                                            : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
+                                    }`}
+                                >
+                                    {model}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Parameters */}
+                    <div>
+                        <Label>{copy.parametersLabel}</Label>
+                        <div className="flex flex-wrap gap-2">
+                            {copy.imageParameters.map(({ key, value }) => {
+                                const param = `${key}=${value}`;
+                                return (
+                                    <button
+                                        key={param}
+                                        type="button"
+                                        onClick={() => toggleParam(param)}
+                                        className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                            params.has(param)
+                                                ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
+                                                : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
+                                        }`}
+                                        title={
+                                            copy.imageParameters.find(
+                                                (p) => p.key === key,
+                                            )?.description
+                                        }
+                                    >
+                                        {key}={value}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right side: Image Preview (no label) */}
+                <div className="bg-input-background flex items-center justify-center min-h-[240px] max-w-[300px] max-h-[300px] overflow-hidden">
+                    {isLoading ? (
+                        <p className="text-text-caption text-xs">
+                            {copy.generatingLabel}
+                        </p>
+                    ) : imageUrl ? (
+                        <img
+                            src={imageUrl}
+                            alt={selectedPrompt}
+                            className="w-full h-full object-cover max-w-[300px] max-h-[300px]"
+                        />
+                    ) : null}
+                </div>
+            </div>
+
+            {/* URL Display */}
+            <div className="mb-4 p-3 bg-input-background font-mono text-xs text-text-body-main break-all">
+                <span className="text-text-caption">
+                    https://{COPY_CONSTANTS.apiBaseUrl}/image/
+                </span>
+                <span className="bg-indicator-text px-1 font-black text-text-inverse">
+                    {selectedPrompt}
+                </span>
+                <span className="text-text-caption">?model=</span>
+                <span className="bg-indicator-text px-1 font-black text-text-inverse">
+                    {selectedModel}
+                </span>
+                <span className="text-text-caption">&key=</span>
+                <span className="bg-indicator-text px-1 font-black text-text-inverse">
+                    YOUR_KEY
+                </span>
+                {params.size > 0 && (
+                    <>
+                        {Array.from(params).map((param) => (
+                            <span key={param}>
+                                <span className="text-text-caption">&</span>
+                                <span className="bg-indicator-text px-1 font-black text-text-inverse">
+                                    {param}
+                                </span>
+                            </span>
+                        ))}
+                    </>
+                )}
+            </div>
+
+            {/* Copy Button */}
+            <Button
+                type="button"
+                onClick={() => navigator.clipboard.writeText(buildUrl())}
+                variant="copy"
+                size={null}
+            >
+                {copy.copyUrlButton}
+            </Button>
+        </div>
+    );
+}

@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "883b26ab-641b-4b35-8044-baf194a588a1",
-  "prevId": "6576122d-9443-43f4-80c7-617ae5933281",
+  "id": "a2a1fafd-8d4f-455d-8e4a-7c9300c7f42f",
+  "prevId": "405f1a45-59fe-4177-8d6f-4465339e386b",
   "tables": {
     "account": {
       "name": "account",
@@ -281,111 +281,6 @@
         "apikey_user_id_user_id_fk": {
           "name": "apikey_user_id_user_id_fk",
           "tableFrom": "apikey",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "device_verification": {
-      "name": "device_verification",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "user_code": {
-          "name": "user_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "device_code": {
-          "name": "device_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "verification_uri": {
-          "name": "verification_uri",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "verified": {
-          "name": "verified",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
-        }
-      },
-      "indexes": {
-        "device_verification_user_code_unique": {
-          "name": "device_verification_user_code_unique",
-          "columns": [
-            "user_code"
-          ],
-          "isUnique": true
-        },
-        "device_verification_device_code_unique": {
-          "name": "device_verification_device_code_unique",
-          "columns": [
-            "device_code"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "device_verification_user_id_user_id_fk": {
-          "name": "device_verification_user_id_user_id_fk",
-          "tableFrom": "device_verification",
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
@@ -972,6 +867,22 @@
           "notNull": true,
           "autoincrement": false
         },
+        "token_price_completion_video_seconds": {
+          "name": "token_price_completion_video_seconds",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "token_price_completion_video_tokens": {
+          "name": "token_price_completion_video_tokens",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
         "token_count_prompt_text": {
           "name": "token_count_prompt_text",
           "type": "integer",
@@ -1027,6 +938,22 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "token_count_completion_video_seconds": {
+          "name": "token_count_completion_video_seconds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "token_count_completion_video_tokens": {
+          "name": "token_count_completion_video_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         },
         "total_cost": {
           "name": "total_cost",
@@ -1170,20 +1097,6 @@
         },
         "error_message": {
           "name": "error_message",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "error_stack": {
-          "name": "error_stack",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "error_details": {
-          "name": "error_details",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

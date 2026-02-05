@@ -26,22 +26,24 @@ type ImageCacheEnv = {
  * - After origin response: caches it asynchronously
  */
 export const imageCache = createMiddleware<ImageCacheEnv>(async (c, next) => {
-    const log = c.get("log").getChild("cache");
+    const log = c.get("log").getChild("image-cache");
 
-    // Skip cache if no-cache header is set
-    if (c.req.header("no-cache")) {
-        log.debug("[CACHE] Skipping cache (no-cache header)");
+    // Check for seed=-1 (random seed convention used by SillyTavern etc.)
+    // Skip cache when seed=-1 to ensure fresh responses each time
+    const seedParam = new URL(c.req.url).searchParams.get("seed");
+    if (seedParam === "-1") {
+        log.debug("seed=-1 detected, skipping cache for random generation");
         return next();
     }
 
     const cacheKey = generateCacheKey(new URL(c.req.url));
-    log.debug("[CACHE] Cache key: {key}", { key: cacheKey });
+    log.debug("Cache key: {key}", { key: cacheKey });
 
     // Try to get from cache
     try {
         const cachedImage = await c.env.IMAGE_BUCKET.get(cacheKey);
         if (cachedImage) {
-            log.info("[CACHE] Cache HIT");
+            log.info("Cache HIT");
             setHttpMetadataHeaders(c, cachedImage.httpMetadata);
             c.header("Cache-Control", "public, max-age=31536000, immutable");
             c.header("X-Cache", "HIT");
@@ -49,10 +51,10 @@ export const imageCache = createMiddleware<ImageCacheEnv>(async (c, next) => {
             return c.body(cachedImage.body);
         }
 
-        log.debug("[CACHE] Cache MISS");
+        log.debug("Cache MISS");
         c.header("X-Cache", "MISS");
     } catch (error) {
-        log.error("[CACHE] Error retrieving cached image: {error}", {
+        log.error("Error retrieving cached image: {error}", {
             error,
         });
     }
@@ -64,10 +66,12 @@ export const imageCache = createMiddleware<ImageCacheEnv>(async (c, next) => {
     const contentType = c.res?.headers.get("content-type");
     const xCache = c.res?.headers.get("x-cache");
 
-    // Cache if: response is OK, is an image, and not already a cache hit
+    // Cache if: response is OK, is an image or video, and not already a cache hit
     // Note: We don't check Content-Length because responses may use chunked encoding
-    if (c.res?.ok && contentType?.includes("image/") && xCache !== "HIT") {
-        log.debug("[CACHE] Caching image response");
+    const isMediaContent =
+        contentType?.includes("image/") || contentType?.includes("video/");
+    if (c.res?.ok && isMediaContent && xCache !== "HIT") {
+        log.debug("Caching image response");
         c.executionCtx.waitUntil(cacheResponse(cacheKey, c));
     }
 });

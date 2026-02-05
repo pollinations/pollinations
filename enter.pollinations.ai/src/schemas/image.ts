@@ -1,42 +1,115 @@
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { z } from "zod";
 
 const QUALITIES = ["low", "medium", "high", "hd"] as const;
-const MAX_SEED_VALUE = 1844674407370955;
+// Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
+const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
+
+// Build list of valid model names: service IDs + all aliases
+const VALID_IMAGE_MODELS = [
+    ...Object.keys(IMAGE_SERVICES),
+    ...Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
+] as const;
 
 export const GenerateImageRequestQueryParamsSchema = z.object({
-    model: z.literal(Object.keys(IMAGE_SERVICES)).optional().default("flux"),
-    width: z.coerce.number().int().nonnegative().optional().default(1024),
-    height: z.coerce.number().int().nonnegative().optional().default(1024),
+    // Image model params
+    model: z
+        .enum(VALID_IMAGE_MODELS as unknown as [string, ...string[]])
+        .optional()
+        .default(DEFAULT_IMAGE_MODEL)
+        .meta({
+            description:
+                "AI model. Image: flux, zimage, turbo, gptimage, kontext, seedream, seedream-pro, nanobanana. Video: veo, seedance, seedance-pro",
+        }),
+    width: z.coerce
+        .number()
+        .int()
+        .nonnegative()
+        .optional()
+        .default(1024)
+        .meta({ description: "Image width in pixels" }),
+    height: z.coerce
+        .number()
+        .int()
+        .nonnegative()
+        .optional()
+        .default(1024)
+        .meta({ description: "Image height in pixels" }),
     seed: z.coerce
         .number()
         .int()
-        .min(0)
+        .min(-1)
         .max(MAX_SEED_VALUE)
         .optional()
-        .default(42),
-    enhance: z.coerce.boolean().optional().default(false),
+        .default(0)
+        .meta({
+            description:
+                "Random seed for reproducible results. Use -1 for random.",
+        }),
+    enhance: z.coerce
+        .boolean()
+        .optional()
+        .default(false)
+        .meta({ description: "Let AI improve your prompt for better results" }),
     negative_prompt: z.coerce
         .string()
         .optional()
-        .default("worst quality, blurry"),
-    private: z.coerce.boolean().optional().default(false),
-    nologo: z.coerce.boolean().optional().default(false),
-    nofeed: z.coerce.boolean().optional().default(false),
-    safe: z.coerce.boolean().optional().default(false),
-    quality: z.literal(QUALITIES).optional().default("medium"),
+        .default("worst quality, blurry")
+        .meta({ description: "What to avoid in the generated image" }),
+    safe: z.coerce
+        .boolean()
+        .optional()
+        .default(false)
+        .meta({ description: "Enable safety content filters" }),
+    quality: z
+        .enum(QUALITIES as unknown as [string, ...string[]])
+        .optional()
+        .default("medium")
+        .meta({ description: "Image quality level (gptimage only)" }),
     image: z
         .string()
         .transform((value: string) => {
-            if (!value) return [];
+            if (!value) return undefined;
             // Support both pipe (|) and comma (,) separators
             // Prefer pipe separator if present, otherwise use comma
             return value.includes("|") ? value.split("|") : value.split(",");
         })
         .optional()
-        .default([]),
-    transparent: z.coerce.boolean().optional().default(false),
-    guidance_scale: z.coerce.number().optional(),
+        .refine(
+            (urls) =>
+                !urls ||
+                urls.every(
+                    (url) =>
+                        !url ||
+                        url.startsWith("http://") ||
+                        url.startsWith("https://"),
+                ),
+            {
+                message:
+                    "Invalid image URL. Put image= param last in your URL, or URL-encode it.",
+            },
+        )
+        .meta({
+            description:
+                "Reference image URL(s). Comma/pipe separated for multiple. For veo: image[0]=first frame, image[1]=last frame (interpolation)",
+        }),
+    transparent: z.coerce.boolean().optional().default(false).meta({
+        description: "Generate with transparent background (gptimage only)",
+    }),
+
+    // Video-specific params
+    duration: z.coerce.number().int().min(1).max(10).optional().meta({
+        description:
+            "Video duration in seconds (video models only). veo: 4, 6, or 8. seedance: 2-10",
+    }),
+    aspectRatio: z.string().optional().meta({
+        description: "Video aspect ratio: 16:9 or 9:16 (veo, seedance)",
+    }),
+    audio: z.coerce
+        .boolean()
+        .optional()
+        .default(false)
+        .meta({ description: "Enable audio generation for video (veo only)" }),
 });
 
 export type GenerateImageRequestQueryParams = z.infer<

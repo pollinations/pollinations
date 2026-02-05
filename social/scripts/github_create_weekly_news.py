@@ -1,0 +1,403 @@
+import os
+import sys
+import json
+import time
+import random
+import re
+import base64
+import requests
+from typing import Dict, List
+from datetime import datetime, timedelta, timezone
+from common import (
+    load_prompt,
+    get_env,
+    get_repo_root,
+    get_file_sha,
+    get_date_range,
+    call_pollinations_api,
+    GITHUB_API_BASE,
+    GITHUB_GRAPHQL_API,
+    MODEL,
+)
+
+CHUNK_SIZE = 50
+NEWS_FOLDER = "social/news"
+
+# Platform name for prompt loading
+PLATFORM = "github"
+
+
+def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> List[Dict]:
+    """Fetch merged PRs using GraphQL - handles any number of PRs efficiently"""
+
+    # Note: GitHub GraphQL PullRequestOrder only supports CREATED_AT and UPDATED_AT
+    # We use UPDATED_AT DESC since merging updates the PR, then filter by mergedAt
+    query = """
+    query($owner: String!, $repo: String!, $cursor: String) {
+      repository(owner: $owner, name: $repo) {
+        pullRequests(
+          states: MERGED
+          first: 100
+          after: $cursor
+          orderBy: {field: UPDATED_AT, direction: DESC}
+          baseRefName: "main"
+        ) {
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          nodes {
+            number
+            title
+            body
+            url
+            mergedAt
+            updatedAt
+            author {
+              login
+            }
+          }
+        }
+      }
+    }
+    """
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
+    all_prs = []
+    cursor = None
+    page = 1
+
+    print(f"Fetching merged PRs since {start_date.strftime('%Y-%m-%d')} using GraphQL...")
+
+    while True:
+        variables = {
+            "owner": owner,
+            "repo": repo,
+            "cursor": cursor
+        }
+
+        response = requests.post(
+            GITHUB_GRAPHQL_API,
+            headers=headers,
+            json={"query": query, "variables": variables}
+        )
+
+        if response.status_code != 200:
+            print(f"GraphQL error: {response.status_code} -> {response.text[:500]}")
+            sys.exit(1)
+
+        data = response.json()
+
+        if "errors" in data:
+            print(f"GraphQL query errors: {data['errors']}")
+            sys.exit(1)
+
+        pr_data = data["data"]["repository"]["pullRequests"]
+        nodes = pr_data["nodes"]
+        page_info = pr_data["pageInfo"]
+
+        print(f"  Page {page}: fetched {len(nodes)} PRs")
+
+        # Track if all PRs on this page are too old (by updatedAt)
+        oldest_update_on_page = None
+
+        for pr in nodes:
+            # Parse timestamps
+            merged_at = datetime.fromisoformat(pr["mergedAt"].replace("Z", "+00:00"))
+            updated_at = datetime.fromisoformat(pr["updatedAt"].replace("Z", "+00:00"))
+
+            if oldest_update_on_page is None or updated_at < oldest_update_on_page:
+                oldest_update_on_page = updated_at
+
+            # Only include PRs merged within our date range
+            if merged_at >= start_date:
+                all_prs.append({
+                    "number": pr["number"],
+                    "title": pr["title"],
+                    "body": pr["body"] or "",
+                    "author": pr["author"]["login"] if pr["author"] else "ghost",
+                    "merged_at": pr["mergedAt"],
+                    "html_url": pr["url"]
+                })
+
+        # Stop pagination if the oldest updatedAt on this page is before our start_date
+        # This means all subsequent pages will also be too old
+        if oldest_update_on_page and oldest_update_on_page < start_date:
+            print(f"  Reached PRs last updated before {start_date.strftime('%Y-%m-%d')}, stopping")
+            break
+
+        # Check if there are more pages
+        if not page_info["hasNextPage"]:
+            print(f"  No more pages")
+            break
+
+        cursor = page_info["endCursor"]
+        page += 1
+
+    return all_prs
+
+
+def chunk_prs(prs: List[Dict], chunk_size: int) -> List[List[Dict]]:
+    return [prs[i:i + chunk_size] for i in range(0, len(prs), chunk_size)]
+
+
+def create_news_prompt(prs: List[Dict], is_final: bool = False, all_changes: List[str] = None) -> tuple:
+    """Create prompt to format ALL PRs for NEWS.md - no filtering, this is source of truth
+    
+    Prompts are loaded from social/prompts/github/
+    """
+
+    # Load system prompt
+    system_prompt = load_prompt(PLATFORM, "weekly_news_system")
+
+    if is_final:
+        combined_changes = "\n\n".join(all_changes)
+        # Load final consolidation user prompt
+        user_prompt_template = load_prompt(PLATFORM, "weekly_news_user_final")
+        user_prompt = user_prompt_template.replace("{combined_changes}", combined_changes)
+    else:
+        # Build PR entries
+        pr_entries = ""
+        for pr in prs:
+            body_preview = pr['body'][:500] if pr['body'] else 'No description'
+            pr_entries += f"""PR #{pr['number']}: {pr['title']}
+Author: @{pr['author']}
+URL: {pr['html_url']}
+Merged: {pr['merged_at']}
+Description: {body_preview}
+
+"""
+        # Load chunk processing user prompt
+        user_prompt_template = load_prompt(PLATFORM, "weekly_news_user")
+        user_prompt = user_prompt_template.replace("{pr_count}", str(len(prs))).replace("{pr_entries}", pr_entries)
+
+    return system_prompt, user_prompt
+
+
+def parse_response(response: str) -> str:
+    message = response.strip()
+
+    if message.startswith('```'):
+        lines = message.split('\n')
+        if lines[0].strip() == '```' or lines[0].startswith('```'):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == '```':
+            lines = lines[:-1]
+        message = '\n'.join(lines)
+
+    return message.strip()
+
+
+def check_news_file_exists(github_token: str, owner: str, repo: str, file_path: str) -> bool:
+    """Check if a news file already exists in the repo"""
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {github_token}"
+    }
+
+    response = requests.get(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
+        headers=headers
+    )
+
+    return response.status_code == 200
+
+
+def create_news_file_content(news_entry: str, entry_date: str) -> str:
+    """Create content for individual news file"""
+    return f"""# Weekly Update - {entry_date}
+
+{news_entry}
+"""
+
+
+def create_pr_with_news(news_content: str, github_token: str, owner: str, repo: str, pr_count: int):
+    """Create a PR with weekly news file only (newsList.js is updated separately)"""
+
+    entry_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    news_file_path = f"{NEWS_FOLDER}/{entry_date}.md"
+
+    # Check if file for this date already exists
+    if check_news_file_exists(github_token, owner, repo, news_file_path):
+        print(f"News file for {entry_date} already exists. Skipping.")
+        return
+
+    # Create content for the news file
+    news_file_content = create_news_file_content(news_content, entry_date)
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {github_token}"
+    }
+
+    default_branch = "main"
+
+    # Get latest commit SHA
+    ref_response = requests.get(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/ref/heads/{default_branch}",
+        headers=headers
+    )
+    if ref_response.status_code != 200:
+        print(f"Error getting ref: {ref_response.text}")
+        sys.exit(1)
+    base_sha = ref_response.json()['object']['sha']
+
+    # Create new branch
+    branch_name = f"news-update-{entry_date}"
+    create_branch_response = requests.post(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/refs",
+        headers=headers,
+        json={
+            "ref": f"refs/heads/{branch_name}",
+            "sha": base_sha
+        }
+    )
+
+    if create_branch_response.status_code not in [200, 201]:
+        # Branch might already exist, try to update it
+        if "Reference already exists" in create_branch_response.text:
+            print(f"Branch {branch_name} already exists, updating...")
+        else:
+            print(f"Error creating branch: {create_branch_response.text}")
+            sys.exit(1)
+
+    print(f"Created branch: {branch_name}")
+
+    # Create/update the NEWS file
+    news_api_path = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{news_file_path}"
+    news_encoded = base64.b64encode(news_file_content.encode()).decode()
+
+    # Check if file already exists on branch (from previous failed run)
+    news_sha = get_file_sha(github_token, owner, repo, news_file_path, branch_name)
+
+    news_payload = {
+        "message": f"docs: add weekly news entry - {entry_date}",
+        "content": news_encoded,
+        "branch": branch_name
+    }
+
+    if news_sha:
+        news_payload["sha"] = news_sha
+
+    news_response = requests.put(news_api_path, headers=headers, json=news_payload)
+
+    if news_response.status_code not in [200, 201]:
+        print(f"Error creating NEWS file: {news_response.text}")
+        sys.exit(1)
+
+    print(f"{'Updated' if news_sha else 'Created'} {news_file_path} on branch {branch_name}")
+
+    # Create PR
+    pr_title = f"Weekly News Update - {entry_date}"
+    pr_body = f"""## Weekly News Update
+
+This PR adds a new weekly changelog: `{news_file_path}`
+
+**PRs included:** {pr_count}
+
+### Full Changelog Preview
+
+{news_content}
+
+---
+**Note:** When this PR is merged, a separate workflow will automatically update `newsList.js` and create its own PR.
+
+Generated automatically by GitHub Actions
+"""
+
+    pr_response = requests.post(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls",
+        headers=headers,
+        json={
+            "title": pr_title,
+            "body": pr_body,
+            "head": branch_name,
+            "base": default_branch
+        }
+    )
+
+    if pr_response.status_code not in [200, 201]:
+        # PR might already exist
+        if "A pull request already exists" in pr_response.text:
+            print("PR already exists for this branch")
+            return
+        print(f"Error creating PR: {pr_response.text}")
+        sys.exit(1)
+
+    pr_data = pr_response.json()
+    pr_number = pr_data['number']
+    print(f"Created PR #{pr_number}: {pr_data['html_url']}")
+
+    # Add labels from PR_LABELS env var
+    pr_labels = get_env('PR_LABELS', required=False)
+    if pr_labels:
+        labels_list = [label.strip() for label in pr_labels.split(',')]
+        label_response = requests.post(
+            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_number}/labels",
+            headers=headers,
+            json={"labels": labels_list}
+        )
+        if label_response.status_code in [200, 201]:
+            print(f"Added labels {labels_list} to PR #{pr_number}")
+        else:
+            print(f"Warning: Could not add labels: {label_response.status_code}")
+
+
+def main():
+    github_token = get_env('GITHUB_TOKEN')
+    pollinations_token = get_env('POLLINATIONS_TOKEN')
+    repo_full_name = get_env('GITHUB_REPOSITORY')
+    owner_name, repo_name = repo_full_name.split('/')
+
+    start_date, end_date = get_date_range(days_back=7)
+    merged_prs = get_merged_prs(owner_name, repo_name, start_date, github_token)
+
+    print(f"Total merged PRs found: {len(merged_prs)}")
+
+    if not merged_prs:
+        print("No merged PRs found for this period. Skipping news update.")
+        return
+
+    # Step 1: Generate full NEWS changelog
+    print(f"Processing {len(merged_prs)} PRs for NEWS.md (including ALL)...")
+
+    if len(merged_prs) <= CHUNK_SIZE:
+        print("Small batch - using single AI call...")
+        system_prompt, user_prompt = create_news_prompt(merged_prs)
+        ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token, temperature=0.3, exit_on_failure=True)
+        news_content = parse_response(ai_response)
+    else:
+        print(f"Large batch - chunking into {CHUNK_SIZE} PR batches...")
+        pr_chunks = chunk_prs(merged_prs, CHUNK_SIZE)
+        all_changes = []
+
+        for i, chunk in enumerate(pr_chunks, 1):
+            print(f"Processing chunk {i}/{len(pr_chunks)} ({len(chunk)} PRs)...")
+            sys_prompt, usr_prompt = create_news_prompt(chunk)
+            response = call_pollinations_api(sys_prompt, usr_prompt, pollinations_token, temperature=0.3, exit_on_failure=True)
+            changes = parse_response(response)
+            all_changes.append(changes)
+            time.sleep(0.5)
+
+        print("Consolidating all entries...")
+        sys_prompt, usr_prompt = create_news_prompt([], is_final=True, all_changes=all_changes)
+        ai_response = call_pollinations_api(sys_prompt, usr_prompt, pollinations_token, temperature=0.3, exit_on_failure=True)
+        news_content = parse_response(ai_response)
+
+    if not news_content.strip():
+        print("Empty NEWS response from AI. This shouldn't happen.")
+        sys.exit(1)
+
+    print("NEWS content generated")
+
+    # Create PR with NEWS file only (newsList.js is updated by separate workflow)
+    create_pr_with_news(news_content, github_token, owner_name, repo_name, len(merged_prs))
+    print("News generation completed!")
+
+
+if __name__ == "__main__":
+    main()

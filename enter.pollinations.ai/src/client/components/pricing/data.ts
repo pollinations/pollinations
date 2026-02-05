@@ -11,8 +11,9 @@ import {
     formatPricePerImage,
 } from "./formatters.ts";
 import type { ModelPrice } from "./types.ts";
+import type { ModelStats } from "./use-model-stats.ts";
 
-export const getModelPrices = (): ModelPrice[] => {
+export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     const prices: ModelPrice[] = [];
 
     // Add text models
@@ -53,20 +54,46 @@ export const getModelPrices = (): ModelPrice[] => {
         });
     }
 
-    // Add image models
+    // Add image/video models - use outputModalities to determine type
     for (const [serviceName, serviceConfig] of Object.entries(IMAGE_SERVICES)) {
         const costHistory = serviceConfig.cost;
         if (!costHistory) continue;
 
         const latestCost: CostDefinition = costHistory[0];
+        const outputType = serviceConfig.outputModalities?.[0] || "image";
 
-        // Auto-detect token-based pricing: models with promptTextTokens or promptImageTokens
-        const isTokenBased =
-            latestCost.promptTextTokens !== undefined ||
-            latestCost.promptImageTokens !== undefined;
-
-        if (isTokenBased) {
-            // Token-based pricing (e.g., gptimage, nanobanana)
+        if (outputType === "video") {
+            // Check if it's token-based (seedance) or second-based (veo)
+            if (latestCost.completionVideoTokens) {
+                prices.push({
+                    name: serviceName,
+                    type: "video",
+                    perToken: true,
+                    perTokenPrice: formatPrice(
+                        latestCost.completionVideoTokens,
+                        formatPricePer1M,
+                    ),
+                });
+            } else {
+                prices.push({
+                    name: serviceName,
+                    type: "video",
+                    perToken: false,
+                    perSecondPrice: formatPrice(
+                        latestCost.completionVideoSeconds,
+                        (v: number) => v.toFixed(3),
+                    ),
+                    perAudioSecondPrice: formatPrice(
+                        latestCost.completionAudioSeconds,
+                        (v: number) => v.toFixed(3),
+                    ),
+                });
+            }
+        } else if (
+            latestCost.promptTextTokens ||
+            latestCost.promptImageTokens
+        ) {
+            // Token-based image pricing (e.g., gptimage, nanobanana)
             prices.push({
                 name: serviceName,
                 type: "image",
@@ -95,6 +122,16 @@ export const getModelPrices = (): ModelPrice[] => {
                     formatPricePerImage,
                 ),
             });
+        }
+    }
+
+    // Merge real usage stats if available
+    if (modelStats) {
+        for (const price of prices) {
+            const stats = modelStats[price.name];
+            if (stats?.avgCost) {
+                price.realAvgCost = stats.avgCost;
+            }
         }
     }
 

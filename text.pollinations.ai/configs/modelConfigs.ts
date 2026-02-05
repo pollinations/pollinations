@@ -1,161 +1,219 @@
 import dotenv from "dotenv";
-import debug from "debug";
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
-    createCloudflareModelConfig,
-    createScalewayModelConfig,
-    createMistralModelConfig,
-    createNebiusModelConfig,
-    createModalModelConfig,
-    createOpenRouterModelConfig,
-    createElixpoSearchModelConfig,
-    createIntelligenceModelConfig,
-    createBedrockLambdaModelConfig,
     createBedrockNativeConfig,
-    createDeepSeekModelConfig,
-    createDeepSeekReasoningConfig,
-    createMyceliDeepSeekV31Config,
+    createFireworksModelConfig,
     createMyceliGrok4FastConfig,
-    createApiNavyModelConfig,
+    createNomNomConfig,
+    createOVHcloudModelConfig,
     createPerplexityModelConfig,
+    createScalewayModelConfig,
 } from "./providerConfigs.js";
-import type { ModelId } from "../../shared/registry/registry.js";
-
-const log = debug("pollinations:portkey");
 
 dotenv.config();
 
-// Type-safe config object: all keys must be valid model IDs from MODEL_REGISTRY
-type PortkeyConfigMap = {
-    [K in ModelId]: () => any;
-} & {
-    [key: string]: () => any; // Allow additional legacy configs not in MODEL_REGISTRY
-};
+// Config keys can be modelIds or custom names - not all modelIds need entries
+type PortkeyConfigMap = Record<string, () => unknown>;
 
-// Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
+// Unified flat Portkey configuration for all providers and models
+// Only configs used by public models in availableModels.ts
 export const portkeyConfig: PortkeyConfigMap = {
     // ============================================================================
-    // ACTIVE CONFIGS - Used in availableModels.ts
+    // Azure (Myceli) - openai, openai-large, openai-audio
     // ============================================================================
-
-    // Azure OpenAI model configurations
-    "gpt-5-mini-2025-08-07": () => ({
+    "gpt-5-mini": () => ({
         ...createAzureModelConfig(
-            process.env.AZURE_MYCELI_GPT5MINI_API_KEY,
-            process.env.AZURE_MYCELI_GPT5MINI_ENDPOINT,
-            "gpt-5-mini-2025-08-07",
+            process.env.AZURE_PF_GPT5MINI_API_KEY,
+            process.env.AZURE_PF_GPT5MINI_ENDPOINT,
+            "gpt-5-mini",
         ),
-        "max-completion-tokens": 1024,
+        "max-completion-tokens": 16384,
     }),
-    "gpt-5-nano-2025-08-07": () => ({
+    "gpt-5.2-2025-12-11": () => ({
         ...createAzureModelConfig(
-            process.env.AZURE_OPENAI_NANO_5_API_KEY,
-            process.env.AZURE_OPENAI_NANO_5_ENDPOINT,
-            "gpt-5-nano-2025-08-07",
+            process.env.AZURE_MYCELI_GPT52_API_KEY,
+            process.env.AZURE_MYCELI_GPT52_ENDPOINT,
+            "gpt-5.2-2025-12-11",
         ),
-        "max-completion-tokens": 512,
-    }),
-    "gpt-4.1-nano-2025-04-14": () =>
-        createAzureModelConfig(
-            process.env.AZURE_OPENAI_NANO_API_KEY,
-            process.env.AZURE_OPENAI_NANO_ENDPOINT,
-            "gpt-4.1-nano-2025-04-14",
-        ),
-    "gpt-5-chat-latest": () => ({
-        ...createAzureModelConfig(
-            process.env.AZURE_MYCELI_GPT5CHAT_API_KEY,
-            process.env.AZURE_MYCELI_GPT5CHAT_ENDPOINT,
-            "gpt-5-chat-latest",
-        ),
-        "max-completion-tokens": 768,
-    }),
-    "gpt-4.1-2025-04-14": () => ({
-        ...createAzureModelConfig(
-            process.env.AZURE_OPENAI_41_API_KEY,
-            process.env.AZURE_OPENAI_41_ENDPOINT,
-            "gpt-4.1-2025-04-14",
-        ),
-        "max-tokens": 512,
-        "max-completion-tokens": 512,
+        "max-completion-tokens": 16384,
     }),
     "gpt-4o-mini-audio-preview-2024-12-17": () => ({
         ...createAzureModelConfig(
-            process.env.AZURE_OPENAI_AUDIO_API_KEY,
-            process.env.AZURE_OPENAI_AUDIO_ENDPOINT,
+            process.env.AZURE_MYCELI_GPT4O_AUDIO_API_KEY,
+            process.env.AZURE_MYCELI_GPT4O_AUDIO_ENDPOINT,
             "gpt-4o-mini-audio-preview-2024-12-17",
         ),
         "max-completion-tokens": 2048,
     }),
-    "openai/o4-mini": () =>
-        createAzureModelConfig(
-            process.env.AZURE_O4MINI_API_KEY,
-            process.env.AZURE_O4MINI_ENDPOINT,
-            "openai/o4-mini",
+    "myceli-grok-4-fast": () => createMyceliGrok4FastConfig(),
+
+    // ============================================================================
+    // Azure-2 (PointsFlyer) - openai-fast
+    // ============================================================================
+    "gpt-5-nano-2025-08-07": () => ({
+        ...createAzureModelConfig(
+            process.env.AZURE_PF_GPT5NANO_API_KEY,
+            process.env.AZURE_PF_GPT5NANO_ENDPOINT,
+            "gpt-5-nano-2025-08-07",
         ),
-    "mistral-small-3.1-24b-instruct-2503": () =>
-        createScalewayModelConfig({
-            "max-tokens": 8192,
-            model: "mistral-small-3.1-24b-instruct-2503",
-        }),
+        "max-completion-tokens": 512,
+    }),
+
+    // ============================================================================
+    // Scaleway - mistral, qwen-coder
+    // ============================================================================
     "mistral-small-3.2-24b-instruct-2506": () =>
         createScalewayModelConfig({
-            "max-tokens": 8192,
             model: "mistral-small-3.2-24b-instruct-2506",
         }),
+    "qwen2.5-coder-32b-instruct": () =>
+        createScalewayModelConfig({
+            model: "qwen2.5-coder-32b-instruct",
+        }),
 
-    // AWS Bedrock Lambda configurations
-    "mistral.mistral-small-2402-v1:0": () =>
-        createBedrockLambdaModelConfig({
-            model: "mistral.mistral-small-2402-v1:0",
-        }),
-    "us.deepseek.r1-v1:0": () =>
-        createBedrockLambdaModelConfig({
-            model: "us.deepseek.r1-v1:0",
-            "max-tokens": 2000,
-        }),
-    "amazon.nova-micro-v1:0": () =>
-        createBedrockLambdaModelConfig({
-            model: "awsbedrock/amazon.nova-micro-v1:0",
-        }),
-    "us.meta.llama3-1-8b-instruct-v1:0": () =>
-        createBedrockLambdaModelConfig({
-            model: "us.meta.llama3-1-8b-instruct-v1:0",
-        }),
+    // ============================================================================
+    // AWS Bedrock - claude-fast, claude, claude-large, chickytutor, nova-fast
+    // ============================================================================
     "us.anthropic.claude-3-5-haiku-20241022-v1:0": () =>
-        createBedrockLambdaModelConfig({
+        createBedrockNativeConfig({
             model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        }),
-    "global.anthropic.claude-haiku-4-5-20251001-v1:0": () =>
-        createBedrockLambdaModelConfig({
-            model: "global.anthropic.claude-haiku-4-5-20251001-v1:0",
-        }),
-    "us.anthropic.claude-sonnet-4-5-20250929-v1:0": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        }),
-    "us.anthropic.claude-sonnet-4-20250514-v1:0": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-sonnet-4-20250514-v1:0",
-        }),
-    "us.anthropic.claude-opus-4-20250514-v1:0": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-opus-4-20250514-v1:0",
         }),
     "us.anthropic.claude-haiku-4-5-20251001-v1:0": () =>
         createBedrockNativeConfig({
             model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        }),
+    "us.anthropic.claude-sonnet-4-5-20250929-v1:0": () =>
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         }),
     "global.anthropic.claude-opus-4-5-20251101-v1:0": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
         }),
 
-    // Google Vertex AI configurations
+    // ============================================================================
+    // Google Vertex AI - Claude models (alternative to Bedrock)
+    // ============================================================================
+    "claude-opus-4-5-vertex": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
+        "vertex-region": "europe-west1",
+        "vertex-model-id": "anthropic.claude-opus-4-5@20251101",
+        "strict-open-ai-compliance": "true",
+    }),
+    "claude-sonnet-4-5-vertex": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
+        "vertex-region": "europe-west1",
+        "vertex-model-id": "anthropic.claude-sonnet-4-5@20250929",
+        "strict-open-ai-compliance": "true",
+    }),
+
+    // ============================================================================
+    // Fallback Configs - AWS Bedrock primary, Google Vertex AI fallback
+    // Uses snake_case for x-portkey-config JSON format
+    // ============================================================================
+    "claude-sonnet-4-5-fallback": () => ({
+        strategy: { mode: "fallback" },
+        defaultOptions: { max_tokens: 16384 },
+        targets: [
+            // Primary: AWS Bedrock (native)
+            {
+                provider: "bedrock",
+                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
+                aws_region: process.env.AWS_REGION || "us-east-1",
+                override_params: {
+                    model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+                },
+            },
+            // Fallback: Google Vertex AI
+            {
+                provider: "vertex-ai",
+                authKey: googleCloudAuth.getAccessToken,
+                vertex_project_id: process.env.GOOGLE_PROJECT_ID,
+                vertex_region: "europe-west1",
+                override_params: {
+                    model: "anthropic.claude-sonnet-4-5@20250929",
+                },
+            },
+        ],
+    }),
+    "claude-opus-4-5-fallback": () => ({
+        strategy: { mode: "fallback" },
+        defaultOptions: { max_tokens: 16384 },
+        targets: [
+            // Primary: AWS Bedrock (native)
+            {
+                provider: "bedrock",
+                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
+                aws_region: process.env.AWS_REGION || "us-east-1",
+                override_params: {
+                    model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+                },
+            },
+            // Fallback: Google Vertex AI
+            {
+                provider: "vertex-ai",
+                authKey: googleCloudAuth.getAccessToken,
+                vertex_project_id: process.env.GOOGLE_PROJECT_ID,
+                vertex_region: "europe-west1",
+                override_params: {
+                    model: "anthropic.claude-opus-4-5@20251101",
+                },
+            },
+        ],
+    }),
+    "amazon.nova-micro-v1:0": () =>
+        createBedrockNativeConfig({
+            model: "amazon.nova-micro-v1:0",
+        }),
+    // Nova Micro with Nova Lite fallback for rate limiting
+    "nova-micro-fallback": () => ({
+        strategy: { mode: "fallback" },
+        targets: [
+            // Primary: Nova Micro (cheapest)
+            {
+                provider: "bedrock",
+                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
+                aws_region: process.env.AWS_REGION || "us-east-1",
+                override_params: {
+                    model: "amazon.nova-micro-v1:0",
+                },
+            },
+            // Fallback: Nova Lite (multimodal, slightly more expensive but still cheap)
+            {
+                provider: "bedrock",
+                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
+                aws_region: process.env.AWS_REGION || "us-east-1",
+                override_params: {
+                    model: "amazon.nova-lite-v1:0",
+                },
+            },
+        ],
+    }),
+
+    // ============================================================================
+    // Google Vertex AI - gemini, gemini-fast, gemini-large, gemini-search, kimi-k2-thinking
+    // ============================================================================
+    "gemini-3-flash-preview": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
+        "vertex-region": "global",
+        "vertex-model-id": "gemini-3-flash-preview",
+        "strict-openai-compliance": "false",
+    }),
     "gemini-2.5-flash-lite": () => ({
         provider: "vertex-ai",
         authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GCLOUD_PROJECT_ID,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
         "vertex-region": "us-central1",
         "vertex-model-id": "gemini-2.5-flash-lite",
         "strict-openai-compliance": "false",
@@ -163,291 +221,30 @@ export const portkeyConfig: PortkeyConfigMap = {
     "gemini-3-pro-preview": () => ({
         provider: "vertex-ai",
         authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GCLOUD_PROJECT_ID,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
         "vertex-region": "global",
         "vertex-model-id": "gemini-3-pro-preview",
+        "strict-openai-compliance": "false",
+    }),
+    "gemini-2.5-pro": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
+        "vertex-region": "us-central1",
+        "vertex-model-id": "gemini-2.5-pro",
         "strict-openai-compliance": "false",
     }),
     "kimi-k2-thinking-maas": () => ({
         provider: "openai",
         authKey: googleCloudAuth.getAccessToken,
-        "custom-host": `https://aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/global/endpoints/openapi`,
+        "custom-host": `https://aiplatform.googleapis.com/v1/projects/${process.env.GOOGLE_PROJECT_ID}/locations/global/endpoints/openapi`,
         "strict-openai-compliance": "false",
         model: "moonshotai/kimi-k2-thinking-maas",
     }),
-    // Note: gemini-search service uses same config as gemini, just adds Google Search transform
-    "deepseek-ai/deepseek-v3.1-maas": () => ({
-        provider: "openai",
-        authKey: googleCloudAuth.getAccessToken,
-        "custom-host": `https://us-west2-aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/us-west2/endpoints/openapi`,
-        "strict-openai-compliance": "false",
-        model: "deepseek-ai/deepseek-v3.1-maas",
-    }),
 
     // ============================================================================
-    // LEGACY/UNUSED CONFIGS - Not currently referenced in availableModels.ts
+    // Perplexity - perplexity-fast, perplexity-reasoning
     // ============================================================================
-
-    // Azure model configurations
-    "azure-grok": () =>
-        createAzureModelConfig(
-            process.env.AZURE_GENERAL_API_KEY,
-            process.env.AZURE_GENERAL_ENDPOINT,
-            `grok-3-mini`,
-            "pollinations-safety",
-        ),
-    "gpt-4.1-mini": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_GPT41MINI_API_KEY,
-            process.env.AZURE_MYCELI_GPT41MINI_ENDPOINT,
-            "gpt-4.1-mini",
-        ),
-    "azure-gpt-5": () =>
-        createAzureModelConfig(
-            process.env.AZURE_OPENAI_GPT_5_API_KEY,
-            process.env.AZURE_OPENAI_GPT_5_ENDPOINT,
-            "gpt-5",
-        ),
-    "gpt-4.1-nano-roblox": () => {
-        // Randomly select one of the 4 roblox endpoints
-        const endpoints = [
-            {
-                apiKey: process.env.AZURE_OPENAI_ROBLOX_API_KEY_1,
-                endpoint: process.env.AZURE_OPENAI_ROBLOX_ENDPOINT_1,
-            },
-            {
-                apiKey: process.env.AZURE_OPENAI_ROBLOX_API_KEY_2,
-                endpoint: process.env.AZURE_OPENAI_ROBLOX_ENDPOINT_2,
-            },
-            {
-                apiKey: process.env.AZURE_OPENAI_ROBLOX_API_KEY_3,
-                endpoint: process.env.AZURE_OPENAI_ROBLOX_ENDPOINT_3,
-            },
-            {
-                apiKey: process.env.AZURE_OPENAI_ROBLOX_API_KEY_4,
-                endpoint: process.env.AZURE_OPENAI_ROBLOX_ENDPOINT_4,
-            },
-        ];
-
-        const randomIndex = Math.floor(Math.random() * endpoints.length);
-        const selectedEndpoint = endpoints[randomIndex];
-
-        log(
-            `Selected random roblox endpoint ${randomIndex + 1}: ${selectedEndpoint.endpoint}`,
-        );
-
-        return createAzureModelConfig(
-            selectedEndpoint.apiKey,
-            selectedEndpoint.endpoint,
-            "gpt-4.1-nano",
-        );
-    },
-    "gpt-4o-mini": () => {
-        // Randomly select one of the 2 endpoints
-        const endpoints = [
-            {
-                apiKey: process.env.AZURE_OPENAI_MINI_API_KEY_1,
-                endpoint: process.env.AZURE_OPENAI_MINI_ENDPOINT_1,
-            },
-            {
-                apiKey: process.env.AZURE_OPENAI_MINI_API_KEY_2,
-                endpoint: process.env.AZURE_OPENAI_MINI_ENDPOINT_2,
-            },
-        ];
-
-        const randomIndex = Math.floor(Math.random() * endpoints.length);
-        const selectedEndpoint = endpoints[randomIndex];
-
-        log(
-            `Selected random endpoint ${randomIndex + 1}: ${selectedEndpoint.endpoint}`,
-        );
-
-        return createAzureModelConfig(
-            selectedEndpoint.apiKey,
-            selectedEndpoint.endpoint,
-            "gpt-4o-mini",
-        );
-    },
-    "gpt-4o": () =>
-        createAzureModelConfig(
-            process.env.AZURE_OPENAI_LARGE_API_KEY,
-            process.env.AZURE_OPENAI_LARGE_ENDPOINT,
-            "gpt-4o",
-        ),
-    "o1-mini": () =>
-        createAzureModelConfig(
-            process.env.AZURE_O1MINI_API_KEY,
-            process.env.AZURE_O1MINI_ENDPOINT,
-            "o1-mini",
-        ),
-    "gpt-4o-audio-preview": () =>
-        createAzureModelConfig(
-            process.env.AZURE_OPENAI_AUDIO_LARGE_API_KEY,
-            process.env.AZURE_OPENAI_AUDIO_LARGE_ENDPOINT,
-            "gpt-4o-audio-preview",
-        ),
-    "azure-gpt-4.1-xlarge": () =>
-        createAzureModelConfig(
-            process.env.AZURE_OPENAI_XLARGE_API_KEY,
-            process.env.AZURE_OPENAI_XLARGE_ENDPOINT,
-            "gpt-4.1",
-        ),
-    "Cohere-command-r-plus-08-2024-jt": () => ({
-        provider: "openai",
-        "custom-host": process.env.AZURE_COMMAND_R_ENDPOINT,
-        authKey: process.env.AZURE_COMMAND_R_API_KEY,
-        "auth-header-name": "Authorization",
-        "auth-header-value-prefix": "",
-        "max-tokens": 800,
-    }),
-    // Cloudflare model configurations
-    "@cf/meta/llama-3.3-70b-instruct-fp8-fast": () =>
-        createCloudflareModelConfig(),
-    "@cf/meta/llama-3.1-8b-instruct": () => createCloudflareModelConfig(),
-    "@cf/meta/llama-3.1-8b-instruct-fp8": () => createCloudflareModelConfig(),
-    "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b": () =>
-        createCloudflareModelConfig(),
-    "@cf/mistralai/mistral-small-3.1-24b-instruct": () =>
-        createCloudflareModelConfig({
-            "max-tokens": 8192,
-            model: "@cf/mistralai/mistral-small-3.1-24b-instruct",
-        }),
-    "@hf/thebloke/llamaguard-7b-awq": () => ({
-        ...createCloudflareModelConfig(),
-        "max-tokens": 4000,
-    }),
-    "phi-4-instruct": () => ({
-        provider: "openai",
-        "custom-host": process.env.OPENAI_PHI4_ENDPOINT,
-        authKey: process.env.OPENAI_PHI4_API_KEY,
-    }),
-    "phi-4-mini-instruct": () => ({
-        provider: "openai",
-        "custom-host": process.env.OPENAI_PHI4_MINI_ENDPOINT,
-        authKey: process.env.OPENAI_PHI4_MINI_API_KEY,
-    }),
-    "@cf/meta/llama-3.2-11b-vision-instruct": () =>
-        createCloudflareModelConfig(),
-    "@cf/meta/llama-4-scout-17b-16e-instruct": () => ({
-        ...createCloudflareModelConfig(),
-        "max-tokens": 4096, // Reduced from 8192 to avoid context length errors
-    }),
-    // Scaleway model configurations
-    "qwen3-235b-a22b-instruct-2507": () => createScalewayModelConfig(),
-    "qwen2.5-coder-32b-instruct": () =>
-        createScalewayModelConfig({
-            "max-tokens": 8000, // Set specific token limit for Qwen Coder
-            model: "qwen2.5-coder-32b-instruct",
-        }),
-    "llama-3.1-8b-instruct": () =>
-        createScalewayModelConfig({
-            model: "llama-3.1-8b-instruct",
-        }),
-    "mistral-nemo-instruct-2407": () =>
-        createScalewayModelConfig({
-            model: "mistral-nemo-instruct-2407",
-        }),
-    "llama-3.3-70b-instruct": () => createScalewayModelConfig(),
-    surscaleway: () => createScalewayModelConfig(),
-    "qwen-reasoning": () => createScalewayModelConfig(),
-    "openai-reasoning": () => createApiNavyModelConfig(),
-    "o4-mini": () => createApiNavyModelConfig(),
-    searchgpt: () => createApiNavyModelConfig(),
-    "gpt-4o-mini-search-preview": () => createApiNavyModelConfig(),
-    unity: () => createScalewayModelConfig(),
-    "mis-unity": () => createScalewayModelConfig(),
-    // Nebius model configurations
-    "mistralai/Mistral-Nemo-Instruct-2407": () =>
-        createNebiusModelConfig({
-            model: "mistralai/Mistral-Nemo-Instruct-2407",
-        }),
-    "meta-llama/Meta-Llama-3.1-8B-Instruct-fast": () =>
-        createNebiusModelConfig({
-            model: "meta-llama/Meta-Llama-3.1-8B-Instruct-fast",
-        }),
-    "deepseek-ai/DeepSeek-R1-0528": () =>
-        createNebiusModelConfig({
-            model: "deepseek-ai/DeepSeek-R1-0528",
-            "max-tokens": 2000,
-        }),
-    "google/gemma-2-9b-it-fast": () =>
-        createNebiusModelConfig({
-            model: "google/gemma-2-9b-it-fast",
-            "max-tokens": 1024,
-        }),
-    // Intelligence.io model configurations
-    "THUDM/glm-4-9b-chat": () =>
-        createIntelligenceModelConfig({
-            model: "THUDM/glm-4-9b-chat",
-        }),
-    // Modal model configurations
-    "Hormoz-8B": () => createModalModelConfig(),
-    // OpenRouter model configurations
-    "anthropic/claude-3.5-haiku-20241022": () =>
-        createOpenRouterModelConfig({
-            "http-referer": "https://pollinations.ai",
-            "x-title": "Pollinations.AI",
-        }),
-    // Cloudflare models
-    "@cf/qwen/qwq-32b": () =>
-        createCloudflareModelConfig({
-            "http-referer": "https://pollinations.ai",
-            "x-title": "Pollinations.AI",
-        }),
-    // Google Vertex AI model configurations
-    "gemini-2.5-flash-vertex": () => ({
-        provider: "vertex-ai",
-        authKey: googleCloudAuth.getAccessToken, // Fix: use getAccessToken instead of getToken
-        "vertex-project-id": process.env.GCLOUD_PROJECT_ID,
-        "vertex-region": "us-central1",
-        "vertex-model-id": "gemini-2.5-flash",
-        "strict-openai-compliance": "false",
-    }),
-    "gemini-2.5-pro-exp-03-25": () => ({
-        provider: "vertex-ai",
-        authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GCLOUD_PROJECT_ID,
-        "vertex-region": "us-central1",
-        "vertex-model-id": "gemini-2.5-pro-exp-03-25",
-        "strict-openai-compliance": "false",
-    }),
-    "gemini-2.0-flash-thinking": () => ({
-        provider: "vertex-ai",
-        authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GCLOUD_PROJECT_ID,
-        "vertex-region": "us-central1",
-        "vertex-model-id": "gemini-2.0-flash-thinking",
-        "strict-openai-compliance": "false",
-    }),
-    "deepseek-ai/deepseek-r1-0528-maas": () => ({
-        provider: "openai",
-        authKey: googleCloudAuth.getAccessToken,
-        "custom-host": `https://us-central1-aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/us-central1/endpoints/openapi`,
-        "strict-openai-compliance": "false",
-    }),
-    "DeepSeek-V3-0324": () => createDeepSeekModelConfig(),
-    "MAI-DS-R1": () => createDeepSeekReasoningConfig(),
-    "myceli-deepseek-v3.1": () => createMyceliDeepSeekV31Config(),
-    "myceli-grok-4-fast": () => createMyceliGrok4FastConfig(),
-    // Custom endpoints
-    "elixposearch-endpoint": () => createElixpoSearchModelConfig(),
-    // AWS Bedrock Lambda endpoint
-    "eu.anthropic.claude-sonnet-4-20250514-v1:0": () =>
-        createBedrockLambdaModelConfig({
-            model: "eu.anthropic.claude-sonnet-4-20250514-v1:0",
-        }),
-    "meta.llama3-1-8b-instruct-v1:0": () =>
-        createBedrockLambdaModelConfig({
-            model: "meta.llama3-1-8b-instruct-v1:0",
-        }),
-    "us.meta.llama3-2-1b-instruct-v1:0": () =>
-        createBedrockLambdaModelConfig({
-            model: "us.meta.llama3-2-1b-instruct-v1:0",
-        }),
-    "us.meta.llama3-2-3b-instruct-v1:0": () =>
-        createBedrockLambdaModelConfig({
-            model: "us.meta.llama3-2-3b-instruct-v1:0",
-        }),
     "sonar": () =>
         createPerplexityModelConfig({
             model: "sonar",
@@ -455,5 +252,45 @@ export const portkeyConfig: PortkeyConfigMap = {
     "sonar-reasoning": () =>
         createPerplexityModelConfig({
             model: "sonar-reasoning",
+        }),
+    "sonar-reasoning-pro": () =>
+        createPerplexityModelConfig({
+            model: "sonar-reasoning-pro",
+        }),
+
+    // ============================================================================
+    // OVHcloud AI Endpoints - qwen3-coder
+    // ============================================================================
+    "qwen3-coder-30b-a3b-instruct": () =>
+        createOVHcloudModelConfig({
+            model: "Qwen3-Coder-30B-A3B-Instruct",
+        }),
+
+    // ============================================================================
+    // Fireworks AI - glm-4.7, minimax-m2.1, deepseek-v3.2, kimi-k2.5
+    // ============================================================================
+    "accounts/fireworks/models/kimi-k2p5": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k2p5",
+        }),
+    "accounts/fireworks/models/glm-4p7": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/glm-4p7",
+        }),
+    "accounts/fireworks/models/minimax-m2p1": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/minimax-m2p1",
+        }),
+    "accounts/fireworks/models/deepseek-v3p2": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v3p2",
+        }),
+
+    // ============================================================================
+    // Community Models - NomNom (web search/scrape/crawl)
+    // ============================================================================
+    "nomnom": () =>
+        createNomNomConfig({
+            model: "nomnom",
         }),
 };

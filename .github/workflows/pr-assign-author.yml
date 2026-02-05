@@ -1,0 +1,39 @@
+name: PR Assign Author
+
+on:
+  pull_request_target:
+    types: [opened]
+
+jobs:
+  assign-author:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Assign author
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.pollinations-ai.outputs.token }}
+          script: |
+            const author = context.payload.pull_request.user.login;
+            
+            try {
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                assignees: [author]
+              });
+              console.log(`Assigned @${author} to PR #${context.issue.number}`);
+            } catch (error) {
+              // This can happen if the user is an external contributor (can't be assigned)
+              console.log(`Could not assign @${author}: ${error.message}`);
+            }

@@ -1,0 +1,258 @@
+name: App Review Submission
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created]
+  pull_request_target:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to process'
+        required: true
+        type: number
+      issue_author:
+        description: 'Issue author username (optional, will be fetched if not provided)'
+        required: false
+        type: string
+
+concurrency:
+  group: app-submission-${{ github.event.issue.number || github.event.inputs.issue_number || github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  app-review:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name != 'pull_request_target' &&
+       ((github.event_name == 'issues' && github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'TIER-APP')) ||
+        (github.event_name == 'issues' && github.event.action == 'edited' && contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE')) ||
+        (github.event_name == 'issue_comment' && contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE') && github.event.comment.user.type != 'Bot')) &&
+       !contains(github.event.issue.labels.*.name, 'TIER-APP-REVIEW') &&
+       !contains(github.event.issue.labels.*.name, 'TIER-APP-COMPLETE') &&
+       !contains(github.event.issue.labels.*.name, 'TIER-APP-REJECTED') &&
+       github.event.issue.state == 'open')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+      actions: read
+
+    steps:
+      - name: Generate App Token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Get issue number and author
+        id: issue
+        run: |
+          ISSUE_NUM="${{ github.event.inputs.issue_number || github.event.issue.number }}"
+          echo "number=$ISSUE_NUM" >> "$GITHUB_OUTPUT"
+          
+          # For workflow_dispatch, fetch author from API (input takes priority)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ -n "${{ github.event.inputs.issue_author }}" ]; then
+              echo "author=${{ github.event.inputs.issue_author }}" >> "$GITHUB_OUTPUT"
+            else
+              AUTHOR=$(gh api repos/${{ github.repository }}/issues/$ISSUE_NUM --jq .user.login)
+              echo "author=$AUTHOR" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "author=${{ github.event.issue.user.login }}" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+
+      - name: Setup
+        id: setup
+        run: |
+          # Add eyes reaction
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            gh api repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions -f content=eyes || true
+          elif [ "${{ github.event_name }}" = "issues" ]; then
+            gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=eyes || true
+          fi
+
+          # Get bot user ID
+          BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
+          echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ steps.token.outputs.token }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install wrangler
+        run: npm install -g wrangler
+
+      - name: Install enter dependencies
+        run: cd enter.pollinations.ai && npm install
+
+      - name: Check comment author permissions
+        id: auth
+        if: github.event_name == 'issue_comment'
+        run: |
+          ASSOCIATION="${{ github.event.comment.author_association }}"
+          COMMENT_AUTHOR="${{ github.event.comment.user.login }}"
+          ISSUE_AUTHOR="${{ github.event.issue.user.login }}"
+
+          if [[ "$ASSOCIATION" == "MEMBER" || "$ASSOCIATION" == "OWNER" || "$ASSOCIATION" == "COLLABORATOR" || "$COMMENT_AUTHOR" == "$ISSUE_AUTHOR" ]]; then
+            echo "authorized=true" >> $GITHUB_OUTPUT
+          else
+            echo "authorized=false" >> $GITHUB_OUTPUT
+            echo "Skipping: $COMMENT_AUTHOR is not authorized (association: $ASSOCIATION, issue author: $ISSUE_AUTHOR)"
+          fi
+
+      - name: Skip if unauthorized
+        if: github.event_name == 'issue_comment' && steps.auth.outputs.authorized == 'false'
+        run: echo "Skipping - commenter not authorized"
+
+      - name: Update issue title
+        if: github.event_name == 'issues' && github.event.action == 'opened'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const body = context.payload.issue.body;
+            const appNameMatch = body?.match(/### App Name\s*\n(.*?)(?:\n|$)/);
+            const appName = appNameMatch ? appNameMatch[1].trim() : 'App';
+            
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              title: `[App Submission] ${appName}`
+            });
+
+      - name: Validate submission
+        id: validate
+        if: github.event_name != 'issue_comment' || steps.auth.outputs.authorized == 'true'
+        continue-on-error: true
+        run: |
+          node .github/scripts/app-validate-submission.js > /tmp/validation.json 2>&1 || true
+          cat /tmp/validation.json
+          echo "result<<EOF" >> $GITHUB_OUTPUT
+          cat /tmp/validation.json >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
+          COMMENT_AUTHOR: ${{ github.event.comment.user.login || '' }}
+          COMMENT_AUTHOR_ASSOCIATION: ${{ github.event.comment.author_association || '' }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Setup Python
+        if: github.event_name != 'issue_comment' || steps.auth.outputs.authorized == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        if: github.event_name != 'issue_comment' || steps.auth.outputs.authorized == 'true'
+        run: pip install requests
+
+      - name: Run App Review Agent
+        if: github.event_name != 'issue_comment' || steps.auth.outputs.authorized == 'true'
+        run: python .github/scripts/app-review-agent.py
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
+          VALIDATION_RESULT: ${{ steps.validate.outputs.result }}
+          BOT_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
+          BOT_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
+
+  app-handle-outcome:
+    if: |
+      github.event_name == 'pull_request_target' &&
+      github.event.action == 'closed' &&
+      contains(github.event.pull_request.labels.*.name, 'TIER-APP-REVIEW-PR')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Generate App Token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Handle PR outcome
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const pr = context.payload.pull_request;
+
+            // Extract issue number from PR body (Fixes #123)
+            const issueMatch = pr.body?.match(/Fixes #(\d+)/i);
+            if (!issueMatch) {
+              console.log('No linked issue found');
+              return;
+            }
+
+            const issueNumber = parseInt(issueMatch[1]);
+            const appName = pr.title.replace(/^Add\s+/, '').replace(/\s+to\s+\w+$/, '');
+
+            // Helper to swap labels
+            const swapLabel = async (newLabel) => {
+              const issue = await github.rest.issues.get({ owner: context.repo.owner, repo: context.repo.repo, issue_number: issueNumber });
+              const oldLabels = issue.data.labels.map(l => l.name).filter(n => n.startsWith('TIER-APP'));
+              for (const label of oldLabels) {
+                try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: issueNumber, name: label }); } catch (e) {}
+              }
+              await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: issueNumber, labels: [newLabel] });
+            };
+
+            if (pr.merged) {
+              await swapLabel('TIER-APP-COMPLETE');
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: `✅ **Congratulations!** Your app **${appName}** is now live on [pollinations.ai](https://pollinations.ai)! 🌸`
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                state: 'closed'
+              });
+            } else {
+              await swapLabel('TIER-APP-REJECTED');
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: `❌ **Submission Declined**\n\nCheck the PR comments for feedback. You're welcome to submit again.`
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                state: 'closed'
+              });
+            }

@@ -1,0 +1,97 @@
+{
+  "tier_benefit_grant_created": {
+    "type": "benefit_grant.created",
+    "timestamp": "2026-01-01T18:09:14.731Z",
+    "data": {
+      "subscriptionId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "orderId": null,
+      "customer": {
+        "externalId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "email": "user@example.com"
+      },
+      "benefit": {
+        "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        "type": "meter_credit",
+        "description": "1 pollen/day",
+        "metadata": {},
+        "properties": {
+          "units": 1,
+          "rollover": false
+        }
+      }
+    },
+    "_note": "Tier benefits have subscriptionId set, orderId is null, rollover: false"
+  },
+  "pack_benefit_grant_created": {
+    "type": "benefit_grant.created",
+    "timestamp": "2026-01-01T18:14:30.751Z",
+    "data": {
+      "subscriptionId": null,
+      "orderId": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy",
+      "customer": {
+        "externalId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "email": "user@example.com"
+      },
+      "benefit": {
+        "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        "type": "meter_credit",
+        "description": "5x2 pollen",
+        "metadata": {},
+        "properties": {
+          "units": 10,
+          "rollover": true,
+          "meterId": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+        }
+      }
+    },
+    "_note": "Pack benefits have orderId set, subscriptionId is null, rollover: true"
+  },
+  "pack_order_paid": {
+    "type": "order.paid",
+    "timestamp": "2026-01-01T18:14:29.535Z",
+    "data": {
+      "id": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy",
+      "subscriptionId": null,
+      "billingReason": "purchase",
+      "totalAmount": 595,
+      "customer": {
+        "externalId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "email": "user@example.com"
+      },
+      "product": {
+        "name": "🐝 5 pollen + 5 FREE",
+        "metadata": {
+          "slug": "v1:product:pack:5x2"
+        },
+        "isRecurring": false
+      }
+    },
+    "_note": "Pack orders have subscriptionId: null, billingReason: purchase, isRecurring: false"
+  },
+  "tier_subscription_updated": {
+    "type": "subscription.updated",
+    "timestamp": "2026-01-01T18:09:13.006Z",
+    "data": {
+      "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "productId": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+      "customer": {
+        "externalId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "email": "user@example.com"
+      },
+      "product": {
+        "name": "🦠 Spore",
+        "metadata": {
+          "slug": "v1:product:tier:spore"
+        }
+      }
+    },
+    "_note": "Product metadata has the tier slug"
+  },
+  "distinction_rules": {
+    "benefit_grant_created": {
+      "tier": "subscriptionId is SET, orderId is NULL, rollover: false",
+      "pack": "subscriptionId is NULL, orderId is SET, rollover: true"
+    },
+    "recommended_check": "Use orderId !== null to identify pack purchases"
+  }
+}

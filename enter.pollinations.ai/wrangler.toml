@@ -6,9 +6,6 @@ compatibility_flags = [ "nodejs_compat", "nodejs_als" ]
 [dev]
 port = 3000
 
-[triggers]
-crons = [ "* * * * *" ] # every minute
-
 [assets]
 directory = "dist/client"
 not_found_handling = "single-page-application"
@@ -30,6 +27,11 @@ binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
 remote = true
 
+[[r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+remote = true
+
 [[durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
@@ -42,23 +44,22 @@ new_classes = ["PollenRateLimiter"]
 [vars]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
+LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"
-TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
-# Polar Sandbox product IDs for tier subscriptions
-POLAR_PRODUCT_TIER_SEED = "c6f94c1b-c119-4e59-9f18-59391c8afee3"
-POLAR_PRODUCT_TIER_FLOWER = "18bdd5c4-dcb3-4a15-8ca6-1c0b45f76b84"
-POLAR_PRODUCT_TIER_NECTAR = "a438764a-c486-4ff4-8f85-e66199c6b26f"
-POLAR_PRODUCT_TIER_ROUTER = "9256189e-ad01-4608-8102-4ebfc4b506e0"
-POLAR_PRODUCT_TIER_SPORE = "19fa1660-a90c-453d-8132-4d228cc7db39"
-# Polar Sandbox pollen pack product IDs
-POLAR_PRODUCT_PACK_5X2 = "a34a0c8d-fc8f-4dd2-b53a-ddd91428d3cb"
-POLAR_PRODUCT_PACK_10X2 = "164ad1b8-6c4a-414e-9096-c9ca8608dfe3"
-POLAR_PRODUCT_PACK_20X2 = "97cddb45-634f-4384-9e41-2fabca3c4fbf"
-POLAR_PRODUCT_PACK_50X2 = "c7f8d94c-d55d-4744-85bf-8d3a7ffca92f"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
+TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+# NOWPayments crypto payments (sandbox for dev)
+NOWPAYMENTS_ENV = "sandbox"
+# Stripe payments (sandbox for dev)
+STRIPE_MODE = "sandbox"
+STRIPE_SUCCESS_URL = "http://localhost:3000"
 
 
 [env.local]
@@ -79,29 +80,34 @@ binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
 remote = true
 
+[[env.local.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+remote = true
+
 [env.local.vars]
 ENVIRONMENT = "local"
 LOG_LEVEL = "trace"
+LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"
-TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
-# Polar Sandbox product IDs for tier subscriptions
-POLAR_PRODUCT_TIER_SEED = "c6f94c1b-c119-4e59-9f18-59391c8afee3"
-POLAR_PRODUCT_TIER_FLOWER = "18bdd5c4-dcb3-4a15-8ca6-1c0b45f76b84"
-POLAR_PRODUCT_TIER_NECTAR = "a438764a-c486-4ff4-8f85-e66199c6b26f"
-POLAR_PRODUCT_TIER_ROUTER = "9256189e-ad01-4608-8102-4ebfc4b506e0"
-POLAR_PRODUCT_TIER_SPORE = "19fa1660-a90c-453d-8132-4d228cc7db39"
-# Polar Sandbox pollen pack product IDs
-POLAR_PRODUCT_PACK_5X2 = "a34a0c8d-fc8f-4dd2-b53a-ddd91428d3cb"
-POLAR_PRODUCT_PACK_10X2 = "164ad1b8-6c4a-414e-9096-c9ca8608dfe3"
-POLAR_PRODUCT_PACK_20X2 = "97cddb45-634f-4384-9e41-2fabca3c4fbf"
-POLAR_PRODUCT_PACK_50X2 = "c7f8d94c-d55d-4744-85bf-8d3a7ffca92f"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
+TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 IMAGE_SERVICE_URL = "http://localhost:16384"
 TEXT_SERVICE_URL = "http://localhost:16385"
+# Stripe payments (sandbox for local development)
+STRIPE_MODE = "sandbox"
+STRIPE_SUCCESS_URL = "http://localhost:3000"
 POLLEN_REFILL_PER_HOUR = 1
 
 [env.production]
+
+[env.production.observability]
+enabled = true
+head_sampling_rate = 1
 
 [[env.production.routes]]
 pattern = "enter.pollinations.ai"
@@ -123,11 +129,15 @@ id = "eb4ea5149a5a413db53902bf2b8c1d95"
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
 
-# Edge rate limiter: ~10 req/s per IP (100 req per 10s)
+[[env.production.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+
+# Edge rate limiter: ~1000 req/s per IP (10000 req per 10s)
 [[env.production.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
-simple = { limit = 100, period = 10 }
+simple = { limit = 10000, period = 10 }
 
 [[env.production.durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
@@ -140,23 +150,23 @@ new_classes = ["PollenRateLimiter"]
 [env.production.vars]
 ENVIRONMENT = "production"
 LOG_LEVEL = "debug"
+LOG_FORMAT = "json"
 ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "https://enter.pollinations.ai"
 POLAR_SERVER = "production"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-# Polar product IDs
-POLAR_PRODUCT_TIER_SEED = "fe32ee28-c7c4-4e7a-87fa-6ffc062e3658"
-POLAR_PRODUCT_TIER_FLOWER = "dfb4c4f6-2004-4205-a358-b1f7bb3b310e"
-POLAR_PRODUCT_TIER_NECTAR = "066f91a4-8ed1-4329-b5f7-3f71e992ed28"
-POLAR_PRODUCT_TIER_ROUTER = "0286ea62-540f-4b19-954f-b8edb9095c43"
-POLAR_PRODUCT_TIER_SPORE = "01a31c1a-7af7-4958-9b73-c10e2fac5f70"
-POLAR_PRODUCT_PACK_5X2 = "bcdde7f7-129e-4ec1-abc3-d4e0c852fa68"
-POLAR_PRODUCT_PACK_10X2 = "cebeb680-4ac3-4f73-9ce7-6bc06a5f21e1"
-POLAR_PRODUCT_PACK_20X2 = "8164c20f-8429-437e-b1a2-616ae89f114e"
-POLAR_PRODUCT_PACK_50X2 = "2cb5ca34-d505-450d-a1d4-94e3bb0c1f68"
+TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
+TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 POLLEN_REFILL_PER_HOUR = 1
+# NOWPayments crypto payments (production)
+NOWPAYMENTS_ENV = "production"
+# Stripe payments (live for production)
+STRIPE_MODE = "live"
+STRIPE_SUCCESS_URL = "https://enter.pollinations.ai"
 
 [env.staging]
 
@@ -168,7 +178,7 @@ custom_domain = true
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
-database_id = "073195b4-d99e-4b67-9575-eb5efe6d3234"
+database_id = "bd0ef469-d727-4ff4-9118-bd7e6e7985ae"
 migrations_dir = "drizzle"
 
 [[env.staging.kv_namespaces]]
@@ -180,10 +190,15 @@ id = "eb4ea5149a5a413db53902bf2b8c1d95"
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
 
+[[env.staging.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+
+# Edge rate limiter: ~1000 req/s per IP (10000 req per 10s)
 [[env.staging.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
-simple = { limit = 100, period = 10 }
+simple = { limit = 10000, period = 10 }
 
 [[env.staging.durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
@@ -196,23 +211,78 @@ new_classes = ["PollenRateLimiter"]
 [env.staging.vars]
 ENVIRONMENT = "staging"
 LOG_LEVEL = "debug"
+LOG_FORMAT = "json"
 ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "https://staging.enter.pollinations.ai"
-POLAR_SERVER = "sandbox"
+POLAR_SERVER = "production"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-# Polar Sandbox product IDs for tier subscriptions
-POLAR_PRODUCT_TIER_SEED = "c6f94c1b-c119-4e59-9f18-59391c8afee3"
-POLAR_PRODUCT_TIER_FLOWER = "18bdd5c4-dcb3-4a15-8ca6-1c0b45f76b84"
-POLAR_PRODUCT_TIER_NECTAR = "a438764a-c486-4ff4-8f85-e66199c6b26f"
-POLAR_PRODUCT_TIER_ROUTER = "9256189e-ad01-4608-8102-4ebfc4b506e0"
-POLAR_PRODUCT_TIER_SPORE = "19fa1660-a90c-453d-8132-4d228cc7db39"
-# Polar Sandbox pollen pack product IDs
-POLAR_PRODUCT_PACK_5X2 = "a34a0c8d-fc8f-4dd2-b53a-ddd91428d3cb"
-POLAR_PRODUCT_PACK_10X2 = "164ad1b8-6c4a-414e-9096-c9ca8608dfe3"
-POLAR_PRODUCT_PACK_20X2 = "97cddb45-634f-4384-9e41-2fabca3c4fbf"
-POLAR_PRODUCT_PACK_50X2 = "c7f8d94c-d55d-4744-85bf-8d3a7ffca92f"
+TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
+TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+# Stripe payments: sandbox mode for staging
+STRIPE_MODE = "sandbox"
+STRIPE_SUCCESS_URL = "https://staging.enter.pollinations.ai"
+
+[env.dev]
+
+[[env.dev.routes]]
+pattern = "dev.enter.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "development-pollinations-enter-db"
+database_id = "6345cb3c-e57a-4aab-bdd4-bca0de7bd930"
+migrations_dir = "drizzle"
+
+[[env.dev.kv_namespaces]]
+# development-pollinations-enter-kv
+binding = "KV"
+id = "aa0d0aceb6bd45de93032270c7adf4ab"
+
+[[env.dev.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+remote = true
+
+[[env.dev.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+remote = true
+
+[[env.dev.durable_objects.bindings]]
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
+
+[[env.dev.migrations]]
+tag = "v2"
+new_classes = ["PollenRateLimiter"]
+
+[env.dev.vars]
+ENVIRONMENT = "dev"
+LOG_LEVEL = "debug"
+LOG_FORMAT = "json"
+ALLOW_ANONYMOUS_USAGE = false
+POLAR_SUCCESS_URL = "https://dev.enter.pollinations.ai"
+POLAR_SERVER = "sandbox"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
+TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
+# TODO: Change back to staging endpoints once staging services are available
+# Staging URLs: IMAGE_SERVICE_URL = "http://ec2-44-222-254-250.compute-1.amazonaws.com:16384"
+#               TEXT_SERVICE_URL = "http://ec2-44-222-254-250.compute-1.amazonaws.com:16385"
+# Currently using prod services for simplicity
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+# Stripe payments (sandbox for dev)
+STRIPE_MODE = "sandbox"
+STRIPE_SUCCESS_URL = "https://dev.enter.pollinations.ai"
 
 [env.test]
 
@@ -231,10 +301,15 @@ id = "aa0d0aceb6bd45de93032270c7adf4ab"
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
 
+[[env.test.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+
+# Edge rate limiter: ~1000 req/s per IP (10000 req per 10s)
 [[env.test.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
-simple = { limit = 100, period = 10 }
+simple = { limit = 10000, period = 10 }
 
 [[env.test.durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
@@ -243,6 +318,7 @@ class_name = "PollenRateLimiter"
 [env.test.vars]
 ENVIRONMENT = "test"
 LOG_LEVEL = "trace"
+LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = true
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
@@ -252,13 +328,12 @@ POLAR_ACCESS_TOKEN = "test_polar_token"
 POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
-POLAR_PRODUCT_TIER_SPORE = "polar_product_id_spore"
-POLAR_PRODUCT_TIER_SEED = "polar_product_id_seed"
-POLAR_PRODUCT_TIER_FLOWER = "polar_product_id_flower"
-POLAR_PRODUCT_TIER_NECTAR = "polar_product_id_nectar"
-POLAR_PRODUCT_PACK_5X2 = "polar_product_id_5x2"
-POLAR_PRODUCT_PACK_10X2 = "polar_product_id_10x2"
-POLAR_PRODUCT_PACK_20X2 = "polar_product_id_20x2"
-POLAR_PRODUCT_PACK_50X2 = "polar_product_id_50x2"
+TINYBIRD_POLAR_INGEST_URL = "http://localhost:7181/v0/events?name=polar_event"
+TINYBIRD_CRYPTO_INGEST_URL = "http://localhost:7181/v0/events?name=crypto_event"
+TINYBIRD_TIER_INGEST_URL = "http://localhost:7181/v0/events?name=tier_event"
+TINYBIRD_STRIPE_INGEST_URL = "http://localhost:7181/v0/events?name=stripe_event"
+TINYBIRD_INGEST_TOKEN = "test_tinybird_ingest_token"
+TINYBIRD_POLAR_INGEST_TOKEN = "test_tinybird_polar_ingest_token"
+TINYBIRD_READ_TOKEN = "test_tinybird_read_token"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"

@@ -1,13 +1,13 @@
-import { createMiddleware } from "hono/factory";
-import { createAuth } from "../auth.ts";
-import { LoggerVariables } from "./logger.ts";
-import { HTTPException } from "hono/http-exception";
-import type { Session, User, Auth } from "@/auth.ts";
-import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
-import * as schema from "@/db/schema/better-auth.ts";
+import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
-import { isApiKeyToken } from "@/utils/token.ts";
+import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
+import type { Session, User } from "@/auth.ts";
+import * as schema from "@/db/schema/better-auth.ts";
+import { createAuth } from "../auth.ts";
+import type { LoggerVariables } from "./logger.ts";
+import type { ModelVariables } from "./model.ts";
 
 export type AuthVariables = {
     auth: {
@@ -17,48 +17,51 @@ export type AuthVariables = {
         apiKey?: ApiKey;
         requireAuthorization: (options?: { message?: string }) => Promise<void>;
         requireUser: () => User;
+        /** Throws 403 if the API key doesn't have access to the resolved model from c.var.model. */
+        requireModelAccess: () => void;
+        /** Throws 402 if the API key has a budget set and remaining <= 0. */
+        requireKeyBudget: () => void;
     };
 };
 
 export type AuthEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & AuthVariables;
+    Variables: LoggerVariables & AuthVariables & Partial<ModelVariables>;
 };
 
 export type AuthOptions = {
     allowSessionCookie: boolean;
     allowApiKey: boolean;
-    allowBearerSessionToken?: boolean; // RFC 8628 Device Flow support
-    allowOAuthAccessToken?: boolean; // OAuth 2.0 access token support
 };
 
-type ApiKey = {
+interface ApiKey {
     id: string;
     name?: string;
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
-};
+    pollenBalance?: number | null;
+    rawKey?: string;
+}
 
-type AuthResult = {
+interface AuthResult {
     user?: User;
     session?: Session;
     apiKey?: ApiKey;
-};
+    rawApiKey?: string;
+}
 
 /** Extracts Bearer token from Authorization header (RFC 6750) or query parameter */
-function extractBearerToken(c: Context<AuthEnv>): string | null {
-    // Try Authorization header first (RFC 6750)
+function extractApiKey(c: Context<AuthEnv>): string | null {
     const auth = c.req.header("authorization");
     const match = auth?.match(/^Bearer (.+)$/);
     if (match?.[1]) return match[1];
 
-    // Fallback to query parameter for GET requests (browser-friendly)
     return c.req.query("key") || null;
 }
 
 export const auth = (options: AuthOptions) =>
     createMiddleware<AuthEnv>(async (c, next) => {
-        const log = c.get("log");
+        const _log = c.get("log").getChild("auth");
         const client = createAuth(c.env);
 
         const authenticateSession = async (): Promise<AuthResult | null> => {
@@ -73,164 +76,78 @@ export const auth = (options: AuthOptions) =>
             };
         };
 
-        /**
-         * Authenticate via Bearer session token (RFC 8628 Device Flow)
-         * This validates session tokens passed as Bearer tokens, supporting CLI/API clients
-         */
-        const authenticateBearerSessionToken =
-            async (): Promise<AuthResult | null> => {
-                if (!options.allowBearerSessionToken) return null;
-                const token = extractBearerToken(c);
-                if (!token) return null;
-
-                // Skip if it looks like an API key (pk_ or sk_ prefix)
-                if (isApiKeyToken(token)) return null;
-
-                log.debug("[AUTH] Checking Bearer session token: {hasToken}", {
-                    hasToken: !!token,
-                    tokenPrefix: token?.substring(0, 8),
-                });
-
-                const db = drizzle(c.env.DB, { schema });
-                const sessionRecord = await db.query.session.findFirst({
-                    where: eq(schema.session.token, token),
-                });
-
-                if (!sessionRecord) {
-                    log.debug("[AUTH] Session token not found");
-                    return null;
-                }
-
-                if (sessionRecord.expiresAt < new Date()) {
-                    log.debug("[AUTH] Session token expired");
-                    return null;
-                }
-
-                const user = await db.query.user.findFirst({
-                    where: eq(schema.user.id, sessionRecord.userId),
-                });
-
-                log.debug("[AUTH] Bearer session token validated: {found}", {
-                    found: !!user,
-                    userId: user?.id,
-                });
-
-                return {
-                    user: user as User,
-                    session: sessionRecord as Session,
-                };
-            };
-
-        /**
-         * Authenticate via OAuth 2.0 access token
-         * This allows OAuth clients to use their access_token directly for API calls
-         */
-        const authenticateOAuthAccessToken =
-            async (): Promise<AuthResult | null> => {
-                if (!options.allowOAuthAccessToken) return null;
-                const token = extractBearerToken(c);
-                if (!token) return null;
-
-                // Skip if it looks like an API key (pk_ or sk_ prefix)
-                if (isApiKeyToken(token)) return null;
-
-                log.debug("[AUTH] Checking OAuth access token: {hasToken}", {
-                    hasToken: !!token,
-                    tokenPrefix: token?.substring(0, 8),
-                });
-
-                const db = drizzle(c.env.DB, { schema });
-                const oauthToken = await db.query.oauthAccessToken.findFirst({
-                    where: eq(schema.oauthAccessToken.accessToken, token),
-                });
-
-                if (!oauthToken) {
-                    log.debug("[AUTH] OAuth access token not found");
-                    return null;
-                }
-
-                if (oauthToken.accessTokenExpiresAt < new Date()) {
-                    log.debug("[AUTH] OAuth access token expired");
-                    return null;
-                }
-
-                const user = await db.query.user.findFirst({
-                    where: eq(schema.user.id, oauthToken.userId),
-                });
-
-                log.debug("[AUTH] OAuth access token validated: {found}", {
-                    found: !!user,
-                    userId: user?.id,
-                });
-
-                return {
-                    user: user as User,
-                };
-            };
-
         const authenticateApiKey = async (): Promise<AuthResult | null> => {
             if (!options.allowApiKey) return null;
-            const apiKey = extractBearerToken(c);
-            log.debug("[AUTH] Extracted API key: {hasKey}", {
-                hasKey: !!apiKey,
-                keyPrefix: apiKey?.substring(0, 8),
-            });
-            if (!apiKey) return null;
+            const rawApiKey = extractApiKey(c);
+            if (!rawApiKey) return null;
+
             const keyResult = await client.api.verifyApiKey({
-                body: {
-                    key: apiKey,
-                },
+                body: { key: rawApiKey },
             });
-            log.debug("[AUTH] API key verification result: {valid}", {
-                valid: keyResult.valid,
-            });
+
             if (!keyResult.valid || !keyResult.key) return null;
+
             const db = drizzle(c.env.DB, { schema });
-            const user = await db.query.user.findFirst({
-                where: eq(schema.user.id, keyResult.key.userId),
-            });
-            log.debug("[AUTH] User lookup result: {found}", {
-                found: !!user,
-                userId: user?.id,
-            });
+            const permissions = keyResult.key.permissions as
+                | { models?: string[]; account?: string[] }
+                | undefined;
+
+            const apiKeyData = await db
+                .select()
+                .from(schema.apikey)
+                .where(eq(schema.apikey.id, keyResult.key.id))
+                .get();
+
+            const userData = apiKeyData
+                ? await db
+                      .select()
+                      .from(schema.user)
+                      .where(eq(schema.user.id, apiKeyData.userId))
+                      .get()
+                : null;
+
+            const fullApiKey = apiKeyData
+                ? { ...apiKeyData, user: userData }
+                : null;
+
+            // Check if key has expired
+            if (fullApiKey?.expiresAt) {
+                const expiryDate = new Date(fullApiKey.expiresAt);
+                if (expiryDate < new Date()) {
+                    return null;
+                }
+            }
+
+            // Check if the key is disabled
+            if (fullApiKey?.enabled === false) {
+                return null;
+            }
+
             return {
-                user: user as User,
+                user: fullApiKey?.user as User,
                 apiKey: {
                     id: keyResult.key.id,
                     name: keyResult.key.name || undefined,
-                    permissions: keyResult.key.permissions || undefined,
+                    permissions,
                     metadata: keyResult.key.metadata || undefined,
+                    pollenBalance: fullApiKey?.pollenBalance ?? null,
+                    rawKey: rawApiKey,
                 },
+                rawApiKey,
             };
         };
 
-        // Authentication priority:
-        // 1. Bearer session token (RFC 8628 Device Flow - CLI/API clients)
-        // 2. OAuth access token (OAuth 2.0 clients)
-        // 3. Session cookie (browser clients)
-        // 4. API key (programmatic access)
-        const { user, session, apiKey } =
-            (await authenticateBearerSessionToken()) ||
-            (await authenticateOAuthAccessToken()) ||
-            (await authenticateSession()) ||
-            (await authenticateApiKey()) ||
-            {};
-
-        log.debug("[AUTH] Authentication result: {authenticated}", {
-            authenticated: !!user,
-            hasSession: !!session,
-            hasApiKey: !!apiKey,
-            userId: user?.id,
-        });
+        // Try session authentication first, then API key
+        let authResult = await authenticateSession();
+        if (!authResult) {
+            authResult = await authenticateApiKey();
+        }
+        const { user, session, apiKey } = authResult || {};
 
         const requireAuthorization = async (options?: {
             message?: string;
         }): Promise<void> => {
-            log.debug("[AUTH] Checking authorization: {hasUser}", {
-                hasUser: !!user,
-            });
             if (!user) {
-                log.debug("[AUTH] Authorization failed: No user");
                 throw new HTTPException(401, {
                     message: options?.message,
                 });
@@ -242,6 +159,33 @@ export const auth = (options: AuthOptions) =>
             return user;
         };
 
+        function requireModelAccess(): void {
+            if (!apiKey || !apiKey.permissions?.models) return;
+
+            const model = c.var.model;
+            if (!model) return;
+
+            if (!apiKey.permissions.models.includes(model.resolved)) {
+                throw new HTTPException(403, {
+                    message: `Model '${model.requested}' is not allowed for this API key`,
+                });
+            }
+        }
+
+        function requireKeyBudget(): void {
+            if (!apiKey) return;
+
+            const { pollenBalance } = apiKey;
+            if (pollenBalance === null || pollenBalance === undefined) return;
+
+            if (pollenBalance <= 0) {
+                throw new HTTPException(402, {
+                    message:
+                        "API key budget exhausted. Please top up or create a new key.",
+                });
+            }
+        }
+
         c.set("auth", {
             client,
             user,
@@ -249,6 +193,8 @@ export const auth = (options: AuthOptions) =>
             apiKey,
             requireAuthorization,
             requireUser,
+            requireModelAccess,
+            requireKeyBudget,
         });
 
         await next();

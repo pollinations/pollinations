@@ -1,20 +1,25 @@
-import { Polar } from "@polar-sh/sdk";
-import { command, number, run, string, boolean } from "@drizzle-team/brocli";
 import { inspect } from "node:util";
+import { boolean, command, number, run, string } from "@drizzle-team/brocli";
+import { Polar } from "@polar-sh/sdk";
 import { applyColor, applyStyle } from "../src/util.ts";
 
 const VERSION = "v1";
 
 const TIERS = [
     {
+        name: "🦠 Spore",
+        slug: "spore",
+        pollenGrantAmount: 1,
+    },
+    {
         name: "🌱 Seed",
         slug: "seed",
-        pollenGrantAmount: 10,
+        pollenGrantAmount: 3,
     },
     {
         name: "🌸 Flower",
         slug: "flower",
-        pollenGrantAmount: 15,
+        pollenGrantAmount: 10,
     },
     {
         name: "🍯 Nectar",
@@ -24,6 +29,9 @@ const TIERS = [
 ];
 
 const PACKS = [
+    {
+        pollenGrantAmount: 5,
+    },
     {
         pollenGrantAmount: 10,
     },
@@ -53,9 +61,7 @@ const polarAccessToken = (env: "staging" | "production") => {
     }
 };
 
-if (!polarAccessToken) {
-    throw new Error("POLAR_ACCESS_TOKEN environment variable is required");
-}
+// Note: polarAccessToken is a function - validation happens when called
 
 function createPolarClient(env: "staging" | "production") {
     const server = env === "production" ? "production" : "sandbox";
@@ -480,19 +486,53 @@ const meterCreate = command({
     },
 });
 
-const customerMeterList = command({
+const customerListMeters = command({
     name: "list-meters",
     options: {
-        userId: string().required(),
+        email: string().required(),
         env: string().enum("staging", "production").default("staging"),
     },
     handler: async (opts) => {
         const polar = createPolarClient(opts.env);
+        const getCustomerReponse = await polar.customers.list({
+            limit: 100,
+            email: opts.email,
+        });
+        const customer = getCustomerReponse.result.items[0];
+        if (!customer) {
+            throw new Error("Customer not found");
+        }
         const response = await polar.customerMeters.list({
             limit: 100,
-            externalCustomerId: opts.userId,
+            customerId: customer.id,
         });
-        console.log(inspect(response, false, 1000));
+        console.log(inspect(response.result.items, false, 1000));
+    },
+});
+
+const customerListEvents = command({
+    name: "list-events",
+    options: {
+        email: string().required(),
+        env: string().enum("staging", "production").default("staging"),
+    },
+    handler: async (opts) => {
+        const polar = createPolarClient(opts.env);
+        const getCustomerReponse = await polar.customers.list({
+            limit: 100,
+            email: opts.email,
+        });
+        const customer = getCustomerReponse.result.items[0];
+        if (!customer) {
+            throw new Error("Customer not found");
+        } else {
+            console.log(`Found customer id: ${customer.id}`);
+        }
+        const response = await polar.events.list({
+            limit: 100,
+            customerId: customer.id,
+        });
+        console.log(inspect(response.result.items, false, 1000));
     },
 });
 
@@ -620,7 +660,7 @@ const customerMigrate = command({
             email: opts.email,
             limit: 100,
         });
-        let createdCustomers: any[] = [];
+        const createdCustomers: any[] = [];
         for await (const page of paginator) {
             for (const customer of page.result.items) {
                 if (customer.deletedAt) {
@@ -649,6 +689,106 @@ const tierSlugMap = {
     "v1:product:tier:20": "v1:product:tier:nectar",
 };
 
+// Production tier product IDs
+// Note: microbe tier doesn't have a Polar product (it's for flagged/suspicious users)
+const TIER_PRODUCT_IDS = {
+    production: {
+        spore: "01a31c1a-7af7-4958-9b73-c10e2fac5f70",
+        seed: "fe32ee28-c7c4-4e7a-87fa-6ffc062e3658",
+        flower: "dfb4c4f6-2004-4205-a358-b1f7bb3b310e",
+        nectar: "066f91a4-8ed1-4329-b5f7-3f71e992ed28",
+        router: "0286ea62-540f-4b19-954f-b8edb9095c43",
+    },
+    staging: {
+        spore: "19fa1660-a90c-453d-8132-4d228cc7db39",
+        seed: "c6f94c1b-c119-4e59-9f18-59391c8afee3",
+        flower: "18bdd5c4-dcb3-4a15-8ca6-1c0b45f76b84",
+        nectar: "a438764a-c486-4ff4-8f85-e66199c6b26f",
+        router: "9256189e-ad01-4608-8102-4ebfc4b506e0",
+    },
+} as const;
+
+type TierName = "microbe" | "spore" | "seed" | "flower" | "nectar" | "router";
+
+const userUpdateTier = command({
+    name: "update-tier",
+    desc: "Update a user's Polar subscription to a new tier (immediate, with proration)",
+    options: {
+        email: string().required().desc("User's email address"),
+        tier: string()
+            .enum("spore", "seed", "flower", "nectar", "router")
+            .required()
+            .desc("Target tier"),
+        env: string().enum("staging", "production").default("production"),
+        apply: boolean()
+            .default(false)
+            .desc("Apply changes to user's subscription"),
+    },
+    handler: async (opts) => {
+        const polar = createPolarClient(opts.env);
+        const tierProductIds = TIER_PRODUCT_IDS[opts.env];
+        const targetProductId = tierProductIds[opts.tier as TierName];
+
+        console.log(`Searching subscription for: ${opts.email}`);
+
+        // First, look up customer by email (fast)
+        const customerResponse = await polar.customers.list({
+            email: opts.email,
+            limit: 1,
+        });
+        const customer = customerResponse.result.items[0];
+        if (!customer) {
+            console.error(`No customer found for ${opts.email}`);
+            return;
+        }
+
+        // Then filter subscriptions by customerId (fast)
+        const subscriptionResponse = await polar.subscriptions.list({
+            customerId: customer.id,
+            active: true,
+            limit: 1,
+        });
+        const subscription = subscriptionResponse.result.items[0];
+
+        if (!subscription) {
+            console.error(`No subscription found for ${opts.email}`);
+            return;
+        }
+
+        console.log("Found subscription:");
+        console.log(`   ID: ${subscription.id}`);
+        console.log(`   Current: ${subscription.product.name}`);
+        console.log(`   Status: ${subscription.status}`);
+
+        if (subscription.productId === targetProductId) {
+            console.log(`Already on ${opts.tier} tier`);
+            return;
+        }
+
+        if (!opts.apply) {
+            console.log(
+                `Would update: ${subscription.product.name} → ${opts.tier}`,
+            );
+            console.log(`   (Use with --apply to make changes)`);
+            return;
+        }
+        console.log(`Updating subscription...`);
+        const result = await polar.subscriptions.update({
+            id: subscription.id,
+            subscriptionUpdate: {
+                productId: targetProductId,
+                prorationBehavior: "prorate",
+            },
+        });
+        console.log(
+            applyColor(
+                "green",
+                `Updated: ${subscription.product.name} → ${result.product.name}`,
+            ),
+        );
+    },
+});
+
 const tierMigrate = command({
     name: "migrate",
     options: {
@@ -657,7 +797,7 @@ const tierMigrate = command({
     },
     handler: async (opts) => {
         if (!opts.apply) {
-            console.log("This is a dry run. Use --apply to apply changes.");
+            console.log("This is a dry run. Use --apply to make changes.");
         }
         const polarSandbox = createPolarClient("staging");
         const polarProduction = createPolarClient("production");
@@ -721,6 +861,146 @@ const tierMigrate = command({
     },
 });
 
+// Required webhook events for D1 balance tracking
+const REQUIRED_WEBHOOK_EVENTS = [
+    "subscription.created",
+    "subscription.updated",
+    "subscription.canceled",
+    "subscription.revoked",
+    "subscription.active",
+    "subscription.uncanceled",
+    "benefit_grant.created", // New subscription benefit grants
+    "benefit_grant.updated", // Tier changes (upgrade/downgrade) - benefit gets updated
+    "benefit_grant.cycled", // Daily pollen grants
+    "order.paid", // Pollen pack purchases
+] as const;
+
+const WEBHOOK_URLS = {
+    production: "https://enter.pollinations.ai/api/webhooks/polar",
+    staging: "https://enter-staging.pollinations.ai/api/webhooks/polar",
+} as const;
+
+const webhookList = command({
+    name: "list",
+    options: {
+        env: string().enum("staging", "production").default("staging"),
+    },
+    handler: async (opts) => {
+        const polar = createPolarClient(opts.env);
+        const endpoints = await polar.webhooks.listWebhookEndpoints({});
+        for await (const page of endpoints) {
+            for (const ep of page.result.items) {
+                console.log(`ID: ${ep.id}`);
+                console.log(`URL: ${ep.url}`);
+                console.log(`Events: ${ep.events.join(", ")}`);
+                console.log();
+            }
+        }
+    },
+});
+
+const webhookSync = command({
+    name: "sync",
+    desc: "Ensure webhook endpoint exists with all required events",
+    options: {
+        env: string().enum("staging", "production").default("staging"),
+        apply: boolean().default(false),
+    },
+    handler: async (opts) => {
+        const polar = createPolarClient(opts.env);
+        const expectedUrl = WEBHOOK_URLS[opts.env];
+
+        console.log(`Checking webhook configuration for ${opts.env}...`);
+        console.log(`Expected URL: ${expectedUrl}`);
+        console.log(`Required events: ${REQUIRED_WEBHOOK_EVENTS.join(", ")}`);
+        console.log();
+
+        // Find existing endpoint
+        let existingEndpoint: any = null;
+        const endpoints = await polar.webhooks.listWebhookEndpoints({});
+        for await (const page of endpoints) {
+            for (const ep of page.result.items) {
+                if (ep.url === expectedUrl) {
+                    existingEndpoint = ep;
+                    break;
+                }
+            }
+        }
+
+        if (existingEndpoint) {
+            console.log(`Found existing endpoint: ${existingEndpoint.id}`);
+            console.log(
+                `Current events: ${existingEndpoint.events.join(", ")}`,
+            );
+
+            // Check for missing events
+            const missingEvents = REQUIRED_WEBHOOK_EVENTS.filter(
+                (e) => !existingEndpoint.events.includes(e),
+            );
+            const extraEvents = existingEndpoint.events.filter(
+                (e: string) =>
+                    !REQUIRED_WEBHOOK_EVENTS.includes(
+                        e as (typeof REQUIRED_WEBHOOK_EVENTS)[number],
+                    ),
+            );
+
+            if (missingEvents.length > 0) {
+                console.log(
+                    applyColor(
+                        "red",
+                        `Missing events: ${missingEvents.join(", ")}`,
+                    ),
+                );
+            }
+            if (extraEvents.length > 0) {
+                console.log(
+                    applyColor(
+                        "yellow",
+                        `Extra events: ${extraEvents.join(", ")}`,
+                    ),
+                );
+            }
+
+            if (missingEvents.length === 0 && extraEvents.length === 0) {
+                console.log(
+                    applyColor("green", "✓ Webhook configuration is correct"),
+                );
+                return;
+            }
+
+            if (opts.apply) {
+                console.log("Updating webhook endpoint...");
+                const updated = await polar.webhooks.updateWebhookEndpoint({
+                    id: existingEndpoint.id,
+                    webhookEndpointUpdate: {
+                        events: [...REQUIRED_WEBHOOK_EVENTS],
+                    },
+                });
+                console.log(
+                    applyColor(
+                        "green",
+                        `✓ Updated webhook with events: ${updated.events.join(", ")}`,
+                    ),
+                );
+            } else {
+                console.log(
+                    applyColor(
+                        "yellow",
+                        "Run with --apply to update the webhook",
+                    ),
+                );
+            }
+        } else {
+            console.log(
+                applyColor("red", "No webhook endpoint found for this URL"),
+            );
+            console.log(
+                "Create one in the Polar dashboard or implement create command",
+            );
+        }
+    },
+});
+
 const commands = [
     command({
         name: "meter",
@@ -737,7 +1017,15 @@ const commands = [
     }),
     command({
         name: "customer",
-        subcommands: [customerMigrate],
+        subcommands: [customerMigrate, customerListMeters, customerListEvents],
+    }),
+    command({
+        name: "user",
+        subcommands: [userUpdateTier],
+    }),
+    command({
+        name: "webhook",
+        subcommands: [webhookList, webhookSync],
     }),
 ];
 

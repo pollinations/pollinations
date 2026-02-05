@@ -1,0 +1,25 @@
+{
+  "name": "myceli.ai",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name=myceli-ai --branch=production"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "typescript": "~5.7.2",
+    "vite": "^6.2.0",
+    "wrangler": "^3.0.0"
+  }
+}

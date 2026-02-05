@@ -1,5 +1,7 @@
 # 🎨 Pollinations API Cheatsheet
 
+> 🔧 **Internal testing only** — For production API usage, use [`gen.pollinations.ai`](https://gen.pollinations.ai). This cheatsheet tests the Enter gateway directly for debugging purposes.
+
 > Quick reference for testing image and text models via **enter.pollinations.ai**
 
 > ⚠️ **Note**: The current endpoint structure (`/api/generate/image/*`, `/api/generate/v1/*`, `/api/generate/text/*`) is transitional and will be simplified in future releases.
@@ -9,15 +11,18 @@
 ## 📍 Quick Reference
 
 ### Endpoints
+
 - **Image:** `GET /api/generate/image/{prompt}?model=flux`
 - **Text (OpenAI):** `POST /api/generate/v1/chat/completions` with JSON body
 - **Text (Simple):** `GET /api/generate/text/{prompt}?model=openai`
 
 ### Authentication
+
 - Header: `Authorization: Bearer YOUR_API_KEY`
 - Query: `?key=YOUR_API_KEY`
 
 ### Model Discovery
+
 - **Image models:** `/api/generate/image/models`
 - **Text models:** `/api/generate/v1/models`
 
@@ -29,18 +34,17 @@
 
 **Two types of API keys available:**
 
-1. **🌐 Publishable Key** (starts with `pk_`)
+1. **🌐 Publishable Key** (starts with `pk_`) - ⚠️ **Beta: Not yet ready for production use**
    - Always visible in dashboard
-   - Safe for client-side code (React, Vue, etc.)
-   - Pollen-based rate limiting: 1 pollen/hour refill per IP+key
-   - Access to all models
-   
+   - For client-side apps (React, Vue, etc.)
+   - IP rate-limited: 1 pollen per IP per hour
+   - **Consumes Pollen from your balance** - exposing in public code will drain your wallet if your app gets traffic
 2. **🔒 Secret Key** (starts with `sk_`)
    - Only shown once - copy immediately!
    - For server-side apps only
    - Never expose publicly
    - No rate limits
-   - Can spend Pollen for paid models
+   - **Consumes Pollen from your balance**
 
 **For testing, use Secret Keys** for better rate limits and pollen spending.
 
@@ -58,8 +62,6 @@ export BASE_URL="https://enter.pollinations.ai/api"
 
 > **All models require authentication.** Image models have NO tier requirements - only pollen balance matters.
 
-### 🆓 Free Models
-
 **Flux** (Default Model)
 
 ```bash
@@ -75,27 +77,29 @@ curl "$BASE_URL/generate/image/test2?model=flux&width=512&height=512&seed=123" \
 curl "$BASE_URL/generate/image/test3?model=flux&key=$TOKEN"
 ```
 
-### 💎 Paid Models (Require Pollen)
-
 **GPT Image**
+
 ```bash
 curl "$BASE_URL/generate/image/test1?model=gptimage&width=512&height=512" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 **Turbo**
+
 ```bash
 curl "$BASE_URL/generate/image/test2?model=turbo&width=1024&height=1024" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 **Kontext**
+
 ```bash
 curl "$BASE_URL/generate/image/test3?model=kontext&width=512&height=512" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-**Seedream** ⚠️ *Requires minimum 960x960 pixels*
+**Seedream** ⚠️ _Requires minimum 960x960 pixels_
+
 ```bash
 curl "$BASE_URL/generate/image/test4?model=seedream&width=1024&height=1024" \
   -H "Authorization: Bearer $TOKEN"
@@ -355,6 +359,54 @@ curl "$BASE_URL/generate/image/test?model=flux" \
 
 ---
 
+## 💳 Local Stripe Webhook Testing
+
+To test Stripe pack purchases locally, you need to forward webhooks to your local dev server.
+
+### One-Time Setup
+
+1. **Install Stripe CLI**: https://stripe.com/docs/stripe-cli
+
+2. **Login to the correct Stripe account**:
+   ```bash
+   stripe login
+   ```
+   Authenticate with the **Myceli.AI OÜ** test account (`acct_1SrYSy6O03AauPe8`)
+
+3. **Decrypt secrets**:
+   ```bash
+   npm run decrypt-vars
+   ```
+
+### Running Local Webhook Testing
+
+```bash
+# Start webhook forwarding (uses permanent secret from Stripe Dashboard)
+stripe listen --forward-to localhost:3000 --load-from-webhooks-api
+```
+
+> **CRITICAL**: Do NOT add `/api/webhooks/stripe` to the `--forward-to` URL! The `--load-from-webhooks-api` flag already includes the path from Stripe Dashboard. Adding it manually causes path duplication (`/api/webhooks/stripe/api/webhooks/stripe`) and 404 errors.
+
+Then in another terminal:
+```bash
+npm run dev
+```
+
+### Testing a Purchase
+
+1. Go to `http://localhost:3000`
+2. Click a pack purchase button (e.g., "+ $10")
+3. Complete checkout with test card: `4242 4242 4242 4242`
+4. Watch terminal for: `Stripe: Credited X pollen to user...`
+
+### Troubleshooting
+
+- **Wrong account**: If `--load-from-webhooks-api` fails, run `stripe login` again
+- **Webhook secret mismatch**: Ensure `.dev.vars` has the correct `STRIPE_WEBHOOK_SECRET`
+- **Async crypto error**: The code uses `constructEventAsync` for Cloudflare Workers compatibility
+
+---
+
 ## Batch Testing
 
 ### Generate Multiple Images
@@ -400,12 +452,12 @@ BASE_URL="https://enter.pollinations.ai/api"
 echo "🧪 Testing Enter Service"
 echo "========================"
 
-# Test free model
-echo "1. Testing FREE model (flux)..."
-curl -s "$BASE_URL/generate/image/test_free?model=flux&width=256&height=256" \
+# Test included model (no additional pollen)
+echo "1. Testing INCLUDED model (flux)..."
+curl -s "$BASE_URL/generate/image/test_included?model=flux&width=256&height=256" \
   -w "   HTTP: %{http_code}\n" -o /dev/null
 
-# Test paid model
+# Test paid model (requires pollen)
 echo "2. Testing PAID model (gptimage)..."
 curl -s "$BASE_URL/generate/image/test_paid?model=gptimage&width=256&height=256" \
   -H "Authorization: Bearer $TOKEN" \
@@ -427,6 +479,7 @@ echo "✅ Done!"
 ## Common Issues
 
 ### 401 Unauthorized
+
 - **All models require authentication** - no anonymous access
 - Check your token is correct (starts with `pk_` or `sk_`)
 - Verify token exists in database
@@ -434,6 +487,7 @@ echo "✅ Done!"
 - For paid models, ensure you're using a **Secret Key** (`sk_`), not Publishable Key
 
 ### 403 Forbidden
+
 - **Insufficient pollen balance** - paid models require pollen
   - Check your pollen balance at https://enter.pollinations.ai
   - Add pollen to your account to use paid models
@@ -441,6 +495,7 @@ echo "✅ Done!"
 - Note: Image models have NO tier requirements, only pollen balance
 
 ### 500 Internal Server Error
+
 - **Most common**: Too many requests too quickly - add delays between requests
 - Backend image service might be temporarily overloaded
 - Try single requests first, then batch with 2+ second delays
@@ -448,6 +503,7 @@ echo "✅ Done!"
 - If persistent, backend service might be down
 
 ### Empty Response
+
 - Model might be rate-limited
 - Cache might have returned empty result
 - Check response headers with `-I` flag
@@ -488,6 +544,7 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 ```
 
 **Important Notes:**
+
 - ⚠️ **Only test models that appear in the discovery endpoint**
 - **Image models**: NO tier requirements, only pollen balance matters for paid models
 - **Text models**: May have tier requirements, check model details
@@ -508,7 +565,7 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 ### Authentication
 
 - **Use Secret Keys (`sk_`) for testing**: Better rate limits and can spend pollen
-- **Publishable Keys (`pk_`)**: Only for client-side apps, IP rate limited (100 req/min)
+- **Publishable Keys (`pk_`)**: Only for client-side apps, IP rate limited (1 pollen per IP per hour)
 
 ### Performance
 
@@ -520,3 +577,93 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 - **Check response headers** for cache status: `x-cache: HIT` or `MISS`
 - **Use small images** (256x256) for quick tests
 - **Monitor your balance** at https://enter.pollinations.ai after tests
+
+---
+
+## 🔐 OAuth Authorization Flow
+
+Third-party apps can redirect users to the authorize page to get an API key with pre-selected permissions.
+
+### Base URL
+
+```
+https://enter.pollinations.ai/authorize?redirect_url=YOUR_APP_URL
+```
+
+### Optional Preselection Parameters
+
+| Param | Description | Example |
+|-------|-------------|---------|
+| `models` | Comma-separated allowed models | `flux,openai,gptimage` |
+| `budget` | Pollen budget limit | `10` |
+| `expiry` | Expiry in days (default: 30) | `7` |
+| `permissions` | Account permissions | `profile,balance,usage` |
+
+### Account Permissions
+
+- `profile`: Read user's name, email, GitHub username
+- `balance`: Read pollen balance
+- `usage`: Read usage history
+
+### Example
+
+```
+https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com/callback&permissions=profile,balance&expiry=7&models=flux,openai
+```
+
+After authorization, the user is redirected back with the API key in the URL fragment:
+```
+https://myapp.com/callback#api_key=pk_xxxxx
+```
+
+---
+
+## 🎫 User Tier Management
+
+> Claude skill available: `.claude/skills/tier-management/SKILL.md`
+
+### Tier Levels
+
+| Tier   | Emoji | Pollen/Day | Criteria                 |
+| ------ | ----- | ---------- | ------------------------ |
+| microbe| 🦠    | 0.1        | Entry tier (auto-upgrades once verified) |
+| spore  | 🍄    | 1          | Verified accounts        |
+| seed   | 🌱    | 3          | GitHub engagement        |
+| flower | 🌸    | 10         | Contributor              |
+| nectar | 🍯    | 20         | Coming soon              |
+
+### Quick Tier Update
+
+```bash
+cd enter.pollinations.ai
+
+# 1. Find user
+npx wrangler d1 execute DB --remote --env production \
+  --command "SELECT github_username, email, tier FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
+
+# 2. Update DB tier
+npx wrangler d1 execute DB --remote --env production \
+  --command "UPDATE user SET tier='flower' WHERE github_username='USERNAME';"
+
+# 3. Update Polar subscription
+export POLAR_ACCESS_TOKEN=$(sops -d secrets/prod.vars.json | grep POLAR_ACCESS_TOKEN | cut -d'"' -f4)
+npx tsx scripts/manage-polar.ts user update-tier --email USER@EMAIL.COM --tier flower
+```
+
+### Evaluate User for Upgrade
+
+**Flower tier** (any ONE qualifies):
+
+- Has commits: `gh api 'search/commits?q=repo:pollinations/pollinations+author:USERNAME' --jq '.total_count'`
+- Has project: `grep -ri "author.*USERNAME" pollinations.ai/src/config/projects/`
+
+**Seed tier** (any ONE qualifies):
+
+- Issue involvement: `gh api 'search/issues?q=repo:pollinations/pollinations+involves:USERNAME' --jq '.total_count'`
+- Starred repo: `.claude/skills/tier-management/fetch-stargazers.sh USERNAME`
+
+### Notes
+
+- **DB tier** = what user CAN activate
+- **Polar subscription** = what user HAS activated
+- If no Polar subscription, user must click "Activate" at enter.pollinations.ai

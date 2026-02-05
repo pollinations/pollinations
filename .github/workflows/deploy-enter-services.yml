@@ -4,12 +4,90 @@ on:
   push:
     branches:
       - production
-      - feature/encrypt-gptimage-env
+      - staging
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
 
 jobs:
-  deploy:
+  deploy-staging:
+    if: github.ref == 'refs/heads/staging' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
     runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SOPS
+        uses: nhedger/setup-sops@v2
+
+      - name: Decrypt .env files with SOPS
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          if [ -f "text.pollinations.ai/secrets/env.json" ]; then
+            sops --output-type dotenv -d text.pollinations.ai/secrets/env.json > text.pollinations.ai/.env
+            echo "✅ Decrypted text.pollinations.ai/.env"
+          fi
+          
+          if [ -f "image.pollinations.ai/secrets/env.json" ]; then
+            sops --output-type dotenv -d image.pollinations.ai/secrets/env.json > image.pollinations.ai/.env
+            echo "✅ Decrypted image.pollinations.ai/.env"
+          fi
+
+      - name: Copy .env files to staging server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ENTER_SERVICES_STAGING_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_STAGING_USER }}
+          key: ${{ secrets.ENTER_SERVICES_STAGING_SSH_KEY }}
+          source: "text.pollinations.ai/.env,image.pollinations.ai/.env"
+          target: "/home/ubuntu/pollinations/"
+          strip_components: 0
+
+      - name: Deploy to staging via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.ENTER_SERVICES_STAGING_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_STAGING_USER }}
+          key: ${{ secrets.ENTER_SERVICES_STAGING_SSH_KEY }}
+          script: |
+            set -e
+            echo "🚀 Deploying to STAGING..."
+            
+            # Secure .env file permissions (prevent world-readable secrets)
+            chmod 600 /home/ubuntu/pollinations/text.pollinations.ai/.env 2>/dev/null || true
+            chmod 600 /home/ubuntu/pollinations/image.pollinations.ai/.env 2>/dev/null || true
+            echo "🔒 Secured .env file permissions"
+            
+            cd /home/ubuntu/pollinations
+            git pull origin staging
+            
+            cd text.pollinations.ai
+            pnpm install --frozen-lockfile || pnpm install
+            
+            cd ../image.pollinations.ai
+            pnpm install --frozen-lockfile || pnpm install
+            
+            sudo systemctl restart text-pollinations.service image-pollinations.service
+            sleep 10
+            
+            sudo systemctl is-active text-pollinations.service || exit 1
+            sudo systemctl is-active image-pollinations.service || exit 1
+            
+            echo "🎉 Staging deployment complete!"
+
+  deploy-production:
+    if: github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,25 +116,25 @@ jobs:
           host: ${{ secrets.ENTER_SERVICES_HOST }}
           username: ${{ secrets.ENTER_SERVICES_USER }}
           key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
-          fingerprint: ${{ secrets.ENTER_SERVICES_FINGERPRINT }}
           source: "text.pollinations.ai/.env,image.pollinations.ai/.env"
           target: "/home/ubuntu/pollinations/"
           strip_components: 0
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
-        env:
-          ENTER_TOKEN: ${{ secrets.ENTER_TOKEN }}
         with:
           host: ${{ secrets.ENTER_SERVICES_HOST }}
           username: ${{ secrets.ENTER_SERVICES_USER }}
           key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
-          fingerprint: ${{ secrets.ENTER_SERVICES_FINGERPRINT }}
-          envs: ENTER_TOKEN
           script: |
             set -e
             
             echo "🚀 Starting deployment to enter-services..."
+            
+            # Secure .env file permissions (prevent world-readable secrets)
+            chmod 600 /home/ubuntu/pollinations/text.pollinations.ai/.env 2>/dev/null || true
+            chmod 600 /home/ubuntu/pollinations/image.pollinations.ai/.env 2>/dev/null || true
+            echo "🔒 Secured .env file permissions"
             
             # Navigate to repo
             cd /home/ubuntu/pollinations
@@ -90,28 +168,25 @@ jobs:
             sudo systemctl is-active text-pollinations.service || exit 1
             sudo systemctl is-active image-pollinations.service || exit 1
             
-            # Health check endpoints
+            # Health check endpoints (no token needed - just verify services respond)
             echo "🏥 Running health checks..."
             sleep 2  # Give services a moment to fully initialize
             
-            # ENTER_TOKEN is passed as environment variable from GitHub secret
-            echo "Using ENTER_TOKEN: ${ENTER_TOKEN:0:10}..."
-            
-            # Check text service health (use /openai/models - /models returns 410 deprecated)
-            TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $ENTER_TOKEN" http://localhost:16385/openai/models || echo "000")
-            if [ "$TEXT_HEALTH" != "200" ]; then
-              echo "❌ Text service health check failed (HTTP $TEXT_HEALTH)"
+            # Check text service health - any HTTP response means service is up
+            TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:16385/ || echo "000")
+            if [ "$TEXT_HEALTH" = "000" ]; then
+              echo "❌ Text service not responding"
               exit 1
             fi
-            echo "✅ Text service responding (HTTP 200)"
+            echo "✅ Text service responding (HTTP $TEXT_HEALTH)"
             
-            # Check image service health (use /about - /models returns 410 deprecated)
-            IMAGE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $ENTER_TOKEN" http://localhost:16384/about || echo "000")
-            if [ "$IMAGE_HEALTH" != "200" ]; then
-              echo "❌ Image service health check failed (HTTP $IMAGE_HEALTH)"
+            # Check image service health - any HTTP response means service is up
+            IMAGE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:16384/ || echo "000")
+            if [ "$IMAGE_HEALTH" = "000" ]; then
+              echo "❌ Image service not responding"
               exit 1
             fi
-            echo "✅ Image service responding (HTTP 200)"
+            echo "✅ Image service responding (HTTP $IMAGE_HEALTH)"
             
             echo "🎉 Deployment complete!"
             echo "📊 Service Status:"

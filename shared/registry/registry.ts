@@ -1,18 +1,10 @@
-import { omit, safeRound } from "../utils";
-import {
-    TEXT_SERVICES,
-    DEFAULT_TEXT_MODEL,
-    TextServiceId,
-    TextModelId,
-} from "./text";
+import { safeRound } from "../utils";
 import {
     IMAGE_SERVICES,
-    DEFAULT_IMAGE_MODEL,
-    ImageServiceId,
-    ImageModelId,
+    type ImageModelId,
+    type ImageServiceId,
 } from "./image";
-import { EventType } from "./types";
-import { z } from "zod";
+import { TEXT_SERVICES, type TextModelId, type TextServiceId } from "./text";
 
 const PRECISION = 8;
 
@@ -24,37 +16,39 @@ export type UsageType =
     | "completionTextTokens"
     | "completionReasoningTokens"
     | "completionAudioTokens"
-    | "completionImageTokens";
+    | "completionAudioSeconds"
+    | "completionImageTokens"
+    | "completionVideoSeconds"
+    | "completionVideoTokens";
 
-export type TokenUsage = {
-    unit: "TOKENS";
-} & { [K in UsageType]?: number };
+// Usage represents raw usage metrics (tokens, seconds, etc.)
+export type Usage = { [K in UsageType]?: number };
 
-export type DollarConvertedUsage = {
-    unit: "USD";
-} & { [K in UsageType]?: number };
-
-export type UsageCost = DollarConvertedUsage & {
+// UsageCost is Usage with dollar amounts and a total
+export type UsageCost = Usage & {
     totalCost: number;
 };
 
-export type UsagePrice = DollarConvertedUsage & {
+// UsagePrice is Usage with dollar amounts and a total (currently same as cost)
+export type UsagePrice = Usage & {
     totalPrice: number;
 };
 
-export type UsageConversionDefinition = {
+// CostDefinition defines conversion rates from usage to dollars
+export type CostDefinition = {
     date: number;
 } & { [K in UsageType]?: number };
 
-export type CostDefinition = UsageConversionDefinition;
-export type PriceDefinition = UsageConversionDefinition;
+// PriceDefinition defines conversion rates for pricing (currently same as cost)
+export type PriceDefinition = CostDefinition;
 
 export type ModelDefinition = CostDefinition[];
 
 // Pre-build MODEL_REGISTRY (modelId -> sorted cost definitions)
+// Uses lowercase keys for case-insensitive lookup (Azure returns lowercase model IDs)
 const MODEL_REGISTRY = Object.fromEntries(
     Object.values({ ...TEXT_SERVICES, ...IMAGE_SERVICES }).map((service) => [
-        service.modelId,
+        service.modelId.toLowerCase(),
         sortDefinitions([...service.cost]),
     ]),
 );
@@ -73,27 +67,27 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
     outputModalities?: string[];
     tools?: boolean;
     reasoning?: boolean;
+    search?: boolean;
+    codeExecution?: boolean;
     contextWindow?: number;
     voices?: string[];
     isSpecialized?: boolean;
     persona?: boolean;
+    paidOnly?: boolean; // Models that require paid balance only
 };
 
 /** Sorts the cost and price definitions by date, in descending order */
-function sortDefinitions<T extends UsageConversionDefinition>(
-    definitions: T[],
-): T[] {
+function sortDefinitions<T extends CostDefinition>(definitions: T[]): T[] {
     return definitions.sort((a, b) => b.date - a.date);
 }
 
-// Helper: Convert token usage to dollar amounts
+// Helper: Convert usage to dollar amounts
 function convertUsage(
-    usage: TokenUsage,
-    conversionDefinition: UsageConversionDefinition,
-): DollarConvertedUsage {
-    const amounts = omit(usage, "unit");
+    usage: Usage,
+    conversionDefinition: CostDefinition,
+): Usage {
     const convertedUsage = Object.fromEntries(
-        Object.entries(amounts).map(([usageType, amount]) => {
+        Object.entries(usage).map(([usageType, amount]) => {
             if (amount === 0) return [usageType, 0];
             const usageTypeWithFallback =
                 usageType === "completionReasoningTokens"
@@ -110,10 +104,7 @@ function convertUsage(
             return [usageType, usageTypeCost];
         }),
     );
-    return {
-        unit: "USD",
-        ...convertedUsage,
-    };
+    return convertedUsage as Usage;
 }
 
 // Generate SERVICE_REGISTRY with computed prices from costs
@@ -135,19 +126,11 @@ const SERVICE_REGISTRY = Object.fromEntries(
 
 /**
  * Resolve a service ID from a name or alias
- * @param serviceId - Service name, alias, or null/undefined for default
- * @param eventType - Event type to determine default service
+ * @param serviceId - Service name or alias
  * @returns Resolved service ID
+ * @throws Error if service ID is not found
  */
-export function resolveServiceId(
-    serviceId: string | null | undefined,
-    eventType: EventType,
-): ServiceId {
-    if (!serviceId) {
-        return eventType === "generate.text"
-            ? DEFAULT_TEXT_MODEL
-            : DEFAULT_IMAGE_MODEL;
-    }
+export function resolveServiceId(serviceId: string): ServiceId {
     // Check if it's a direct service ID
     if (SERVICE_REGISTRY[serviceId]) {
         return serviceId as ServiceId;
@@ -167,7 +150,7 @@ export function resolveServiceId(
  * Check if a model ID exists in the registry
  */
 export function isValidModel(modelId: ModelId): modelId is ModelId {
-    return !!MODEL_REGISTRY[modelId];
+    return !!MODEL_REGISTRY[modelId.toLowerCase()];
 }
 
 /**
@@ -223,7 +206,7 @@ export function getServiceAliases(serviceId: ServiceId): readonly string[] {
 export function getModelDefinition(
     modelId: string,
 ): ModelDefinition | undefined {
-    return MODEL_REGISTRY[modelId as ModelId];
+    return MODEL_REGISTRY[modelId.toLowerCase() as ModelId];
 }
 
 /**
@@ -233,7 +216,7 @@ export function getActiveCostDefinition(
     modelId: ModelId,
     date: Date = new Date(),
 ): CostDefinition | null {
-    const modelDefinition = MODEL_REGISTRY[modelId];
+    const modelDefinition = MODEL_REGISTRY[modelId.toLowerCase()];
     if (!modelDefinition) return null;
     for (const definition of modelDefinition) {
         if (definition.date < date.getTime()) return definition;
@@ -257,9 +240,9 @@ export function getActivePriceDefinition(
 }
 
 /**
- * Calculate cost for a model based on token usage
+ * Calculate cost for a model based on usage
  */
-export function calculateCost(modelId: ModelId, usage: TokenUsage): UsageCost {
+export function calculateCost(modelId: ModelId, usage: Usage): UsageCost {
     const costDefinition = getActiveCostDefinition(modelId);
     if (!costDefinition)
         throw new Error(
@@ -267,9 +250,7 @@ export function calculateCost(modelId: ModelId, usage: TokenUsage): UsageCost {
         );
     const usageCost = convertUsage(usage, costDefinition);
     const totalCost = safeRound(
-        Object.values(omit(usageCost, "unit")).reduce(
-            (total, cost) => total + cost,
-        ),
+        Object.values(usageCost).reduce((total, cost) => total + cost),
         PRECISION,
     );
     return {
@@ -279,12 +260,9 @@ export function calculateCost(modelId: ModelId, usage: TokenUsage): UsageCost {
 }
 
 /**
- * Calculate price for a service based on token usage
+ * Calculate price for a service based on usage
  */
-export function calculatePrice(
-    serviceId: ServiceId,
-    usage: TokenUsage,
-): UsagePrice {
+export function calculatePrice(serviceId: ServiceId, usage: Usage): UsagePrice {
     const priceDefinition = getActivePriceDefinition(serviceId);
     if (!priceDefinition)
         throw new Error(
@@ -292,9 +270,7 @@ export function calculatePrice(
         );
     const usagePrice = convertUsage(usage, priceDefinition);
     const totalPrice = safeRound(
-        Object.values(omit(usagePrice, "unit")).reduce(
-            (total, price) => total + price,
-        ),
+        Object.values(usagePrice).reduce((total, price) => total + price),
         PRECISION,
     );
     return {
@@ -302,3 +278,5 @@ export function calculatePrice(
         totalPrice,
     };
 }
+
+// ModelInfo, getModelInfo, getTextModelsInfo, getImageModelsInfo are in model-info.ts

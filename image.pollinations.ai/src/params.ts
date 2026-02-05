@@ -8,7 +8,8 @@ type ModelName = keyof typeof MODELS;
 
 const allowedModels = Object.keys(MODELS) as Array<keyof typeof MODELS>;
 const validQualities = ["low", "medium", "high", "hd"] as const;
-const maxSeedValue = 1844674407370955;
+// Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
+const MAX_RANDOM_SEED = 2147483647; // INT32_MAX (2^31 - 1)
 
 const sanitizedBoolean = z
     .union([z.string(), z.boolean()])
@@ -19,7 +20,9 @@ const sanitizedBoolean = z
 
 const sanitizedSeed = z.preprocess((v) => {
     const seed = String(v);
-    return Number.isInteger(parseInt(seed)) ? parseInt(seed) : 42;
+    const parsed = Number.isInteger(parseInt(seed)) ? parseInt(seed) : 42;
+    // seed=-1 means "random" - generate a random seed
+    return parsed === -1 ? Math.floor(Math.random() * MAX_RANDOM_SEED) : parsed;
 }, z.int().catch(42));
 
 const sanitizedSideLength = z.preprocess((v) => {
@@ -55,7 +58,6 @@ export const ImageParamsSchema = z
         seed: sanitizedSeed,
         model: z.enum(allowedModels),
         enhance: sanitizedBoolean.catch(false),
-        nologo: sanitizedBoolean.catch(false),
         negative_prompt: z.coerce.string().catch("worst quality, blurry"),
         nofeed: sanitizedBoolean.catch(false),
         safe: sanitizedBoolean.catch(false),
@@ -74,6 +76,10 @@ export const ImageParamsSchema = z
             .catch([]),
         transparent: sanitizedBoolean.catch(false),
         guidance_scale: z.coerce.number().optional().catch(undefined),
+        // Video-specific parameters - pass through to backend, let provider validate
+        duration: z.coerce.number().optional(),
+        aspectRatio: z.enum(["16:9", "9:16"]).optional(),
+        audio: sanitizedBoolean.catch(false), // generateAudio defaults to false (can enable later)
     })
     .transform((data) => {
         // adjust width and height to fit the selected model

@@ -18,6 +18,7 @@ from common import (
     get_env,
     get_repo_root,
     call_pollinations_api,
+    generate_image,
     GITHUB_API_BASE,
     MODEL,
     DISCORD_CHAR_LIMIT,
@@ -421,10 +422,31 @@ def main():
         print(f"Message content: {message_content}")
         raise
     
+    # Generate image
+    print("🎨 Generating image...")
+    image_prompt_system = load_prompt(PLATFORM, "image_prompt_system")
+    image_prompt = call_pollinations_api(image_prompt_system, message_content, pollinations_token, temperature=0.7)
+    image_bytes = None
+    if image_prompt:
+        image_prompt = image_prompt.strip()
+        print(f"Image prompt: {image_prompt[:100]}...")
+        image_bytes, _ = generate_image(image_prompt, pollinations_token)
+
     # Post to Discord
     print(f"📤 Posting {len(discord_payloads)} message(s) to Discord...")
     post_to_discord(discord_webhook, discord_payloads)
-    
+
+    # Post image as follow-up file upload
+    if image_bytes:
+        import time
+        time.sleep(0.5)
+        files = {"file": ("image.jpg", image_bytes, "image/jpeg")}
+        response = requests.post(discord_webhook, files=files)
+        if response.status_code in [200, 204]:
+            print(f"📷 Image posted to Discord!")
+        else:
+            print(f"Warning: Failed to post image: {response.status_code}")
+
     print("✨ Done!")
 
 if __name__ == "__main__":

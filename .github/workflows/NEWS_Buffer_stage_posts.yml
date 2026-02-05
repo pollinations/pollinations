@@ -1,4 +1,4 @@
-name: Buffer Publish Post
+name: Buffer Stage Post
 
 on:
   pull_request:
@@ -6,6 +6,7 @@ on:
     paths:
       - 'social/news/transformed/linkedin/posts/*.json'
       - 'social/news/transformed/twitter/posts/*.json'
+      - 'social/news/transformed/instagram/posts/*.json'
   workflow_dispatch:
     inputs:
       post_file:
@@ -35,13 +36,13 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install requests pyyaml
 
-      - name: Publish to Buffer
+      - name: Stage on Buffer
         env:
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           POST_FILE_PATH: ${{ github.event.inputs.post_file || '' }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: python social/scripts/buffer_publish_post.py
+        run: python social/scripts/buffer_stage_post.py

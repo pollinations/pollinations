@@ -7,22 +7,17 @@ Analyzes merged PRs and creates user-facing announcements about changes
 import os
 import sys
 import json
-import random
 import re
 import requests
-from typing import Dict, List, Optional
-from jinja2 import Environment, Template
+from typing import Dict, Optional
 from datetime import datetime
 from common import (
     load_prompt,
     get_env,
-    get_repo_root,
     call_pollinations_api,
     generate_image,
     GITHUB_API_BASE,
     MODEL,
-    DISCORD_CHAR_LIMIT,
-    DISCORD_CHUNK_SIZE as CHUNK_SIZE,
 )
 
 # Platform name for prompt loading
@@ -245,50 +240,9 @@ def format_timestamp(merged_at: str) -> str:
         print(f"⚠️ Warning: Could not parse timestamp '{merged_at}': {e}")
         return "unknown time"
 
-def chunk_message(message: str, max_length: int = CHUNK_SIZE) -> List[str]:
-    """
-    Split message into chunks at appropriate breakpoints.
-    Tries to split at paragraph breaks, then line breaks, then hard cuts.
-    """
-    if len(message) <= max_length:
-        return [message]
-    
-    chunks = []
-    remaining = message
-    
-    while remaining:
-        if len(remaining) <= max_length:
-            chunks.append(remaining)
-            break
-        
-        # Find the best split point
-        chunk = remaining[:max_length]
-        split_point = max_length
-        
-        # Try to split at paragraph break (double newline)
-        last_para = chunk.rfind('\n\n')
-        if last_para > max_length * 0.5:  # Only if it's past halfway
-            split_point = last_para + 2
-        else:
-            # Try to split at line break
-            last_line = chunk.rfind('\n')
-            if last_line > max_length * 0.5:
-                split_point = last_line + 1
-            else:
-                # Try to split at space
-                last_space = chunk.rfind(' ')
-                if last_space > max_length * 0.5:
-                    split_point = last_space + 1
-        
-        # Add the chunk
-        chunks.append(remaining[:split_point].rstrip())
-        remaining = remaining[split_point:].lstrip()
-    
-    return chunks
 
-
-
-def format_review_for_discord(message_content: str, pr_info: Dict) -> List[Dict]:
+def format_review_for_discord(message_content: str, pr_info: Dict) -> Dict:
+    """Format PR announcement as a Discord embed payload"""
     time_str = format_timestamp(pr_info.get('merged_at'))
     pr_number = pr_info.get('number', 'Unknown')
     pr_url = pr_info.get('url', '#')
@@ -298,59 +252,45 @@ def format_review_for_discord(message_content: str, pr_info: Dict) -> List[Dict]
     creator_link = f"[{pr_creator if pr_creator != 'Unknown' else 'Some Pollinations Contributor'}](<https://github.com/{pr_creator}>)"
     footer = f"\n\n{pr_link} • By {creator_link} • {time_str}"
 
-    # Calculate available space for content
-    footer_length = len(footer)
-    available_space = CHUNK_SIZE - footer_length
-    
-    # Check if we need to chunk
-    if len(message_content) <= available_space:
-        # Single message - add footer
-        full_message = message_content + footer
-        return [{"content": full_message}]
-    
-    # Need to chunk - split the message content
-    print(f"📦 Message is {len(message_content)} chars, chunking into ~{CHUNK_SIZE} char pieces...")
-    chunks = chunk_message(message_content, available_space)
-    
-    payloads = []
-    total_chunks = len(chunks)
-    
-    for i, chunk in enumerate(chunks):
-        is_last = (i == total_chunks - 1)
-        
-        if is_last:
-            # Last chunk gets the footer
-            full_message = chunk + footer
-        else:
-            # Non-last chunks are sent as-is without any continuation indicator
-            full_message = chunk
-        
-        payloads.append({"content": full_message})
-        print(f"  📄 Chunk {i+1}/{total_chunks}: {len(full_message)} chars")
-    
-    return payloads
+    # Embed description limit is 4096 chars
+    max_description = 4096
+    full_text = message_content + footer
+
+    if len(full_text) > max_description:
+        # Truncate message content to fit footer
+        available = max_description - len(footer) - 3  # room for "..."
+        full_text = message_content[:available] + "..." + footer
+        print(f"📦 Truncated message to fit embed limit ({len(full_text)} chars)")
+
+    embed = {
+        "description": full_text,
+        "color": 0x2F3136,  # Subtle dark grey to blend with Discord dark theme
+    }
+
+    return {"embeds": [embed]}
 
 
 
-def post_to_discord(webhook_url: str, payloads: List[Dict]):
-    """Post message(s) to Discord webhook"""
-    import time
-    
-    for i, payload in enumerate(payloads):
-        if i > 0:
-            # Add small delay between messages to ensure correct ordering
-            time.sleep(0.5)
-        
-        response = requests.post(webhook_url, json=payload)
-        
-        if response.status_code not in [200, 204]:
-            print(f"❌ Discord webhook error on message {i+1}: {response.status_code}")
-            # Truncate error output to avoid exposing sensitive info in CI logs
-            error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
-            print(f"Error preview: {error_preview}")
-            sys.exit(1)
-        
-        print(f"✅ Successfully posted message {i+1}/{len(payloads)} to Discord!")
+
+def post_to_discord(webhook_url: str, embed_payload: Dict, image_bytes: Optional[bytes] = None):
+    """Post embed + optional image to Discord webhook as single message"""
+    if image_bytes:
+        # Add image reference to embed
+        embed_payload["embeds"][0]["image"] = {"url": "attachment://image.jpg"}
+        files = {"file": ("image.jpg", image_bytes, "image/jpeg")}
+        data = {"payload_json": json.dumps(embed_payload)}
+        response = requests.post(webhook_url, files=files, data=data)
+    else:
+        response = requests.post(webhook_url, json=embed_payload)
+
+    if response.status_code not in [200, 204]:
+        print(f"❌ Discord webhook error: {response.status_code}")
+        # Truncate error output to avoid exposing sensitive info in CI logs
+        error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+        print(f"Error preview: {error_preview}")
+        sys.exit(1)
+
+    print("✅ Successfully posted to Discord!")
 
 def main():
     print("🚀 Starting Update Announcement Generator...")
@@ -416,12 +356,12 @@ def main():
     }
     
     try:
-        discord_payloads = format_review_for_discord(message_content, pr_info)
+        embed_payload = format_review_for_discord(message_content, pr_info)
     except Exception as e:
         print(f"❌ Error formatting for Discord: {e}")
         print(f"Message content: {message_content}")
         raise
-    
+
     # Generate image
     print("🎨 Generating image...")
     image_prompt_system = load_prompt(PLATFORM, "image_prompt_system")
@@ -432,20 +372,9 @@ def main():
         print(f"Image prompt: {image_prompt[:100]}...")
         image_bytes, _ = generate_image(image_prompt, pollinations_token)
 
-    # Post to Discord
-    print(f"📤 Posting {len(discord_payloads)} message(s) to Discord...")
-    post_to_discord(discord_webhook, discord_payloads)
-
-    # Post image as follow-up file upload
-    if image_bytes:
-        import time
-        time.sleep(0.5)
-        files = {"file": ("image.jpg", image_bytes, "image/jpeg")}
-        response = requests.post(discord_webhook, files=files)
-        if response.status_code in [200, 204]:
-            print(f"📷 Image posted to Discord!")
-        else:
-            print(f"Warning: Failed to post image: {response.status_code}")
+    # Post embed + image as single Discord message
+    print("📤 Posting embed to Discord...")
+    post_to_discord(discord_webhook, embed_payload, image_bytes)
 
     print("✨ Done!")
 

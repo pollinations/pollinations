@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
@@ -168,7 +168,7 @@ export const audioRoutes = new Hono<Env>()
         validator("json", CreateSpeechRequestSchema),
         resolveModel("generate.audio"),
         track("generate.audio"),
-        async (c) => {
+        async (c: Context<Env>) => {
             const log = c.get("log").getChild("tts");
             await c.var.auth.requireAuthorization();
 

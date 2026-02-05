@@ -266,6 +266,7 @@ export const IMAGE_SERVICES = {
         aliases: ["ltx2", "ltxvideo", "ltx-video"],
         modelId: "ltx-2",
         provider: "modal",
+        paidOnly: true,
         cost: [
             // LTX-2 on Modal H200 GPU
             // Replicate's price (~$0.08/8s = $0.01/s)

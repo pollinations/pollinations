@@ -1,4 +1,8 @@
 import { getLogger } from "@logtape/logtape";
+<<<<<<< HEAD
+=======
+import type { Usage } from "@shared/registry/registry.ts";
+>>>>>>> main
 import {
     calculateCost,
     calculatePrice,
@@ -7,15 +11,21 @@ import {
     type ModelId,
     type PriceDefinition,
     type ServiceId,
+<<<<<<< HEAD
     type TokenUsage,
+=======
+>>>>>>> main
     type UsageCost,
     type UsagePrice,
 } from "@shared/registry/registry.ts";
 import {
-    openaiUsageToTokenUsage,
+    openaiUsageToUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
+<<<<<<< HEAD
 import { eq, sql } from "drizzle-orm";
+=======
+>>>>>>> main
 import { drizzle } from "drizzle-orm/d1";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { HonoRequest } from "hono";
@@ -23,7 +33,10 @@ import { createMiddleware } from "hono/factory";
 import { routePath } from "hono/route";
 import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
+<<<<<<< HEAD
 import { user as userTable } from "@/db/schema/better-auth.ts";
+=======
+>>>>>>> main
 import type {
     ApiKeyType,
     EventType,
@@ -51,14 +64,21 @@ import {
     ContentFilterSeveritySchema,
 } from "@/schemas/openai.ts";
 import { generateRandomId, removeUnset } from "@/util.ts";
+<<<<<<< HEAD
 import type { LoggerVariables } from "./logger.ts";
 import type { ModelVariables } from "./model.ts";
 import type { PolarVariables } from "./polar.ts";
+=======
+import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
+import type { BalanceVariables } from "./balance.ts";
+import type { LoggerVariables } from "./logger.ts";
+import type { ModelVariables } from "./model.ts";
+>>>>>>> main
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
 
 export type ModelUsage = {
     model: ModelId;
-    usage: TokenUsage;
+    usage: Usage;
 };
 
 type RequestTrackingData = {
@@ -76,7 +96,7 @@ type ResponseTrackingData = {
     cacheData: CacheData;
     isBilledUsage: boolean;
     modelUsed?: string;
-    usage?: TokenUsage;
+    usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
     contentFilterResults?: GenerationEventContentFilterParams;
@@ -96,7 +116,7 @@ export type TrackEnv = {
     Variables: ErrorVariables &
         LoggerVariables &
         AuthVariables &
-        PolarVariables &
+        BalanceVariables &
         FrontendKeyRateLimitVariables &
         TrackVariables &
         ModelVariables;
@@ -156,15 +176,10 @@ export const track = (eventType: EventType) =>
                 // Capture balance tracking AFTER next() so balanceCheckResult is set
                 const balanceTracking = {
                     selectedMeterId:
-                        c.var.polar.balanceCheckResult?.selectedMeterId,
+                        c.var.balance.balanceCheckResult?.selectedMeterId,
                     selectedMeterSlug:
-                        c.var.polar.balanceCheckResult?.selectedMeterSlug,
-                    balances: Object.fromEntries(
-                        c.var.polar.balanceCheckResult?.meters.map((meter) => [
-                            meter.metadata.slug,
-                            meter.balance,
-                        ]) || [],
-                    ),
+                        c.var.balance.balanceCheckResult?.selectedMeterSlug,
+                    balances: c.var.balance.balanceCheckResult?.balances || {},
                 } satisfies BalanceData;
 
                 const finalEvent = createTrackingEvent({
@@ -202,6 +217,7 @@ export const track = (eventType: EventType) =>
                     log,
                 );
 
+<<<<<<< HEAD
                 // Decrement local pollen balance after billable requests
                 // Strategy: decrement from tier_balance first, then pack_balance
                 if (
@@ -248,6 +264,18 @@ export const track = (eventType: EventType) =>
                         },
                     );
                 }
+=======
+                // Handle balance deduction for both API keys and users
+                await handleBalanceDeduction({
+                    db,
+                    isBilledUsage: responseTracking.isBilledUsage,
+                    totalPrice: responseTracking.price?.totalPrice,
+                    userId: userTracking.userId,
+                    apiKeyId: c.var.auth?.apiKey?.id,
+                    apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
+                    modelResolved: c.var.model?.resolved,
+                });
+>>>>>>> main
             })(),
         );
     });
@@ -589,7 +617,7 @@ async function extractUsageAndContentFilterResultsStream(
     return {
         modelUsage: {
             model: model as ModelId,
-            usage: openaiUsageToTokenUsage(usage),
+            usage: openaiUsageToUsage(usage),
         },
         contentFilterResults,
     };

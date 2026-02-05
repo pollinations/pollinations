@@ -1,11 +1,12 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
-import { FAQ } from "../components/faq.tsx";
+import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
+import { FAQ } from "../components/faq.tsx";
+import { Footer } from "../components/footer.tsx";
 import { Header } from "../components/header.tsx";
 import { NewsBanner } from "../components/news-banner.tsx";
 import { Pricing } from "../components/pricing/index.ts";
-import { authClient } from "../auth.ts";
 
 export const Route = createFileRoute("/sign-in")({
     component: RouteComponent,
@@ -23,7 +24,13 @@ export const Route = createFileRoute("/sign-in")({
                 localStorage.removeItem("pending_redirect_url");
                 throw redirect({
                     to: "/authorize",
-                    search: { redirect_url: pendingRedirectUrl },
+                    search: {
+                        redirect_url: pendingRedirectUrl,
+                        models: null,
+                        budget: null,
+                        expiry: null,
+                        permissions: null,
+                    },
                 });
             }
             throw redirect({ to: "/" });
@@ -47,7 +54,6 @@ function RouteComponent() {
 
     return (
         <div className="flex flex-col gap-6">
-            <NewsBanner />
             <div className="flex flex-col gap-20">
                 <Header>
                     <div className="relative">
@@ -76,8 +82,10 @@ function RouteComponent() {
                         API Ref.
                     </Button>
                 </Header>
+                <NewsBanner />
                 <FAQ />
                 <Pricing />
+                <Footer />
             </div>
         </div>
     );

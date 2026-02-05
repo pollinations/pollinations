@@ -1,63 +1,77 @@
-import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { productSlugToUrlParam } from "../../routes/polar.ts";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { apiClient } from "../api.ts";
+import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
     ApiKeyList,
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/api-key.tsx";
 import { Button } from "../components/button.tsx";
-import { config } from "../config.ts";
-import { User } from "../components/user.tsx";
-import { PollenBalance } from "../components/pollen-balance.tsx";
-import { TierPanel } from "../components/tier-panel.tsx";
 import { FAQ } from "../components/faq.tsx";
+import { Footer } from "../components/footer.tsx";
 import { Header } from "../components/header.tsx";
+import { NewsBanner } from "../components/news-banner.tsx";
+import { PollenBalance } from "../components/pollen-balance.tsx";
 import { Pricing } from "../components/pricing/index.ts";
-import { apiClient } from "../api.ts";
-import { authClient, getUserOrRedirect } from "../auth.ts";
+import { TierPanel } from "../components/tier-panel.tsx";
+import { UsageGraph } from "../components/usage-analytics";
+import { User } from "../components/user.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
-        const [
-            customer,
-            tierData,
-            apiKeysResult,
-            d1BalanceResult,
-        ] = await Promise.all([
-            apiClient.polar.customer.state
-                .$get()
-                .then((r) => (r.ok ? r.json() : null)),
+        const [tierData, apiKeysResult, d1BalanceResult] = await Promise.all([
             apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
-            authClient.apiKey.list(),
-            apiClient.polar.customer["d1-balance"]
+            apiClient["api-keys"]
+                .$get()
+                .then((r) => (r.ok ? r.json() : { data: [] })),
+            apiClient.customer.balance
                 .$get()
                 .then((r) => (r.ok ? r.json() : null)),
         ]);
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
+        const cryptoBalance = d1BalanceResult?.cryptoBalance ?? 0;
 
         return {
             user: context.user,
-            customer,
             apiKeys,
             tierData,
             tierBalance,
             packBalance,
+            cryptoBalance,
         };
     },
 });
 
 function RouteComponent() {
     const router = useRouter();
-    const { user, customer, apiKeys, tierData, tierBalance, packBalance } =
+    const { user, apiKeys, tierData, tierBalance, packBalance, cryptoBalance } =
         Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
+    const [activeTab, setActiveTab] = useState<"balance" | "usage">("balance");
+    const [downloadOpen, setDownloadOpen] = useState(false);
+    const [downloadingDetailed, setDownloadingDetailed] = useState(false);
+    const downloadRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (
+                downloadRef.current &&
+                !downloadRef.current.contains(e.target as Node)
+            ) {
+                setDownloadOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     const handleSignOut = async () => {
         if (isSigningOut) return; // Prevent double-clicks
@@ -72,23 +86,28 @@ function RouteComponent() {
         }
     };
 
-    const handleCreateApiKey = async (formState: CreateApiKey) => {
+    async function handleCreateApiKey(
+        formState: CreateApiKey,
+    ): Promise<CreateApiKeyResponse> {
         const keyType = formState.keyType || "secret";
         const isPublishable = keyType === "publishable";
-        const prefix = isPublishable ? "pk" : "sk";
 
-        // Step 1: Create key via better-auth's native API
+        // Create key via better-auth's native API
+        const SECONDS_PER_DAY = 24 * 60 * 60;
         const createResult = await authClient.apiKey.create({
             name: formState.name,
-            prefix,
+            prefix: isPublishable ? "pk" : "sk",
+            expiresIn: formState.expiryDays
+                ? formState.expiryDays * SECONDS_PER_DAY
+                : undefined,
             metadata: {
                 description: formState.description,
                 keyType,
+                ...(isPublishable && { plaintextKey: "" }), // Placeholder, updated below
             },
         });
 
         if (createResult.error || !createResult.data) {
-            console.error("Failed to create API key:", createResult.error);
             throw new Error(
                 createResult.error?.message || "Failed to create API key",
             );
@@ -96,7 +115,7 @@ function RouteComponent() {
 
         const apiKey = createResult.data;
 
-        // For publishable keys, store the plaintext key in metadata for easy retrieval
+        // Store plaintext key for publishable keys
         if (isPublishable) {
             await authClient.apiKey.update({
                 keyId: apiKey.id,
@@ -108,29 +127,30 @@ function RouteComponent() {
             });
         }
 
-        // Step 2: Set permissions if restricted (allowedModels is not null)
-        // null = unrestricted (all models), array = restricted to specific models
-        if (
-            formState.allowedModels !== null &&
-            formState.allowedModels !== undefined
-        ) {
-            const updateResponse = await fetch(
-                `/api/api-keys/${apiKey.id}/update`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        allowedModels: formState.allowedModels,
-                    }),
-                },
-            );
+        // Set permissions and budget if provided
+        const permissionUpdates = Object.fromEntries(
+            Object.entries({
+                allowedModels: formState.allowedModels,
+                pollenBudget: formState.pollenBudget,
+                accountPermissions: formState.accountPermissions?.length
+                    ? formState.accountPermissions
+                    : undefined,
+            }).filter(([_, v]) => v !== undefined),
+        );
 
-            if (!updateResponse.ok) {
-                const errorData = await updateResponse.json();
-                console.error("Failed to set API key permissions:", errorData);
-                // Key was created but permissions failed - still return the key
-                // User can update permissions later
+        if (Object.keys(permissionUpdates).length > 0) {
+            const response = await fetch(`/api/api-keys/${apiKey.id}/update`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(permissionUpdates),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(
+                    `Key created but failed to set permissions: ${(error as { message?: string }).message || "Unknown error"}`,
+                );
             }
         }
 
@@ -140,19 +160,44 @@ function RouteComponent() {
             key: apiKey.key,
             name: apiKey.name,
         } as CreateApiKeyResponse;
-    };
+    }
 
-    const handleDeleteApiKey = async (id: string) => {
+    async function handleDeleteApiKey(id: string): Promise<void> {
         const result = await authClient.apiKey.delete({ keyId: id });
         if (result.error) {
             console.error(result.error);
         }
         router.invalidate();
-    };
+    }
 
-    const handleBuyPollen = (slug: string) => {
-        // Navigate directly to checkout endpoint - server will handle redirect
-        window.location.href = `/api/polar/checkout/${productSlugToUrlParam(slug)}?redirect=true`;
+    async function handleUpdateApiKey(
+        id: string,
+        updates: {
+            name?: string;
+            allowedModels?: string[] | null;
+            pollenBudget?: number | null;
+            accountPermissions?: string[] | null;
+            expiresAt?: Date | null;
+        },
+    ): Promise<void> {
+        const response = await fetch(`/api/api-keys/${id}/update`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(updates),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(
+                (error as { message?: string }).message || "Update failed",
+            );
+        }
+        router.invalidate();
+    }
+
+    const handleBuyPollen = (amount: number) => {
+        // Navigate to Stripe checkout endpoint with amount in USD
+        window.location.href = `/api/stripe/checkout/${amount}`;
     };
 
     return (
@@ -163,9 +208,6 @@ function RouteComponent() {
                         githubUsername={user?.githubUsername || ""}
                         githubAvatarUrl={user?.image || ""}
                         onSignOut={handleSignOut}
-                        onUserPortal={() => {
-                            window.location.href = "/api/polar/customer/portal";
-                        }}
                     />
                     <Button
                         as="a"
@@ -175,56 +217,237 @@ function RouteComponent() {
                         API Reference
                     </Button>
                 </Header>
+                <NewsBanner />
                 <div className="flex flex-col gap-2">
-                    <div className="flex flex-col sm:flex-row justify-between gap-3">
-                        <h2 className="font-bold flex-1">Balance</h2>
-                        <div className="flex flex-wrap gap-3 items-center">
-                            <Button
-                                as="button"
-                                color="purple"
-                                weight="light"
-                                onClick={() =>
-                                    handleBuyPollen("v1:product:pack:5x2")
-                                }
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                        <h2 className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("balance")}
+                                className={`font-bold ${
+                                    activeTab === "balance"
+                                        ? "text-green-950"
+                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
+                                }`}
                             >
-                                + $5
-                            </Button>
-                            <Button
-                                as="button"
-                                color="purple"
-                                weight="light"
-                                onClick={() =>
-                                    handleBuyPollen("v1:product:pack:10x2")
-                                }
+                                Balance
+                            </button>
+                            <span className="text-gray-300">·</span>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("usage")}
+                                className={`font-bold ${
+                                    activeTab === "usage"
+                                        ? "text-green-950"
+                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
+                                }`}
                             >
-                                + $10
-                            </Button>
-                            <Button
-                                as="button"
-                                color="purple"
-                                weight="light"
-                                onClick={() =>
-                                    handleBuyPollen("v1:product:pack:20x2")
-                                }
+                                Usage
+                                {activeTab === "balance" && (
+                                    <img
+                                        src="/stats-icon.svg"
+                                        alt="stats"
+                                        className="emoji-pulse ml-1 w-7 h-7 inline-block"
+                                    />
+                                )}
+                            </button>
+                        </h2>
+                        {activeTab === "balance" && (
+                            <div
+                                id="buy-pollen"
+                                className="flex flex-wrap gap-2"
                             >
-                                + $20
-                            </Button>
-                            <Button
-                                as="button"
-                                color="purple"
-                                weight="light"
-                                onClick={() =>
-                                    handleBuyPollen("v1:product:pack:50x2")
-                                }
-                            >
-                                + $50
-                            </Button>
-                        </div>
+                                <Button
+                                    as="button"
+                                    color="violet"
+                                    weight="light"
+                                    onClick={() => handleBuyPollen(5)}
+                                    className="btn-shimmer"
+                                >
+                                    💎 $5
+                                </Button>
+                                <Button
+                                    as="button"
+                                    color="violet"
+                                    weight="light"
+                                    onClick={() => handleBuyPollen(10)}
+                                    className="btn-shimmer"
+                                >
+                                    💎 $10
+                                </Button>
+                                <Button
+                                    as="button"
+                                    color="violet"
+                                    weight="light"
+                                    onClick={() => handleBuyPollen(20)}
+                                    className="btn-shimmer"
+                                >
+                                    💎 $20
+                                </Button>
+                                <Button
+                                    as="button"
+                                    color="violet"
+                                    weight="light"
+                                    onClick={() => handleBuyPollen(50)}
+                                    className="btn-shimmer"
+                                >
+                                    💎 $50
+                                </Button>
+                            </div>
+                        )}
+                        {activeTab === "usage" && (
+                            <div ref={downloadRef} className="relative">
+                                <Button
+                                    as="button"
+                                    color="violet"
+                                    weight="light"
+                                    onClick={() =>
+                                        setDownloadOpen(!downloadOpen)
+                                    }
+                                    className="flex items-center gap-1.5"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="14"
+                                        height="14"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <title>Download</title>
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="7 10 12 15 17 10" />
+                                        <line x1="12" y1="15" x2="12" y2="3" />
+                                    </svg>
+                                    Download
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="12"
+                                        height="12"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className={`transition-transform ${downloadOpen ? "rotate-180" : ""}`}
+                                    >
+                                        <title>Toggle</title>
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                </Button>
+                                {downloadOpen && (
+                                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                try {
+                                                    const res = await fetch(
+                                                        "/api/account/usage/daily?format=csv",
+                                                    );
+                                                    if (!res.ok)
+                                                        throw new Error(
+                                                            "Failed to fetch",
+                                                        );
+                                                    const blob =
+                                                        await res.blob();
+                                                    const url =
+                                                        URL.createObjectURL(
+                                                            blob,
+                                                        );
+                                                    const a =
+                                                        document.createElement(
+                                                            "a",
+                                                        );
+                                                    a.href = url;
+                                                    a.download =
+                                                        "usage-daily.csv";
+                                                    a.click();
+                                                    URL.revokeObjectURL(url);
+                                                } catch (e) {
+                                                    console.error(
+                                                        "Download failed:",
+                                                        e,
+                                                    );
+                                                } finally {
+                                                    setDownloadOpen(false);
+                                                }
+                                            }}
+                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                        >
+                                            Daily Summary
+                                            <span className="block text-xs text-gray-400">
+                                                Aggregated by day
+                                            </span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                setDownloadingDetailed(true);
+                                                try {
+                                                    const res = await fetch(
+                                                        "/api/account/usage?format=csv&limit=50000",
+                                                    );
+                                                    if (!res.ok)
+                                                        throw new Error(
+                                                            "Failed to fetch",
+                                                        );
+                                                    const blob =
+                                                        await res.blob();
+                                                    const url =
+                                                        URL.createObjectURL(
+                                                            blob,
+                                                        );
+                                                    const a =
+                                                        document.createElement(
+                                                            "a",
+                                                        );
+                                                    a.href = url;
+                                                    a.download =
+                                                        "usage-detailed.csv";
+                                                    a.click();
+                                                    URL.revokeObjectURL(url);
+                                                } catch (e) {
+                                                    console.error(
+                                                        "Download failed:",
+                                                        e,
+                                                    );
+                                                } finally {
+                                                    setDownloadingDetailed(
+                                                        false,
+                                                    );
+                                                    setDownloadOpen(false);
+                                                }
+                                            }}
+                                            disabled={downloadingDetailed}
+                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                        >
+                                            {downloadingDetailed
+                                                ? "Downloading..."
+                                                : "Detailed Usage"}
+                                            <span className="block text-xs text-gray-400">
+                                                Per-request data
+                                            </span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
-                    <PollenBalance
-                        tierBalance={tierBalance}
-                        packBalance={packBalance}
-                    />
+                    {activeTab === "balance" && (
+                        <PollenBalance
+                            tierBalance={tierBalance}
+                            packBalance={packBalance}
+                            cryptoBalance={cryptoBalance}
+                            tier={tierData?.active?.tier}
+                        />
+                    )}
+                    {activeTab === "usage" && (
+                        <UsageGraph tier={tierData?.active?.tier} />
+                    )}
                 </div>
                 {tierData && (
                     <div className="flex flex-col gap-2">
@@ -237,22 +460,12 @@ function RouteComponent() {
                 <ApiKeyList
                     apiKeys={apiKeys}
                     onCreate={handleCreateApiKey}
+                    onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
                 />
+                <Pricing packBalance={packBalance} />
                 <FAQ />
-                <Pricing />
-                <div className="bg-violet-50/20 border border-violet-200/50 rounded-xl px-6 py-4 mt-4 w-fit mx-auto">
-                    <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-3 text-sm text-gray-400">
-                        <span>© 2026 Myceli.AI</span>
-                        <span className="hidden sm:inline">·</span>
-                        <Link
-                            to="/terms"
-                            className="font-medium text-gray-500 hover:text-gray-700 hover:underline transition-colors"
-                        >
-                            Terms & Conditions
-                        </Link>
-                    </div>
-                </div>
+                <Footer />
             </div>
         </div>
     );

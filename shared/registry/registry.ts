@@ -21,32 +21,31 @@ export type UsageType =
     | "completionTextTokens"
     | "completionReasoningTokens"
     | "completionAudioTokens"
+    | "completionAudioSeconds"
     | "completionImageTokens"
     | "completionVideoSeconds"
     | "completionVideoTokens";
 
-export type TokenUsage = {
-    unit: "TOKENS";
-} & { [K in UsageType]?: number };
+// Usage represents raw usage metrics (tokens, seconds, etc.)
+export type Usage = { [K in UsageType]?: number };
 
-export type DollarConvertedUsage = {
-    unit: "USD";
-} & { [K in UsageType]?: number };
-
-export type UsageCost = DollarConvertedUsage & {
+// UsageCost is Usage with dollar amounts and a total
+export type UsageCost = Usage & {
     totalCost: number;
 };
 
-export type UsagePrice = DollarConvertedUsage & {
+// UsagePrice is Usage with dollar amounts and a total (currently same as cost)
+export type UsagePrice = Usage & {
     totalPrice: number;
 };
 
-export type UsageConversionDefinition = {
+// CostDefinition defines conversion rates from usage to dollars
+export type CostDefinition = {
     date: number;
 } & { [K in UsageType]?: number };
 
-export type CostDefinition = UsageConversionDefinition;
-export type PriceDefinition = UsageConversionDefinition;
+// PriceDefinition defines conversion rates for pricing (currently same as cost)
+export type PriceDefinition = CostDefinition;
 
 export type ModelDefinition = CostDefinition[];
 
@@ -83,23 +82,21 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
     voices?: string[];
     isSpecialized?: boolean;
     persona?: boolean;
+    paidOnly?: boolean; // Models that require paid balance only
 };
 
 /** Sorts the cost and price definitions by date, in descending order */
-function sortDefinitions<T extends UsageConversionDefinition>(
-    definitions: T[],
-): T[] {
+function sortDefinitions<T extends CostDefinition>(definitions: T[]): T[] {
     return definitions.sort((a, b) => b.date - a.date);
 }
 
-// Helper: Convert token usage to dollar amounts
+// Helper: Convert usage to dollar amounts
 function convertUsage(
-    usage: TokenUsage,
-    conversionDefinition: UsageConversionDefinition,
-): DollarConvertedUsage {
-    const amounts = omit(usage, "unit");
+    usage: Usage,
+    conversionDefinition: CostDefinition,
+): Usage {
     const convertedUsage = Object.fromEntries(
-        Object.entries(amounts).map(([usageType, amount]) => {
+        Object.entries(usage).map(([usageType, amount]) => {
             if (amount === 0) return [usageType, 0];
             const usageTypeWithFallback =
                 usageType === "completionReasoningTokens"
@@ -116,10 +113,7 @@ function convertUsage(
             return [usageType, usageTypeCost];
         }),
     );
-    return {
-        unit: "USD",
-        ...convertedUsage,
-    };
+    return convertedUsage as Usage;
 }
 
 // Generate SERVICE_REGISTRY with computed prices from costs
@@ -264,9 +258,9 @@ export function getActivePriceDefinition(
 }
 
 /**
- * Calculate cost for a model based on token usage
+ * Calculate cost for a model based on usage
  */
-export function calculateCost(modelId: ModelId, usage: TokenUsage): UsageCost {
+export function calculateCost(modelId: ModelId, usage: Usage): UsageCost {
     const costDefinition = getActiveCostDefinition(modelId);
     if (!costDefinition)
         throw new Error(
@@ -274,9 +268,7 @@ export function calculateCost(modelId: ModelId, usage: TokenUsage): UsageCost {
         );
     const usageCost = convertUsage(usage, costDefinition);
     const totalCost = safeRound(
-        Object.values(omit(usageCost, "unit")).reduce(
-            (total, cost) => total + cost,
-        ),
+        Object.values(usageCost).reduce((total, cost) => total + cost),
         PRECISION,
     );
     return {
@@ -286,12 +278,9 @@ export function calculateCost(modelId: ModelId, usage: TokenUsage): UsageCost {
 }
 
 /**
- * Calculate price for a service based on token usage
+ * Calculate price for a service based on usage
  */
-export function calculatePrice(
-    serviceId: ServiceId,
-    usage: TokenUsage,
-): UsagePrice {
+export function calculatePrice(serviceId: ServiceId, usage: Usage): UsagePrice {
     const priceDefinition = getActivePriceDefinition(serviceId);
     if (!priceDefinition)
         throw new Error(
@@ -299,9 +288,7 @@ export function calculatePrice(
         );
     const usagePrice = convertUsage(usage, priceDefinition);
     const totalPrice = safeRound(
-        Object.values(omit(usagePrice, "unit")).reduce(
-            (total, price) => total + price,
-        ),
+        Object.values(usagePrice).reduce((total, price) => total + price),
         PRECISION,
     );
     return {

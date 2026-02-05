@@ -1,42 +1,45 @@
 import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { auth, AuthVariables } from "@/middleware/auth.ts";
-import { polar, PolarVariables } from "@/middleware/polar.ts";
-import type { Env } from "../env.ts";
-import { track, type TrackEnv } from "@/middleware/track.ts";
+import type { StandardSchemaV1 } from "hono-openapi";
+import { resolver as baseResolver, describeRoute } from "hono-openapi";
+import { type AuthVariables, auth } from "@/middleware/auth.ts";
+import { type BalanceVariables, balance } from "@/middleware/balance.ts";
+import { imageCache } from "@/middleware/image-cache.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
-import { imageCache } from "@/middleware/image-cache.ts";
-import { textCache } from "@/middleware/text-cache.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
-import { describeRoute, resolver as baseResolver } from "hono-openapi";
-import type { StandardSchemaV1 } from "hono-openapi";
+import { textCache } from "@/middleware/text-cache.ts";
+import { track } from "@/middleware/track.ts";
+import type { Env } from "../env.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
 const resolver = <T extends StandardSchemaV1>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
-import { validator } from "@/middleware/validator.ts";
+
 import {
-    CreateChatCompletionResponseSchema,
-    CreateChatCompletionRequestSchema,
-    type CreateChatCompletionResponse,
-    GetModelsResponseSchema,
-} from "@/schemas/openai.ts";
-import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
-import { errorResponseDescriptions } from "@/utils/api-docs.ts";
-import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
-import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
-import { z } from "zod";
-import { HTTPException } from "hono/http-exception";
-import {
-    ModelInfoSchema,
     getImageModelsInfo,
     getTextModelsInfo,
+    ModelInfoSchema,
 } from "@shared/registry/model-info.ts";
+import { getServiceDefinition } from "@shared/registry/registry.ts";
 import { createFactory } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
+import { z } from "zod";
+import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
+import { validator } from "@/middleware/validator.ts";
+import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
+import {
+    CreateChatCompletionRequestSchema,
+    type CreateChatCompletionResponse,
+    CreateChatCompletionResponseSchema,
+    GetModelsResponseSchema,
+} from "@/schemas/openai.ts";
+import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 
 const factory = createFactory<Env>();
 
@@ -49,6 +52,7 @@ const chatCompletionHandlers = factory.createHandlers(
         const log = c.get("log").getChild("generate");
         await c.var.auth.requireAuthorization();
         c.var.auth.requireModelAccess();
+        c.var.auth.requireKeyBudget();
 
         // Use resolved model from middleware for the backend request
         const requestBody = await c.req.json();
@@ -105,7 +109,7 @@ function filterModelsByPermissions<T extends { name: string }>(
     models: T[],
     allowedModels: string[] | undefined,
 ): T[] {
-    if (!allowedModels || allowedModels.length === 0) return models;
+    if (!allowedModels?.length) return models;
     return models.filter((m) => allowedModels.includes(m.name));
 }
 
@@ -228,7 +232,7 @@ export const proxyRoutes = new Hono<Env>()
     // Auth required for all endpoints below (API key only - no session cookies)
     .use(auth({ allowApiKey: true, allowSessionCookie: false }))
     .use(frontendKeyRateLimit)
-    .use(polar)
+    .use(balance)
     // Request deduplication: prevents duplicate concurrent requests by sharing promises
     .use(requestDeduplication)
     .post(
@@ -248,7 +252,7 @@ export const proxyRoutes = new Hono<Env>()
                 "`Authorization: Bearer YOUR_API_KEY`",
                 "",
                 "API keys can be created from your dashboard at enter.pollinations.ai.",
-                "Secret keys provide the best rate limits and can spend Pollen.",
+                "Both key types consume Pollen. Secret keys have no rate limits.",
             ].join("\n"),
             responses: {
                 200: {
@@ -261,7 +265,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
         ...chatCompletionHandlers,
@@ -291,7 +295,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
         validator(
@@ -310,6 +314,7 @@ export const proxyRoutes = new Hono<Env>()
             const log = c.get("log").getChild("generate");
             await c.var.auth.requireAuthorization();
             c.var.auth.requireModelAccess();
+            c.var.auth.requireKeyBudget();
             await checkBalance(c.var);
 
             // Use resolved model from middleware
@@ -404,7 +409,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
         validator(
@@ -424,6 +429,7 @@ export const proxyRoutes = new Hono<Env>()
             const log = c.get("log").getChild("generate");
             await c.var.auth.requireAuthorization();
             c.var.auth.requireModelAccess();
+            c.var.auth.requireKeyBudget();
             await checkBalance(c.var);
 
             // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
@@ -473,9 +479,10 @@ export const proxyRoutes = new Hono<Env>()
 function proxyHeaders(c: Context): Record<string, string> {
     const clientIP = c.req.header("cf-connecting-ip") || "";
     const clientHost = c.req.header("host") || "";
-    const headers = { ...c.req.header() };
+    const userApiKey = c.var.auth?.apiKey?.rawKey || "";
 
-    // Remove Authorization header - we use x-enter-token for backend auth instead
+    // Copy headers excluding Authorization
+    const headers = { ...c.req.header() };
     delete headers.authorization;
     delete headers.Authorization;
 
@@ -486,27 +493,27 @@ function proxyHeaders(c: Context): Record<string, string> {
         "x-forwarded-for": clientIP,
         "x-real-ip": clientIP,
         "x-enter-token": c.env.PLN_ENTER_TOKEN,
+        "x-user-api-key": userApiKey, // For community model billing passthrough
     };
 }
 
-function proxyUrl(
-    c: Context,
-    targetBaseUrl: string,
-    targetPort: string = "",
-): URL {
+function proxyUrl(c: Context, targetBaseUrl: string, targetPort = ""): URL {
     const incomingUrl = new URL(c.req.url);
     const targetUrl = new URL(targetBaseUrl);
-    // Only override port if explicitly provided
+
     if (targetPort) {
         targetUrl.port = targetPort;
     }
-    // Copy query parameters but exclude the 'key' parameter (used for enter.pollinations.ai auth only)
+
+    // Copy query parameters excluding 'key' (auth only)
     const searchParams = new URLSearchParams(incomingUrl.search);
     searchParams.delete("key");
-    // Replace model with resolved model (handles aliases like flux -> zimage)
+
+    // Replace model with resolved model (handles aliases)
     if (c.var.model?.resolved && searchParams.has("model")) {
         searchParams.set("model", c.var.model.resolved);
     }
+
     targetUrl.search = searchParams.toString();
     return targetUrl;
 }
@@ -518,55 +525,89 @@ function joinPaths(...paths: string[]): string {
 export function contentFilterResultsToHeaders(
     response: CreateChatCompletionResponse,
 ): Record<string, string> {
-    const promptFilterResults =
+    const promptFilters =
         response.prompt_filter_results?.[0]?.content_filter_results;
-    const completionFilterResults =
-        response.choices?.[0]?.content_filter_results;
-    const mapToString = (value: unknown) => (value ? String(value) : undefined);
-    const headers = {
-        "x-moderation-prompt-hate-severity": mapToString(
-            promptFilterResults?.hate?.severity,
-        ),
-        "x-moderation-prompt-self-harm-severity": mapToString(
-            promptFilterResults?.self_harm?.severity,
-        ),
-        "x-moderation-prompt-sexual-severity": mapToString(
-            promptFilterResults?.sexual?.severity,
-        ),
-        "x-moderation-prompt-violence-severity": mapToString(
-            promptFilterResults?.violence?.severity,
-        ),
-        "x-moderation-prompt-jailbreak-detected": mapToString(
-            promptFilterResults?.jailbreak?.detected,
-        ),
-        "x-moderation-completion-hate-severity": mapToString(
-            completionFilterResults?.hate?.severity,
-        ),
-        "x-moderation-completion-self-harm-severity": mapToString(
-            completionFilterResults?.self_harm?.severity,
-        ),
-        "x-moderation-completion-sexual-severity": mapToString(
-            completionFilterResults?.sexual?.severity,
-        ),
-        "x-moderation-completion-violence-severity": mapToString(
-            completionFilterResults?.violence?.severity,
-        ),
-        "x-moderation-completion-protected-material-text-detected": mapToString(
-            completionFilterResults?.protected_material_text?.detected,
-        ),
-        "x-moderation-completion-protected-material-code-detected": mapToString(
-            completionFilterResults?.protected_material_code?.detected,
-        ),
-    };
-    // Filter out undefined values
-    return Object.fromEntries(
-        Object.entries(headers).filter(([_, value]) => value !== undefined),
-    ) as Record<string, string>;
+    const completionFilters = response.choices?.[0]?.content_filter_results;
+
+    const mapToString = (value: unknown): string | undefined =>
+        value ? String(value) : undefined;
+
+    // Build header mappings
+    const headerMappings: Array<[string, unknown]> = [
+        // Prompt filters
+        ["x-moderation-prompt-hate-severity", promptFilters?.hate?.severity],
+        [
+            "x-moderation-prompt-self-harm-severity",
+            promptFilters?.self_harm?.severity,
+        ],
+        [
+            "x-moderation-prompt-sexual-severity",
+            promptFilters?.sexual?.severity,
+        ],
+        [
+            "x-moderation-prompt-violence-severity",
+            promptFilters?.violence?.severity,
+        ],
+        [
+            "x-moderation-prompt-jailbreak-detected",
+            promptFilters?.jailbreak?.detected,
+        ],
+        // Completion filters
+        [
+            "x-moderation-completion-hate-severity",
+            completionFilters?.hate?.severity,
+        ],
+        [
+            "x-moderation-completion-self-harm-severity",
+            completionFilters?.self_harm?.severity,
+        ],
+        [
+            "x-moderation-completion-sexual-severity",
+            completionFilters?.sexual?.severity,
+        ],
+        [
+            "x-moderation-completion-violence-severity",
+            completionFilters?.violence?.severity,
+        ],
+        [
+            "x-moderation-completion-protected-material-text-detected",
+            completionFilters?.protected_material_text?.detected,
+        ],
+        [
+            "x-moderation-completion-protected-material-code-detected",
+            completionFilters?.protected_material_code?.detected,
+        ],
+    ];
+
+    // Convert to headers, filtering out undefined values
+    const headers: Record<string, string> = {};
+    for (const [key, value] of headerMappings) {
+        const stringValue = mapToString(value);
+        if (stringValue !== undefined) {
+            headers[key] = stringValue;
+        }
+    }
+
+    return headers;
 }
 
-async function checkBalance({ auth, polar }: AuthVariables & PolarVariables) {
-    if (auth.user?.id) {
-        await polar.requirePositiveBalance(
+async function checkBalance({
+    auth,
+    balance,
+    model,
+}: AuthVariables & BalanceVariables & ModelVariables): Promise<void> {
+    if (!auth.user?.id) return;
+
+    const serviceDefinition = getServiceDefinition(model.resolved);
+    const isPaidOnly = serviceDefinition.paidOnly ?? false;
+
+    if (isPaidOnly) {
+        await balance.requirePaidBalance(
+            auth.user.id,
+            "This premium model requires a paid balance. Tier balance cannot be used.",
+        );
+    } else {
+        await balance.requirePositiveBalance(
             auth.user.id,
             "Insufficient pollen balance to use this model",
         );

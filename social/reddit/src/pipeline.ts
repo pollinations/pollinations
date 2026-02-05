@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { getSystemPromptTemplate } from './system_prompt.js';
 dotenv.config();
 
 const POLLINATIONS_IMAGE_API = 'https://gen.pollinations.ai/image';
@@ -6,11 +7,20 @@ const GITHUB_GRAPHQL_API = 'https://api.github.com/graphql';
 const POLLINATIONS_API = 'https://gen.pollinations.ai/v1/chat/completions';
 const MAX_RETRIES = 2;
 const INITIAL_RETRY_DELAY = 5;
+const githubToken = process.env.GITHUB_TOKEN
+const pollinationsToken = process.env.PLN_REDDIT_NEWS_KEY
+
+if (!githubToken) {
+throw new Error('GitHub token not configured. Please set it in app settings.');
+}
+if (!pollinationsToken) {
+throw new Error('Pollinations token not configured. Please set it in app settings.');
+}
 
 function getPreviousDayRange() {
     const now = new Date();
-    const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
+    const endDate = now;
+    const startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
     return {
         startDate,
@@ -18,6 +28,13 @@ function getPreviousDayRange() {
     };
 }
 
+function getTodayDate() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 
 async function getMergedPRsFromPreviousDay(owner : any = 'pollinations', repo : any = 'pollinations', githubToken : string) {
     if (!githubToken) {
@@ -130,7 +147,7 @@ async function getMergedPRsFromPreviousDay(owner : any = 'pollinations', repo : 
             cursor = pageInfo.endCursor;
             pageNum++;
             if (allPRs.length == 0) {
-                break;
+                return
             }
         } catch (error) {
             console.error('Fetch error:', error);
@@ -143,21 +160,20 @@ async function getMergedPRsFromPreviousDay(owner : any = 'pollinations', repo : 
     return { prs: allPRs, dateString };
 }
 
-async function createImagePrompt(prs : any[], dateString: string, pollactionsToken : string) {
+async function createImagePrompt(prs : any[], dateString: string, pollinationsToken : string) {
     if (!prs || prs.length === 0) {
         return {
-            prompt: 'Pollinations: A free, open-source AI image generation platform with community updates',
+            prompt: 'Flat vector editorial infographic: Pollinations: A free, open-source AI image generation platform with community updates',
             summary: 'No specific updates from previous day',
             prCount: 0,
             highlights: [],
         };
     }
 
-    const prList = prs.slice(0, 10).map(pr => pr.title).join(', ');
-
-    const systemPrompt = `Output SHORT image prompt (2-3 sentences). Create nature-themed comic flowchart with updates as distinct natural elements (flowers, trees, creatures, vines). Bug fixes=pruned branches, Features=blooming flowers, Refactors=reorganized paths, Infrastructure=nesting animals. Bright comic style: emerald, golden, sky blue, orange, purple. Dynamic energy: wind, pollen, water, bee flight paths. Strip all dates, counts, metrics. ONLY output the image prompt.`
-    const userPrompt = `Nature-themed comic flowchart: ${prList}
-Short prompt only. No dates, counts, metadata.`
+    const prSummary = prs.slice(0, 10).map(pr => `- ${pr.title}`).join('\n');
+    const systemPrompt = getSystemPromptTemplate(prSummary);
+    
+    const userPrompt = `Generate an image prompt for a flat vector editorial infographic for Reddit based on these PRs:\n${prSummary}`;
 
     try {
         console.log('Generating merged prompt using Pollinations API...');
@@ -166,7 +182,7 @@ Short prompt only. No dates, counts, metadata.`
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${pollactionsToken}`,
+                'Authorization': `Bearer ${pollinationsToken}`,
             },
             body: JSON.stringify({
                 model: 'openai-large',
@@ -175,8 +191,7 @@ Short prompt only. No dates, counts, metadata.`
                     { role: 'user', content: userPrompt },
                 ],
                 temperature: 0.7,
-                max_tokens: 250,
-                seed: 42,
+                max_tokens: 500,
             }),
         });
 
@@ -224,15 +239,13 @@ ${highlights.map(h => `• ${h}`).join('\n')}
             prCount: prs.length,
             highlights,
             prs: prs.map(p => ({ number: p.number, title: p.title, url: p.url })),
+            dateString,
         };
     } catch (error) {
         console.warn(`Prompt generation failed: ${(error as any).message}`);
         console.log('Falling back to local prompt generation...\n');
 
-        const comicPrompt = `Comic book style illustration celebrating ${prs.length} Pollinations updates:
-${prs.slice(0, 5).map(p => p.title).join(', ')}.
-Dynamic composition with bees pollinating code flowers, bright colors, retro comic aesthetic.
-Write in pure plain text, no metadata or extra commentary or markdown`;
+        const comicPrompt = `Flat vector editorial infographic celebrating ${prs.length} Pollinations updates. Headline: 'POLLINATIONS - WEEKLY UPDATES'. Content includes: ${prs.slice(0, 5).map(p => p.title).join(', ')}. Style: minimal tech infographic. Color palette: cream background, navy text, lime green (#ecf874) accents. No decorative elements.`;
 
         const highlights = prs
             .slice(0, 8)
@@ -252,46 +265,25 @@ Write in pure plain text, no metadata or extra commentary or markdown`;
             prCount: prs.length,
             highlights,
             prs: prs.map(p => ({ number: p.number, title: p.title, url: p.url })),
+            dateString,
         };
     }
 }
 
-async function getPRsAndCreatePrompt(githubToken : string, pollactionsToken : string) {
+async function generateTitleFromPRs(prs : any[],  pollinationsToken : string, dateString: string = '') {
     try {
-        const result = await getMergedPRsFromPreviousDay('pollinations', 'pollinations', githubToken);
+        const todayDate = getTodayDate();
         
-        if (!result || !result.prs || result.prs.length === 0) {
-            console.log('ℹ️  No merged PRs found in the previous day. Exiting pipeline.');
-            process.exit(0);
-        }
+        const prSummary = prs.slice(0, 5).map(pr => `- ${pr.title}`).join('\n');
         
-        const { prs, dateString } = result;
-        const promptData = await createImagePrompt(prs, dateString, pollactionsToken);
-        console.log('\n=== Generated Image Prompt ===');
-        console.log(promptData.prompt);
-        console.log('\n');
-
-        return promptData;
-    } catch (error) {
-        console.error('Error fetching PRs:', error);
-        throw error;
-    }
-}
-
-
-async function generateTitleFromPRs(prSummary : string, prCount : string, pollactionsToken : string) {
-    try {
-        const systemPrompt = `You are a Reddit post title generator. Generate a catchy yet descriptive development update title, maximum 12 words. The title must be clear, engaging, and professional, with natural enthusiasm. Avoid brackets, numbers, metrics, emojis, hashtags, or promotional language. Prioritize concrete features or improvements over vague hype.`;
-        const userPrompt = `Generate a Reddit post title for this dev update:
-${prSummary}
-
-Title only, no explanation.`;
+        const systemPrompt = getSystemPromptTemplate(prSummary);
+        const userPrompt = `Create a short, factual Reddit post title (5-12 words) for today's update (${todayDate}) based on these PRs:\n${prSummary}\n\nTitle must include 'Pollinations' or 'Pollinations.ai' and follow Reddit norms - factual, non-promotional.`;
 
         const response = await fetch(POLLINATIONS_API, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${pollactionsToken}`,
+                'Authorization': `Bearer ${pollinationsToken}`,
             },
             body: JSON.stringify({
                 model: 'openai-large',
@@ -299,8 +291,8 @@ Title only, no explanation.`;
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: userPrompt },
                 ],
-                temperature: 0.8,
-                max_tokens: 60,
+                temperature: 0.7,
+                max_tokens: 150,
             }),
         });
 
@@ -314,17 +306,17 @@ Title only, no explanation.`;
         title = title.replace(/^["']|["']$/g, '').trim();
         
         if (!title || title.length < 5) {
-            title = `Pollinations: ${prCount} Updates Shipped`;
+            title = `Something remarkable happened at Pollinations today`;
         }
 
         return title;
     } catch (error) {
         console.error('PR title generation failed:', (error as any).message);
-        return `Pollinations: ${prCount} Updates Shipped`;
+        return `You're gonna want to see what Pollinations shipped`;
     }
 }
 
-async function generateImage(prompt : string, pollactionsToken : string, attempt = 0) {
+async function generateImage(prompt : string, pollinationsToken : string, attempt = 0) {
     if (attempt > 0) {
         const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1);
         console.log(`  Retrying in ${delay}s... (attempt ${attempt + 1}/${MAX_RETRIES})`);
@@ -332,11 +324,11 @@ async function generateImage(prompt : string, pollactionsToken : string, attempt
     }
 
     try {
-        const URL = `${POLLINATIONS_IMAGE_API}/${encodeURIComponent(prompt)}?model=nanobanana&width=1024&height=1024&seed=42`;
+        const URL = `${POLLINATIONS_IMAGE_API}/${encodeURIComponent(prompt)}?model=nanobanana-pro&width=1024&height=1024&seed=42`;
         const response = await fetch(URL, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${pollactionsToken}`,
+                'Authorization': `Bearer ${pollinationsToken}`,
             },
             signal: AbortSignal.timeout(120000),
         });
@@ -352,44 +344,71 @@ async function generateImage(prompt : string, pollactionsToken : string, attempt
     } catch (error) {
         if (attempt < MAX_RETRIES - 1) {
             console.log(`  ✗ Attempt ${attempt + 1} failed: ${(error as any).message}`);
-            return generateImage(prompt, pollactionsToken, attempt + 1);
+            return generateImage(prompt, pollinationsToken, attempt + 1);
         }
         throw error;
     }
 }
 
+async function pipeline(githubToken : string, pollinationsToken : string) {
+    try {
+        console.log('\n📋 Fetching merged PRs from previous day...\n');
+        
+        const result = await getMergedPRsFromPreviousDay('pollinations', 'pollinations', githubToken);
+        
+        if (!result || !result.prs || result.prs.length === 0) {
+            console.log('ℹ️  No merged PRs found in the previous day. Exiting pipeline.');
+            return null;
+        }
+        
+        const { prs, dateString } = result;
+        const promptData = await createImagePrompt(prs, dateString, pollinationsToken);
+        console.log('\n=== Generated Image Prompt (System Prompt Based) ===');
+        console.log(promptData.prompt);
+        console.log('\n');
 
-const githubToken = process.env.GITHUB_TOKEN
-const pollinationsToken = process.env.POLLINATIONS_TOKEN
 
-if (!githubToken) {
-throw new Error('GitHub token not configured. Please set it in app settings.');
+        const postTitle = await generateTitleFromPRs(prs, pollinationsToken, dateString);
+        console.log('=== Generated Post Title (System Prompt Based) ===');
+        console.log(postTitle);
+        console.log('\n');
+        
+        
+        const imageData = await generateImage(promptData.prompt, pollinationsToken);
+        console.log('=== Generated Image URL ===');
+        console.log(imageData.url);
+        console.log('\n');
+
+        const data = {
+            TITLE: postTitle,
+            LINK: imageData.url,
+        }
+        return data;
+    } catch (error) {
+        console.error('Error fetching PRs:', error);
+        throw error;
+    }
 }
-if (!pollinationsToken) {
-throw new Error('Pollinations token not configured. Please set it in app settings.');
-}
+
 
 (async () => {
-    try {
-        const promptData = await getPRsAndCreatePrompt(githubToken as string, pollinationsToken as string);
-        const imageData = await generateImage(promptData.prompt, pollinationsToken as string);
-        const TITLE = await generateTitleFromPRs(promptData.summary, String(promptData.prCount), pollinationsToken as string);
-        
-        console.log('Final Results:');
-        console.log(`Title: ${TITLE}`);
-        console.log(`Image URL: ${imageData.url}`);
-        const fs = await import('fs');
-        const linkTsPath = new URL('link.ts', import.meta.url);
-        const updatedLinkTs = `
-const LINK = "${imageData.url}";
-const TITLE = "${TITLE}";
+const promptData = await pipeline(githubToken as string, pollinationsToken as string);
+
+if (!promptData) {
+    console.log('No PRs to process. Pipeline complete.');
+    process.exit(0);
+}
+
+console.log(promptData)
+console.log('Final Results:');
+console.log(`Image URL: ${promptData.LINK}`);
+const fs = await import('fs');
+const linkTsPath = new URL('link.ts', import.meta.url);
+const escapedTitle = promptData.TITLE.replace(/\"/g, '\\"').replace(/\n/g, ' ').replace(/\r/g, '');
+const updatedLinkTs = `const LINK = "${promptData.LINK}";
+const TITLE = "${escapedTitle}";
 export {LINK, TITLE};
 `;
-        fs.writeFileSync(linkTsPath, updatedLinkTs, 'utf-8');
-        console.log('\n✓ link.ts updated successfully');
-    } catch (error) {
-        console.error('⚠️ Pipeline failed:', (error as any).message);
-        process.exit(1);
-    }
+fs.writeFileSync(linkTsPath, updatedLinkTs, 'utf-8');
+console.log('\n✓ link.ts updated successfully');
 })();
-

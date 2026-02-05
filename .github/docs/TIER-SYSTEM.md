@@ -6,10 +6,13 @@ The pollinations.ai tier system rewards contributors with increasing API credits
 
 | Tier | Pollen/Day | How to Get |
 |------|------------|------------|
-| **Spore** | 0 | Default tier on registration |
+| **Microbe** | 0.1 | Entry tier (auto-upgrades once verified) |
+| **Spore** | 1 | Verified account |
 | **Seed** | 3 | Automatic via GitHub activity |
-| **Flower** | 10 | Submit an approved app |
-| **Nectar** | 20 | Reserved for maintainers/sponsors |
+| **Flower** | 10 | Contributor |
+| **Nectar** | 20 | Coming soon |
+
+> **Note:** Tier balance refills daily at midnight UTC via Cloudflare cron trigger. No rollover.
 
 ---
 
@@ -53,8 +56,8 @@ Example: A 12-month-old account (6 pts) with 20 commits (2 pts) qualifies.
 - **Script:** `tier-update-user.ts` (in `enter.pollinations.ai`)
 - **Action:** For each approved user:
   1. Updates D1 database: `tier = 'seed'`
-  2. Updates Polar subscription (billing system)
-- **Rate limiting:** 1 second delay between upgrades (Polar API limit)
+  2. Balance refills automatically at next midnight UTC
+- **Rate limiting:** 1 second delay between upgrades
 
 ### Scripts
 
@@ -248,7 +251,7 @@ flowchart TD
 | Trigger | PR closed + merged |
 | Condition | Has `TIER-APP-REVIEW-PR` label |
 | PR label | `TIER-APP-REVIEW-PR` → `TIER-APP-COMPLETE` |
-| User tier | Upgraded to `flower` (D1 + Polar) |
+| User tier | Upgraded to `flower` in D1 |
 | Issue | Closed automatically |
 
 **Bot comment posted:**
@@ -306,7 +309,7 @@ flowchart TD
 | `app-check-duplicate.ts` | `.github/scripts/` | Duplicate detection logic |
 | `app-prepend-row.js` | `.github/scripts/` | Add app row to APPS.md |
 | `app-update-readme.js` | `.github/scripts/` | Update README showcase |
-| `tier-update-user.ts` | `enter.pollinations.ai/scripts/` | Update user tier in D1 + Polar |
+| `tier-update-user.ts` | `enter.pollinations.ai/scripts/` | Update user tier in D1 |
 
 ---
 
@@ -355,9 +358,10 @@ npx tsx scripts/tier-update-user.ts verify-tier \
   --env production
 ```
 
-This script updates both:
+This script updates:
 - **D1 database** (Cloudflare) - `tier` column in `user` table
-- **Polar subscription** (billing system) - subscription tier
+
+> Balance refills automatically at next midnight UTC via cron trigger.
 
 ---
 
@@ -368,7 +372,6 @@ This script updates both:
 | `GITHUB_TOKEN` | GitHub API access |
 | `CLOUDFLARE_API_TOKEN` | D1 database access (wrangler) |
 | `CLOUDFLARE_ACCOUNT_ID` | D1 database access (wrangler) |
-| `POLAR_ACCESS_TOKEN` | Polar subscription updates |
 | `POLLY_BOT_APP_ID` | GitHub App authentication |
 | `POLLY_BOT_PRIVATE_KEY` | GitHub App authentication |
 | `POLLINATIONS_API_KEY` | AI agent (LLM calls) |

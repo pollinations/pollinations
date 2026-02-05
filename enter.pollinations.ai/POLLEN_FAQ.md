@@ -9,7 +9,7 @@ Pollen is our prepaid credit system. **$1 ≈ 1 Pollen** (pricing may evolve). Y
 There are three ways to add Pollen to your balance:
 
 1.  **Buy It:** Purchase Pollen packs directly with a credit card. This Pollen goes into your wallet and never expires. (Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)
-2.  **Get Daily Pollen:** During and after beta, registered developers receive daily Pollen grants to support experimentation based on their tier _(spore, seed, flower, or nectar)_.
+2.  **Get Daily Pollen:** During and after beta, registered developers receive daily Pollen grants to support experimentation based on their tier _(microbe, spore, seed, flower, or nectar)_.
 3.  **Earn It:** Complete one-time community rewards, like helping solve a technical issue or contributing to the project.
 
 ## What payment methods do you accept?
@@ -32,7 +32,7 @@ Registration gives you access to the Pollinations API and the **Spore tier**, wh
 
 \*During beta only - subject to change
 
-- **Publishable Key (pk\_):** Designed for client-side apps (bound to your domain). Rate limits: 1 pollen/hour per IP+key. Access to all models, which consume Pollen based on usage.
+- **Publishable Key (pk\_):** Designed for client-side apps (bound to your domain). Rate limits: 1 pollen per IP per hour. Access to all models, which consume Pollen based on usage.
 - **Secret Key (sk\_):** For server-side apps only. No rate limits. Access to all models, which consume Pollen based on usage.
 
 ## How do daily Pollen grants work?
@@ -46,6 +46,15 @@ You receive a daily Pollen grant based on your tier. Daily Pollen is spent befor
 Think of Pollen like buying in bulk — the more efficient the model, the more you get!
 
 **Pro tip:** Mix efficient models for high-volume tasks with premium models when quality matters most.
+
+## How is my pollen spent?
+
+Your daily tier pollen is always used first, then your purchased pollen:
+
+1. **Daily grants** — Used first for most models
+2. **Purchased pollen** — Used after daily is depleted
+
+**Exception:** Some premium models are marked with a 💎 **Paid Only** badge. These require purchased pollen and cannot use daily tier grants. This ensures sustainable access to high-cost models while keeping daily pollen available for experimentation.
 
 ## How does my Pollen wallet work?
 

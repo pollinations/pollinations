@@ -1,761 +1,798 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
-import { formatDistanceToNowStrict, type FormatDistanceToken } from "date-fns";
+import { type FormatDistanceToken, formatDistanceToNowStrict } from "date-fns";
+import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
+import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 
 const shortFormatDistance: Record<FormatDistanceToken, string> = {
-  lessThanXSeconds: "{{count}}s",
-  xSeconds: "{{count}}s",
-  halfAMinute: "30s",
-  lessThanXMinutes: "{{count}}m",
-  xMinutes: "{{count}}m",
-  aboutXHours: "{{count}}h",
-  xHours: "{{count}}h",
-  xDays: "{{count}}d",
-  aboutXWeeks: "{{count}}w",
-  xWeeks: "{{count}}w",
-  aboutXMonths: "{{count}}mo",
-  xMonths: "{{count}}mo",
-  aboutXYears: "{{count}}y",
-  xYears: "{{count}}y",
-  overXYears: "{{count}}y",
-  almostXYears: "{{count}}y",
+    lessThanXSeconds: "{{count}}s",
+    xSeconds: "{{count}}s",
+    halfAMinute: "30s",
+    lessThanXMinutes: "{{count}}m",
+    xMinutes: "{{count}}m",
+    aboutXHours: "{{count}}h",
+    xHours: "{{count}}h",
+    xDays: "{{count}}d",
+    aboutXWeeks: "{{count}}w",
+    xWeeks: "{{count}}w",
+    aboutXMonths: "{{count}}mo",
+    xMonths: "{{count}}mo",
+    aboutXYears: "{{count}}y",
+    xYears: "{{count}}y",
+    overXYears: "{{count}}y",
+    almostXYears: "{{count}}y",
 };
 
 const shortLocale = {
-  formatDistance: (token: FormatDistanceToken, count: number) =>
-    shortFormatDistance[token].replace("{{count}}", String(count)),
+    formatDistance: (token: FormatDistanceToken, count: number) =>
+        shortFormatDistance[token].replace("{{count}}", String(count)),
 };
+
 import type { FC } from "react";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useEffect, useState } from "react";
+import {
+    adjectives,
+    animals,
+    uniqueNamesGenerator,
+} from "unique-names-generator";
 import { cn } from "@/util.ts";
 import { Button } from "../components/button.tsx";
-import { Fragment } from "react";
-import {
-  uniqueNamesGenerator,
-  adjectives,
-  animals,
-} from "unique-names-generator";
-import { ModelPermissions } from "./model-permissions.tsx";
-import { getModelDisplayName } from "./model-utils.ts";
 
-type ApiKey = {
-  id: string;
-  name?: string | null;
-  start?: string | null;
-  createdAt: Date;
-  lastRequest?: Date | null;
-  expiresAt?: Date | null;
-  permissions: { [key: string]: string[] } | null;
-  metadata: Record<string, string> | null;
-};
+interface ApiKey {
+    id: string;
+    name?: string | null;
+    start?: string | null;
+    createdAt: string;
+    lastRequest?: string | null;
+    expiresAt?: string | null;
+    permissions: { [key: string]: string[] } | null;
+    metadata: { [key: string]: unknown } | null;
+    pollenBalance?: number | null;
+}
 
-type ApiKeyManagerProps = {
-  apiKeys: ApiKey[];
-  onCreate: (formData: CreateApiKey) => Promise<CreateApiKeyResponse>;
-  onDelete: (id: string) => Promise<void>;
-};
+interface ApiKeyUpdateParams {
+    name?: string;
+    allowedModels?: string[] | null;
+    pollenBudget?: number | null;
+    accountPermissions?: string[] | null;
+    expiresAt?: Date | null;
+}
 
-const Cell: FC<React.ComponentProps<"div">> = ({ children, ...props }) => {
-  return (
-    <span className="flex items-center" {...props}>
-      {children}
-    </span>
-  );
-};
+interface ApiKeyManagerProps {
+    apiKeys: ApiKey[];
+    onCreate: (formData: CreateApiKey) => Promise<CreateApiKeyResponse>;
+    onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
+    onDelete: (id: string) => Promise<void>;
+}
 
 const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
-  fullKey,
-  start,
+    fullKey,
+    start,
 }) => {
-  const [copied, setCopied] = useState(false);
+    const [copied, setCopied] = useState(false);
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(fullKey);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
-    }
-  };
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(fullKey);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (_err) {
+            // Silently fail
+        }
+    };
 
-  return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      className={cn(
-        "font-mono text-xs text-left cursor-pointer transition-all",
-        copied
-          ? "text-green-600 font-semibold"
-          : "text-blue-600 hover:text-blue-800 hover:underline"
-      )}
-      title={copied ? "Copied!" : "Click to copy full key"}
-    >
-      {copied ? "✓ Copied!" : `${start}...`}
-    </button>
-  );
+    return (
+        <button
+            type="button"
+            onClick={handleCopy}
+            className={cn(
+                "font-mono text-xs text-left cursor-pointer transition-all",
+                copied
+                    ? "text-green-600 font-semibold"
+                    : "text-blue-600 hover:text-blue-800 hover:underline",
+            )}
+            title={copied ? "Copied!" : "Click to copy full key"}
+        >
+            {copied ? "✓ Copied!" : `${start}...`}
+        </button>
+    );
 };
 
-const ExpirationBadge: FC<{ expiresAt: Date | null | undefined }> = ({
-  expiresAt,
-}) => {
-  if (!expiresAt) {
-    return <span className="text-xs text-gray-400">Never</span>;
-  }
+const LimitsBadge: FC<{
+    expiresAt: Date | null | undefined;
+    pollenBudget: number | null | undefined;
+}> = ({ expiresAt, pollenBudget }) => {
+    const expiryStr = formatExpiry(expiresAt);
+    const budgetStr = formatBudget(pollenBudget);
+    const isExhausted = pollenBudget != null && pollenBudget <= 0;
 
-  const expiresDate = new Date(expiresAt);
-  const now = new Date();
-  const daysLeft = Math.ceil(
-    (expiresDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-  );
-  const timeLeft = formatDistanceToNowStrict(expiresDate, {
-    addSuffix: false,
-    locale: shortLocale,
-  });
-
-  if (daysLeft <= 0) {
     return (
-      <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-300">
-        Expired
-      </span>
+        <>
+            <span>
+                <span className="text-gray-400">Expires: </span>
+                <span className="text-gray-500">{expiryStr}</span>
+            </span>
+            <span>
+                <span className="text-gray-400">Budget: </span>
+                <span
+                    className={cn(
+                        "text-gray-500",
+                        isExhausted && "text-red-500 font-medium",
+                    )}
+                >
+                    {budgetStr}
+                </span>
+            </span>
+        </>
     );
-  }
-
-  if (daysLeft <= 7) {
-    return (
-      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">
-        ⚠️ {timeLeft}
-      </span>
-    );
-  }
-
-  return <span className="text-xs text-gray-600">{timeLeft}</span>;
 };
 
-const TooltipContent: FC<{
-  isAllModels: boolean;
-  modelCount: number;
-  models: string[] | null;
-}> = ({ isAllModels, modelCount, models }) => (
-  <>
-    {isAllModels ? (
-      "Access to all models"
-    ) : modelCount === 0 ? (
-      "No models allowed"
-    ) : (
-      <div className="flex flex-col gap-1">
-        {models?.map((modelId) => (
-          <div key={modelId} className="text-left whitespace-nowrap">
-            <span>{getModelDisplayName(modelId)}</span>
-            <span className="font-mono opacity-70"> - {modelId}</span>
-          </div>
-        ))}
-      </div>
-    )}
-  </>
-);
+function formatExpiry(expiresAt: Date | null | undefined): string {
+    if (!expiresAt) return "∞";
+
+    const expiresDate = new Date(expiresAt);
+    const daysLeft = Math.ceil(
+        (expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+    );
+
+    if (daysLeft <= 0) return "expired";
+
+    return formatDistanceToNowStrict(expiresDate, {
+        addSuffix: false,
+        locale: shortLocale,
+    });
+}
+
+function formatBudget(pollenBudget: number | null | undefined): string {
+    if (pollenBudget == null) return "∞";
+    if (pollenBudget <= 0) return "empty";
+
+    return Number.isInteger(pollenBudget)
+        ? `${pollenBudget}p`
+        : `${pollenBudget.toFixed(2)}p`;
+}
+
+const AccountBadge: FC<{
+    permissions: { [key: string]: string[] } | null;
+}> = ({ permissions }) => {
+    const account = permissions?.account ?? null;
+    if (!account || account.length === 0) return null;
+
+    return (
+        <>
+            {account.map((perm) => (
+                <span
+                    key={perm}
+                    className="text-xs px-1.5 py-0.5 rounded-full border bg-violet-100 text-violet-700 border-violet-300"
+                >
+                    {perm}
+                </span>
+            ))}
+        </>
+    );
+};
 
 const ModelsBadge: FC<{
-  permissions: { [key: string]: string[] } | null;
+    permissions: { [key: string]: string[] } | null;
 }> = ({ permissions }) => {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const models = permissions?.models ?? null;
-  const isAllModels = models === null;
-  const modelCount = models?.length ?? 0;
+    const [showTooltip, setShowTooltip] = useState(false);
+    const models = permissions?.models ?? null;
+    const isAllModels = models === null;
+    const modelCount = models?.length ?? 0;
 
-  const updateTooltipPosition = useCallback(() => {
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setTooltipPos({
-        top: rect.bottom + 8,
-        left: rect.right,
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!showTooltip) return;
-    
-    const handleResize = () => updateTooltipPosition();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [showTooltip, updateTooltipPosition]);
-
-  return (
-    <button
-      ref={buttonRef}
-      type="button"
-      className="relative inline-flex items-center"
-      onClick={(e) => {
+    const handleInteraction = (e: React.MouseEvent | React.KeyboardEvent) => {
         e.stopPropagation();
-        updateTooltipPosition();
+        if ("key" in e && e.key !== "Enter" && e.key !== " ") return;
+        if ("key" in e) e.preventDefault();
         setShowTooltip((prev) => !prev);
-      }}
-      onMouseEnter={() => {
-        updateTooltipPosition();
-        setShowTooltip(true);
-      }}
-      onMouseLeave={() => setShowTooltip(false)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          updateTooltipPosition();
-          setShowTooltip((prev) => !prev);
-        }
-      }}
-      aria-label="Show allowed models"
-    >
-      <span
-        className={cn(
-          "text-xs px-2 py-0.5 rounded-full border cursor-pointer transition-colors",
-          isAllModels
-            ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200"
-            : "bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200"
-        )}
-      >
-        {isAllModels ? "All" : modelCount}
-      </span>
-      {showTooltip && (
-        <>
-          {/* Mobile: centered */}
-          <div
-            className="fixed z-[9999] px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 pointer-events-none left-1/2 -translate-x-1/2 sm:hidden"
-            style={{ top: tooltipPos.top }}
-          >
-            <TooltipContent isAllModels={isAllModels} modelCount={modelCount} models={models} />
-          </div>
-          {/* Desktop: right-aligned */}
-          <div
-            className="fixed z-[9999] px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 pointer-events-none hidden sm:block"
-            style={{ top: tooltipPos.top, right: `calc(100vw - ${tooltipPos.left}px)` }}
-          >
-            <TooltipContent isAllModels={isAllModels} modelCount={modelCount} models={models} />
-          </div>
-        </>
-      )}
-    </button>
-  );
+    };
+
+    const tooltipContent = () => {
+        if (isAllModels) return "Access to all models";
+        if (modelCount === 0) return "No models allowed";
+        return (
+            <div className="font-mono text-[11px] leading-relaxed text-left whitespace-nowrap">
+                {models?.map((model) => (
+                    <div key={model}>{model}</div>
+                ))}
+            </div>
+        );
+    };
+
+    return (
+        <button
+            type="button"
+            className="relative inline-flex items-center"
+            onClick={handleInteraction}
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+            onKeyDown={handleInteraction}
+            aria-label="Show allowed models"
+        >
+            <span
+                className={cn(
+                    "text-xs px-2 py-0.5 rounded-full border cursor-pointer transition-colors",
+                    isAllModels
+                        ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200"
+                        : "bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200",
+                )}
+            >
+                {isAllModels ? "All" : modelCount}
+            </span>
+            {showTooltip && (
+                <div
+                    className="fixed z-[9999] px-2 py-1.5 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 pointer-events-none"
+                    style={{
+                        top: "var(--tooltip-top)",
+                        left: "var(--tooltip-left)",
+                    }}
+                    ref={(el) => {
+                        if (!el) return;
+                        const btn = el.parentElement;
+                        if (!btn) return;
+                        const rect = btn.getBoundingClientRect();
+                        el.style.setProperty(
+                            "--tooltip-top",
+                            `${rect.bottom + 4}px`,
+                        );
+                        el.style.setProperty(
+                            "--tooltip-left",
+                            `${rect.left}px`,
+                        );
+                    }}
+                >
+                    {tooltipContent()}
+                </div>
+            )}
+        </button>
+    );
 };
 
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
-  apiKeys,
-  onCreate,
-  onDelete,
+    apiKeys,
+    onCreate,
+    onUpdate,
+    onDelete,
 }) => {
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
 
-  const handleDelete = async () => {
-    if (deleteId) {
-      await onDelete(deleteId);
-      setDeleteId(null);
-    }
-  };
+    const handleDelete = async () => {
+        if (deleteId) {
+            await onDelete(deleteId);
+            setDeleteId(null);
+        }
+    };
 
-  return (
-    <>
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-col sm:flex-row justify-between gap-3">
-          <h2 className="font-bold flex-1">API Keys</h2>
-          <div className="flex gap-3">
-            <ApiKeyDialog
-              onSubmit={onCreate}
-              onUpdate={() => {}}
-              onComplete={() => {}}
-            />
-          </div>
-        </div>
-        {apiKeys.length ? (
-          <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-300">
-            <div
-              className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+    const sortedKeys = [...apiKeys].sort(
+        (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
+    return (
+        <>
+            <div className="flex flex-col gap-2">
+                <div className="flex flex-col sm:flex-row justify-between gap-3">
+                    <h2 className="font-bold flex-1">API Keys</h2>
+                    <div className="flex gap-3">
+                        <ApiKeyDialog
+                            onSubmit={onCreate}
+                            onComplete={() => {}}
+                        />
+                    </div>
+                </div>
+                {apiKeys.length ? (
+                    <div className="bg-blue-50/30 rounded-2xl p-4 border border-blue-300">
+                        <div className="flex flex-col gap-3">
+                            {sortedKeys.map((apiKey) => {
+                                const keyType = apiKey.metadata?.["keyType"] as
+                                    | string
+                                    | undefined;
+                                const isPublishable = keyType === "publishable";
+                                const plaintextKey = apiKey.metadata?.[
+                                    "plaintextKey"
+                                ] as string | undefined;
+
+                                return (
+                                    <div
+                                        key={apiKey.id}
+                                        className="bg-white/40 rounded-xl p-3 transition-colors hover:bg-white/60"
+                                    >
+                                        {/* Row 1: Type, Name, Key, Actions */}
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span
+                                                className={cn(
+                                                    "px-2 py-0.5 rounded text-xs font-medium shrink-0",
+                                                    isPublishable
+                                                        ? "bg-blue-100 text-blue-700"
+                                                        : "bg-purple-100 text-purple-700",
+                                                )}
+                                            >
+                                                {isPublishable
+                                                    ? "🌐 Publishable"
+                                                    : "🔒 Secret"}
+                                            </span>
+                                            <span
+                                                className="text-sm font-medium truncate"
+                                                title={apiKey.name ?? undefined}
+                                            >
+                                                {apiKey.name}
+                                            </span>
+                                            <span className="flex-1" />
+                                            {isPublishable && plaintextKey ? (
+                                                <KeyDisplay
+                                                    fullKey={plaintextKey}
+                                                    start={apiKey.start ?? ""}
+                                                />
+                                            ) : (
+                                                <span className="font-mono text-xs text-gray-500 shrink-0">
+                                                    {apiKey.start}...
+                                                </span>
+                                            )}
+                                            <div className="flex gap-1 shrink-0 ml-2 items-center">
+                                                <button
+                                                    type="button"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                                    onClick={() =>
+                                                        setEditingKey(apiKey)
+                                                    }
+                                                    title="Edit key"
+                                                >
+                                                    ✎
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
+                                                    onClick={() =>
+                                                        setDeleteId(apiKey.id)
+                                                    }
+                                                    title="Delete key"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {/* Row 2: Stats and Permissions */}
+                                        <div className="flex flex-wrap items-center gap-4 text-xs">
+                                            <span title="Created">
+                                                <span className="text-gray-400">
+                                                    Created:{" "}
+                                                </span>
+                                                <span className="text-gray-500">
+                                                    {formatDistanceToNowStrict(
+                                                        apiKey.createdAt,
+                                                        {
+                                                            addSuffix: false,
+                                                            locale: shortLocale,
+                                                        },
+                                                    )}
+                                                </span>
+                                            </span>
+                                            <span title="Last used">
+                                                <span className="text-gray-400">
+                                                    Used:{" "}
+                                                </span>
+                                                <span className="text-gray-500">
+                                                    {apiKey.lastRequest
+                                                        ? formatDistanceToNowStrict(
+                                                              new Date(
+                                                                  apiKey.lastRequest,
+                                                              ),
+                                                              {
+                                                                  addSuffix: false,
+                                                                  locale: shortLocale,
+                                                              },
+                                                          )
+                                                        : "never"}
+                                                </span>
+                                            </span>
+                                            <LimitsBadge
+                                                expiresAt={apiKey.expiresAt}
+                                                pollenBudget={
+                                                    apiKey.pollenBalance
+                                                }
+                                            />
+                                            <span className="flex items-center gap-1">
+                                                <span className="text-gray-400">
+                                                    Models:
+                                                </span>
+                                                <ModelsBadge
+                                                    permissions={
+                                                        apiKey.permissions
+                                                    }
+                                                />
+                                            </span>
+                                            <AccountBadge
+                                                permissions={apiKey.permissions}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        {apiKeys.some(
+                            (k) => k.metadata?.["keyType"] === "publishable",
+                        ) && (
+                            <div className="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl p-4 border border-blue-300 mt-4">
+                                <p className="text-sm font-medium text-blue-900">
+                                    🌐 <strong>Publishable keys:</strong> Beta -
+                                    actively improving stability.
+                                </p>
+                                <p className="text-sm text-blue-800">
+                                    For production apps, we recommend secret
+                                    keys.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                ) : null}
+            </div>
+            <Dialog.Root
+                open={!!deleteId}
+                onOpenChange={({ open }) => !open && setDeleteId(null)}
             >
-              <div className="grid grid-cols-[auto_auto_auto_auto_auto_auto_auto] gap-x-3 gap-y-2 text-sm min-w-max">
-                <span className="font-bold text-pink-400 text-sm">Type</span>
-                <span className="font-bold text-pink-400 text-sm">Name</span>
-                <span className="font-bold text-pink-400 text-sm">Key</span>
-                <span className="font-bold text-pink-400 text-sm">
-                  Created / Used
-                </span>
-                <span className="font-bold text-pink-400 text-sm">Expires</span>
-                <span className="font-bold text-pink-400 text-sm">Models</span>
-                <span></span>
-                {[...apiKeys]
-                  .sort(
-                    (a, b) =>
-                      new Date(b.createdAt).getTime() -
-                      new Date(a.createdAt).getTime()
-                  )
-                  .map((apiKey) => {
-                    const keyType = apiKey.metadata?.["keyType"] as
-                      | string
-                      | undefined;
-                    const isPublishable = keyType === "publishable";
-                    const plaintextKey = apiKey.metadata?.["plaintextKey"] as
-                      | string
-                      | undefined;
-
-                    return (
-                      <Fragment key={apiKey.id}>
-                        <Cell>
-                          <span
-                            className={cn(
-                              "px-2 py-1 rounded text-xs font-medium",
-                              isPublishable
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-purple-100 text-purple-700"
-                            )}
-                          >
-                            {isPublishable ? "🌐 Publishable" : "🔒 Secret"}
-                          </span>
-                        </Cell>
-                        <Cell>
-                          <span
-                            className="text-xs truncate block"
-                            title={apiKey.name ?? undefined}
-                          >
-                            {apiKey.name}
-                          </span>
-                        </Cell>
-                        <Cell>
-                          {isPublishable && plaintextKey ? (
-                            <KeyDisplay
-                              fullKey={plaintextKey}
-                              start={apiKey.start ?? ""}
-                            />
-                          ) : (
-                            <span className="font-mono text-xs text-gray-500">
-                              {apiKey.start}...
-                            </span>
-                          )}
-                        </Cell>
-                        <Cell>
-                          <div className="flex items-center text-xs whitespace-nowrap">
-                            <span className="text-gray-600">
-                              {formatDistanceToNowStrict(apiKey.createdAt, {
-                                addSuffix: false,
-                                locale: shortLocale,
-                              })}
-                            </span>
-                            <span className="text-gray-400 mx-1">/</span>
-                            <span className="text-gray-500">
-                              {apiKey.lastRequest
-                                ? formatDistanceToNowStrict(
-                                    new Date(apiKey.lastRequest),
-                                    {
-                                      addSuffix: false,
-                                      locale: shortLocale,
-                                    }
-                                  )
-                                : "—"}
-                            </span>
-                          </div>
-                        </Cell>
-                        <Cell>
-                          <ExpirationBadge expiresAt={apiKey.expiresAt} />
-                        </Cell>
-                        <Cell>
-                          <ModelsBadge permissions={apiKey.permissions} />
-                        </Cell>
-                        <Cell>
-                          <button
-                            type="button"
-                            className="w-6 h-6 flex items-center justify-center rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
-                            onClick={() => setDeleteId(apiKey.id)}
-                            title="Delete key"
-                          >
-                            ×
-                          </button>
-                        </Cell>
-                      </Fragment>
-                    );
-                  })}
-              </div>
-            </div>
-            {apiKeys.some((k) => k.metadata?.["keyType"] === "publishable") && (
-              <div className="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl p-4 border border-blue-300 mt-4">
-                <p className="text-sm font-medium text-blue-900">
-                  🌐 <strong>Publishable keys:</strong> Beta - actively
-                  improving stability. For production apps, we recommend secret
-                  keys.
-                </p>
-              </div>
+                <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
+                <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
+                    <Dialog.Content className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-md w-full p-6">
+                        <Dialog.Title className="text-lg font-semibold mb-4">
+                            Delete API Key
+                        </Dialog.Title>
+                        <p className="mb-6">
+                            Are you sure you want to delete this API key? This
+                            action cannot be undone.
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <Button
+                                type="button"
+                                weight="outline"
+                                onClick={() => setDeleteId(null)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="button"
+                                color="red"
+                                weight="strong"
+                                onClick={handleDelete}
+                            >
+                                Delete
+                            </Button>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Positioner>
+            </Dialog.Root>
+            {editingKey && (
+                <EditApiKeyDialog
+                    apiKey={editingKey}
+                    onUpdate={onUpdate}
+                    onClose={() => setEditingKey(null)}
+                />
             )}
-          </div>
-        ) : null}
-      </div>
-      <Dialog.Root
-        open={!!deleteId}
-        onOpenChange={({ open }) => !open && setDeleteId(null)}
-      >
-        <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
-        <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
-          <Dialog.Content className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-md w-full p-6">
-            <Dialog.Title className="text-lg font-semibold mb-4">
-              Delete API Key
-            </Dialog.Title>
-            <p className="mb-6">
-              Are you sure you want to delete this API key? This action cannot
-              be undone.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <Button
-                type="button"
-                weight="outline"
-                onClick={() => setDeleteId(null)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                color="red"
-                weight="strong"
-                onClick={handleDelete}
-              >
-                Delete
-              </Button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Positioner>
-      </Dialog.Root>
-    </>
-  );
+        </>
+    );
 };
 
 export type CreateApiKey = {
-  name: string;
-  description?: string;
-  keyType?: "publishable" | "secret";
-  /** Model IDs this key can access. null = all models allowed */
-  allowedModels?: string[] | null;
+    name: string;
+    description?: string;
+    keyType?: "publishable" | "secret";
+    /** Model IDs this key can access. null = all models allowed */
+    allowedModels?: string[] | null;
+    /** Pollen budget cap for this key. null = unlimited */
+    pollenBudget?: number | null;
+    /** Days until expiry. null = no expiry */
+    expiryDays?: number | null;
+    /** Account permissions: ["balance", "usage"]. null = no permissions */
+    accountPermissions?: string[] | null;
 };
 
 export type CreateApiKeyResponse = ApiKey & {
-  key: string;
+    key: string;
 };
 
 type ApiKeyDialogProps = {
-  onUpdate: (state: CreateApiKey) => void;
-  onSubmit: (state: CreateApiKey) => Promise<CreateApiKeyResponse>;
-  onComplete: () => void;
-};
-
-const CreateKeyForm: FC<{
-  formData: CreateApiKey;
-  onInputChange: (
-    field: keyof CreateApiKey,
-    value: string | string[] | null | undefined
-  ) => void;
-  onSubmit: (e: React.FormEvent) => void;
-  onCancel: () => void;
-  isSubmitting: boolean;
-  createdKey?: CreateApiKeyResponse | null;
-  onComplete?: () => void;
-}> = ({
-  formData,
-  onInputChange,
-  onSubmit,
-  onCancel,
-  isSubmitting,
-  createdKey,
-  onComplete,
-}) => {
-  const [copied, setCopied] = useState(false);
-
-  // Reset copied state when modal reopens (createdKey becomes null)
-  useEffect(() => {
-    if (!createdKey) {
-      setCopied(false);
-    }
-  }, [createdKey]);
-
-  const handleCopyAndClose = async () => {
-    if (createdKey) {
-      try {
-        await navigator.clipboard.writeText(createdKey.key);
-        setCopied(true);
-        setTimeout(() => {
-          onComplete?.();
-        }, 500);
-      } catch (err) {
-        console.error("Failed to copy:", err);
-        onComplete?.();
-      }
-    }
-  };
-
-  return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <fieldset className="border-0 p-0 m-0">
-        <legend className="block text-sm font-medium mb-2">
-          Key Type (*)
-        </legend>
-        <div className="space-y-2">
-          <label
-            className={cn(
-              "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
-              formData.keyType === "publishable"
-                ? "border-blue-500 bg-blue-50"
-                : "border-gray-200 hover:border-gray-300",
-              createdKey && formData.keyType !== "publishable" && "opacity-40"
-            )}
-          >
-            <input
-              type="radio"
-              name="keyType"
-              value="publishable"
-              checked={formData.keyType === "publishable"}
-              onChange={(e) => onInputChange("keyType", e.target.value)}
-              className="mt-1 w-4 h-4 text-blue-600"
-              disabled={isSubmitting || !!createdKey}
-            />
-            <div className="flex-1">
-              <div className="font-medium text-blue-800">
-                🌐 Publishable Key
-              </div>
-              <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
-                <li className="font-semibold">
-                  Always visible in your dashboard
-                </li>
-                <li>Safe to use in client-side code (React, Vue, etc.)</li>
-                <li>
-                  Pollen-based rate limiting: 1 pollen/hour refill per IP+key
-                </li>
-              </ul>
-              <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs">
-                <div className="font-semibold text-amber-900 mb-1">
-                  ⚠️ Beta Feature
-                </div>
-                <ul className="space-y-0.5 list-disc pl-4 text-amber-800">
-                  <li>Still working out some bugs</li>
-                  <li>
-                    For stable production → use secret keys (no rate limits)
-                  </li>
-                  <li>Secret keys must be hidden in your backend</li>
-                </ul>
-              </div>
-            </div>
-          </label>
-          <label
-            className={cn(
-              "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
-              formData.keyType === "secret"
-                ? "border-purple-500 bg-purple-50"
-                : "border-gray-200 hover:border-gray-300",
-              createdKey && formData.keyType !== "secret" && "opacity-40"
-            )}
-          >
-            <input
-              type="radio"
-              name="keyType"
-              value="secret"
-              checked={formData.keyType === "secret"}
-              onChange={(e) => onInputChange("keyType", e.target.value)}
-              className="mt-1 w-4 h-4 text-purple-600"
-              disabled={isSubmitting || !!createdKey}
-            />
-            <div className="flex-1">
-              <div className="font-medium text-purple-800">🔒 Secret Key</div>
-              <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
-                <li className="font-semibold text-amber-900">
-                  Only shown once - copy it now!
-                </li>
-                <li>For server-side apps - never expose publicly</li>
-                <li>No rate limits</li>
-              </ul>
-            </div>
-          </label>
-        </div>
-      </fieldset>
-
-      <Field.Root className="pt-2">
-        <Field.Label className="block text-sm font-medium mb-1">
-          {createdKey ? "Your API Key" : "Name (*)"}
-        </Field.Label>
-        <Field.Input
-          type="text"
-          value={createdKey ? createdKey.key : formData.name}
-          onChange={(e) => onInputChange("name", e.target.value)}
-          className={cn(
-            "w-full px-3 py-2 border rounded",
-            createdKey
-              ? "border-green-300 bg-green-200 font-mono text-xs"
-              : "border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          )}
-          placeholder={createdKey ? "" : "Enter API key name"}
-          required={!createdKey}
-          disabled={isSubmitting || !!createdKey}
-          readOnly={!!createdKey}
-        />
-      </Field.Root>
-
-      {/* Model permissions - collapsible advanced option */}
-      {!createdKey && (
-        <ModelPermissions
-          value={formData.allowedModels ?? null}
-          onChange={(models) => onInputChange("allowedModels", models)}
-          disabled={isSubmitting}
-        />
-      )}
-      <div className="flex gap-2 justify-end pt-4">
-        {!createdKey && (
-          <Button
-            type="button"
-            weight="outline"
-            onClick={onCancel}
-            className="disabled:opacity-50"
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-        )}
-        {(() => {
-          const noModelsSelected =
-            Array.isArray(formData.allowedModels) &&
-            formData.allowedModels.length === 0;
-          const isDisabled =
-            !createdKey &&
-            (!formData.name.trim() || isSubmitting || noModelsSelected);
-
-          return (
-            <span
-              title={
-                noModelsSelected && !createdKey
-                  ? "Select at least one model"
-                  : undefined
-              }
-            >
-              <Button
-                type={createdKey ? "button" : "submit"}
-                onClick={createdKey ? handleCopyAndClose : undefined}
-                className="disabled:opacity-50"
-                disabled={isDisabled}
-              >
-                {copied
-                  ? "✓ Copied! Closing..."
-                  : createdKey
-                    ? "Copy and Close"
-                    : isSubmitting
-                      ? "Creating..."
-                      : "Create"}
-              </Button>
-            </span>
-          );
-        })()}
-      </div>
-    </form>
-  );
+    onSubmit: (state: CreateApiKey) => Promise<CreateApiKeyResponse>;
+    onComplete: () => void;
 };
 
 export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
-  onUpdate,
-  onSubmit,
-  onComplete,
+    onSubmit,
+    onComplete,
 }) => {
-  // Generate a short fun default name (2 words for brevity)
-  const generateFunName = () => {
-    return uniqueNamesGenerator({
-      dictionaries: [adjectives, animals],
-      separator: "-",
-      length: 2,
-      style: "lowerCase",
-    });
-  };
+    // Generate a short fun default name (2 words for brevity)
+    const generateFunName = () => {
+        return uniqueNamesGenerator({
+            dictionaries: [adjectives, animals],
+            separator: "-",
+            length: 2,
+            style: "lowerCase",
+        });
+    };
 
-  const [formData, setFormData] = useState<CreateApiKey>({
-    name: generateFunName(),
-    description: `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
-    keyType: "secret", // Default to secret key
-    allowedModels: null, // null = all models allowed
-  });
-  const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
-    null
-  );
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+    // Form state
+    const [name, setName] = useState(generateFunName());
+    const [description, setDescription] = useState(
+        `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
+    );
+    const [keyType, setKeyType] = useState<"secret" | "publishable">("secret");
+    const keyPermissions = useKeyPermissions();
+    const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
+        null,
+    );
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const [copied, setCopied] = useState(false);
 
-  const handleInputChange = (
-    field: keyof CreateApiKey,
-    value: string | string[] | null | undefined
-  ) => {
-    const updatedData = { ...formData, [field]: value };
+    useEffect(() => {
+        if (!isOpen) return;
+        const originalBodyOverflow = document.body.style.overflow;
+        const originalHtmlOverflow = document.documentElement.style.overflow;
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = originalBodyOverflow;
+            document.documentElement.style.overflow = originalHtmlOverflow;
+        };
+    }, [isOpen]);
 
-    // When key type changes, regenerate name and clear/set description
-    if (field === "keyType") {
-      updatedData.name = generateFunName();
-      updatedData.description =
-        value === "publishable"
-          ? ""
-          : `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`;
+    const handleKeyTypeChange = (newKeyType: "secret" | "publishable") => {
+        setKeyType(newKeyType);
+        setName(generateFunName());
+        const dateStr = new Date().toLocaleDateString("en-US", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "2-digit",
+        });
+        setDescription(
+            newKeyType === "publishable" ? "" : `Created on ${dateStr}`,
+        );
+    };
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const newKey = await onSubmit({
+                name,
+                description,
+                keyType,
+                ...keyPermissions.permissions,
+            });
+            setCreatedKey(newKey);
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
-    setFormData(updatedData);
-    onUpdate(updatedData);
-  };
+    async function handleCopyAndClose() {
+        if (!createdKey) return;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      const newKey = await onSubmit(formData);
-      setCreatedKey(newKey);
-    } catch (error) {
-      console.error("Failed to create API key:", error);
-    } finally {
-      setIsSubmitting(false);
+        try {
+            await navigator.clipboard.writeText(createdKey.key);
+            setCopied(true);
+            setTimeout(() => {
+                onComplete();
+                setIsOpen(false);
+            }, 500);
+        } catch (_err) {
+            onComplete();
+            setIsOpen(false);
+        }
     }
-  };
 
-  const handleComplete = () => {
-    onComplete();
-    setIsOpen(false);
-    resetForm();
-  };
+    return (
+        <Dialog.Root open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>
+            <Dialog.Trigger>
+                <Button as="div" color="blue" weight="light">
+                    Create new key
+                </Button>
+            </Dialog.Trigger>
+            <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
+            <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
+                <Dialog.Content className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full max-h-[85vh] flex flex-col">
+                    <div className="shrink-0 p-6 pb-4">
+                        <Dialog.Title className="text-lg font-semibold">
+                            Create New API Key
+                        </Dialog.Title>
+                    </div>
 
-  const resetForm = () => {
-    setCreatedKey(null);
-    setFormData({
-      name: "backend-" + generateFunName(),
-      description: "",
-      keyType: "secret",
-      allowedModels: null,
-    });
-  };
+                    <form
+                        onSubmit={handleSubmit}
+                        className="flex flex-col flex-1 min-h-0"
+                    >
+                        <div
+                            className="flex-1 overflow-y-auto px-6 py-2 space-y-4"
+                            style={{
+                                scrollbarWidth: "thin",
+                                scrollbarColor:
+                                    "rgba(156, 163, 175, 0.5) transparent",
+                                overscrollBehavior: "contain",
+                            }}
+                        >
+                            <Field.Root>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <label
+                                        className={cn(
+                                            "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
+                                            keyType === "publishable"
+                                                ? "bg-blue-100 ring-2 ring-blue-500"
+                                                : "bg-gray-50 hover:bg-gray-100",
+                                            createdKey &&
+                                                keyType !== "publishable" &&
+                                                "opacity-40",
+                                        )}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="keyType"
+                                            value="publishable"
+                                            checked={keyType === "publishable"}
+                                            onChange={(e) =>
+                                                handleKeyTypeChange(
+                                                    e.target
+                                                        .value as "publishable",
+                                                )
+                                            }
+                                            className="sr-only"
+                                            disabled={
+                                                isSubmitting || !!createdKey
+                                            }
+                                        />
+                                        <div className="font-semibold text-sm mb-2">
+                                            🌐 Publishable Key
+                                        </div>
+                                        <ul className="text-xs text-gray-600 space-y-1 flex-1 list-disc pl-4">
+                                            <li>Always visible in dashboard</li>
+                                            <li>
+                                                For client-side code (React,
+                                                Vue)
+                                            </li>
+                                            <li>
+                                                Rate limited: 1p/hour per IP
+                                            </li>
+                                        </ul>
+                                        <div className="mt-3 text-[10px] text-amber-700 bg-amber-50 px-2 py-1 rounded">
+                                            ⚠️ Beta – still working out bugs
+                                        </div>
+                                    </label>
+                                    <label
+                                        className={cn(
+                                            "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
+                                            keyType === "secret"
+                                                ? "bg-purple-100 ring-2 ring-purple-500"
+                                                : "bg-gray-50 hover:bg-gray-100",
+                                            createdKey &&
+                                                keyType !== "secret" &&
+                                                "opacity-40",
+                                        )}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="keyType"
+                                            value="secret"
+                                            checked={keyType === "secret"}
+                                            onChange={(e) =>
+                                                handleKeyTypeChange(
+                                                    e.target.value as "secret",
+                                                )
+                                            }
+                                            className="sr-only"
+                                            disabled={
+                                                isSubmitting || !!createdKey
+                                            }
+                                        />
+                                        <div className="font-semibold text-sm mb-2">
+                                            🔒 Secret Key
+                                        </div>
+                                        <ul className="text-xs text-gray-600 space-y-1 flex-1 list-disc pl-4">
+                                            <li className="text-amber-700 font-medium">
+                                                Only shown once – copy it!
+                                            </li>
+                                            <li>
+                                                Never expose publicly (must be
+                                                hidden in your backend)
+                                            </li>
+                                            <li>No rate limits</li>
+                                        </ul>
+                                        <div className="mt-3 text-[10px] text-green-700 bg-green-50 px-2 py-1 rounded">
+                                            ✓ Recommended for production
+                                        </div>
+                                    </label>
+                                </div>
+                            </Field.Root>
 
-  useEffect(() => {
-    if (!isOpen) resetForm();
-  }, [isOpen]);
+                            <Field.Root className="flex items-center gap-3">
+                                <Field.Label className="text-sm font-semibold shrink-0">
+                                    {createdKey ? "Your API Key" : "Name"}
+                                </Field.Label>
+                                <Field.Input
+                                    type="text"
+                                    value={createdKey ? createdKey.key : name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    className={cn(
+                                        "flex-1 px-3 py-2 border rounded",
+                                        createdKey
+                                            ? "border-green-300 bg-green-200 font-mono text-xs"
+                                            : "border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500",
+                                    )}
+                                    placeholder={
+                                        createdKey ? "" : "Enter API key name"
+                                    }
+                                    required={!createdKey}
+                                    disabled={isSubmitting || !!createdKey}
+                                    readOnly={!!createdKey}
+                                />
+                            </Field.Root>
 
-  return (
-    <Dialog.Root open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>
-      <Dialog.Trigger>
-        <Button as="div" color="blue" weight="light">
-          Create new key
-        </Button>
-      </Dialog.Trigger>
-      <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
-      <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
-        <Dialog.Content
-          className={
-            "bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto"
-          }
-        >
-          <Dialog.Title className="text-lg font-semibold mb-6">
-            Create New API Key
-          </Dialog.Title>
+                            {!createdKey && (
+                                <KeyPermissionsInputs
+                                    value={keyPermissions}
+                                    disabled={isSubmitting}
+                                    inline
+                                />
+                            )}
+                        </div>
 
-          <CreateKeyForm
-            formData={formData}
-            onInputChange={handleInputChange}
-            onSubmit={handleSubmit}
-            onCancel={() => setIsOpen(false)}
-            isSubmitting={isSubmitting}
-            createdKey={createdKey}
-            onComplete={handleComplete}
-          />
-        </Dialog.Content>
-      </Dialog.Positioner>
-    </Dialog.Root>
-  );
+                        <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
+                            {!createdKey && (
+                                <Button
+                                    type="button"
+                                    weight="outline"
+                                    onClick={() => setIsOpen(false)}
+                                    className="disabled:opacity-50"
+                                    disabled={isSubmitting}
+                                >
+                                    Cancel
+                                </Button>
+                            )}
+                            {(() => {
+                                const { allowedModels } =
+                                    keyPermissions.permissions;
+                                const noModelsSelected =
+                                    Array.isArray(allowedModels) &&
+                                    allowedModels.length === 0;
+                                const isDisabled =
+                                    !createdKey &&
+                                    (!name.trim() ||
+                                        isSubmitting ||
+                                        noModelsSelected);
+
+                                const buttonText = () => {
+                                    if (copied) return "✓ Copied! Closing...";
+                                    if (createdKey) return "Copy and Close";
+                                    if (isSubmitting) return "Creating...";
+                                    return "Create";
+                                };
+
+                                return (
+                                    <span
+                                        title={
+                                            noModelsSelected && !createdKey
+                                                ? "Select at least one model"
+                                                : undefined
+                                        }
+                                    >
+                                        <Button
+                                            type={
+                                                createdKey ? "button" : "submit"
+                                            }
+                                            onClick={
+                                                createdKey
+                                                    ? handleCopyAndClose
+                                                    : undefined
+                                            }
+                                            className="disabled:opacity-50"
+                                            disabled={isDisabled}
+                                        >
+                                            {buttonText()}
+                                        </Button>
+                                    </span>
+                                );
+                            })()}
+                        </div>
+                    </form>
+                </Dialog.Content>
+            </Dialog.Positioner>
+        </Dialog.Root>
+    );
 };

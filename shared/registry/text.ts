@@ -27,8 +27,8 @@ export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
 export const TEXT_SERVICES = {
     "openai": {
         aliases: [],
-        modelId: "gpt-5-mini-2025-08-07",
-        provider: "azure",
+        modelId: "gpt-5-mini",
+        provider: "azure-2",
         cost: [
             {
                 date: COST_START_DATE,
@@ -187,12 +187,13 @@ export const TEXT_SERVICES = {
     },
     "deepseek": {
         aliases: ["deepseek-v3", "deepseek-reasoning"],
-        modelId: "deepseek-ai/deepseek-v3.2-maas",
-        provider: "google",
+        modelId: "accounts/fireworks/models/deepseek-v3p2",
+        provider: "fireworks",
         cost: [
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(0.56),
+                promptCachedTokens: perMillion(0.28),
                 completionTextTokens: perMillion(1.68),
             },
         ],
@@ -261,8 +262,8 @@ export const TEXT_SERVICES = {
     },
     "midijourney": {
         aliases: [],
-        modelId: "gpt-4.1-2025-04-14",
-        provider: "azure-2",
+        modelId: "gpt-5.2-2025-12-11",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
@@ -315,6 +316,7 @@ export const TEXT_SERVICES = {
         aliases: ["claude-opus-4.5", "claude-opus"],
         modelId: "claude-opus-4-5-20251101",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -367,28 +369,31 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "kimi": {
-        aliases: ["kimi-k2", "kimi-reasoning", "kimi-k2-thinking"],
-        modelId: "moonshotai/kimi-k2-thinking-maas",
-        provider: "google",
+        aliases: ["kimi-k2.5", "kimi-k2p5", "kimi-reasoning", "kimi-large"],
+        modelId: "accounts/fireworks/models/kimi-k2p5",
+        provider: "fireworks",
         cost: [
             {
-                date: COST_START_DATE,
+                date: new Date("2026-01-28").getTime(),
                 promptTextTokens: perMillion(0.6),
-                completionTextTokens: perMillion(2.5),
+                promptCachedTokens: perMillion(0.1),
+                completionTextTokens: perMillion(3.0),
             },
         ],
         description:
-            "Moonshot Kimi K2 Thinking - Deep Reasoning & Tool Orchestration",
-        inputModalities: ["text"],
+            "Moonshot Kimi K2.5 - Flagship Agentic Model with Vision & Multi-Agent",
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
+        contextWindow: 256000,
         isSpecialized: false,
     },
     "gemini-large": {
         aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
         modelId: "gemini-3-pro-preview",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -405,6 +410,29 @@ export const TEXT_SERVICES = {
         reasoning: true,
         search: true,
         codeExecution: false, // Disabled - was breaking gemini-large
+        isSpecialized: false,
+    },
+    "gemini-legacy": {
+        aliases: ["gemini-2.5-pro"],
+        modelId: "gemini-2.5-pro",
+        provider: "google",
+        paidOnly: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(1.25),
+                promptCachedTokens: perMillion(0.31), // ~25% of input price
+                completionTextTokens: perMillion(10.0),
+            },
+        ],
+        description:
+            "Google Gemini 2.5 Pro - Stable Reasoning Model with 1M Context",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        search: true,
+        codeExecution: true,
         isSpecialized: false,
     },
     "nova-fast": {
@@ -462,6 +490,25 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextWindow: 200000,
+        isSpecialized: false,
+    },
+    "nomnom": {
+        aliases: ["gemini-scrape", "web-research"],
+        modelId: "nomnom",
+        provider: "community",
+        cost: [
+            {
+                date: new Date("2026-01-17").getTime(),
+                promptTextTokens: perMillion(0.0), // Free - uses Pollinations under the hood
+                completionTextTokens: perMillion(0.0),
+            },
+        ],
+        description:
+            "NomNom by @Itachi-1824 - Web Research with Search, Scrape & Crawl (Alpha)",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        search: true,
         isSpecialized: false,
     },
 } as const satisfies Record<string, ServiceDefinition<string>>;

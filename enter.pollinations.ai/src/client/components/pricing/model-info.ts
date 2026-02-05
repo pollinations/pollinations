@@ -2,8 +2,11 @@
  * Model metadata and information utilities
  */
 
+import {
+    getServiceDefinition,
+    type ServiceId,
+} from "@shared/registry/registry.ts";
 import type { Modalities } from "./types.ts";
-import { getServiceDefinition, ServiceId } from "@shared/registry/registry.ts";
 
 export const getModalities = (modelName: string): Modalities => {
     const service = getServiceDefinition(modelName as ServiceId);
@@ -66,13 +69,13 @@ export const isPersona = (modelName: string): boolean => {
 };
 
 /**
- * Check if a model is "new" (added within the last 14 days)
+ * Check if a model is "new" (added within the last 30 days)
  */
 export const isNewModel = (modelName: string): boolean => {
     const service = getServiceDefinition(modelName as ServiceId);
     if (!service?.cost?.[0]?.date) return false;
-    const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
-    return service.cost[0].date > fourteenDaysAgo;
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    return service.cost[0].date > thirtyDaysAgo;
 };
 
 export const getTextModelId = (modelName: string): string | undefined => {
@@ -83,4 +86,12 @@ export const getTextModelId = (modelName: string): string | undefined => {
 export const getImageModelId = (modelName: string): string | undefined => {
     const service = getServiceDefinition(modelName as ServiceId);
     return service?.modelId as string | undefined;
+};
+
+/**
+ * Check if a model requires paid balance only (no tier balance)
+ */
+export const isPaidOnly = (modelName: string): boolean => {
+    const service = getServiceDefinition(modelName as ServiceId);
+    return service?.paidOnly === true;
 };

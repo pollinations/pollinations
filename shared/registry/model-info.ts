@@ -26,6 +26,7 @@ export const ModelInfoSchema = z.object({
     context_window: z.number().optional(),
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
+    paid_only: z.boolean().optional(),
 });
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;
@@ -62,6 +63,7 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
         context_window: service.contextWindow,
         voices: service.voices,
         is_specialized: service.isSpecialized,
+        paid_only: service.paidOnly,
     };
 }
 

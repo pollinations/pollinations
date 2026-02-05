@@ -91,11 +91,15 @@ def load_shared(name: str) -> str:
 
 def _inject_shared_prompts(content: str) -> str:
     """Inject shared prompt components into content
-    
-    Replaces {about} placeholder with shared content.
+
+    Replaces placeholders with shared content:
+    - {about} -> _shared/about.md
+    - {visual_style} -> _shared/visual_style.md
     """
     if "{about}" in content:
         content = content.replace("{about}", load_shared("about"))
+    if "{visual_style}" in content:
+        content = content.replace("{visual_style}", load_shared("visual_style"))
     return content
 
 
@@ -113,6 +117,7 @@ def load_prompt(platform: str, prompt_name: str) -> str:
     
     Automatically injects shared components:
     - {about} -> content from _shared/about.md
+    - {visual_style} -> content from _shared/visual_style.md
     
     Args:
         platform: 'linkedin', 'twitter', 'instagram', 'reddit', etc.
@@ -364,7 +369,7 @@ def call_pollinations_api(
     return None
 
 
-def generate_image(prompt: str, token: str, width: int = 1200, height: int = 675, index: int = 0) -> tuple[Optional[bytes], Optional[str]]:
+def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0) -> tuple[Optional[bytes], Optional[str]]:
     """Generate a single image using Pollinations nanobanana"""
 
     encoded_prompt = quote(prompt)

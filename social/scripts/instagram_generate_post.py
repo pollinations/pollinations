@@ -174,7 +174,7 @@ def get_instagram_trends() -> Dict:
             "warm, emotionally resonant pixel scenes"
         ],
         "popular_formats": [
-            "carousel (up to 20 images) - highest engagement",
+            "carousel (3-5 images) - highest engagement",
             "pixel art animation loops (GIF-style)",
             "retro game screenshot aesthetic",
             "infographic with pixel icons",
@@ -505,6 +505,14 @@ def main():
     if not strategy:
         print("Failed to generate strategy. Exiting.")
         sys.exit(1)
+
+    # Clamp image count to 3-5
+    img_list = strategy.get('images', [])
+    if len(img_list) < 3:
+        print(f"Warning: AI generated {len(img_list)} images, need at least 3")
+    if len(img_list) > 5:
+        print(f"Clamping images from {len(img_list)} to 5")
+        strategy['images'] = img_list[:5]
 
     # Step 4: Generate images
     print(f"\n=== Generating Images ===")

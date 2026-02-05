@@ -6,7 +6,7 @@ import random
 import re
 import requests
 from datetime import datetime, timedelta, timezone
-from common import load_prompt, get_env, call_pollinations_api, MODEL
+from common import load_prompt, get_env, call_pollinations_api, generate_image, MODEL
 
 NEWS_FOLDER = "social/news"
 
@@ -209,8 +209,28 @@ def main():
         print("AI returned SKIP — no functional updates for Discord.")
         return
 
+    # Generate image
+    print("Generating image...")
+    image_prompt_system = load_prompt(PLATFORM, "image_prompt_system")
+    image_prompt = call_pollinations_api(image_prompt_system, discord_message, pollinations_token, temperature=0.7)
+    image_url = None
+    if image_prompt:
+        image_prompt = image_prompt.strip()
+        print(f"Image prompt: {image_prompt[:100]}...")
+        _, image_url = generate_image(image_prompt, pollinations_token)
+
     # Post to Discord
     post_to_discord(discord_webhook, discord_message)
+
+    # Post image as follow-up embed
+    if image_url:
+        time.sleep(0.5)
+        embed_payload = {"embeds": [{"image": {"url": image_url}}]}
+        response = requests.post(discord_webhook, json=embed_payload)
+        if response.status_code in [200, 204]:
+            print("📷 Image posted to Discord!")
+        else:
+            print(f"Warning: Failed to post image embed: {response.status_code}")
 
 
 if __name__ == "__main__":

@@ -54,7 +54,24 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-01-26** – **🛠️ Vercel AI SDK** Build apps easily with the new official Pollinations provider for Vercel AI SDK.
 ---
 
-## 🌟 Introduction
+## 🌟 Google Summer of Code 2026 (GSOC)
+
+Hello folks! This year, `pollinations.ai` is participating in [Google Summer of Code 2026](https://summerofcode.withgoogle.com)! 
+We're looking for talented developers to contribute to our open-source AI platform. 
+
+**Website:** [Pollinations GSOC 2026](https://gsoc.pollinations.ai)
+
+**Mentors:** Thomas Haferlach, Ayushman Bhattacharya, Nihal Gazi.
+
+**Projects:** Check out our [Project Ideas](https://gsoc.pollinations.ai/projects).
+
+**Timeline:** Applications open **March 16th 2026** 
+Coding starts **May 25th 2026**
+
+> Please reach out to us about any queries on [Discord](https://discord.gg/pollinations-ai-885844321461485618) or via email at `gsoc@pollinations.ai`
+
+
+## 🌱 Introduction
 
 [pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text, image, video, and audio generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
 

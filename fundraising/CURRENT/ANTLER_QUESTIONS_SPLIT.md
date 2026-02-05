@@ -54,7 +54,11 @@
 
 ### Estonian Setup
 **Q11: Any concerns about Estonian legal structure?**
-> **A**: Not discussed in this meeting.
+> **A**: (via WhatsApp with Alan, Feb 5)
+> - **Not a blocker** for fundraising
+> - Would be easier with a GmbH, but only marginally
+> - "You have bigger fish to fry"
+> - **Bigger risk at DD stage**: The Outlier Ventures situation that's still unresolved
 
 ---
 

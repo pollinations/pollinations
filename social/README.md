@@ -98,7 +98,7 @@ social/
 │
 ├── scripts/                  # Python automation scripts
 │   ├── common.py             # Shared utilities (prompt loading, API calls)
-│   ├── buffer_publish_post.py
+│   ├── buffer_stage_post.py
 │   ├── buffer_utils.py
 │   ├── discord_post_merged_pr.py
 │   ├── discord_post_weekly_news.py

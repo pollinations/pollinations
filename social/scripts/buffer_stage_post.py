@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Buffer Publish Post - Publishes posts to LinkedIn/Twitter/Instagram via Buffer GraphQL API
+Buffer Stage Post - Stages posts to LinkedIn/Twitter/Instagram via Buffer GraphQL API
 Triggered when a post PR is merged
 """
 
@@ -23,6 +23,29 @@ SCHEDULE_FILE = os.path.join(os.path.dirname(__file__), "..", "buffer-schedule.y
 
 MAX_RETRIES = 3
 RETRY_DELAY = 5  # seconds
+
+
+def verify_image_urls(urls: list, max_retries: int = 6, delay: int = 10) -> bool:
+    """Verify all image URLs are accessible, retrying for CDN propagation."""
+    for attempt in range(max_retries):
+        all_ok = True
+        for url in urls:
+            try:
+                resp = requests.head(url, timeout=10, allow_redirects=True)
+                if resp.status_code != 200:
+                    all_ok = False
+                    break
+            except requests.RequestException:
+                all_ok = False
+                break
+        if all_ok:
+            print(f"All {len(urls)} image URL(s) verified accessible")
+            return True
+        if attempt < max_retries - 1:
+            print(f"Image URL not yet accessible (attempt {attempt + 1}/{max_retries}), waiting {delay}s...")
+            time.sleep(delay)
+    print(f"Warning: Image URLs not accessible after {max_retries} attempts")
+    return False
 
 
 def get_next_scheduled_time(platform: str) -> Optional[str]:
@@ -133,6 +156,10 @@ def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
         media = {"photo": image_data["url"]}
         print(f"Including image: {image_data['url'][:100]}...")
 
+    # Verify image URLs are accessible (CDN propagation)
+    if media:
+        verify_image_urls([media["photo"]])
+
     # Calculate next scheduled posting time
     scheduled_at = get_next_scheduled_time("linkedin")
 
@@ -179,6 +206,10 @@ def publish_twitter_post(post_data: dict, access_token: str) -> bool:
     if image_data and image_data.get("url"):
         media = {"photo": image_data["url"]}
         print(f"Including image: {image_data['url'][:100]}...")
+
+    # Verify image URLs are accessible (CDN propagation)
+    if media:
+        verify_image_urls([media["photo"]])
 
     # Calculate next scheduled posting time
     scheduled_at = get_next_scheduled_time("twitter")
@@ -227,6 +258,10 @@ def publish_instagram_post(post_data: dict, access_token: str) -> bool:
     if image_urls:
         media = {"photos": image_urls}
         print(f"Including {len(image_urls)} image(s)")
+
+    # Verify image URLs are accessible (CDN propagation)
+    if image_urls:
+        verify_image_urls(image_urls)
 
     # Calculate next scheduled posting time
     scheduled_at = get_next_scheduled_time("instagram")

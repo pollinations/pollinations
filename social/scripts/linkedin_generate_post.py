@@ -116,11 +116,13 @@ def create_post_pr(post_data: Dict, image_bytes: Optional[bytes], image_url: Opt
     print(f"Created branch: {branch_name}")
 
     # Commit image to branch and get stable URL
+    preview_url = image_url  # fallback: same as JSON
     if image_bytes:
         image_path = f"social/news/transformed/linkedin/posts/{today}-image.jpg"
         raw_url = commit_image_to_branch(image_bytes, image_path, branch_name, github_token, owner, repo)
         if raw_url:
-            image_url = raw_url
+            image_url = raw_url  # main URL for JSON/Buffer
+            preview_url = raw_url.replace("/main/", f"/{branch_name}/")  # branch URL for PR
         else:
             print("Warning: Using generation URL as fallback — Buffer may fail to fetch it")
 
@@ -184,7 +186,7 @@ def create_post_pr(post_data: Dict, image_bytes: Optional[bytes], image_url: Opt
     # Create PR
     pr_title = f"LinkedIn Post - {today}"
 
-    # Image preview in PR body
+    # Image preview in PR body (uses branch URL so reviewers can see it)
     image_preview = ""
     if image_url:
         image_preview = f"""
@@ -192,7 +194,7 @@ def create_post_pr(post_data: Dict, image_bytes: Optional[bytes], image_url: Opt
 **Prompt:** {post_data.get('image_prompt', 'N/A')[:200]}...
 **Text in image:** {post_data.get('image_text', 'N/A')}
 
-![Preview]({image_url})
+![Preview]({preview_url})
 """
 
     pr_body = f"""## LinkedIn Post for {today}

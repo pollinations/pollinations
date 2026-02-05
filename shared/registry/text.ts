@@ -168,7 +168,6 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-2.5-flash-lite"],
         modelId: "gemini-2.5-flash-lite",
         provider: "google",
-        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,

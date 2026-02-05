@@ -6,6 +6,7 @@ on:
     paths:
       - 'social/news/transformed/linkedin/posts/*.json'
       - 'social/news/transformed/twitter/posts/*.json'
+      - 'social/news/transformed/instagram/posts/*.json'
   workflow_dispatch:
     inputs:
       post_file:
@@ -35,7 +36,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install requests pyyaml
 
       - name: Publish to Buffer
         env:

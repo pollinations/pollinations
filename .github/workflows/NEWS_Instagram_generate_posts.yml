@@ -2,7 +2,7 @@ name: Instagram Generate Post
 
 on:
   schedule:
-    - cron: '0 16 * * *'  # Daily at 16:00 UTC (17:00 Berlin, 21:30 India)
+    - cron: '0 0 * * *'  # Daily at midnight UTC (recaps the day's PRs)
   workflow_dispatch:
     inputs:
       source_repo:

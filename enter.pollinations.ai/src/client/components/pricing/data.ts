@@ -11,7 +11,7 @@ import {
     formatPricePerImage,
 } from "./formatters.ts";
 import type { ModelPrice } from "./types.ts";
-import type { ModelStats } from "./useModelStats.ts";
+import type { ModelStats } from "./use-model-stats.ts";
 
 export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     const prices: ModelPrice[] = [];

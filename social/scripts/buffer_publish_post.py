@@ -1,82 +1,114 @@
 #!/usr/bin/env python3
 """
-Buffer Publish Post - Publishes posts to LinkedIn/Twitter via Buffer API
+Buffer Publish Post - Publishes posts to LinkedIn/Twitter/Instagram via Buffer GraphQL API
 Triggered when a post PR is merged
 """
 
+import os
 import sys
 import json
 import time
 import requests
+import yaml
 from typing import Optional
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
+from common import get_env
 from buffer_utils import (
-    BUFFER_API_BASE,
-    get_env,
-    get_profile_by_service,
+    get_channel_by_service,
+    create_buffer_post,
 )
+
+SCHEDULE_FILE = os.path.join(os.path.dirname(__file__), "..", "buffer-schedule.yml")
 
 MAX_RETRIES = 3
 RETRY_DELAY = 5  # seconds
 
 
-def create_buffer_update_with_retry(
+def get_next_scheduled_time(platform: str) -> Optional[str]:
+    """Read buffer-schedule.yml and return the next scheduled posting time as ISO 8601.
+
+    Finds the next valid day+time slot for the given platform.
+    Returns None if schedule file is missing (falls back to immediate posting).
+    """
+    try:
+        with open(SCHEDULE_FILE, "r") as f:
+            schedule = yaml.safe_load(f)
+    except (FileNotFoundError, yaml.YAMLError) as e:
+        print(f"Warning: Could not read schedule file: {e}")
+        return None
+
+    platform_schedule = schedule.get(platform)
+    if not platform_schedule:
+        print(f"Warning: No schedule found for {platform}")
+        return None
+
+    allowed_days = platform_schedule.get("days", [1, 2, 3, 4, 5, 6, 7])
+    preferred_time = platform_schedule.get("preferred", "17:00")
+    hour, minute = map(int, preferred_time.split(":"))
+
+    now = datetime.now(timezone.utc)
+
+    # Check today and the next 7 days to find a valid slot
+    for days_ahead in range(8):
+        candidate = now + timedelta(days=days_ahead)
+        # isoweekday(): Monday=1, Sunday=7 (matches our YAML format)
+        if candidate.isoweekday() not in allowed_days:
+            continue
+
+        scheduled = candidate.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        # Must be at least 10 minutes in the future
+        if scheduled > now + timedelta(minutes=10):
+            iso_time = scheduled.strftime("%Y-%m-%dT%H:%M:%SZ")
+            print(f"Scheduled for: {iso_time}")
+            return iso_time
+
+    print("Warning: Could not find a valid schedule slot")
+    return None
+
+
+def create_buffer_post_with_retry(
     access_token: str,
-    profile_id: str,
+    channel_id: str,
     text: str,
     media: Optional[dict] = None,
-    now: bool = True
+    scheduled_at: Optional[str] = None,
 ) -> dict:
-    """Create a Buffer update (post) with retry logic for rate limits
+    """Create a Buffer post with retry logic for rate limits.
 
-    Uses application/x-www-form-urlencoded format as required by Buffer API.
-    Includes retry logic for rate limits (HTTP 429).
+    Retries on LimitReachedError responses from the GraphQL API.
     """
-    # Buffer API expects profile_ids[] as separate form fields for each ID
-    data = [
-        ("access_token", access_token),
-        ("text", text),
-        ("profile_ids[]", profile_id),
-    ]
-
-    if media:
-        for key, value in media.items():
-            if value:
-                data.append((f"media[{key}]", value))
-
-    if now:
-        data.append(("now", "true"))
-
-    # Retry logic for rate limits
     for attempt in range(MAX_RETRIES):
-        response = requests.post(
-            f"{BUFFER_API_BASE}/updates/create.json",
-            data=data,
-            timeout=60
+        result = create_buffer_post(
+            access_token=access_token,
+            channel_id=channel_id,
+            text=text,
+            media=media,
+            scheduled_at=scheduled_at,
+            now=not scheduled_at,
         )
 
-        if response.status_code == 200:
-            return response.json()
+        if result.get("success"):
+            return result
 
-        if response.status_code == 429:
-            # Rate limited - wait and retry
+        error = result.get("error", "")
+        # Retry on rate limit errors
+        if "limit" in error.lower() or "rate" in error.lower():
             if attempt < MAX_RETRIES - 1:
                 print(f"Rate limited, waiting {RETRY_DELAY}s before retry {attempt + 2}/{MAX_RETRIES}...")
                 time.sleep(RETRY_DELAY)
                 continue
 
         # Non-retryable error or max retries reached
-        print(f"Error creating update: {response.status_code} - {response.text[:500]}")
-        return {"success": False, "error": response.text}
+        return result
 
     return {"success": False, "error": "Max retries exceeded"}
 
 
 def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
-    """Publish a LinkedIn post via Buffer"""
-    profile = get_profile_by_service(access_token, "linkedin")
-    if not profile:
+    """Publish a LinkedIn post via Buffer (scheduled delivery)"""
+    channel = get_channel_by_service(access_token, "linkedin")
+    if not channel:
         return False
 
     # Get the full post text
@@ -90,7 +122,7 @@ def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
         if hashtags:
             text += "\n\n" + " ".join(hashtags[:5])
 
-    print(f"Publishing to LinkedIn (@{profile.get('service_username', 'unknown')})...")
+    print(f"Publishing to LinkedIn ({channel.get('displayName', 'unknown')})...")
     print(f"Post preview ({len(text)} chars):")
     print(f"---\n{text[:500]}{'...' if len(text) > 500 else ''}\n---")
 
@@ -101,16 +133,19 @@ def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
         media = {"photo": image_data["url"]}
         print(f"Including image: {image_data['url'][:100]}...")
 
-    result = create_buffer_update_with_retry(
+    # Calculate next scheduled posting time
+    scheduled_at = get_next_scheduled_time("linkedin")
+
+    result = create_buffer_post_with_retry(
         access_token=access_token,
-        profile_id=profile["id"],
+        channel_id=channel["id"],
         text=text,
         media=media,
-        now=True
+        scheduled_at=scheduled_at,
     )
 
     if result.get("success"):
-        print(f"Successfully published to LinkedIn!")
+        print(f"Successfully {'scheduled' if scheduled_at else 'published'} to LinkedIn!")
         return True
     else:
         print(f"Failed to publish: {result.get('error', 'Unknown error')}")
@@ -118,12 +153,12 @@ def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
 
 
 def publish_twitter_post(post_data: dict, access_token: str) -> bool:
-    """Publish a Twitter/X post via Buffer"""
+    """Publish a Twitter/X post via Buffer (scheduled delivery)"""
     # Try both "twitter" and "x" service names (Buffer may use either)
-    profile = get_profile_by_service(access_token, "twitter")
-    if not profile:
-        profile = get_profile_by_service(access_token, "x")
-    if not profile:
+    channel = get_channel_by_service(access_token, "twitter")
+    if not channel:
+        channel = get_channel_by_service(access_token, "x")
+    if not channel:
         return False
 
     # Get the tweet text
@@ -134,7 +169,7 @@ def publish_twitter_post(post_data: dict, access_token: str) -> bool:
         print(f"Warning: Tweet is {len(text)} chars, truncating...")
         text = text[:277] + "..."
 
-    print(f"Publishing to Twitter/X (@{profile.get('service_username', 'unknown')})...")
+    print(f"Publishing to Twitter/X ({channel.get('displayName', 'unknown')})...")
     print(f"Tweet ({len(text)} chars):")
     print(f"---\n{text}\n---")
 
@@ -145,16 +180,67 @@ def publish_twitter_post(post_data: dict, access_token: str) -> bool:
         media = {"photo": image_data["url"]}
         print(f"Including image: {image_data['url'][:100]}...")
 
-    result = create_buffer_update_with_retry(
+    # Calculate next scheduled posting time
+    scheduled_at = get_next_scheduled_time("twitter")
+
+    result = create_buffer_post_with_retry(
         access_token=access_token,
-        profile_id=profile["id"],
+        channel_id=channel["id"],
         text=text,
         media=media,
-        now=True
+        scheduled_at=scheduled_at,
     )
 
     if result.get("success"):
-        print(f"Successfully published to Twitter/X!")
+        print(f"Successfully {'scheduled' if scheduled_at else 'published'} to Twitter/X!")
+        return True
+    else:
+        print(f"Failed to publish: {result.get('error', 'Unknown error')}")
+        return False
+
+
+def publish_instagram_post(post_data: dict, access_token: str) -> bool:
+    """Publish an Instagram post via Buffer (scheduled delivery)"""
+    channel = get_channel_by_service(access_token, "instagram")
+    if not channel:
+        return False
+
+    # Build caption from caption + hashtags
+    caption = post_data.get("caption", "")
+    hashtags = post_data.get("hashtags", [])
+    text = caption
+    if hashtags:
+        text += "\n\n" + " ".join(hashtags)
+
+    # Instagram caption limit is 2200 chars
+    if len(text) > 2200:
+        text = text[:2197] + "..."
+
+    print(f"Publishing to Instagram ({channel.get('displayName', 'unknown')})...")
+    print(f"Caption ({len(text)} chars):")
+    print(f"---\n{text[:500]}{'...' if len(text) > 500 else ''}\n---")
+
+    # Get image URLs from images array
+    media = None
+    images = post_data.get("images", [])
+    image_urls = [img.get("url") for img in images if img.get("url")]
+    if image_urls:
+        media = {"photos": image_urls}
+        print(f"Including {len(image_urls)} image(s)")
+
+    # Calculate next scheduled posting time
+    scheduled_at = get_next_scheduled_time("instagram")
+
+    result = create_buffer_post_with_retry(
+        access_token=access_token,
+        channel_id=channel["id"],
+        text=text,
+        media=media,
+        scheduled_at=scheduled_at,
+    )
+
+    if result.get("success"):
+        print(f"Successfully {'scheduled' if scheduled_at else 'published'} to Instagram!")
         return True
     else:
         print(f"Failed to publish: {result.get('error', 'Unknown error')}")
@@ -189,25 +275,26 @@ def get_post_file_from_pr(github_token: str, repo: str, pr_number: int) -> Optio
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {github_token}"
     }
-    
+
     response = requests.get(
         f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files",
         headers=headers,
         timeout=30
     )
-    
+
     if response.status_code != 200:
         print(f"Error fetching PR files: {response.status_code}")
         return None
-    
+
     files = response.json()
     for file_info in files:
         filename = file_info.get("filename", "")
         if (filename.startswith("social/news/transformed/linkedin/posts/") or
-            filename.startswith("social/news/transformed/twitter/posts/")) and \
+            filename.startswith("social/news/transformed/twitter/posts/") or
+            filename.startswith("social/news/transformed/instagram/posts/")) and \
            filename.endswith(".json"):
             return filename
-    
+
     return None
 
 
@@ -215,26 +302,26 @@ def main():
     buffer_token = get_env("BUFFER_ACCESS_TOKEN")
     github_token = get_env("GITHUB_TOKEN")
     repo = get_env("GITHUB_REPOSITORY")
-    
+
     # Post file can be provided directly (workflow_dispatch) or detected from PR
     post_file_path = get_env("POST_FILE_PATH", required=False)
     pr_number_str = get_env("PR_NUMBER", required=False)
     pr_number = int(pr_number_str) if pr_number_str else None
-    
+
     # These are guaranteed non-None by get_env with required=True
     assert buffer_token is not None
     assert github_token is not None
     assert repo is not None
-    
+
     # If no post file provided, detect from PR
     if not post_file_path and pr_number:
         print(f"Detecting post file from PR #{pr_number}...")
         post_file_path = get_post_file_from_pr(github_token, repo, pr_number)
         if not post_file_path:
-            print(f"Error: No LinkedIn or Twitter post file found in PR #{pr_number}")
+            print(f"Error: No LinkedIn, Twitter, or Instagram post file found in PR #{pr_number}")
             sys.exit(1)
         print(f"Found: {post_file_path}")
-    
+
     if not post_file_path:
         print("Error: POST_FILE_PATH not provided and no PR_NUMBER to detect from")
         sys.exit(1)
@@ -258,6 +345,8 @@ def main():
             platform = "linkedin"
         elif "twitter" in post_file_path.lower():
             platform = "twitter"
+        elif "instagram" in post_file_path.lower():
+            platform = "instagram"
         else:
             print(f"Error: Could not determine platform from path: {post_file_path}")
             sys.exit(1)
@@ -271,6 +360,8 @@ def main():
         success = publish_linkedin_post(post_data, buffer_token)
     elif platform == "twitter":
         success = publish_twitter_post(post_data, buffer_token)
+    elif platform == "instagram":
+        success = publish_instagram_post(post_data, buffer_token)
     else:
         print(f"Error: Unknown platform: {platform}")
         sys.exit(1)
@@ -282,7 +373,7 @@ def main():
             github_token,
             repo,
             pr_number,
-            f"Published to {platform.title()} via Buffer at {timestamp}"
+            f"Sent to {platform.title()} via Buffer at {timestamp}. Check Buffer dashboard for delivery status."
         )
         print("\n=== Success! ===")
     else:

@@ -9,7 +9,7 @@
 
 1. **Lead investor sets the terms** - Don't spend time deciding CLA vs SAFE vs priced round. The lead investor will tell you.
 2. **Your job**: Know your ask (€1.5-3M), say "market standard valuation", let investors propose terms.
-3. **Typical dilution**: 17-22% for seed rounds at this size.
+3. **Typical dilution**: 17-22% for seed rounds at this size. *(Web verified: US SaaS 2025 benchmarks show 12-15% standard, 15-18% for higher risk - Europe tends slightly higher)*
 4. **Don't run angel + institutional in parallel** - Word travels. Do one or the other.
 5. **Focus all intensity on getting a lead investor first**, then fill remaining allocation with angels.
 
@@ -20,6 +20,8 @@
 ### CLA / Contract Structure
 **Q1: Which CLA templates do you see most frequently?**
 > **A**: Depends on round size. For €3M territory in Germany → likely notarized priced round. For €1.5M → more likely convertible or SAFE. Convertible is more common. **The lead investor will determine the legal shape.**
+> 
+> *(Web verified: Europe leans heavily toward Convertible Notes over SAFEs due to investor protection, maturity dates, and local tax/legal alignment. Germany, France, Spain prefer convertibles.)*
 
 **Q2: Are there clauses (e.g. MFN) you want as first investor?**
 > **A**: Not yours to set at this point. Antler has pro-rata rights in existing CLA. That's the extent of it. **Wait for the term sheet** - don't pre-negotiate terms.

@@ -58,26 +58,13 @@ export function createBedrockNativeConfig(additionalConfig = {}) {
 }
 
 /**
- * Creates a Myceli DeepSeek V3.2 model configuration
- */
-export function createMyceliDeepSeekV32Config(additionalConfig = {}) {
-    return {
-        provider: "openai",
-        "custom-host": "https://myceli.services.ai.azure.com/openai/v1",
-        authKey: process.env.AZURE_MYCELI_DEEPSEEK_R1_API_KEY,
-        model: "DeepSeek-V3.2",
-        ...additionalConfig,
-    };
-}
-
-/**
  * Creates a Myceli Grok 4 Fast model configuration
  */
 export function createMyceliGrok4FastConfig(additionalConfig = {}) {
     return {
         provider: "openai",
         "custom-host": "https://myceli.services.ai.azure.com/openai/v1",
-        authKey: process.env.AZURE_MYCELI_DEEPSEEK_R1_API_KEY,
+        authKey: process.env.AZURE_MYCELI_GROK_API_KEY,
         model: "grok-4-fast-non-reasoning",
         ...additionalConfig,
     };

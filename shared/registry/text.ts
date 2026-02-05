@@ -262,8 +262,8 @@ export const TEXT_SERVICES = {
     },
     "midijourney": {
         aliases: [],
-        modelId: "gpt-4.1-2025-04-14",
-        provider: "azure-2",
+        modelId: "gpt-5.2-2025-12-11",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,

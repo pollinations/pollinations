@@ -1,8 +1,5 @@
 import { getLogger } from "@logtape/logtape";
-<<<<<<< HEAD
-=======
 import type { Usage } from "@shared/registry/registry.ts";
->>>>>>> main
 import {
     calculateCost,
     calculatePrice,
@@ -11,10 +8,6 @@ import {
     type ModelId,
     type PriceDefinition,
     type ServiceId,
-<<<<<<< HEAD
-    type TokenUsage,
-=======
->>>>>>> main
     type UsageCost,
     type UsagePrice,
 } from "@shared/registry/registry.ts";
@@ -22,10 +15,6 @@ import {
     openaiUsageToUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
-<<<<<<< HEAD
-import { eq, sql } from "drizzle-orm";
-=======
->>>>>>> main
 import { drizzle } from "drizzle-orm/d1";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { HonoRequest } from "hono";
@@ -33,10 +22,6 @@ import { createMiddleware } from "hono/factory";
 import { routePath } from "hono/route";
 import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
-<<<<<<< HEAD
-import { user as userTable } from "@/db/schema/better-auth.ts";
-=======
->>>>>>> main
 import type {
     ApiKeyType,
     EventType,
@@ -64,16 +49,11 @@ import {
     ContentFilterSeveritySchema,
 } from "@/schemas/openai.ts";
 import { generateRandomId, removeUnset } from "@/util.ts";
-<<<<<<< HEAD
-import type { LoggerVariables } from "./logger.ts";
-import type { ModelVariables } from "./model.ts";
-import type { PolarVariables } from "./polar.ts";
-=======
 import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
 import type { BalanceVariables } from "./balance.ts";
 import type { LoggerVariables } from "./logger.ts";
 import type { ModelVariables } from "./model.ts";
->>>>>>> main
+import type { PolarVariables } from "./polar.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
 
 export type ModelUsage = {
@@ -217,54 +197,6 @@ export const track = (eventType: EventType) =>
                     log,
                 );
 
-<<<<<<< HEAD
-                // Decrement local pollen balance after billable requests
-                // Strategy: decrement from tier_balance first, then pack_balance
-                if (
-                    responseTracking.isBilledUsage &&
-                    responseTracking.price?.totalPrice &&
-                    userTracking.userId
-                ) {
-                    const priceToDeduct = responseTracking.price.totalPrice;
-
-                    // Get current balances to determine how to split the deduction
-                    const currentUser = await db
-                        .select({
-                            tierBalance: userTable.tierBalance,
-                            packBalance: userTable.packBalance,
-                        })
-                        .from(userTable)
-                        .where(eq(userTable.id, userTracking.userId))
-                        .limit(1);
-
-                    const tierBalance = currentUser[0]?.tierBalance ?? 0;
-
-                    // Decrement tier first, then pack
-                    const fromTier = Math.min(
-                        priceToDeduct,
-                        Math.max(0, tierBalance),
-                    );
-                    const fromPack = priceToDeduct - fromTier;
-
-                    await db
-                        .update(userTable)
-                        .set({
-                            tierBalance: sql`${userTable.tierBalance} - ${fromTier}`,
-                            packBalance: sql`${userTable.packBalance} - ${fromPack}`,
-                        })
-                        .where(eq(userTable.id, userTracking.userId));
-
-                    log.debug(
-                        "Decremented {price} pollen from user {userId} (tier: -{fromTier}, pack: -{fromPack})",
-                        {
-                            price: priceToDeduct,
-                            userId: userTracking.userId,
-                            fromTier,
-                            fromPack,
-                        },
-                    );
-                }
-=======
                 // Handle balance deduction for both API keys and users
                 await handleBalanceDeduction({
                     db,
@@ -275,7 +207,6 @@ export const track = (eventType: EventType) =>
                     apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                     modelResolved: c.var.model?.resolved,
                 });
->>>>>>> main
             })(),
         );
     });

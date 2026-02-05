@@ -18,6 +18,7 @@ from common import (
     get_merged_prs,
     call_pollinations_api,
     generate_image,
+    commit_image_to_branch,
     get_file_sha,
     format_pr_summary,
 )
@@ -80,7 +81,7 @@ def generate_twitter_post(prs: List[Dict], token: str) -> Optional[Dict]:
         return None
 
 
-def create_post_pr(post_data: Dict, image_url: Optional[str], prs: List[Dict], github_token: str, owner: str, repo: str):
+def create_post_pr(post_data: Dict, image_bytes: Optional[bytes], image_url: Optional[str], prs: List[Dict], github_token: str, owner: str, repo: str):
     """Create a PR with the Twitter post JSON"""
 
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -119,6 +120,15 @@ def create_post_pr(post_data: Dict, image_url: Optional[str], prs: List[Dict], g
         print(f"Branch {branch_name} already exists, updating...")
 
     print(f"Created branch: {branch_name}")
+
+    # Commit image to branch and get stable URL
+    if image_bytes:
+        image_path = f"social/news/transformed/twitter/posts/{today}-image.jpg"
+        raw_url = commit_image_to_branch(image_bytes, image_path, branch_name, github_token, owner, repo)
+        if raw_url:
+            image_url = raw_url
+        else:
+            print("Warning: Using generation URL as fallback — Buffer may fail to fetch it")
 
     # Build full tweet with hashtags
     tweet = post_data['tweet']
@@ -300,20 +310,21 @@ def main():
 
     # Generate image
     print(f"\n=== Generating Image ===")
+    image_bytes = None
     image_url = None
     if post_data.get('image_prompt'):
-        _, image_url = generate_image(
-            post_data['image_prompt'], 
+        image_bytes, image_url = generate_image(
+            post_data['image_prompt'],
             pollinations_token,
             width=TWITTER_IMAGE_WIDTH,
             height=TWITTER_IMAGE_HEIGHT
         )
-        if not image_url:
+        if not image_bytes:
             print("Warning: Failed to generate image, continuing without it")
 
     # Create PR
     print(f"\n=== Creating PR ===")
-    create_post_pr(post_data, image_url, merged_prs, github_token, owner_name, repo_name)
+    create_post_pr(post_data, image_bytes, image_url, merged_prs, github_token, owner_name, repo_name)
 
     print("\n=== Done! ===")
 

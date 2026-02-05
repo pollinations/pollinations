@@ -1,0 +1,28 @@
+{
+  "date": "2026-02-05",
+  "generated_at": "2026-02-05T15:16:49.645409+00:00",
+  "platform": "twitter",
+  "tweet_type": "shipped",
+  "tweet": "clicking checkboxes one by one is officially a thing of the past. just shipped 'select all' for model permissions. 🌸\n\nalso fixed a linux case-sensitivity bug that was haunting us.\n\nproductivity: 📈\ncarpal tunnel: 📉\n\n#OpenSource #PollinationsAI",
+  "alt_tweet": "pov: you just realized you don't have to click 50 boxes manually anymore because we added a 'select all' toggle.\n\nlinux builds fixed too. we are so back.\n\nstay hydrated and ship code. 🌸",
+  "full_tweet": "clicking checkboxes one by one is officially a thing of the past. just shipped 'select all' for model permissions. 🌸\n\nalso fixed a linux case-sensitivity bug that was haunting us.\n\nproductivity: 📈\ncarpal tunnel: 📉\n\n#OpenSource #PollinationsAI #OpenSource #PollinationsAI",
+  "hashtags": [
+    "#OpenSource",
+    "#PollinationsAI"
+  ],
+  "image": {
+    "url": "https://gen.pollinations.ai/image/A%20split-screen%20pixel%20art%20meme%20comparing%20manual%20clicking%20vs%20the%20new%20feature.%20Left%20side%3A%20A%20weary%20pixel%20bee%20hand%20manually%20ticking%20endless%20gray%20boxes%2C%20clock%20on%20wall%20showing%203AM%2C%20gloomy%20blue%20palette.%20Right%20side%3A%20The%20bee%20pushing%20a%20giant%2C%20shiny%2C%20candy-like%20button%20labeled%20%27SELECT%20ALL%27.%20An%20explosion%20of%20lime%20green%20%28%23ecf874%29%20sparkles%20and%20%27CHECKED%21%27%20text%20fills%20the%20screen.%20The%20bee%20wears%20cool%20sunglasses.%20Style%3A%20Retro%20arcade%20game%20victory%20screen.%20Composition%3A%20High%20contrast%20between%20the%20boring%20left%20and%20the%20electric%2C%20vibrant%20right.%20Avoid%3A%20realistic%20hands%2C%20dull%20colors%2C%20modern%20UI%20vector%20art.?model=nanobanana-pro&width=1200&height=675&quality=hd&nologo=true&private=true&nofeed=true&seed=1151352120",
+    "prompt": "A split-screen pixel art meme comparing manual clicking vs the new feature. Left side: A weary pixel bee hand manually ticking endless gray boxes, clock on wall showing 3AM, gloomy blue palette. Right side: The bee pushing a giant, shiny, candy-like button labeled 'SELECT ALL'. An explosion of lime green (#ecf874) sparkles and 'CHECKED!' text fills the screen. The bee wears cool sunglasses. Style: Retro arcade game victory screen. Composition: High contrast between the boring left and the electric, vibrant right. Avoid: realistic hands, dull colors, modern UI vector art."
+  },
+  "reasoning": "Highlights the most user-facing UX improvement ('select all') which is a relatable pain point for devs. Mentions the Linux fix to show technical competence. Uses the 'stonks' chart meme format in text for quick readability. Image prompt uses the specific 'dopamine hit' visual of a one-click solution in the brand's retro pixel style.",
+  "pr_references": [
+    "#7959",
+    "#7877",
+    "#7949",
+    "#7926",
+    "#7947",
+    "#7943",
+    "#7930"
+  ],
+  "char_count": 270
+}

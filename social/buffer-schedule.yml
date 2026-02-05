@@ -1,6 +1,6 @@
 # Social Media Posting Schedule
 # All times in UTC
-# Used by buffer_publish_post.py to schedule posts via Buffer's customScheduled mode
+# Used by buffer_stage_post.py to schedule posts via Buffer's customScheduled mode
 #
 # Each post is generated once, reviewed via PR, and delivered once at the preferred time.
 # Generation frequency = delivery frequency. Lookback window matches the gap between generations.
@@ -23,5 +23,5 @@ instagram:
 # How it works:
 # 1. Cron generates post → creates PR for review
 # 2. PR merged → Buffer publish workflow triggers
-# 3. buffer_publish_post.py reads this schedule, picks next valid day at preferred time
+# 3. buffer_stage_post.py reads this schedule, picks next valid day at preferred time
 # 4. Buffer delivers the post at that scheduled time

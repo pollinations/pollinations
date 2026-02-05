@@ -28,7 +28,7 @@ flowchart TD
     C --> D["AI writes casual tweet"]:::ai
     D --> E["AI generates dynamic image"]:::ai
     E --> F["Creates PR with JSON + image"]:::pr
-    F -->|PR merged| G["buffer_publish_post.py"]:::script
+    F -->|PR merged| G["buffer_stage_post.py"]:::script
     G --> H["Delivers same day at 17:00 UTC"]:::output
 
     classDef trigger fill:#f59e0b,stroke:#fff,stroke-width:2px,color:#000
@@ -46,7 +46,7 @@ flowchart TD
 | Script | Purpose |
 |--------|---------|
 | `scripts/twitter_generate_post.py` | Fetches PRs, generates tweet JSON + image |
-| `scripts/buffer_publish_post.py` | Publishes to Buffer with scheduled delivery |
+| `scripts/buffer_stage_post.py` | Stages on Buffer for scheduled delivery |
 
 ## Prompts
 

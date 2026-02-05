@@ -60,7 +60,7 @@ YOUR MISSION: Create friendly, approachable, Gen-Z aesthetic content that reflec
 
 ## Instagram Formats
 
-- Carousel (up to 20 images) - highest engagement
+- Carousel (3-5 images) - highest engagement
 - Pixel art animation loops (GIF-style)
 - Retro game screenshot aesthetic
 - Infographic with pixel icons

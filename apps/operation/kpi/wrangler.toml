@@ -2,10 +2,12 @@ name = "myceli-kpi"
 # account_id is set via CLOUDFLARE_ACCOUNT_ID env var in CI
 main = "src/worker/index.ts"
 compatibility_date = "2024-01-01"
+workers_dev = true
 
-routes = [
-    { pattern = "kpi.myceli.ai", custom_domain = true }
-]
+# Custom domain not yet configured in Cloudflare
+# routes = [
+#     { pattern = "kpi.myceli.ai", custom_domain = true }
+# ]
 
 [site]
 bucket = "./dist"

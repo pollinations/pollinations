@@ -127,6 +127,8 @@ def create_post_pr(post_data: Dict, image_bytes: Optional[bytes], image_url: Opt
         raw_url = commit_image_to_branch(image_bytes, image_path, branch_name, github_token, owner, repo)
         if raw_url:
             image_url = raw_url
+        else:
+            print("Warning: Using generation URL as fallback — Buffer may fail to fetch it")
 
     # Build full tweet with hashtags
     tweet = post_data['tweet']

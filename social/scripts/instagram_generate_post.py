@@ -328,6 +328,8 @@ def create_post_pr(strategy: Dict, images: List[bytes], image_urls: List[str], p
             # Commit image to branch for a stable URL
             image_path = f"social/news/transformed/instagram/posts/{today}-image-{i+1}.jpg"
             raw_url = commit_image_to_branch(images[i], image_path, branch_name, github_token, owner, repo)
+            if not raw_url:
+                print(f"Warning: Image {i+1} using generation URL as fallback — Buffer may fail to fetch it")
             url = raw_url if raw_url else image_urls[i]
             image_data.append({
                 "url": url,

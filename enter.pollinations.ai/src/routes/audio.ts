@@ -24,6 +24,7 @@ function buildAudioUsageHeaders(
 }
 
 const VOICE_MAPPING: Record<string, string> = {
+
     // These are the new voices mapped to ElevenLabs voices from OpenAI TTS
 
     alloy: "21m00Tcm4TlvDq8ikWAM", // Rachel

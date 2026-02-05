@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
+import type { Context } from "hono";
 import { createAuth } from "./auth.ts";
 import type { Env } from "./env.ts";
 import { handleError } from "./error.ts";
@@ -62,7 +63,7 @@ const app = new Hono<Env>()
     .route("/api", api)
     .route("/api/docs", docsRoutes);
 
-app.notFound(async (c) => {
+app.notFound(async (c: Context<Env>) => {
     return await handleError(new HTTPException(404), c);
 });
 

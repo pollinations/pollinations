@@ -42,6 +42,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-02-06** – **🎨 Imagen 3 & Grok Video** New image and video generation models powered by [api.airforce](https://api.airforce). Generate with `imagen` and `grok-video`.
 - **2026-02-02** – **🚀 Kimi K2.5** Upgraded model with vision support and improved reasoning capabilities.
 - **2026-02-02** – **🧠 Web Research** Claude can now use `perplexity` and `gemini-search` tools for real-time answers.
 - **2026-02-02** – **💎 Premium Access** High-end models `veo`, `claude-large`, and `seedream-pro` are now available for credit holders.
@@ -54,7 +55,24 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-01-26** – **🛠️ Vercel AI SDK** Build apps easily with the new official Pollinations provider for Vercel AI SDK.
 ---
 
-## 🌟 Introduction
+## 🌟 Google Summer of Code 2026 (GSOC)
+
+Hello folks! This year, `pollinations.ai` is participating in [Google Summer of Code 2026](https://summerofcode.withgoogle.com)! 
+We're looking for talented developers to contribute to our open-source AI platform. 
+
+**Website:** [Pollinations GSOC 2026](https://gsoc.pollinations.ai)
+
+**Mentors:** Thomas Haferlach, Ayushman Bhattacharya, Nihal Gazi.
+
+**Projects:** Check out our [Project Ideas](https://gsoc.pollinations.ai/projects).
+
+**Timeline:** Applications open **March 16th 2026** 
+Coding starts **May 25th 2026**
+
+> Please reach out to us about any queries on [Discord](https://discord.gg/pollinations-ai-885844321461485618) or via email at `gsoc@pollinations.ai`
+
+
+## 🌱 Introduction
 
 [pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text, image, video, and audio generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
 
@@ -341,6 +359,7 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 - [Modal](https://modal.com/): High-performance AI infrastructure
 - [NavyAI](https://api.navy/): AI API provider for OpenAI o3 and Gemini models
 - [Nebius](https://nebius.com/): AI-optimized cloud infrastructure with NVIDIA GPU clusters
+- [api.airforce](https://api.airforce): AI API gateway powering Imagen 3 and Grok Imagine Video models
 
 ## 💚 Support Us
 

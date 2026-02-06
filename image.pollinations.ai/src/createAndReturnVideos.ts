@@ -4,6 +4,7 @@
  */
 
 import debug from "debug";
+import { callAirforceVideoAPI } from "./models/airforceModel.ts";
 import { callLtx2API } from "./models/ltx2VideoModel.ts";
 import {
     callSeedanceAPI,
@@ -18,7 +19,9 @@ import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
 export type { VideoGenerationResult };
 
+import type { ImageServiceId } from "../../shared/registry/image.ts";
 import { incrementModelCounter } from "./modelCounter.ts";
+import { IMAGE_CONFIG } from "./models.ts";
 
 const logOps = debug("pollinations:video:ops");
 const logError = debug("pollinations:video:error");
@@ -55,22 +58,12 @@ export async function createAndReturnVideo(
         );
 
         // Route to appropriate video model
-        const modelHandlers: Record<string, typeof callVeoAPI> = {
-            veo: callVeoAPI,
-            seedance: callSeedanceAPI,
-            "seedance-pro": callSeedanceProAPI,
-            wan: callWanAPI,
-            "ltx-2": callLtx2API,
-        };
-
-        const handler = modelHandlers[safeParams.model];
-        if (!handler) {
-            throw new Error(
-                `Video generation not supported for model: ${safeParams.model}`,
-            );
-        }
-
-        const result = await handler(prompt, safeParams, progress, requestId);
+        const result = await routeToVideoModel(
+            prompt,
+            safeParams,
+            progress,
+            requestId,
+        );
 
         logOps("Video generation complete:", {
             durationSeconds: result.durationSeconds,
@@ -84,20 +77,42 @@ export async function createAndReturnVideo(
     }
 }
 
-// List of supported video models
-const VIDEO_MODELS = [
-    "veo",
-    "seedance",
-    "seedance-pro",
-    "wan",
-    "ltx-2",
-] as const;
+async function routeToVideoModel(
+    prompt: string,
+    safeParams: ImageParams,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<VideoGenerationResult> {
+    switch (safeParams.model) {
+        case "veo":
+            return callVeoAPI(prompt, safeParams, progress, requestId);
+        case "seedance":
+            return callSeedanceAPI(prompt, safeParams, progress, requestId);
+        case "seedance-pro":
+            return callSeedanceProAPI(prompt, safeParams, progress, requestId);
+        case "wan":
+            return callWanAPI(prompt, safeParams, progress, requestId);
+        case "ltx-2":
+            return callLtx2API(prompt, safeParams, progress, requestId);
+        case "grok-video":
+            return callAirforceVideoAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+                "grok-imagine-video",
+            );
+        default:
+            throw new Error(
+                `Video generation not supported for model: ${safeParams.model}`,
+            );
+    }
+}
 
 /**
- * Check if a model is a video model
- * @param {string} model - Model name
- * @returns {boolean}
+ * Check if a model is a video model by looking at the IMAGE_CONFIG
  */
 export function isVideoModel(model: string): boolean {
-    return VIDEO_MODELS.includes(model as (typeof VIDEO_MODELS)[number]);
+    const config = IMAGE_CONFIG[model as ImageServiceId];
+    return config?.isVideo === true;
 }

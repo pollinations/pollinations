@@ -6,6 +6,7 @@ import {
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
     createNomNomConfig,
+    createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
     createScalewayModelConfig,
@@ -46,17 +47,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
         "max-completion-tokens": 2048,
     }),
-    "deepseek-v3.2-maas": () => ({
-        provider: "openai",
-        authKey: googleCloudAuth.getAccessToken,
-        "custom-host": `https://aiplatform.googleapis.com/v1/projects/${process.env.GOOGLE_PROJECT_ID}/locations/global/endpoints/openapi`,
-        "strict-openai-compliance": "false",
-        model: "deepseek-ai/deepseek-v3.2-maas",
-    }),
     "myceli-grok-4-fast": () => createMyceliGrok4FastConfig(),
 
     // ============================================================================
-    // Azure-2 (PointsFlyer) - openai-fast, midijourney
+    // Azure-2 (PointsFlyer) - openai-fast
     // ============================================================================
     "gpt-5-nano-2025-08-07": () => ({
         ...createAzureModelConfig(
@@ -66,24 +60,21 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
         "max-completion-tokens": 512,
     }),
-    "gpt-4.1-2025-04-14": () => ({
-        ...createAzureModelConfig(
-            process.env.AZURE_PF_GPT41_API_KEY,
-            process.env.AZURE_PF_GPT41_ENDPOINT,
-            "gpt-4.1-2025-04-14",
-        ),
-    }),
 
     // ============================================================================
-    // Scaleway - mistral, qwen-coder
+    // Scaleway - qwen-coder (legacy)
     // ============================================================================
-    "mistral-small-3.2-24b-instruct-2506": () =>
-        createScalewayModelConfig({
-            model: "mistral-small-3.2-24b-instruct-2506",
-        }),
     "qwen2.5-coder-32b-instruct": () =>
         createScalewayModelConfig({
             model: "qwen2.5-coder-32b-instruct",
+        }),
+
+    // ============================================================================
+    // OVHcloud - Mistral
+    // ============================================================================
+    "Mistral-Small-3.2-24B-Instruct-2506": () =>
+        createOVHcloudMistralConfig({
+            model: "Mistral-Small-3.2-24B-Instruct-2506",
         }),
 
     // ============================================================================

@@ -1,0 +1,34 @@
+{
+  "date": "2026-02-06",
+  "generated_at": "2026-02-06T00:11:15.785046+00:00",
+  "platform": "twitter",
+  "tweet_type": "shipped",
+  "tweet": "battled github 429 rate limits today. added smarter backoffs to our CI workflows—green builds are the best dopamine.\n\nalso: heavy models (claude/grok) moved to paid tiers. keeps `gemini-fast` free for everyone.\n\nsustainability > hype. 13 PRs merged.",
+  "alt_tweet": "shipping sustainable open source means making the math work.\n\nmoved heavy models (claude, grok) to paid tiers today so we can keep `gemini-fast` free forever.\n\n(also fixed a nasty github 429 rate limit bug in our CI. automation is only as good as its error handling.)",
+  "full_tweet": "battled github 429 rate limits today. added smarter backoffs to our CI workflows—green builds are the best dopamine.\n\nalso: heavy models (claude/grok) moved to paid tiers. keeps `gemini-fast` free for everyone.\n\nsustainability > hype. 13 PRs merged. #OpenSource #AI",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/twitter/posts/2026-02-06-image.jpg",
+    "prompt": "Cozy pixel art of a bee developer standing triumphantly in front of a server rack with all lime green (#ecf874) status lights. A monitor displays 'CI: PASS' in pixel font. Soft pastel purple shadows, warm ambient glow. 8-bit retro aesthetic like Stardew Valley. Visualizes technical success."
+  },
+  "reasoning": "Leads with a relatable engineering pain point (GitHub rate limits) to establish builder credibility before announcing the business change (paid models). Frames the pricing update as a sustainability move to protect the free tier.",
+  "pr_references": [
+    "#7986",
+    "#7984",
+    "#7983",
+    "#7982",
+    "#7981",
+    "#7980",
+    "#7979",
+    "#7976",
+    "#7972",
+    "#7974",
+    "#7973",
+    "#7959",
+    "#7877"
+  ],
+  "char_count": 265
+}

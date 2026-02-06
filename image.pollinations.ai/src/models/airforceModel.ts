@@ -86,7 +86,8 @@ function buildRequestBody(
         n: 1,
     };
 
-    if (safeParams.width && safeParams.height) {
+    // imagen-3 only supports default resolution; other models accept custom sizes
+    if (airforceModel !== "imagen-3" && safeParams.width && safeParams.height) {
         requestBody.size = `${safeParams.width}x${safeParams.height}`;
     }
 

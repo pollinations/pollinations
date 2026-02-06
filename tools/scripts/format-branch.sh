@@ -5,7 +5,7 @@
 set -e
 
 # Get the base branch (default to main)
-BASE_BRANCH="${1:-main}"
+BASE_BRANCH="${1:-origin/main}"
 
 echo "🔍 Finding files changed compared to $BASE_BRANCH..."
 

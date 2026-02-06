@@ -8,6 +8,7 @@ import {
 } from "./availableServers.ts";
 import { HttpError } from "./httpError.ts";
 import { incrementModelCounter } from "./modelCounter.ts";
+import { callAirforceAPI } from "./models/airforceModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
@@ -1148,6 +1149,39 @@ const generateImage = async (
             );
         } catch (error) {
             logError("Flux Klein Large generation failed:", error.message);
+            progress.updateBar(requestId, 100, "Error", error.message);
+            throw error;
+        }
+    }
+
+    // api.airforce models (imagen, grok-video)
+    if (safeParams.model === "imagen") {
+        try {
+            return await callAirforceAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+                "imagen-3",
+            );
+        } catch (error) {
+            logError("Imagen 3 generation failed:", error.message);
+            progress.updateBar(requestId, 100, "Error", error.message);
+            throw error;
+        }
+    }
+
+    if (safeParams.model === "grok-video") {
+        try {
+            return await callAirforceAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+                "grok-imagine-video",
+            );
+        } catch (error) {
+            logError("Grok Imagine Video generation failed:", error.message);
             progress.updateBar(requestId, 100, "Error", error.message);
             throw error;
         }

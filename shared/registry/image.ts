@@ -262,4 +262,34 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "imagen": {
+        aliases: ["imagen-3"],
+        modelId: "imagen",
+        provider: "airforce",
+        cost: [
+            // Google Imagen 3 via api.airforce
+            {
+                date: new Date("2026-02-06").getTime(),
+                completionImageTokens: 0.01, // Estimated cost per image
+            },
+        ],
+        description: "Imagen 3 - Google's image generation model",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "grok-video": {
+        aliases: ["grok-imagine-video"],
+        modelId: "grok-video",
+        provider: "airforce",
+        cost: [
+            // Grok Imagine Video via api.airforce
+            {
+                date: new Date("2026-02-06").getTime(),
+                completionVideoSeconds: 0.05, // Estimated cost per second
+            },
+        ],
+        description: "Grok Imagine Video - xAI's video generation model",
+        inputModalities: ["text"],
+        outputModalities: ["video"],
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

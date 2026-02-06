@@ -103,13 +103,13 @@ export const TEXT_SERVICES = {
             "mistral-small-3.2",
             "mistral-small-3.2-24b-instruct-2506",
         ],
-        modelId: "mistral-small-3.2-24b-instruct-2506",
-        provider: "scaleway",
+        modelId: "Mistral-Small-3.2-24B-Instruct-2506",
+        provider: "ovhcloud",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.15),
-                completionTextTokens: perMillion(0.35),
+                promptTextTokens: perMillion(0.1), // OVH: 0.09€ ≈ $0.10
+                completionTextTokens: perMillion(0.3), // OVH: 0.28€ ≈ $0.30
             },
         ],
         description: "Mistral Small 3.2 24B - Efficient & Cost-Effective",
@@ -145,6 +145,7 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-3-flash", "gemini-3-flash-preview"],
         modelId: "gemini-3-flash-preview",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -208,6 +209,7 @@ export const TEXT_SERVICES = {
         aliases: ["grok-fast", "grok-4", "grok-4-fast"],
         modelId: "grok-4-fast-non-reasoning",
         provider: "azure",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -299,6 +301,7 @@ export const TEXT_SERVICES = {
         aliases: ["claude-sonnet-4.5", "claude-sonnet"],
         modelId: "claude-sonnet-4-5-20250929",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -313,8 +316,8 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-large": {
-        aliases: ["claude-opus-4.5", "claude-opus"],
-        modelId: "claude-opus-4-5-20251101",
+        aliases: ["claude-opus-4.6", "claude-opus"],
+        modelId: "claude-opus-4-6-20260205",
         provider: "google",
         paidOnly: true,
         cost: [
@@ -324,7 +327,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(25.0),
             },
         ],
-        description: "Anthropic Claude Opus 4.5 - Most Intelligent Model",
+        description: "Anthropic Claude Opus 4.6 - Most Intelligent Model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,

@@ -18,9 +18,9 @@ import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
 export type { VideoGenerationResult };
 
+import type { ImageServiceId } from "../../shared/registry/image.ts";
 import { incrementModelCounter } from "./modelCounter.ts";
 import { IMAGE_CONFIG } from "./models.ts";
-import type { ImageServiceId } from "../../shared/registry/image.ts";
 
 const logOps = debug("pollinations:video:ops");
 const logError = debug("pollinations:video:error");

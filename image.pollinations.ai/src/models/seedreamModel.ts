@@ -1,10 +1,10 @@
 import debug from "debug";
+import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import { getScaledDimensions } from "../models.ts";
 import type { ImageParams } from "../params.ts";
-import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 
 // Logger
 const logOps = debug("pollinations:seedream:ops");
@@ -221,7 +221,8 @@ async function generateWithSeedream(
                 );
 
                 // Download and detect MIME type from magic bytes
-                const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
+                const { base64, mimeType } =
+                    await downloadImageAsBase64(imageUrl);
 
                 // Create data URL format: data:image/jpeg;base64,<base64data>
                 const dataUrl = `data:${mimeType};base64,${base64}`;

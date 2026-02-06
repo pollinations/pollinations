@@ -142,12 +142,12 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // Imagen 3 - Google's image generation via api.airforce
-    imagen: {
-        type: "airforce",
-        enhance: false,
-        defaultSideLength: 1024,
-    },
+    // Imagen 3 - Google's image generation via api.airforce (disabled - airforce provider unreliable)
+    // imagen: {
+    //     type: "airforce",
+    //     enhance: false,
+    //     defaultSideLength: 1024,
+    // },
 
     // Grok Imagine Video - xAI video generation via api.airforce
     "grok-video": {

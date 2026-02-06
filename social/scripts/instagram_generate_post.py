@@ -18,6 +18,7 @@ from common import (
     get_file_sha,
     call_pollinations_api,
     generate_image,
+    commit_image_to_branch,
     GITHUB_API_BASE,
     GITHUB_GRAPHQL_API,
 )
@@ -320,15 +321,27 @@ def create_post_pr(strategy: Dict, images: List[bytes], image_urls: List[str], p
 
     print(f"Created branch: {branch_name}")
 
-    # Prepare image data using the actual generated URLs (without key)
-    image_data = []
+    # Commit images to branch and build image data with stable URLs
+    image_data = []      # For JSON — uses main URLs (for Buffer after merge)
+    preview_urls = []    # For PR body — uses branch URLs (for human review before merge)
     for i, img_info in enumerate(strategy.get('images', [])):
         if i < len(images) and images[i] and i < len(image_urls) and image_urls[i]:
+            # Commit image to branch for a stable URL
+            image_path = f"social/news/transformed/instagram/posts/{today}-image-{i+1}.jpg"
+            raw_url = commit_image_to_branch(images[i], image_path, branch_name, github_token, owner, repo)
+            if raw_url:
+                json_url = raw_url  # main URL for Buffer
+                branch_url = raw_url.replace("/main/", f"/{branch_name}/")
+            else:
+                print(f"Warning: Image {i+1} using generation URL as fallback — Buffer may fail to fetch it")
+                json_url = image_urls[i]
+                branch_url = image_urls[i]
             image_data.append({
-                "url": image_urls[i],
+                "url": json_url,
                 "prompt": img_info.get('prompt', ''),
                 "description": img_info.get('description', '')
             })
+            preview_urls.append(branch_url)
 
     # Create the JSON post data
     post_data = {
@@ -379,13 +392,14 @@ def create_post_pr(strategy: Dict, images: List[bytes], image_urls: List[str], p
     # Create PR
     pr_title = f"Instagram Post - {today}"
 
-    # Build image preview for PR body
+    # Build image preview for PR body (uses branch URLs so reviewers can see images)
     image_preview = ""
     for i, img in enumerate(image_data):
         image_preview += f"\n### Image {i + 1}\n"
         image_preview += f"**Prompt:** {img['prompt'][:100]}...\n"
         image_preview += f"**Description:** {img['description']}\n"
-        image_preview += f"![Preview]({img['url']})\n"
+        preview_url = preview_urls[i] if i < len(preview_urls) else img['url']
+        image_preview += f"![Preview]({preview_url})\n"
 
     hashtags_str = " ".join(post_data['hashtags'])
 

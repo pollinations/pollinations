@@ -27,7 +27,7 @@ flowchart TD
     B --> C["Scan recent PRs"]:::process
     C --> D["AI generates caption + 3-5 images"]:::ai
     D --> E["Creates PR with post JSON"]:::pr
-    E -->|PR merged| F["buffer_publish_post.py"]:::script
+    E -->|PR merged| F["buffer_stage_post.py"]:::script
     F --> G["Delivers same day at 15:00 UTC"]:::output
 
     classDef trigger fill:#f59e0b,stroke:#fff,stroke-width:2px,color:#000
@@ -45,7 +45,7 @@ flowchart TD
 | Script | Purpose |
 |--------|---------|
 | `scripts/instagram_generate_post.py` | Fetches PRs, generates post JSON with carousel images |
-| `scripts/buffer_publish_post.py` | Publishes to Buffer with scheduled delivery |
+| `scripts/buffer_stage_post.py` | Stages on Buffer for scheduled delivery |
 
 ## Prompts
 

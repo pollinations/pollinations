@@ -82,7 +82,7 @@ export function createPerplexityModelConfig(additionalConfig = {}) {
 }
 
 /**
- * Creates an OVHcloud AI Endpoints model configuration
+ * Creates an OVHcloud AI Endpoints model configuration (Qwen endpoint)
  */
 export function createOVHcloudModelConfig(additionalConfig = {}) {
     return {
@@ -90,6 +90,18 @@ export function createOVHcloudModelConfig(additionalConfig = {}) {
         "custom-host":
             "https://qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1",
         authKey: process.env.OVHCLOUD_API_KEY,
+        ...additionalConfig,
+    };
+}
+
+/**
+ * Creates an OVHcloud AI Endpoints model configuration for Mistral
+ */
+export function createOVHcloudMistralConfig(additionalConfig = {}) {
+    return {
+        provider: "openai",
+        "custom-host": "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1",
+        authKey: process.env.OVHCLOUD_MISTRAL_API_KEY,
         ...additionalConfig,
     };
 }

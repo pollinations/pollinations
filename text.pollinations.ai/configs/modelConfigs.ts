@@ -6,6 +6,7 @@ import {
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
     createNomNomConfig,
+    createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
     createScalewayModelConfig,
@@ -61,15 +62,19 @@ export const portkeyConfig: PortkeyConfigMap = {
     }),
 
     // ============================================================================
-    // Scaleway - mistral, qwen-coder
+    // Scaleway - qwen-coder (legacy)
     // ============================================================================
-    "mistral-small-3.2-24b-instruct-2506": () =>
-        createScalewayModelConfig({
-            model: "mistral-small-3.2-24b-instruct-2506",
-        }),
     "qwen2.5-coder-32b-instruct": () =>
         createScalewayModelConfig({
             model: "qwen2.5-coder-32b-instruct",
+        }),
+
+    // ============================================================================
+    // OVHcloud - Mistral
+    // ============================================================================
+    "Mistral-Small-3.2-24B-Instruct-2506": () =>
+        createOVHcloudMistralConfig({
+            model: "Mistral-Small-3.2-24B-Instruct-2506",
         }),
 
     // ============================================================================

@@ -4,6 +4,7 @@
  */
 
 import debug from "debug";
+import { callLtx2API } from "./models/ltx2VideoModel.ts";
 import {
     callSeedanceAPI,
     callSeedanceProAPI,
@@ -13,7 +14,6 @@ import {
     type VideoGenerationResult,
 } from "./models/veoVideoModel.ts";
 import { callWanAPI } from "./models/wanVideoModel.ts";
-import { callLtx2API } from "./models/ltx2VideoModel.ts";
 import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
 export type { VideoGenerationResult };
@@ -55,38 +55,22 @@ export async function createAndReturnVideo(
         );
 
         // Route to appropriate video model
-        let result: VideoGenerationResult;
+        const modelHandlers: Record<string, typeof callVeoAPI> = {
+            veo: callVeoAPI,
+            seedance: callSeedanceAPI,
+            "seedance-pro": callSeedanceProAPI,
+            wan: callWanAPI,
+            "ltx-2": callLtx2API,
+        };
 
-        if (safeParams.model === "veo") {
-            // Google Veo 3.1 Fast
-            result = await callVeoAPI(prompt, safeParams, progress, requestId);
-        } else if (safeParams.model === "seedance") {
-            // BytePlus Seedance Lite (better quality)
-            result = await callSeedanceAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
-        } else if (safeParams.model === "seedance-pro") {
-            // BytePlus Seedance Pro-Fast (better prompt adherence)
-            result = await callSeedanceProAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
-        } else if (safeParams.model === "wan") {
-            // Alibaba Wan 2.6 (image-to-video with audio)
-            result = await callWanAPI(prompt, safeParams, progress, requestId);
-        } else if (safeParams.model === "ltx-2") {
-            // LTX-2 on Modal (text-to-video with audio)
-            result = await callLtx2API(prompt, safeParams, progress, requestId);
-        } else {
+        const handler = modelHandlers[safeParams.model];
+        if (!handler) {
             throw new Error(
                 `Video generation not supported for model: ${safeParams.model}`,
             );
         }
+
+        const result = await handler(prompt, safeParams, progress, requestId);
 
         logOps("Video generation complete:", {
             durationSeconds: result.durationSeconds,
@@ -100,11 +84,20 @@ export async function createAndReturnVideo(
     }
 }
 
+// List of supported video models
+const VIDEO_MODELS = [
+    "veo",
+    "seedance",
+    "seedance-pro",
+    "wan",
+    "ltx-2",
+] as const;
+
 /**
  * Check if a model is a video model
  * @param {string} model - Model name
  * @returns {boolean}
  */
 export function isVideoModel(model: string): boolean {
-    return ["veo", "seedance", "seedance-pro", "wan", "ltx-2"].includes(model);
+    return VIDEO_MODELS.includes(model as (typeof VIDEO_MODELS)[number]);
 }

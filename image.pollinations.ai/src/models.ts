@@ -155,17 +155,9 @@ export const IMAGE_CONFIG = {
 
 /**
  * Legacy MODELS export for backward compatibility
- * Combines registry data with local config (enhance, defaultSideLength)
  * @deprecated Use IMAGE_SERVICES from registry, IMAGE_CONFIG for implementation details
  */
-export const MODELS = Object.fromEntries(
-    Object.entries(IMAGE_CONFIG).map(([name, config]) => [
-        name,
-        {
-            ...config,
-        },
-    ]),
-) as Record<ImageServiceId, ImageModelConfig>;
+export const MODELS = IMAGE_CONFIG as Record<ImageServiceId, ImageModelConfig>;
 
 /**
  * Scale up dimensions to meet minimum pixel requirements while preserving aspect ratio

@@ -24,8 +24,9 @@ const MODAL_TOKEN_SECRET = process.env.MODAL_LTX2_TOKEN_SECRET;
  */
 function getModalAuthHeaders(): Record<string, string> {
     if (!MODAL_TOKEN_ID || !MODAL_TOKEN_SECRET) {
-        logError("Missing MODAL_LTX2_TOKEN_ID or MODAL_LTX2_TOKEN_SECRET");
-        throw new Error("Modal authentication not configured");
+        throw new Error(
+            "Modal authentication not configured: Missing MODAL_LTX2_TOKEN_ID or MODAL_LTX2_TOKEN_SECRET",
+        );
     }
     return {
         "Modal-Key": MODAL_TOKEN_ID,
@@ -83,40 +84,32 @@ function calculateDimensions(
 
     // Handle aspect ratio presets if no explicit dimensions
     if (!inputWidth && !inputHeight && aspectRatio) {
-        switch (aspectRatio) {
-            case "16:9":
-                width = 1024;
-                height = 576;
-                break;
-            case "9:16":
-                width = 576;
-                height = 1024;
-                break;
-            default:
-                width = DEFAULT_SIZE;
-                height = DEFAULT_SIZE;
+        if (aspectRatio === "16:9") {
+            width = 1024;
+            height = 576;
+        } else if (aspectRatio === "9:16") {
+            width = 576;
+            height = 1024;
+        } else {
+            width = DEFAULT_SIZE;
+            height = DEFAULT_SIZE;
         }
     }
 
-    // Check if total pixels exceed max
+    // Scale down if total pixels exceed max
     const totalPixels = width * height;
     if (totalPixels > MAX_PIXELS) {
-        // Scale down proportionally maintaining aspect ratio
         const scale = Math.sqrt(MAX_PIXELS / totalPixels);
         width = Math.floor(width * scale);
         height = Math.floor(height * scale);
         logOps(
-            `Scaled down resolution to ${width}x${height} (was exceeding max pixels)`,
+            `Scaled down resolution to ${width}x${height} (exceeded max pixels)`,
         );
     }
 
-    // Round to nearest 32 (LTX-2 requirement)
-    width = roundTo32(width);
-    height = roundTo32(height);
-
-    // Ensure minimum size
-    width = Math.max(256, width);
-    height = Math.max(256, height);
+    // Round to nearest 32 (LTX-2 requirement) and ensure minimum size
+    width = Math.max(256, roundTo32(width));
+    height = Math.max(256, roundTo32(height));
 
     return { width, height };
 }
@@ -220,7 +213,9 @@ async function pollLtx2Status(
             if (data.status === "done") {
                 logOps("Generation complete!");
                 return;
-            } else if (data.status === "error") {
+            }
+
+            if (data.status === "error") {
                 throw new HttpError(
                     `Video generation failed: ${data.error || "Unknown error"}`,
                     500,
@@ -229,12 +224,11 @@ async function pollLtx2Status(
 
             // Status is "running" or other, continue polling
         } catch (error) {
-            // Network errors - log and continue
-            if (!(error instanceof HttpError)) {
-                logError("Poll error:", error);
-            } else {
-                throw error; // Re-throw HttpErrors
+            if (error instanceof HttpError) {
+                throw error;
             }
+            // Network errors - log and continue polling
+            logError("Poll error:", error);
         }
 
         await sleep(POLL_INTERVAL_MS);

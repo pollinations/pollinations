@@ -65,7 +65,7 @@ def build_image() -> modal.Image:
 
 
 image = build_image()
-app = modal.App(name=APP_NAME, image=image, experimental_options={"enable_gpu_snapshot": True})
+app = modal.App(name=APP_NAME, image=image)
 vol = modal.Volume.from_name(HF_CACHE_VOLUME_NAME, create_if_missing=True)
 
 

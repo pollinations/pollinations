@@ -37,17 +37,22 @@ export const ModelRow: FC<ModelRowProps> = ({
     };
 
     // Get model capabilities
-    const showReasoning = hasReasoning(model.name);
-    const showVision = hasVision(model.name);
-    const showAudioInput = hasAudioInput(model.name);
-    const showAudioOutput = hasAudioOutput(model.name);
-    const showSearch = hasSearch(model.name);
-    const showCodeExecution = hasCodeExecution(model.name);
-    const showNew = isNewModel(model.name);
-    const showPaidOnly = isPaidOnly(model.name);
-    const isDisabled = showPaidOnly && packBalance <= 0;
+    const capabilities = {
+        reasoning: hasReasoning(model.name),
+        vision: hasVision(model.name),
+        audioInput: hasAudioInput(model.name),
+        audioOutput: hasAudioOutput(model.name),
+        search: hasSearch(model.name),
+        codeExecution: hasCodeExecution(model.name),
+        isNew: isNewModel(model.name),
+        isPaidOnly: isPaidOnly(model.name),
+    };
+    const isDisabled = capabilities.isPaidOnly && packBalance <= 0;
 
     const borderClass = isLast ? "" : "border-b border-gray-200";
+    const badgeClass = capabilities.isPaidOnly
+        ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
+        : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700";
 
     return (
         <tr className={isDisabled ? "opacity-50" : ""}>
@@ -56,7 +61,11 @@ export const ModelRow: FC<ModelRowProps> = ({
             >
                 <div className="flex items-center gap-2">
                     <div className="flex flex-col">
-                        <span className={showNew ? "font-bold" : "font-medium"}>
+                        <span
+                            className={
+                                capabilities.isNew ? "font-bold" : "font-medium"
+                            }
+                        >
                             {modelDisplayName || model.name}
                         </span>
                         <button
@@ -68,7 +77,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                             {copied ? "✓ copied" : model.name}
                         </button>
                     </div>
-                    {showVision && (
+                    {capabilities.vision && (
                         <Tooltip
                             content={
                                 model.type === "image"
@@ -79,37 +88,37 @@ export const ModelRow: FC<ModelRowProps> = ({
                             <span className="text-base">👁️</span>
                         </Tooltip>
                     )}
-                    {showAudioInput && (
+                    {capabilities.audioInput && (
                         <Tooltip content="Audio input">
                             <span className="text-base">🎙️</span>
                         </Tooltip>
                     )}
-                    {showAudioOutput && (
+                    {capabilities.audioOutput && (
                         <Tooltip content="Audio output">
                             <span className="text-base">🔊</span>
                         </Tooltip>
                     )}
-                    {showReasoning && (
+                    {capabilities.reasoning && (
                         <Tooltip content="Reasoning">
                             <span className="text-base">🧠</span>
                         </Tooltip>
                     )}
-                    {showSearch && (
+                    {capabilities.search && (
                         <Tooltip content="Web search">
                             <span className="text-base">🔍</span>
                         </Tooltip>
                     )}
-                    {showCodeExecution && (
+                    {capabilities.codeExecution && (
                         <Tooltip content="Code execution">
                             <span className="text-base">💻</span>
                         </Tooltip>
                     )}
-                    {showNew && (
+                    {capabilities.isNew && (
                         <span className="text-[10px] text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full font-semibold border border-green-400 shadow-[0_0_6px_rgba(34,197,94,0.5)] animate-[glow_2s_ease-in-out_infinite]">
                             NEW
                         </span>
                     )}
-                    {showPaidOnly && (
+                    {capabilities.isPaidOnly && (
                         <Tooltip
                             content={
                                 isDisabled
@@ -127,68 +136,46 @@ export const ModelRow: FC<ModelRowProps> = ({
             <td className={`py-2 px-2 text-sm ${borderClass}`}>
                 <div className="flex justify-center">
                     <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${model.type === "image" ? "uppercase" : ""} ${showPaidOnly ? "bg-purple-200 text-purple-700 border border-purple-300" : "bg-cyan-200 text-cyan-700 border border-cyan-300"}`}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${model.type === "image" ? "uppercase" : ""} ${capabilities.isPaidOnly ? "bg-purple-200 text-purple-700 border border-purple-300" : "bg-cyan-200 text-cyan-700 border border-cyan-300"}`}
                     >
                         {genPerPollen}
                     </span>
                 </div>
             </td>
             <td className={`py-2 px-2 text-sm text-center ${borderClass}`}>
-                {genPerPollen === "—" ? (
-                    <span className="text-gray-400">—</span>
-                ) : (
-                    <div className="flex flex-col gap-1 items-center">
-                        <PriceBadge
-                            prices={[model.promptTextPrice]}
-                            emoji="💬"
-                            subEmojis={["💬"]}
-                            perToken={model.perToken}
-                            className={
-                                showPaidOnly
-                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
-                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
-                            }
-                        />
-                        <PriceBadge
-                            prices={[model.promptCachedPrice]}
-                            emoji="�"
-                            subEmojis={["💾"]}
-                            perToken={model.perToken}
-                            className={
-                                showPaidOnly
-                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
-                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
-                            }
-                        />
-                        <PriceBadge
-                            prices={[model.promptAudioPrice]}
-                            emoji="🔊"
-                            subEmojis={["🔊"]}
-                            perToken={model.perToken}
-                            className={
-                                showPaidOnly
-                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
-                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
-                            }
-                        />
-                        <PriceBadge
-                            prices={[model.promptImagePrice]}
-                            emoji="🖼️"
-                            subEmojis={["🖼️"]}
-                            perToken={model.perToken}
-                            className={
-                                showPaidOnly
-                                    ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
-                                    : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
-                            }
-                        />
-                    </div>
-                )}
+                <div className="flex flex-col gap-1 items-center">
+                    <PriceBadge
+                        prices={[model.promptTextPrice]}
+                        emoji="💬"
+                        subEmojis={["💬"]}
+                        perToken={model.perToken}
+                        className={badgeClass}
+                    />
+                    <PriceBadge
+                        prices={[model.promptCachedPrice]}
+                        emoji="💾"
+                        subEmojis={["💾"]}
+                        perToken={model.perToken}
+                        className={badgeClass}
+                    />
+                    <PriceBadge
+                        prices={[model.promptAudioPrice]}
+                        emoji="🔊"
+                        subEmojis={["🔊"]}
+                        perToken={model.perToken}
+                        className={badgeClass}
+                    />
+                    <PriceBadge
+                        prices={[model.promptImagePrice]}
+                        emoji="🖼️"
+                        subEmojis={["🖼️"]}
+                        perToken={model.perToken}
+                        className={badgeClass}
+                    />
+                </div>
             </td>
             <td className={`py-2 px-2 text-sm text-center ${borderClass}`}>
-                {genPerPollen === "—" ? (
-                    <span className="text-gray-400">—</span>
-                ) : (
+                {
                     <div className="flex flex-col gap-1 items-center">
                         <PriceBadge
                             prices={[model.completionTextPrice]}
@@ -196,7 +183,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                             subEmojis={["💬"]}
                             perToken={model.perToken}
                             className={
-                                showPaidOnly
+                                capabilities.isPaidOnly
                                     ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
                                     : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
                             }
@@ -207,7 +194,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                             subEmojis={["🔊"]}
                             perToken={model.perToken}
                             className={
-                                showPaidOnly
+                                capabilities.isPaidOnly
                                     ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
                                     : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
                             }
@@ -220,7 +207,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                     subEmojis={["🎬"]}
                                     perSecond
                                     className={
-                                        showPaidOnly
+                                        capabilities.isPaidOnly
                                             ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
                                             : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
                                     }
@@ -231,7 +218,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                     subEmojis={["🔊"]}
                                     perSecond
                                     className={
-                                        showPaidOnly
+                                        capabilities.isPaidOnly
                                             ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
                                             : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
                                     }
@@ -244,7 +231,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 subEmojis={["🎬"]}
                                 perToken
                                 className={
-                                    showPaidOnly
+                                    capabilities.isPaidOnly
                                         ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
                                         : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
                                 }
@@ -256,7 +243,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 subEmojis={["🖼️"]}
                                 perImage
                                 className={
-                                    showPaidOnly
+                                    capabilities.isPaidOnly
                                         ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
                                         : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
                                 }
@@ -268,14 +255,14 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 subEmojis={["🖼️"]}
                                 perToken={model.perToken}
                                 className={
-                                    showPaidOnly
+                                    capabilities.isPaidOnly
                                         ? "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-purple-200 text-purple-700"
                                         : "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-cyan-200 text-cyan-700"
                                 }
                             />
                         )}
                     </div>
-                )}
+                }
             </td>
         </tr>
     );

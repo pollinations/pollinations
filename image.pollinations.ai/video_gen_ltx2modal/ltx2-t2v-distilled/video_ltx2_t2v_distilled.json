@@ -1,0 +1,492 @@
+{
+  "104": {
+    "inputs": {
+      "filename_prefix": "video/LTX-2",
+      "format": "auto",
+      "codec": "auto",
+      "video-preview": "",
+      "video": [
+        "177:114",
+        0
+      ]
+    },
+    "class_type": "SaveVideo",
+    "_meta": {
+      "title": "Save Video"
+    }
+  },
+  "177:101": {
+    "inputs": {
+      "ckpt_name": "ltx-2-19b-distilled.safetensors"
+    },
+    "class_type": "LTXVAudioVAELoader",
+    "_meta": {
+      "title": "LTXV Audio VAE Loader"
+    }
+  },
+  "177:102": {
+    "inputs": {
+      "text": [
+        "177:109",
+        0
+      ],
+      "clip": [
+        "177:111",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "enhanced prompt (positive)"
+    }
+  },
+  "177:103": {
+    "inputs": {
+      "frame_rate": [
+        "177:112",
+        0
+      ],
+      "positive": [
+        "177:102",
+        0
+      ],
+      "negative": [
+        "177:102",
+        0
+      ]
+    },
+    "class_type": "LTXVConditioning",
+    "_meta": {
+      "title": "LTXVConditioning"
+    }
+  },
+  "177:110": {
+    "inputs": {
+      "model_name": "ltx-2-spatial-upscaler-x2-1.0.safetensors"
+    },
+    "class_type": "LatentUpscaleModelLoader",
+    "_meta": {
+      "title": "Load Latent Upscale Model"
+    }
+  },
+  "177:111": {
+    "inputs": {
+      "text_encoder": "gemma_3_12B_it.safetensors",
+      "ckpt_name": "ltx-2-19b-distilled.safetensors",
+      "device": "default"
+    },
+    "class_type": "LTXAVTextEncoderLoader",
+    "_meta": {
+      "title": "LTXV Audio Text Encoder Loader"
+    }
+  },
+  "177:115": {
+    "inputs": {
+      "frames_number": [
+        "177:113",
+        0
+      ],
+      "frame_rate": [
+        "177:106",
+        0
+      ],
+      "batch_size": 1,
+      "audio_vae": [
+        "177:101",
+        0
+      ]
+    },
+    "class_type": "LTXVEmptyLatentAudio",
+    "_meta": {
+      "title": "LTXV Empty Latent Audio"
+    }
+  },
+  "177:116": {
+    "inputs": {
+      "width": [
+        "177:122",
+        0
+      ],
+      "height": [
+        "177:122",
+        1
+      ],
+      "length": [
+        "177:113",
+        0
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyLTXVLatentVideo",
+    "_meta": {
+      "title": "EmptyLTXVLatentVideo"
+    }
+  },
+  "177:121": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": 0.5,
+      "image": [
+        "177:131",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Upscale Image By"
+    }
+  },
+  "177:100": {
+    "inputs": {
+      "ckpt_name": "ltx-2-19b-distilled.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "177:127": {
+    "inputs": {
+      "cfg": 1,
+      "model": [
+        "177:100",
+        0
+      ],
+      "positive": [
+        "177:103",
+        0
+      ],
+      "negative": [
+        "177:103",
+        1
+      ]
+    },
+    "class_type": "CFGGuider",
+    "_meta": {
+      "title": "CFGGuider"
+    }
+  },
+  "177:126": {
+    "inputs": {
+      "sampler_name": "euler_ancestral"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "177:176": {
+    "inputs": {
+      "sigmas": "1., 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0"
+    },
+    "class_type": "ManualSigmas",
+    "_meta": {
+      "title": "ManualSigmas"
+    }
+  },
+  "177:117": {
+    "inputs": {
+      "sigmas": "0.909375, 0.725, 0.421875, 0.0"
+    },
+    "class_type": "ManualSigmas",
+    "_meta": {
+      "title": "ManualSigmas"
+    }
+  },
+  "177:129": {
+    "inputs": {
+      "sampler_name": "euler_ancestral"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "177:124": {
+    "inputs": {
+      "cfg": 1,
+      "model": [
+        "177:100",
+        0
+      ],
+      "positive": [
+        "177:103",
+        0
+      ],
+      "negative": [
+        "177:103",
+        1
+      ]
+    },
+    "class_type": "CFGGuider",
+    "_meta": {
+      "title": "CFGGuider"
+    }
+  },
+  "177:118": {
+    "inputs": {
+      "noise_seed": 420
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "RandomNoise"
+    }
+  },
+  "177:128": {
+    "inputs": {
+      "video_latent": [
+        "177:135",
+        0
+      ],
+      "audio_latent": [
+        "177:133",
+        1
+      ]
+    },
+    "class_type": "LTXVConcatAVLatent",
+    "_meta": {
+      "title": "LTXVConcatAVLatent"
+    }
+  },
+  "177:114": {
+    "inputs": {
+      "fps": [
+        "177:112",
+        0
+      ],
+      "images": [
+        "177:119",
+        0
+      ],
+      "audio": [
+        "177:120",
+        0
+      ]
+    },
+    "class_type": "CreateVideo",
+    "_meta": {
+      "title": "Create Video"
+    }
+  },
+  "177:135": {
+    "inputs": {
+      "samples": [
+        "177:133",
+        0
+      ],
+      "upscale_model": [
+        "177:110",
+        0
+      ],
+      "vae": [
+        "177:100",
+        2
+      ]
+    },
+    "class_type": "LTXVLatentUpsampler",
+    "_meta": {
+      "title": "LTXVLatentUpsampler"
+    }
+  },
+  "177:133": {
+    "inputs": {
+      "av_latent": [
+        "177:125",
+        1
+      ]
+    },
+    "class_type": "LTXVSeparateAVLatent",
+    "_meta": {
+      "title": "LTXVSeparateAVLatent"
+    }
+  },
+  "177:123": {
+    "inputs": {
+      "noise_seed": 45
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "RandomNoise"
+    }
+  },
+  "177:119": {
+    "inputs": {
+      "tile_size": 512,
+      "overlap": 64,
+      "temporal_size": 4096,
+      "temporal_overlap": 8,
+      "samples": [
+        "177:130",
+        0
+      ],
+      "vae": [
+        "177:100",
+        2
+      ]
+    },
+    "class_type": "VAEDecodeTiled",
+    "_meta": {
+      "title": "VAE Decode (Tiled)"
+    }
+  },
+  "177:120": {
+    "inputs": {
+      "samples": [
+        "177:130",
+        1
+      ],
+      "audio_vae": [
+        "177:101",
+        0
+      ]
+    },
+    "class_type": "LTXVAudioVAEDecode",
+    "_meta": {
+      "title": "LTXV Audio VAE Decode"
+    }
+  },
+  "177:130": {
+    "inputs": {
+      "av_latent": [
+        "177:134",
+        1
+      ]
+    },
+    "class_type": "LTXVSeparateAVLatent",
+    "_meta": {
+      "title": "LTXVSeparateAVLatent"
+    }
+  },
+  "177:132": {
+    "inputs": {
+      "video_latent": [
+        "177:116",
+        0
+      ],
+      "audio_latent": [
+        "177:115",
+        0
+      ]
+    },
+    "class_type": "LTXVConcatAVLatent",
+    "_meta": {
+      "title": "LTXVConcatAVLatent"
+    }
+  },
+  "177:113": {
+    "inputs": {
+      "value": 121
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Frame Count"
+    }
+  },
+  "177:106": {
+    "inputs": {
+      "value": 24
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Frame Rate (Int)"
+    }
+  },
+  "177:112": {
+    "inputs": {
+      "value": 24
+    },
+    "class_type": "PrimitiveFloat",
+    "_meta": {
+      "title": "Frame Rate (Float)"
+    }
+  },
+  "177:131": {
+    "inputs": {
+      "width": 720,
+      "height": 720,
+      "batch_size": 1,
+      "color": 0
+    },
+    "class_type": "EmptyImage",
+    "_meta": {
+      "title": "EmptyImage"
+    }
+  },
+  "177:122": {
+    "inputs": {
+      "image": [
+        "177:121",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Get Image Size"
+    }
+  },
+  "177:109": {
+    "inputs": {
+      "value": "Live-action absurdist surrealism. Shot on warm, vintage 35mm film stock. The camera starts in an extreme close-up of a realistic man’s face, focusing on the starch of his collar and the sheer panic in his wide, watery eyes. He is wearing a pristine, 1920s tuxedo with a black bow tie. Suddenly, the camera rapidly zooms back to a wide tracking shot, revealing him sprinting across an infinite, polished wooden parquet floor that stretches to the horizon under a black, starless sky. As he runs, the camera executes a sharp whip pan 180 degrees to the rear to reveal the pursuer: a colossal, rolling sphere composed of hundreds of tangled, vintage wooden chairs. The sphere is 50 feet tall and chaotic, with chair legs and backrests interlocking in a dense, wooden mesh. It rolls with heavy momentum, crushing the floorboards beneath it with explosive splinters. The lighting is singular and theatrical, like a spotlight following the runner. Sound of deafening, rhythmic wood snapping and heavy rolling thunder.\n"
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Positive prompt"
+    }
+  },
+  "177:125": {
+    "inputs": {
+      "noise": [
+        "177:123",
+        0
+      ],
+      "guider": [
+        "177:127",
+        0
+      ],
+      "sampler": [
+        "177:126",
+        0
+      ],
+      "sigmas": [
+        "177:176",
+        0
+      ],
+      "latent_image": [
+        "177:132",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "177:134": {
+    "inputs": {
+      "noise": [
+        "177:118",
+        0
+      ],
+      "guider": [
+        "177:124",
+        0
+      ],
+      "sampler": [
+        "177:129",
+        0
+      ],
+      "sigmas": [
+        "177:117",
+        0
+      ],
+      "latent_image": [
+        "177:128",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  }
+}

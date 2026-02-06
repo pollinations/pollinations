@@ -5,6 +5,7 @@
 
 import debug from "debug";
 import { callAirforceVideoAPI } from "./models/airforceModel.ts";
+import { callLtx2API } from "./models/ltx2VideoModel.ts";
 import {
     callSeedanceAPI,
     callSeedanceProAPI,
@@ -91,6 +92,8 @@ async function routeToVideoModel(
             return callSeedanceProAPI(prompt, safeParams, progress, requestId);
         case "wan":
             return callWanAPI(prompt, safeParams, progress, requestId);
+        case "ltx-2":
+            return callLtx2API(prompt, safeParams, progress, requestId);
         case "grok-video":
             return callAirforceVideoAPI(
                 prompt,

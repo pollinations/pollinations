@@ -96,6 +96,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
         }),
+    "global.anthropic.claude-opus-4-6-v1": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-opus-4-6-v1",
+        }),
 
     // ============================================================================
     // Google Vertex AI - Claude models (alternative to Bedrock)
@@ -147,7 +151,7 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         ],
     }),
-    "claude-opus-4-5-fallback": () => ({
+    "claude-opus-4-6-fallback": () => ({
         strategy: { mode: "fallback" },
         defaultOptions: { max_tokens: 16384 },
         targets: [
@@ -158,10 +162,10 @@ export const portkeyConfig: PortkeyConfigMap = {
                 aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
                 aws_region: process.env.AWS_REGION || "us-east-1",
                 override_params: {
-                    model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+                    model: "global.anthropic.claude-opus-4-6-v1",
                 },
             },
-            // Fallback: Google Vertex AI
+            // Fallback: Google Vertex AI (still Opus 4.5 until Vertex gets 4.6)
             {
                 provider: "vertex-ai",
                 authKey: googleCloudAuth.getAccessToken,

@@ -72,7 +72,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     // ============================================================================
     // OVHcloud - Mistral
     // ============================================================================
-    "Mistral-Small-3.2-24B-Instruct-2506": () =>
+    "mistral-small-3.2-24b-instruct-2506": () =>
         createOVHcloudMistralConfig({
             model: "Mistral-Small-3.2-24B-Instruct-2506",
         }),

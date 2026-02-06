@@ -11,6 +11,7 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "kontext",
         provider: "azure",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -25,6 +26,7 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "nanobanana",
         provider: "google",
+        paidOnly: true,
         cost: [
             // Gemini 2.5 Flash Image via Vertex AI
             {
@@ -62,6 +64,7 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "seedream",
         provider: "bytedance",
+        paidOnly: true,
         cost: [
             // ByteDance ARK Seedream 4.0 - $0.03 per image
             {
@@ -196,6 +199,7 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "seedance-pro",
         provider: "bytedance",
+        paidOnly: true,
         cost: [
             // Seedance Pro-Fast - $1/M tokens
             // Token formula: (height × width × FPS × duration) / 1024

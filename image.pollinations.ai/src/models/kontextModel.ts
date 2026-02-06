@@ -1,5 +1,4 @@
 import debug from "debug";
-import { withTimeoutSignal } from "../util.ts";
 import type { ImageParams } from "../params.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 
@@ -59,16 +58,11 @@ export const callKontextAPI = async (
             headers["Authorization"] = `Bearer ${process.env.SCALEWAY_KONTEXT_KEY}`;
         }
 
-        const response = await withTimeoutSignal(
-            (signal) =>
-                fetch("http://51.159.184.240:8000/generate", {
-                    method: "POST",
-                    headers,
-                    body: formData,
-                    signal,
-                }),
-            120000, // 2 minute timeout
-        );
+        const response = await fetch("http://51.159.184.240:8000/generate", {
+            method: "POST",
+            headers,
+            body: formData,
+        });
 
         if (!response.ok) {
             throw new Error(

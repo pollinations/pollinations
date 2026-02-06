@@ -1154,21 +1154,15 @@ const generateImage = async (
         }
     }
 
-    // api.airforce models (imagen, grok-video)
+    // api.airforce models (imagen)
     if (safeParams.model === "imagen") {
-        try {
-            return await callAirforceAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-                "imagen-3",
-            );
-        } catch (error) {
-            logError("Imagen 3 generation failed:", error.message);
-            progress.updateBar(requestId, 100, "Error", error.message);
-            throw error;
-        }
+        return await callAirforceAPI(
+            prompt,
+            safeParams,
+            progress,
+            requestId,
+            "imagen-3",
+        );
     }
 
     if (safeParams.model === "flux") {

@@ -283,10 +283,10 @@ export const IMAGE_SERVICES = {
         modelId: "grok-video",
         provider: "airforce",
         cost: [
-            // Grok Imagine Video via api.airforce ($500/M = $0.0005/video)
+            // Grok Imagine Video via api.airforce ($0.005 per video)
             {
                 date: COST_START_DATE,
-                completionVideoSeconds: 0.0001, // $0.0005 per ~5s video ≈ $0.0001/sec
+                completionVideoSeconds: 0.001, // $0.005 per ~5s video = $0.001/sec
             },
         ],
         description:

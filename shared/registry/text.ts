@@ -316,8 +316,8 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-large": {
-        aliases: ["claude-opus-4.5", "claude-opus"],
-        modelId: "claude-opus-4-5-20251101",
+        aliases: ["claude-opus-4.6", "claude-opus"],
+        modelId: "claude-opus-4-6-20260205",
         provider: "google",
         paidOnly: true,
         cost: [
@@ -327,7 +327,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(25.0),
             },
         ],
-        description: "Anthropic Claude Opus 4.5 - Most Intelligent Model",
+        description: "Anthropic Claude Opus 4.6 - Most Intelligent Model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,

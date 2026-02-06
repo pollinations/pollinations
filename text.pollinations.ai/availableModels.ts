@@ -79,7 +79,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude-large",
-        config: portkeyConfig["claude-opus-4-5-fallback"],
+        config: portkeyConfig["claude-opus-4-6-fallback"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {

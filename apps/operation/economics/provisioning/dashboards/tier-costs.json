@@ -1343,6 +1343,171 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "decimals": 1,
+          "thresholds": {"mode": "absolute", "steps": [{"color": "yellow", "value": null}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 5, "x": 0, "y": 50},
+      "id": 410,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {"type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456"},
+        "format": 1,
+        "rawSql": "SELECT\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'nectar'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0",
+        "refId": "A"
+      }],
+      "title": "Nectar Total",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "decimals": 1,
+          "thresholds": {"mode": "absolute", "steps": [{"color": "yellow", "value": null}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 5, "x": 5, "y": 50},
+      "id": 411,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {"type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456"},
+        "format": 1,
+        "rawSql": "SELECT\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'flower'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0",
+        "refId": "A"
+      }],
+      "title": "Flower Total",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "decimals": 1,
+          "thresholds": {"mode": "absolute", "steps": [{"color": "yellow", "value": null}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 5, "x": 10, "y": 50},
+      "id": 412,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {"type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456"},
+        "format": 1,
+        "rawSql": "SELECT\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'seed'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0",
+        "refId": "A"
+      }],
+      "title": "Seed Total",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "decimals": 1,
+          "thresholds": {"mode": "absolute", "steps": [{"color": "yellow", "value": null}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 5, "x": 15, "y": 50},
+      "id": 413,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {"type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456"},
+        "format": 1,
+        "rawSql": "SELECT\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'spore'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0",
+        "refId": "A"
+      }],
+      "title": "Spore Total",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "decimals": 1,
+          "thresholds": {"mode": "absolute", "steps": [{"color": "yellow", "value": null}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 50},
+      "id": 414,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {"type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456"},
+        "format": 1,
+        "rawSql": "SELECT\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'microbe'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0",
+        "refId": "A"
+      }],
+      "title": "Microbe Total",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
       "description": "Top models used by Nectar tier users ($20/day allowance). Shows request count and cost breakdown by tier vs pack meters.",
       "fieldConfig": {
         "defaults": {
@@ -1368,14 +1533,41 @@
         "overrides": [{
           "matcher": {
             "id": "byName",
+            "options": "Model"
+          },
+          "properties": [{
+            "id": "custom.width",
+            "value": 120
+          }]
+        }, {
+          "matcher": {
+            "id": "byName",
+            "options": "Pack_Pct"
+          },
+          "properties": [{
+            "id": "custom.width",
+            "value": 55
+          }, {
+            "id": "decimals",
+            "value": 1
+          }]
+        }, {
+          "matcher": {
+            "id": "byName",
             "options": "Tier_Cost"
           },
           "properties": [{
             "id": "unit",
             "value": "currencyUSD"
           }, {
+            "id": "decimals",
+            "value": 1
+          }, {
             "id": "displayName",
-            "value": "Tier Cost"
+            "value": "Tier$"
+          }, {
+            "id": "custom.width",
+            "value": 70
           }]
         }, {
           "matcher": {
@@ -1386,16 +1578,22 @@
             "id": "unit",
             "value": "currencyUSD"
           }, {
+            "id": "decimals",
+            "value": 1
+          }, {
             "id": "displayName",
-            "value": "Pack Cost"
+            "value": "Pack$"
+          }, {
+            "id": "custom.width",
+            "value": 70
           }]
         }]
       },
       "gridPos": {
-        "h": 10,
+        "h": 22,
         "w": 5,
         "x": 0,
-        "y": 50
+        "y": 54
       },
       "id": 401,
       "options": {
@@ -1403,9 +1601,9 @@
         "footer": {
           "countRows": false,
           "enablePagination": false,
-          "fields": ["Requests", "Tier_Cost", "Pack_Cost"],
+          "fields": [],
           "reducer": ["sum"],
-          "show": true
+          "show": false
         },
         "showHeader": true,
         "sortBy": [{
@@ -1420,7 +1618,7 @@
           "uid": "PAD1A0A25CD30D456"
         },
         "format": 1,
-        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  COUNT(*) as Requests,\n  sumIf(total_cost, selected_meter_slug LIKE '%tier%') as Tier_Cost,\n  sumIf(total_cost, selected_meter_slug LIKE '%pack%') as Pack_Cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'nectar'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
+        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'nectar'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
         "refId": "A"
       }],
       "title": "Nectar ($20/day)",
@@ -1456,14 +1654,41 @@
         "overrides": [{
           "matcher": {
             "id": "byName",
+            "options": "Model"
+          },
+          "properties": [{
+            "id": "custom.width",
+            "value": 120
+          }]
+        }, {
+          "matcher": {
+            "id": "byName",
+            "options": "Pack_Pct"
+          },
+          "properties": [{
+            "id": "custom.width",
+            "value": 55
+          }, {
+            "id": "decimals",
+            "value": 1
+          }]
+        }, {
+          "matcher": {
+            "id": "byName",
             "options": "Tier_Cost"
           },
           "properties": [{
             "id": "unit",
             "value": "currencyUSD"
           }, {
+            "id": "decimals",
+            "value": 1
+          }, {
             "id": "displayName",
-            "value": "Tier Cost"
+            "value": "Tier$"
+          }, {
+            "id": "custom.width",
+            "value": 70
           }]
         }, {
           "matcher": {
@@ -1474,16 +1699,22 @@
             "id": "unit",
             "value": "currencyUSD"
           }, {
+            "id": "decimals",
+            "value": 1
+          }, {
             "id": "displayName",
-            "value": "Pack Cost"
+            "value": "Pack$"
+          }, {
+            "id": "custom.width",
+            "value": 70
           }]
         }]
       },
       "gridPos": {
-        "h": 10,
+        "h": 22,
         "w": 5,
         "x": 5,
-        "y": 50
+        "y": 54
       },
       "id": 402,
       "options": {
@@ -1491,9 +1722,9 @@
         "footer": {
           "countRows": false,
           "enablePagination": false,
-          "fields": ["Requests", "Tier_Cost", "Pack_Cost"],
+          "fields": [],
           "reducer": ["sum"],
-          "show": true
+          "show": false
         },
         "showHeader": true,
         "sortBy": [{
@@ -1508,7 +1739,7 @@
           "uid": "PAD1A0A25CD30D456"
         },
         "format": 1,
-        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  COUNT(*) as Requests,\n  sumIf(total_cost, selected_meter_slug LIKE '%tier%') as Tier_Cost,\n  sumIf(total_cost, selected_meter_slug LIKE '%pack%') as Pack_Cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'flower'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
+        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'flower'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
         "refId": "A"
       }],
       "title": "Flower ($10/day)",
@@ -1544,14 +1775,41 @@
         "overrides": [{
           "matcher": {
             "id": "byName",
+            "options": "Model"
+          },
+          "properties": [{
+            "id": "custom.width",
+            "value": 120
+          }]
+        }, {
+          "matcher": {
+            "id": "byName",
+            "options": "Pack_Pct"
+          },
+          "properties": [{
+            "id": "custom.width",
+            "value": 55
+          }, {
+            "id": "decimals",
+            "value": 1
+          }]
+        }, {
+          "matcher": {
+            "id": "byName",
             "options": "Tier_Cost"
           },
           "properties": [{
             "id": "unit",
             "value": "currencyUSD"
           }, {
+            "id": "decimals",
+            "value": 1
+          }, {
             "id": "displayName",
-            "value": "Tier Cost"
+            "value": "Tier$"
+          }, {
+            "id": "custom.width",
+            "value": 70
           }]
         }, {
           "matcher": {
@@ -1562,16 +1820,22 @@
             "id": "unit",
             "value": "currencyUSD"
           }, {
+            "id": "decimals",
+            "value": 1
+          }, {
             "id": "displayName",
-            "value": "Pack Cost"
+            "value": "Pack$"
+          }, {
+            "id": "custom.width",
+            "value": 70
           }]
         }]
       },
       "gridPos": {
-        "h": 10,
+        "h": 22,
         "w": 5,
         "x": 10,
-        "y": 50
+        "y": 54
       },
       "id": 403,
       "options": {
@@ -1579,9 +1843,9 @@
         "footer": {
           "countRows": false,
           "enablePagination": false,
-          "fields": ["Requests", "Tier_Cost", "Pack_Cost"],
+          "fields": [],
           "reducer": ["sum"],
-          "show": true
+          "show": false
         },
         "showHeader": true,
         "sortBy": [{
@@ -1596,7 +1860,7 @@
           "uid": "PAD1A0A25CD30D456"
         },
         "format": 1,
-        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  COUNT(*) as Requests,\n  sumIf(total_cost, selected_meter_slug LIKE '%tier%') as Tier_Cost,\n  sumIf(total_cost, selected_meter_slug LIKE '%pack%') as Pack_Cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'seed'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
+        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'seed'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
         "refId": "A"
       }],
       "title": "Seed ($3/day)",
@@ -1632,14 +1896,41 @@
         "overrides": [{
           "matcher": {
             "id": "byName",
+            "options": "Model"
+          },
+          "properties": [{
+            "id": "custom.width",
+            "value": 120
+          }]
+        }, {
+          "matcher": {
+            "id": "byName",
+            "options": "Pack_Pct"
+          },
+          "properties": [{
+            "id": "custom.width",
+            "value": 55
+          }, {
+            "id": "decimals",
+            "value": 1
+          }]
+        }, {
+          "matcher": {
+            "id": "byName",
             "options": "Tier_Cost"
           },
           "properties": [{
             "id": "unit",
             "value": "currencyUSD"
           }, {
+            "id": "decimals",
+            "value": 1
+          }, {
             "id": "displayName",
-            "value": "Tier Cost"
+            "value": "Tier$"
+          }, {
+            "id": "custom.width",
+            "value": 70
           }]
         }, {
           "matcher": {
@@ -1650,16 +1941,22 @@
             "id": "unit",
             "value": "currencyUSD"
           }, {
+            "id": "decimals",
+            "value": 1
+          }, {
             "id": "displayName",
-            "value": "Pack Cost"
+            "value": "Pack$"
+          }, {
+            "id": "custom.width",
+            "value": 70
           }]
         }]
       },
       "gridPos": {
-        "h": 10,
+        "h": 22,
         "w": 5,
         "x": 15,
-        "y": 50
+        "y": 54
       },
       "id": 404,
       "options": {
@@ -1667,9 +1964,9 @@
         "footer": {
           "countRows": false,
           "enablePagination": false,
-          "fields": ["Requests", "Tier_Cost", "Pack_Cost"],
+          "fields": [],
           "reducer": ["sum"],
-          "show": true
+          "show": false
         },
         "showHeader": true,
         "sortBy": [{
@@ -1684,7 +1981,7 @@
           "uid": "PAD1A0A25CD30D456"
         },
         "format": 1,
-        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  COUNT(*) as Requests,\n  sumIf(total_cost, selected_meter_slug LIKE '%tier%') as Tier_Cost,\n  sumIf(total_cost, selected_meter_slug LIKE '%pack%') as Pack_Cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'spore'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
+        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'spore'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
         "refId": "A"
       }],
       "title": "Spore ($1/day)",
@@ -1720,14 +2017,41 @@
         "overrides": [{
           "matcher": {
             "id": "byName",
+            "options": "Model"
+          },
+          "properties": [{
+            "id": "custom.width",
+            "value": 120
+          }]
+        }, {
+          "matcher": {
+            "id": "byName",
+            "options": "Pack_Pct"
+          },
+          "properties": [{
+            "id": "custom.width",
+            "value": 55
+          }, {
+            "id": "decimals",
+            "value": 1
+          }]
+        }, {
+          "matcher": {
+            "id": "byName",
             "options": "Tier_Cost"
           },
           "properties": [{
             "id": "unit",
             "value": "currencyUSD"
           }, {
+            "id": "decimals",
+            "value": 1
+          }, {
             "id": "displayName",
-            "value": "Tier Cost"
+            "value": "Tier$"
+          }, {
+            "id": "custom.width",
+            "value": 70
           }]
         }, {
           "matcher": {
@@ -1738,16 +2062,22 @@
             "id": "unit",
             "value": "currencyUSD"
           }, {
+            "id": "decimals",
+            "value": 1
+          }, {
             "id": "displayName",
-            "value": "Pack Cost"
+            "value": "Pack$"
+          }, {
+            "id": "custom.width",
+            "value": 70
           }]
         }]
       },
       "gridPos": {
-        "h": 10,
+        "h": 22,
         "w": 4,
         "x": 20,
-        "y": 50
+        "y": 54
       },
       "id": 405,
       "options": {
@@ -1755,9 +2085,9 @@
         "footer": {
           "countRows": false,
           "enablePagination": false,
-          "fields": ["Requests", "Tier_Cost", "Pack_Cost"],
+          "fields": [],
           "reducer": ["sum"],
-          "show": true
+          "show": false
         },
         "showHeader": true,
         "sortBy": [{
@@ -1772,7 +2102,7 @@
           "uid": "PAD1A0A25CD30D456"
         },
         "format": 1,
-        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  COUNT(*) as Requests,\n  sumIf(total_cost, selected_meter_slug LIKE '%tier%') as Tier_Cost,\n  sumIf(total_cost, selected_meter_slug LIKE '%pack%') as Pack_Cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'microbe'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
+        "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'microbe'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
         "refId": "A"
       }],
       "title": "Microbe ($0.10/day)",

@@ -34,10 +34,12 @@ app.use(bodyParser.json({ limit: "20mb" }));
 app.use(cors());
 
 // IP logging middleware - log all incoming request IPs for security investigation
+// Use socket.remoteAddress to get the DIRECT connecting IP (not forwarded headers)
 app.use((req, _res, next) => {
-    const ip = getIp(req);
+    const socketIp =
+        req.socket?.remoteAddress || req.connection?.remoteAddress || "unknown";
     const model = req.body?.model || req.query?.model || "unknown";
-    logIp(ip, "text", `path=${req.path} model=${model}`);
+    logIp(socketIp, "text", `path=${req.path} model=${model}`);
     next();
 });
 

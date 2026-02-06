@@ -93,6 +93,17 @@ export const handleError: ErrorHandler<Env> = async (err, c) => {
     // Set the error on the context for it to be tracked
     c.set("error", err);
 
+    // Check for UpstreamError first (more specific than HTTPException)
+    // Use name check as fallback for bundling/prototype chain issues
+    if (err instanceof UpstreamError || err.name === "UpstreamError") {
+        const status = (err as UpstreamError).status;
+        const response = createBaseErrorResponse(err, status, timestamp);
+        log.trace("UpstreamError: {message}", {
+            message: err.message || getDefaultErrorMessage(status),
+        });
+        return c.json(response, status);
+    }
+
     if (err instanceof HTTPException) {
         const status = err.status;
         const response = createBaseErrorResponse(err, status, timestamp);

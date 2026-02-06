@@ -1,0 +1,36 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/prompt/create%20a%20video?model=wan&duration=5",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 400,
+    "statusText": "Bad Request",
+    "headers": {
+      "access-control-allow-headers": "Content-Type",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "Content-Length",
+      "connection": "keep-alive",
+      "content-type": "application/json",
+      "date": "Fri, 23 Jan 2026 17:07:44 GMT",
+      "keep-alive": "timeout=5",
+      "transfer-encoding": "chunked",
+      "x-error-type": "Bad Request"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "{\"error\":\"Bad Request\",\"message\":\"Wan model requires an image parameter for image-to-video generation\",\"timingInfo\":[{\"step\":\"Request received.\",\"timestamp\":0}],\"requestId\":\"tswktc\",\"requestParameters\":{\"prompt\":\"create a video\",\"seed\":42,\"model\":\"wan\",\"enhance\":false,\"negative_prompt\":\"undefined\",\"nofeed\":false,\"safe\":false,\"quality\":\"medium\",\"image\":[],\"transparent\":false,\"duration\":5,\"audio\":false,\"width\":1024,\"height\":1024},\"queueInfo\":null}",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

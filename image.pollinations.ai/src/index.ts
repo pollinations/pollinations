@@ -540,9 +540,10 @@ const server = http.createServer((req, res) => {
     const pathname = parsedUrl.pathname;
 
     // IP logging for security investigation
-    const ip = getIp(req);
+    // Use socket.remoteAddress to get the DIRECT connecting IP (not forwarded headers)
+    const socketIp = req.socket?.remoteAddress || "unknown";
     const model = (parsedUrl.query?.model as string) || "unknown";
-    logIp(ip, "image", `path=${pathname} model=${model}`);
+    logIp(socketIp, "image", `path=${pathname} model=${model}`);
 
     // Handle deprecated /models endpoint BEFORE auth check
     if (pathname === "/models") {

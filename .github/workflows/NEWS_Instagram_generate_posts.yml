@@ -2,7 +2,7 @@ name: Instagram Generate Post
 
 on:
   schedule:
-    - cron: '0 16 * * *'  # Daily at 16:00 UTC (17:00 Berlin, 21:30 India)
+    - cron: '0 0 * * *'  # Daily at midnight UTC (recaps the day's PRs)
   workflow_dispatch:
     inputs:
       source_repo:
@@ -52,7 +52,7 @@ jobs:
       - name: Generate Instagram Post and Create PR
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
-          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           SOURCE_REPO: ${{ inputs.source_repo || 'pollinations/pollinations' }}
           DAYS_BACK: ${{ inputs.days_back || '1' }}

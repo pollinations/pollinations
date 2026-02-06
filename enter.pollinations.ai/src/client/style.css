@@ -28,30 +28,6 @@
     font-display: swap;
 }
 
-@font-face {
-    font-family: "Maven Pro";
-    src: url("./fonts/maven-pro-v40-latin-regular.woff2") format("woff2");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "Mako";
-    src: url("./fonts/mako-v19-latin-regular.woff2") format("woff2");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "Duru Sans";
-    src: url("./fonts/duru-sans-v21-latin-regular.woff2") format("woff2");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
 *,
 ::before,
 ::after {
@@ -113,15 +89,29 @@
     .scrollbar-hide::-webkit-scrollbar {
         display: none;  /* Chrome, Safari and Opera */
     }
+
+    .scrollbar-subtle {
+        scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+    }
 }
 
-/* NEW badge glow animation */
+/* NEW badge glow animation (green) */
 @keyframes glow {
     0%, 100% {
         box-shadow: 0 0 4px rgba(34, 197, 94, 0.4);
     }
     50% {
         box-shadow: 0 0 12px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.4);
+    }
+}
+
+/* PAID ONLY badge glow animation (purple) */
+@keyframes glow-purple {
+    0%, 100% {
+        box-shadow: 0 0 4px rgba(192, 132, 252, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 12px rgba(192, 132, 252, 0.8), 0 0 20px rgba(192, 132, 252, 0.4);
     }
 }
 

@@ -4,31 +4,23 @@ Instagram Post Generator - Daily workflow to create AI-generated Instagram posts
 Fetches PRs from pollinations/pollinations, researches trends, generates images
 """
 
-import os
 import sys
 import json
 import time
-import re
-import random
 import base64
 import requests
-from typing import Dict, List, Optional
-from datetime import datetime, timedelta, timezone
-from urllib.parse import quote
+from typing import Dict, List
+from datetime import datetime, timezone
 from common import (
     load_prompt,
     get_env,
     get_date_range,
     get_file_sha,
     call_pollinations_api,
+    generate_image,
+    commit_image_to_branch,
     GITHUB_API_BASE,
     GITHUB_GRAPHQL_API,
-    POLLINATIONS_IMAGE_BASE,
-    MODEL,
-    IMAGE_MODEL,
-    MAX_SEED,
-    MAX_RETRIES,
-    INITIAL_RETRY_DELAY,
 )
 
 # Instagram post settings
@@ -183,7 +175,7 @@ def get_instagram_trends() -> Dict:
             "warm, emotionally resonant pixel scenes"
         ],
         "popular_formats": [
-            "carousel (up to 20 images) - highest engagement",
+            "carousel (3-5 images) - highest engagement",
             "pixel art animation loops (GIF-style)",
             "retro game screenshot aesthetic",
             "infographic with pixel icons",
@@ -289,134 +281,6 @@ def generate_post_strategy(prs: List[Dict], token: str) -> Dict:
         return None
 
 
-def generate_image(prompt: str, token: str, index: int, reference_url: str = None) -> tuple[Optional[bytes], Optional[str]]:
-    """Generate a single image using Pollinations nanobanana-pro
-
-    Args:
-        prompt: The image generation prompt
-        token: Pollinations API token
-        index: Image index for logging
-        reference_url: Optional URL of previous image for I2I continuity
-
-    Returns:
-        Tuple of (image_bytes, public_url) - public_url can be used for I2I reference (no key)
-
-    Each attempt uses a new random seed (0 to MAX_SEED/int32).
-    Retries use exponential backoff: 2s, 4s, 8s...
-    """
-
-    encoded_prompt = quote(prompt)
-    base_url = f"{POLLINATIONS_IMAGE_BASE}/{encoded_prompt}"  # GET https://gen.pollinations.ai/image/{prompt}
-
-    # Verbose logging for image generation
-    print(f"\n  [VERBOSE] Image Generation Request")
-    print(f"  [VERBOSE] Model: {IMAGE_MODEL}")
-    print(f"  [VERBOSE] Size: {IMAGE_WIDTH}x{IMAGE_HEIGHT}")
-    print(f"  [VERBOSE] Full prompt ({len(prompt)} chars):")
-    print(f"  ---BEGIN IMAGE PROMPT---")
-    print(prompt)
-    print(f"  ---END IMAGE PROMPT---")
-    if reference_url:
-        print(f"  [VERBOSE] Reference image (I2I): {reference_url}")
-
-    # Add reference image for image-to-image generation (creates visual continuity)
-    if reference_url:
-        print(f"Generating image {index + 1} (I2I from previous): {prompt[:50]}...")
-    else:
-        print(f"Generating image {index + 1} (T2I): {prompt[:50]}...")
-
-    last_error = None
-
-    for attempt in range(MAX_RETRIES):
-        # Each attempt gets a fresh random seed
-        seed = random.randint(0, MAX_SEED)
-
-        # Params with key (for authenticated request)
-        params = {
-            "model": IMAGE_MODEL,
-            "width": IMAGE_WIDTH,
-            "height": IMAGE_HEIGHT,
-            "quality": "hd",
-            "nologo": "true",
-            "private": "true",
-            "nofeed": "true",
-            "seed": seed,
-            "key": token
-        }
-
-        # Add reference image for I2I (must be fully URL-encoded)
-        if reference_url:
-            # Strip key= param from reference URL if present (auth goes on outer URL only)
-            clean_ref = re.sub(r'[&?]key=[^&]*', '', reference_url)
-            # Encode the full URL so nested params don't break outer URL parsing
-            params["image"] = quote(clean_ref, safe='')
-
-        if attempt == 0:
-            print(f"  Using seed: {seed}")
-        else:
-            # Exponential backoff: 2^attempt * initial_delay
-            backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
-            print(f"  Retry {attempt}/{MAX_RETRIES - 1} with new seed: {seed} (waiting {backoff_delay}s)")
-            time.sleep(backoff_delay)
-
-        try:
-            response = requests.get(base_url, params=params, timeout=300)
-
-            if response.status_code == 200:
-                content_type = response.headers.get('content-type', '')
-                if 'image' in content_type:
-                    image_bytes = response.content
-                    
-                    # Verify image is valid (check size and magic bytes)
-                    if len(image_bytes) < 1000:
-                        last_error = f"Image too small ({len(image_bytes)} bytes) - likely broken"
-                        print(f"  {last_error}")
-                        continue
-                    
-                    # Check for valid image magic bytes (JPEG, PNG, WebP)
-                    is_jpeg = image_bytes[:2] == b'\xff\xd8'
-                    is_png = image_bytes[:8] == b'\x89PNG\r\n\x1a\n'
-                    is_webp = image_bytes[:4] == b'RIFF' and image_bytes[8:12] == b'WEBP'
-                    
-                    if not (is_jpeg or is_png or is_webp):
-                        last_error = f"Invalid image format (magic bytes: {image_bytes[:12].hex()})"
-                        print(f"  {last_error}")
-                        continue
-                    
-                    img_format = "JPEG" if is_jpeg else ("PNG" if is_png else "WebP")
-                    print(f"  Image {index + 1} generated successfully ({img_format}, {len(image_bytes):,} bytes)")
-
-                    # Build public URL without key for I2I reference
-                    public_params = {k: v for k, v in params.items() if k != "key"}
-                    public_url = base_url + "?" + "&".join(f"{k}={v}" for k, v in public_params.items())
-
-                    return image_bytes, public_url
-                else:
-                    # Not an image - likely an error response (JSON or text)
-                    last_error = f"Unexpected content type: {content_type}"
-                    try:
-                        error_body = response.text[:500]
-                        print(f"  {last_error}")
-                        print(f"  [ERROR RESPONSE]: {error_body}")
-                    except:
-                        print(f"  {last_error}")
-            else:
-                last_error = f"HTTP error: {response.status_code}"
-                print(f"  {last_error}")
-                try:
-                    error_body = response.text[:500]
-                    print(f"  [ERROR RESPONSE]: {error_body}")
-                except:
-                    pass
-
-        except requests.exceptions.RequestException as e:
-            last_error = f"Request error: {e}"
-            print(f"  {last_error}")
-
-    print(f"  Failed to generate image {index + 1} after {MAX_RETRIES} attempts. Last error: {last_error}")
-    return None, None
-
-
 def create_post_pr(strategy: Dict, images: List[bytes], image_urls: List[str], prs: List[Dict], github_token: str, owner: str, repo: str):
     """Create a PR with the Instagram post JSON and images"""
 
@@ -457,15 +321,27 @@ def create_post_pr(strategy: Dict, images: List[bytes], image_urls: List[str], p
 
     print(f"Created branch: {branch_name}")
 
-    # Prepare image data using the actual generated URLs (without key)
-    image_data = []
+    # Commit images to branch and build image data with stable URLs
+    image_data = []      # For JSON — uses main URLs (for Buffer after merge)
+    preview_urls = []    # For PR body — uses branch URLs (for human review before merge)
     for i, img_info in enumerate(strategy.get('images', [])):
         if i < len(images) and images[i] and i < len(image_urls) and image_urls[i]:
+            # Commit image to branch for a stable URL
+            image_path = f"social/news/transformed/instagram/posts/{today}-image-{i+1}.jpg"
+            raw_url = commit_image_to_branch(images[i], image_path, branch_name, github_token, owner, repo)
+            if raw_url:
+                json_url = raw_url  # main URL for Buffer
+                branch_url = raw_url.replace("/main/", f"/{branch_name}/")
+            else:
+                print(f"Warning: Image {i+1} using generation URL as fallback — Buffer may fail to fetch it")
+                json_url = image_urls[i]
+                branch_url = image_urls[i]
             image_data.append({
-                "url": image_urls[i],
+                "url": json_url,
                 "prompt": img_info.get('prompt', ''),
                 "description": img_info.get('description', '')
             })
+            preview_urls.append(branch_url)
 
     # Create the JSON post data
     post_data = {
@@ -516,13 +392,14 @@ def create_post_pr(strategy: Dict, images: List[bytes], image_urls: List[str], p
     # Create PR
     pr_title = f"Instagram Post - {today}"
 
-    # Build image preview for PR body
+    # Build image preview for PR body (uses branch URLs so reviewers can see images)
     image_preview = ""
     for i, img in enumerate(image_data):
         image_preview += f"\n### Image {i + 1}\n"
         image_preview += f"**Prompt:** {img['prompt'][:100]}...\n"
         image_preview += f"**Description:** {img['description']}\n"
-        image_preview += f"![Preview]({img['url']})\n"
+        preview_url = preview_urls[i] if i < len(preview_urls) else img['url']
+        image_preview += f"![Preview]({preview_url})\n"
 
     hashtags_str = " ".join(post_data['hashtags'])
 
@@ -643,41 +520,32 @@ def main():
         print("Failed to generate strategy. Exiting.")
         sys.exit(1)
 
-    # Step 4: Generate images - AI decides if linked (I2I) or standalone
-    use_linked_images = strategy.get('linked_images', True)
-    if use_linked_images:
-        print(f"\n=== Generating Images (LINKED - I2I chaining for visual continuity) ===")
-    else:
-        print(f"\n=== Generating Images (STANDALONE - each generated fresh) ===")
+    # Clamp image count to 3-5
+    img_list = strategy.get('images', [])
+    if len(img_list) < 3:
+        print(f"Warning: AI generated {len(img_list)} images, need at least 3")
+    if len(img_list) > 5:
+        print(f"Clamping images from {len(img_list)} to 5")
+        strategy['images'] = img_list[:5]
+
+    # Step 4: Generate images
+    print(f"\n=== Generating Images ===")
 
     images = []
-    image_urls = []  # Track URLs for the final post
-    previous_image_url = None  # For I2I reference (only used if linked_images=true)
+    image_urls = []
 
     for i, img_info in enumerate(strategy.get('images', [])):
         prompt = img_info.get('prompt', '')
         if not prompt:
             continue
 
-        # Generate image - only use I2I reference if linked_images=true AND not first image
-        reference_url = None
-        if use_linked_images and i > 0 and previous_image_url:
-            reference_url = previous_image_url
-
         image_bytes, public_url = generate_image(
-            prompt,
-            pollinations_token,
-            i,
-            reference_url=reference_url
+            prompt, pollinations_token, IMAGE_WIDTH, IMAGE_HEIGHT, i
         )
 
         if image_bytes:
             images.append(image_bytes)
             image_urls.append(public_url)
-
-            # Use public URL (without key) as reference for next image (only if linked)
-            if use_linked_images:
-                previous_image_url = public_url
         else:
             images.append(None)
             image_urls.append(None)

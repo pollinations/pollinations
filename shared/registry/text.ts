@@ -27,8 +27,8 @@ export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
 export const TEXT_SERVICES = {
     "openai": {
         aliases: [],
-        modelId: "gpt-5-mini-2025-08-07",
-        provider: "azure",
+        modelId: "gpt-5-mini",
+        provider: "azure-2",
         cost: [
             {
                 date: COST_START_DATE,
@@ -103,13 +103,13 @@ export const TEXT_SERVICES = {
             "mistral-small-3.2",
             "mistral-small-3.2-24b-instruct-2506",
         ],
-        modelId: "mistral-small-3.2-24b-instruct-2506",
-        provider: "scaleway",
+        modelId: "Mistral-Small-3.2-24B-Instruct-2506",
+        provider: "ovhcloud",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.15),
-                completionTextTokens: perMillion(0.35),
+                promptTextTokens: perMillion(0.1), // OVH: 0.09€ ≈ $0.10
+                completionTextTokens: perMillion(0.3), // OVH: 0.28€ ≈ $0.30
             },
         ],
         description: "Mistral Small 3.2 24B - Efficient & Cost-Effective",
@@ -145,6 +145,7 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-3-flash", "gemini-3-flash-preview"],
         modelId: "gemini-3-flash-preview",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -208,6 +209,7 @@ export const TEXT_SERVICES = {
         aliases: ["grok-fast", "grok-4", "grok-4-fast"],
         modelId: "grok-4-fast-non-reasoning",
         provider: "azure",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -262,8 +264,8 @@ export const TEXT_SERVICES = {
     },
     "midijourney": {
         aliases: [],
-        modelId: "gpt-4.1-2025-04-14",
-        provider: "azure-2",
+        modelId: "gpt-5.2-2025-12-11",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
@@ -299,6 +301,7 @@ export const TEXT_SERVICES = {
         aliases: ["claude-sonnet-4.5", "claude-sonnet"],
         modelId: "claude-sonnet-4-5-20250929",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -313,9 +316,10 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-large": {
-        aliases: ["claude-opus-4.5", "claude-opus"],
-        modelId: "claude-opus-4-5-20251101",
+        aliases: ["claude-opus-4.6", "claude-opus"],
+        modelId: "claude-opus-4-6-20260205",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -323,7 +327,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(25.0),
             },
         ],
-        description: "Anthropic Claude Opus 4.5 - Most Intelligent Model",
+        description: "Anthropic Claude Opus 4.6 - Most Intelligent Model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -368,28 +372,31 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "kimi": {
-        aliases: ["kimi-k2", "kimi-reasoning", "kimi-k2-thinking"],
-        modelId: "moonshotai/kimi-k2-thinking-maas",
-        provider: "google",
+        aliases: ["kimi-k2.5", "kimi-k2p5", "kimi-reasoning", "kimi-large"],
+        modelId: "accounts/fireworks/models/kimi-k2p5",
+        provider: "fireworks",
         cost: [
             {
-                date: COST_START_DATE,
+                date: new Date("2026-01-28").getTime(),
                 promptTextTokens: perMillion(0.6),
-                completionTextTokens: perMillion(2.5),
+                promptCachedTokens: perMillion(0.1),
+                completionTextTokens: perMillion(3.0),
             },
         ],
         description:
-            "Moonshot Kimi K2 Thinking - Deep Reasoning & Tool Orchestration",
-        inputModalities: ["text"],
+            "Moonshot Kimi K2.5 - Flagship Agentic Model with Vision & Multi-Agent",
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
+        contextWindow: 256000,
         isSpecialized: false,
     },
     "gemini-large": {
         aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
         modelId: "gemini-3-pro-preview",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -412,6 +419,7 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-2.5-pro"],
         modelId: "gemini-2.5-pro",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,

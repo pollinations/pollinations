@@ -1,0 +1,876 @@
+{
+    "annotations": {
+        "list": [{
+            "builtIn": 1,
+            "datasource": {
+                "type": "grafana",
+                "uid": "-- Grafana --"
+            },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+        }]
+    },
+    "description": "Daily costs per provider — fully dynamic from generation_event data",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [],
+    "panels": [{
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Daily cost breakdown by provider (stacked). Shows what we pay to each provider per day.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "Cost ($)",
+                        "axisPlacement": "left",
+                        "barAlignment": 0,
+                        "drawStyle": "bars",
+                        "fillOpacity": 80,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{
+                            "color": "green",
+                            "value": null
+                        }]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": [{
+                        "matcher": {
+                            "id": "byName",
+                            "options": "google"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#34A853",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "azure"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#0078D4",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "azure-2"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#50E6FF",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "aws"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#FF9900",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "fireworks"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#FF4500",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "bytedance"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#00F2EA",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "perplexity"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#1FB8CD",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "scaleway"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#4F0599",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "ovhcloud"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#000E9C",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "alibaba"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#FF6A00",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "io.net"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#00D4AA",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "modal"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#7C3AED",
+                                "mode": "fixed"
+                            }
+                        }]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 12,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 1,
+            "options": {
+                "legend": {
+                    "calcs": ["sum", "mean"],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true,
+                    "sortBy": "Total",
+                    "sortDesc": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "pluginVersion": "11.4.0",
+            "targets": [{
+                "datasource": {
+                    "type": "grafana-clickhouse-datasource",
+                    "uid": "PAD1A0A25CD30D456"
+                },
+                "format": 0,
+                "range": true,
+                "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  model_provider_used as provider,\n  sum(total_cost) as cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\n  AND model_provider_used != ''\n  AND model_provider_used != 'undefined'\nGROUP BY time, provider\nORDER BY time, provider",
+                "refId": "A"
+            }],
+            "title": "Daily Provider Costs",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Daily revenue breakdown by provider (stacked). Shows what users pay us per provider per day.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisLabel": "Revenue ($)",
+                        "axisPlacement": "left",
+                        "drawStyle": "bars",
+                        "fillOpacity": 80,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        }
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 12,
+                "w": 24,
+                "x": 0,
+                "y": 12
+            },
+            "id": 4,
+            "options": {
+                "legend": {
+                    "calcs": ["sum", "mean"],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true,
+                    "sortBy": "Total",
+                    "sortDesc": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [{
+                "datasource": {
+                    "type": "grafana-clickhouse-datasource",
+                    "uid": "PAD1A0A25CD30D456"
+                },
+                "format": 0,
+                "range": true,
+                "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  model_provider_used as provider,\n  sumIf(total_price, selected_meter_slug LIKE '%pack%') as pack_revenue\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND model_provider_used != ''\n  AND model_provider_used != 'undefined'\nGROUP BY time, provider\nORDER BY time, provider",
+                "refId": "A"
+            }],
+            "title": "Daily Pack Revenue (Paid Usage)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Net daily balance per provider: (Pack Revenue / 2) - Cost. Positive = profit (green), Negative = loss (red).",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisLabel": "Net Balance ($)",
+                        "axisPlacement": "left",
+                        "drawStyle": "bars",
+                        "fillOpacity": 80,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        }
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 12,
+                "w": 24,
+                "x": 0,
+                "y": 24
+            },
+            "id": 6,
+            "options": {
+                "legend": {
+                    "calcs": ["sum", "mean"],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true,
+                    "sortBy": "Total",
+                    "sortDesc": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [{
+                "datasource": {
+                    "type": "grafana-clickhouse-datasource",
+                    "uid": "PAD1A0A25CD30D456"
+                },
+                "format": 0,
+                "range": true,
+                "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  model_provider_used as provider,\n  (sumIf(total_price, selected_meter_slug LIKE '%pack%') / 2) - sum(total_cost) as net_balance\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND (total_cost > 0 OR total_price > 0)\n  AND model_provider_used != ''\n  AND model_provider_used != 'undefined'\nGROUP BY time, provider\nORDER BY time, provider",
+                "refId": "A"
+            }],
+            "title": "Daily Net Balance by Provider",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Summary table of total costs per provider for the selected time range.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{
+                            "color": "green",
+                            "value": null
+                        }]
+                    }
+                },
+                "overrides": [{
+                        "matcher": {
+                            "id": "byName",
+                            "options": "provider_cost"
+                        },
+                        "properties": [{
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Total Cost"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "pack_revenue"
+                        },
+                        "properties": [{
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Pack Revenue"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "effective_revenue"
+                        },
+                        "properties": [{
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Effective Rev (2x)"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "blue",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "tier_loss"
+                        },
+                        "properties": [{
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Tier Loss"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "orange",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "bal_contribution_pct"
+                        },
+                        "properties": [{
+                                "id": "unit",
+                                "value": "percent"
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Bal %"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "daily_balance"
+                        },
+                        "properties": [{
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Daily Bal"
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "mode": "basic",
+                                    "type": "color-background"
+                                }
+                            },
+                            {
+                                "id": "thresholds",
+                                "value": {
+                                    "mode": "absolute",
+                                    "steps": [{
+                                            "color": "red",
+                                            "value": null
+                                        },
+                                        {
+                                            "color": "green",
+                                            "value": 0
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "net_balance"
+                        },
+                        "properties": [{
+                                "id": "unit",
+                                "value": "currencyUSD"
+                            },
+                            {
+                                "id": "displayName",
+                                "value": "Balance"
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "mode": "basic",
+                                    "type": "color-background"
+                                }
+                            },
+                            {
+                                "id": "thresholds",
+                                "value": {
+                                    "mode": "absolute",
+                                    "steps": [{
+                                            "color": "red",
+                                            "value": null
+                                        },
+                                        {
+                                            "color": "green",
+                                            "value": 0
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "request_count"
+                        },
+                        "properties": [{
+                            "id": "displayName",
+                            "value": "Requests"
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "provider"
+                        },
+                        "properties": [{
+                            "id": "displayName",
+                            "value": "Provider"
+                        }]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 24,
+                "x": 0,
+                "y": 36
+            },
+            "id": 2,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": false,
+                    "fields": ["net_balance", "daily_balance", "bal_contribution_pct", "provider_cost", "pack_revenue", "effective_revenue", "tier_loss", "request_count"],
+                    "reducer": ["sum"],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [{
+                    "desc": false,
+                    "displayName": "Balance"
+                }]
+            },
+            "pluginVersion": "11.4.0",
+            "targets": [{
+                "datasource": {
+                    "type": "grafana-clickhouse-datasource",
+                    "uid": "PAD1A0A25CD30D456"
+                },
+                "format": 1,
+                "rawSql": "SELECT\n  provider,\n  net_balance,\n  daily_balance,\n  (net_balance / sum(net_balance) OVER ()) * 100 as bal_contribution_pct,\n  provider_cost,\n  pack_revenue,\n  effective_revenue,\n  tier_loss,\n  request_count\nFROM (\n  SELECT\n    model_provider_used as provider,\n    (sumIf(total_price, selected_meter_slug LIKE '%pack%') / 2) - sum(total_cost) as net_balance,\n    ((sumIf(total_price, selected_meter_slug LIKE '%pack%') / 2) - sum(total_cost)) / uniqExact(toDate(start_time)) as daily_balance,\n    sum(total_cost) as provider_cost,\n    sumIf(total_price, selected_meter_slug LIKE '%pack%') as pack_revenue,\n    sumIf(total_price, selected_meter_slug LIKE '%pack%') / 2 as effective_revenue,\n    sumIf(total_cost, selected_meter_slug LIKE '%tier%') as tier_loss,\n    count() as request_count\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND environment = 'production'\n    AND response_status >= 200 AND response_status < 300\n    AND (total_cost > 0 OR total_price > 0)\n    AND model_provider_used != ''\n    AND model_provider_used != 'undefined'\n  GROUP BY provider\n)\nORDER BY net_balance ASC",
+                "refId": "A"
+            }],
+            "title": "Provider Cost Summary",
+            "type": "table"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Pie chart showing cost distribution across providers.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        }
+                    },
+                    "mappings": [],
+                    "unit": "currencyUSD"
+                },
+                "overrides": [{
+                        "matcher": {
+                            "id": "byName",
+                            "options": "google"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#34A853",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "azure"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#0078D4",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "azure-2"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#50E6FF",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "aws"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#FF9900",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "fireworks"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#FF4500",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "bytedance"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#00F2EA",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "perplexity"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#1FB8CD",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "scaleway"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#4F0599",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "ovhcloud"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#000E9C",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "alibaba"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#FF6A00",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "io.net"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#00D4AA",
+                                "mode": "fixed"
+                            }
+                        }]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "modal"
+                        },
+                        "properties": [{
+                            "id": "color",
+                            "value": {
+                                "fixedColor": "#7C3AED",
+                                "mode": "fixed"
+                            }
+                        }]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 24,
+                "x": 0,
+                "y": 46
+            },
+            "id": 3,
+            "options": {
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "right",
+                    "showLegend": true,
+                    "values": ["value", "percent"]
+                },
+                "pieType": "pie",
+                "reduceOptions": {
+                    "calcs": ["sum"],
+                    "fields": "",
+                    "values": true
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "11.4.0",
+            "targets": [{
+                "datasource": {
+                    "type": "grafana-clickhouse-datasource",
+                    "uid": "PAD1A0A25CD30D456"
+                },
+                "format": 1,
+                "rawSql": "SELECT\n  model_provider_used as provider,\n  sum(total_cost) as cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\n  AND model_provider_used != ''\n  AND model_provider_used != 'undefined'\nGROUP BY provider\nORDER BY cost DESC",
+                "refId": "A"
+            }],
+            "title": "Cost Distribution",
+            "type": "piechart"
+        }
+    ],
+    "refresh": "5m",
+    "schemaVersion": 39,
+    "tags": ["economics", "costs", "providers"],
+    "templating": {
+        "list": []
+    },
+    "time": {
+        "from": "now-30d",
+        "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "browser",
+    "title": "Provider Costs",
+    "uid": "provider-costs-dashboard",
+    "version": 1,
+    "weekStart": ""
+}

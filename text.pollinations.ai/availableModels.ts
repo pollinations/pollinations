@@ -30,7 +30,7 @@ interface ModelDefinition {
 const models: ModelDefinition[] = [
     {
         name: "openai",
-        config: portkeyConfig["gpt-5-mini-2025-08-07"],
+        config: portkeyConfig["gpt-5-mini"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -79,7 +79,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude-large",
-        config: portkeyConfig["claude-opus-4-5-fallback"],
+        config: portkeyConfig["claude-opus-4-6-fallback"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -113,7 +113,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "midijourney",
-        config: portkeyConfig["gpt-4.1-2025-04-14"],
+        config: portkeyConfig["gpt-5.2-2025-12-11"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
@@ -133,7 +133,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi",
-        config: portkeyConfig["kimi-k2-thinking-maas"],
+        config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {

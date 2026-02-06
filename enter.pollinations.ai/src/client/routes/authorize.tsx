@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
-import { Button } from "../components/button.tsx";
 import {
     KeyPermissionsInputs,
     useKeyPermissions,
-} from "../components/key-permissions.tsx";
+} from "../components/api-keys";
+import { Button } from "../components/button.tsx";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
@@ -145,8 +145,31 @@ function AuthorizeComponent() {
 
             const data = result.data;
 
-            // Set permissions using hook's method
-            await keyPermissions.updatePermissions(data.id);
+            // Set permissions via API
+            const { allowedModels, pollenBudget, accountPermissions } =
+                keyPermissions.permissions;
+            const updates = {
+                ...(allowedModels !== null && { allowedModels }),
+                ...(pollenBudget !== null && { pollenBudget }),
+                ...(accountPermissions?.length && { accountPermissions }),
+            };
+            if (Object.keys(updates).length > 0) {
+                const response = await fetch(
+                    `/api/api-keys/${data.id}/update`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify(updates),
+                    },
+                );
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(
+                        `Key created but failed to set permissions: ${(error as { message?: string }).message || "Unknown error"}`,
+                    );
+                }
+            }
 
             // Redirect back to the app with the key in URL fragment (not query param)
             // Using fragment prevents key from leaking to server logs/Referer headers
@@ -224,7 +247,8 @@ function AuthorizeComponent() {
                         as="button"
                         onClick={handleSignIn}
                         disabled={isSigningIn || !!error}
-                        className="w-full bg-gray-900 text-white hover:!brightness-90"
+                        color="dark"
+                        className="w-full"
                     >
                         {isSigningIn ? "Signing in..." : "Sign in with GitHub"}
                     </Button>

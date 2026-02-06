@@ -70,6 +70,7 @@ export const ModelSelector = memo(function ModelSelector({
                     const hasVideoOutput = m.hasVideoOutput;
                     const hasAudioOutput = m.hasAudioOutput;
                     const isImage = m.type === "image";
+                    const isPaidOnly = m.paid_only;
 
                     // Priority: video > audio > image > text
                     const modelType = hasVideoOutput
@@ -112,6 +113,11 @@ export const ModelSelector = memo(function ModelSelector({
                                 }`}
                             >
                                 {m.name}
+                                {isPaidOnly && (
+                                    <span className="ml-1 text-[9px] font-black uppercase tracking-wider text-indicator-warning">
+                                        💰
+                                    </span>
+                                )}
                             </Button>
                             {!isAllowed && (
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">

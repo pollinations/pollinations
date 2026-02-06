@@ -6,6 +6,7 @@ import {
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
     createNomNomConfig,
+    createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
     createScalewayModelConfig,
@@ -22,13 +23,13 @@ export const portkeyConfig: PortkeyConfigMap = {
     // ============================================================================
     // Azure (Myceli) - openai, openai-large, openai-audio
     // ============================================================================
-    "gpt-5-mini-2025-08-07": () => ({
+    "gpt-5-mini": () => ({
         ...createAzureModelConfig(
-            process.env.AZURE_MYCELI_GPT5MINI_API_KEY,
-            process.env.AZURE_MYCELI_GPT5MINI_ENDPOINT,
-            "gpt-5-mini-2025-08-07",
+            process.env.AZURE_PF_GPT5MINI_API_KEY,
+            process.env.AZURE_PF_GPT5MINI_ENDPOINT,
+            "gpt-5-mini",
         ),
-        "max-completion-tokens": 1024,
+        "max-completion-tokens": 16384,
     }),
     "gpt-5.2-2025-12-11": () => ({
         ...createAzureModelConfig(
@@ -46,17 +47,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
         "max-completion-tokens": 2048,
     }),
-    "deepseek-v3.2-maas": () => ({
-        provider: "openai",
-        authKey: googleCloudAuth.getAccessToken,
-        "custom-host": `https://aiplatform.googleapis.com/v1/projects/${process.env.GOOGLE_PROJECT_ID}/locations/global/endpoints/openapi`,
-        "strict-openai-compliance": "false",
-        model: "deepseek-ai/deepseek-v3.2-maas",
-    }),
     "myceli-grok-4-fast": () => createMyceliGrok4FastConfig(),
 
     // ============================================================================
-    // Azure-2 (PointsFlyer) - openai-fast, midijourney
+    // Azure-2 (PointsFlyer) - openai-fast
     // ============================================================================
     "gpt-5-nano-2025-08-07": () => ({
         ...createAzureModelConfig(
@@ -66,24 +60,21 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
         "max-completion-tokens": 512,
     }),
-    "gpt-4.1-2025-04-14": () => ({
-        ...createAzureModelConfig(
-            process.env.AZURE_PF_GPT41_API_KEY,
-            process.env.AZURE_PF_GPT41_ENDPOINT,
-            "gpt-4.1-2025-04-14",
-        ),
-    }),
 
     // ============================================================================
-    // Scaleway - mistral, qwen-coder
+    // Scaleway - qwen-coder (legacy)
     // ============================================================================
-    "mistral-small-3.2-24b-instruct-2506": () =>
-        createScalewayModelConfig({
-            model: "mistral-small-3.2-24b-instruct-2506",
-        }),
     "qwen2.5-coder-32b-instruct": () =>
         createScalewayModelConfig({
             model: "qwen2.5-coder-32b-instruct",
+        }),
+
+    // ============================================================================
+    // OVHcloud - Mistral
+    // ============================================================================
+    "mistral-small-3.2-24b-instruct-2506": () =>
+        createOVHcloudMistralConfig({
+            model: "Mistral-Small-3.2-24B-Instruct-2506",
         }),
 
     // ============================================================================
@@ -104,6 +95,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "global.anthropic.claude-opus-4-5-20251101-v1:0": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        }),
+    "global.anthropic.claude-opus-4-6-v1": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-opus-4-6-v1",
         }),
 
     // ============================================================================
@@ -156,7 +151,7 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         ],
     }),
-    "claude-opus-4-5-fallback": () => ({
+    "claude-opus-4-6-fallback": () => ({
         strategy: { mode: "fallback" },
         defaultOptions: { max_tokens: 16384 },
         targets: [
@@ -167,10 +162,10 @@ export const portkeyConfig: PortkeyConfigMap = {
                 aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
                 aws_region: process.env.AWS_REGION || "us-east-1",
                 override_params: {
-                    model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+                    model: "global.anthropic.claude-opus-4-6-v1",
                 },
             },
-            // Fallback: Google Vertex AI
+            // Fallback: Google Vertex AI (still Opus 4.5 until Vertex gets 4.6)
             {
                 provider: "vertex-ai",
                 authKey: googleCloudAuth.getAccessToken,
@@ -281,8 +276,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // Fireworks AI - glm-4.7, minimax-m2.1, deepseek-v3.2
+    // Fireworks AI - glm-4.7, minimax-m2.1, deepseek-v3.2, kimi-k2.5
     // ============================================================================
+    "accounts/fireworks/models/kimi-k2p5": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k2p5",
+        }),
     "accounts/fireworks/models/glm-4p7": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-4p7",

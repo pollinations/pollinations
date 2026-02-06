@@ -8,3 +8,10 @@ dist/
 *.log
 backups/
 prod_data*.sql
+
+# Abuse detection outputs (contain PII)
+scripts/abuse-detection/flagged-users*.csv
+scripts/abuse-detection/flagged-users*.md
+scripts/flagged-users*.csv
+scripts/flagged-users*.md
+abuse-report*.csv

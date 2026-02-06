@@ -58,26 +58,13 @@ export function createBedrockNativeConfig(additionalConfig = {}) {
 }
 
 /**
- * Creates a Myceli DeepSeek V3.2 model configuration
- */
-export function createMyceliDeepSeekV32Config(additionalConfig = {}) {
-    return {
-        provider: "openai",
-        "custom-host": "https://myceli.services.ai.azure.com/openai/v1",
-        authKey: process.env.AZURE_MYCELI_DEEPSEEK_R1_API_KEY,
-        model: "DeepSeek-V3.2",
-        ...additionalConfig,
-    };
-}
-
-/**
  * Creates a Myceli Grok 4 Fast model configuration
  */
 export function createMyceliGrok4FastConfig(additionalConfig = {}) {
     return {
         provider: "openai",
         "custom-host": "https://myceli.services.ai.azure.com/openai/v1",
-        authKey: process.env.AZURE_MYCELI_DEEPSEEK_R1_API_KEY,
+        authKey: process.env.AZURE_MYCELI_GROK_API_KEY,
         model: "grok-4-fast-non-reasoning",
         ...additionalConfig,
     };
@@ -95,13 +82,25 @@ export function createPerplexityModelConfig(additionalConfig = {}) {
 }
 
 /**
- * Creates an OVHcloud AI Endpoints model configuration
+ * Creates an OVHcloud AI Endpoints model configuration (Qwen endpoint)
  */
 export function createOVHcloudModelConfig(additionalConfig = {}) {
     return {
         provider: "openai",
         "custom-host":
             "https://qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1",
+        authKey: process.env.OVHCLOUD_API_KEY,
+        ...additionalConfig,
+    };
+}
+
+/**
+ * Creates an OVHcloud AI Endpoints model configuration for Mistral
+ */
+export function createOVHcloudMistralConfig(additionalConfig = {}) {
+    return {
+        provider: "openai",
+        "custom-host": "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1",
         authKey: process.env.OVHCLOUD_API_KEY,
         ...additionalConfig,
     };

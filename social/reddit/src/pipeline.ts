@@ -8,7 +8,7 @@ const POLLINATIONS_API = 'https://gen.pollinations.ai/v1/chat/completions';
 const MAX_RETRIES = 2;
 const INITIAL_RETRY_DELAY = 5;
 const githubToken = process.env.GITHUB_TOKEN
-const pollinationsToken = process.env.POLLINATIONS_TOKEN
+const pollinationsToken = process.env.PLN_REDDIT_NEWS_KEY
 
 if (!githubToken) {
 throw new Error('GitHub token not configured. Please set it in app settings.');
@@ -19,8 +19,8 @@ throw new Error('Pollinations token not configured. Please set it in app setting
 
 function getPreviousDayRange() {
     const now = new Date();
-    const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
+    const endDate = now;
+    const startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
     return {
         startDate,
@@ -36,7 +36,7 @@ function getTodayDate() {
     return `${year}-${month}-${day}`;
 }
 
-async function getMergedPRsFromPreviousDay(owner : string = 'pollinations', repo : string = 'pollinations', githubToken : string) {
+async function getMergedPRsFromPreviousDay(owner : any = 'pollinations', repo : any = 'pollinations', githubToken : string) {
     if (!githubToken) {
         throw new Error('GitHub token is required');
     }
@@ -163,7 +163,7 @@ async function getMergedPRsFromPreviousDay(owner : string = 'pollinations', repo
 async function createImagePrompt(prs : any[], dateString: string, pollinationsToken : string) {
     if (!prs || prs.length === 0) {
         return {
-            prompt: 'Flat vector editorial infographic: Pollinations: A free, open-source AI image generation platform with community updates',
+            prompt: 'Cozy pixel art infographic: Pollinations weekly update. Pixel bee mascot, retro game UI panels, lime green (#ecf874) accents, dark purple (#110518) text, warm cream background.',
             summary: 'No specific updates from previous day',
             prCount: 0,
             highlights: [],
@@ -173,7 +173,7 @@ async function createImagePrompt(prs : any[], dateString: string, pollinationsTo
     const prSummary = prs.slice(0, 10).map(pr => `- ${pr.title}`).join('\n');
     const systemPrompt = getSystemPromptTemplate(prSummary);
     
-    const userPrompt = `Generate an image prompt for a flat vector editorial infographic for Reddit based on these PRs:\n${prSummary}`;
+    const userPrompt = `Generate an image prompt for a pixel art dev meme infographic for Reddit based on these PRs:\n${prSummary}`;
 
     try {
         console.log('Generating merged prompt using Pollinations API...');
@@ -185,7 +185,7 @@ async function createImagePrompt(prs : any[], dateString: string, pollinationsTo
                 'Authorization': `Bearer ${pollinationsToken}`,
             },
             body: JSON.stringify({
-                model: 'openai-large',
+                model: 'gemini-large',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: userPrompt },
@@ -241,12 +241,11 @@ ${highlights.map(h => `• ${h}`).join('\n')}
             prs: prs.map(p => ({ number: p.number, title: p.title, url: p.url })),
             dateString,
         };
-        
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.warn(`Prompt generation failed: ${message}`);
+        console.warn(`Prompt generation failed: ${(error as any).message}`);
+        console.log('Falling back to local prompt generation...\n');
 
-        const comicPrompt = `Flat vector editorial infographic celebrating ${prs.length} Pollinations updates. Headline: 'POLLINATIONS - WEEKLY UPDATES'. Content includes: ${prs.slice(0, 5).map(p => p.title).join(', ')}. Style: minimal tech infographic. Color palette: cream background, navy text, lime green (#ecf874) accents. No decorative elements.`;
+        const comicPrompt = `Cozy pixel art dev meme infographic celebrating ${prs.length} Pollinations updates. Chunky pixel headline reads 'POLLINATIONS - WEEKLY UPDATES'. Content includes: ${prs.slice(0, 5).map(p => p.title).join(', ')}. Style: 8-bit pixel art meets dev meme, like Stardew Valley UI. Color palette: lime green (#ecf874) dominant, dark purple (#110518) text, warm cream background, soft pastel accents. Pixel bee mascot celebrating.`;
 
         const highlights = prs
             .slice(0, 8)
@@ -287,7 +286,7 @@ async function generateTitleFromPRs(prs : any[],  pollinationsToken : string, da
                 'Authorization': `Bearer ${pollinationsToken}`,
             },
             body: JSON.stringify({
-                model: 'openai-large',
+                model: 'gemini-large',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: userPrompt },
@@ -312,8 +311,7 @@ async function generateTitleFromPRs(prs : any[],  pollinationsToken : string, da
 
         return title;
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.warn(`Prompt generation failed: ${message}`);
+        console.error('PR title generation failed:', (error as any).message);
         return `You're gonna want to see what Pollinations shipped`;
     }
 }
@@ -326,7 +324,7 @@ async function generateImage(prompt : string, pollinationsToken : string, attemp
     }
 
     try {
-        const URL = `${POLLINATIONS_IMAGE_API}/${encodeURIComponent(prompt)}?model=nanobanana-pro&width=1024&height=1024&seed=42`;
+        const URL = `${POLLINATIONS_IMAGE_API}/${encodeURIComponent(prompt)}?model=nanobanana-pro&width=2048&height=2048`;
         const response = await fetch(URL, {
             method: 'GET',
             headers: {
@@ -345,8 +343,7 @@ async function generateImage(prompt : string, pollinationsToken : string, attemp
         }
     } catch (error) {
         if (attempt < MAX_RETRIES - 1) {
-            const message = error instanceof Error ? error.message : String(error);
-            console.log(`  ✗ Attempt ${attempt + 1} failed: ${message}`);
+            console.log(`  ✗ Attempt ${attempt + 1} failed: ${(error as any).message}`);
             return generateImage(prompt, pollinationsToken, attempt + 1);
         }
         throw error;
@@ -361,7 +358,7 @@ async function pipeline(githubToken : string, pollinationsToken : string) {
         
         if (!result || !result.prs || result.prs.length === 0) {
             console.log('ℹ️  No merged PRs found in the previous day. Exiting pipeline.');
-            process.exit(0);
+            return null;
         }
         
         const { prs, dateString } = result;
@@ -396,6 +393,12 @@ async function pipeline(githubToken : string, pollinationsToken : string) {
 
 (async () => {
 const promptData = await pipeline(githubToken as string, pollinationsToken as string);
+
+if (!promptData) {
+    console.log('No PRs to process. Pipeline complete.');
+    process.exit(0);
+}
+
 console.log(promptData)
 console.log('Final Results:');
 console.log(`Image URL: ${promptData.LINK}`);

@@ -8,6 +8,7 @@ import {
 } from "./availableServers.ts";
 import { HttpError } from "./httpError.ts";
 import { incrementModelCounter } from "./modelCounter.ts";
+import { callAirforceAPI } from "./models/airforceModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
@@ -1151,6 +1152,17 @@ const generateImage = async (
             progress.updateBar(requestId, 100, "Error", error.message);
             throw error;
         }
+    }
+
+    // api.airforce models (imagen)
+    if (safeParams.model === "imagen") {
+        return await callAirforceAPI(
+            prompt,
+            safeParams,
+            progress,
+            requestId,
+            "imagen-3",
+        );
     }
 
     if (safeParams.model === "flux") {

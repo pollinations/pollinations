@@ -1171,22 +1171,6 @@ const generateImage = async (
         }
     }
 
-    if (safeParams.model === "grok-video") {
-        try {
-            return await callAirforceAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-                "grok-imagine-video",
-            );
-        } catch (error) {
-            logError("Grok Imagine Video generation failed:", error.message);
-            progress.updateBar(requestId, 100, "Error", error.message);
-            throw error;
-        }
-    }
-
     if (safeParams.model === "flux") {
         progress.updateBar(
             requestId,

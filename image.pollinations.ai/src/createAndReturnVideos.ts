@@ -4,6 +4,7 @@
  */
 
 import debug from "debug";
+import { callAirforceVideoAPI } from "./models/airforceModel.ts";
 import {
     callSeedanceAPI,
     callSeedanceProAPI,
@@ -78,6 +79,15 @@ export async function createAndReturnVideo(
         } else if (safeParams.model === "wan") {
             // Alibaba Wan 2.6 (image-to-video with audio)
             result = await callWanAPI(prompt, safeParams, progress, requestId);
+        } else if (safeParams.model === "grok-video") {
+            // Grok Imagine Video via api.airforce
+            result = await callAirforceVideoAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+                "grok-imagine-video",
+            );
         } else {
             throw new Error(
                 `Video generation not supported for model: ${safeParams.model}`,
@@ -102,5 +112,7 @@ export async function createAndReturnVideo(
  * @returns {boolean}
  */
 export function isVideoModel(model: string): boolean {
-    return ["veo", "seedance", "seedance-pro", "wan"].includes(model);
+    return ["veo", "seedance", "seedance-pro", "wan", "grok-video"].includes(
+        model,
+    );
 }

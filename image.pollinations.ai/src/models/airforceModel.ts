@@ -4,6 +4,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { withTimeoutSignal } from "../util.ts";
+import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:airforce:ops");
 const logError = debug("pollinations:airforce:error");
@@ -155,4 +156,38 @@ export const callAirforceAPI = async (
             `api.airforce ${airforceModel} generation failed: ${message}`,
         );
     }
+};
+
+/**
+ * Calls the api.airforce video generation API
+ * Returns VideoGenerationResult for the video pipeline
+ */
+export const callAirforceVideoAPI = async (
+    prompt: string,
+    safeParams: ImageParams,
+    progress: ProgressManager,
+    requestId: string,
+    airforceModel: string,
+): Promise<VideoGenerationResult> => {
+    // Reuse the core API call logic
+    const imageResult = await callAirforceAPI(
+        prompt,
+        safeParams,
+        progress,
+        requestId,
+        airforceModel,
+    );
+
+    return {
+        buffer: imageResult.buffer,
+        mimeType: "video/mp4",
+        durationSeconds: safeParams.duration || 5,
+        trackingData: {
+            actualModel: safeParams.model,
+            usage: {
+                completionVideoSeconds: safeParams.duration || 5,
+                totalTokenCount: 1,
+            },
+        },
+    };
 };

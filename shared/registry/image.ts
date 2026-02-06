@@ -274,7 +274,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "Imagen 3 - Google's image generation model (via api.airforce)",
+            "Imagen 3 (api.airforce) - Google's image generation model",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -290,7 +290,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "Grok Imagine Video - xAI's video generation model (via api.airforce)",
+            "Grok Imagine Video (api.airforce) - xAI's video generation model",
         inputModalities: ["text"],
         outputModalities: ["video"],
     },

@@ -10,17 +10,51 @@ const logError = debug("pollinations:airforce:error");
 
 const AIRFORCE_API_URL = "https://api.airforce/v1/images/generations";
 
+// api.airforce only supports these exact sizes (OpenAI DALL-E 3 compatible)
+const SUPPORTED_SIZES: Array<{ width: number; height: number }> = [
+    { width: 1024, height: 1024 }, // 1:1
+    { width: 1024, height: 1792 }, // ~9:16 portrait
+    { width: 1792, height: 1024 }, // ~16:9 landscape
+];
+
 /**
- * Calls the api.airforce image/video generation API
- * Uses OpenAI-compatible /v1/images/generations endpoint
+ * Pick the supported size closest to the requested aspect ratio.
+ * If no size is requested, returns undefined (let the API use its default).
  */
-export async function callAirforceAPI(
+function closestSupportedSize(
+    width: number | undefined,
+    height: number | undefined,
+): string | undefined {
+    if (!width || !height) return undefined;
+
+    const requestedRatio = width / height;
+    let best = SUPPORTED_SIZES[0];
+    let bestDiff = Math.abs(requestedRatio - best.width / best.height);
+
+    for (const size of SUPPORTED_SIZES) {
+        const diff = Math.abs(requestedRatio - size.width / size.height);
+        if (diff < bestDiff) {
+            best = size;
+            bestDiff = diff;
+        }
+    }
+
+    logOps(
+        `Mapped requested ${width}x${height} (ratio ${requestedRatio.toFixed(2)}) → ${best.width}x${best.height}`,
+    );
+    return `${best.width}x${best.height}`;
+}
+
+/**
+ * Generic api.airforce call — returns the raw result buffer.
+ */
+async function fetchFromAirforce(
     prompt: string,
     safeParams: ImageParams,
     progress: ProgressManager,
     requestId: string,
     airforceModel: string,
-): Promise<ImageGenerationResult> {
+): Promise<Buffer> {
     logOps(`Calling api.airforce model ${airforceModel} with prompt:`, prompt);
 
     const apiKey = process.env.AIRFORCE_API_KEY;
@@ -61,8 +95,29 @@ export async function callAirforceAPI(
         `${airforceModel} generation completed`,
     );
 
+    return resultBuffer;
+}
+
+/**
+ * Image generation via api.airforce (e.g. imagen-3)
+ */
+export async function callAirforceImageAPI(
+    prompt: string,
+    safeParams: ImageParams,
+    progress: ProgressManager,
+    requestId: string,
+    airforceModel: string,
+): Promise<ImageGenerationResult> {
+    const buffer = await fetchFromAirforce(
+        prompt,
+        safeParams,
+        progress,
+        requestId,
+        airforceModel,
+    );
+
     return {
-        buffer: resultBuffer,
+        buffer,
         isMature: false,
         isChild: false,
         trackingData: {
@@ -86,8 +141,10 @@ function buildRequestBody(
         n: 1,
     };
 
-    // imagen-3 only supports default resolution; other models accept custom sizes
-    if (airforceModel !== "imagen-3" && safeParams.width && safeParams.height) {
+    if (airforceModel === "imagen-3") {
+        const size = closestSupportedSize(safeParams.width, safeParams.height);
+        if (size) requestBody.size = size;
+    } else if (safeParams.width && safeParams.height) {
         requestBody.size = `${safeParams.width}x${safeParams.height}`;
     }
 
@@ -178,8 +235,7 @@ async function downloadResultFromUrl(
 }
 
 /**
- * Calls the api.airforce video generation API
- * Returns VideoGenerationResult for the video pipeline
+ * Video generation via api.airforce (e.g. grok-imagine-video)
  */
 export async function callAirforceVideoAPI(
     prompt: string,
@@ -188,7 +244,7 @@ export async function callAirforceVideoAPI(
     requestId: string,
     airforceModel: string,
 ): Promise<VideoGenerationResult> {
-    const imageResult = await callAirforceAPI(
+    const buffer = await fetchFromAirforce(
         prompt,
         safeParams,
         progress,
@@ -199,7 +255,7 @@ export async function callAirforceVideoAPI(
     const durationSeconds = safeParams.duration || 5;
 
     return {
-        buffer: imageResult.buffer,
+        buffer,
         mimeType: "video/mp4",
         durationSeconds,
         trackingData: {

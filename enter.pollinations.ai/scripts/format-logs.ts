@@ -1,6 +1,6 @@
-import { LogLevel, getLogger } from "@logtape/logtape";
-import { ensureConfigured } from "../src/logger.ts";
 import { createInterface } from "node:readline/promises";
+import { getLogger, type LogLevel } from "@logtape/logtape";
+import { ensureConfigured } from "../src/logger.ts";
 
 async function main() {
     await ensureConfigured({ level: "trace", format: "text" });

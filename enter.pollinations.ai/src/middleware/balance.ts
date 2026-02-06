@@ -25,6 +25,7 @@ export type BalanceVariables = {
             message?: string,
         ) => Promise<void>;
         requirePaidBalance: (userId: string, message?: string) => Promise<void>;
+        requireTierOnly: (userId: string, message?: string) => Promise<void>;
         getBalance: (userId: string) => Promise<UserBalance>;
         balanceCheckResult?: BalanceCheckResult;
     };
@@ -176,9 +177,42 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         });
     };
 
+    // Tier-only balance check - ignores crypto and pack balances
+    const requireTierOnly = async (userId: string, message?: string) => {
+        const balances = await fetchBalanceWithErrorHandling(userId);
+
+        log.debug(
+            "Tier-only balance check for user {userId}: tier={tierBalance}",
+            {
+                userId,
+                tierBalance: balances.tierBalance,
+            },
+        );
+
+        if (balances.tierBalance > 0) {
+            c.var.balance.balanceCheckResult = {
+                selectedMeterId: "local:tier",
+                selectedMeterSlug: "v1:meter:tier",
+                balances: {
+                    "v1:meter:tier": balances.tierBalance,
+                    "v1:meter:crypto": 0, // Ignore paid balances
+                    "v1:meter:pack": 0,
+                },
+            };
+            return;
+        }
+
+        throw new HTTPException(402, {
+            message:
+                message ||
+                "Tier balance depleted. This key is configured to use tier balance only.",
+        });
+    };
+
     c.set("balance", {
         requirePositiveBalance,
         requirePaidBalance,
+        requireTierOnly,
         getBalance,
     });
 

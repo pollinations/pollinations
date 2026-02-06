@@ -3,8 +3,8 @@ import {
     defineWorkersConfig,
     readD1Migrations,
 } from "@cloudflare/vitest-pool-workers/config";
-import viteConfig from "./vite.config";
 import { loadEnv } from "vite";
+import viteConfig from "./vite.config";
 
 export default defineWorkersConfig(async ({ mode }) => {
     const migrationsPath = path.join(__dirname, "drizzle");

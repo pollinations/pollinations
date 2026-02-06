@@ -1,9 +1,9 @@
 import { createMiddleware } from "hono/factory";
-import type { AuthVariables } from "./auth.ts";
-import { PollenRateLimiter } from "@/durable-objects/PollenRateLimiter.ts";
+import type { PollenRateLimiter } from "@/durable-objects/PollenRateLimiter.ts";
+import type { Env } from "@/env.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { safeRound } from "@/util.ts";
-import { Env } from "@/env.ts";
+import type { AuthVariables } from "./auth.ts";
 
 export type FrontendKeyRateLimitVariables = {
     // will be undefined when using a secret api key

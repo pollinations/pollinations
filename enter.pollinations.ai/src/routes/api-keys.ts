@@ -87,6 +87,10 @@ const UpdateApiKeySchema = z.object({
         .optional()
         .transform((val) => (val ? new Date(val) : val))
         .describe("Expiration date for the key. null = no expiry"),
+    tierOnly: z
+        .boolean()
+        .optional()
+        .describe("Use tier balance only, ignore paid pollen"),
 });
 
 /**
@@ -130,6 +134,7 @@ export const apiKeysRoutes = new Hono<Env>()
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
+                    tierOnly: key.tierOnly ?? false,
                 })),
             });
         },
@@ -156,6 +161,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 pollenBudget,
                 accountPermissions,
                 expiresAt,
+                tierOnly,
             } = c.req.valid("json");
 
             // Verify ownership before updating
@@ -191,11 +197,12 @@ export const apiKeysRoutes = new Hono<Env>()
                 });
             }
 
-            const d1Updates: Record<string, string | number | Date | null> = {};
+            const d1Updates: Record<string, string | number | boolean | Date | null> = {};
             if (name !== undefined) d1Updates.name = name;
             if (pollenBudget !== undefined)
                 d1Updates.pollenBalance = pollenBudget;
             if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
+            if (tierOnly !== undefined) d1Updates.tierOnly = tierOnly;
 
             if (Object.keys(d1Updates).length > 0) {
                 const keyForCache = await db.query.apikey.findFirst({
@@ -226,6 +233,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 permissions: finalKey?.permissions,
                 pollenBalance: finalKey?.pollenBalance ?? null,
                 expiresAt: finalKey?.expiresAt ?? null,
+                tierOnly: finalKey?.tierOnly ?? false,
             });
         },
     );

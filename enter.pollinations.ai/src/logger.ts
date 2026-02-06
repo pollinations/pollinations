@@ -1,14 +1,14 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { inspect } from "node:util";
-import { applyColor } from "@/util";
 import {
     configure,
-    getConsoleSink,
+    type FormattedValues,
     getAnsiColorFormatter,
+    getConsoleSink,
     getJsonLinesFormatter,
-    FormattedValues,
-    LogLevel,
+    type LogLevel,
 } from "@logtape/logtape";
+import { applyColor } from "@/util";
 
 export type LogFormat = "json" | "text";
 

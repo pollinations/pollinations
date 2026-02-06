@@ -63,6 +63,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         pollenBudget: apiKey.pollenBalance ?? null,
         accountPermissions: apiKey.permissions?.account ?? null,
         expiryDays,
+        tierOnly: apiKey.tierOnly ?? false,
     });
 
     async function handleSave() {

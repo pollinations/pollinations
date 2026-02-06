@@ -40,6 +40,7 @@ interface ApiKey {
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
+    tierOnly?: boolean;
     rawKey?: string;
 }
 
@@ -131,6 +132,7 @@ export const auth = (options: AuthOptions) =>
                     permissions,
                     metadata: keyResult.key.metadata || undefined,
                     pollenBalance: fullApiKey?.pollenBalance ?? null,
+                    tierOnly: fullApiKey?.tierOnly ?? false,
                     rawKey: rawApiKey,
                 },
                 rawApiKey,

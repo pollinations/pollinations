@@ -1,5 +1,5 @@
 import { SELF } from "cloudflare:test";
-import { test, expect } from "vitest";
+import { expect, test } from "vitest";
 import { test as fixtureTest } from "../fixtures.ts";
 
 // Test public endpoints that should be accessible without authentication

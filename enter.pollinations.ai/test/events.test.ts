@@ -1,8 +1,8 @@
 import { env } from "cloudflare:test";
-import { test } from "./fixtures.ts";
-import { sendToTinybird, flattenBalances } from "@/events.ts";
-import { exponentialBackoffDelay } from "@/util.ts";
 import { expect } from "vitest";
+import { flattenBalances, sendToTinybird } from "@/events.ts";
+import { exponentialBackoffDelay } from "@/util.ts";
+import { test } from "./fixtures.ts";
 
 test("sendToTinybird sends event to Tinybird API", async ({ log, mocks }) => {
     await mocks.enable("tinybird");

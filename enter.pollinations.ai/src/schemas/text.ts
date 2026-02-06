@@ -1,4 +1,4 @@
-import { TEXT_SERVICES, DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { DEFAULT_TEXT_MODEL, TEXT_SERVICES } from "@shared/registry/text.ts";
 import { z } from "zod";
 
 const VALID_TEXT_MODELS = [

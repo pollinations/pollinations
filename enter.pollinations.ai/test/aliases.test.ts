@@ -1,8 +1,8 @@
-import { test, expect } from "vitest";
-import { resolveServiceId } from "@shared/registry/registry.js";
-import type { ServiceDefinition } from "@shared/registry/registry.js";
-import { TEXT_SERVICES } from "@shared/registry/text";
 import { IMAGE_SERVICES } from "@shared/registry/image";
+import type { ServiceDefinition } from "@shared/registry/registry.js";
+import { resolveServiceId } from "@shared/registry/registry.js";
+import { TEXT_SERVICES } from "@shared/registry/text";
+import { expect, test } from "vitest";
 
 function serviceAliasTestCases(
     services: Record<string, ServiceDefinition>,

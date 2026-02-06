@@ -9,6 +9,7 @@ export interface ApiKey {
     permissions: Record<string, string[]> | null;
     metadata: Record<string, unknown> | null;
     pollenBalance?: number | null;
+    tierOnly?: boolean;
 }
 
 export interface ApiKeyUpdateParams {
@@ -17,6 +18,7 @@ export interface ApiKeyUpdateParams {
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
     expiresAt?: Date | null;
+    tierOnly?: boolean;
 }
 
 export interface ApiKeyManagerProps {

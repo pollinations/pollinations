@@ -4,9 +4,9 @@
  * Following the "thin proxy" design principle - keeping logic simple and minimal
  */
 
+import type { Logger } from "@logtape/logtape";
 import type { Context } from "hono";
 import { removeUnset } from "@/util.ts";
-import { Logger } from "@logtape/logtape";
 
 /**
  * Generate a consistent cache key from URL

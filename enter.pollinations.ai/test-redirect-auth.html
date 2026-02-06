@@ -108,7 +108,7 @@
 
         // Check for API key in URL fragment on page load
         // Key is passed in fragment (#api_key=...) to prevent leaking to server logs
-        window.onload = function() {
+        window.onload = () => {
             const hash = window.location.hash.substring(1); // Remove #
             const hashParams = new URLSearchParams(hash);
             const key = hashParams.get('api_key');

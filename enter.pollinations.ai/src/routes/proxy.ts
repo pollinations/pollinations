@@ -598,6 +598,12 @@ async function checkBalance({
 }: AuthVariables & BalanceVariables & ModelVariables): Promise<void> {
     if (!auth.user?.id) return;
 
+    // Check if API key has tierOnly restriction
+    if (auth.apiKey?.tierOnly) {
+        await balance.requireTierOnly(auth.user.id);
+        return;
+    }
+
     const serviceDefinition = getServiceDefinition(model.resolved);
     const isPaidOnly = serviceDefinition.paidOnly ?? false;
 

@@ -1,5 +1,5 @@
-import { RequestIdVariables } from "hono/request-id";
-import { LoggerVariables } from "./middleware/logger.ts";
+import type { RequestIdVariables } from "hono/request-id";
+import type { LoggerVariables } from "./middleware/logger.ts";
 
 export type ErrorVariables = {
     error?: Error;

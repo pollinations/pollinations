@@ -129,6 +129,7 @@ export const apikey = sqliteTable("apikey", {
   permissions: text("permissions"),
   metadata: text("metadata"),
   pollenBalance: real("pollen_balance"),
+  tierOnly: integer("tier_only", { mode: "boolean" }).default(false),
 }, (table) => [
   index("idx_apikey_key").on(table.key),
   index('idx_apikey_expires_at').on(table.expiresAt),

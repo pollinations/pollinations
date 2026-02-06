@@ -42,6 +42,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-02-06** – **🎨 Imagen 3 & Grok Video** New image and video generation models powered by [api.airforce](https://api.airforce). Generate with `imagen` and `grok-video`.
 - **2026-02-02** – **🚀 Kimi K2.5** Upgraded model with vision support and improved reasoning capabilities.
 - **2026-02-02** – **🧠 Web Research** Claude can now use `perplexity` and `gemini-search` tools for real-time answers.
 - **2026-02-02** – **💎 Premium Access** High-end models `veo`, `claude-large`, and `seedream-pro` are now available for credit holders.
@@ -358,6 +359,7 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 - [Modal](https://modal.com/): High-performance AI infrastructure
 - [NavyAI](https://api.navy/): AI API provider for OpenAI o3 and Gemini models
 - [Nebius](https://nebius.com/): AI-optimized cloud infrastructure with NVIDIA GPU clusters
+- [api.airforce](https://api.airforce): AI API gateway powering Imagen 3 and Grok Imagine Video models
 
 ## 💚 Support Us
 

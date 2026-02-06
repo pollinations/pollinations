@@ -8,7 +8,7 @@ import {
 } from "./availableServers.ts";
 import { HttpError } from "./httpError.ts";
 import { incrementModelCounter } from "./modelCounter.ts";
-import { callAirforceAPI } from "./models/airforceModel.ts";
+import { callAirforceImageAPI } from "./models/airforceModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
@@ -1156,7 +1156,7 @@ const generateImage = async (
 
     // api.airforce models (imagen)
     if (safeParams.model === "imagen") {
-        return await callAirforceAPI(
+        return await callAirforceImageAPI(
             prompt,
             safeParams,
             progress,

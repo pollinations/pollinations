@@ -10,6 +10,8 @@ const logError = debug("pollinations:airforce:error");
 
 const AIRFORCE_API_URL = "https://api.airforce/v1/images/generations";
 
+const VIDEO_MODELS = ["grok-imagine-video"];
+
 // api.airforce only supports these exact sizes (OpenAI DALL-E 3 compatible)
 const SUPPORTED_SIZES: Array<{ width: number; height: number }> = [
     { width: 1024, height: 1024 }, // 1:1
@@ -75,18 +77,21 @@ async function fetchFromAirforce(
     const requestBody = buildRequestBody(prompt, safeParams, airforceModel);
     logOps("Request body:", JSON.stringify(requestBody));
 
+    const isVideo = VIDEO_MODELS.includes(airforceModel);
     const response = await makeApiRequest(apiKey, requestBody);
 
     if (!response.ok) {
         await handleApiError(response, airforceModel);
     }
 
-    const resultBuffer = await processApiResponse(
-        response,
-        airforceModel,
-        progress,
-        requestId,
-    );
+    const resultBuffer = isVideo
+        ? await processSseResponse(response, airforceModel, progress, requestId)
+        : await processApiResponse(
+              response,
+              airforceModel,
+              progress,
+              requestId,
+          );
 
     progress.updateBar(
         requestId,
@@ -141,7 +146,10 @@ function buildRequestBody(
         n: 1,
     };
 
-    if (airforceModel === "imagen-3") {
+    if (VIDEO_MODELS.includes(airforceModel)) {
+        requestBody.sse = true;
+        requestBody.response_format = "url";
+    } else if (airforceModel === "imagen-3") {
         const size = closestSupportedSize(safeParams.width, safeParams.height);
         if (size) requestBody.size = size;
     } else if (safeParams.width && safeParams.height) {
@@ -210,6 +218,58 @@ async function processApiResponse(
     }
 
     throw new HttpError(`api.airforce ${airforceModel} returned no data`, 500);
+}
+
+async function processSseResponse(
+    response: Response,
+    airforceModel: string,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<Buffer> {
+    const text = await response.text();
+    logOps("SSE response received, parsing...");
+
+    let resultUrl: string | undefined;
+
+    for (const line of text.split("\n")) {
+        const trimmed = line.trim();
+        if (
+            !trimmed.startsWith("data: ") ||
+            trimmed === "data: [DONE]" ||
+            trimmed === "data: : keepalive"
+        ) {
+            continue;
+        }
+        try {
+            const parsed = JSON.parse(trimmed.slice(6)) as {
+                data?: Array<{ url?: string }>;
+                error?: string;
+            };
+            if (parsed.error) {
+                throw new HttpError(
+                    `api.airforce ${airforceModel} error: ${parsed.error}`,
+                    500,
+                );
+            }
+            const url = parsed.data?.[0]?.url;
+            if (url) {
+                resultUrl = url;
+            }
+        } catch (e) {
+            if (e instanceof HttpError) throw e;
+            logError("Failed to parse SSE line:", trimmed);
+        }
+    }
+
+    if (!resultUrl) {
+        throw new HttpError(
+            `api.airforce ${airforceModel} SSE returned no result URL`,
+            500,
+        );
+    }
+
+    logOps("SSE result URL:", resultUrl);
+    return downloadResultFromUrl(resultUrl, progress, requestId);
 }
 
 async function downloadResultFromUrl(

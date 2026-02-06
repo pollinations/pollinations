@@ -149,15 +149,15 @@ export const IMAGE_CONFIG = {
     //     defaultSideLength: 1024,
     // },
 
-    // Grok Imagine Video - xAI video generation via api.airforce
-    "grok-video": {
-        type: "airforce-video",
-        enhance: false,
-        isVideo: true,
-        defaultDuration: 5,
-        maxDuration: 10,
-        defaultResolution: "720p",
-    },
+    // Grok Imagine Video - xAI video generation via api.airforce (disabled - upstream provider ~40% failure rate)
+    // "grok-video": {
+    //     type: "airforce-video",
+    //     enhance: false,
+    //     isVideo: true,
+    //     defaultDuration: 5,
+    //     maxDuration: 10,
+    //     defaultResolution: "720p",
+    // },
 
     // LTX-2 - Fast video generation with audio on Modal
     "ltx-2": {

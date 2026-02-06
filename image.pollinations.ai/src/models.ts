@@ -158,21 +158,23 @@ export const IMAGE_CONFIG = {
         maxDuration: 10,
         defaultResolution: "720p",
     },
+
+    // LTX-2 - Fast video generation with audio on Modal
+    "ltx-2": {
+        type: "modal-ltx2",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5, // 121 frames at 24 FPS
+        maxDuration: 10, // 241 frames
+        defaultResolution: "720p",
+    },
 } as const satisfies ImageModelsConfig;
 
 /**
  * Legacy MODELS export for backward compatibility
- * Combines registry data with local config (enhance, defaultSideLength)
  * @deprecated Use IMAGE_SERVICES from registry, IMAGE_CONFIG for implementation details
  */
-export const MODELS = Object.fromEntries(
-    Object.entries(IMAGE_CONFIG).map(([name, config]) => [
-        name,
-        {
-            ...config,
-        },
-    ]),
-) as Record<ImageServiceId, ImageModelConfig>;
+export const MODELS = IMAGE_CONFIG as Record<ImageServiceId, ImageModelConfig>;
 
 /**
  * Scale up dimensions to meet minimum pixel requirements while preserving aspect ratio

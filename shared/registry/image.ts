@@ -271,10 +271,9 @@ export const IMAGE_SERVICES = {
         modelId: "imagen",
         provider: "airforce",
         cost: [
-            // Google Imagen 3 via api.airforce ($1000/M = $0.001/image)
             {
                 date: new Date("2026-02-05").getTime(),
-                completionImageTokens: 0.001, // $0.001 per image (api.airforce pricing)
+                completionImageTokens: 0.005, // $0.005 per image
             },
         ],
         description:
@@ -287,10 +286,9 @@ export const IMAGE_SERVICES = {
         modelId: "grok-video",
         provider: "airforce",
         cost: [
-            // Grok Imagine Video via api.airforce ($0.005 per video)
             {
                 date: new Date("2026-02-05").getTime(),
-                completionVideoSeconds: 0.001, // $0.005 per ~5s video = $0.001/sec
+                completionVideoSeconds: 0.005, // $0.005 per second
             },
         ],
         description:

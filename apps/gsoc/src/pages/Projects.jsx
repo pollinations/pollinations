@@ -170,7 +170,7 @@ const ProjectsPage = () => {
                             fontSize: "0.85rem",
                         }}
                     >
-                        <strong>Project sizes:</strong> Small ≈ 90h • Medium ≈
+                        <strong>Project sizes:</strong> Medium ≈
                         175h • Large ≈ 350h
                     </Typography>
                 </Box>

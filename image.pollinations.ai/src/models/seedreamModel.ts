@@ -1,11 +1,10 @@
 import debug from "debug";
-import { withTimeoutSignal } from "../util.ts";
+import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import { getScaledDimensions } from "../models.ts";
 import type { ImageParams } from "../params.ts";
-import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 
 // Logger
 const logOps = debug("pollinations:seedream:ops");
@@ -222,10 +221,8 @@ async function generateWithSeedream(
                 );
 
                 // Download and detect MIME type from magic bytes
-                const { base64, mimeType } = await withTimeoutSignal(
-                    (signal) => downloadImageAsBase64(imageUrl),
-                    30000, // 30 second timeout
-                );
+                const { base64, mimeType } =
+                    await downloadImageAsBase64(imageUrl);
 
                 // Create data URL format: data:image/jpeg;base64,<base64data>
                 const dataUrl = `data:${mimeType};base64,${base64}`;
@@ -260,22 +257,17 @@ async function generateWithSeedream(
 
     logOps("Seedream API request body:", JSON.stringify(requestBody, null, 2));
 
-    // Make API call with timeout
-    const response = await withTimeoutSignal(
-        (signal) =>
-            fetch(
-                "https://ark.ap-southeast.bytepluses.com/api/v3/images/generations",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${apiKey}`,
-                    },
-                    body: JSON.stringify(requestBody),
-                    signal,
-                },
-            ),
-        60000, // 60 second timeout
+    // Make API call
+    const response = await fetch(
+        "https://ark.ap-southeast.bytepluses.com/api/v3/images/generations",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify(requestBody),
+        },
     );
 
     if (!response.ok) {
@@ -314,10 +306,7 @@ async function generateWithSeedream(
     const imageUrl = data.data[0].url;
     logOps("Downloading image from URL:", imageUrl);
 
-    const imageResponse = await withTimeoutSignal(
-        (signal) => fetch(imageUrl, { signal }),
-        30000, // 30 second timeout for image download
-    );
+    const imageResponse = await fetch(imageUrl);
 
     if (!imageResponse.ok) {
         throw new Error(

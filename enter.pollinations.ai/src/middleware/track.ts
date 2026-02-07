@@ -114,7 +114,9 @@ export const track = (eventType: EventType) =>
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
             userTier: c.var.auth.user?.tier,
-            userGithubId: `${c.var.auth.user?.githubId}`,
+            userGithubId: c.var.auth.user?.githubId
+                ? String(c.var.auth.user.githubId)
+                : undefined,
             userGithubUsername: c.var.auth.user?.githubUsername,
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyType: c.var.auth.apiKey?.metadata?.keyType as ApiKeyType,
@@ -265,6 +267,22 @@ async function trackResponse(
         ) {
             log.warn(
                 "Image generation returned non-image content-type: {contentType}",
+                { contentType },
+            );
+            return {
+                responseOk: response.ok,
+                responseStatus: response.status,
+                cacheData: cacheInfo,
+                isBilledUsage: false,
+            };
+        }
+    }
+    // For audio generation, verify the response is actually audio
+    if (eventType === "generate.audio") {
+        const contentType = response.headers.get("content-type") || "";
+        if (!contentType.startsWith("audio/")) {
+            log.warn(
+                "Audio generation returned non-audio content-type: {contentType}",
                 { contentType },
             );
             return {

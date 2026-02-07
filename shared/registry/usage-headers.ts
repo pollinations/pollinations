@@ -107,3 +107,40 @@ export function parseUsageHeaders(
 
     return usage;
 }
+
+/**
+ * Helper for image services: create TokenUsage with only image tokens
+ */
+export function createImageTokenUsage(completionImageTokens: number): Usage {
+    return {
+        completionImageTokens,
+    };
+}
+
+/**
+ * Helper for video services: create TokenUsage with video seconds (Veo)
+ */
+export function createVideoSecondsUsage(completionVideoSeconds: number): Usage {
+    return {
+        completionVideoSeconds,
+    };
+}
+
+/**
+ * Helper for video services: create TokenUsage with video tokens (Seedance)
+ */
+export function createVideoTokenUsage(completionVideoTokens: number): Usage {
+    return {
+        completionVideoTokens,
+    };
+}
+
+/**
+ * Helper for audio/TTS services: create TokenUsage with audio tokens (characters)
+ * ElevenLabs bills by character count, so we use completionAudioTokens
+ */
+export function createAudioTokenUsage(completionAudioTokens: number): Usage {
+    return {
+        completionAudioTokens,
+    };
+}

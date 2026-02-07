@@ -10,6 +10,7 @@
  *   gen.pollinations.ai/models        → /api/generate/text/models
  *   gen.pollinations.ai/image/*       → /api/generate/image/*
  *   gen.pollinations.ai/text/*        → /api/generate/text/*
+ *   gen.pollinations.ai/audio/*       → /api/generate/audio/*
  *   gen.pollinations.ai/v1/*          → /api/generate/v1/*
  *   gen.pollinations.ai/account/*     → /api/account/*
  */

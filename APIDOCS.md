@@ -2207,6 +2207,114 @@ API keys can be created from your dashboard at enter.pollinations.ai.
 }
 ```
 
+### GET /audio/{text}
+
+- **Method:** `GET`
+- **Path:** `/audio/{text}`
+- **Tags:** gen.pollinations.ai
+
+Generate speech audio from text.
+
+**Available Voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
+
+**Output Formats:** mp3, opus, aac, flac, wav, pcm
+
+**Authentication:**
+
+Include your API key either:
+
+- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`
+- As a query parameter: `?key=YOUR_API_KEY`
+
+API keys can be created from your dashboard at enter.pollinations.ai.
+
+#### Parameters
+
+| Name | In | Type | Required | Default | Description |
+|------|------|------|----------|---------|-------------|
+| `text` | path | string | Yes | — | Text to convert to speech |
+| `voice` | query | string | No | `alloy` | Voice to use for speech generation |
+| `speed` | query | number | No | `1.0` | Speed of the generated audio (0.25-4.0) |
+| `response_format` | query | string | No | `mp3` | Audio output format (mp3, opus, aac, flac, wav, pcm) |
+| `model` | query | string | No | — | TTS model to use |
+| `key` | query | string | No | — | API key (alternative to Authorization header) |
+
+#### Responses
+
+##### Status: 200 Success - Returns audio data
+
+###### Content-Type: audio/mpeg
+
+`string`, format: `binary`
+
+##### Status: 400 Invalid voice or request parameters
+
+##### Status: 401 Unauthorized
+
+##### Status: 500 Internal server error
+
+### POST /v1/audio/speech
+
+- **Method:** `POST`
+- **Path:** `/v1/audio/speech`
+- **Tags:** gen.pollinations.ai
+
+Generate speech audio from text using ElevenLabs. OpenAI TTS API compatible.
+
+**Available Voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
+
+**Output Formats:** mp3, opus, aac, flac, wav, pcm
+
+#### Request Body
+
+##### Content-Type: application/json
+
+- **`input` (required)**
+
+  `string` — The text to generate audio for. Maximum 4096 characters.
+
+- **`model`**
+
+  `string`, default: `"tts-1"` — TTS model to use.
+
+- **`voice`**
+
+  `string`, default: `"alloy"` — The voice to use.
+
+- **`response_format`**
+
+  `string`, default: `"mp3"` — The audio format for the output. Possible values: `"mp3", "opus", "aac", "flac", "wav", "pcm"`
+
+- **`speed`**
+
+  `number`, default: `1.0` — The speed of the generated audio. 0.25 to 4.0.
+
+**Example:**
+
+```json
+{
+  "model": "tts-1",
+  "input": "Hello from Pollinations!",
+  "voice": "nova",
+  "response_format": "mp3",
+  "speed": 1.0
+}
+```
+
+#### Responses
+
+##### Status: 200 Success - Returns audio data
+
+###### Content-Type: audio/mpeg
+
+`string`, format: `binary`
+
+##### Status: 400 Invalid voice or request parameters
+
+##### Status: 401 Unauthorized
+
+##### Status: 500 Internal server error
+
 ## Schemas
 
 ### ErrorDetails

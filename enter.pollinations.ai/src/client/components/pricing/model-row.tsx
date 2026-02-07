@@ -51,6 +51,14 @@ export const ModelRow: FC<ModelRowProps> = ({
     const borderClass = isLast ? "" : "border-b border-gray-200";
     const priceColor = showPaidOnly ? "purple" : ("teal" as const);
 
+    // Show price badges if we have any pricing data (static or from Tinybird)
+    const hasPriceData =
+        genPerPollen !== "—" ||
+        model.perCharPrice ||
+        model.perImagePrice ||
+        model.perSecondPrice ||
+        model.perTokenPrice;
+
     return (
         <tr>
             <td
@@ -145,7 +153,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                 </div>
             </td>
             <td className={`py-2 px-2 text-sm text-center ${borderClass}`}>
-                {genPerPollen === "—" ? (
+                {!hasPriceData ? (
                     <span className="text-gray-400">—</span>
                 ) : (
                     <div className="flex flex-col gap-1 items-center">
@@ -158,7 +166,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                         />
                         <PriceBadge
                             prices={[model.promptCachedPrice]}
-                            emoji="�"
+                            emoji="💾"
                             subEmojis={["💾"]}
                             perToken={model.perToken}
                             color={priceColor}
@@ -181,7 +189,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                 )}
             </td>
             <td className={`py-2 px-2 text-sm text-center ${borderClass}`}>
-                {genPerPollen === "—" ? (
+                {!hasPriceData ? (
                     <span className="text-gray-400">—</span>
                 ) : (
                     <div className="flex flex-col gap-1 items-center">
@@ -199,7 +207,15 @@ export const ModelRow: FC<ModelRowProps> = ({
                             perToken={model.perToken}
                             color={priceColor}
                         />
-                        {model.perSecondPrice ? (
+                        {model.perCharPrice ? (
+                            <PriceBadge
+                                prices={[model.perCharPrice]}
+                                emoji="🔊"
+                                subEmojis={["🔊"]}
+                                perKChar
+                                color={priceColor}
+                            />
+                        ) : model.perSecondPrice ? (
                             <>
                                 <PriceBadge
                                     prices={[model.perSecondPrice]}

@@ -16,6 +16,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
 
     const imageModels = allModels.filter((m) => m.type === "image");
     const videoModels = allModels.filter((m) => m.type === "video");
+    const audioModels = allModels.filter((m) => m.type === "audio");
     const textModels = allModels.filter((m) => m.type === "text");
 
     return (
@@ -38,6 +39,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                     <UnifiedModelTable
                         imageModels={imageModels}
                         videoModels={videoModels}
+                        audioModels={audioModels}
                         textModels={textModels}
                         packBalance={packBalance}
                     />
@@ -88,6 +90,10 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                     <div>
                                         <strong>/sec</strong> = per second of
                                         video
+                                    </div>
+                                    <div>
+                                        <strong>/1K chars</strong> = per 1000
+                                        characters
                                     </div>
                                 </div>
                             </div>

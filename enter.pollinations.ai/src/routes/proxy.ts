@@ -171,7 +171,7 @@ export const proxyRoutes = new Hono<Env>()
                     content: {
                         "application/json": {
                             schema: resolver(
-                                z.array(ModelInfoSchema).meta({
+                                z.array(ModelInfoSchema as any).meta({
                                     description:
                                         "List of models with pricing and metadata",
                                 }),
@@ -210,7 +210,7 @@ export const proxyRoutes = new Hono<Env>()
                     content: {
                         "application/json": {
                             schema: resolver(
-                                z.array(ModelInfoSchema).meta({
+                                z.array(ModelInfoSchema as any).meta({
                                     description:
                                         "List of models with pricing and metadata",
                                 }),

@@ -16,8 +16,8 @@ import type { Env } from "../env.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
-// biome-ignore lint/suspicious/noExplicitAny: hono-openapi resolver accepts any schema
-const resolver = (schema: any) => baseResolver(schema, { reused: "ref" });
+const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
+    baseResolver(schema, { reused: "ref" });
 
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import {

@@ -278,6 +278,22 @@ async function trackResponse(
             };
         }
     }
+    // For audio generation, verify the response is actually audio
+    if (eventType === "generate.audio") {
+        const contentType = response.headers.get("content-type") || "";
+        if (!contentType.startsWith("audio/")) {
+            log.warn(
+                "Audio generation returned non-audio content-type: {contentType}",
+                { contentType },
+            );
+            return {
+                responseOk: response.ok,
+                responseStatus: response.status,
+                cacheData: cacheInfo,
+                isBilledUsage: false,
+            };
+        }
+    }
     const { modelUsage, contentFilterResults } =
         await extractUsageAndContentFilterResults(
             eventType,

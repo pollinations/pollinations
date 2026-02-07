@@ -1,5 +1,9 @@
 import type { Logger } from "@logtape/logtape";
 import { ELEVENLABS_VOICES, VOICE_MAPPING } from "@shared/registry/audio.ts";
+import {
+    buildUsageHeaders,
+    createAudioTokenUsage,
+} from "@shared/registry/usage-headers.ts";
 import { type Context, Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
@@ -14,26 +18,11 @@ import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import type { Env } from "../env.ts";
 
-function buildAudioUsageHeaders(
-    modelUsed: string,
-    completionAudioTokens: number,
-): Record<string, string> {
-    return {
-        "x-model-used": modelUsed,
-        "x-usage-completion-audio-tokens": String(completionAudioTokens),
-        "x-usage-total-tokens": String(completionAudioTokens),
-    };
-}
-
 const DEFAULT_ELEVENLABS_MODEL = "eleven_multilingual_v2";
 
 const CreateSpeechRequestSchema = z
     .object({
-        model: z.string().default("tts-1").meta({
-            description:
-                "TTS model to use. Currently maps to ElevenLabs models.",
-            example: "tts-1",
-        }),
+        model: z.string().optional(),
         input: z.string().min(1).max(4096).meta({
             description:
                 "The text to generate audio for. Maximum 4096 characters.",
@@ -66,28 +55,39 @@ type CreateSpeechRequest = z.infer<typeof CreateSpeechRequestSchema>;
 function mapOutputFormat(format: string): string {
     const formatMap: Record<string, string> = {
         mp3: "mp3_44100_128",
-        opus: "opus_16000",
-        aac: "aac_44100",
-        flac: "flac_44100",
-        wav: "pcm_44100",
+        opus: "opus_48000_128",
+        aac: "m4a_aac_44100_128",
+        flac: "pcm_44100", // ElevenLabs doesn't support flac, use pcm
+        wav: "wav_44100",
         pcm: "pcm_44100",
     };
     return formatMap[format] || "mp3_44100_128";
-}
-
-function mapSpeedToStability(speed: number): number {
-    return Math.max(0, Math.min(1, 1.5 - speed * 0.5));
 }
 
 export async function generateSpeech(opts: {
     text: string;
     voice: string;
     responseFormat: string;
-    speed: number;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { text, voice, responseFormat, speed, apiKey, log } = opts;
+    const { text, voice, responseFormat, apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "TTS service is not configured (missing API key)",
+        });
+    }
+
+    if (text.length > 4096) {
+        return Response.json(
+            {
+                error: "invalid_request_error",
+                message: `Input text too long: ${text.length} characters. Maximum is 4096.`,
+            },
+            { status: 400 },
+        );
+    }
 
     const voiceId = VOICE_MAPPING[voice];
     if (!voiceId) {
@@ -102,7 +102,6 @@ export async function generateSpeech(opts: {
     }
 
     const outputFormat = mapOutputFormat(responseFormat);
-    const stability = mapSpeedToStability(speed);
 
     log.info("TTS request: voice={voice}, format={format}, chars={chars}", {
         voice,
@@ -116,7 +115,7 @@ export async function generateSpeech(opts: {
         text,
         model_id: DEFAULT_ELEVENLABS_MODEL,
         voice_settings: {
-            stability,
+            stability: 0.5,
             similarity_boost: 0.75,
             style: 0.0,
             use_speaker_boost: true,
@@ -147,9 +146,8 @@ export async function generateSpeech(opts: {
     const contentType = response.headers.get("content-type") || "audio/mpeg";
 
     const usageHeaders = {
-        ...buildAudioUsageHeaders("elevenlabs", text.length),
+        ...buildUsageHeaders("elevenlabs", createAudioTokenUsage(text.length)),
         "x-tts-voice": voice,
-        "x-usage-characters": String(text.length),
     };
 
     log.info("TTS success: {chars} characters", { chars: text.length });
@@ -217,14 +215,14 @@ export const audioRoutes = new Hono<Env>()
                 );
             }
 
-            const body: CreateSpeechRequest = await c.req.json();
-            const { input, voice, response_format, speed } = body;
+            const { input, voice, response_format } = c.req.valid(
+                "json" as never,
+            ) as CreateSpeechRequest;
 
             return generateSpeech({
                 text: input,
                 voice,
                 responseFormat: response_format,
-                speed,
                 apiKey: (c.env as unknown as { ELEVENLABS_API_KEY: string })
                     .ELEVENLABS_API_KEY,
                 log,

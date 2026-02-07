@@ -527,10 +527,6 @@ export const proxyRoutes = new Hono<Env>()
                         description: "Voice to use for speech generation",
                         example: "nova",
                     }),
-                speed: z.coerce.number().min(0.25).max(4.0).default(1.0).meta({
-                    description: "Speed of the generated audio (0.25-4.0)",
-                    example: 1.0,
-                }),
                 response_format: z
                     .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
                     .default("mp3")
@@ -556,15 +552,12 @@ export const proxyRoutes = new Hono<Env>()
             await checkBalance(c.var);
 
             const text = decodeURIComponent(c.req.param("text"));
-            const { voice, speed, response_format } = c.req.valid(
-                "query" as never,
-            );
+            const { voice, response_format } = c.req.valid("query" as never);
 
             return generateSpeech({
                 text,
                 voice: voice || "alloy",
                 responseFormat: response_format || "mp3",
-                speed: speed ?? 1.0,
                 apiKey: (c.env as unknown as { ELEVENLABS_API_KEY: string })
                     .ELEVENLABS_API_KEY,
                 log,

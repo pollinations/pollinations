@@ -1,4 +1,3 @@
-import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -17,8 +16,8 @@ import type { Env } from "../env.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
-const resolver = <T extends StandardSchemaV1>(schema: T) =>
-    baseResolver(schema, { reused: "ref" });
+// biome-ignore lint/suspicious/noExplicitAny: hono-openapi resolver accepts any schema
+const resolver = (schema: any) => baseResolver(schema, { reused: "ref" });
 
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import {

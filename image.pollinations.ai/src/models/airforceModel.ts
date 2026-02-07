@@ -104,7 +104,7 @@ async function fetchFromAirforce(
 }
 
 /**
- * Image generation via api.airforce (e.g. imagen-3)
+ * Image generation via api.airforce (e.g. imagen-4, flux-2-dev)
  */
 export async function callAirforceImageAPI(
     prompt: string,
@@ -149,7 +149,7 @@ function buildRequestBody(
     if (VIDEO_MODELS.includes(airforceModel)) {
         requestBody.sse = true;
         requestBody.response_format = "url";
-    } else if (airforceModel === "imagen-3") {
+    } else if (airforceModel === "imagen-4") {
         const size = closestSupportedSize(safeParams.width, safeParams.height);
         if (size) requestBody.size = size;
     } else if (safeParams.width && safeParams.height) {
@@ -294,8 +294,11 @@ async function downloadResultFromUrl(
     return buffer;
 }
 
+const MAX_VIDEO_RETRIES = 3;
+
 /**
  * Video generation via api.airforce (e.g. grok-imagine-video)
+ * Includes retry logic since video models can be flaky.
  */
 export async function callAirforceVideoAPI(
     prompt: string,
@@ -304,26 +307,58 @@ export async function callAirforceVideoAPI(
     requestId: string,
     airforceModel: string,
 ): Promise<VideoGenerationResult> {
-    const buffer = await fetchFromAirforce(
-        prompt,
-        safeParams,
-        progress,
-        requestId,
-        airforceModel,
+    let lastError: Error | undefined;
+
+    for (let attempt = 1; attempt <= MAX_VIDEO_RETRIES; attempt++) {
+        try {
+            if (attempt > 1) {
+                logOps(
+                    `Retry ${attempt}/${MAX_VIDEO_RETRIES} for ${airforceModel}`,
+                );
+                progress.updateBar(
+                    requestId,
+                    20,
+                    "Retrying",
+                    `Attempt ${attempt}/${MAX_VIDEO_RETRIES}...`,
+                );
+            }
+
+            const buffer = await fetchFromAirforce(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+                airforceModel,
+            );
+
+            const durationSeconds = safeParams.duration || 5;
+
+            return {
+                buffer,
+                mimeType: "video/mp4",
+                durationSeconds,
+                trackingData: {
+                    actualModel: safeParams.model,
+                    usage: {
+                        completionVideoSeconds: durationSeconds,
+                        totalTokenCount: 1,
+                    },
+                },
+            };
+        } catch (error) {
+            lastError = error as Error;
+            logError(
+                `${airforceModel} attempt ${attempt}/${MAX_VIDEO_RETRIES} failed:`,
+                lastError.message,
+            );
+        }
+    }
+
+    throw (
+        lastError ||
+        new HttpError(
+            `${airforceModel} failed after ${MAX_VIDEO_RETRIES} retries`,
+            500,
+        )
     );
-
-    const durationSeconds = safeParams.duration || 5;
-
-    return {
-        buffer,
-        mimeType: "video/mp4",
-        durationSeconds,
-        trackingData: {
-            actualModel: safeParams.model,
-            usage: {
-                completionVideoSeconds: durationSeconds,
-                totalTokenCount: 1,
-            },
-        },
-    };
 }

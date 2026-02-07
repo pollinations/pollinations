@@ -142,22 +142,29 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // Imagen 3 - Google's image generation via api.airforce (disabled - airforce provider unreliable)
-    // imagen: {
-    //     type: "airforce",
-    //     enhance: false,
-    //     defaultSideLength: 1024,
-    // },
+    // Imagen 4 - Google's latest image generation via api.airforce
+    "imagen-4": {
+        type: "airforce",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
 
-    // Grok Imagine Video - xAI video generation via api.airforce (disabled - upstream provider ~40% failure rate)
-    // "grok-video": {
-    //     type: "airforce-video",
-    //     enhance: false,
-    //     isVideo: true,
-    //     defaultDuration: 5,
-    //     maxDuration: 10,
-    //     defaultResolution: "720p",
-    // },
+    // FLUX.2 Dev - Black Forest Labs' latest image model via api.airforce
+    "flux-2-dev": {
+        type: "airforce",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Grok Imagine Video - xAI video generation via api.airforce (alpha - ~90% success rate)
+    "grok-video": {
+        type: "airforce-video",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 10,
+        defaultResolution: "720p",
+    },
 
     // LTX-2 - Fast video generation with audio on Modal
     "ltx-2": {

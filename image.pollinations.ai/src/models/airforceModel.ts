@@ -104,7 +104,7 @@ async function fetchFromAirforce(
 }
 
 /**
- * Image generation via api.airforce (e.g. imagen-3)
+ * Image generation via api.airforce (e.g. imagen-4, flux-2-dev)
  */
 export async function callAirforceImageAPI(
     prompt: string,
@@ -149,7 +149,7 @@ function buildRequestBody(
     if (VIDEO_MODELS.includes(airforceModel)) {
         requestBody.sse = true;
         requestBody.response_format = "url";
-    } else if (airforceModel === "imagen-3" || airforceModel === "imagen-4") {
+    } else if (airforceModel === "imagen-4") {
         const size = closestSupportedSize(safeParams.width, safeParams.height);
         if (size) requestBody.size = size;
     } else if (safeParams.width && safeParams.height) {

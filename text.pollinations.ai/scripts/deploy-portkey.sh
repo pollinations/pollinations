@@ -9,7 +9,7 @@ set -e
 # Includes: code_execution, url_context, google_search tools for Gemini
 # PR: https://github.com/Portkey-AI/gateway/pull/1458
 PORTKEY_REPO="https://github.com/pollinations/gateway.git"
-PORTKEY_COMMIT="${PORTKEY_COMMIT:-0750ef464e3f39a860b94b4786354a81f451c97a}"  # v1.15.1 + video_url + code_execution + url_context + gemini token fix
+PORTKEY_COMMIT="${PORTKEY_COMMIT:-d2a366a0d63aeb3ba8a221064e291121737d4e33}"  # v1.15.1 + video_url + code_execution + url_context + gemini token fix + custom domain portkey.pollinations.ai
 CLONE_DIR="/tmp/portkey-gateway-$$"
 ENVIRONMENT="${PORTKEY_ENV:-production}"
 

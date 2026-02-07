@@ -116,7 +116,19 @@ def fetch_batch(usernames: list[str], retries: int = 3) -> list[dict]:
             break
         except urllib.error.HTTPError as error:
             if attempt < retries - 1 and error.code in (502, 503, 504):
-                time.sleep(5 * (attempt + 1))  # Exponential backoff: 5s, 10s, 15s
+                time.sleep(5 * (attempt + 1))
+                continue
+            if attempt < retries - 1 and error.code in (403, 429):
+                retry_after = error.headers.get("Retry-After")
+                reset_at = error.headers.get("X-RateLimit-Reset")
+                if retry_after:
+                    wait = int(retry_after) + 1
+                elif reset_at:
+                    wait = max(int(reset_at) - int(time.time()), 0) + 1
+                else:
+                    wait = 60
+                print(f"   ⏳ Rate limited (HTTP {error.code}), waiting {wait}s...")
+                time.sleep(wait)
                 continue
             raise
 

@@ -5,7 +5,6 @@ title: Organization Application Period
 description: Mentoring organizations can submit applications to Google Summer of Code.
 startDate: 2026-01-19
 endDate: 2026-02-03
-isCurrent: true
 ---
 
 ---
@@ -13,6 +12,7 @@ title: Accepted Organizations Announced
 description: List of accepted mentoring organizations published.
 startDate: 2026-02-19
 endDate: 2026-02-19
+isCurrent: true
 ---
 
 ---

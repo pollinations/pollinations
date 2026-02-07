@@ -3,7 +3,6 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import { withTimeoutSignal } from "../util.ts";
 import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:flux-klein:ops");
@@ -121,17 +120,12 @@ async function generateTextToImage(
     const url = `${KLEIN_ENDPOINTS[variant].generate}?${params.toString()}`;
     logOps("Flux Klein GET URL:", url);
 
-    const response = await withTimeoutSignal(
-        (signal) =>
-            fetch(url, {
-                method: "GET",
-                headers: {
-                    "x-backend-token": backendToken,
-                },
-                signal,
-            }),
-        120000, // 2 minute timeout for cold starts
-    );
+    const response = await fetch(url, {
+        method: "GET",
+        headers: {
+            "x-backend-token": backendToken,
+        },
+    });
 
     if (!response.ok) {
         const errorText = await response.text();
@@ -209,10 +203,7 @@ async function generateWithEditing(
                 `Downloading reference image ${i + 1}/${imageUrls.length} from: ${imageUrl}`,
             );
 
-            const { base64, mimeType } = await withTimeoutSignal(
-                (signal) => downloadImageAsBase64(imageUrl, signal),
-                30000, // 30 second timeout
-            );
+            const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
 
             // Create data URL format for Modal endpoint
             const dataUrl = `data:${mimeType};base64,${base64}`;
@@ -257,19 +248,14 @@ async function generateWithEditing(
         "Generating with Flux Klein (editing)...",
     );
 
-    const response = await withTimeoutSignal(
-        (signal) =>
-            fetch(editUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-backend-token": backendToken,
-                },
-                body: JSON.stringify(base64Images),
-                signal,
-            }),
-        120000, // 2 minute timeout for cold starts
-    );
+    const response = await fetch(editUrl, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "x-backend-token": backendToken,
+        },
+        body: JSON.stringify(base64Images),
+    });
 
     if (!response.ok) {
         const errorText = await response.text();

@@ -14,6 +14,7 @@ import { createGeminiThinkingTransform } from "./transforms/createGeminiThinking
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
+import { passthroughToolSchemas } from "./transforms/passthroughToolSchemas.js";
 import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
@@ -88,6 +89,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
+            passthroughToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
@@ -99,6 +101,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
+            passthroughToolSchemas(),
             createGeminiThinkingTransform("v2.5"),
         ),
     },
@@ -107,6 +110,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas(),
+            passthroughToolSchemas(),
             createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v2.5"),
         ),
@@ -142,6 +146,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
+            passthroughToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-pro"),
@@ -153,6 +158,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
+            passthroughToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v2.5"),

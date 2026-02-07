@@ -83,6 +83,7 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
     isSpecialized?: boolean;
     persona?: boolean;
     paidOnly?: boolean; // Models that require paid balance only
+    alpha?: boolean; // Experimental models with potential instability
 };
 
 /** Sorts the cost and price definitions by date, in descending order */

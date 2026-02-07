@@ -85,7 +85,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                         {showAlpha && (
                             <Tooltip content="Alpha model — experimental, may be unstable">
                                 <span className="text-[10px] text-amber-700 bg-transparent px-1.5 py-0.5 rounded-full font-semibold border border-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.5)] whitespace-nowrap">
-                                    ⚗️ ALPHA
+                                    ⚠️ ALPHA
                                 </span>
                             </Tooltip>
                         )}

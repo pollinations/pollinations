@@ -1,7 +1,7 @@
+import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import type { StandardSchemaV1 } from "hono-openapi";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
 import { type BalanceVariables, balance } from "@/middleware/balance.ts";
@@ -552,7 +552,12 @@ export const proxyRoutes = new Hono<Env>()
             await checkBalance(c.var);
 
             const text = decodeURIComponent(c.req.param("text"));
-            const { voice, response_format } = c.req.valid("query" as never);
+            const { voice, response_format } = c.req.valid(
+                "query" as never,
+            ) as {
+                voice: string;
+                response_format: string;
+            };
 
             return generateSpeech({
                 text,

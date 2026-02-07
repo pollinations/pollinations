@@ -53,7 +53,6 @@ import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
 import type { BalanceVariables } from "./balance.ts";
 import type { LoggerVariables } from "./logger.ts";
 import type { ModelVariables } from "./model.ts";
-import type { PolarVariables } from "./polar.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
 
 export type ModelUsage = {

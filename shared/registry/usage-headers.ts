@@ -111,11 +111,8 @@ export function parseUsageHeaders(
 /**
  * Helper for image services: create TokenUsage with only image tokens
  */
-export function createImageTokenUsage(
-    completionImageTokens: number,
-): TokenUsage {
+export function createImageTokenUsage(completionImageTokens: number): Usage {
     return {
-        unit: "TOKENS",
         completionImageTokens,
     };
 }
@@ -123,11 +120,8 @@ export function createImageTokenUsage(
 /**
  * Helper for video services: create TokenUsage with video seconds (Veo)
  */
-export function createVideoSecondsUsage(
-    completionVideoSeconds: number,
-): TokenUsage {
+export function createVideoSecondsUsage(completionVideoSeconds: number): Usage {
     return {
-        unit: "TOKENS",
         completionVideoSeconds,
     };
 }
@@ -135,11 +129,8 @@ export function createVideoSecondsUsage(
 /**
  * Helper for video services: create TokenUsage with video tokens (Seedance)
  */
-export function createVideoTokenUsage(
-    completionVideoTokens: number,
-): TokenUsage {
+export function createVideoTokenUsage(completionVideoTokens: number): Usage {
     return {
-        unit: "TOKENS",
         completionVideoTokens,
     };
 }
@@ -148,11 +139,8 @@ export function createVideoTokenUsage(
  * Helper for audio/TTS services: create TokenUsage with audio tokens (characters)
  * ElevenLabs bills by character count, so we use completionAudioTokens
  */
-export function createAudioTokenUsage(
-    completionAudioTokens: number,
-): TokenUsage {
+export function createAudioTokenUsage(completionAudioTokens: number): Usage {
     return {
-        unit: "TOKENS",
         completionAudioTokens,
     };
 }

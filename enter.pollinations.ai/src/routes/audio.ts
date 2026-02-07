@@ -4,7 +4,7 @@ import {
     buildUsageHeaders,
     createAudioTokenUsage,
 } from "@shared/registry/usage-headers.ts";
-import { type Context, Hono } from "hono";
+import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
@@ -204,10 +204,9 @@ export const audioRoutes = new Hono<Env>()
         validator("json", CreateSpeechRequestSchema),
         resolveModel("generate.audio"),
         track("generate.audio"),
-        async (c: Context<Env>) => {
+        async (c) => {
             const log = c.get("log").getChild("tts");
             await c.var.auth.requireAuthorization();
-
             if (c.var.auth.user?.id) {
                 await c.var.balance.requirePositiveBalance(
                     c.var.auth.user.id,

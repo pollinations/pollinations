@@ -1,17 +1,18 @@
+import type { Logger } from "@logtape/logtape";
+import { ELEVENLABS_VOICES, VOICE_MAPPING } from "@shared/registry/audio.ts";
 import { type Context, Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
 import { auth } from "@/middleware/auth.ts";
-import { resolveModel } from "@/middleware/model.ts";
 import { balance } from "@/middleware/balance.ts";
+import { resolveModel } from "@/middleware/model.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import type { Env } from "../env.ts";
-import { VOICE_MAPPING, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 
 function buildAudioUsageHeaders(
     modelUsed: string,
@@ -78,6 +79,90 @@ function mapSpeedToStability(speed: number): number {
     return Math.max(0, Math.min(1, 1.5 - speed * 0.5));
 }
 
+export async function generateSpeech(opts: {
+    text: string;
+    voice: string;
+    responseFormat: string;
+    speed: number;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { text, voice, responseFormat, speed, apiKey, log } = opts;
+
+    const voiceId = VOICE_MAPPING[voice];
+    if (!voiceId) {
+        log.warn("Invalid voice requested: {voice}", { voice });
+        return Response.json(
+            {
+                error: "invalid_request_error",
+                message: `Invalid voice: ${voice}. Available voices: ${Object.keys(VOICE_MAPPING).join(", ")}.`,
+            },
+            { status: 400 },
+        );
+    }
+
+    const outputFormat = mapOutputFormat(responseFormat);
+    const stability = mapSpeedToStability(speed);
+
+    log.info("TTS request: voice={voice}, format={format}, chars={chars}", {
+        voice,
+        format: responseFormat,
+        chars: text.length,
+    });
+
+    const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=${outputFormat}`;
+
+    const elevenLabsBody = {
+        text,
+        model_id: DEFAULT_ELEVENLABS_MODEL,
+        voice_settings: {
+            stability,
+            similarity_boost: 0.75,
+            style: 0.0,
+            use_speaker_boost: true,
+        },
+    };
+
+    const response = await fetch(elevenLabsUrl, {
+        method: "POST",
+        headers: {
+            "xi-api-key": apiKey,
+            "Content-Type": "application/json",
+            Accept: "audio/mpeg",
+        },
+        body: JSON.stringify(elevenLabsBody),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        log.warn("ElevenLabs error {status}: {body}", {
+            status: response.status,
+            body: errorText,
+        });
+        throw new UpstreamError(response.status as ContentfulStatusCode, {
+            message: errorText || getDefaultErrorMessage(response.status),
+        });
+    }
+
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
+
+    const usageHeaders = {
+        ...buildAudioUsageHeaders("elevenlabs", text.length),
+        "x-tts-voice": voice,
+        "x-usage-characters": String(text.length),
+    };
+
+    log.info("TTS success: {chars} characters", { chars: text.length });
+
+    return new Response(response.body, {
+        status: 200,
+        headers: {
+            "Content-Type": contentType,
+            ...usageHeaders,
+        },
+    });
+}
+
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
     .use("*", auth({ allowApiKey: true, allowSessionCookie: false }), balance)
@@ -135,90 +220,14 @@ export const audioRoutes = new Hono<Env>()
             const body: CreateSpeechRequest = await c.req.json();
             const { input, voice, response_format, speed } = body;
 
-            const voiceId = VOICE_MAPPING[voice];
-            if (!voiceId) {
-                log.warn("Invalid voice requested: {voice}", { voice });
-                return c.json(
-                    {
-                        error: "invalid_request_error",
-                        message: `Invalid voice: ${voice}. Available voices: ${Object.keys(VOICE_MAPPING).join(", ")}.`,
-                    },
-                    400,
-                );
-            }
-
-            const outputFormat = mapOutputFormat(response_format);
-            const stability = mapSpeedToStability(speed);
-
-            log.info(
-                "TTS request: voice={voice}, format={format}, chars={chars}",
-                {
-                    voice,
-                    format: response_format,
-                    chars: input.length,
-                },
-            );
-
-            const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=${outputFormat}`;
-
-            const elevenLabsBody = {
+            return generateSpeech({
                 text: input,
-                model_id: DEFAULT_ELEVENLABS_MODEL,
-                voice_settings: {
-                    stability: stability,
-                    similarity_boost: 0.75,
-                    style: 0.0,
-                    use_speaker_boost: true,
-                },
-            };
-
-            const response = await fetch(elevenLabsUrl, {
-                method: "POST",
-                headers: {
-                    "xi-api-key": (
-                        c.env as unknown as { ELEVENLABS_API_KEY: string }
-                    ).ELEVENLABS_API_KEY,
-                    "Content-Type": "application/json",
-                    Accept: "audio/mpeg",
-                },
-                body: JSON.stringify(elevenLabsBody),
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                log.warn("ElevenLabs error {status}: {body}", {
-                    status: response.status,
-                    body: errorText,
-                });
-                throw new UpstreamError(
-                    response.status as ContentfulStatusCode,
-                    {
-                        message:
-                            errorText ||
-                            getDefaultErrorMessage(response.status),
-                    },
-                );
-            }
-
-            const contentType =
-                response.headers.get("content-type") || "audio/mpeg";
-
-            const usageHeaders = {
-                ...buildAudioUsageHeaders("elevenlabs", input.length),
-                "x-tts-voice": voice,
-                "x-usage-characters": String(input.length),
-            };
-
-            log.info("TTS success: {chars} characters", {
-                chars: input.length,
-            });
-
-            return new Response(response.body, {
-                status: 200,
-                headers: {
-                    "Content-Type": contentType,
-                    ...usageHeaders,
-                },
+                voice,
+                responseFormat: response_format,
+                speed,
+                apiKey: (c.env as unknown as { ELEVENLABS_API_KEY: string })
+                    .ELEVENLABS_API_KEY,
+                log,
             });
         },
     );

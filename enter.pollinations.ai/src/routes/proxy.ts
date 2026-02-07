@@ -20,6 +20,7 @@ import type { Env } from "../env.ts";
 const resolver = <T extends StandardSchemaV1>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
+import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import {
     getImageModelsInfo,
     getTextModelsInfo,
@@ -40,6 +41,7 @@ import {
 } from "@/schemas/openai.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
+import { generateSpeech } from "./audio.ts";
 
 const factory = createFactory<Env>();
 
@@ -473,6 +475,100 @@ export const proxyRoutes = new Hono<Env>()
             }
 
             return response;
+        },
+    )
+    .get(
+        "/audio/:text",
+        describeRoute({
+            tags: ["gen.pollinations.ai"],
+            description: [
+                "Generate speech audio from text.",
+                "",
+                `**Available Voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                "",
+                "**Output Formats:** mp3, opus, aac, flac, wav, pcm",
+                "",
+                "**Authentication:**",
+                "",
+                "Include your API key either:",
+                "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
+                "- As a query parameter: `?key=YOUR_API_KEY`",
+                "",
+                "API keys can be created from your dashboard at enter.pollinations.ai.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success - Returns audio data",
+                    content: {
+                        "audio/mpeg": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                text: z.string().min(1).meta({
+                    description: "Text to convert to speech",
+                    example: "Hello, welcome to Pollinations!",
+                }),
+            }),
+        ),
+        validator(
+            "query",
+            z.object({
+                voice: z
+                    .enum(ELEVENLABS_VOICES as unknown as [string, ...string[]])
+                    .default("alloy")
+                    .meta({
+                        description: "Voice to use for speech generation",
+                        example: "nova",
+                    }),
+                speed: z.coerce.number().min(0.25).max(4.0).default(1.0).meta({
+                    description: "Speed of the generated audio (0.25-4.0)",
+                    example: 1.0,
+                }),
+                response_format: z
+                    .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
+                    .default("mp3")
+                    .meta({
+                        description: "Audio output format",
+                        example: "mp3",
+                    }),
+                model: z.string().optional().meta({
+                    description: "TTS model to use",
+                    example: "tts-1",
+                }),
+                key: z.string().optional().meta({
+                    description:
+                        "API key (alternative to Authorization header)",
+                }),
+            }),
+        ),
+        resolveModel("generate.audio"),
+        track("generate.audio"),
+        async (c) => {
+            const log = c.get("log").getChild("generate");
+            await c.var.auth.requireAuthorization();
+            await checkBalance(c.var);
+
+            const text = decodeURIComponent(c.req.param("text"));
+            const { voice, speed, response_format } = c.req.valid(
+                "query" as never,
+            );
+
+            return generateSpeech({
+                text,
+                voice: voice || "alloy",
+                responseFormat: response_format || "mp3",
+                speed: speed ?? 1.0,
+                apiKey: (c.env as unknown as { ELEVENLABS_API_KEY: string })
+                    .ELEVENLABS_API_KEY,
+                log,
+            });
         },
     );
 

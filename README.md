@@ -114,7 +114,13 @@ curl 'https://gen.pollinations.ai/text/Hello%20world'
 
 ### Audio Generation
 
-**Text-to-Speech** (OpenAI TTS compatible):
+**Simple GET endpoint:**
+
+```bash
+curl 'https://gen.pollinations.ai/audio/Hello%20from%20Pollinations?voice=nova&key=YOUR_API_KEY' -o speech.mp3
+```
+
+**OpenAI TTS compatible:**
 
 ```bash
 curl 'https://gen.pollinations.ai/v1/audio/speech' \
@@ -244,7 +250,11 @@ To generate text:
 
 ### Audio Generation
 
-Generate speech from text using the OpenAI TTS-compatible endpoint:
+Generate speech from text:
+
+    https://gen.pollinations.ai/audio/Hello%20from%20Pollinations?voice=alloy&key=YOUR_API_KEY
+
+Or use the OpenAI TTS-compatible endpoint:
 
 ```bash
 curl 'https://gen.pollinations.ai/v1/audio/speech' \

@@ -209,13 +209,13 @@ describe("Tier Balance Management", () => {
             expect(balances.cryptoBalance).toBe(0); // 1 - 1
             expect(balances.packBalance).toBe(6); // 10 - 4
 
-            // Deduct 10 more (all from pack, goes negative)
+            // Deduct 10 more (all from pack, capped at 0)
             await atomicDeductUserBalance(db, userId, 10);
 
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(0);
             expect(balances.cryptoBalance).toBe(0);
-            expect(balances.packBalance).toBe(-4); // 6 - 10 = -4 (pack can go negative)
+            expect(balances.packBalance).toBe(0); // 6 - 10 = capped at 0 (pack never goes negative)
         });
 
         test("should prioritize tier → crypto → pack balance order", async () => {
@@ -754,13 +754,13 @@ describe("Tier Balance Management", () => {
             expect(balances.cryptoBalance).toBe(0); // 1 - 1
             expect(balances.packBalance).toBe(2); // 5 - 3
 
-            // Deduct 5 more (all from pack, goes negative)
+            // Deduct 5 more (all from pack, capped at 0)
             await atomicDeductPaidBalance(db, userId, 5);
 
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(10); // Still unchanged
             expect(balances.cryptoBalance).toBe(0);
-            expect(balances.packBalance).toBe(-3); // 2 - 5 = -3
+            expect(balances.packBalance).toBe(0); // 2 - 5 = capped at 0
         });
 
         test("should show paid_only field in model info", async () => {
@@ -873,7 +873,7 @@ describe("Tier Balance Management", () => {
             expect(balances.packBalance).toBe(1.5); // 2 - 0.5
         });
 
-        test("should handle paid-only models when pack balance goes negative", async () => {
+        test("should cap pack balance at 0 for paid-only models", async () => {
             const db = drizzle(env.DB);
             const userId = "test-paid-negative";
 
@@ -905,11 +905,11 @@ describe("Tier Balance Management", () => {
 
             const balances = await getUserBalances(db, userId);
 
-            // Tier still untouched despite negative pack
+            // Tier still untouched
             expect(balances.tierBalance).toBe(50);
             expect(balances.cryptoBalance).toBe(0);
-            // Pack goes negative as expected
-            expect(balances.packBalance).toBe(-1.5); // 1 - 2.5
+            // Pack capped at 0
+            expect(balances.packBalance).toBe(0); // 1 - 2.5 = capped at 0
         });
 
         test("should reject all paid-only model aliases with tier-only balance", async ({

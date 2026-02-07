@@ -24,10 +24,9 @@ export async function atomicDeductUserBalance(
     // This complex SQL statement atomically deducts from balances in order:
     // 1. First, deduct from tier_balance (up to available amount)
     // 2. Then, deduct remainder from crypto_balance (up to available amount)
-    // 3. Finally, deduct any remaining from pack_balance (can go negative)
+    // 3. Finally, deduct any remaining from pack_balance (capped at 0)
     //
-    // The MAX(0, ...) ensures tier and crypto never go below 0
-    // Pack balance is allowed to go negative as it represents paid credits
+    // All balances are protected from going below 0 via MAX(0, ...)
     // Note: SQLite uses MAX/MIN instead of GREATEST/LEAST
     await db.run(sql`
 		UPDATE ${userTable}
@@ -38,9 +37,9 @@ export async function atomicDeductUserBalance(
 					MAX(0, ${amount} - COALESCE(tier_balance, 0))
 				)
 			),
-			pack_balance = pack_balance - MAX(0,
+			pack_balance = MAX(0, pack_balance - MAX(0,
 				${amount} - COALESCE(tier_balance, 0) - COALESCE(crypto_balance, 0)
-			)
+			))
 		WHERE id = ${userId}
 	`);
 }
@@ -131,7 +130,7 @@ export function calculateDeductionSplit(
     const fromTier = Math.min(amount, Math.max(0, tierBalance));
     const remainingAfterTier = amount - fromTier;
     const fromCrypto = Math.min(remainingAfterTier, Math.max(0, cryptoBalance));
-    const fromPack = remainingAfterTier - fromCrypto;
+    const fromPack = Math.min(remainingAfterTier - fromCrypto, Math.max(0, packBalance));
 
     return { fromTier, fromCrypto, fromPack };
 }
@@ -153,11 +152,12 @@ export async function atomicDeductPaidBalance(
     if (amount <= 0) return;
 
     // Deduct from crypto first, then pack (tier is not touched)
+    // Pack balance is capped at 0 to prevent negative balances
     await db.run(sql`
 		UPDATE ${userTable}
 		SET
 			crypto_balance = MAX(0, crypto_balance - MIN(crypto_balance, ${amount})),
-			pack_balance = pack_balance - MAX(0, ${amount} - COALESCE(crypto_balance, 0))
+			pack_balance = MAX(0, pack_balance - MAX(0, ${amount} - COALESCE(crypto_balance, 0)))
 		WHERE id = ${userId}
 	`);
 }

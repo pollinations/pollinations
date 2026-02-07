@@ -197,7 +197,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                             toggleCategory(textModels)
                                         }
                                         disabled={disabled}
-                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50 cursor-pointer"
                                     >
                                         {isCategoryAllSelected(textModels)
                                             ? "Deselect all"
@@ -232,7 +232,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                             toggleCategory(imageModels)
                                         }
                                         disabled={disabled}
-                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50 cursor-pointer"
                                     >
                                         {isCategoryAllSelected(imageModels)
                                             ? "Deselect all"
@@ -267,7 +267,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                             toggleCategory(videoModels)
                                         }
                                         disabled={disabled}
-                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50 cursor-pointer"
                                     >
                                         {isCategoryAllSelected(videoModels)
                                             ? "Deselect all"

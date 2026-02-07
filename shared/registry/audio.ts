@@ -1,4 +1,3 @@
-import { COST_START_DATE } from "./price-helpers";
 import type { ServiceDefinition } from "./registry";
 
 // ElevenLabs voices available for TTS
@@ -58,7 +57,7 @@ export const AUDIO_SERVICES = {
         provider: "elevenlabs",
         cost: [
             {
-                date: COST_START_DATE,
+                date: new Date("2026-02-07").getTime(),
                 // ElevenLabs pricing: ~$0.18 per 1000 characters (average across plans)
                 // Based on: 1 credit = 1 character, ~$0.15-0.22 per 1000 credits depending on plan
                 // We use completionAudioTokens to track character usage

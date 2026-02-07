@@ -5,7 +5,7 @@ import { z } from "zod";
 import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
 import { auth } from "@/middleware/auth.ts";
 import { resolveModel } from "@/middleware/model.ts";
-import { polar } from "@/middleware/polar.ts";
+import { balance } from "@/middleware/balance.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
@@ -24,7 +24,6 @@ function buildAudioUsageHeaders(
 }
 
 const VOICE_MAPPING: Record<string, string> = {
-
     // These are the new voices mapped to ElevenLabs voices from OpenAI TTS
 
     alloy: "21m00Tcm4TlvDq8ikWAM", // Rachel
@@ -127,7 +126,7 @@ function mapSpeedToStability(speed: number): number {
 
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
-    .use("*", auth({ allowApiKey: true, allowSessionCookie: false }), polar)
+    .use("*", auth({ allowApiKey: true, allowSessionCookie: false }), balance)
     .post(
         "/speech",
         describeRoute({
@@ -173,7 +172,7 @@ export const audioRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
 
             if (c.var.auth.user?.id) {
-                await c.var.polar.requirePositiveBalance(
+                await c.var.balance.requirePositiveBalance(
                     c.var.auth.user.id,
                     "Insufficient pollen balance for text-to-speech",
                 );

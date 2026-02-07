@@ -217,6 +217,7 @@ export const IMAGE_SERVICES = {
         aliases: ["wan2.6", "wan-i2v"],
         modelId: "wan",
         provider: "alibaba",
+        alpha: true,
         cost: [
             // Wan 2.6 I2V Flash (Singapore/International region)
             // Video base: 720P $0.025/sec (without audio)
@@ -270,6 +271,7 @@ export const IMAGE_SERVICES = {
         aliases: ["imagen"],
         modelId: "imagen-4",
         provider: "airforce",
+        alpha: true,
         cost: [
             {
                 date: new Date("2026-02-07").getTime(),
@@ -285,6 +287,7 @@ export const IMAGE_SERVICES = {
         aliases: ["flux2", "flux-2"],
         modelId: "flux-2-dev",
         provider: "airforce",
+        alpha: true,
         cost: [
             {
                 date: new Date("2026-02-07").getTime(),

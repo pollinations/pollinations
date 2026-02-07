@@ -11,6 +11,7 @@ import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import type { Env } from "../env.ts";
+import { VOICE_MAPPING } from "@shared/registry/audio.ts";
 
 function buildAudioUsageHeaders(
     modelUsed: string,
@@ -22,49 +23,6 @@ function buildAudioUsageHeaders(
         "x-usage-total-tokens": String(completionAudioTokens),
     };
 }
-
-const VOICE_MAPPING: Record<string, string> = {
-    // These are the new voices mapped to ElevenLabs voices from OpenAI TTS
-
-    alloy: "21m00Tcm4TlvDq8ikWAM", // Rachel
-    echo: "29vD33N1CtxCmqQRPOHJ", // Drew
-    fable: "EXAVITQu4vr4xnSDxMaL", // Bella
-    onyx: "ErXwobaYiN019PkySvjV", // Antoni
-    nova: "MF3mGyEYCl7XYWbV9V6O", // Elli
-    shimmer: "ThT5KcBeYPX3keUQqHPh", // Dorothy
-    ash: "dXtC3XhB9GtPusIpNtQx", // Hale
-    ballad: "q0IMILNRPxOgtBTS4taI", // Drew
-    coral: "gJx1vCzNCD1EQHT212Ls", // Coral
-    sage: "wJqPPQ618aTW29mptyoc", // ana rita
-    verse: "eXpIbVcVbLo8ZJQDlDnl", // Siren
-
-    // These are the original voices from ElevenLabs
-
-    rachel: "21m00Tcm4TlvDq8ikWAM", // Calm, conversational
-    domi: "AZnzlk1XvdvUeBnXmlld", // Strong, confident
-    bella: "EXAVITQu4vr4xnSDxMaL", // Soft, gentle
-    elli: "MF3mGyEYCl7XYWbV9V6O", // Young, bright
-    charlotte: "XB0fDUnXU5powFXDhCwa", // Sophisticated, seductive
-    dorothy: "ThT5KcBeYPX3keUQqHPh", // Pleasant, British
-    sarah: "EXAVITQu4vr4xnSDxMaL", // Soft, news anchor
-    emily: "LcfcDJNUP1GQjkzn1xUU", // Calm, gentle
-    lily: "pFZP5JQG7iQjIQuC4Bku", // Warm, British narrator
-    adam: "pNInz6obpgDQGcFmaJgB", // Deep, natural
-    antoni: "ErXwobaYiN019PkySvjV", // Well-rounded, calm
-    arnold: "VR6AewLTigWG4xSOukaG", // Crisp, deep
-    josh: "TxGEqnHWrfWFTfGW9XjX", // Deep, young American
-    sam: "yoZ06aMxZJJ28mfd3POQ", // Raspy, young American
-    daniel: "onwK4e9ZLuTAKqWW03F9", // Deep, British
-    charlie: "IKne3meq5aSn9XLyUdCD", // Casual Australian
-    james: "ZQe5CZNOzWyzPSCn5a3c", // Calm, old British
-    fin: "D38z5RcWu1voky8WS1ja", // Sailor, Irish
-    callum: "N2lVS1w4EtoT3dr4eOWO", // Intense, transatlantic
-    liam: "TX3LPaxmHKxFdv7VOQHJ", // Articulate, neutral
-    george: "JBFqnCBsd6RMkjVDRZzb", // Warm, British
-    brian: "nPczCjzI2devNBz1zQrb", // Deep, American narrator
-    bill: "pqHfZKP75CvOlQylNhV4", // Trustworthy, American
-    matilda: "XrExE9yKIg1WjnnlVkGX", // Warm, friendly
-};
 
 const DEFAULT_ELEVENLABS_MODEL = "eleven_multilingual_v2";
 

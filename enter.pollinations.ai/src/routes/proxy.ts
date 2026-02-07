@@ -23,7 +23,6 @@ import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import {
     getImageModelsInfo,
     getTextModelsInfo,
-    ModelInfoSchema,
 } from "@shared/registry/model-info.ts";
 import { getServiceDefinition } from "@shared/registry/registry.ts";
 import { createFactory } from "hono/factory";
@@ -171,7 +170,7 @@ export const proxyRoutes = new Hono<Env>()
                     content: {
                         "application/json": {
                             schema: resolver(
-                                z.array(ModelInfoSchema).meta({
+                                z.array(z.any()).meta({
                                     description:
                                         "List of models with pricing and metadata",
                                 }),
@@ -210,7 +209,7 @@ export const proxyRoutes = new Hono<Env>()
                     content: {
                         "application/json": {
                             schema: resolver(
-                                z.array(ModelInfoSchema).meta({
+                                z.array(z.any()).meta({
                                     description:
                                         "List of models with pricing and metadata",
                                 }),

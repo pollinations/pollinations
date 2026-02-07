@@ -2,6 +2,7 @@
  * Data fetching and transformation for pricing
  */
 
+import { AUDIO_SERVICES } from "../../../../../shared/registry/audio.ts";
 import { IMAGE_SERVICES } from "../../../../../shared/registry/image.ts";
 import type { CostDefinition } from "../../../../../shared/registry/registry.ts";
 import { TEXT_SERVICES } from "../../../../../shared/registry/text.ts";
@@ -123,6 +124,24 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
                 ),
             });
         }
+    }
+
+    // Add audio/TTS models
+    for (const [serviceName, serviceConfig] of Object.entries(AUDIO_SERVICES)) {
+        const costHistory = serviceConfig.cost;
+        if (!costHistory) continue;
+
+        const latestCost: CostDefinition = costHistory[0];
+
+        prices.push({
+            name: serviceName,
+            type: "audio",
+            perToken: false,
+            perCharPrice: formatPrice(
+                latestCost.completionAudioTokens,
+                (v: number) => (v * 1000).toFixed(2),
+            ),
+        });
     }
 
     // Merge real usage stats if available

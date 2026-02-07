@@ -1,25 +1,25 @@
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
-import type { Context } from "hono";
 import { createAuth } from "./auth.ts";
 import type { Env } from "./env.ts";
 import { handleError } from "./error.ts";
 import { logger } from "./middleware/logger.ts";
+import { accountRoutes } from "./routes/account.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { audioRoutes } from "./routes/audio.ts";
+import { customerRoutes } from "./routes/customer.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
-import { proxyRoutes } from "./routes/proxy.ts";
-import { tiersRoutes } from "./routes/tiers.ts";
-import { webhooksRoutes } from "./routes/webhooks.ts";
-import { accountRoutes } from "./routes/account.ts";
-import { customerRoutes } from "./routes/customer.ts";
 import { nowpaymentsRoutes } from "./routes/nowpayments.ts";
+import { proxyRoutes } from "./routes/proxy.ts";
 import { stripeRoutes } from "./routes/stripe.ts";
 import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
+import { tiersRoutes } from "./routes/tiers.ts";
+import { webhooksRoutes } from "./routes/webhooks.ts";
 import { webhooksCryptoRoutes } from "./routes/webhooks-crypto.ts";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {

@@ -11,7 +11,7 @@ import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import type { Env } from "../env.ts";
-import { VOICE_MAPPING } from "@shared/registry/audio.ts";
+import { VOICE_MAPPING, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 
 function buildAudioUsageHeaders(
     modelUsed: string,
@@ -39,14 +39,10 @@ const CreateSpeechRequestSchema = z
             example: "Hello, welcome to Pollinations!",
         }),
         voice: z
-            .enum(Object.keys(VOICE_MAPPING) as [string, ...string[]])
+            .enum(ELEVENLABS_VOICES as unknown as [string, ...string[]])
             .default("alloy")
             .meta({
-                description:
-                    "The voice to use. OpenAI voices: alloy, echo, fable, onyx, nova, shimmer. " +
-                    "ElevenLabs voices: rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, " +
-                    "adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill, matilda, " +
-                    "ash, ballad, coral, sage, verse.",
+                description: `The voice to use. Available voices: ${ELEVENLABS_VOICES.join(", ")}.`,
                 example: "rachel",
             }),
         response_format: z
@@ -94,7 +90,7 @@ export const audioRoutes = new Hono<Env>()
                 "",
                 "This endpoint is OpenAI TTS API compatible.",
                 "",
-                "**Available Voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse",
+                `**Available Voices:** ${ELEVENLABS_VOICES.join(", ")}`,
                 "",
                 "**Output Formats:** mp3, opus, aac, flac, wav, pcm",
             ].join("\n"),

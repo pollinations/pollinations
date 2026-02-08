@@ -78,4 +78,20 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
     },
+    whisper: {
+        aliases: ["whisper-1", "whisper-large-v3"],
+        modelId: "whisper-large-v3",
+        provider: "ovhcloud",
+        cost: [
+            {
+                date: new Date("2026-02-08").getTime(),
+                // OVH Whisper: €0.00004083/sec ≈ $0.0000445/sec
+                promptAudioSeconds: 0.0000445,
+            },
+        ],
+        description:
+            "Whisper Large V3 - Speech to Text Transcription (OVHcloud)",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+    },
 } satisfies Record<string, ServiceDefinition<string>>;

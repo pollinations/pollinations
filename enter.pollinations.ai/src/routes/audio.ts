@@ -2,6 +2,7 @@ import type { Logger } from "@logtape/logtape";
 import { ELEVENLABS_VOICES, VOICE_MAPPING } from "@shared/registry/audio.ts";
 import {
     buildUsageHeaders,
+    createAudioSecondsUsage,
     createAudioTokenUsage,
 } from "@shared/registry/usage-headers.ts";
 import { Hono } from "hono";
@@ -227,4 +228,137 @@ export const audioRoutes = new Hono<Env>()
                 log,
             });
         },
+    )
+    .post(
+        "/transcriptions",
+        describeRoute({
+            tags: ["gen.pollinations.ai"],
+            description: [
+                "Transcribe audio to text using Whisper.",
+                "",
+                "This endpoint is OpenAI Whisper API compatible.",
+                "",
+                "**Supported formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm",
+                "",
+                "**Models:** `whisper-large-v3` (default), `whisper-1`",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success - Returns transcription",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    text: { type: "string" },
+                                },
+                            },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 500),
+            },
+        }),
+        resolveModel("generate.audio"),
+        track("generate.audio"),
+        async (c) => {
+            const log = c.get("log").getChild("transcription");
+            await c.var.auth.requireAuthorization();
+            if (c.var.auth.user?.id) {
+                await c.var.balance.requirePositiveBalance(
+                    c.var.auth.user.id,
+                    "Insufficient pollen balance for transcription",
+                );
+            }
+
+            const ovhApiKey = c.env.OVHCLOUD_API_KEY;
+            if (!ovhApiKey) {
+                throw new UpstreamError(500 as ContentfulStatusCode, {
+                    message:
+                        "Transcription service is not configured (missing API key)",
+                });
+            }
+
+            // Thin proxy to OVHcloud Whisper — forward multipart body directly
+            const response = await fetch(
+                "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${ovhApiKey}`,
+                        "Content-Type":
+                            c.req.header("Content-Type") ||
+                            "multipart/form-data",
+                    },
+                    body: c.req.raw.body,
+                    // @ts-expect-error duplex required for streaming request bodies
+                    duplex: "half",
+                },
+            );
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                log.warn("Transcription error {status}: {body}", {
+                    status: response.status,
+                    body: errorText,
+                });
+                throw new UpstreamError(
+                    response.status as ContentfulStatusCode,
+                    {
+                        message:
+                            errorText ||
+                            getDefaultErrorMessage(response.status),
+                    },
+                );
+            }
+
+            // Read body to extract duration for usage billing
+            const responseBody = await response.text();
+            const usageHeaders = extractWhisperUsageHeaders(
+                responseBody,
+                c.var.model.resolved,
+                log,
+            );
+
+            // Override response tracking with usage headers
+            const trackedResponse = new Response(responseBody, {
+                status: response.status,
+                headers: {
+                    ...Object.fromEntries(response.headers),
+                    ...usageHeaders,
+                },
+            });
+            c.var.track.overrideResponseTracking(trackedResponse);
+
+            return new Response(responseBody, {
+                headers: {
+                    ...Object.fromEntries(response.headers),
+                    ...usageHeaders,
+                },
+            });
+        },
     );
+
+/**
+ * Extract usage from Whisper response body and build tracking headers.
+ * OVH returns: {"usage": {"type": "duration", "duration": 21.0}, ...}
+ */
+function extractWhisperUsageHeaders(
+    responseBody: string,
+    modelUsed: string,
+    log: Logger,
+): Record<string, string> {
+    try {
+        const json = JSON.parse(responseBody);
+        if (json.usage?.duration) {
+            const usage = createAudioSecondsUsage(json.usage.duration);
+            log.debug("Whisper usage: {duration}s", {
+                duration: json.usage.duration,
+            });
+            return buildUsageHeaders(modelUsed, usage);
+        }
+    } catch {
+        log.warn("Failed to parse whisper response for usage");
+    }
+    return { "x-model-used": modelUsed };
+}

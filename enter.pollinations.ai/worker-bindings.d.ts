@@ -121,6 +121,7 @@ declare namespace NodeJS {
                 | "STRIPE_SECRET_KEY"
                 | "STRIPE_WEBHOOK_SECRET"
                 | "TINYBIRD_STRIPE_INGEST_TOKEN"
+                | "OVHCLOUD_API_KEY"
             >
         > {}
 }

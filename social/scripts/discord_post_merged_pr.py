@@ -318,10 +318,12 @@ def format_review_for_discord(message_content: str, pr_info: Dict) -> str:
 def post_to_discord(webhook_url: str, message_content: str, image_bytes: Optional[bytes] = None):
     """Post message + optional image to Discord webhook as single message"""
     if image_bytes:
-        # Send as multipart with both content and file
-        files = {"file": ("image.jpg", image_bytes, "image/jpeg")}
-        data = {"content": message_content}
-        response = requests.post(webhook_url, files=files, data=data)
+        # Send as multipart with both payload_json and file
+        files = {
+            "payload_json": (None, json.dumps({"content": message_content}), "application/json"),
+            "files[0]": ("image.jpg", image_bytes, "image/jpeg")
+        }
+        response = requests.post(webhook_url, files=files)
     else:
         # Send as JSON
         response = requests.post(webhook_url, json={"content": message_content})

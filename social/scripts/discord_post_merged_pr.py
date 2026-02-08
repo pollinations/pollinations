@@ -191,7 +191,7 @@ def get_system_prompt() -> str:
     """Load the system prompt from external file"""
     return load_prompt(PLATFORM, "merged_pr_system")
 
-def get_user_prompt(title: str, branch: str, description: str, diff: str) -> str:
+def get_user_prompt(title: str, branch: str, description: str) -> str:
     """Load user prompt template and render with PR data"""
     # Build description section
     description_section = ""
@@ -201,10 +201,11 @@ PR Description:
 ======
 {description}
 ======"""
-    
+
     # Load template and replace placeholders
     template = load_prompt(PLATFORM, "merged_pr_user")
-    return template.replace("{title}", title).replace("{branch}", branch).replace("{description_section}", description_section).replace("{diff}", diff)
+    # Remove {diff} placeholder since we're not using it anymore
+    return template.replace("{title}", title).replace("{branch}", branch).replace("{description_section}", description_section).replace("{diff}", "")
 
 def parse_discord_message(response: str) -> str:
     """Parse Discord message from AI response"""
@@ -288,7 +289,8 @@ def chunk_message(message: str, max_length: int = CHUNK_SIZE) -> List[str]:
 
 
 
-def format_review_for_discord(message_content: str, pr_info: Dict) -> List[Dict]:
+def format_review_for_discord(message_content: str, pr_info: Dict) -> str:
+    """Format PR announcement message content"""
     time_str = format_timestamp(pr_info.get('merged_at'))
     pr_number = pr_info.get('number', 'Unknown')
     pr_url = pr_info.get('url', '#')
@@ -298,59 +300,41 @@ def format_review_for_discord(message_content: str, pr_info: Dict) -> List[Dict]
     creator_link = f"[{pr_creator if pr_creator != 'Unknown' else 'Some Pollinations Contributor'}](<https://github.com/{pr_creator}>)"
     footer = f"\n\n{pr_link} • By {creator_link} • {time_str}"
 
-    # Calculate available space for content
+    # Calculate available space for content (2000 char limit for Discord)
+    max_length = 2000
     footer_length = len(footer)
-    available_space = CHUNK_SIZE - footer_length
-    
-    # Check if we need to chunk
-    if len(message_content) <= available_space:
-        # Single message - add footer
-        full_message = message_content + footer
-        return [{"content": full_message}]
-    
-    # Need to chunk - split the message content
-    print(f"📦 Message is {len(message_content)} chars, chunking into ~{CHUNK_SIZE} char pieces...")
-    chunks = chunk_message(message_content, available_space)
-    
-    payloads = []
-    total_chunks = len(chunks)
-    
-    for i, chunk in enumerate(chunks):
-        is_last = (i == total_chunks - 1)
-        
-        if is_last:
-            # Last chunk gets the footer
-            full_message = chunk + footer
-        else:
-            # Non-last chunks are sent as-is without any continuation indicator
-            full_message = chunk
-        
-        payloads.append({"content": full_message})
-        print(f"  📄 Chunk {i+1}/{total_chunks}: {len(full_message)} chars")
-    
-    return payloads
+    available_space = max_length - footer_length
+
+    # Check if we need to truncate
+    if len(message_content) > available_space:
+        # Truncate message content to fit footer
+        message_content = message_content[:available_space - 3] + "..."
+        print(f"📦 Truncated message to fit Discord limit")
+
+    return message_content + footer
 
 
 
-def post_to_discord(webhook_url: str, payloads: List[Dict]):
-    """Post message(s) to Discord webhook"""
-    import time
-    
-    for i, payload in enumerate(payloads):
-        if i > 0:
-            # Add small delay between messages to ensure correct ordering
-            time.sleep(0.5)
-        
-        response = requests.post(webhook_url, json=payload)
-        
-        if response.status_code not in [200, 204]:
-            print(f"❌ Discord webhook error on message {i+1}: {response.status_code}")
-            # Truncate error output to avoid exposing sensitive info in CI logs
-            error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
-            print(f"Error preview: {error_preview}")
-            sys.exit(1)
-        
-        print(f"✅ Successfully posted message {i+1}/{len(payloads)} to Discord!")
+def post_to_discord(webhook_url: str, message_content: str, image_bytes: Optional[bytes] = None):
+    """Post message + optional image to Discord webhook as single message"""
+    if image_bytes:
+        # Send as multipart with both payload_json and file
+        files = {
+            "payload_json": (None, json.dumps({"content": message_content}), "application/json"),
+            "files[0]": ("image.jpg", image_bytes, "image/jpeg")
+        }
+        response = requests.post(webhook_url, files=files)
+    else:
+        # Send as JSON
+        response = requests.post(webhook_url, json={"content": message_content})
+
+    if response.status_code not in [200, 204]:
+        print(f"❌ Discord webhook error: {response.status_code}")
+        error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+        print(f"Error preview: {error_preview}")
+        sys.exit(1)
+
+    print("✅ Successfully posted to Discord!")
 
 def main():
     print("🚀 Starting Update Announcement Generator...")
@@ -365,31 +349,36 @@ def main():
     discord_webhook = get_env('DISCORD_WEBHOOK_URL')
     pr_number = get_env('PR_NUMBER')
     repo_full_name = get_env('REPO_FULL_NAME')
-    pr_title = get_env('PR_TITLE')
-    pr_url = get_env('PR_URL')
-    pr_author = get_env('PR_AUTHOR')
-    pr_branch = get_env('PR_BRANCH')
-    
-    print(f"📝 Reviewing PR #{pr_number} in {repo_full_name}")
-    print(f"🔗 {pr_url}")
-    
-    # Get PR details
-    pr_data = github_api_request(f"repos/{repo_full_name}/pulls/{pr_number}", github_token)
-    pr_description = pr_data.get('body', '')
-    merged_at = pr_data.get('merged_at', '')
-    
-    # Get PR diff
-    print("📥 Fetching PR diff...")
-    diff_raw = get_pr_diff(repo_full_name, pr_number, github_token)
-    
-    # Format diff for review
-    print("🔄 Formatting diff...")
-    diff_formatted = format_diff_for_review(diff_raw)
-    
-    # Prepare prompts
+
+    # For manual dispatch, we need to fetch PR details from API
+    # Check if we have the PR data from webhook (automatic trigger)
+    pr_title = os.getenv('PR_TITLE')
+    pr_url = os.getenv('PR_URL')
+    pr_author = os.getenv('PR_AUTHOR')
+    pr_branch = os.getenv('PR_BRANCH')
+
+    # If missing, fetch from API (manual dispatch)
+    if not pr_title or not pr_url:
+        print("📥 Fetching PR details from GitHub API (manual dispatch mode)...")
+        pr_data = github_api_request(f"repos/{repo_full_name}/pulls/{pr_number}", github_token)
+        pr_title = pr_data.get('title', 'Unknown')
+        pr_url = pr_data.get('html_url', '#')
+        pr_author = pr_data.get('user', {}).get('login', 'Unknown')
+        pr_branch = pr_data.get('head', {}).get('ref', 'unknown')
+        pr_description = pr_data.get('body', '')
+        merged_at = pr_data.get('merged_at', '')
+    else:
+        # Automatic trigger - fetch additional details
+        print(f"📝 Reviewing PR #{pr_number} in {repo_full_name}")
+        print(f"🔗 {pr_url}")
+        pr_data = github_api_request(f"repos/{repo_full_name}/pulls/{pr_number}", github_token)
+        pr_description = pr_data.get('body', '')
+        merged_at = pr_data.get('merged_at', '')
+
+    # Prepare prompts (no diff fetching)
     print("📋 Preparing review prompts...")
     system_prompt = get_system_prompt()
-    user_prompt = get_user_prompt(pr_title, pr_branch, pr_description, diff_formatted)
+    user_prompt = get_user_prompt(pr_title, pr_branch, pr_description)
     
     # Get AI announcement
     print("🤖 Generating update announcement...")
@@ -414,14 +403,14 @@ def main():
         'author': pr_author,
         'merged_at': merged_at
     }
-    
+
     try:
-        discord_payloads = format_review_for_discord(message_content, pr_info)
+        message_content = format_review_for_discord(message_content, pr_info)
     except Exception as e:
         print(f"❌ Error formatting for Discord: {e}")
         print(f"Message content: {message_content}")
         raise
-    
+
     # Generate image
     print("🎨 Generating image...")
     image_prompt_system = load_prompt(PLATFORM, "image_prompt_system")
@@ -432,20 +421,9 @@ def main():
         print(f"Image prompt: {image_prompt[:100]}...")
         image_bytes, _ = generate_image(image_prompt, pollinations_token)
 
-    # Post to Discord
-    print(f"📤 Posting {len(discord_payloads)} message(s) to Discord...")
-    post_to_discord(discord_webhook, discord_payloads)
-
-    # Post image as follow-up file upload
-    if image_bytes:
-        import time
-        time.sleep(0.5)
-        files = {"file": ("image.jpg", image_bytes, "image/jpeg")}
-        response = requests.post(discord_webhook, files=files)
-        if response.status_code in [200, 204]:
-            print(f"📷 Image posted to Discord!")
-        else:
-            print(f"Warning: Failed to post image: {response.status_code}")
+    # Post to Discord (text + image in one message)
+    print("📤 Posting to Discord...")
+    post_to_discord(discord_webhook, message_content, image_bytes)
 
     print("✨ Done!")
 

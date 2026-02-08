@@ -475,6 +475,10 @@ Generated automatically by GitHub Actions
     pr_data = pr_response.json()
     print(f"Created PR #{pr_data['number']}: {pr_data['html_url']}")
 
+    # Write PR number to file for workflow auto-merge
+    with open('.pr_number', 'w') as f:
+        f.write(str(pr_data['number']))
+
     # Add labels from PR_LABELS env var
     pr_labels = get_env('PR_LABELS', required=False)
     if pr_labels:

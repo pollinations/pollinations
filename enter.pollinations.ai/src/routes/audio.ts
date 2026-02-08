@@ -279,20 +279,18 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            // Thin proxy to OVHcloud Whisper — forward multipart body directly
+            // Parse multipart form and re-send to OVH (Hono consumes the body stream)
+            const formData = await c.req.formData();
+
+            // Thin proxy to OVHcloud Whisper
             const response = await fetch(
                 "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions",
                 {
                     method: "POST",
                     headers: {
                         Authorization: `Bearer ${ovhApiKey}`,
-                        "Content-Type":
-                            c.req.header("Content-Type") ||
-                            "multipart/form-data",
                     },
-                    body: c.req.raw.body,
-                    // @ts-expect-error duplex required for streaming request bodies
-                    duplex: "half",
+                    body: formData,
                 },
             );
 

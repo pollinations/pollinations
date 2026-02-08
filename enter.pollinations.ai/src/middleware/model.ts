@@ -27,11 +27,21 @@ export function resolveModel(eventType: EventType) {
         if (c.req.method === "GET") {
             rawModel = c.req.query("model") || null;
         } else if (c.req.method === "POST") {
-            try {
-                const body = await c.req.json();
-                rawModel = body.model || null;
-            } catch {
-                // Body parsing failed, use default
+            const contentType = c.req.header("Content-Type") || "";
+            if (contentType.includes("multipart/form-data")) {
+                try {
+                    const formData = await c.req.formData();
+                    rawModel = formData.get("model") as string | null;
+                } catch {
+                    // FormData parsing failed, use default
+                }
+            } else {
+                try {
+                    const body = await c.req.json();
+                    rawModel = body.model || null;
+                } catch {
+                    // Body parsing failed, use default
+                }
             }
         }
 

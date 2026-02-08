@@ -87,16 +87,18 @@ describe("Whisper Transcription", () => {
                     body: formData,
                 },
             );
-            expect(response.status).toBe(200);
+            const body = await response.text();
+            expect(
+                response.status,
+                `Expected 200 but got ${response.status}: ${body}`,
+            ).toBe(200);
 
-            const data = (await response.json()) as { text: string };
+            const data = JSON.parse(body) as { text: string };
             expect(data.text).toBeDefined();
             expect(data.text.length).toBeGreaterThan(0);
 
             // Verify usage headers
-            expect(response.headers.get("x-model-used")).toBe(
-                "whisper-large-v3",
-            );
+            expect(response.headers.get("x-model-used")).toBe("whisper");
         },
     );
 });

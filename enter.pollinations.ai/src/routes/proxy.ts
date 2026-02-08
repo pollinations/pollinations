@@ -40,7 +40,7 @@ import {
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import {
-    generateHeartMuLaMusic,
+    generateAceStepMusic,
     generateMusic,
     generateSpeech,
 } from "./audio.ts";
@@ -566,7 +566,7 @@ export const proxyRoutes = new Hono<Env>()
                     }),
                 style: z.string().optional().meta({
                     description:
-                        "Music style/genre descriptors for music models. Comma-separated tags, e.g. 'pop,female vocal,upbeat'. For heartmula, spaces after commas are stripped automatically.",
+                        "Music style/genre descriptors for music models. Natural language description of the desired style, e.g. 'upbeat pop with female vocals'.",
                     example: "pop,female vocal,upbeat",
                 }),
                 key: z.string().optional().meta({
@@ -592,8 +592,8 @@ export const proxyRoutes = new Hono<Env>()
                     style?: string;
                 };
 
-            if (c.var.model.resolved === "heartmula") {
-                return generateHeartMuLaMusic({
+            if (c.var.model.resolved === "acestep") {
+                return generateAceStepMusic({
                     prompt: text,
                     style,
                     durationSeconds: duration,

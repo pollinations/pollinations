@@ -109,14 +109,14 @@ describe("ElevenLabs Music", () => {
     );
 });
 
-describe("HeartMuLa Music", () => {
+describe("ACE-Step Music", () => {
     test(
-        "GET /audio/:text with model=heartmula returns audio",
-        { timeout: 120000 },
+        "GET /audio/:text with model=acestep returns audio",
+        { timeout: 300000 },
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/audio/A%20short%20pop%20song%20about%20sunshine?model=heartmula&duration=15&style=pop%2C%20upbeat`,
+                `http://localhost:3000/api/generate/audio/A%20short%20pop%20song%20about%20sunshine?model=acestep&duration=15&style=upbeat%20pop`,
                 {
                     method: "GET",
                     headers: {
@@ -126,7 +126,7 @@ describe("HeartMuLa Music", () => {
             );
             expect(response.status).toBe(200);
             expect(response.headers.get("content-type")).toContain("audio/");
-            expect(response.headers.get("x-model-used")).toBe("heartmula");
+            expect(response.headers.get("x-model-used")).toBe("acestep");
 
             const arrayBuffer = await response.arrayBuffer();
             expect(arrayBuffer.byteLength).toBeGreaterThan(0);
@@ -134,8 +134,8 @@ describe("HeartMuLa Music", () => {
     );
 
     test(
-        "POST /v1/audio/speech with model=heartmula returns audio",
-        { timeout: 120000 },
+        "POST /v1/audio/speech with model=acestep returns audio",
+        { timeout: 300000 },
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
@@ -147,7 +147,7 @@ describe("HeartMuLa Music", () => {
                         authorization: `Bearer ${apiKey}`,
                     },
                     body: JSON.stringify({
-                        model: "heartmula",
+                        model: "acestep",
                         input: "A short pop song about sunshine",
                         style: "rock, energetic",
                         duration: 15,
@@ -156,7 +156,7 @@ describe("HeartMuLa Music", () => {
             );
             expect(response.status).toBe(200);
             expect(response.headers.get("content-type")).toContain("audio/");
-            expect(response.headers.get("x-model-used")).toBe("heartmula");
+            expect(response.headers.get("x-model-used")).toBe("acestep");
 
             const arrayBuffer = await response.arrayBuffer();
             expect(arrayBuffer.byteLength).toBeGreaterThan(0);

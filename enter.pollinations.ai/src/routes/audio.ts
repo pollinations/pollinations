@@ -42,8 +42,8 @@ const CreateSpeechRequestSchema = z
             }),
         style: z.string().max(200).optional().meta({
             description:
-                "Music style/genre descriptors for music models. Comma-separated tags, e.g. 'pop,female vocal,upbeat'. For heartmula, spaces after commas are stripped automatically.",
-            example: "pop,female vocal,upbeat",
+                "Music style/genre descriptors for music models. Natural language description of the desired style, e.g. 'upbeat pop with female vocals'.",
+            example: "upbeat pop with female vocals",
         }),
         response_format: z
             .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
@@ -255,7 +255,7 @@ export async function generateMusic(opts: {
     return buildMusicResponse(response, "elevenmusic", log);
 }
 
-export async function generateHeartMuLaMusic(opts: {
+export async function generateAceStepMusic(opts: {
     prompt: string;
     style?: string;
     durationSeconds?: number;
@@ -273,49 +273,122 @@ export async function generateHeartMuLaMusic(opts: {
         });
     }
 
-    log.info("HeartMuLa request: chars={chars}, duration={duration}", {
+    log.info("ACE-Step request: chars={chars}, duration={duration}", {
         chars: prompt.length,
         duration: durationSeconds || "auto",
     });
-
-    const maxLengthMs = durationSeconds
-        ? Math.round(durationSeconds * 1000)
-        : 60000;
-
-    const heartMuLaBody = {
-        lyrics: prompt,
-        tags: style ? style.replace(/,\s+/g, ",") : "",
-        max_length_ms: Math.min(maxLengthMs, 240000),
-        temperature: 1.1,
-        topk: 30,
-        cfg_scale: 3.0,
-    };
 
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
     };
     if (backendToken) {
-        headers["x-backend-token"] = backendToken;
+        headers["Authorization"] = `Bearer ${backendToken}`;
     }
 
-    const response = await fetch(`${serviceUrl}/generate`, {
+    // Step 1: Submit task via /release_task
+    const taskBody: Record<string, unknown> = {
+        prompt: style || "",
+        lyrics: prompt,
+        audio_duration: durationSeconds || 60,
+        batch_size: 1,
+        thinking: true,
+        audio_format: "mp3",
+    };
+
+    const submitResponse = await fetch(`${serviceUrl}/release_task`, {
         method: "POST",
         headers,
-        body: JSON.stringify(heartMuLaBody),
+        body: JSON.stringify(taskBody),
     });
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        log.warn("HeartMuLa error {status}: {body}", {
-            status: response.status,
+    if (!submitResponse.ok) {
+        const errorText = await submitResponse.text();
+        log.warn("ACE-Step submit error {status}: {body}", {
+            status: submitResponse.status,
             body: errorText,
         });
-        throw new UpstreamError(response.status as ContentfulStatusCode, {
-            message: errorText || getDefaultErrorMessage(response.status),
+        throw new UpstreamError(submitResponse.status as ContentfulStatusCode, {
+            message: errorText || getDefaultErrorMessage(submitResponse.status),
         });
     }
 
-    return buildMusicResponse(response, "heartmula", log);
+    const submitData = (await submitResponse.json()) as {
+        data?: { task_id?: string };
+    };
+    const taskId = submitData?.data?.task_id;
+    if (!taskId) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "ACE-Step did not return a task_id",
+        });
+    }
+
+    log.info("ACE-Step task submitted: {taskId}", { taskId });
+
+    // Step 2: Poll /query_result until done (status 1=success, 2=failed)
+    const maxPollTime = 300_000; // 5 minutes
+    const pollInterval = 2_000; // 2 seconds
+    const startTime = Date.now();
+
+    let audioPath: string | undefined;
+
+    while (Date.now() - startTime < maxPollTime) {
+        await new Promise((r) => setTimeout(r, pollInterval));
+
+        const pollResponse = await fetch(`${serviceUrl}/query_result`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ task_id_list: [taskId] }),
+        });
+
+        if (!pollResponse.ok) continue;
+
+        const pollData = (await pollResponse.json()) as {
+            data?: Array<{ task_id: string; status: number; result?: string }>;
+        };
+
+        const task = pollData?.data?.[0];
+        if (!task) continue;
+
+        if (task.status === 2) {
+            throw new UpstreamError(500 as ContentfulStatusCode, {
+                message: "ACE-Step generation failed",
+            });
+        }
+
+        if (task.status === 1 && task.result) {
+            // result is a JSON string containing an array of results
+            const results = JSON.parse(task.result) as Array<{
+                file?: string;
+                status?: number;
+            }>;
+            const firstResult = results?.[0];
+            if (firstResult?.file) {
+                audioPath = firstResult.file;
+                break;
+            }
+        }
+    }
+
+    if (!audioPath) {
+        throw new UpstreamError(504 as ContentfulStatusCode, {
+            message: "ACE-Step generation timed out",
+        });
+    }
+
+    // Step 3: Download audio from /v1/audio?path=...
+    const audioUrl = `${serviceUrl}${audioPath}`;
+    log.info("ACE-Step downloading audio: {url}", { url: audioUrl });
+
+    const audioResponse = await fetch(audioUrl, { headers });
+
+    if (!audioResponse.ok) {
+        const errorText = await audioResponse.text();
+        throw new UpstreamError(audioResponse.status as ContentfulStatusCode, {
+            message: errorText || "Failed to download generated audio",
+        });
+    }
+
+    return buildMusicResponse(audioResponse, "acestep", log);
 }
 
 /** Buffer upstream music response, estimate duration, and return with usage headers. */
@@ -420,8 +493,8 @@ export const audioRoutes = new Hono<Env>()
             } = c.req.valid("json" as never) as CreateSpeechRequest;
             const apiKey = c.env.ELEVENLABS_API_KEY;
 
-            if (c.var.model.resolved === "heartmula") {
-                return generateHeartMuLaMusic({
+            if (c.var.model.resolved === "acestep") {
+                return generateAceStepMusic({
                     prompt: input,
                     style,
                     durationSeconds: duration,

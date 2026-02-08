@@ -94,19 +94,20 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-    heartmula: {
-        aliases: ["heartmula-music", "heartmula-rl"],
-        modelId: "heartmula_rl_3b",
+    acestep: {
+        aliases: ["ace-step", "acestep-music"],
+        modelId: "acestep_v15_turbo",
         provider: "self-hosted",
         cost: [
             {
                 date: new Date("2026-02-08").getTime(),
-                // Self-hosted on Vast.ai RTX 5090 — ~$0.33/hr GPU cost
-                // ~23s per 15s audio → ~$0.002 per second of output
+                // Self-hosted on Vast.ai — <4GB VRAM, ultra-fast generation
+                // ~$0.002 per second of output
                 completionAudioSeconds: 0.002,
             },
         ],
-        description: "HeartMuLa RL 3B",
+        description:
+            "ACE-Step 1.5 Turbo — Fast open-source music generation with rich style support",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         alpha: true,

@@ -191,7 +191,7 @@ def get_system_prompt() -> str:
     """Load the system prompt from external file"""
     return load_prompt(PLATFORM, "merged_pr_system")
 
-def get_user_prompt(title: str, branch: str, description: str, diff: str) -> str:
+def get_user_prompt(title: str, branch: str, description: str) -> str:
     """Load user prompt template and render with PR data"""
     # Build description section
     description_section = ""
@@ -201,10 +201,11 @@ PR Description:
 ======
 {description}
 ======"""
-    
+
     # Load template and replace placeholders
     template = load_prompt(PLATFORM, "merged_pr_user")
-    return template.replace("{title}", title).replace("{branch}", branch).replace("{description_section}", description_section).replace("{diff}", diff)
+    # Remove {diff} placeholder since we're not using it anymore
+    return template.replace("{title}", title).replace("{branch}", branch).replace("{description_section}", description_section).replace("{diff}", "")
 
 def parse_discord_message(response: str) -> str:
     """Parse Discord message from AI response"""
@@ -377,19 +378,11 @@ def main():
     pr_data = github_api_request(f"repos/{repo_full_name}/pulls/{pr_number}", github_token)
     pr_description = pr_data.get('body', '')
     merged_at = pr_data.get('merged_at', '')
-    
-    # Get PR diff
-    print("📥 Fetching PR diff...")
-    diff_raw = get_pr_diff(repo_full_name, pr_number, github_token)
-    
-    # Format diff for review
-    print("🔄 Formatting diff...")
-    diff_formatted = format_diff_for_review(diff_raw)
-    
-    # Prepare prompts
+
+    # Prepare prompts (no diff fetching)
     print("📋 Preparing review prompts...")
     system_prompt = get_system_prompt()
-    user_prompt = get_user_prompt(pr_title, pr_branch, pr_description, diff_formatted)
+    user_prompt = get_user_prompt(pr_title, pr_branch, pr_description)
     
     # Get AI announcement
     print("🤖 Generating update announcement...")

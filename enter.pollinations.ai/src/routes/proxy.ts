@@ -564,11 +564,6 @@ export const proxyRoutes = new Hono<Env>()
                             "If true, guarantees instrumental output (elevenmusic only)",
                         example: "false",
                     }),
-                style: z.string().optional().meta({
-                    description:
-                        "Music style/genre descriptors for music models. Natural language description of the desired style, e.g. 'upbeat pop with female vocals'.",
-                    example: "pop,female vocal,upbeat",
-                }),
                 key: z.string().optional().meta({
                     description:
                         "API key (alternative to Authorization header)",
@@ -583,19 +578,17 @@ export const proxyRoutes = new Hono<Env>()
             await checkBalance(c.var);
 
             const text = decodeURIComponent(c.req.param("text"));
-            const { voice, response_format, duration, instrumental, style } =
+            const { voice, response_format, duration, instrumental } =
                 c.req.valid("query" as never) as {
                     voice: string;
                     response_format: string;
                     duration?: number;
                     instrumental?: boolean;
-                    style?: string;
                 };
 
             if (c.var.model.resolved === "acestep") {
                 return generateAceStepMusic({
                     prompt: text,
-                    style,
                     durationSeconds: duration,
                     serviceUrl: c.env.MUSIC_SERVICE_URL,
                     backendToken: c.env.PLN_IMAGE_BACKEND_TOKEN,
@@ -606,7 +599,6 @@ export const proxyRoutes = new Hono<Env>()
             if (c.var.model.resolved === "elevenmusic") {
                 return generateMusic({
                     prompt: text,
-                    style,
                     durationSeconds: duration,
                     forceInstrumental: instrumental,
                     apiKey: c.env.ELEVENLABS_API_KEY,

@@ -40,11 +40,6 @@ const CreateSpeechRequestSchema = z
                 description: `The voice to use for TTS. Available voices: ${ELEVENLABS_VOICES.join(", ")}.`,
                 example: "rachel",
             }),
-        style: z.string().max(200).optional().meta({
-            description:
-                "Music style/genre descriptors for music models. Natural language description of the desired style, e.g. 'upbeat pop with female vocals'.",
-            example: "upbeat pop with female vocals",
-        }),
         response_format: z
             .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
             .default("mp3")
@@ -182,14 +177,12 @@ export async function generateSpeech(opts: {
 
 export async function generateMusic(opts: {
     prompt: string;
-    style?: string;
     durationSeconds?: number;
     forceInstrumental?: boolean;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, style, durationSeconds, forceInstrumental, apiKey, log } =
-        opts;
+    const { prompt, durationSeconds, forceInstrumental, apiKey, log } = opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -218,10 +211,8 @@ export async function generateMusic(opts: {
 
     const elevenLabsUrl = "https://api.elevenlabs.io/v1/music";
 
-    const combinedPrompt = [style, prompt].filter(Boolean).join("\n\n");
-
     const elevenLabsBody: Record<string, unknown> = {
-        prompt: combinedPrompt,
+        prompt,
         model_id: "music_v1",
     };
     if (durationSeconds !== undefined) {
@@ -257,14 +248,12 @@ export async function generateMusic(opts: {
 
 export async function generateAceStepMusic(opts: {
     prompt: string;
-    style?: string;
     durationSeconds?: number;
     serviceUrl: string;
     backendToken?: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, style, durationSeconds, serviceUrl, backendToken, log } =
-        opts;
+    const { prompt, durationSeconds, serviceUrl, backendToken, log } = opts;
 
     if (!serviceUrl) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -287,7 +276,6 @@ export async function generateAceStepMusic(opts: {
 
     // Step 1: Submit task via /release_task
     const taskBody: Record<string, unknown> = {
-        prompt: style || "",
         lyrics: prompt,
         audio_duration: durationSeconds || 60,
         batch_size: 1,
@@ -483,20 +471,13 @@ export const audioRoutes = new Hono<Env>()
                 );
             }
 
-            const {
-                input,
-                voice,
-                response_format,
-                duration,
-                instrumental,
-                style,
-            } = c.req.valid("json" as never) as CreateSpeechRequest;
+            const { input, voice, response_format, duration, instrumental } =
+                c.req.valid("json" as never) as CreateSpeechRequest;
             const apiKey = c.env.ELEVENLABS_API_KEY;
 
             if (c.var.model.resolved === "acestep") {
                 return generateAceStepMusic({
                     prompt: input,
-                    style,
                     durationSeconds: duration,
                     serviceUrl: c.env.MUSIC_SERVICE_URL,
                     backendToken: c.env.PLN_IMAGE_BACKEND_TOKEN,
@@ -507,7 +488,6 @@ export const audioRoutes = new Hono<Env>()
             if (c.var.model.resolved === "elevenmusic") {
                 return generateMusic({
                     prompt: input,
-                    style,
                     durationSeconds: duration,
                     forceInstrumental: instrumental,
                     apiKey,

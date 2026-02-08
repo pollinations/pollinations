@@ -116,7 +116,7 @@ describe("ACE-Step Music", () => {
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/audio/A%20short%20pop%20song%20about%20sunshine?model=acestep&duration=15&style=upbeat%20pop`,
+                `http://localhost:3000/api/generate/audio/A%20short%20pop%20song%20about%20sunshine?model=acestep&duration=15`,
                 {
                     method: "GET",
                     headers: {
@@ -149,7 +149,6 @@ describe("ACE-Step Music", () => {
                     body: JSON.stringify({
                         model: "acestep",
                         input: "A short pop song about sunshine",
-                        style: "rock, energetic",
                         duration: 15,
                     }),
                 },

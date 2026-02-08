@@ -39,7 +39,11 @@ import {
 } from "@/schemas/openai.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
-import { generateMusic, generateSpeech } from "./audio.ts";
+import {
+    generateHeartMuLaMusic,
+    generateMusic,
+    generateSpeech,
+} from "./audio.ts";
 
 const factory = createFactory<Env>();
 
@@ -525,14 +529,11 @@ export const proxyRoutes = new Hono<Env>()
         validator(
             "query",
             z.object({
-                voice: z
-                    .enum(ELEVENLABS_VOICES as unknown as [string, ...string[]])
-                    .default("alloy")
-                    .meta({
-                        description:
-                            "Voice to use for speech generation (TTS only)",
-                        example: "nova",
-                    }),
+                voice: z.string().default("alloy").meta({
+                    description:
+                        "Voice to use for speech generation (TTS only)",
+                    example: "nova",
+                }),
                 response_format: z
                     .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
                     .default("mp3")
@@ -579,6 +580,21 @@ export const proxyRoutes = new Hono<Env>()
             const text = decodeURIComponent(c.req.param("text"));
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
+
+            if (c.var.model.resolved === "heartmula") {
+                const { duration, voice } = c.req.valid("query" as never) as {
+                    duration?: number;
+                    voice?: string;
+                };
+                return generateHeartMuLaMusic({
+                    prompt: text,
+                    tags: voice,
+                    durationSeconds: duration,
+                    serviceUrl: c.env.MUSIC_SERVICE_URL,
+                    backendToken: c.env.PLN_IMAGE_BACKEND_TOKEN,
+                    log,
+                });
+            }
 
             if (c.var.model.resolved === "elevenmusic") {
                 const { duration, instrumental } = c.req.valid(

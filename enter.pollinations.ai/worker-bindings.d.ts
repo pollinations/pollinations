@@ -44,6 +44,10 @@ declare namespace Cloudflare {
         TEXT_SERVICE_URL:
             | "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
             | "http://localhost:16385";
+        MUSIC_SERVICE_URL:
+            | "http://108.55.118.247:51075"
+            | "http://localhost:10004";
+        PLN_IMAGE_BACKEND_TOKEN: string;
         NOWPAYMENTS_ENV: "sandbox" | "production";
         STRIPE_MODE: "sandbox" | "live";
         STRIPE_SUCCESS_URL:

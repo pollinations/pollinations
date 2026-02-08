@@ -1,14 +1,37 @@
-# Vast.ai GPU Instances - Flux & Z-Image Deployment
+# Vast.ai GPU Instances - Deployment Guide
 
-Last updated: 2026-02-05
+Last updated: 2026-02-08
 
 ## Overview
 
-Vast.ai instances running RTX 5090 GPUs for image generation:
+Vast.ai instances running RTX 5090 GPUs:
+- **Sana Sprint**: Ultra-fast 1.6B parameter model, 2 inference steps, ~0.2s per 1024x1024 on RTX 5090
 - **Flux**: Uses nunchaku quantization (FP4 for Blackwell GPUs) to run Flux Schnell
 - **Z-Image**: Tongyi Z-Image-Turbo with SPAN 2x upscaler (generates at 512x512 + 2x neural upscale)
+- **HeartMuLa**: Music generation model (RL-oss-3B), co-located with Sana Sprint on instance 31080854
+
+## Critical: Direct Port Access vs SSH Tunnels
+
+**Always use direct port access** (`-p` flag) when creating instances. SSH tunnels add ~400ms+ latency per round-trip, making a 0.2s generation take 1.8s.
+
+| Method | Health check latency | Full generation round-trip |
+|--------|---------------------|---------------------------|
+| **Direct port** | ~180ms | ~0.5-0.8s |
+| SSH tunnel | ~550ms | ~1.8-2.0s |
+
+To expose ports, use `--env '-p <port>:<port>'` when creating the instance. Vast.ai maps internal ports to random external ports. Find the mapping with `vastai show instances --raw`.
 
 ## Active Instances
+
+### Sana Sprint (Primary - Legacy image.pollinations.ai)
+
+| Instance ID | Public IP | SSH Host | SSH Port | GPUs | GPU Type | Location | Service | Cost | Port (int→ext) |
+|-------------|-----------|----------|----------|------|----------|----------|---------|------|----------------|
+| 31080854 | 108.55.118.247 | ssh6.vast.ai | 10854 | 1 | RTX 5090 | Pennsylvania, US | Sana Sprint + HeartMuLa | $0.33/hr | 10003→51100, 10004→51075 |
+
+Also running on **comfystream** (AWS L40S, `3.239.212.66:10002`) — not a Vast.ai instance.
+
+### Flux & Z-Image (Legacy - via enter gateway)
 
 | Instance ID | Public IP | SSH Host | SSH Port | GPUs | GPU Type | Location | Services |
 |-------------|-----------|----------|----------|------|----------|----------|----------|
@@ -18,6 +41,12 @@ Vast.ai instances running RTX 5090 GPUs for image generation:
 | 30994805 | 108.255.76.60 | ssh7.vast.ai | 34804 | 1 | RTX 5090 | North Carolina, US | Z-Image |
 
 ### Port Mappings
+
+**Instance 31080854 (Pennsylvania - Sana Sprint + HeartMuLa)**
+| Internal Port | External Port | Service |
+|---------------|---------------|--------|
+| 10003 | 51100 | Sana Sprint |
+| 10004 | 51075 | HeartMuLa Music Gen |
 
 **Instance 30937024 (Taiwan)**
 | Internal Port | External Port | Service |
@@ -51,6 +80,9 @@ Vast.ai instances running RTX 5090 GPUs for image generation:
 Vast.ai uses **proxy SSH** through `sshN.vast.ai` hosts. The SSH host and port can change if an instance is recreated.
 
 ```bash
+# Instance 31080854 (Pennsylvania - Sana Sprint + HeartMuLa)
+ssh -o StrictHostKeyChecking=no -i ~/.ssh/pollinations_services_2026 -p 10854 root@ssh6.vast.ai
+
 # Instance 30937024 (Taiwan)
 ssh -o StrictHostKeyChecking=no -i ~/.ssh/pollinations_services_2026 -p 17024 root@ssh3.vast.ai
 
@@ -84,18 +116,31 @@ for i in json.load(sys.stdin):
 
 ### 1. Create Instance via CLI
 
-**Important**: Use `--ssh --direct` flags for proper SSH access:
+**Important**: Use `--ssh --direct` and `--env '-p <port>:<port>'` for direct port access:
 
 ```bash
-# Search for available RTX 5090 instances with good reliability
-vastai search offers 'gpu_name=RTX_5090 num_gpus=1 reliability>0.95' --order 'dph' --limit 10
+# Search for available RTX 5090 instances with good reliability and upload speed
+vastai search offers 'gpu_name=RTX_5090 num_gpus=1 reliability>0.95 inet_up>200' --order 'dph' --limit 10
 
-# Create instance with direct SSH access
+# Create instance with direct SSH + port access
 vastai create instance <OFFER_ID> \
   --image "vastai/base-image:cuda-13.0.2-cudnn-devel-ubuntu24.04-py312" \
   --disk 50 \
   --ssh --direct \
-  --onstart-cmd "apt update && apt install -y git"
+  --env '-p 10003:10003' \
+  --onstart-cmd "apt update && apt install -y git screen"
+```
+
+**Note**: The `-p 10003:10003` exposes port 10003 inside the container. Vast.ai maps it to a random external port. Find the mapping after creation:
+```bash
+vastai show instances --raw | python3 -c "
+import sys, json
+for i in json.load(sys.stdin):
+    ports = i.get('ports', {})
+    for k, v in ports.items():
+        if '22' not in k:
+            print(f'Instance {i[\"id\"]}: {k} -> external {v[0][\"HostPort\"]}')
+"
 ```
 
 **Critical: Attach SSH Key After Creation**
@@ -112,14 +157,14 @@ vastai show ssh-keys
 
 Without this step, SSH will fail with `Permission denied (publickey)`.
 
-### 2. Configure Port Mappings (Optional)
+### 2. Configure Port Mappings
 
-For multi-service instances, configure port mappings via template:
-- Ports 8765-8768 exposed (for Flux servers)
-- Port 22 for SSH
-- Port 8080 for Jupyter (optional)
+Ports are configured at instance creation time via `--env '-p <port>:<port>'`. For multi-service instances:
+```bash
+--env '-p 8765:8765 -p 8766:8766 -p 8767:8767 -p 8768:8768'
+```
 
-Use the Vast.ai CLI or web UI to apply the template before starting the instance.
+Vast.ai has a limit of 64 open ports per instance.
 
 ### 3. Initial Setup (Run on Instance)
 
@@ -264,10 +309,11 @@ curl http://<PUBLIC_IP>:<MAPPED_FLUX_PORT>/docs
 
 ## Heartbeat Registration
 
-Servers send heartbeats to the EC2 image service:
-- **URL**: `http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register`
-- **Payload**: `{"url": "http://PUBLIC_IP:PUBLIC_PORT", "type": "flux"}`
+Servers send heartbeats to the image dispatcher:
+- **URL**: `https://image.pollinations.ai/register` (default in server.py)
+- **Payload**: `{"url": "http://PUBLIC_IP:PUBLIC_PORT", "type": "sana"}`
 - **Interval**: Every 30 seconds
+- **View registered backends**: `curl https://image.pollinations.ai/register`
 
 ## Service Management
 
@@ -451,7 +497,17 @@ screen -dmS zimage-gpu3 bash -c 'cd /workspace/zimage && source venv/bin/activat
 - Check that `x-backend-token` header matches `PLN_IMAGE_BACKEND_TOKEN`
 - Verify the token in `enter.pollinations.ai/.testingtokens`
 
-## Capacity Summary (2026-02-05)
+## Capacity Summary (2026-02-08)
+
+### Sana Sprint (serves legacy image.pollinations.ai)
+
+| Instance | GPU | Service | VRAM | Port | Location | Speed |
+|----------|-----|---------|------|------|----------|-------|
+| 31080854 | 0 | Sana Sprint | ~9.4 GB | 51100 | Pennsylvania | ~0.2s/img |
+| 31080854 | 0 | HeartMuLa | 0 idle / ~13 GB peak | 51075 | Pennsylvania | ~23s/15s audio |
+| comfystream | 0 | Sana Sprint | ~13 GB | 10002 | AWS US-East (L40S) | ~0.27s/img |
+
+### Flux & Z-Image (serves via enter gateway gen.pollinations.ai)
 
 | Instance | GPU | Service | VRAM | Port | Location |
 |----------|-----|---------|------|------|----------|
@@ -466,15 +522,137 @@ screen -dmS zimage-gpu3 bash -c 'cd /workspace/zimage && source venv/bin/activat
 | 30939919 | 0 | Flux | ~21 GB | 63218 | N. Carolina |
 | 30939919 | 1 | Flux | ~21 GB | 63511 | N. Carolina |
 | 30994805 | 0 | Z-Image | ~25 GB | 53559 | N. Carolina |
-| **Total** | **11** | **7 Flux + 4 Z-Image** | | |
+| **Total** | **13** | **2 Sana + 7 Flux + 4 Z-Image** | | |
 
 ## Notes
 
 - RTX 5090 uses Blackwell architecture (sm_120, CUDA 13.0)
+- **Sana Sprint**: Simplest setup — just PyTorch nightly + diffusers. No custom builds needed. ~0.2s per 1024x1024
 - **Flux**: Must use FP4 quantization (not INT4) for Blackwell GPUs; nunchaku must be built from source
 - **Z-Image**: Simpler setup, just needs PyTorch nightly cu128 with sm_120 support
 - PyTorch nightly with CUDA 12.8 (`cu128`) required until stable release supports sm_120
 - Use `python -c "import torch; print(torch.cuda.get_arch_list())"` to verify sm_120 is in the list
+- **Always use direct port access** — never SSH tunnels for production (see comparison table above)
+
+---
+
+## HeartMuLa Music Generation (Co-located with Sana Sprint)
+
+HeartMuLa-RL-oss-3B is a music generation model that creates songs from lyrics + tags. It runs on instance 31080854 alongside Sana Sprint, sharing the same RTX 5090 GPU via `lazy_load=True` (0 VRAM at idle, loads on demand).
+
+### Instance Details
+
+| Key | Value |
+|-----|-------|
+| Instance | 31080854 (Pennsylvania) |
+| Screen session | `heartmula` |
+| Internal port | 10004 → external 51075 |
+| Venv | `/workspace/heartmula/venv` |
+| Model weights | `/workspace/heartmula/ckpt/` |
+| Server script | `/workspace/heartmula/server.py` |
+| Local copy | `image.pollinations.ai/heartmula/server.py` |
+
+### API
+
+- `GET /health` — status, GPU info, VRAM
+- `POST /generate` — `{lyrics, tags, max_length_ms, temperature, topk, cfg_scale}` → `audio/mpeg`
+
+### Performance
+
+| Metric | Value |
+|--------|-------|
+| 15s audio generation | ~23s |
+| VRAM (idle) | 0 GB (lazy_load) |
+| VRAM (LLM inference peak) | ~12.7 GB |
+| VRAM (codec peak) | ~6.2 GB |
+| Output format | 48kHz stereo MP3 |
+| Model | HeartMuLa-RL-oss-3B-20260123 + HeartCodec-oss-20260123 |
+
+### RTX 5090 / Nightly PyTorch Compatibility Fixes
+
+The server includes several workarounds for Blackwell (sm_120) + PyTorch nightly:
+
+1. **Audio saving**: `torchaudio.save()` requires `torchcodec` which is incompatible with nightly PyTorch. Monkey-patched `postprocess` to use `soundfile` instead.
+2. **Codec token clamp**: LLM can generate token ID 8192 which exceeds the codec codebook range [0, 8191]. Fixed with `frames.clamp(0, 8191)` before `detokenize`.
+3. **Codec dtype**: fp32 triggers CUBLAS errors on Blackwell. Codec runs in bf16.
+4. **PyTorch API**: `total_mem` renamed to `total_memory` in nightly.
+
+### Setup from Scratch
+
+```bash
+# SSH into the Sana + HeartMuLa instance
+ssh -i ~/.ssh/pollinations_services_2026 -p 10854 root@ssh6.vast.ai
+
+# Create venv with nightly PyTorch
+mkdir -p /workspace/heartmula
+python3.12 -m venv /workspace/heartmula/venv
+source /workspace/heartmula/venv/bin/activate
+pip install --pre torch torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
+
+# Install dependencies (skip pinned torch versions)
+pip install numpy==2.0.2 torchtune==0.4.0 torchao==0.9.0 torchvision \
+  tqdm==4.67.1 transformers==4.57.0 tokenizers==0.22.1 einops==0.8.1 \
+  accelerate==1.12.0 bitsandbytes==0.49.0 'vector-quantize-pytorch==1.27.15' \
+  soundfile huggingface_hub fastapi uvicorn
+
+# Re-install nightly torch (torchao may have pulled in stable torch)
+pip install --pre torch torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128 --force-reinstall --no-deps
+
+# Install heartlib (no-deps to avoid overwriting nightly torch)
+pip install --no-deps git+https://github.com/HeartMuLa/heartlib.git
+
+# Install ffmpeg (for soundfile MP3 support)
+apt-get update -qq && apt-get install -y -qq ffmpeg
+
+# Download model weights
+python3 -c "
+from huggingface_hub import snapshot_download, hf_hub_download
+import os
+ckpt = '/workspace/heartmula/ckpt'
+os.makedirs(ckpt, exist_ok=True)
+snapshot_download('HeartMuLa/HeartMuLa-RL-oss-3B-20260123', local_dir=os.path.join(ckpt, 'HeartMuLa-RL-oss-3B-20260123'))
+snapshot_download('HeartMuLa/HeartCodec-oss-20260123', local_dir=os.path.join(ckpt, 'HeartCodec-oss-20260123'))
+hf_hub_download('HeartMuLa/HeartMuLaGen', 'tokenizer.json', local_dir=ckpt)
+hf_hub_download('HeartMuLa/HeartMuLaGen', 'gen_config.json', local_dir=ckpt)
+"
+
+# Create symlinks (heartlib expects HeartMuLa-oss-3B and HeartCodec-oss)
+cd /workspace/heartmula/ckpt
+ln -sf HeartMuLa-RL-oss-3B-20260123 HeartMuLa-oss-3B
+ln -sf HeartCodec-oss-20260123 HeartCodec-oss
+
+# Copy server.py from local machine
+# scp -P 10854 -i ~/.ssh/pollinations_services_2026 \
+#   image.pollinations.ai/heartmula/server.py root@ssh6.vast.ai:/workspace/heartmula/
+
+# Start server
+screen -dmS heartmula bash -c 'source /workspace/heartmula/venv/bin/activate && \
+  CUDA_VISIBLE_DEVICES=0 PORT=10004 python /workspace/heartmula/server.py 2>&1 | tee /tmp/heartmula.log'
+
+# Verify
+curl http://localhost:10004/health
+```
+
+### Management
+
+```bash
+# Attach to screen
+screen -r heartmula
+
+# View logs
+tail -f /tmp/heartmula.log
+
+# Restart
+screen -S heartmula -X quit
+screen -dmS heartmula bash -c 'source /workspace/heartmula/venv/bin/activate && \
+  CUDA_VISIBLE_DEVICES=0 PORT=10004 python /workspace/heartmula/server.py 2>&1 | tee /tmp/heartmula.log'
+
+# Test generation
+curl -X POST http://localhost:10004/generate \
+  -H 'Content-Type: application/json' \
+  -d '{"lyrics": "Hello world", "tags": "pop, upbeat", "max_length_ms": 15000}' \
+  -o /tmp/test.mp3
+```
 
 ---
 
@@ -534,6 +712,96 @@ image = pipe(
 ### Recommendation
 
 TwinFlow-Z-Image-Turbo offers **~25% faster** generation than standard Z-Image-Turbo at equivalent quality. Consider deploying alongside or replacing current Z-Image setup for improved throughput.
+
+---
+
+## Sana Sprint Deployment (Quick Setup)
+
+Sana Sprint is the fastest model to deploy — no custom builds, no CUDA toolkit install.
+
+```bash
+# 1. Create instance with direct port access
+vastai create instance <OFFER_ID> \
+  --image "vastai/base-image:cuda-13.0.2-cudnn-devel-ubuntu24.04-py312" \
+  --disk 50 --ssh --direct \
+  --env '-p 10003:10003' \
+  --onstart-cmd "apt update && apt install -y git screen"
+
+# 2. Attach SSH key
+vastai attach ssh <INSTANCE_ID> "$(cat ~/.ssh/pollinations_services_2026.pub)"
+
+# 3. Find external port mapping
+vastai show instances --raw | python3 -c "
+import sys, json
+for i in json.load(sys.stdin):
+    if i['id'] == <INSTANCE_ID>:
+        for k, v in i.get('ports', {}).items():
+            print(f'{k} -> external {v[0][\"HostPort\"]}')
+"
+
+# 4. SSH in and install
+ssh -o StrictHostKeyChecking=no -i ~/.ssh/pollinations_services_2026 -p <SSH_PORT> root@<SSH_HOST>
+mkdir -p /workspace/sana && python3 -m venv /workspace/sana/venv
+source /workspace/sana/venv/bin/activate
+pip install --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/cu128
+pip install fastapi uvicorn pydantic aiohttp pillow diffusers transformers accelerate safetensors
+
+# 5. Copy server.py from local machine
+scp -P <SSH_PORT> -i ~/.ssh/pollinations_services_2026 \
+  image.pollinations.ai/sana/server.py root@<SSH_HOST>:/workspace/sana/
+
+# 6. Create run.sh with auto-restart
+cat > /workspace/sana/run.sh << 'EOF'
+#!/bin/bash
+cd /workspace/sana
+source venv/bin/activate
+export CUDA_VISIBLE_DEVICES=0
+export PORT=10003
+export PUBLIC_IP=<INSTANCE_PUBLIC_IP>
+export PUBLIC_PORT=<MAPPED_EXTERNAL_PORT>
+export SERVICE_TYPE=sana
+
+while true; do
+    echo "[$(date)] Starting Sana server..."
+    python server.py 2>&1 | tee -a /tmp/sana.log
+    echo "[$(date)] Server exited, restarting in 10s..."
+    sleep 10
+done
+EOF
+chmod +x /workspace/sana/run.sh
+
+# 7. Auto-start on container restart
+echo '
+if ! pgrep -f "python server.py" > /dev/null; then
+    screen -dmS sana bash /workspace/sana/run.sh
+fi' >> /root/.bashrc
+
+# 8. Start now
+screen -dmS sana bash /workspace/sana/run.sh
+
+# 9. Verify (after ~30s for model download + load)
+curl http://localhost:10003/health
+curl http://<PUBLIC_IP>:<EXTERNAL_PORT>/health  # from outside
+```
+
+### Sana Sprint Performance (RTX 5090)
+
+| Metric | Value |
+|--------|-------|
+| GPU generation time | ~0.2s (1024x1024) |
+| Image encode time | ~0.004s |
+| Total round-trip (direct port) | ~0.5-0.8s |
+| Total round-trip (SSH tunnel) | ~1.8-2.0s |
+| VRAM usage | ~13 GB |
+| Model | Efficient-Large-Model/Sana_Sprint_1.6B_1024px_diffusers |
+| Inference steps | 2 (SCM constraint) |
+
+### Log Format
+
+The server logs detailed timing breakdown per request:
+```
+Generation 1024x1024: total=0.214s (lock_wait=0.000s gpu=0.210s encode=0.004s) img=240KB
+```
 
 ---
 
@@ -609,3 +877,42 @@ curl http://localhost:10002/health
 ### Server Code
 
 Located at `image_gen_twinflow/server.py` in this repository.
+
+---
+
+## HeartMuLa Music Generation (Instance 31080854)
+
+### Current Setup
+
+- **Instance**: 31080854 (RTX 5090, Pennsylvania) — co-located with Sana Sprint
+- **Server**: Running in screen session `heartmula`
+- **Port**: 10004 → external 51075 (direct port access)
+- **External URL**: `http://108.55.118.247:51075`
+- **Model**: HeartMuLa-RL-oss-3B (music generation from lyrics + tags)
+- **VRAM**: 0 GB idle (lazy_load), peaks ~12.7 GB during generation
+- **Performance**: ~23s for 15s of audio, 48kHz stereo MP3
+
+### Management Commands
+
+```bash
+# SSH to instance
+ssh -i ~/.ssh/pollinations_services_2026 -p 10854 root@ssh6.vast.ai
+
+# Attach to screen session
+screen -r heartmula
+
+# Check logs
+tail -f /tmp/heartmula.log
+
+# Restart
+screen -S heartmula -X quit
+screen -dmS heartmula bash -c 'source /workspace/heartmula/venv/bin/activate && CUDA_VISIBLE_DEVICES=0 PORT=10004 python /workspace/heartmula/server.py 2>&1 | tee /tmp/heartmula.log'
+
+# Verify health (direct port access)
+curl http://108.55.118.247:51075/health
+curl http://localhost:10004/health  # from inside instance
+```
+
+### Server Code
+
+Located at `image.pollinations.ai/heartmula/server.py` in this repository.

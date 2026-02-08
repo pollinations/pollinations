@@ -94,6 +94,23 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
+    heartmula: {
+        aliases: ["heartmula-music", "heartmula-rl"],
+        modelId: "heartmula_rl_3b",
+        provider: "self-hosted",
+        cost: [
+            {
+                date: new Date("2026-02-08").getTime(),
+                // Self-hosted on Vast.ai RTX 5090 — ~$0.33/hr GPU cost
+                // ~23s per 15s audio → ~$0.002 per second of output
+                completionAudioSeconds: 0.002,
+            },
+        ],
+        description: "HeartMuLa RL 3B",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        alpha: true,
+    },
     whisper: {
         aliases: ["whisper-1", "whisper-large-v3"],
         modelId: "whisper-large-v3",

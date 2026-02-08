@@ -34,10 +34,10 @@ const CreateSpeechRequestSchema = z
             example: "Hello, welcome to Pollinations!",
         }),
         voice: z
-            .enum(ELEVENLABS_VOICES as unknown as [string, ...string[]])
+            .string()
             .default("alloy")
             .meta({
-                description: `The voice to use. Available voices: ${ELEVENLABS_VOICES.join(", ")}.`,
+                description: `The voice to use for TTS. Available voices: ${ELEVENLABS_VOICES.join(", ")}. For heartmula, this field is used as music tags.`,
                 example: "rachel",
             }),
         response_format: z
@@ -269,6 +269,96 @@ export async function generateMusic(opts: {
     });
 }
 
+export async function generateHeartMuLaMusic(opts: {
+    prompt: string;
+    tags?: string;
+    durationSeconds?: number;
+    serviceUrl: string;
+    backendToken?: string;
+    log: Logger;
+}): Promise<Response> {
+    const { prompt, tags, durationSeconds, serviceUrl, backendToken, log } =
+        opts;
+
+    if (!serviceUrl) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message:
+                "Music generation service is not configured (missing MUSIC_SERVICE_URL)",
+        });
+    }
+
+    log.info("HeartMuLa request: chars={chars}, duration={duration}", {
+        chars: prompt.length,
+        duration: durationSeconds || "auto",
+    });
+
+    const maxLengthMs = durationSeconds
+        ? Math.round(durationSeconds * 1000)
+        : 60000;
+
+    const heartMuLaBody = {
+        lyrics: prompt,
+        tags: tags || "pop, upbeat",
+        max_length_ms: Math.min(maxLengthMs, 240000),
+        temperature: 1.0,
+        topk: 50,
+        cfg_scale: 1.5,
+    };
+
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    };
+    if (backendToken) {
+        headers["x-backend-token"] = backendToken;
+    }
+
+    const response = await fetch(`${serviceUrl}/generate`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(heartMuLaBody),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        log.warn("HeartMuLa error {status}: {body}", {
+            status: response.status,
+            body: errorText,
+        });
+        throw new UpstreamError(response.status as ContentfulStatusCode, {
+            message: errorText || getDefaultErrorMessage(response.status),
+        });
+    }
+
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
+    const generationTime = response.headers.get("x-generation-time") || "";
+
+    const audioBuffer = await response.arrayBuffer();
+    // MP3 at 128kbps ≈ 16000 bytes/second
+    const estimatedDuration = audioBuffer.byteLength / 16000;
+
+    const usageHeaders = buildUsageHeaders(
+        "heartmula",
+        createCompletionAudioSecondsUsage(estimatedDuration),
+    );
+
+    log.info(
+        "HeartMuLa success: {bytes} bytes, ~{duration}s, gen_time={genTime}",
+        {
+            bytes: audioBuffer.byteLength,
+            duration: Math.round(estimatedDuration),
+            genTime: generationTime,
+        },
+    );
+
+    return new Response(audioBuffer, {
+        status: 200,
+        headers: {
+            "Content-Type": contentType,
+            ...usageHeaders,
+        },
+    });
+}
+
 /** Set model for tracking — audio routes have fixed providers, no model resolution needed */
 const fixedModel = (serviceId: ServiceId) =>
     createMiddleware<{ Variables: ModelVariables }>(async (c, next) => {
@@ -335,6 +425,20 @@ export const audioRoutes = new Hono<Env>()
             ) as CreateSpeechRequest;
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
+
+            if (c.var.model.resolved === "heartmula") {
+                const { duration, voice: tags } = c.req.valid(
+                    "json" as never,
+                ) as CreateSpeechRequest;
+                return generateHeartMuLaMusic({
+                    prompt: input,
+                    tags: tags !== "alloy" ? tags : undefined,
+                    durationSeconds: duration,
+                    serviceUrl: c.env.MUSIC_SERVICE_URL,
+                    backendToken: c.env.PLN_IMAGE_BACKEND_TOKEN,
+                    log,
+                });
+            }
 
             if (c.var.model.resolved === "elevenmusic") {
                 const { duration, instrumental } = c.req.valid(

@@ -52,6 +52,15 @@ const CreateSpeechRequestSchema = z
                 "The speed of the generated audio. 0.25 to 4.0, default 1.0.",
             example: 1.0,
         }),
+        duration: z.number().min(3).max(300).optional().meta({
+            description: "Music duration in seconds, 3-300 (elevenmusic only)",
+            example: 30,
+        }),
+        instrumental: z.boolean().optional().meta({
+            description:
+                "If true, guarantees instrumental output (elevenmusic only)",
+            example: false,
+        }),
     })
     .meta({ $id: "CreateSpeechRequest" });
 
@@ -236,8 +245,8 @@ export async function generateMusic(opts: {
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
 
-    // Buffer response to calculate duration from MP3 byte size
-    // MP3 at 128kbps ≈ 16000 bytes/second
+    // Buffer response to estimate duration from MP3 byte size
+    // MP3 at 128kbps ≈ 16000 bytes/second (±20% for VBR or different bitrates)
     const audioBuffer = await response.arrayBuffer();
     const estimatedDuration = audioBuffer.byteLength / 16000;
 
@@ -328,8 +337,13 @@ export const audioRoutes = new Hono<Env>()
                 .ELEVENLABS_API_KEY;
 
             if (c.var.model.resolved === "elevenmusic") {
+                const { duration, instrumental } = c.req.valid(
+                    "json" as never,
+                ) as CreateSpeechRequest;
                 return generateMusic({
                     prompt: input,
+                    durationSeconds: duration,
+                    forceInstrumental: instrumental,
                     apiKey,
                     log,
                 });

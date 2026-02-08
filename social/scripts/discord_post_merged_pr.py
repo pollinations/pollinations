@@ -289,7 +289,8 @@ def chunk_message(message: str, max_length: int = CHUNK_SIZE) -> List[str]:
 
 
 
-def format_review_for_discord(message_content: str, pr_info: Dict) -> List[Dict]:
+def format_review_for_discord(message_content: str, pr_info: Dict) -> str:
+    """Format PR announcement message content"""
     time_str = format_timestamp(pr_info.get('merged_at'))
     pr_number = pr_info.get('number', 'Unknown')
     pr_url = pr_info.get('url', '#')
@@ -299,59 +300,41 @@ def format_review_for_discord(message_content: str, pr_info: Dict) -> List[Dict]
     creator_link = f"[{pr_creator if pr_creator != 'Unknown' else 'Some Pollinations Contributor'}](<https://github.com/{pr_creator}>)"
     footer = f"\n\n{pr_link} • By {creator_link} • {time_str}"
 
-    # Calculate available space for content
+    # Calculate available space for content (2000 char limit for Discord)
+    max_length = 2000
     footer_length = len(footer)
-    available_space = CHUNK_SIZE - footer_length
-    
-    # Check if we need to chunk
-    if len(message_content) <= available_space:
-        # Single message - add footer
-        full_message = message_content + footer
-        return [{"content": full_message}]
-    
-    # Need to chunk - split the message content
-    print(f"📦 Message is {len(message_content)} chars, chunking into ~{CHUNK_SIZE} char pieces...")
-    chunks = chunk_message(message_content, available_space)
-    
-    payloads = []
-    total_chunks = len(chunks)
-    
-    for i, chunk in enumerate(chunks):
-        is_last = (i == total_chunks - 1)
-        
-        if is_last:
-            # Last chunk gets the footer
-            full_message = chunk + footer
-        else:
-            # Non-last chunks are sent as-is without any continuation indicator
-            full_message = chunk
-        
-        payloads.append({"content": full_message})
-        print(f"  📄 Chunk {i+1}/{total_chunks}: {len(full_message)} chars")
-    
-    return payloads
+    available_space = max_length - footer_length
+
+    # Check if we need to truncate
+    if len(message_content) > available_space:
+        # Truncate message content to fit footer
+        message_content = message_content[:available_space - 3] + "..."
+        print(f"📦 Truncated message to fit Discord limit")
+
+    return message_content + footer
 
 
 
-def post_to_discord(webhook_url: str, payloads: List[Dict]):
-    """Post message(s) to Discord webhook"""
-    import time
-    
-    for i, payload in enumerate(payloads):
-        if i > 0:
-            # Add small delay between messages to ensure correct ordering
-            time.sleep(0.5)
-        
-        response = requests.post(webhook_url, json=payload)
-        
-        if response.status_code not in [200, 204]:
-            print(f"❌ Discord webhook error on message {i+1}: {response.status_code}")
-            # Truncate error output to avoid exposing sensitive info in CI logs
-            error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
-            print(f"Error preview: {error_preview}")
-            sys.exit(1)
-        
-        print(f"✅ Successfully posted message {i+1}/{len(payloads)} to Discord!")
+def post_to_discord(webhook_url: str, message_content: str, image_bytes: Optional[bytes] = None):
+    """Post message + optional image to Discord webhook as single message"""
+    if image_bytes:
+        # Send as multipart with both payload_json and file
+        files = {
+            "payload_json": (None, json.dumps({"content": message_content}), "application/json"),
+            "files[0]": ("image.jpg", image_bytes, "image/jpeg")
+        }
+        response = requests.post(webhook_url, files=files)
+    else:
+        # Send as JSON
+        response = requests.post(webhook_url, json={"content": message_content})
+
+    if response.status_code not in [200, 204]:
+        print(f"❌ Discord webhook error: {response.status_code}")
+        error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+        print(f"Error preview: {error_preview}")
+        sys.exit(1)
+
+    print("✅ Successfully posted to Discord!")
 
 def main():
     print("🚀 Starting Update Announcement Generator...")
@@ -420,14 +403,14 @@ def main():
         'author': pr_author,
         'merged_at': merged_at
     }
-    
+
     try:
-        discord_payloads = format_review_for_discord(message_content, pr_info)
+        message_content = format_review_for_discord(message_content, pr_info)
     except Exception as e:
         print(f"❌ Error formatting for Discord: {e}")
         print(f"Message content: {message_content}")
         raise
-    
+
     # Generate image
     print("🎨 Generating image...")
     image_prompt_system = load_prompt(PLATFORM, "image_prompt_system")
@@ -438,20 +421,9 @@ def main():
         print(f"Image prompt: {image_prompt[:100]}...")
         image_bytes, _ = generate_image(image_prompt, pollinations_token)
 
-    # Post to Discord
-    print(f"📤 Posting {len(discord_payloads)} message(s) to Discord...")
-    post_to_discord(discord_webhook, discord_payloads)
-
-    # Post image as follow-up file upload
-    if image_bytes:
-        import time
-        time.sleep(0.5)
-        files = {"file": ("image.jpg", image_bytes, "image/jpeg")}
-        response = requests.post(discord_webhook, files=files)
-        if response.status_code in [200, 204]:
-            print(f"📷 Image posted to Discord!")
-        else:
-            print(f"Warning: Failed to post image: {response.status_code}")
+    # Post to Discord (text + image in one message)
+    print("📤 Posting to Discord...")
+    post_to_discord(discord_webhook, message_content, image_bytes)
 
     print("✨ Done!")
 

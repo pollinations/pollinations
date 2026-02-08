@@ -8,7 +8,7 @@ Vast.ai instances running RTX 5090 GPUs:
 - **Sana Sprint**: Ultra-fast 1.6B parameter model, 2 inference steps, ~0.2s per 1024x1024 on RTX 5090
 - **Flux**: Uses nunchaku quantization (FP4 for Blackwell GPUs) to run Flux Schnell
 - **Z-Image**: Tongyi Z-Image-Turbo with SPAN 2x upscaler (generates at 512x512 + 2x neural upscale)
-- **HeartMuLa**: Music generation model (RL-oss-3B), co-located with Sana Sprint on instance 31080854
+- **ACE-Step 1.5**: Music generation model (turbo DiT + 0.6B LM), co-located on instance 31080854
 
 ## Critical: Direct Port Access vs SSH Tunnels
 
@@ -27,7 +27,7 @@ To expose ports, use `--env '-p <port>:<port>'` when creating the instance. Vast
 
 | Instance ID | Public IP | SSH Host | SSH Port | GPUs | GPU Type | Location | Service | Cost | Port (int→ext) |
 |-------------|-----------|----------|----------|------|----------|----------|---------|------|----------------|
-| 31080854 | 108.55.118.247 | ssh6.vast.ai | 10854 | 1 | RTX 5090 | Pennsylvania, US | Sana Sprint + HeartMuLa | $0.33/hr | 10003→51100, 10004→51075 |
+| 31080854 | 108.55.118.247 | ssh6.vast.ai | 10854 | 1 | RTX 5090 | Pennsylvania, US | ACE-Step 1.5 Music | $0.33/hr | 10003→51100, 10004→51075 |
 
 Also running on **comfystream** (AWS L40S, `3.239.212.66:10002`) — not a Vast.ai instance.
 
@@ -42,11 +42,11 @@ Also running on **comfystream** (AWS L40S, `3.239.212.66:10002`) — not a Vast.
 
 ### Port Mappings
 
-**Instance 31080854 (Pennsylvania - Sana Sprint + HeartMuLa)**
+**Instance 31080854 (Pennsylvania - ACE-Step 1.5 Music)**
 | Internal Port | External Port | Service |
 |---------------|---------------|--------|
-| 10003 | 51100 | Sana Sprint |
-| 10004 | 51075 | HeartMuLa Music Gen |
+| 10003 | 51100 | (unused — was Sana Sprint) |
+| 10004 | 51075 | ACE-Step 1.5 Music Gen |
 
 **Instance 30937024 (Taiwan)**
 | Internal Port | External Port | Service |
@@ -80,7 +80,7 @@ Also running on **comfystream** (AWS L40S, `3.239.212.66:10002`) — not a Vast.
 Vast.ai uses **proxy SSH** through `sshN.vast.ai` hosts. The SSH host and port can change if an instance is recreated.
 
 ```bash
-# Instance 31080854 (Pennsylvania - Sana Sprint + HeartMuLa)
+# Instance 31080854 (Pennsylvania - ACE-Step 1.5 Music)
 ssh -o StrictHostKeyChecking=no -i ~/.ssh/pollinations_services_2026 -p 10854 root@ssh6.vast.ai
 
 # Instance 30937024 (Taiwan)
@@ -499,12 +499,16 @@ screen -dmS zimage-gpu3 bash -c 'cd /workspace/zimage && source venv/bin/activat
 
 ## Capacity Summary (2026-02-08)
 
+### ACE-Step 1.5 Music Generation
+
+| Instance | GPU | Service | VRAM | Port | Location | Speed |
+|----------|-----|---------|------|------|----------|-------|
+| 31080854 | 0 | ACE-Step 1.5 | ~21 GB (DiT + LM + VAE) | 51075 | Pennsylvania | ~8s/15s audio |
+
 ### Sana Sprint (serves legacy image.pollinations.ai)
 
 | Instance | GPU | Service | VRAM | Port | Location | Speed |
 |----------|-----|---------|------|------|----------|-------|
-| 31080854 | 0 | Sana Sprint | ~9.4 GB | 51100 | Pennsylvania | ~0.2s/img |
-| 31080854 | 0 | HeartMuLa | 0 idle / ~13 GB peak | 51075 | Pennsylvania | ~23s/15s audio |
 | comfystream | 0 | Sana Sprint | ~13 GB | 10002 | AWS US-East (L40S) | ~0.27s/img |
 
 ### Flux & Z-Image (serves via enter gateway gen.pollinations.ai)
@@ -522,7 +526,7 @@ screen -dmS zimage-gpu3 bash -c 'cd /workspace/zimage && source venv/bin/activat
 | 30939919 | 0 | Flux | ~21 GB | 63218 | N. Carolina |
 | 30939919 | 1 | Flux | ~21 GB | 63511 | N. Carolina |
 | 30994805 | 0 | Z-Image | ~25 GB | 53559 | N. Carolina |
-| **Total** | **13** | **2 Sana + 7 Flux + 4 Z-Image** | | |
+| **Total** | **12** | **1 ACE-Step + 1 Sana + 7 Flux + 4 Z-Image** | | |
 
 ## Notes
 
@@ -536,122 +540,128 @@ screen -dmS zimage-gpu3 bash -c 'cd /workspace/zimage && source venv/bin/activat
 
 ---
 
-## HeartMuLa Music Generation (Co-located with Sana Sprint)
+## ACE-Step 1.5 Music Generation (Instance 31080854)
 
-HeartMuLa-RL-oss-3B is a music generation model that creates songs from lyrics + tags. It runs on instance 31080854 alongside Sana Sprint, sharing the same RTX 5090 GPU via `lazy_load=True` (0 VRAM at idle, loads on demand).
+ACE-Step 1.5 is an open-source music generation model with DiT architecture + language model for style inference. It generates full songs from lyrics with automatic BPM/key/style detection via "thinking" mode.
 
 ### Instance Details
 
 | Key | Value |
 |-----|-------|
 | Instance | 31080854 (Pennsylvania) |
-| Screen session | `heartmula` |
+| Screen session | `acestep` |
 | Internal port | 10004 → external 51075 |
-| Venv | `/workspace/heartmula/venv` |
-| Model weights | `/workspace/heartmula/ckpt/` |
-| Server script | `/workspace/heartmula/server.py` |
-| Local copy | `image.pollinations.ai/heartmula/server.py` |
+| Shared venv | `/workspace/twinflow/venv` |
+| Repo (editable install) | `/workspace/acestep` (cloned from ACE-Step/ACE-Step-1.5) |
+| Startup script | `/workspace/acestep/start.sh` |
+| Model checkpoints | `/workspace/acestep/checkpoints/` |
 
-### API
+### API (native ACE-Step async API)
 
-- `GET /health` — status, GPU info, VRAM
-- `POST /generate` — `{lyrics, tags, max_length_ms, temperature, topk, cfg_scale}` → `audio/mpeg`
+- `GET /health` — `{"data": {"status": "ok"}, "code": 200}`
+- `POST /release_task` — submit generation job → returns `task_id`
+- `POST /query_result` — poll job status → `status: 0` (running), `1` (done), `2` (failed)
+- `GET /v1/audio?path=...` — download generated audio file
+- Auth: `Authorization: Bearer <ACESTEP_API_KEY>` header
 
 ### Performance
 
 | Metric | Value |
 |--------|-------|
-| 15s audio generation | ~23s |
-| VRAM (idle) | 0 GB (lazy_load) |
-| VRAM (LLM inference peak) | ~12.7 GB |
-| VRAM (codec peak) | ~6.2 GB |
+| 15s audio generation | ~8s |
+| VRAM usage | ~21 GB (all models on GPU) |
 | Output format | 48kHz stereo MP3 |
-| Model | HeartMuLa-RL-oss-3B-20260123 + HeartCodec-oss-20260123 |
+| DiT model | acestep-v15-turbo (8 inference steps) |
+| LM model | acestep-5Hz-lm-0.6B |
+| Repo | https://github.com/ACE-Step/ACE-Step-1.5 |
 
 ### RTX 5090 / Nightly PyTorch Compatibility Fixes
 
-The server includes several workarounds for Blackwell (sm_120) + PyTorch nightly:
-
-1. **Audio saving**: `torchaudio.save()` requires `torchcodec` which is incompatible with nightly PyTorch. Monkey-patched `postprocess` to use `soundfile` instead.
-2. **Codec token clamp**: LLM can generate token ID 8192 which exceeds the codec codebook range [0, 8191]. Fixed with `frames.clamp(0, 8191)` before `detokenize`.
-3. **Codec dtype**: fp32 triggers CUBLAS errors on Blackwell. Codec runs in bf16.
-4. **PyTorch API**: `total_mem` renamed to `total_memory` in nightly.
+1. **Python version**: pyproject.toml requires `==3.11.*` but instance has Python 3.12. Patched to `>=3.11,<3.13`.
+2. **transformers version**: Must use `>=4.51.0,<4.58.0` (v5.x causes meta tensor errors during model init).
+3. **torch.multinomial bug**: Blackwell (sm_120) triggers `Offset increment outside graph capture` in `torch.multinomial`. Patched `_sample_tokens` in `llm_inference.py` to use CPU fallback: `torch.multinomial(probs.cpu(), ...).to(device)`.
+4. **nano-vllm**: CUDA graph capture fails on Blackwell. Falls back to PyTorch backend (functional, slightly slower LM inference).
 
 ### Setup from Scratch
 
 ```bash
-# SSH into the Sana + HeartMuLa instance
 ssh -i ~/.ssh/pollinations_services_2026 -p 10854 root@ssh6.vast.ai
 
-# Create venv with nightly PyTorch
-mkdir -p /workspace/heartmula
-python3.12 -m venv /workspace/heartmula/venv
-source /workspace/heartmula/venv/bin/activate
-pip install --pre torch torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
+# Uses shared twinflow venv (saves ~7GB disk — PyTorch + nvidia libs already installed)
+source /workspace/twinflow/venv/bin/activate
 
-# Install dependencies (skip pinned torch versions)
-pip install numpy==2.0.2 torchtune==0.4.0 torchao==0.9.0 torchvision \
-  tqdm==4.67.1 transformers==4.57.0 tokenizers==0.22.1 einops==0.8.1 \
-  accelerate==1.12.0 bitsandbytes==0.49.0 'vector-quantize-pytorch==1.27.15' \
-  soundfile huggingface_hub fastapi uvicorn
+# Clone ACE-Step 1.5
+git clone --depth 1 https://github.com/ACE-Step/ACE-Step-1.5.git /workspace/acestep
 
-# Re-install nightly torch (torchao may have pulled in stable torch)
-pip install --pre torch torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128 --force-reinstall --no-deps
+# Patch Python version requirement
+cd /workspace/acestep
+sed -i 's/requires-python = "==3.11.\*"/requires-python = ">=3.11,<3.13"/' pyproject.toml
 
-# Install heartlib (no-deps to avoid overwriting nightly torch)
-pip install --no-deps git+https://github.com/HeartMuLa/heartlib.git
+# Install ACE-Step (editable, no-deps to avoid pulling conflicting torch)
+pip install --no-cache-dir --no-deps -e .
+pip install --no-cache-dir --no-deps -e acestep/third_parts/nano-vllm/
 
-# Install ffmpeg (for soundfile MP3 support)
-apt-get update -qq && apt-get install -y -qq ffmpeg
+# Install remaining deps (torch/transformers/diffusers already in twinflow venv)
+pip install --no-cache-dir \
+  torchaudio soundfile loguru numba "vector-quantize-pytorch>=1.27.15" \
+  torchao toml diskcache "peft>=0.18.0" "gradio==6.2.0" xxhash
 
-# Download model weights
+# Downgrade transformers to ACE-Step compatible version
+pip install --no-cache-dir "transformers>=4.51.0,<4.58.0"
+
+# Patch torch.multinomial for Blackwell
 python3 -c "
-from huggingface_hub import snapshot_download, hf_hub_download
-import os
-ckpt = '/workspace/heartmula/ckpt'
-os.makedirs(ckpt, exist_ok=True)
-snapshot_download('HeartMuLa/HeartMuLa-RL-oss-3B-20260123', local_dir=os.path.join(ckpt, 'HeartMuLa-RL-oss-3B-20260123'))
-snapshot_download('HeartMuLa/HeartCodec-oss-20260123', local_dir=os.path.join(ckpt, 'HeartCodec-oss-20260123'))
-hf_hub_download('HeartMuLa/HeartMuLaGen', 'tokenizer.json', local_dir=ckpt)
-hf_hub_download('HeartMuLa/HeartMuLaGen', 'gen_config.json', local_dir=ckpt)
+content = open('acestep/llm_inference.py').read()
+old = '            return torch.multinomial(probs, num_samples=1).squeeze(1)'
+new = '''            # Workaround: torch.multinomial has CUDA graph issues on Blackwell (sm_120)
+            # Fall back to CPU sampling then move back to device
+            device = probs.device
+            return torch.multinomial(probs.cpu(), num_samples=1).squeeze(1).to(device)'''
+open('acestep/llm_inference.py', 'w').write(content.replace(old, new, 1))
 "
 
-# Create symlinks (heartlib expects HeartMuLa-oss-3B and HeartCodec-oss)
-cd /workspace/heartmula/ckpt
-ln -sf HeartMuLa-RL-oss-3B-20260123 HeartMuLa-oss-3B
-ln -sf HeartCodec-oss-20260123 HeartCodec-oss
+# Create startup script
+cat > start.sh << 'SCRIPT'
+#!/bin/bash
+source /workspace/twinflow/venv/bin/activate
+cd /workspace/acestep
+export ACESTEP_API_KEY=<PLN_IMAGE_BACKEND_TOKEN>
+export ACESTEP_API_HOST=0.0.0.0
+export ACESTEP_API_PORT=10004
+export ACESTEP_LM_MODEL_PATH=acestep-5Hz-lm-0.6B
+export ACESTEP_OFFLOAD_TO_CPU=false
+export ACESTEP_LM_BACKEND=pytorch
+export CUDA_VISIBLE_DEVICES=0
+exec acestep-api --host 0.0.0.0 --port 10004
+SCRIPT
+chmod +x start.sh
 
-# Copy server.py from local machine
-# scp -P 10854 -i ~/.ssh/pollinations_services_2026 \
-#   image.pollinations.ai/heartmula/server.py root@ssh6.vast.ai:/workspace/heartmula/
+# Start (models auto-download from HuggingFace on first run)
+screen -dmS acestep bash -c "/workspace/acestep/start.sh 2>&1 | tee /tmp/acestep.log"
 
-# Start server
-screen -dmS heartmula bash -c 'source /workspace/heartmula/venv/bin/activate && \
-  CUDA_VISIBLE_DEVICES=0 PORT=10004 python /workspace/heartmula/server.py 2>&1 | tee /tmp/heartmula.log'
-
-# Verify
+# Verify (after ~60s for model download + init)
 curl http://localhost:10004/health
+curl http://108.55.118.247:51075/health  # external
 ```
 
 ### Management
 
 ```bash
 # Attach to screen
-screen -r heartmula
+screen -r acestep
 
 # View logs
-tail -f /tmp/heartmula.log
+tail -f /tmp/acestep.log
 
 # Restart
-screen -S heartmula -X quit
-screen -dmS heartmula bash -c 'source /workspace/heartmula/venv/bin/activate && \
-  CUDA_VISIBLE_DEVICES=0 PORT=10004 python /workspace/heartmula/server.py 2>&1 | tee /tmp/heartmula.log'
+screen -S acestep -X quit
+screen -dmS acestep bash -c "/workspace/acestep/start.sh 2>&1 | tee /tmp/acestep.log"
 
 # Test generation
-curl -X POST http://localhost:10004/generate \
-  -H 'Content-Type: application/json' \
-  -d '{"lyrics": "Hello world", "tags": "pop, upbeat", "max_length_ms": 15000}' \
-  -o /tmp/test.mp3
+curl -X POST http://localhost:10004/release_task \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $ACESTEP_API_KEY" \
+  -d '{"prompt": "upbeat pop", "lyrics": "[verse]\nHello sunshine", "audio_duration": 15, "batch_size": 1, "thinking": true, "audio_format": "mp3"}'
 ```
 
 ---
@@ -880,17 +890,17 @@ Located at `image_gen_twinflow/server.py` in this repository.
 
 ---
 
-## HeartMuLa Music Generation (Instance 31080854)
+## ACE-Step 1.5 Music (Instance 31080854)
 
 ### Current Setup
 
-- **Instance**: 31080854 (RTX 5090, Pennsylvania) — co-located with Sana Sprint
-- **Server**: Running in screen session `heartmula`
+- **Instance**: 31080854 (RTX 5090, Pennsylvania)
+- **Server**: Running in screen session `acestep`
 - **Port**: 10004 → external 51075 (direct port access)
 - **External URL**: `http://108.55.118.247:51075`
-- **Model**: HeartMuLa-RL-oss-3B (music generation from lyrics + tags)
-- **VRAM**: 0 GB idle (lazy_load), peaks ~12.7 GB during generation
-- **Performance**: ~23s for 15s of audio, 48kHz stereo MP3
+- **Model**: ACE-Step 1.5 Turbo (DiT + 0.6B LM)
+- **VRAM**: ~21 GB (all models on GPU)
+- **Performance**: ~8s for 15s of audio, 48kHz stereo MP3
 
 ### Management Commands
 
@@ -899,20 +909,16 @@ Located at `image_gen_twinflow/server.py` in this repository.
 ssh -i ~/.ssh/pollinations_services_2026 -p 10854 root@ssh6.vast.ai
 
 # Attach to screen session
-screen -r heartmula
+screen -r acestep
 
 # Check logs
-tail -f /tmp/heartmula.log
+tail -f /tmp/acestep.log
 
 # Restart
-screen -S heartmula -X quit
-screen -dmS heartmula bash -c 'source /workspace/heartmula/venv/bin/activate && CUDA_VISIBLE_DEVICES=0 PORT=10004 python /workspace/heartmula/server.py 2>&1 | tee /tmp/heartmula.log'
+screen -S acestep -X quit
+screen -dmS acestep bash -c "/workspace/acestep/start.sh 2>&1 | tee /tmp/acestep.log"
 
 # Verify health (direct port access)
 curl http://108.55.118.247:51075/health
 curl http://localhost:10004/health  # from inside instance
 ```
-
-### Server Code
-
-Located at `image.pollinations.ai/heartmula/server.py` in this repository.

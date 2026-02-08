@@ -277,12 +277,18 @@ async function trackResponse(
             };
         }
     }
-    // For audio generation, verify the response is actually audio
+    // For audio generation, verify the response content-type is expected.
+    // TTS returns audio/*, STT (whisper) returns application/json — both are valid.
     if (eventType === "generate.audio") {
         const contentType = response.headers.get("content-type") || "";
-        if (!contentType.startsWith("audio/")) {
+        const isAudio = contentType.startsWith("audio/");
+        const isSTT =
+            contentType.startsWith("application/json") &&
+            getServiceDefinition(resolvedModelRequested as ServiceId)
+                ?.outputModalities?.[0] === "text";
+        if (!isAudio && !isSTT) {
             log.warn(
-                "Audio generation returned non-audio content-type: {contentType}",
+                "Audio generation returned unexpected content-type: {contentType}",
                 { contentType },
             );
             return {

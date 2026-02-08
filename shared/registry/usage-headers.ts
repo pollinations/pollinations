@@ -98,11 +98,18 @@ export function parseUsageHeaders(
     const getHeader = (name: string) =>
         headers instanceof Headers ? headers.get(name) : headers[name];
 
-    // Iterate in reverse to parse headers back to usage
+    const FLOAT_USAGE_TYPES: Set<string> = new Set([
+        "promptAudioSeconds",
+        "completionAudioSeconds",
+        "completionVideoSeconds",
+    ]);
+
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {
         const value = getHeader(headerName);
         if (value) {
-            usage[usageType as UsageType] = parseInt(value, 10);
+            usage[usageType as UsageType] = FLOAT_USAGE_TYPES.has(usageType)
+                ? parseFloat(value)
+                : parseInt(value, 10);
         }
     }
 

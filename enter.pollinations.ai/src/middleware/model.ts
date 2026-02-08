@@ -19,7 +19,7 @@ export type ModelVariables = {
  * Middleware that extracts, defaults, and resolves the model from the request.
  * Must run before auth and track middlewares.
  */
-export function resolveModel(eventType: EventType, defaultOverride?: string) {
+export function resolveModel(eventType: EventType) {
     return createMiddleware<{ Variables: ModelVariables }>(async (c, next) => {
         // Extract model from request
         let rawModel: string | null = null;
@@ -27,32 +27,21 @@ export function resolveModel(eventType: EventType, defaultOverride?: string) {
         if (c.req.method === "GET") {
             rawModel = c.req.query("model") || null;
         } else if (c.req.method === "POST") {
-            const contentType = c.req.header("Content-Type") || "";
-            if (contentType.includes("multipart/form-data")) {
-                try {
-                    const formData = await c.req.formData();
-                    rawModel = formData.get("model") as string | null;
-                } catch {
-                    // FormData parsing failed, use default
-                }
-            } else {
-                try {
-                    const body = await c.req.json();
-                    rawModel = body.model || null;
-                } catch {
-                    // Body parsing failed, use default
-                }
+            try {
+                const body = await c.req.json();
+                rawModel = body.model || null;
+            } catch {
+                // Body parsing failed, use default
             }
         }
 
-        // Apply default: explicit override > event-type default
+        // Apply default based on event type
         const defaultModel =
-            defaultOverride ||
-            (eventType === "generate.text"
+            eventType === "generate.text"
                 ? DEFAULT_TEXT_MODEL
                 : eventType === "generate.audio"
                   ? DEFAULT_AUDIO_MODEL
-                  : DEFAULT_IMAGE_MODEL);
+                  : DEFAULT_IMAGE_MODEL;
         const model = rawModel || defaultModel;
 
         // Resolve alias to canonical service ID

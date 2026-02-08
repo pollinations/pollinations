@@ -1,5 +1,6 @@
 import type { Logger } from "@logtape/logtape";
 import { ELEVENLABS_VOICES, VOICE_MAPPING } from "@shared/registry/audio.ts";
+import type { ServiceId } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
@@ -12,7 +13,6 @@ import { z } from "zod";
 import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
-import { resolveModel } from "@/middleware/model.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
@@ -162,6 +162,17 @@ export async function generateSpeech(opts: {
     });
 }
 
+/** Set model for tracking — audio routes have fixed providers, no model resolution needed */
+function fixedModel(serviceId: ServiceId) {
+    return async (
+        c: { set: (key: string, value: unknown) => void },
+        next: () => Promise<void>,
+    ) => {
+        c.set("model", { requested: serviceId, resolved: serviceId });
+        await next();
+    };
+}
+
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
     .use("*", auth({ allowApiKey: true, allowSessionCookie: false }), balance)
@@ -203,7 +214,7 @@ export const audioRoutes = new Hono<Env>()
             },
         }),
         validator("json", CreateSpeechRequestSchema),
-        resolveModel("generate.audio"),
+        fixedModel("elevenlabs" as ServiceId),
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("tts");
@@ -312,7 +323,7 @@ export const audioRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 500),
             },
         }),
-        resolveModel("generate.audio", "whisper"),
+        fixedModel("whisper" as ServiceId),
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("transcription");

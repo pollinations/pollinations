@@ -19,17 +19,17 @@ const ACCOUNT_PERMISSIONS = [
     {
         id: "profile",
         label: "Profile",
-        tooltip: "Read name, email, GitHub username, profile image, tier",
+        tooltip: "Read name, email, image, tier",
     },
     {
         id: "balance",
         label: "Balance",
-        tooltip: "Read tier balance, pack balance, and key budget",
+        tooltip: "Read balance (tier + paid)",
     },
     {
         id: "usage",
         label: "Usage",
-        tooltip: "Read request history, spending, and model usage",
+        tooltip: "Read usage history",
     },
 ] as const;
 

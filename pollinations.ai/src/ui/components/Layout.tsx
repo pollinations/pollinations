@@ -53,11 +53,11 @@ function Layout() {
                 }`}
                 style={{ top: isBannerVisible ? "44px" : "0" }}
             >
-                <div className="w-full px-4 py-3 pb-5 md:py-4 md:pb-5">
+                <div className="w-full px-4 py-3 pb-5 lg:py-4 lg:pb-5">
                     <div className="max-w-4xl mx-auto relative overflow-visible">
-                        {/* Mobile: Grid — Logo spans all rows, content on right */}
+                        {/* Mobile/Tablet: Grid — Logo spans all rows, content on right */}
                         <div
-                            className="md:hidden grid overflow-hidden"
+                            className="lg:hidden grid overflow-visible"
                             style={{
                                 gridTemplateColumns: "auto minmax(0, 1fr)",
                                 gridTemplateRows: "auto auto auto",
@@ -73,9 +73,9 @@ function Layout() {
                                     <Logo className="w-20 h-20 object-contain" />
                                 </button>
                             </div>
-                            {/* Row 1: Hello, Play, Docs */}
-                            <div className="flex flex-wrap gap-1.5 items-center justify-end pb-1">
-                                {tabs.slice(0, 3).map((tab) => (
+                            {/* Row 1: Nav tabs + Enter/Register */}
+                            <div className="flex flex-wrap gap-1 items-center justify-end pb-1">
+                                {tabs.map((tab) => (
                                     <NavLink
                                         key={tab.path}
                                         to={tab.path}
@@ -93,31 +93,28 @@ function Layout() {
                                         )}
                                     </NavLink>
                                 ))}
+                                <Button
+                                    as="a"
+                                    href="https://enter.pollinations.ai"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="iconText"
+                                    size={null}
+                                >
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
+                                        {isLoggedIn
+                                            ? authCopy.enterButton
+                                            : authCopy.registerButton}
+                                    </span>
+                                    <ExternalLinkIcon className="w-3 h-3 text-text-brand" />
+                                </Button>
                             </div>
-                            {/* Row 2: Apps, Community, Login */}
+                            {/* Row 2: Login/Account */}
                             <div className="flex flex-wrap gap-1.5 items-center justify-end pb-1">
-                                {tabs.slice(3, 5).map((tab) => (
-                                    <NavLink
-                                        key={tab.path}
-                                        to={tab.path}
-                                        end={tab.path === "/"}
-                                        className="no-underline"
-                                    >
-                                        {({ isActive }) => (
-                                            <Button
-                                                variant="nav"
-                                                size={null}
-                                                data-active={isActive}
-                                            >
-                                                {tab.label}
-                                            </Button>
-                                        )}
-                                    </NavLink>
-                                ))}
                                 <UserMenu />
                             </div>
                             {/* Row 3: Theme Creator */}
-                            <div className="flex items-center gap-1.5 min-w-0 pb-1">
+                            <div className="flex items-center justify-end gap-1.5 min-w-0 pb-1">
                                 <AIPromptInput
                                     isLoggedIn={isLoggedIn}
                                     onLoginRequired={login}
@@ -129,7 +126,7 @@ function Layout() {
 
                         {/* Desktop: Grid — Logo spans both rows, content on right */}
                         <div
-                            className="hidden md:grid overflow-visible"
+                            className="hidden lg:grid overflow-visible"
                             style={{
                                 gridTemplateColumns: "auto 1fr",
                                 gridTemplateRows: "1fr auto",
@@ -224,7 +221,7 @@ function Layout() {
 
             {/* Main Content - Full Bleed */}
             <main
-                className="w-full min-h-screen pb-40 md:pb-24 transition-all duration-200 pt-[calc(12rem+var(--banner-offset))] md:pt-[calc(10rem+var(--banner-offset))]"
+                className="w-full min-h-screen pb-40 lg:pb-24 transition-all duration-200 pt-[calc(12rem+var(--banner-offset))] lg:pt-[calc(10rem+var(--banner-offset))]"
                 style={
                     {
                         "--banner-offset": isBannerVisible ? "44px" : "0px",
@@ -240,8 +237,8 @@ function Layout() {
                     showFooter ? "translate-y-0" : "translate-y-full"
                 }`}
             >
-                {/* Mobile: Simplified footer */}
-                <div className="md:hidden">
+                {/* Mobile/Tablet: Simplified footer */}
+                <div className="lg:hidden">
                     <div className="w-full px-4 py-3">
                         <div className="max-w-4xl mx-auto flex flex-col gap-3">
                             {/* 1. Social Icons */}
@@ -371,8 +368,8 @@ function Layout() {
                     </div>
                 </div>
 
-                {/* Desktop: Single line with mobile styling */}
-                <div className="hidden md:block w-full px-4 py-3">
+                {/* Desktop: Single line footer */}
+                <div className="hidden lg:block w-full px-4 py-3">
                     <div className="max-w-4xl mx-auto">
                         <div className="flex items-center justify-between gap-6">
                             {/* Left: Branding Text */}

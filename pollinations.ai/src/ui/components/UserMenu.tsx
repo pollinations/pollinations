@@ -35,7 +35,12 @@ export function UserMenu() {
 
     if (!isLoggedIn) {
         return (
-            <Button variant="primary" size="sm" onClick={login}>
+            <Button
+                variant="primary"
+                size={null}
+                onClick={login}
+                className="px-3 py-1.5 lg:px-5 lg:py-3 text-xs"
+            >
                 {copy.loginButton}
             </Button>
         );
@@ -51,7 +56,7 @@ export function UserMenu() {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-1.5 px-3 py-2 font-headline text-xs font-black uppercase tracking-wider text-text-body-main bg-surface-page backdrop-blur-md border-r-4 border-b-4 border-border-brand rounded-button transition-all hover:bg-button-secondary-bg hover:shadow-shadow-brand-md whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-1.5 lg:px-3 lg:py-3 font-headline text-xs font-black uppercase tracking-wider text-text-body-main bg-surface-page backdrop-blur-md border-r-4 border-b-4 border-border-brand rounded-button transition-all hover:bg-button-secondary-bg hover:shadow-shadow-brand-md whitespace-nowrap"
             >
                 <span>{tierEmoji}</span>
                 <span className="max-w-[140px] truncate">{displayName}</span>

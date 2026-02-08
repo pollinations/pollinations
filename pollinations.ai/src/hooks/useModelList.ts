@@ -10,6 +10,7 @@ import { API_BASE } from "../api.config";
 
 const IMAGE_MODELS_URL = `${API_BASE}/image/models`;
 const TEXT_MODELS_URL = `${API_BASE}/text/models`;
+const AUDIO_MODELS_URL = `${API_BASE}/audio/models`;
 
 export interface Model {
     id: string;
@@ -105,6 +106,8 @@ export function useModelList(apiKey: string): UseModelListReturn {
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
+        const controller = new AbortController();
+
         const extractIds = (
             list: Array<{ id?: string; name?: string } | string>,
         ) =>
@@ -119,21 +122,38 @@ export function useModelList(apiKey: string): UseModelListReturn {
                 const authHeaders = {
                     Authorization: `Bearer ${apiKey}`,
                 };
+                const signal = controller.signal;
 
-                // Only fetch which models are allowed for this key
-                const [allowedImageList, allowedTextList] = await Promise.all([
-                    fetch(IMAGE_MODELS_URL, { headers: authHeaders })
-                        .then((r) => r.json())
-                        .catch(() => []),
-                    fetch(TEXT_MODELS_URL, { headers: authHeaders })
-                        .then((r) => r.json())
-                        .catch(() => []),
-                ]);
+                // Fetch which models are allowed for this key
+                const [allowedImageList, allowedTextList, allowedAudioList] =
+                    await Promise.all([
+                        fetch(IMAGE_MODELS_URL, {
+                            headers: authHeaders,
+                            signal,
+                        })
+                            .then((r) => r.json())
+                            .catch(() => []),
+                        fetch(TEXT_MODELS_URL, {
+                            headers: authHeaders,
+                            signal,
+                        })
+                            .then((r) => r.json())
+                            .catch(() => []),
+                        fetch(AUDIO_MODELS_URL, {
+                            headers: authHeaders,
+                            signal,
+                        })
+                            .then((r) => r.json())
+                            .catch(() => []),
+                    ]);
 
-                // Image endpoint returns image + video models
+                if (controller.signal.aborted) return;
+
                 setAllowedImageModelIds(extractIds(allowedImageList || []));
 
-                // Text endpoint returns text + audio models — split them
+                // openai-audio lives in /text/models but is displayed as audio
+                // in the UI — extract it from the text response and merge with
+                // the dedicated /audio/models response.
                 type RawModel =
                     | {
                           id?: string;
@@ -141,31 +161,27 @@ export function useModelList(apiKey: string): UseModelListReturn {
                           output_modalities?: string[];
                       }
                     | string;
-                const isAudio = (m: RawModel) =>
+                const hasAudioOutput = (m: RawModel) =>
                     typeof m !== "string" &&
                     m.output_modalities?.includes("audio");
 
                 const textOnly = (allowedTextList || []).filter(
-                    (m: RawModel) => !isAudio(m),
+                    (m: RawModel) => !hasAudioOutput(m),
                 );
-                const audioOnly = (allowedTextList || []).filter(
-                    (m: RawModel) => isAudio(m),
+                const audioFromText = (allowedTextList || []).filter(
+                    (m: RawModel) => hasAudioOutput(m),
                 );
 
                 setAllowedTextModelIds(extractIds(textOnly));
 
-                // Dedicated audio services (elevenlabs, etc.) aren't returned by
-                // /text/models or /image/models. Include them based on paid_only:
-                // free models are always allowed, paid models need a logged-in user.
-                const audioIds = extractIds(audioOnly);
-                for (const model of REGISTRY_AUDIO_MODELS) {
-                    if (!audioIds.has(model.id) && !model.paid_only) {
-                        audioIds.add(model.id);
-                    }
+                const audioIds = extractIds(allowedAudioList || []);
+                for (const id of extractIds(audioFromText)) {
+                    audioIds.add(id);
                 }
                 setAllowedAudioModelIds(audioIds);
                 setIsLoading(false);
             } catch (err) {
+                if (controller.signal.aborted) return;
                 console.error("Failed to fetch allowed models:", err);
                 setError(err instanceof Error ? err : new Error(String(err)));
                 setIsLoading(false);
@@ -173,6 +189,8 @@ export function useModelList(apiKey: string): UseModelListReturn {
         };
 
         fetchAllowed();
+
+        return () => controller.abort();
     }, [apiKey]);
 
     return {

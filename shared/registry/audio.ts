@@ -93,5 +93,6 @@ export const AUDIO_SERVICES = {
             "Whisper Large V3 - Speech to Text Transcription (OVHcloud)",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        alpha: true,
     },
 } satisfies Record<string, ServiceDefinition<string>>;

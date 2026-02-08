@@ -5,6 +5,7 @@ import {
     buildUsageHeaders,
     createAudioSecondsUsage,
     createAudioTokenUsage,
+    createCompletionAudioSecondsUsage,
 } from "@shared/registry/usage-headers.ts";
 import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -167,12 +168,12 @@ export async function generateSpeech(opts: {
 
 export async function generateMusic(opts: {
     prompt: string;
-    durationMs?: number;
+    durationSeconds?: number;
     forceInstrumental?: boolean;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, durationMs, forceInstrumental, apiKey, log } = opts;
+    const { prompt, durationSeconds, forceInstrumental, apiKey, log } = opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -194,7 +195,7 @@ export async function generateMusic(opts: {
         "Music request: chars={chars}, duration={duration}, instrumental={instrumental}",
         {
             chars: prompt.length,
-            duration: durationMs || "auto",
+            duration: durationSeconds || "auto",
             instrumental: forceInstrumental || false,
         },
     );
@@ -205,8 +206,8 @@ export async function generateMusic(opts: {
         prompt,
         model_id: "music_v1",
     };
-    if (durationMs !== undefined) {
-        elevenLabsBody.music_length_ms = durationMs;
+    if (durationSeconds !== undefined) {
+        elevenLabsBody.music_length_ms = Math.round(durationSeconds * 1000);
     }
     if (forceInstrumental) {
         elevenLabsBody.force_instrumental = true;
@@ -238,15 +239,16 @@ export async function generateMusic(opts: {
     // Buffer response to calculate duration from MP3 byte size
     // MP3 at 128kbps ≈ 16000 bytes/second
     const audioBuffer = await response.arrayBuffer();
-    const durationSeconds = audioBuffer.byteLength / 16000;
+    const estimatedDuration = audioBuffer.byteLength / 16000;
 
-    const usageHeaders = buildUsageHeaders("elevenmusic", {
-        completionAudioSeconds: durationSeconds,
-    });
+    const usageHeaders = buildUsageHeaders(
+        "elevenmusic",
+        createCompletionAudioSecondsUsage(estimatedDuration),
+    );
 
     log.info("Music success: {bytes} bytes, ~{duration}s", {
         bytes: audioBuffer.byteLength,
-        duration: Math.round(durationSeconds),
+        duration: Math.round(estimatedDuration),
     });
 
     return new Response(audioBuffer, {

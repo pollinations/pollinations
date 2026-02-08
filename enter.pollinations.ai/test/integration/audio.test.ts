@@ -62,7 +62,7 @@ describe("ElevenLabs Music", () => {
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/audio/A%20short%20calm%20piano%20melody?model=elevenmusic&duration_ms=5000&instrumental=true`,
+                `http://localhost:3000/api/generate/audio/A%20short%20calm%20piano%20melody?model=elevenmusic&duration=5&instrumental=true`,
                 {
                     method: "GET",
                     headers: {

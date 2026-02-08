@@ -490,7 +490,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Output Formats (TTS only):** mp3, opus, aac, flac, wav, pcm",
                 "",
-                "**Music options:** `duration_ms` (3000-300000), `instrumental=true`",
+                "**Music options:** `duration` in seconds (3-300), `instrumental=true`",
                 "",
                 "**Authentication:**",
                 "",
@@ -545,14 +545,14 @@ export const proxyRoutes = new Hono<Env>()
                         "Audio model: TTS (default) or elevenmusic for music generation",
                     example: "tts-1",
                 }),
-                duration_ms: z
+                duration: z
                     .string()
                     .optional()
-                    .transform((v) => (v ? parseInt(v, 10) : undefined))
+                    .transform((v) => (v ? parseFloat(v) : undefined))
                     .meta({
                         description:
-                            "Music duration in milliseconds, 3000-300000 (elevenmusic only)",
-                        example: "30000",
+                            "Music duration in seconds, 3-300 (elevenmusic only)",
+                        example: "30",
                     }),
                 instrumental: z
                     .enum(["true", "false"])
@@ -581,15 +581,15 @@ export const proxyRoutes = new Hono<Env>()
                 .ELEVENLABS_API_KEY;
 
             if (c.var.model.resolved === "elevenmusic") {
-                const { duration_ms, instrumental } = c.req.valid(
+                const { duration, instrumental } = c.req.valid(
                     "query" as never,
                 ) as {
-                    duration_ms?: number;
+                    duration?: number;
                     instrumental?: boolean;
                 };
                 return generateMusic({
                     prompt: text,
-                    durationMs: duration_ms,
+                    durationSeconds: duration,
                     forceInstrumental: instrumental,
                     apiKey,
                     log,

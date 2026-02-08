@@ -366,18 +366,31 @@ def main():
     discord_webhook = get_env('DISCORD_WEBHOOK_URL')
     pr_number = get_env('PR_NUMBER')
     repo_full_name = get_env('REPO_FULL_NAME')
-    pr_title = get_env('PR_TITLE')
-    pr_url = get_env('PR_URL')
-    pr_author = get_env('PR_AUTHOR')
-    pr_branch = get_env('PR_BRANCH')
-    
-    print(f"📝 Reviewing PR #{pr_number} in {repo_full_name}")
-    print(f"🔗 {pr_url}")
-    
-    # Get PR details
-    pr_data = github_api_request(f"repos/{repo_full_name}/pulls/{pr_number}", github_token)
-    pr_description = pr_data.get('body', '')
-    merged_at = pr_data.get('merged_at', '')
+
+    # For manual dispatch, we need to fetch PR details from API
+    # Check if we have the PR data from webhook (automatic trigger)
+    pr_title = os.getenv('PR_TITLE')
+    pr_url = os.getenv('PR_URL')
+    pr_author = os.getenv('PR_AUTHOR')
+    pr_branch = os.getenv('PR_BRANCH')
+
+    # If missing, fetch from API (manual dispatch)
+    if not pr_title or not pr_url:
+        print("📥 Fetching PR details from GitHub API (manual dispatch mode)...")
+        pr_data = github_api_request(f"repos/{repo_full_name}/pulls/{pr_number}", github_token)
+        pr_title = pr_data.get('title', 'Unknown')
+        pr_url = pr_data.get('html_url', '#')
+        pr_author = pr_data.get('user', {}).get('login', 'Unknown')
+        pr_branch = pr_data.get('head', {}).get('ref', 'unknown')
+        pr_description = pr_data.get('body', '')
+        merged_at = pr_data.get('merged_at', '')
+    else:
+        # Automatic trigger - fetch additional details
+        print(f"📝 Reviewing PR #{pr_number} in {repo_full_name}")
+        print(f"🔗 {pr_url}")
+        pr_data = github_api_request(f"repos/{repo_full_name}/pulls/{pr_number}", github_token)
+        pr_description = pr_data.get('body', '')
+        merged_at = pr_data.get('merged_at', '')
 
     # Prepare prompts (no diff fetching)
     print("📋 Preparing review prompts...")

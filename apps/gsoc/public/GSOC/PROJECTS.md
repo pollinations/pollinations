@@ -80,7 +80,7 @@ title: Semantic Steganography for AI Generated Synthetic Media
 category: AI/ML
 difficulty: Advanced
 duration: 350
-mentor: 0xmnt02
+mentor: 0xmnt03
 technologies: Python, TensorFlow/PyTorch, Steganography Techniques
 ---
 
@@ -94,7 +94,7 @@ title: Generative Assistant
 category: AI/ML
 difficulty: Advanced
 duration: 350
-mentor: 0xmnt01
+mentor: 0xmnt03
 technologies: TypeScript, Streaming SSE, Semantic Routing, Markdown
 ---
 

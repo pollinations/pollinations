@@ -78,6 +78,23 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
     },
+    elevenmusic: {
+        aliases: ["music"],
+        modelId: "music_v1",
+        provider: "elevenlabs",
+        cost: [
+            {
+                date: new Date("2026-02-07").getTime(),
+                // ElevenLabs Music: billed by output audio duration
+                // ~$0.30 per minute ≈ $0.005 per second (Scale plan pricing)
+                completionAudioSeconds: 0.005,
+            },
+        ],
+        description:
+            "ElevenLabs Music - Generate studio-grade music from text prompts",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+    },
     whisper: {
         aliases: ["whisper-1", "whisper-large-v3"],
         modelId: "whisper-large-v3",

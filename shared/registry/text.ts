@@ -513,5 +513,6 @@ export const TEXT_SERVICES = {
         tools: true,
         search: true,
         isSpecialized: false,
+        alpha: true,
     },
 } as const satisfies Record<string, ServiceDefinition<string>>;

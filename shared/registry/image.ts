@@ -217,6 +217,7 @@ export const IMAGE_SERVICES = {
         aliases: ["wan2.6", "wan-i2v"],
         modelId: "wan",
         provider: "alibaba",
+        alpha: true,
         cost: [
             // Wan 2.6 I2V Flash (Singapore/International region)
             // Video base: 720P $0.025/sec (without audio)
@@ -266,36 +267,54 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
-    // "imagen": {
-    //     aliases: ["imagen-3"],
-    //     modelId: "imagen",
-    //     provider: "airforce",
-    //     cost: [
-    //         {
-    //             date: new Date("2026-02-05").getTime(),
-    //             completionImageTokens: 0.005, // $0.005 per image
-    //         },
-    //     ],
-    //     description:
-    //         "Imagen 3 (api.airforce) - Google's image generation model",
-    //     inputModalities: ["text"],
-    //     outputModalities: ["image"],
-    // },
-    // "grok-video": {
-    //     aliases: ["grok-imagine-video"],
-    //     modelId: "grok-video",
-    //     provider: "airforce",
-    //     cost: [
-    //         {
-    //             date: new Date("2026-02-05").getTime(),
-    //             completionVideoSeconds: 0.005, // $0.005 per second
-    //         },
-    //     ],
-    //     description:
-    //         "Grok Imagine Video (api.airforce) - xAI's video generation model",
-    //     inputModalities: ["text"],
-    //     outputModalities: ["video"],
-    // },
+    "imagen-4": {
+        aliases: ["imagen"],
+        modelId: "imagen-4",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-02-07").getTime(),
+                completionImageTokens: 0.005, // $0.005 per image
+            },
+        ],
+        description:
+            "Imagen 4 (api.airforce) - Google's latest image generation model",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "flux-2-dev": {
+        aliases: ["flux2", "flux-2"],
+        modelId: "flux-2-dev",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-02-07").getTime(),
+                completionImageTokens: 0.005, // $0.005 per image
+            },
+        ],
+        description:
+            "FLUX.2 Dev (api.airforce) - Black Forest Labs' latest image model",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "grok-video": {
+        aliases: ["grok-imagine-video"],
+        modelId: "grok-video",
+        provider: "airforce",
+        alpha: true,
+        cost: [
+            {
+                date: new Date("2026-02-07").getTime(),
+                completionVideoSeconds: 0.005, // $0.005 per second
+            },
+        ],
+        description:
+            "Grok Imagine Video (api.airforce) - xAI's video generation model",
+        inputModalities: ["text"],
+        outputModalities: ["video"],
+    },
     "ltx-2": {
         aliases: ["ltx2", "ltxvideo", "ltx-video"],
         modelId: "ltx-2",

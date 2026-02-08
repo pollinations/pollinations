@@ -9,6 +9,7 @@ import {
     hasReasoning,
     hasSearch,
     hasVision,
+    isAlpha,
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
@@ -46,10 +47,19 @@ export const ModelRow: FC<ModelRowProps> = ({
     const showCodeExecution = hasCodeExecution(model.name);
     const showNew = isNewModel(model.name);
     const showPaidOnly = isPaidOnly(model.name);
+    const showAlpha = isAlpha(model.name);
     const isDisabled = showPaidOnly && packBalance <= 0;
 
     const borderClass = isLast ? "" : "border-b border-gray-200";
     const priceColor = showPaidOnly ? "purple" : ("teal" as const);
+
+    // Show price badges if we have any pricing data (static or from Tinybird)
+    const hasPriceData =
+        genPerPollen !== "—" ||
+        model.perCharPrice ||
+        model.perImagePrice ||
+        model.perSecondPrice ||
+        model.perTokenPrice;
 
     return (
         <tr>
@@ -71,6 +81,13 @@ export const ModelRow: FC<ModelRowProps> = ({
                             >
                                 NEW
                             </Badge>
+                        )}
+                        {showAlpha && (
+                            <Tooltip content="Alpha model — experimental, may be unstable">
+                                <span className="text-[10px] text-amber-700 bg-transparent px-1.5 py-0.5 rounded-full font-semibold border border-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.5)] whitespace-nowrap">
+                                    ⚠️ ALPHA
+                                </span>
+                            </Tooltip>
                         )}
                         {showPaidOnly && (
                             <Tooltip
@@ -145,7 +162,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                 </div>
             </td>
             <td className={`py-2 px-2 text-sm text-center ${borderClass}`}>
-                {genPerPollen === "—" ? (
+                {!hasPriceData ? (
                     <span className="text-gray-400">—</span>
                 ) : (
                     <div className="flex flex-col gap-1 items-center">
@@ -158,7 +175,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                         />
                         <PriceBadge
                             prices={[model.promptCachedPrice]}
-                            emoji="�"
+                            emoji="💾"
                             subEmojis={["💾"]}
                             perToken={model.perToken}
                             color={priceColor}
@@ -181,7 +198,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                 )}
             </td>
             <td className={`py-2 px-2 text-sm text-center ${borderClass}`}>
-                {genPerPollen === "—" ? (
+                {!hasPriceData ? (
                     <span className="text-gray-400">—</span>
                 ) : (
                     <div className="flex flex-col gap-1 items-center">
@@ -199,7 +216,15 @@ export const ModelRow: FC<ModelRowProps> = ({
                             perToken={model.perToken}
                             color={priceColor}
                         />
-                        {model.perSecondPrice ? (
+                        {model.perCharPrice ? (
+                            <PriceBadge
+                                prices={[model.perCharPrice]}
+                                emoji="🔊"
+                                subEmojis={["🔊"]}
+                                perKChar
+                                color={priceColor}
+                            />
+                        ) : model.perSecondPrice ? (
                             <>
                                 <PriceBadge
                                     prices={[model.perSecondPrice]}

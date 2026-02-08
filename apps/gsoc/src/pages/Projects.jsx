@@ -181,7 +181,7 @@ const ProjectsPage = () => {
                             fontSize: "0.85rem",
                         }}
                     >
-                        <strong>We are looking forward for taking up 3 projects this season based on applications!</strong>
+                        <strong>We are looking forward for taking up 3 projects this season based on applications.</strong>
                     </Typography>
                 </Box>
 

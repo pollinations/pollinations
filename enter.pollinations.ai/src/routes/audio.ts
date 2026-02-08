@@ -286,9 +286,9 @@ export async function generateHeartMuLaMusic(opts: {
         lyrics: prompt,
         tags: style ? style.replace(/,\s+/g, ",") : "",
         max_length_ms: Math.min(maxLengthMs, 240000),
-        temperature: 1.0,
-        topk: 50,
-        cfg_scale: 1.5,
+        temperature: 1.1,
+        topk: 30,
+        cfg_scale: 3.0,
     };
 
     const headers: Record<string, string> = {

@@ -239,7 +239,7 @@ export const proxyRoutes = new Hono<Env>()
         describeRoute({
             tags: ["gen.pollinations.ai"],
             description:
-                "Get a list of available audio models (TTS, music, transcription) with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.",
+                "Get a list of available audio models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.",
             responses: {
                 200: {
                     description: "Success",
@@ -248,7 +248,7 @@ export const proxyRoutes = new Hono<Env>()
                             schema: resolver(
                                 z.array(z.any()).meta({
                                     description:
-                                        "List of audio models with pricing and metadata",
+                                        "List of models with pricing and metadata",
                                 }),
                             ),
                         },

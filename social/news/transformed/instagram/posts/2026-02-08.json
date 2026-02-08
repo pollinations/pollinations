@@ -1,0 +1,49 @@
+{
+  "date": "2026-02-08",
+  "generated_at": "2026-02-08T00:44:47.721184+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art_carousel",
+  "linked_images": true,
+  "strategy_reasoning": "Using a retro RPG 'inventory update' and 'patch notes' theme fits the pixel art aesthetic perfectly while gamifying the technical updates. A carousel allows us to break down the dense features (new models, audio, fixes) into digestible, cozy visual bites.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-08-image-1.jpg",
+      "prompt": "[Pixel art bee character opening a glowing magical chest in a garden]. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, sparkling particles. Warm lighting, lo-fi vibes like Stardew Valley. Pixel text: 'WEEKLY LOOT'. Nostalgic but beautiful, emotionally warm.",
+      "description": "Cover image showing the bee mascot discovering new treasures (the updates)."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-08-image-2.jpg",
+      "prompt": "[Retro RPG inventory screen showing three new shiny items: a paintbrush, a camera, and a film reel]. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) UI borders and cream background. Chunky icons representing Imagen-4, Flux-2, and Grok-Video. Warm lighting. Pixel text: 'NEW MODELS'. Nostalgic but beautiful.",
+      "description": "Visualizing the new models as game items to be equipped."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-08-image-3.jpg",
+      "prompt": "[Pixel art bee wearing tiny headphones speaking into a retro microphone]. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender gradient background. Visible pixel sound waves in pastel colors. Warm lighting, lo-fi vibes. Pixel text: 'TTS ADDED'. Nostalgic but beautiful.",
+      "description": "Announcing the ElevenLabs TTS endpoint with a cute audio-themed visual."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-08-image-4.jpg",
+      "prompt": "[Pixel art stream flowing smoothly without rocks blocking it]. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) grassy banks. A tiny signpost says 'FIXED'. Warm lighting, lo-fi vibes like A Short Hike. Serene and calm atmosphere representing the bug fixes. Nostalgic but beautiful.",
+      "description": "Representing the timeout fixes and scroll issues as a smooth, unblocked path."
+    }
+  ],
+  "caption": "New gear just dropped in the inventory besties 🎒✨ \n\nWe’ve been tending to the garden and added some MAJOR loot this week:\n\n✨ **New Models:** Imagen-4, Flux-2-dev, and Grok-Video are now live via api.airforce! The art generation goes crazy rn.\n🗣️ **Speak Up:** Added ElevenLabs TTS endpoint so your bots can finally have a voice.\n🛠️ **Bug Squashing:** Fixed those annoying 524 timeouts on the gateway (moved to custom domain) + fixed the scroll position on route changes. Smooth sailing only.\n\nGrab the new tools and show us what you build! 🌸🐝\n\n#pollinations #indiedev #pixelart #opensource #aiart #cozyvibes #gamedev #buildinpublic",
+  "hashtags": [
+    "#pollinations",
+    "#pixelart",
+    "#retrogaming",
+    "#opensource",
+    "#aiart",
+    "#cozyvibes",
+    "#8bit",
+    "#indiedev"
+  ],
+  "alt_text": "A carousel of cozy 8-bit pixel art images featuring a cute bee mascot, retro game inventory screens in lime green and pastel colors, and serene garden scenes announcing new AI models and bug fixes.",
+  "pr_references": [
+    "#8063",
+    "#7281",
+    "#8053",
+    "#8026"
+  ]
+}

@@ -3,15 +3,15 @@
  * Pure logic - parsing, validation, and theme generation functions
  */
 
-import {
-    ThemeDictionary,
-    themeToDictionary,
-} from "../../style/theme-processor";
-import { assembleStylePrompt } from "../../buildPrompts";
 import { generateText } from "../../../services/pollinationsAPI";
-import { STYLING_GUIDELINES } from "../designer";
+import { assembleStylePrompt } from "../../buildPrompts";
 import type { MacroConfig } from "../../style/simplified-config.types";
 import { macrosToTheme } from "../../style/simplified-to-theme";
+import {
+    type ThemeDictionary,
+    themeToDictionary,
+} from "../../style/theme-processor";
+import { STYLING_GUIDELINES } from "../designer";
 
 // ==============================================
 // TYPE DEFINITIONS
@@ -141,6 +141,8 @@ export function parseFullThemeResponse(text: string): FullThemeStyle {
  */
 export async function generateTheme(
     userPrompt: string,
+    apiKey?: string,
+    model?: string,
 ): Promise<ThemeDictionary> {
     const fullPrompt = `${STYLING_GUIDELINES}
 
@@ -150,7 +152,7 @@ ${userPrompt}
 Generate the theme JSON now:`;
 
     console.log("🎨 [DESIGNER] → Requesting theme tokens...");
-    const text = await generateText(fullPrompt);
+    const text = await generateText(fullPrompt, undefined, model, apiKey);
     console.log("🎨 [DESIGNER] ← Theme tokens received");
     return parseThemeResponse(text);
 }

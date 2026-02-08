@@ -53,13 +53,13 @@ export function useAuth(): UseAuthReturn {
 
         if (key) {
             localStorage.setItem(STORAGE_KEY, key);
-            setUserApiKey(key);
-            // Clean URL - remove fragment
+            // Clean URL and reload so all components pick up the new auth state
             window.history.replaceState(
                 {},
                 "",
                 window.location.pathname + window.location.search,
             );
+            window.location.reload();
         }
     }, []);
 
@@ -155,9 +155,7 @@ export function useAuth(): UseAuthReturn {
 
     const logout = useCallback(() => {
         localStorage.removeItem(STORAGE_KEY);
-        setUserApiKey(null);
-        setProfile(null);
-        setBalance(null);
+        window.location.reload();
     }, []);
 
     return {

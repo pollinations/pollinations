@@ -89,6 +89,8 @@ export const CrazyDreamsTheme: LLMThemeResponse = {
     "borderRadius": {
         "radius.button": "24px",
         "radius.card": "32px",
+        "radius.input": "16px",
+        "radius.subcard": "16px",
     },
     "fonts": {
         "font.title": "Syne",

@@ -55,6 +55,52 @@ describe("ElevenLabs TTS", () => {
     );
 });
 
+describe("Whisper Transcription", () => {
+    test(
+        "POST /v1/audio/transcriptions returns text",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            // Fetch a short sample wav to transcribe
+            const audioResponse = await fetch(
+                "https://cdn.openai.com/API/docs/audio/alloy.wav",
+            );
+            const audioBuffer = await audioResponse.arrayBuffer();
+
+            // Build multipart form data
+            const formData = new FormData();
+            formData.append(
+                "file",
+                new Blob([audioBuffer], { type: "audio/wav" }),
+                "test.wav",
+            );
+            formData.append("model", "whisper-large-v3");
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/v1/audio/transcriptions",
+                {
+                    method: "POST",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                    body: formData,
+                },
+            );
+            expect(response.status).toBe(200);
+
+            const data = (await response.json()) as { text: string };
+            expect(data.text).toBeDefined();
+            expect(data.text.length).toBeGreaterThan(0);
+
+            // Verify usage headers
+            expect(response.headers.get("x-model-used")).toBe(
+                "whisper-large-v3",
+            );
+        },
+    );
+});
+
 describe("GET /text/:prompt (audio)", () => {
     test(
         "GET /text/:prompt with openai-audio should return raw audio",

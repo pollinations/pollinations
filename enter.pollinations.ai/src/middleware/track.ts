@@ -277,12 +277,18 @@ async function trackResponse(
             };
         }
     }
-    // For audio generation, verify the response is actually audio
+    // For audio generation, verify the response content-type is expected.
+    // TTS returns audio/*, STT (whisper) returns application/json — both are valid.
     if (eventType === "generate.audio") {
         const contentType = response.headers.get("content-type") || "";
-        if (!contentType.startsWith("audio/")) {
+        const isAudio = contentType.startsWith("audio/");
+        const isSTT =
+            contentType.startsWith("application/json") &&
+            getServiceDefinition(resolvedModelRequested as ServiceId)
+                ?.outputModalities?.[0] === "text";
+        if (!isAudio && !isSTT) {
             log.warn(
-                "Audio generation returned non-audio content-type: {contentType}",
+                "Audio generation returned unexpected content-type: {contentType}",
                 { contentType },
             );
             return {
@@ -449,8 +455,17 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
         return z.safeParse(z.coerce.boolean(), stream).data || false;
     }
     if (request.method === "POST") {
-        const stream = (await request.json()).stream;
-        return z.safeParse(z.coerce.boolean(), stream).data || false;
+        const contentType = request.header("content-type") || "";
+        // Skip JSON parsing for multipart requests (e.g., audio transcription)
+        if (contentType.includes("multipart/form-data")) {
+            return false;
+        }
+        try {
+            const stream = (await request.json()).stream;
+            return z.safeParse(z.coerce.boolean(), stream).data || false;
+        } catch {
+            return false;
+        }
     }
     return false;
 }

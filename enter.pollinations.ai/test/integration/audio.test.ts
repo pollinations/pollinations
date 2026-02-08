@@ -55,6 +55,60 @@ describe("ElevenLabs TTS", () => {
     );
 });
 
+describe("ElevenLabs Music", () => {
+    test(
+        "GET /audio/:text with model=elevenmusic returns audio",
+        { timeout: 120000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/audio/A%20short%20calm%20piano%20melody?model=elevenmusic&duration_ms=5000&instrumental=true`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                },
+            );
+            expect(response.status).toBe(200);
+            expect(response.headers.get("content-type")).toContain("audio/");
+            expect(response.headers.get("x-model-used")).toBe("elevenmusic");
+
+            const arrayBuffer = await response.arrayBuffer();
+            expect(arrayBuffer.byteLength).toBeGreaterThan(0);
+        },
+    );
+
+    test(
+        "POST /v1/audio/speech with model=elevenmusic returns audio",
+        { timeout: 120000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/audio/speech`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "elevenmusic",
+                        input: "A short calm piano melody",
+                        voice: "alloy",
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            expect(response.headers.get("content-type")).toContain("audio/");
+            expect(response.headers.get("x-model-used")).toBe("elevenmusic");
+
+            const arrayBuffer = await response.arrayBuffer();
+            expect(arrayBuffer.byteLength).toBeGreaterThan(0);
+        },
+    );
+});
+
 describe("Whisper Transcription", () => {
     test(
         "POST /v1/audio/transcriptions returns text",

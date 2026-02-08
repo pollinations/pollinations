@@ -1,0 +1,64 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "claude-large",
+        "messages": [
+          {
+            "role": "user",
+            "content": "test"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "383",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Feb 2026 00:06:27 GMT",
+      "etag": "W/\"17f-mNooskUC1LDQUZwylMvDr4Ll2qA\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "global.anthropic.claude-opus-4-6-v1",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "9",
+      "x-usage-prompt-text-tokens": "279"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_2158e52b281b278d96ffa56cc170a87c",
+        "object": "chat.completion",
+        "created": 1770509187,
+        "model": "global.anthropic.claude-opus-4-6-v1",
+        "provider": "bedrock",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Hey! What's up?"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 279,
+          "completion_tokens": 9,
+          "total_tokens": 288,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

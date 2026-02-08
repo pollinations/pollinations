@@ -371,22 +371,15 @@ export const audioRoutes = new Hono<Env>()
                 log,
             );
 
-            // Override response tracking with usage headers
-            const trackedResponse = new Response(responseBody, {
-                status: response.status,
-                headers: {
-                    ...Object.fromEntries(response.headers),
-                    ...usageHeaders,
-                },
-            });
-            c.var.track.overrideResponseTracking(trackedResponse);
+            // Build final response with usage headers
+            const headers = {
+                ...Object.fromEntries(response.headers),
+                ...usageHeaders,
+            };
+            const result = new Response(responseBody, { headers });
+            c.var.track.overrideResponseTracking(result.clone());
 
-            return new Response(responseBody, {
-                headers: {
-                    ...Object.fromEntries(response.headers),
-                    ...usageHeaders,
-                },
-            });
+            return result;
         },
     );
 

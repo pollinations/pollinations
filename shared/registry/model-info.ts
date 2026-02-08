@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
     getActivePriceDefinition,
+    getAudioServices,
     getImageServices,
     getServiceDefinition,
     getTextServices,
@@ -8,9 +9,9 @@ import {
 } from "./registry";
 
 // Pricing uses registry field names directly, filtering out zero/undefined values
-// Fields: promptTextTokens, promptCachedTokens, promptAudioTokens, promptImageTokens,
-//         completionTextTokens, completionReasoningTokens, completionAudioTokens,
-//         completionImageTokens, completionVideoSeconds, completionVideoTokens
+// Fields: promptTextTokens, promptCachedTokens, promptAudioTokens, promptAudioSeconds,
+//         promptImageTokens, completionTextTokens, completionReasoningTokens,
+//         completionAudioTokens, completionImageTokens, completionVideoSeconds, completionVideoTokens
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
@@ -78,4 +79,11 @@ export function getTextModelsInfo(): ModelInfo[] {
  */
 export function getImageModelsInfo(): ModelInfo[] {
     return getImageServices().map(getModelInfo);
+}
+
+/**
+ * Get all audio models with enriched information
+ */
+export function getAudioModelsInfo(): ModelInfo[] {
+    return getAudioServices().map(getModelInfo);
 }

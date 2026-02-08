@@ -126,22 +126,47 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
         }
     }
 
-    // Add audio/TTS models
+    // Add audio models (TTS and STT)
     for (const [serviceName, serviceConfig] of Object.entries(AUDIO_SERVICES)) {
         const costHistory = serviceConfig.cost;
         if (!costHistory) continue;
 
         const latestCost: CostDefinition = costHistory[0];
 
-        prices.push({
-            name: serviceName,
-            type: "audio",
-            perToken: false,
-            perCharPrice: formatPrice(
-                latestCost.completionAudioTokens,
-                (v: number) => (v * 1000).toFixed(2),
-            ),
-        });
+        if (latestCost.promptAudioSeconds) {
+            // Speech-to-text (Whisper) — billed per input audio second
+            prices.push({
+                name: serviceName,
+                type: "audio",
+                perToken: false,
+                perSecondPrice: formatPrice(
+                    latestCost.promptAudioSeconds,
+                    (v: number) => v.toFixed(5),
+                ),
+            });
+        } else if (latestCost.completionAudioSeconds) {
+            // Music generation (ElevenLabs Music) — billed per output audio second
+            prices.push({
+                name: serviceName,
+                type: "audio",
+                perToken: false,
+                perSecondPrice: formatPrice(
+                    latestCost.completionAudioSeconds,
+                    (v: number) => v.toFixed(4),
+                ),
+            });
+        } else {
+            // Text-to-speech (ElevenLabs TTS) — billed per character
+            prices.push({
+                name: serviceName,
+                type: "audio",
+                perToken: false,
+                perCharPrice: formatPrice(
+                    latestCost.completionAudioTokens,
+                    (v: number) => (v * 1000).toFixed(2),
+                ),
+            });
+        }
     }
 
     // Merge real usage stats if available

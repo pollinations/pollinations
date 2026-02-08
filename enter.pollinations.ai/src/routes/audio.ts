@@ -5,6 +5,7 @@ import {
     buildUsageHeaders,
     createAudioSecondsUsage,
     createAudioTokenUsage,
+    createCompletionAudioSecondsUsage,
 } from "@shared/registry/usage-headers.ts";
 import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -15,6 +16,7 @@ import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
+import { resolveModel } from "@/middleware/model.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
@@ -49,6 +51,15 @@ const CreateSpeechRequestSchema = z
             description:
                 "The speed of the generated audio. 0.25 to 4.0, default 1.0.",
             example: 1.0,
+        }),
+        duration: z.number().min(3).max(300).optional().meta({
+            description: "Music duration in seconds, 3-300 (elevenmusic only)",
+            example: 30,
+        }),
+        instrumental: z.boolean().optional().meta({
+            description:
+                "If true, guarantees instrumental output (elevenmusic only)",
+            example: false,
         }),
     })
     .meta({ $id: "CreateSpeechRequest" });
@@ -164,6 +175,100 @@ export async function generateSpeech(opts: {
     });
 }
 
+export async function generateMusic(opts: {
+    prompt: string;
+    durationSeconds?: number;
+    forceInstrumental?: boolean;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { prompt, durationSeconds, forceInstrumental, apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Music service is not configured (missing API key)",
+        });
+    }
+
+    if (prompt.length > 10000) {
+        return Response.json(
+            {
+                error: "invalid_request_error",
+                message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
+            },
+            { status: 400 },
+        );
+    }
+
+    log.info(
+        "Music request: chars={chars}, duration={duration}, instrumental={instrumental}",
+        {
+            chars: prompt.length,
+            duration: durationSeconds || "auto",
+            instrumental: forceInstrumental || false,
+        },
+    );
+
+    const elevenLabsUrl = "https://api.elevenlabs.io/v1/music";
+
+    const elevenLabsBody: Record<string, unknown> = {
+        prompt,
+        model_id: "music_v1",
+    };
+    if (durationSeconds !== undefined) {
+        elevenLabsBody.music_length_ms = Math.round(durationSeconds * 1000);
+    }
+    if (forceInstrumental) {
+        elevenLabsBody.force_instrumental = true;
+    }
+
+    const response = await fetch(elevenLabsUrl, {
+        method: "POST",
+        headers: {
+            "xi-api-key": apiKey,
+            "Content-Type": "application/json",
+            Accept: "audio/mpeg",
+        },
+        body: JSON.stringify(elevenLabsBody),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        log.warn("ElevenLabs Music error {status}: {body}", {
+            status: response.status,
+            body: errorText,
+        });
+        throw new UpstreamError(response.status as ContentfulStatusCode, {
+            message: errorText || getDefaultErrorMessage(response.status),
+        });
+    }
+
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
+
+    // Buffer response to estimate duration from MP3 byte size
+    // MP3 at 128kbps ≈ 16000 bytes/second (±20% for VBR or different bitrates)
+    const audioBuffer = await response.arrayBuffer();
+    const estimatedDuration = audioBuffer.byteLength / 16000;
+
+    const usageHeaders = buildUsageHeaders(
+        "elevenmusic",
+        createCompletionAudioSecondsUsage(estimatedDuration),
+    );
+
+    log.info("Music success: {bytes} bytes, ~{duration}s", {
+        bytes: audioBuffer.byteLength,
+        duration: Math.round(estimatedDuration),
+    });
+
+    return new Response(audioBuffer, {
+        status: 200,
+        headers: {
+            "Content-Type": contentType,
+            ...usageHeaders,
+        },
+    });
+}
+
 /** Set model for tracking — audio routes have fixed providers, no model resolution needed */
 const fixedModel = (serviceId: ServiceId) =>
     createMiddleware<{ Variables: ModelVariables }>(async (c, next) => {
@@ -179,13 +284,14 @@ export const audioRoutes = new Hono<Env>()
         describeRoute({
             tags: ["gen.pollinations.ai"],
             description: [
-                "Generate speech audio from text using ElevenLabs.",
+                "Generate audio from text — speech (TTS) or music.",
                 "",
                 "This endpoint is OpenAI TTS API compatible.",
+                "Set `model` to `elevenmusic` (or alias `music`) to generate music instead of speech.",
                 "",
-                `**Available Voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                `**TTS Voices:** ${ELEVENLABS_VOICES.join(", ")}`,
                 "",
-                "**Output Formats:** mp3, opus, aac, flac, wav, pcm",
+                "**Output Formats (TTS only):** mp3, opus, aac, flac, wav, pcm",
             ].join("\n"),
             responses: {
                 200: {
@@ -212,7 +318,7 @@ export const audioRoutes = new Hono<Env>()
             },
         }),
         validator("json", CreateSpeechRequestSchema),
-        fixedModel("elevenlabs" as ServiceId),
+        resolveModel("generate.audio"),
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("tts");
@@ -220,20 +326,34 @@ export const audioRoutes = new Hono<Env>()
             if (c.var.auth.user?.id) {
                 await c.var.balance.requirePositiveBalance(
                     c.var.auth.user.id,
-                    "Insufficient pollen balance for text-to-speech",
+                    "Insufficient pollen balance for audio generation",
                 );
             }
 
             const { input, voice, response_format } = c.req.valid(
                 "json" as never,
             ) as CreateSpeechRequest;
+            const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
+                .ELEVENLABS_API_KEY;
+
+            if (c.var.model.resolved === "elevenmusic") {
+                const { duration, instrumental } = c.req.valid(
+                    "json" as never,
+                ) as CreateSpeechRequest;
+                return generateMusic({
+                    prompt: input,
+                    durationSeconds: duration,
+                    forceInstrumental: instrumental,
+                    apiKey,
+                    log,
+                });
+            }
 
             return generateSpeech({
                 text: input,
                 voice,
                 responseFormat: response_format,
-                apiKey: (c.env as unknown as { ELEVENLABS_API_KEY: string })
-                    .ELEVENLABS_API_KEY,
+                apiKey,
                 log,
             });
         },

@@ -59,3 +59,17 @@ jobs:
           FORCE_BRAND_CONTENT: ${{ inputs.force_brand_content || 'false' }}
           PR_LABELS: NEWS
         run: python social/scripts/instagram_generate_post.py
+
+      - name: Auto-merge PR
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          # Get the latest NEWS PR for Instagram
+          PR_NUMBER=$(gh pr list --label NEWS --limit 1 --json number --jq '.[0].number')
+          if [ -n "$PR_NUMBER" ]; then
+            echo "Auto-merging PR #$PR_NUMBER"
+            gh pr merge $PR_NUMBER --auto --squash
+          else
+            echo "No PR found to merge"
+          fi

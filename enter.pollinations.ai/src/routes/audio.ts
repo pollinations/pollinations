@@ -242,6 +242,59 @@ export const audioRoutes = new Hono<Env>()
                 "",
                 "**Models:** `whisper-large-v3` (default), `whisper-1`",
             ].join("\n"),
+            requestBody: {
+                required: true,
+                content: {
+                    "multipart/form-data": {
+                        schema: {
+                            type: "object",
+                            required: ["file"],
+                            properties: {
+                                file: {
+                                    type: "string",
+                                    format: "binary",
+                                    description:
+                                        "The audio file to transcribe. Supported formats: mp3, mp4, mpeg, mpga, m4a, wav, webm.",
+                                },
+                                model: {
+                                    type: "string",
+                                    default: "whisper-large-v3",
+                                    description:
+                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`.",
+                                },
+                                language: {
+                                    type: "string",
+                                    description:
+                                        "Language of the audio in ISO-639-1 format (e.g. `en`, `fr`). Improves accuracy.",
+                                },
+                                prompt: {
+                                    type: "string",
+                                    description:
+                                        "Optional text to guide the model's style or continue a previous segment.",
+                                },
+                                response_format: {
+                                    type: "string",
+                                    enum: [
+                                        "json",
+                                        "text",
+                                        "srt",
+                                        "verbose_json",
+                                        "vtt",
+                                    ],
+                                    default: "json",
+                                    description:
+                                        "The format of the transcript output.",
+                                },
+                                temperature: {
+                                    type: "number",
+                                    description:
+                                        "Sampling temperature between 0 and 1. Lower is more deterministic.",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
             responses: {
                 200: {
                     description: "Success - Returns transcription",

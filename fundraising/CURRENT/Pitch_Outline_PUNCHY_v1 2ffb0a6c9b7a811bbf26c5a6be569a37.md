@@ -12,8 +12,8 @@
 
 Developers build free.
 End users pay.
-Every app is a storefront.
-1,000+ and growing — 20+ new apps per day.
+Every app is a storefront. Every user gets one wallet.
+1,000+ apps and growing — 20+ new per day.
 
 ---
 
@@ -86,6 +86,9 @@ Then we monetize the end users they bring.
 
 They validate the model. We go further — end users pay, not developers.
 
+**For developers:** free infrastructure, zero setup.
+**For end users:** one account, 1,000+ AI apps, one balance. The App Store of AI.
+
 ---
 
 ## Slide 7: The Moat
@@ -105,15 +108,18 @@ Switching means breaking live products.
 
 ## Slide 8: Business Model
 
-**One line.**
+**Two customers. One economy.**
 
 Dev builds free → App launches → Users buy Pollen → We collect revenue.
+
+Users don't buy per app. They buy Pollen once and spend it everywhere.
+More apps = more reasons to buy. More users = more revenue per app.
 
 **Proof:**
 Roblox game. 51M visits. $12K/month revenue.
 Pays us $500/month.
 
-*That’s the model.*
+*That's the flywheel.*
 
 ---
 

@@ -12,6 +12,8 @@
 
 Open, developer-first AI platform enabling teams to ship, scale, and monetize generative AI — without enterprise complexity.
 
+Every app is a storefront. Every user gets one wallet.
+
 ---
 
 ## Slide 2: The Problem
@@ -93,6 +95,10 @@ Fal ($4.5B valuation, $200M+ ARR) and OpenRouter ($100M+ ARR, 5-person team) cha
 **Self-scaling distribution**
 1,000+ apps already live. Each one is a customer acquisition channel we didn't pay for.
 
+**Two sides, one economy**
+For developers: free infrastructure, zero setup.
+For end users: one account, 1,000+ AI apps, one balance. The App Store of AI.
+
 **Community that compounds**
 17K Discord members and bots answering questions, shipping starter kits, onboarding new devs. Zero support cost at scale.
 
@@ -124,6 +130,9 @@ We don't need developers to pay — we need their users to pay.
 ```
 Developer builds free → launches app → end users buy Pollen → we collect revenue
 ```
+
+Users don't buy per app. They buy Pollen once and spend it everywhere.
+More apps = more reasons to buy. More users = more revenue per app.
 
 **Unit Economics:**
 - Developer acquisition: $0

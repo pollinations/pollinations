@@ -283,6 +283,10 @@ Generated automatically by GitHub Actions after NEWS PR merge.
     pr_number = pr_data['number']
     print(f"Created PR #{pr_number}: {pr_data['html_url']}")
 
+    # Write PR number to file for workflow auto-merge
+    with open('.pr_number', 'w') as f:
+        f.write(str(pr_number))
+
     # Add labels from PR_LABELS env var
     pr_labels = get_env('PR_LABELS', required=False)
     if pr_labels:

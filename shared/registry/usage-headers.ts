@@ -162,3 +162,15 @@ export function createAudioSecondsUsage(promptAudioSeconds: number): Usage {
         promptAudioSeconds,
     };
 }
+
+/**
+ * Helper for music generation: create Usage with completion audio seconds
+ * Used for duration-based billing (e.g., ElevenLabs Music at $0.005/sec)
+ */
+export function createCompletionAudioSecondsUsage(
+    completionAudioSeconds: number,
+): Usage {
+    return {
+        completionAudioSeconds,
+    };
+}

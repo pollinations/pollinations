@@ -52,13 +52,16 @@ jobs:
       - name: Auto-merge PR
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          # Get the latest NEWS PR for README
-          PR_NUMBER=$(gh pr list --label NEWS --limit 1 --json number --jq '.[0].number')
-          if [ -n "$PR_NUMBER" ]; then
-            echo "Auto-merging PR #$PR_NUMBER"
-            gh pr merge $PR_NUMBER --auto --squash
+          # Read PR number from file written by script
+          if [ -f .pr_number ]; then
+            PR_NUMBER=$(cat .pr_number)
+            echo "Auto-merging PR #$PR_NUMBER via GitHub API"
+            curl -X PUT \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/merge" \
+              -d '{"merge_method":"squash"}'
           else
-            echo "No PR found to merge"
+            echo "No .pr_number file found - PR not created"
           fi

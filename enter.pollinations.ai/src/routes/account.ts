@@ -100,13 +100,9 @@ const profileResponseSchema = z.object({
 const balanceResponseSchema = z.object({
     balance: z
         .number()
-        .describe("Total remaining pollen balance (tier + pack combined)"),
-    tierBalance: z
-        .number()
-        .describe("Free daily tier pollen (refills at midnight UTC)"),
-    packBalance: z
-        .number()
-        .describe("Purchased pollen credits (includes crypto balance)"),
+        .describe(
+            "Remaining pollen balance (combines tier, pack, and crypto balances)",
+        ),
 });
 
 const usageRecordSchema = z.object({
@@ -264,16 +260,12 @@ export const accountRoutes = new Hono<Env>()
                 });
             }
 
-            // If API key has a budget, return that (no breakdown available)
+            // If API key has a budget, return that
             if (apiKey?.pollenBalance != null) {
-                return c.json({
-                    balance: apiKey.pollenBalance,
-                    tierBalance: 0,
-                    packBalance: apiKey.pollenBalance,
-                });
+                return c.json({ balance: apiKey.pollenBalance });
             }
 
-            // Otherwise return user's balance with breakdown
+            // Otherwise return user's total balance
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({
@@ -286,13 +278,11 @@ export const accountRoutes = new Hono<Env>()
                 .limit(1);
 
             const tierBalance = users[0]?.tierBalance ?? 0;
-            const packBalance =
-                (users[0]?.packBalance ?? 0) + (users[0]?.cryptoBalance ?? 0);
+            const packBalance = users[0]?.packBalance ?? 0;
+            const cryptoBalance = users[0]?.cryptoBalance ?? 0;
 
             return c.json({
-                balance: tierBalance + packBalance,
-                tierBalance,
-                packBalance,
+                balance: tierBalance + packBalance + cryptoBalance,
             });
         },
     )

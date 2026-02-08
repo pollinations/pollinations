@@ -13,18 +13,19 @@
 Developers build free.
 End users pay.
 Every app is a storefront.
-We have 800+.
+1,000+ and growing — 20+ new apps per day.
 
 ---
 
 ## Slide 2: The Gap
 
-**Enterprise AI is too expensive to start.Consumer AI has no APIs.**
+**Enterprise AI requires API keys, backends, and billing infrastructure.
+Consumer AI has no path to production.**
 
-600 developers join us every day.
-$0 spent on sales.
+Creators don't want complexity. They want to build the fun part.
+400+ developers join us every day. $0 spent on sales.
 
-That’s the gap.
+That's the gap.
 
 ---
 
@@ -32,10 +33,10 @@ That’s the gap.
 
 **Natural language is the new programming.**
 
-- “Vibe coders” — teenagers, indie devs, small teams — are building real products
-- This doesn’t show up in enterprise sales reports
-- It lives on Discord, Roblox, GitHub
-- Youngest developer on our platform: 11 years old
+- "Vibe coding" is Collins Word of the Year 2025 — natural language replaces programming
+- Meta's Alexandr Wang: "If you're 13, spend all your time vibe coding"
+- Teenagers, indie devs, small teams are shipping real products on Discord, Roblox, GitHub
+- We're the platform where that 13-year-old builds
 
 **Technical moats are gone. Distribution wins.**
 
@@ -43,16 +44,18 @@ That’s the gap.
 
 ## Slide 4: How It Works
 
-**Two pools. One insight.**
+**Build free. Launch. Get paid.**
 
-| BUILD | PRODUCTION |
-| --- | --- |
-| Free AI for devs | End users pay |
-| No credit card | Premium models |
-| No friction | Revenue flows through us |
+```
+Developer gets credits → Builds app → App goes live → End users buy Pollen → Revenue flows
+```
+
+No API keys. No backend. No billing integration. Just build.
+
+**For end users:** One wallet. 1,000 AI apps. Buy Pollen once, use it everywhere.
 
 **Developers are our distribution.**
-Every app they ship is a revenue channel we didn’t build.
+Every app they ship is a revenue channel we didn't build.
 
 ---
 
@@ -60,13 +63,14 @@ Every app they ship is a revenue channel we didn’t build.
 
 **Zero marketing. All organic.**
 
-| **3M+** | end-users/month |
+| **3M+** | end-users/month (across developer apps) |
 | --- | --- |
-| **800+** | live apps |
-| **600+** | new devs/day |
+| **1,000+** | live apps |
+| **400+** | new devs/day |
 | **17K+** | Discord members |
+| **3.9K** | GitHub stars |
 
-We’re growing because we’re the easiest way to build.
+We're growing because we're the easiest way to build.
 
 ---
 
@@ -74,14 +78,13 @@ We’re growing because we’re the easiest way to build.
 
 **We sell THROUGH developers, not TO them.**
 
-Fal charges developers.
-Replicate charges developers.
-OpenRouter charges developers.
+Fal charges developers. ($4.5B valuation, $200M+ ARR)
+OpenRouter charges developers. ($100M+ ARR, 5-person team, 1M+ devs)
 
 **We let developers build free.**
 Then we monetize the end users they bring.
 
-800+ apps = 800+ acquisition channels we didn’t pay for.
+They validate the model. We go further — end users pay, not developers.
 
 ---
 
@@ -118,11 +121,11 @@ Pays us $500/month.
 
 **They sell to developers. We sell through them.**
 
-|  | HuggingFace | fal.ai | Us |
-| --- | --- | --- | --- |
-| Customer | Researchers | Enterprise | Builders |
-| Entry | Upload models | Sales call | One line of code |
-| Revenue | Enterprise | Contracts | End users |
+|  | HuggingFace | fal.ai | OpenRouter | Us |
+| --- | --- | --- | --- | --- |
+| Customer | Researchers | Enterprise | Developers | Creators |
+| Entry | Use models | Pay-per-use API | API key | No signup needed |
+| Revenue | Enterprise tooling | Contracts + GPU | Usage fees | End users buy Pollen |
 
 ---
 
@@ -137,7 +140,7 @@ Neither did:
 
 Until they were inside the products that won.
 
-**We don’t need every builder to succeed.We need to be inside the ones that do.**
+**A thousand seeds. We only need a few to bloom.**
 
 ---
 
@@ -171,6 +174,6 @@ Full-stack. Infra at scale. Makes it run.
 
 Developers build.
 Users pay.
-We’re already inside 800+ products.
+We're already inside 1,000+ products.
 
 pollinations.ai

@@ -19,14 +19,14 @@ Open, developer-first AI platform enabling teams to ship, scale, and monetize ge
 **Current Infrastructure Locks Out Builders**
 
 The AI tooling market has over-rotated to extremes:
-- **Enterprise platforms** (fal.ai, Together): Powerful but expensive. Sales-led. Minimum contracts.
-- **Consumer tools** (Flora, Hugging Face Spaces): Polished UX but capped upside. No APIs.
+- **Enterprise platforms** (fal.ai, Together): Powerful but complex. API keys, backend setup, billing infrastructure.
+- **Consumer tools** (Flora): Polished UX but no path to production. No developer APIs.
 
-**The squeeze:** Builders who ship real products can’t commit to enterprise contracts, but outgrow consumer tools quickly.
+**The squeeze:** Creators who ship real products can't fund the experimentation phase, and outgrow consumer tools quickly.
 
 **The fear:** One viral app on OpenAI APIs can lead to a five-figure bill overnight.
 
-*This is the gap Pollinations fills.*
+*Creators don't want complexity. They want to build the fun part. This is the gap Pollinations fills.*
 
 ---
 
@@ -34,30 +34,32 @@ The AI tooling market has over-rotated to extremes:
 
 **Technical Moats Have Collapsed**
 
-- Natural language is the new programming — “vibe coders” are building real products
-- Massive influx of teenagers, indie devs, and small teams entering the market
-- This activity doesn’t show up in enterprise sales reports — it lives on Discord, Roblox, and GitHub
+- "Vibe coding" is Collins Word of the Year 2025 — natural language replaces programming
+- Meta's Alexandr Wang: "If you're 13, spend all your time vibe coding" — the next Bill Gates is a teenager
+- Teenagers, indie devs, and small teams are shipping real products on Discord, Roblox, and GitHub
 - Models are commoditizing — value is shifting to distribution and orchestration
 
-**The long tail of AI applications is now real. The winners will be platforms that turn developers into distribution channels.**
+**The long tail of AI applications is now real. The winners will be platforms that turn creators into distribution channels.**
 
 ---
 
 ## Slide 4: The Solution
 
-**Pollinations = The Open AI Platform Layer**
+**Pollinations = The Distribution Layer for Generative AI**
 
-One line of code → generated content.
+One API call. Any AI model. No setup.
 
-**Two-Pool Model:**
+**The Graduation Path:**
 
-| Build Pool | Production Pool |
-| --- | --- |
-| Free AI for developers | End users pay for premium models |
-| Text, image, audio, video | Revenue flows through us |
-| No credit card. No friction. | Developers = distribution |
+```
+Developer gets credits → Builds app → App goes live → End users buy Pollen → Revenue flows
+```
 
-**Every app developers ship is a new revenue channel we didn’t have to build.**
+No API keys. No backend. No billing integration. Text, image, audio, video — just build.
+
+**For end users:** One wallet. 1,000 AI apps. Buy Pollen once, use it everywhere.
+
+**Every app developers ship is a new revenue channel we didn't have to build.**
 
 ---
 
@@ -67,10 +69,11 @@ One line of code → generated content.
 
 | Metric | Value |
 | --- | --- |
-| Monthly end-users | 3M+ |
-| Live production apps | 800+ |
-| New developers/day | 600+ |
+| Monthly end-users | 3M+ (across developer apps) |
+| Live production apps | 1,000+ |
+| New developers/day | 400+ |
 | Discord community | 17K+ |
+| GitHub stars | 3.9K |
 
 **Zero marketing spend. All organic growth.**
 
@@ -85,10 +88,10 @@ One line of code → generated content.
 Our moat is not models (commoditized) or price (race to bottom). It’s the network effect.
 
 **We sell through developers, not to them**
-Fal, Replicate, OpenRouter charge developers. We let developers build free — then monetize the end users they bring.
+Fal ($4.5B valuation, $200M+ ARR) and OpenRouter ($100M+ ARR, 5-person team) charge developers. We let developers build free — then monetize the end users they bring. They validate the model. We go further.
 
 **Self-scaling distribution**
-800+ apps already live. Each one is a customer acquisition channel we didn’t pay for.
+1,000+ apps already live. Each one is a customer acquisition channel we didn't pay for.
 
 **Community that compounds**
 17K Discord members and bots answering questions, shipping starter kits, onboarding new devs. Zero support cost at scale.
@@ -99,12 +102,12 @@ Fal, Replicate, OpenRouter charge developers. We let developers build free — t
 
 **The Missing Layer in the AI Stack**
 
-|  | Hugging Face | fal.ai | Pollinations |
-| --- | --- | --- | --- |
-| Core role | Model hub | Enterprise infra | Developer execution layer |
-| Primary customer | Researchers | Enterprises | Builders & small teams |
-| Entry point | Upload models | Sales + contracts | Build → ship → iterate |
-| Business model | Enterprise tooling | Contracts + GPU | Usage via end users |
+|  | Hugging Face | fal.ai | OpenRouter | Pollinations |
+| --- | --- | --- | --- | --- |
+| Core role | Model hub | Enterprise infra | LLM aggregator | Distribution layer |
+| Primary customer | Researchers | Enterprises | Developers | Creators |
+| Entry point | Use models | Pay-per-use API | API key | No signup needed |
+| Business model | Enterprise tooling | Contracts + GPU | Usage fees | End users buy Pollen |
 
 **Big platforms optimize for control. We optimize for ubiquity.**
 
@@ -112,9 +115,9 @@ Fal, Replicate, OpenRouter charge developers. We let developers build free — t
 
 ## Slide 8: Business Model
 
-**We Sell Usage, Not Seats**
+**Revenue Scales With End Users, Not Developer Headcount**
 
-We don’t need developers to pay — we need their users to pay.
+We don't need developers to pay — we need their users to pay.
 
 **How Money Flows:**
 
@@ -125,7 +128,7 @@ Developer builds free → launches app → end users buy Pollen → we collect r
 **Unit Economics:**
 - Developer acquisition: $0
 - End user acquisition: $0 (developers bring them)
-- Revenue: Usage-based pricing on premium models
+- Revenue: Usage-based pricing on advanced models
 
 **Proof Point:**
 One developer built a Roblox game on our platform — 51M visits, $12K/month revenue. They pay us $500/month in Pollen. *That’s the model at work.*
@@ -134,18 +137,18 @@ One developer built a Roblox game on our platform — 51M visits, $12K/month rev
 
 ## Slide 9: Addressing Skeptics
 
-**“Indie Platforms Don’t Scale”**
+**"Indie Platforms Don't Scale"**
 
-| Skeptic View | Reality |
-| --- | --- |
-| “You sell to hobbyists” | We sell usage, not people |
-| “ARPU is too low” | We aggregate usage across 800+ products |
-| “Churn kills you” | Usage compounds inside surviving products |
-| “No enterprise = no scale” | Enterprise emerges from embedded usage |
+Neither did:
+- **Stripe** (side projects → $70B+ company)
+- **AWS** (startups → cloud standard)
+- **Firebase** (hobbyists → acquired by Google)
 
-**We don’t need every builder to succeed. We need to be inside the ones that do.**
+Until they were inside the products that won.
 
-*This is the Stripe/Firebase curve, not a SaaS curve.*
+We're B2B2C. Teens are the next wave of entrepreneurs. Everyone is going to be in business with AI. We need to be inside the ones that succeed.
+
+**A thousand seeds. We only need a few to bloom.**
 
 ---
 

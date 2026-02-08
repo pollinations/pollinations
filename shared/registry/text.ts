@@ -225,19 +225,19 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemini-search": {
-        aliases: ["gemini-3-flash-search"],
-        modelId: "gemini-3-flash-preview",
+        aliases: ["gemini-2.5-flash-search", "gemini-2.5-flash-lite-search"],
+        modelId: "gemini-2.5-flash-lite",
         provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.5),
-                promptCachedTokens: perMillion(0.05),
-                promptAudioTokens: perMillion(0.5), // Audio billed at same rate as text
-                completionTextTokens: perMillion(3.0),
+                promptTextTokens: perMillion(0.1),
+                promptCachedTokens: perMillion(0.01),
+                promptAudioTokens: perMillion(0.1), // Audio billed at same rate as text
+                completionTextTokens: perMillion(0.4),
             },
         ],
-        description: "Google Gemini 3 Flash - With Google Search",
+        description: "Google Gemini 2.5 Flash Lite - With Google Search",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: false,

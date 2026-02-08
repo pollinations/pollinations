@@ -24,7 +24,7 @@ const ACCOUNT_PERMISSIONS = [
     {
         id: "balance",
         label: "Balance",
-        tooltip: "Read balance (tier + paid) and key budget",
+        tooltip: "Read pollen balance and key budget",
     },
     {
         id: "usage",

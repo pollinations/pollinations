@@ -81,6 +81,10 @@ const profileResponseSchema = z.object({
     name: z.string().nullable().describe("User's display name"),
     email: z.email().nullable().describe("User's email address"),
     githubUsername: z.string().nullable().describe("GitHub username if linked"),
+    image: z
+        .string()
+        .nullable()
+        .describe("Profile picture URL (e.g. GitHub avatar)"),
     tier: z
         .enum(["anonymous", ...tierNames])
         .describe("User's current tier level"),
@@ -96,9 +100,13 @@ const profileResponseSchema = z.object({
 const balanceResponseSchema = z.object({
     balance: z
         .number()
-        .describe(
-            "Remaining pollen balance (combines tier, pack, and crypto balances)",
-        ),
+        .describe("Total remaining pollen balance (tier + pack combined)"),
+    tierBalance: z
+        .number()
+        .describe("Free daily tier pollen (refills at midnight UTC)"),
+    packBalance: z
+        .number()
+        .describe("Purchased pollen credits (includes crypto balance)"),
 });
 
 const usageRecordSchema = z.object({
@@ -193,6 +201,7 @@ export const accountRoutes = new Hono<Env>()
                     name: userTable.name,
                     email: userTable.email,
                     githubUsername: userTable.githubUsername,
+                    image: userTable.image,
                     tier: userTable.tier,
                     createdAt: userTable.createdAt,
                     lastTierGrant: userTable.lastTierGrant,
@@ -213,6 +222,7 @@ export const accountRoutes = new Hono<Env>()
                 name: profile.name,
                 email: profile.email,
                 githubUsername: profile.githubUsername ?? null,
+                image: profile.image ?? null,
                 tier: profile.tier,
                 createdAt: profile.createdAt,
                 nextResetAt,
@@ -254,12 +264,16 @@ export const accountRoutes = new Hono<Env>()
                 });
             }
 
-            // If API key has a budget, return that
+            // If API key has a budget, return that (no breakdown available)
             if (apiKey?.pollenBalance != null) {
-                return c.json({ balance: apiKey.pollenBalance });
+                return c.json({
+                    balance: apiKey.pollenBalance,
+                    tierBalance: 0,
+                    packBalance: apiKey.pollenBalance,
+                });
             }
 
-            // Otherwise return user's total balance
+            // Otherwise return user's balance with breakdown
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({
@@ -272,11 +286,13 @@ export const accountRoutes = new Hono<Env>()
                 .limit(1);
 
             const tierBalance = users[0]?.tierBalance ?? 0;
-            const packBalance = users[0]?.packBalance ?? 0;
-            const cryptoBalance = users[0]?.cryptoBalance ?? 0;
+            const packBalance =
+                (users[0]?.packBalance ?? 0) + (users[0]?.cryptoBalance ?? 0);
 
             return c.json({
-                balance: tierBalance + packBalance + cryptoBalance,
+                balance: tierBalance + packBalance,
+                tierBalance,
+                packBalance,
             });
         },
     )

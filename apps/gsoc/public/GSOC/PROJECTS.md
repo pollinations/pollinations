@@ -64,7 +64,7 @@ title: Universal Multimodal Semantic Cache
 category: Infrastructure
 difficulty: Advanced
 duration: 350
-mentor: 0xmnt01
+mentor: 0xmnt03
 technologies: CLIP, Cloudflare Vectorize, FAISS, TypeScript
 ---
 
@@ -94,7 +94,7 @@ title: Generative Assistant
 category: AI/ML
 difficulty: Advanced
 duration: 350
-mentor: 0xmnt03
+mentor: 0xmnt01
 technologies: TypeScript, Streaming SSE, Semantic Routing, Markdown
 ---
 

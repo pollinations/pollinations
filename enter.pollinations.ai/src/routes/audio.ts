@@ -23,7 +23,7 @@ import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import type { Env } from "../env.ts";
 
-const DEFAULT_ELEVENLABS_MODEL = "eleven_multilingual_v2";
+const DEFAULT_ELEVENLABS_MODEL = "eleven_v3";
 
 const CreateSpeechRequestSchema = z
     .object({

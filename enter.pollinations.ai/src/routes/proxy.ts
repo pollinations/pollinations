@@ -21,6 +21,7 @@ const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
 
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import {
+    getAudioModelsInfo,
     getImageModelsInfo,
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
@@ -142,6 +143,10 @@ export const proxyRoutes = new Hono<Env>()
         auth({ allowApiKey: true, allowSessionCookie: false }),
     )
     .use("/text/models", auth({ allowApiKey: true, allowSessionCookie: false }))
+    .use(
+        "/audio/models",
+        auth({ allowApiKey: true, allowSessionCookie: false }),
+    )
     .get(
         "/v1/models",
         describeRoute({
@@ -243,6 +248,38 @@ export const proxyRoutes = new Hono<Env>()
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const models = filterModelsByPermissions(
                 getTextModelsInfo(),
+                allowedModels,
+            );
+            return c.json(models);
+        },
+    )
+    .get(
+        "/audio/models",
+        describeRoute({
+            tags: ["gen.pollinations.ai"],
+            description:
+                "Get a list of available audio models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(z.any()).meta({
+                                    description:
+                                        "List of models with pricing and metadata",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(500),
+            },
+        }),
+        (c) => {
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const models = filterModelsByPermissions(
+                getAudioModelsInfo(),
                 allowedModels,
             );
             return c.json(models);

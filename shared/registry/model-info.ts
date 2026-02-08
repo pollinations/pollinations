@@ -71,19 +71,25 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
  * Get all text models with enriched information
  */
 export function getTextModelsInfo(): ModelInfo[] {
-    return getTextServices().map(getModelInfo);
+    return getTextServices()
+        .filter((id) => !getServiceDefinition(id).hidden)
+        .map(getModelInfo);
 }
 
 /**
  * Get all image models with enriched information
  */
 export function getImageModelsInfo(): ModelInfo[] {
-    return getImageServices().map(getModelInfo);
+    return getImageServices()
+        .filter((id) => !getServiceDefinition(id).hidden)
+        .map(getModelInfo);
 }
 
 /**
  * Get all audio models with enriched information
  */
 export function getAudioModelsInfo(): ModelInfo[] {
-    return getAudioServices().map(getModelInfo);
+    return getAudioServices()
+        .filter((id) => !getServiceDefinition(id).hidden)
+        .map(getModelInfo);
 }

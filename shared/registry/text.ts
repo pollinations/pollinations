@@ -333,6 +333,25 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
+    "opus-large-legacy": {
+        aliases: ["claude-opus-4.5"],
+        modelId: "claude-opus-4-5-20251101",
+        provider: "google",
+        paidOnly: true,
+        hidden: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(5.0),
+                completionTextTokens: perMillion(25.0),
+            },
+        ],
+        description: "Anthropic Claude Opus 4.5 - Legacy",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
     "perplexity-fast": {
         aliases: ["sonar"],
         modelId: "sonar",

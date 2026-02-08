@@ -83,6 +83,11 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
+        name: "opus-large-legacy",
+        config: portkeyConfig["claude-opus-4-5-fallback"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
         name: "gemini",
         config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(

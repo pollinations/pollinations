@@ -85,6 +85,7 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
     persona?: boolean;
     paidOnly?: boolean; // Models that require paid balance only
     alpha?: boolean; // Experimental models with potential instability
+    hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
 };
 
 /** Sorts the cost and price definitions by date, in descending order */

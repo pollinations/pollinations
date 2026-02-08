@@ -60,13 +60,13 @@ function serviceToModel(
 }
 
 // Build the full model lists from the shared registry (instant, no fetch)
-const REGISTRY_IMAGE_MODELS: Model[] = getImageServices().map((id) =>
-    serviceToModel(id, "image"),
-);
+const REGISTRY_IMAGE_MODELS: Model[] = getImageServices()
+    .filter((id) => !getServiceDefinition(id).hidden)
+    .map((id) => serviceToModel(id, "image"));
 const REGISTRY_TEXT_MODELS: Model[] = getTextServices()
     .filter((id) => {
         const def = getServiceDefinition(id);
-        return !def.outputModalities?.includes("audio");
+        return !def.hidden && !def.outputModalities?.includes("audio");
     })
     .map((id) => serviceToModel(id, "text"));
 const REGISTRY_AUDIO_MODELS: Model[] = [
@@ -74,11 +74,13 @@ const REGISTRY_AUDIO_MODELS: Model[] = [
     ...getTextServices()
         .filter((id) => {
             const def = getServiceDefinition(id);
-            return def.outputModalities?.includes("audio");
+            return !def.hidden && def.outputModalities?.includes("audio");
         })
         .map((id) => serviceToModel(id, "audio")),
     // Dedicated audio services
-    ...getAudioServices().map((id) => serviceToModel(id, "audio")),
+    ...getAudioServices()
+        .filter((id) => !getServiceDefinition(id).hidden)
+        .map((id) => serviceToModel(id, "audio")),
 ];
 const ALL_MODELS: Model[] = [
     ...REGISTRY_IMAGE_MODELS,

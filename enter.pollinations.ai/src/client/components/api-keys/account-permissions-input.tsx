@@ -1,3 +1,4 @@
+import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { FC } from "react";
@@ -60,6 +61,13 @@ const videoModels = Object.entries(IMAGE_SERVICES)
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 
+const audioModels = Object.keys(AUDIO_SERVICES)
+    .map((id) => ({
+        id,
+        label: getModelDisplayName(id),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
 /**
  * Unified permissions input for API keys.
  * Includes model restrictions and account permissions (profile, balance, usage).
@@ -88,7 +96,10 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     // Model permissions logic
     const isUnrestricted = allowedModels === null;
     const totalModels =
-        textModels.length + imageModels.length + videoModels.length;
+        textModels.length +
+        imageModels.length +
+        videoModels.length +
+        audioModels.length;
     const selectedCount = isUnrestricted
         ? totalModels
         : (allowedModels ?? []).length;
@@ -276,6 +287,41 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     {videoModels.map((model) => (
+                                        <ModelChip
+                                            key={model.id}
+                                            apiName={model.id}
+                                            officialName={model.label}
+                                            selected={isModelSelected(model.id)}
+                                            onClick={() =>
+                                                toggleModel(model.id)
+                                            }
+                                            disabled={disabled}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Audio models */}
+                            <div>
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs font-semibold text-gray-500 tracking-wide">
+                                        Audio
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            toggleCategory(audioModels)
+                                        }
+                                        disabled={disabled}
+                                        className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                    >
+                                        {isCategoryAllSelected(audioModels)
+                                            ? "Deselect all"
+                                            : "Select all"}
+                                    </button>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    {audioModels.map((model) => (
                                         <ModelChip
                                             key={model.id}
                                             apiName={model.id}

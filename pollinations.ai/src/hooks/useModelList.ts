@@ -5,7 +5,7 @@ import {
     getTextServices,
     type ServiceId,
 } from "@shared/registry/registry";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { API_BASE } from "../api.config";
 
 const IMAGE_MODELS_URL = `${API_BASE}/image/models`;
@@ -78,6 +78,11 @@ const REGISTRY_AUDIO_MODELS: Model[] = [
         .map((id) => serviceToModel(id, "audio")),
     // Dedicated audio services
     ...getAudioServices().map((id) => serviceToModel(id, "audio")),
+];
+const ALL_MODELS: Model[] = [
+    ...REGISTRY_IMAGE_MODELS,
+    ...REGISTRY_TEXT_MODELS,
+    ...REGISTRY_AUDIO_MODELS,
 ];
 
 /**
@@ -170,15 +175,6 @@ export function useModelList(apiKey: string): UseModelListReturn {
         fetchAllowed();
     }, [apiKey]);
 
-    const allModels = useMemo(
-        () => [
-            ...REGISTRY_IMAGE_MODELS,
-            ...REGISTRY_TEXT_MODELS,
-            ...REGISTRY_AUDIO_MODELS,
-        ],
-        [],
-    );
-
     return {
         imageModels: REGISTRY_IMAGE_MODELS,
         textModels: REGISTRY_TEXT_MODELS,
@@ -188,6 +184,6 @@ export function useModelList(apiKey: string): UseModelListReturn {
         allowedAudioModelIds,
         isLoading,
         error,
-        allModels,
+        allModels: ALL_MODELS,
     };
 }

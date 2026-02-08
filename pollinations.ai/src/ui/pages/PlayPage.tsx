@@ -145,7 +145,7 @@ function PlayPage() {
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
                                 placeholder={pageCopy.imagePlaceholder}
-                                className="min-h-[100px] p-3 border border-border rounded bg-transparent font-bold text-[#fff] focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                                className="min-h-[100px] p-3 border border-border rounded bg-transparent font-bold text-text-body-main focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                             />
                         </div>
                         <PlayGenerator

@@ -5,7 +5,8 @@ export const PLAY_PAGE = {
     createTitle: "Create",
     watchTitle: "Watch",
     createDescription:
-        "Test our API, play with different models, and see what you can create. This is a fun demo playground—not our main product, just a place to explore and experiment.",
+        "Try any model. This is a fun demo playground—not our main product, just a place to explore and experiment.",
+    pricingLinkText: "See pricing",
     feedDescription:
         "Watch the global pulse of our network in real-time. See what the community is creating right now through our APIs.",
     toggleWatchOthers: "Watch what others are making",
@@ -34,6 +35,7 @@ export const PLAY_PAGE = {
     generateImageButton: "Generate Image",
     generateTextButton: "Generate Text",
     generateAudioButton: "Generate Audio",
+    generateVideoButton: "Generate Video",
 
     // Tooltips
     seedTooltip: "Same seed + same prompt = same image",
@@ -65,8 +67,10 @@ export const PLAY_PAGE = {
     pollenUnit: "Pollen",
 
     // Login CTA
-    loginCtaText: "Login to unlock all models · Get API keys at",
-    loginCtaLink: "enter.pollinations.ai",
+    loginCtaLogin: "Login",
+    loginCtaOr: "or",
+    loginCtaRegister: "Register",
+    loginCtaSuffix: "to unlock all models and get API keys",
     loggedInCtaText: "🔓 Selected models are now unlocked!",
 
     // Validation

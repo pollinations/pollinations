@@ -1,7 +1,8 @@
 import { BotIcon, DownloadIcon, SendIcon, SparklesIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { API_BASE, DEFAULTS } from "../../../api.config";
+import { DEFAULTS } from "../../../api.config";
 import { AUTH_COPY } from "../../../copy/content/auth";
+import { useModelList } from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
 import { generateBackground } from "../../../theme/guidelines/helpers/animator";
 import { generateTheme } from "../../../theme/guidelines/helpers/designer";
@@ -33,33 +34,26 @@ export function AIPromptInput({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const [selectedModel, setSelectedModel] = useState(DEFAULTS.TEXT_MODEL);
-    const [textModels, setTextModels] = useState<string[]>([]);
     const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const { setTheme, themeDefinition, themePrompt, backgroundHtml } =
         useTheme();
 
-    // Fetch available text models
+    // Get text models from shared hook (no duplicate fetch)
+    const { textModels: textModelObjects, allowedTextModelIds } = useModelList(
+        apiKey || "",
+    );
+    const textModels = textModelObjects
+        .filter((m) => allowedTextModelIds.has(m.id))
+        .map((m) => m.id);
+
+    // If default model isn't in the allowed list, select the first available
     useEffect(() => {
-        if (!isLoggedIn || !apiKey) return;
-        fetch(`${API_BASE}/text/models`, {
-            headers: { Authorization: `Bearer ${apiKey}` },
-        })
-            .then((res) => res.json())
-            .then((list) => {
-                const ids: string[] = list.map(
-                    (m: { id?: string; name?: string } | string) =>
-                        typeof m === "string" ? m : m.id || m.name || "",
-                );
-                setTextModels(ids);
-                // If default model isn't in the list, select the first available
-                if (ids.length > 0 && !ids.includes(DEFAULTS.TEXT_MODEL)) {
-                    setSelectedModel(ids[0]);
-                }
-            })
-            .catch(() => {});
-    }, [isLoggedIn, apiKey]);
+        if (textModels.length > 0 && !textModels.includes(selectedModel)) {
+            setSelectedModel(textModels[0]);
+        }
+    }, [textModels, selectedModel]);
 
     // Generate theme and background when activePrompt changes
     useEffect(() => {

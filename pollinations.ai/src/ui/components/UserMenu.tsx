@@ -105,7 +105,7 @@ export function UserMenu() {
                             {copy.apiKeyLabel}
                         </span>
                         <span className="font-mono text-sm text-text-body-secondary">
-                            {apiKey.slice(0, 7)}••••
+                            {apiKey.slice(0, 4)}••••••••
                         </span>
                     </div>
 

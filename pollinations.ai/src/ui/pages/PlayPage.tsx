@@ -21,6 +21,7 @@ function PlayPage() {
         imageModels,
         textModels,
         audioModels,
+        allModels: registryModels,
         allowedImageModelIds,
         allowedTextModelIds,
         allowedAudioModelIds,
@@ -30,30 +31,24 @@ function PlayPage() {
     const { copy: pageCopy, isTranslating } = usePageCopy(PLAY_PAGE);
 
     const allModels = useMemo(() => {
-        const models = [
-            ...imageModels.map((m) => ({ ...m, type: "image" as const })),
-            ...textModels.map((m) => ({ ...m, type: "text" as const })),
-            ...audioModels.map((m) => ({ ...m, type: "audio" as const })),
-        ];
         const typeOrder: Record<string, number> = {
             image: 0,
             video: 1,
             text: 2,
             audio: 3,
         };
-        const effectiveType = (m: (typeof models)[0]) =>
+        const effectiveType = (m: (typeof registryModels)[0]) =>
             m.hasVideoOutput
                 ? "video"
                 : m.hasAudioOutput || m.type === "audio"
                   ? "audio"
                   : m.type;
-        models.sort(
+        return [...registryModels].sort(
             (a, b) =>
                 (typeOrder[effectiveType(a)] ?? 99) -
                 (typeOrder[effectiveType(b)] ?? 99),
         );
-        return models;
-    }, [imageModels, textModels, audioModels]);
+    }, [registryModels]);
 
     return (
         <PageContainer>
@@ -145,7 +140,7 @@ function PlayPage() {
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
                                 placeholder={pageCopy.imagePlaceholder}
-                                className="min-h-[100px] p-3 border border-border rounded bg-transparent font-bold text-text-body-main focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                                className="min-h-[100px] p-3 border border-border-main rounded bg-transparent font-bold text-text-body-main focus:outline-none focus:ring-2 focus:ring-border-brand resize-none"
                             />
                         </div>
                         <PlayGenerator

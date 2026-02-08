@@ -90,7 +90,7 @@ No API keys. No backend. No billing integration. Text, image, audio, video — j
 Our moat is not models (commoditized) or price (race to bottom). It’s the network effect.
 
 **We sell through developers, not to them**
-Fal ($4.5B valuation, $200M+ ARR) and OpenRouter ($100M+ ARR, 5-person team) charge developers. We let developers build free — then monetize the end users they bring. They validate the model. We go further.
+Fal ($4.5B valuation, $200M+ ARR) and OpenRouter ($40M raised from a16z + Sequoia, $500M valuation, ~8 people) charge developers. We let developers build free — then monetize the end users they bring. They validate the model. We go further.
 
 **Self-scaling distribution**
 1,000+ apps already live. Each one is a customer acquisition channel we didn't pay for.
@@ -114,6 +114,14 @@ For end users: one account, 1,000+ AI apps, one balance. The App Store of AI.
 | Primary customer | Researchers | Enterprises | Developers | Creators |
 | Entry point | Use models | Pay-per-use API | API key | No signup needed |
 | Business model | Enterprise tooling | Contracts + GPU | Usage fees | End users buy Pollen |
+
+**OpenRouter: Market Validation + What's Different in 2026**
+
+OpenRouter raised $40M (a16z, Menlo Ventures, Sequoia) at a $500M valuation in early 2025 — seed and Series A two months apart. ~8 people. $5M ARR off $100M in annualized inference spend (5% take rate). They proved that a unified AI API is a venture-scale category.
+
+But they stopped at the developer layer. Their revenue = percentage of what developers spend on inference. In 2026, model aggregation is table stakes — the question is: **who captures the end user?**
+
+OpenRouter is infrastructure for developers. Pollinations is infrastructure for products that reach consumers. They have 1M developers paying them. We have 1,000+ apps paying us through their users — via the Pollen economy.
 
 **Big platforms optimize for control. We optimize for ubiquity.**
 

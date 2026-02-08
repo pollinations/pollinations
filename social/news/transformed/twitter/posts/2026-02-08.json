@@ -1,0 +1,26 @@
+{
+  "date": "2026-02-08",
+  "generated_at": "2026-02-08T00:16:47.825831+00:00",
+  "platform": "twitter",
+  "tweet_type": "shipped",
+  "tweet": "just shipped support for google's imagen-4, flux-2-dev & grok-video (alpha). ⚡️\n\nplus: full elevenlabs tts integration (openai-compatible).\n\nbig day for the api. open source, free credits, no gatekeeping. go build something weird.",
+  "alt_tweet": "model drop incoming: imagen-4, flux-2-dev, and grok-video are now live on the api.\n\nalso fixed those annoying 524 timeouts on the gateway and added elevenlabs tts support.\n\nshipping fast, staying open. 🌸",
+  "full_tweet": "just shipped support for google's imagen-4, flux-2-dev & grok-video (alpha). ⚡️\n\nplus: full elevenlabs tts integration (openai-compatible).\n\nbig day for the api. open source, free credits, no gatekeeping. go build something weird. #OpenSource #AI #GenerativeAI",
+  "hashtags": [
+    "#OpenSource",
+    "#AI",
+    "#GenerativeAI"
+  ],
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/twitter/posts/2026-02-08-image.jpg",
+    "prompt": "Dynamic pixel art scene. A pixelated bee character excitedly plugging three glowing futuristic cartridges into a retro console server rack. Cartridges glow neon blue, green, and purple. Screen background displays 'SYSTEM UPGRADE: COMPLETE'. High contrast, lime green #ecf874 accents, energetic atmosphere, cozy retro gaming vibes like Stardew Valley."
+  },
+  "reasoning": "Focuses heavily on the high-value model additions (Imagen 4, Flux 2, Grok) which are major hooks for devs. The tone is casual but competent ('go build something weird').",
+  "pr_references": [
+    "#8063",
+    "#7281",
+    "#8053",
+    "#8026"
+  ],
+  "char_count": 260
+}

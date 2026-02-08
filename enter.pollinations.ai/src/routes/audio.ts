@@ -34,12 +34,22 @@ const CreateSpeechRequestSchema = z
             example: "Hello, welcome to Pollinations!",
         }),
         voice: z
-            .string()
+            .enum(ELEVENLABS_VOICES as unknown as [string, ...string[]])
             .default("alloy")
             .meta({
-                description: `The voice to use for TTS. Available voices: ${ELEVENLABS_VOICES.join(", ")}. For heartmula, this field is used as music tags.`,
+                description: `The voice to use for TTS. Available voices: ${ELEVENLABS_VOICES.join(", ")}.`,
                 example: "rachel",
             }),
+        lyrics: z.string().max(4096).optional().meta({
+            description:
+                "Song lyrics for music generation (heartmula only). If omitted, `input` is used as lyrics.",
+            example: "La la la, sunshine on my face",
+        }),
+        tags: z.string().max(200).optional().meta({
+            description:
+                'Music style/genre tags (heartmula only). Comma-separated descriptors.',
+            example: "pop, female vocal, upbeat",
+        }),
         response_format: z
             .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
             .default("mp3")
@@ -53,7 +63,7 @@ const CreateSpeechRequestSchema = z
             example: 1.0,
         }),
         duration: z.number().min(3).max(300).optional().meta({
-            description: "Music duration in seconds, 3-300 (elevenmusic only)",
+            description: "Music duration in seconds, 3-300 (music models only)",
             example: 30,
         }),
         instrumental: z.boolean().optional().meta({
@@ -420,19 +430,21 @@ export const audioRoutes = new Hono<Env>()
                 );
             }
 
-            const { input, voice, response_format } = c.req.valid(
-                "json" as never,
-            ) as CreateSpeechRequest;
-            const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
-                .ELEVENLABS_API_KEY;
+            const {
+                input,
+                voice,
+                response_format,
+                duration,
+                instrumental,
+                lyrics,
+                tags,
+            } = c.req.valid("json" as never) as CreateSpeechRequest;
+            const apiKey = c.env.ELEVENLABS_API_KEY;
 
             if (c.var.model.resolved === "heartmula") {
-                const { duration, voice: tags } = c.req.valid(
-                    "json" as never,
-                ) as CreateSpeechRequest;
                 return generateHeartMuLaMusic({
-                    prompt: input,
-                    tags: tags !== "alloy" ? tags : undefined,
+                    prompt: lyrics || input,
+                    tags,
                     durationSeconds: duration,
                     serviceUrl: c.env.MUSIC_SERVICE_URL,
                     backendToken: c.env.PLN_IMAGE_BACKEND_TOKEN,
@@ -441,9 +453,6 @@ export const audioRoutes = new Hono<Env>()
             }
 
             if (c.var.model.resolved === "elevenmusic") {
-                const { duration, instrumental } = c.req.valid(
-                    "json" as never,
-                ) as CreateSpeechRequest;
                 return generateMusic({
                     prompt: input,
                     durationSeconds: duration,

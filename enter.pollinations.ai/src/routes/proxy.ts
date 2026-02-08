@@ -552,7 +552,7 @@ export const proxyRoutes = new Hono<Env>()
                     .transform((v) => (v ? parseFloat(v) : undefined))
                     .meta({
                         description:
-                            "Music duration in seconds, 3-300 (elevenmusic only)",
+                            "Music duration in seconds, 3-300 (music models only)",
                         example: "30",
                     }),
                 instrumental: z
@@ -564,6 +564,16 @@ export const proxyRoutes = new Hono<Env>()
                             "If true, guarantees instrumental output (elevenmusic only)",
                         example: "false",
                     }),
+                lyrics: z.string().optional().meta({
+                    description:
+                        "Song lyrics for music generation (heartmula only). If omitted, the :text param is used as lyrics.",
+                    example: "La la la, sunshine on my face",
+                }),
+                tags: z.string().optional().meta({
+                    description:
+                        "Music style/genre tags (heartmula only). Comma-separated descriptors.",
+                    example: "pop, female vocal, upbeat",
+                }),
                 key: z.string().optional().meta({
                     description:
                         "API key (alternative to Authorization header)",
@@ -578,17 +588,19 @@ export const proxyRoutes = new Hono<Env>()
             await checkBalance(c.var);
 
             const text = decodeURIComponent(c.req.param("text"));
-            const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
-                .ELEVENLABS_API_KEY;
+            const apiKey = c.env.ELEVENLABS_API_KEY;
 
             if (c.var.model.resolved === "heartmula") {
-                const { duration, voice } = c.req.valid("query" as never) as {
+                const { duration, lyrics, tags } = c.req.valid(
+                    "query" as never,
+                ) as {
                     duration?: number;
-                    voice?: string;
+                    lyrics?: string;
+                    tags?: string;
                 };
                 return generateHeartMuLaMusic({
-                    prompt: text,
-                    tags: voice,
+                    prompt: lyrics || text,
+                    tags,
                     durationSeconds: duration,
                     serviceUrl: c.env.MUSIC_SERVICE_URL,
                     backendToken: c.env.PLN_IMAGE_BACKEND_TOKEN,

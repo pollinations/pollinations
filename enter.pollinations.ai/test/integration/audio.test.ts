@@ -109,6 +109,61 @@ describe("ElevenLabs Music", () => {
     );
 });
 
+describe("HeartMuLa Music", () => {
+    test(
+        "GET /audio/:text with model=heartmula returns audio",
+        { timeout: 120000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/audio/A%20short%20pop%20song%20about%20sunshine?model=heartmula&duration=15&tags=pop%2C%20upbeat`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                },
+            );
+            expect(response.status).toBe(200);
+            expect(response.headers.get("content-type")).toContain("audio/");
+            expect(response.headers.get("x-model-used")).toBe("heartmula");
+
+            const arrayBuffer = await response.arrayBuffer();
+            expect(arrayBuffer.byteLength).toBeGreaterThan(0);
+        },
+    );
+
+    test(
+        "POST /v1/audio/speech with model=heartmula returns audio",
+        { timeout: 120000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/audio/speech`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "heartmula",
+                        input: "A short pop song about sunshine",
+                        tags: "rock, energetic",
+                        duration: 15,
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            expect(response.headers.get("content-type")).toContain("audio/");
+            expect(response.headers.get("x-model-used")).toBe("heartmula");
+
+            const arrayBuffer = await response.arrayBuffer();
+            expect(arrayBuffer.byteLength).toBeGreaterThan(0);
+        },
+    );
+});
+
 describe("Whisper Transcription", () => {
     test(
         "POST /v1/audio/transcriptions returns text",

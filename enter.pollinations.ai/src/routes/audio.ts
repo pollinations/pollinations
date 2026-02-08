@@ -7,12 +7,14 @@ import {
     createAudioTokenUsage,
 } from "@shared/registry/usage-headers.ts";
 import { Hono } from "hono";
+import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
@@ -163,15 +165,11 @@ export async function generateSpeech(opts: {
 }
 
 /** Set model for tracking — audio routes have fixed providers, no model resolution needed */
-function fixedModel(serviceId: ServiceId) {
-    return async (
-        c: { set: (key: string, value: unknown) => void },
-        next: () => Promise<void>,
-    ) => {
+const fixedModel = (serviceId: ServiceId) =>
+    createMiddleware<{ Variables: ModelVariables }>(async (c, next) => {
         c.set("model", { requested: serviceId, resolved: serviceId });
         await next();
-    };
-}
+    });
 
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
@@ -376,10 +374,10 @@ export const audioRoutes = new Hono<Env>()
 
             // Read body to extract duration for usage billing
             const responseBody = await response.text();
-            const usageHeaders = extractWhisperUsageHeaders(
-                responseBody,
+            const duration = extractWhisperUsage(responseBody, log);
+            const usageHeaders = buildUsageHeaders(
                 c.var.model.resolved,
-                log,
+                createAudioSecondsUsage(duration),
             );
 
             // Build final response with usage headers
@@ -398,22 +396,14 @@ export const audioRoutes = new Hono<Env>()
  * Extract usage from Whisper response body and build tracking headers.
  * OVH returns: {"usage": {"type": "duration", "duration": 21.0}, ...}
  */
-function extractWhisperUsageHeaders(
-    responseBody: string,
-    modelUsed: string,
-    log: Logger,
-): Record<string, string> {
-    try {
-        const json = JSON.parse(responseBody);
-        if (json.usage?.duration) {
-            const usage = createAudioSecondsUsage(json.usage.duration);
-            log.debug("Whisper usage: {duration}s", {
-                duration: json.usage.duration,
-            });
-            return buildUsageHeaders(modelUsed, usage);
-        }
-    } catch {
-        log.warn("Failed to parse whisper response for usage");
+function extractWhisperUsage(responseBody: string, log: Logger): number {
+    const json = JSON.parse(responseBody);
+    const duration = json.usage?.duration;
+    if (typeof duration !== "number" || duration <= 0) {
+        throw new Error(
+            `Whisper response missing usage.duration: ${JSON.stringify(json.usage)}`,
+        );
     }
-    return { "x-model-used": modelUsed };
+    log.debug("Whisper usage: {duration}s", { duration });
+    return duration;
 }

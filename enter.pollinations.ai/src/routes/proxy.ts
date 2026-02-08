@@ -564,14 +564,9 @@ export const proxyRoutes = new Hono<Env>()
                             "If true, guarantees instrumental output (elevenmusic only)",
                         example: "false",
                     }),
-                lyrics: z.string().optional().meta({
+                style: z.string().optional().meta({
                     description:
-                        "Song lyrics for music generation (heartmula only). If omitted, the :text param is used as lyrics.",
-                    example: "La la la, sunshine on my face",
-                }),
-                tags: z.string().optional().meta({
-                    description:
-                        "Music style/genre tags (heartmula only). Comma-separated descriptors.",
+                        "Music style/genre descriptors for music models (heartmula, elevenmusic). Comma-separated tags, e.g. 'pop, female vocal, upbeat'.",
                     example: "pop, female vocal, upbeat",
                 }),
                 key: z.string().optional().meta({
@@ -591,16 +586,13 @@ export const proxyRoutes = new Hono<Env>()
             const apiKey = c.env.ELEVENLABS_API_KEY;
 
             if (c.var.model.resolved === "heartmula") {
-                const { duration, lyrics, tags } = c.req.valid(
-                    "query" as never,
-                ) as {
+                const { duration, style } = c.req.valid("query" as never) as {
                     duration?: number;
-                    lyrics?: string;
-                    tags?: string;
+                    style?: string;
                 };
                 return generateHeartMuLaMusic({
-                    prompt: lyrics || text,
-                    tags,
+                    prompt: text,
+                    style,
                     durationSeconds: duration,
                     serviceUrl: c.env.MUSIC_SERVICE_URL,
                     backendToken: c.env.PLN_IMAGE_BACKEND_TOKEN,
@@ -609,14 +601,16 @@ export const proxyRoutes = new Hono<Env>()
             }
 
             if (c.var.model.resolved === "elevenmusic") {
-                const { duration, instrumental } = c.req.valid(
+                const { duration, instrumental, style } = c.req.valid(
                     "query" as never,
                 ) as {
                     duration?: number;
                     instrumental?: boolean;
+                    style?: string;
                 };
                 return generateMusic({
                     prompt: text,
+                    style,
                     durationSeconds: duration,
                     forceInstrumental: instrumental,
                     apiKey,

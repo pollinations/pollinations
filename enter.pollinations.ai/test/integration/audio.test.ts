@@ -116,7 +116,7 @@ describe("HeartMuLa Music", () => {
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/audio/A%20short%20pop%20song%20about%20sunshine?model=heartmula&duration=15&tags=pop%2C%20upbeat`,
+                `http://localhost:3000/api/generate/audio/A%20short%20pop%20song%20about%20sunshine?model=heartmula&duration=15&style=pop%2C%20upbeat`,
                 {
                     method: "GET",
                     headers: {
@@ -149,7 +149,7 @@ describe("HeartMuLa Music", () => {
                     body: JSON.stringify({
                         model: "heartmula",
                         input: "A short pop song about sunshine",
-                        tags: "rock, energetic",
+                        style: "rock, energetic",
                         duration: 15,
                     }),
                 },

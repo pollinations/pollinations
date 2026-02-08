@@ -40,14 +40,9 @@ const CreateSpeechRequestSchema = z
                 description: `The voice to use for TTS. Available voices: ${ELEVENLABS_VOICES.join(", ")}.`,
                 example: "rachel",
             }),
-        lyrics: z.string().max(4096).optional().meta({
+        style: z.string().max(200).optional().meta({
             description:
-                "Song lyrics for music generation (heartmula only). If omitted, `input` is used as lyrics.",
-            example: "La la la, sunshine on my face",
-        }),
-        tags: z.string().max(200).optional().meta({
-            description:
-                'Music style/genre tags (heartmula only). Comma-separated descriptors.',
+                "Music style/genre descriptors for music models (heartmula, elevenmusic). Comma-separated tags, e.g. 'pop, female vocal, upbeat'.",
             example: "pop, female vocal, upbeat",
         }),
         response_format: z
@@ -187,12 +182,14 @@ export async function generateSpeech(opts: {
 
 export async function generateMusic(opts: {
     prompt: string;
+    style?: string;
     durationSeconds?: number;
     forceInstrumental?: boolean;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, durationSeconds, forceInstrumental, apiKey, log } = opts;
+    const { prompt, style, durationSeconds, forceInstrumental, apiKey, log } =
+        opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -221,8 +218,10 @@ export async function generateMusic(opts: {
 
     const elevenLabsUrl = "https://api.elevenlabs.io/v1/music";
 
+    const combinedPrompt = [style, prompt].filter(Boolean).join("\n\n");
+
     const elevenLabsBody: Record<string, unknown> = {
-        prompt,
+        prompt: combinedPrompt,
         model_id: "music_v1",
     };
     if (durationSeconds !== undefined) {
@@ -281,13 +280,13 @@ export async function generateMusic(opts: {
 
 export async function generateHeartMuLaMusic(opts: {
     prompt: string;
-    tags?: string;
+    style?: string;
     durationSeconds?: number;
     serviceUrl: string;
     backendToken?: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, tags, durationSeconds, serviceUrl, backendToken, log } =
+    const { prompt, style, durationSeconds, serviceUrl, backendToken, log } =
         opts;
 
     if (!serviceUrl) {
@@ -308,7 +307,7 @@ export async function generateHeartMuLaMusic(opts: {
 
     const heartMuLaBody = {
         lyrics: prompt,
-        tags: tags || "pop, upbeat",
+        tags: style || "",
         max_length_ms: Math.min(maxLengthMs, 240000),
         temperature: 1.0,
         topk: 50,
@@ -436,15 +435,14 @@ export const audioRoutes = new Hono<Env>()
                 response_format,
                 duration,
                 instrumental,
-                lyrics,
-                tags,
+                style,
             } = c.req.valid("json" as never) as CreateSpeechRequest;
             const apiKey = c.env.ELEVENLABS_API_KEY;
 
             if (c.var.model.resolved === "heartmula") {
                 return generateHeartMuLaMusic({
-                    prompt: lyrics || input,
-                    tags,
+                    prompt: input,
+                    style,
                     durationSeconds: duration,
                     serviceUrl: c.env.MUSIC_SERVICE_URL,
                     backendToken: c.env.PLN_IMAGE_BACKEND_TOKEN,
@@ -455,6 +453,7 @@ export const audioRoutes = new Hono<Env>()
             if (c.var.model.resolved === "elevenmusic") {
                 return generateMusic({
                     prompt: input,
+                    style,
                     durationSeconds: duration,
                     forceInstrumental: instrumental,
                     apiKey,

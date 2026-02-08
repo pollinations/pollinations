@@ -1,0 +1,52 @@
+{
+  "date": "2026-02-07",
+  "generated_at": "2026-02-07T00:32:29.897338+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art",
+  "linked_images": true,
+  "strategy_reasoning": "Combining technical updates (SSE video support, backend optimization) into a cozy narrative about 'streamlining' the digital garden. Using the pixel art style to make backend fixes feel satisfying and tangible, like organizing a room.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-07-image-1.jpg",
+      "prompt": "Cozy 8-bit pixel art close-up of a retro CRT monitor sitting on a wooden desk surrounded by plants. On the screen, a loading bar is full and glowing lime green (#ecf874). A tiny pixel bee mascot sits on top of the monitor looking happy. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font on screen: 'Smoother Streams'. Nostalgic, peaceful.",
+      "description": "Visualizing the SSE support for video models as a smooth, completed loading experience on a retro screen."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-07-image-2.jpg",
+      "prompt": "Cozy pixel art scene of the Pollinations bee mascot connecting a glowing lime green (#ecf874) cable into a retro server machine that looks like a garden planter. Data particles flowing smoothly like water through the cable. Soft mint and cream background. Chunky retro sprites, warm hug energy. Text in pixel font: 'Video Upgrades'.",
+      "description": "Representing the api.airforce video model fixes as physical infrastructure work in a cozy garden lab."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-07-image-3.jpg",
+      "prompt": "Cozy 8-bit pixel art of a tidy workspace. The pixel bee is holding a clipboard next to a chart showing an arrow going up. The room is clean and organized, symbolizing the optimized Tinybird queries and fixed KPIs. Lime green (#ecf874) glow from the window. Atmospheric dust motes, calm vibes like Unpacking game. Text in pixel font: 'Tidying Up'.",
+      "description": "Visualizing the backend optimizations and churn fixes as a satisfying 'spring cleaning' moment."
+    }
+  ],
+  "caption": "POV: The dev team just did some spring cleaning in the code garden 🧹✨\n\nWe smoothed out the video generation streams (hello SSE support! 👋) and tidied up our analytics so everything runs faster. It’s giving organized, it’s giving efficient, it’s giving cozy vibes.\n\nBuilding in public means sometimes we just gotta fix the pipes so the flowers can bloom. 🌸\n\nLink in bio to try the smoother video models!\n\n#pollinations #opensource #pixelart #indiedev #cozyvibes #buildinpublic #8bit #generativeai",
+  "hashtags": [
+    "#pollinations",
+    "#pixelart",
+    "#opensource",
+    "#cozyvibes",
+    "#indiedev",
+    "#retrogaming",
+    "#generativeai"
+  ],
+  "alt_text": "A carousel of cozy pixel art images featuring a cute bee mascot. 1. A retro monitor with a lime green loading bar. 2. The bee connecting cables in a garden server room. 3. The bee organizing a tidy workspace. All in soft pastels and 8-bit style.",
+  "pr_references": [
+    "#8023",
+    "#7996",
+    "#7997",
+    "#7995",
+    "#8024",
+    "#8016",
+    "#8015",
+    "#8004",
+    "#7903",
+    "#8001",
+    "#7922",
+    "#8000",
+    "#7994"
+  ]
+}

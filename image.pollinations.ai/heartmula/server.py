@@ -5,15 +5,12 @@ Uses lazy_load=True to keep VRAM usage low (~7 GB peak).
 """
 
 import os
-import sys
 import time
 import tempfile
 import logging
 import threading
-import subprocess
 import torch
 import soundfile as sf
-import numpy as np
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import Response, JSONResponse
 from pydantic import BaseModel, Field
@@ -45,6 +42,7 @@ class MusicRequest(BaseModel):
 def patched_postprocess(self, model_outputs, save_path):
     """Save audio using soundfile instead of torchaudio (which requires torchcodec/FFmpeg)."""
     frames = model_outputs["frames"].to(self.codec_device)
+    frames = frames.clamp(0, 8191)
     wav = self.codec.detokenize(frames)
     audio_np = wav.to(torch.float32).cpu().numpy()
     if audio_np.ndim == 3:

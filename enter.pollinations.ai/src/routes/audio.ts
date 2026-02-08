@@ -42,8 +42,8 @@ const CreateSpeechRequestSchema = z
             }),
         style: z.string().max(200).optional().meta({
             description:
-                "Music style/genre descriptors for music models (heartmula, elevenmusic). Comma-separated tags, e.g. 'pop, female vocal, upbeat'.",
-            example: "pop, female vocal, upbeat",
+                "Music style/genre descriptors for music models. Comma-separated tags, e.g. 'pop,female vocal,upbeat'. For heartmula, spaces after commas are stripped automatically.",
+            example: "pop,female vocal,upbeat",
         }),
         response_format: z
             .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
@@ -252,30 +252,7 @@ export async function generateMusic(opts: {
         });
     }
 
-    const contentType = response.headers.get("content-type") || "audio/mpeg";
-
-    // Buffer response to estimate duration from MP3 byte size
-    // MP3 at 128kbps ≈ 16000 bytes/second (±20% for VBR or different bitrates)
-    const audioBuffer = await response.arrayBuffer();
-    const estimatedDuration = audioBuffer.byteLength / 16000;
-
-    const usageHeaders = buildUsageHeaders(
-        "elevenmusic",
-        createCompletionAudioSecondsUsage(estimatedDuration),
-    );
-
-    log.info("Music success: {bytes} bytes, ~{duration}s", {
-        bytes: audioBuffer.byteLength,
-        duration: Math.round(estimatedDuration),
-    });
-
-    return new Response(audioBuffer, {
-        status: 200,
-        headers: {
-            "Content-Type": contentType,
-            ...usageHeaders,
-        },
-    });
+    return buildMusicResponse(response, "elevenmusic", log);
 }
 
 export async function generateHeartMuLaMusic(opts: {
@@ -307,7 +284,7 @@ export async function generateHeartMuLaMusic(opts: {
 
     const heartMuLaBody = {
         lyrics: prompt,
-        tags: style || "",
+        tags: style ? style.replace(/,\s+/g, ",") : "",
         max_length_ms: Math.min(maxLengthMs, 240000),
         temperature: 1.0,
         topk: 50,
@@ -338,26 +315,30 @@ export async function generateHeartMuLaMusic(opts: {
         });
     }
 
-    const contentType = response.headers.get("content-type") || "audio/mpeg";
-    const generationTime = response.headers.get("x-generation-time") || "";
+    return buildMusicResponse(response, "heartmula", log);
+}
 
+/** Buffer upstream music response, estimate duration, and return with usage headers. */
+async function buildMusicResponse(
+    response: Response,
+    modelId: string,
+    log: Logger,
+): Promise<Response> {
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
     const audioBuffer = await response.arrayBuffer();
-    // MP3 at 128kbps ≈ 16000 bytes/second
+    // MP3 at 128kbps ≈ 16000 bytes/second (±20% for VBR or different bitrates)
     const estimatedDuration = audioBuffer.byteLength / 16000;
 
     const usageHeaders = buildUsageHeaders(
-        "heartmula",
+        modelId,
         createCompletionAudioSecondsUsage(estimatedDuration),
     );
 
-    log.info(
-        "HeartMuLa success: {bytes} bytes, ~{duration}s, gen_time={genTime}",
-        {
-            bytes: audioBuffer.byteLength,
-            duration: Math.round(estimatedDuration),
-            genTime: generationTime,
-        },
-    );
+    log.info("{model} success: {bytes} bytes, ~{duration}s", {
+        model: modelId,
+        bytes: audioBuffer.byteLength,
+        duration: Math.round(estimatedDuration),
+    });
 
     return new Response(audioBuffer, {
         status: 200,

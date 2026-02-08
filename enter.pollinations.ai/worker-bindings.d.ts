@@ -126,6 +126,8 @@ declare namespace NodeJS {
                 | "REFILL_TOKEN"
                 | "ELEVENLABS_API_KEY"
                 | "OVHCLOUD_API_KEY"
+                | "MUSIC_SERVICE_URL"
+                | "PLN_IMAGE_BACKEND_TOKEN"
             >
         > {}
 }

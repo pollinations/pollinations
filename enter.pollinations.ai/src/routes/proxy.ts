@@ -566,8 +566,8 @@ export const proxyRoutes = new Hono<Env>()
                     }),
                 style: z.string().optional().meta({
                     description:
-                        "Music style/genre descriptors for music models (heartmula, elevenmusic). Comma-separated tags, e.g. 'pop, female vocal, upbeat'.",
-                    example: "pop, female vocal, upbeat",
+                        "Music style/genre descriptors for music models. Comma-separated tags, e.g. 'pop,female vocal,upbeat'. For heartmula, spaces after commas are stripped automatically.",
+                    example: "pop,female vocal,upbeat",
                 }),
                 key: z.string().optional().meta({
                     description:
@@ -583,13 +583,16 @@ export const proxyRoutes = new Hono<Env>()
             await checkBalance(c.var);
 
             const text = decodeURIComponent(c.req.param("text"));
-            const apiKey = c.env.ELEVENLABS_API_KEY;
-
-            if (c.var.model.resolved === "heartmula") {
-                const { duration, style } = c.req.valid("query" as never) as {
+            const { voice, response_format, duration, instrumental, style } =
+                c.req.valid("query" as never) as {
+                    voice: string;
+                    response_format: string;
                     duration?: number;
+                    instrumental?: boolean;
                     style?: string;
                 };
+
+            if (c.var.model.resolved === "heartmula") {
                 return generateHeartMuLaMusic({
                     prompt: text,
                     style,
@@ -601,35 +604,21 @@ export const proxyRoutes = new Hono<Env>()
             }
 
             if (c.var.model.resolved === "elevenmusic") {
-                const { duration, instrumental, style } = c.req.valid(
-                    "query" as never,
-                ) as {
-                    duration?: number;
-                    instrumental?: boolean;
-                    style?: string;
-                };
                 return generateMusic({
                     prompt: text,
                     style,
                     durationSeconds: duration,
                     forceInstrumental: instrumental,
-                    apiKey,
+                    apiKey: c.env.ELEVENLABS_API_KEY,
                     log,
                 });
             }
-
-            const { voice, response_format } = c.req.valid(
-                "query" as never,
-            ) as {
-                voice: string;
-                response_format: string;
-            };
 
             return generateSpeech({
                 text,
                 voice: voice || "alloy",
                 responseFormat: response_format || "mp3",
-                apiKey,
+                apiKey: c.env.ELEVENLABS_API_KEY,
                 log,
             });
         },

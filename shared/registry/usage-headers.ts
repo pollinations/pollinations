@@ -7,6 +7,7 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     promptTextTokens: "x-usage-prompt-text-tokens",
     promptCachedTokens: "x-usage-prompt-cached-tokens",
     promptAudioTokens: "x-usage-prompt-audio-tokens",
+    promptAudioSeconds: "x-usage-prompt-audio-seconds",
     promptImageTokens: "x-usage-prompt-image-tokens",
     completionTextTokens: "x-usage-completion-text-tokens",
     completionReasoningTokens: "x-usage-completion-reasoning-tokens",
@@ -97,13 +98,79 @@ export function parseUsageHeaders(
     const getHeader = (name: string) =>
         headers instanceof Headers ? headers.get(name) : headers[name];
 
-    // Iterate in reverse to parse headers back to usage
+    const FLOAT_USAGE_TYPES: Set<string> = new Set([
+        "promptAudioSeconds",
+        "completionAudioSeconds",
+        "completionVideoSeconds",
+    ]);
+
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {
         const value = getHeader(headerName);
         if (value) {
-            usage[usageType as UsageType] = parseInt(value, 10);
+            usage[usageType as UsageType] = FLOAT_USAGE_TYPES.has(usageType)
+                ? parseFloat(value)
+                : parseInt(value, 10);
         }
     }
 
     return usage;
+}
+
+/**
+ * Helper for image services: create TokenUsage with only image tokens
+ */
+export function createImageTokenUsage(completionImageTokens: number): Usage {
+    return {
+        completionImageTokens,
+    };
+}
+
+/**
+ * Helper for video services: create TokenUsage with video seconds (Veo)
+ */
+export function createVideoSecondsUsage(completionVideoSeconds: number): Usage {
+    return {
+        completionVideoSeconds,
+    };
+}
+
+/**
+ * Helper for video services: create TokenUsage with video tokens (Seedance)
+ */
+export function createVideoTokenUsage(completionVideoTokens: number): Usage {
+    return {
+        completionVideoTokens,
+    };
+}
+
+/**
+ * Helper for audio/TTS services: create TokenUsage with audio tokens (characters)
+ * ElevenLabs bills by character count, so we use completionAudioTokens
+ */
+export function createAudioTokenUsage(completionAudioTokens: number): Usage {
+    return {
+        completionAudioTokens,
+    };
+}
+
+/**
+ * Helper for audio transcription (Whisper): create Usage with audio seconds
+ * Used for duration-based billing (e.g., OVH Whisper at $0.0000445/sec)
+ */
+export function createAudioSecondsUsage(promptAudioSeconds: number): Usage {
+    return {
+        promptAudioSeconds,
+    };
+}
+
+/**
+ * Helper for music generation: create Usage with completion audio seconds
+ * Used for duration-based billing (e.g., ElevenLabs Music at $0.005/sec)
+ */
+export function createCompletionAudioSecondsUsage(
+    completionAudioSeconds: number,
+): Usage {
+    return {
+        completionAudioSeconds,
+    };
 }

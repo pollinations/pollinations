@@ -1,5 +1,10 @@
 import { safeRound } from "../utils";
 import {
+    AUDIO_SERVICES,
+    type AudioModelId,
+    type AudioServiceId,
+} from "./audio";
+import {
     IMAGE_SERVICES,
     type ImageModelId,
     type ImageServiceId,
@@ -12,6 +17,7 @@ export type UsageType =
     | "promptTextTokens"
     | "promptCachedTokens"
     | "promptAudioTokens"
+    | "promptAudioSeconds"
     | "promptImageTokens"
     | "completionTextTokens"
     | "completionReasoningTokens"
@@ -47,14 +53,18 @@ export type ModelDefinition = CostDefinition[];
 // Pre-build MODEL_REGISTRY (modelId -> sorted cost definitions)
 // Uses lowercase keys for case-insensitive lookup (Azure returns lowercase model IDs)
 const MODEL_REGISTRY = Object.fromEntries(
-    Object.values({ ...TEXT_SERVICES, ...IMAGE_SERVICES }).map((service) => [
+    Object.values({
+        ...TEXT_SERVICES,
+        ...IMAGE_SERVICES,
+        ...AUDIO_SERVICES,
+    }).map((service) => [
         service.modelId.toLowerCase(),
         sortDefinitions([...service.cost]),
     ]),
 );
 
-export type ModelId = ImageModelId | TextModelId;
-export type ServiceId = ImageServiceId | TextServiceId;
+export type ModelId = ImageModelId | TextModelId | AudioModelId;
+export type ServiceId = ImageServiceId | TextServiceId | AudioServiceId;
 
 export type ServiceDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
@@ -74,6 +84,7 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
     isSpecialized?: boolean;
     persona?: boolean;
     paidOnly?: boolean; // Models that require paid balance only
+    alpha?: boolean; // Experimental models with potential instability
 };
 
 /** Sorts the cost and price definitions by date, in descending order */
@@ -113,15 +124,17 @@ type ServiceRegistryEntry = ServiceDefinition & {
 };
 
 const SERVICE_REGISTRY = Object.fromEntries(
-    Object.entries({ ...TEXT_SERVICES, ...IMAGE_SERVICES }).map(
-        ([name, service]) => [
-            name,
-            {
-                ...service,
-                price: sortDefinitions([...service.cost]),
-            } as ServiceRegistryEntry,
-        ],
-    ),
+    Object.entries({
+        ...TEXT_SERVICES,
+        ...IMAGE_SERVICES,
+        ...AUDIO_SERVICES,
+    }).map(([name, service]) => [
+        name,
+        {
+            ...service,
+            price: sortDefinitions([...service.cost]),
+        } as ServiceRegistryEntry,
+    ]),
 ) as Record<string, ServiceRegistryEntry>;
 
 /**
@@ -181,6 +194,13 @@ export function getTextServices(): ServiceId[] {
  */
 export function getImageServices(): ServiceId[] {
     return Object.keys(IMAGE_SERVICES) as ServiceId[];
+}
+
+/**
+ * Get audio service IDs
+ */
+export function getAudioServices(): ServiceId[] {
+    return Object.keys(AUDIO_SERVICES) as ServiceId[];
 }
 
 /**

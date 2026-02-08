@@ -133,15 +133,9 @@ Pays us $500/month.
 | Entry | Use models | Pay-per-use API | API key | No signup needed |
 | Revenue | Enterprise tooling | Contracts + GPU | Usage fees | End users buy Pollen |
 
-**OpenRouter: validation + what's different in 2026**
-OpenRouter raised $40M (a16z, Menlo, Sequoia) at $500M in early 2025 — seed + Series A two months apart. ~8 people. $5M ARR off $100M GMV. They proved a unified AI API is a category.
-
-But they stopped at the developer layer: 5% take on inference spend.
-In 2026 the question isn't "can you aggregate models?" — that's settled.
-The question is: **who captures the end user?**
-
-OpenRouter is plumbing for developers. We're plumbing for products that reach consumers.
-They have 1M devs paying them. We have 1,000+ apps paying us through their users.
+**OpenRouter validates the category.** $40M from a16z + Sequoia. $500M valuation. ~8 people. They proved unified AI APIs are venture-scale.
+But they charge developers 5% on inference (B2B). We let devs build free and monetize end users (B2B2C).
+In 2026, aggregation is settled. **The question is who captures the consumer.**
 
 ---
 

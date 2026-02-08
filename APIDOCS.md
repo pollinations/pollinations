@@ -97,191 +97,6 @@ curl 'https://gen.pollinations.ai/account/usage' \
 
 ## Operations
 
-### GET /customer/balance
-
-- **Method:** `GET`
-- **Path:** `/customer/balance`
-- **Tags:** Customer
-
-Get detailed balance breakdown for the current user (tier, pack, crypto).
-
-#### Responses
-
-### GET /tiers/view
-
-- **Method:** `GET`
-- **Path:** `/tiers/view`
-- **Tags:** Auth
-
-Get the current user's tier status and daily pollen information.
-
-#### Responses
-
-##### Status: 200 Success
-
-###### Content-Type: application/json
-
-- **`active` (required)**
-
-  `object`
-
-  - **`dailyPollen` (required)**
-
-    `number`
-
-  - **`displayName` (required)**
-
-    `string`
-
-  - **`tier` (required)**
-
-    `string`, possible values: `"microbe", "spore", "seed", "flower", "nectar", "router", "none"`
-
-- **`target` (required)**
-
-  `string`, possible values: `"microbe", "spore", "seed", "flower", "nectar", "router"`
-
-**Example:**
-
-```json
-{
-  "target": "microbe",
-  "active": {
-    "tier": "microbe",
-    "displayName": "",
-    "dailyPollen": 1
-  }
-}
-```
-
-##### Status: 500 Oh snap, something went wrong on our end. We're on it!
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 500,
-  "success": false,
-  "error": {
-    "code": "INTERNAL_ERROR",
-    "message": "Oh snap, something went wrong on our end. We're on it!",
-    "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-### GET /api-keys
-
-- **Method:** `GET`
-- **Path:** `/api-keys`
-- **Tags:** Account
-
-List all API keys for the current user with pollenBalance.
-
-#### Responses
-
-### POST /api-keys/{id}/update
-
-- **Method:** `POST`
-- **Path:** `/api-keys/{id}/update`
-- **Tags:** Account
-
-Update an API key's permissions and budget.
-
-#### Request Body
-
-##### Content-Type: application/json
-
-- **`accountPermissions`**
-
-  `object` — Account permissions: \["balance", "usage"]. null = none
-
-- **`allowedModels`**
-
-  `object` — Model IDs this key can access. null = all models allowed
-
-- **`expiresAt`**
-
-  `object` — Expiration date for the key. null = no expiry
-
-- **`name`**
-
-  `string` — Name for the API key
-
-- **`pollenBudget`**
-
-  `object` — Pollen budget cap for this key. null = unlimited
-
-**Example:**
-
-```json
-{
-  "name": "",
-  "allowedModels": [
-    ""
-  ],
-  "pollenBudget": 1,
-  "accountPermissions": [
-    ""
-  ],
-  "expiresAt": ""
-}
-```
-
-#### Responses
-
 ### GET /account/profile
 
 - **Method:** `GET`
@@ -846,6 +661,96 @@ Get a list of available image generation models with pricing, capabilities, and 
 - **Tags:** gen.pollinations.ai
 
 Get a list of available text generation models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.
+
+#### Responses
+
+##### Status: 200 Success
+
+###### Content-Type: application/json
+
+**Array of:**
+
+**Example:**
+
+```json
+[]
+```
+
+##### Status: 500 Oh snap, something went wrong on our end. We're on it!
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 500,
+  "success": false,
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Oh snap, something went wrong on our end. We're on it!",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+### GET /audio/models
+
+- **Method:** `GET`
+- **Path:** `/audio/models`
+- **Tags:** gen.pollinations.ai
+
+Get a list of available audio models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.
 
 #### Responses
 
@@ -3197,6 +3102,14 @@ This endpoint is OpenAI TTS API compatible. Set `model` to `elevenmusic` (or ali
 
   `string` — The text to generate audio for. Maximum 4096 characters.
 
+- **`duration`**
+
+  `number` — Music duration in seconds, 3-300 (elevenmusic only)
+
+- **`instrumental`**
+
+  `boolean` — If true, guarantees instrumental output (elevenmusic only)
+
 - **`model`**
 
   `string`
@@ -3221,7 +3134,9 @@ This endpoint is OpenAI TTS API compatible. Set `model` to `elevenmusic` (or ali
   "input": "Hello, welcome to Pollinations!",
   "voice": "rachel",
   "response_format": "mp3",
-  "speed": 1
+  "speed": 1,
+  "duration": 30,
+  "instrumental": false
 }
 ```
 
@@ -4067,6 +3982,14 @@ This endpoint is OpenAI Whisper API compatible.
 
   `string` — The text to generate audio for. Maximum 4096 characters.
 
+* **`duration`**
+
+  `number` — Music duration in seconds, 3-300 (elevenmusic only)
+
+* **`instrumental`**
+
+  `boolean` — If true, guarantees instrumental output (elevenmusic only)
+
 * **`model`**
 
   `string`
@@ -4091,6 +4014,8 @@ This endpoint is OpenAI Whisper API compatible.
   "input": "Hello, welcome to Pollinations!",
   "voice": "rachel",
   "response_format": "mp3",
-  "speed": 1
+  "speed": 1,
+  "duration": 30,
+  "instrumental": false
 }
 ```

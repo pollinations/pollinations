@@ -3,6 +3,7 @@ import { PLAY_PAGE } from "../../copy/content/play";
 import { useAuth } from "../../hooks/useAuth";
 import { useModelList } from "../../hooks/useModelList";
 import { usePageCopy } from "../../hooks/usePageCopy";
+import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { ImageFeed } from "../components/play/ImageFeed";
 import { ModelSelector } from "../components/play/ModelSelector";
 import { PlayGenerator } from "../components/play/PlayGenerator";
@@ -15,24 +16,39 @@ function PlayPage() {
     const [view, setView] = useState("play");
     const [selectedModel, setSelectedModel] = useState("flux");
     const [prompt, setPrompt] = useState("");
-    const { apiKey, isLoggedIn, profile, balance, login, logout } = useAuth();
+    const { apiKey, isLoggedIn, login } = useAuth();
     const {
         imageModels,
         textModels,
+        audioModels,
+        allModels: registryModels,
         allowedImageModelIds,
         allowedTextModelIds,
+        allowedAudioModelIds,
     } = useModelList(apiKey);
 
     // Get translated copy
     const { copy: pageCopy, isTranslating } = usePageCopy(PLAY_PAGE);
 
-    const allModels = useMemo(
-        () => [
-            ...imageModels.map((m) => ({ ...m, type: "image" as const })),
-            ...textModels.map((m) => ({ ...m, type: "text" as const })),
-        ],
-        [imageModels, textModels],
-    );
+    const allModels = useMemo(() => {
+        const typeOrder: Record<string, number> = {
+            image: 0,
+            video: 1,
+            text: 2,
+            audio: 3,
+        };
+        const effectiveType = (m: (typeof registryModels)[0]) =>
+            m.hasVideoOutput
+                ? "video"
+                : m.hasAudioOutput || m.type === "audio"
+                  ? "audio"
+                  : m.type;
+        return [...registryModels].sort(
+            (a, b) =>
+                (typeOrder[effectiveType(a)] ?? 99) -
+                (typeOrder[effectiveType(b)] ?? 99),
+        );
+    }, [registryModels]);
 
     return (
         <PageContainer>
@@ -57,92 +73,54 @@ function PlayPage() {
                     </Button>
                 </div>
 
-                {/* Description */}
-                <Body className="mb-4">
-                    {view === "play"
-                        ? pageCopy.createDescription
-                        : pageCopy.feedDescription}
-                </Body>
+                {/* Description + Pricing */}
+                {view === "play" ? (
+                    <div className="mb-6">
+                        <Body className="mb-3">
+                            {pageCopy.createDescription}
+                        </Body>
+                        <Button
+                            as="a"
+                            href="https://enter.pollinations.ai"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="iconText"
+                            className="inline-flex"
+                        >
+                            <span className="font-headline text-[10px] md:text-xs font-black uppercase tracking-wider text-text-body-main">
+                                {pageCopy.pricingLinkText}
+                            </span>
+                            <ExternalLinkIcon className="w-3 h-3 md:w-4 md:h-4 text-text-brand" />
+                        </Button>
+                    </div>
+                ) : (
+                    <Body className="mb-4">{pageCopy.feedDescription}</Body>
+                )}
 
-                {/* Login CTA - only show in Create view */}
-                {view === "play" &&
-                    (!isLoggedIn ? (
-                        <div className="flex items-center gap-4 p-4 mb-8 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
-                            <div className="flex-1">
-                                <p className="font-body text-sm text-text-body-secondary">
-                                    {pageCopy.loginCtaText}{" "}
-                                    <span className="text-text-brand font-medium">
-                                        {pageCopy.loginCtaLink}
-                                    </span>
-                                </p>
-                            </div>
-                            <Button
+                {/* Login CTA - only show in Create view when not logged in */}
+                {view === "play" && !isLoggedIn && (
+                    <div className="p-3 mb-6 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
+                        <p className="font-body text-sm text-text-body-secondary">
+                            <button
                                 type="button"
                                 onClick={login}
-                                variant="primary"
-                                size="sm"
+                                className="text-text-brand font-medium underline cursor-pointer bg-transparent border-none p-0"
                             >
-                                {pageCopy.loginButton}
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 mb-8 bg-surface-card rounded-sub-card border-l-4 border-border-brand">
-                            <div className="flex-1 flex flex-wrap items-start gap-6">
-                                {/* User - only show if profile permission granted */}
-                                {profile && (
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium">
-                                            {pageCopy.loggedInAsLabel}
-                                        </span>
-                                        <span className="font-headline text-sm font-black text-text-body-main">
-                                            {profile.githubUsername
-                                                ? `@${profile.githubUsername}`
-                                                : profile.name}
-                                        </span>
-                                    </div>
-                                )}
-                                {/* Balance - only show if balance permission granted */}
-                                {balance !== null && (
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium">
-                                            {pageCopy.balanceLabel}
-                                        </span>
-                                        <span className="font-headline text-sm font-black text-text-brand">
-                                            {profile?.tier === "spore"
-                                                ? "🦠"
-                                                : profile?.tier === "seed"
-                                                  ? "🌱"
-                                                  : profile?.tier === "flower"
-                                                    ? "🌸"
-                                                    : profile?.tier === "nectar"
-                                                      ? "🍯"
-                                                      : "🌱"}{" "}
-                                            {balance.balance.toFixed(2)}{" "}
-                                            {pageCopy.pollenUnit}
-                                        </span>
-                                    </div>
-                                )}
-                                {/* API Key - always show */}
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium">
-                                        {pageCopy.apiKeyLabel}
-                                    </span>
-                                    <span className="font-mono text-sm text-text-body-secondary">
-                                        {apiKey.slice(0, 7)}••••
-                                    </span>
-                                </div>
-                            </div>
-                            <Button
-                                type="button"
-                                onClick={logout}
-                                variant="secondary"
-                                size="sm"
-                                className="self-start sm:self-center"
+                                {pageCopy.loginCtaLogin}
+                            </button>{" "}
+                            {pageCopy.loginCtaOr}{" "}
+                            <a
+                                href="https://enter.pollinations.ai"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-text-brand font-medium underline"
                             >
-                                {pageCopy.logoutButton}
-                            </Button>
-                        </div>
-                    ))}
+                                {pageCopy.loginCtaRegister}
+                            </a>{" "}
+                            {pageCopy.loginCtaSuffix}
+                        </p>
+                    </div>
+                )}
 
                 {view === "play" && (
                     <ModelSelector
@@ -151,6 +129,7 @@ function PlayPage() {
                         onSelectModel={setSelectedModel}
                         allowedImageModelIds={allowedImageModelIds}
                         allowedTextModelIds={allowedTextModelIds}
+                        allowedAudioModelIds={allowedAudioModelIds}
                     />
                 )}
 
@@ -161,7 +140,7 @@ function PlayPage() {
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
                                 placeholder={pageCopy.imagePlaceholder}
-                                className="min-h-[100px] p-3 border border-border rounded bg-transparent font-bold text-[#fff] focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                                className="min-h-[100px] p-3 border border-border-main rounded bg-transparent font-bold text-text-body-main focus:outline-none focus:ring-2 focus:ring-border-brand resize-none"
                             />
                         </div>
                         <PlayGenerator
@@ -170,6 +149,7 @@ function PlayPage() {
                             onPromptChange={setPrompt}
                             imageModels={imageModels}
                             textModels={textModels}
+                            audioModels={audioModels}
                             apiKey={apiKey || ""}
                         />
                     </div>

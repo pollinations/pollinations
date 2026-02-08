@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import {
+    createContext,
+    type ReactNode,
+    useCallback,
+    useContext,
+    useEffect,
+    useState,
+} from "react";
 import { DEFAULT_API_KEY } from "../api.config";
 
 const STORAGE_KEY = "pollinations_api_key";
@@ -16,7 +23,7 @@ interface UserBalance {
     balance: number;
 }
 
-interface UseAuthReturn {
+interface AuthContextValue {
     apiKey: string;
     isLoggedIn: boolean;
     profile: UserProfile | null;
@@ -26,13 +33,13 @@ interface UseAuthReturn {
     logout: () => void;
 }
 
+const AuthContext = createContext<AuthContextValue | null>(null);
+
 /**
- * Hook for managing authentication state
- * - Stores user's API key in localStorage
- * - Provides login/logout functions
- * - Returns current API key (user's or default)
+ * Provider that holds authentication state for the entire app.
+ * Wrap your app with this so all useAuth() consumers share the same state.
  */
-export function useAuth(): UseAuthReturn {
+export function AuthProvider({ children }: { children: ReactNode }) {
     const [userApiKey, setUserApiKey] = useState<string | null>(() => {
         if (typeof window === "undefined") return null;
         return localStorage.getItem(STORAGE_KEY);
@@ -54,7 +61,7 @@ export function useAuth(): UseAuthReturn {
         if (key) {
             localStorage.setItem(STORAGE_KEY, key);
             setUserApiKey(key);
-            // Clean URL - remove fragment
+            // Clean URL fragment without reload
             window.history.replaceState(
                 {},
                 "",
@@ -160,7 +167,7 @@ export function useAuth(): UseAuthReturn {
         setBalance(null);
     }, []);
 
-    return {
+    const value: AuthContextValue = {
         apiKey: userApiKey || DEFAULT_API_KEY,
         isLoggedIn: !!userApiKey,
         profile,
@@ -169,4 +176,20 @@ export function useAuth(): UseAuthReturn {
         login,
         logout,
     };
+
+    return (
+        <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+    );
+}
+
+/**
+ * Hook for accessing shared authentication state.
+ * Must be used within an AuthProvider.
+ */
+export function useAuth(): AuthContextValue {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error("useAuth must be used within an AuthProvider");
+    }
+    return context;
 }

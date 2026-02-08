@@ -11,6 +11,7 @@ interface PlayGeneratorProps {
     onPromptChange?: (prompt: string) => void;
     imageModels: Model[];
     textModels: Model[];
+    audioModels: Model[];
     apiKey: string;
 }
 
@@ -44,6 +45,7 @@ export function PlayGenerator({
     prompt,
     imageModels,
     textModels,
+    audioModels,
     apiKey,
 }: PlayGeneratorProps) {
     // Get translated copy
@@ -76,10 +78,15 @@ export function PlayGenerator({
     const isImageModel = imageModels.some((m) => m.id === selectedModel);
 
     // Get current model data once and derive all flags from it
-    const currentModelData = [...imageModels, ...textModels].find(
-        (m) => m.id === selectedModel,
-    );
-    const isAudioModel = currentModelData?.hasAudioOutput || false;
+    const currentModelData = [
+        ...imageModels,
+        ...textModels,
+        ...audioModels,
+    ].find((m) => m.id === selectedModel);
+    const isAudioModel =
+        currentModelData?.hasAudioOutput ||
+        currentModelData?.type === "audio" ||
+        false;
     const isVideoModel = currentModelData?.hasVideoOutput || false;
     const supportsImageInput = currentModelData?.hasImageInput || false;
     const availableVoices = currentModelData?.voices || [];
@@ -327,35 +334,24 @@ export function PlayGenerator({
                             ))}
                         </div>
                     )}
-                    {/* URL input with add button */}
-                    <div className="flex gap-2">
-                        <input
-                            id="image-url"
-                            name="image-url"
-                            type="text"
-                            value={imageUrlInput}
-                            onChange={(e) => setImageUrlInput(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    addImageUrl();
-                                }
-                            }}
-                            placeholder={copy.imageUrlPlaceholder}
-                            className="flex-1 p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors placeholder:text-text-caption rounded-input"
-                            disabled={imageUrls.length >= 4}
-                        />
-                        <button
-                            type="button"
-                            onClick={addImageUrl}
-                            disabled={
-                                !imageUrlInput.trim() || imageUrls.length >= 4
+                    {/* URL input — Enter or blur to add */}
+                    <input
+                        id="image-url"
+                        name="image-url"
+                        type="url"
+                        value={imageUrlInput}
+                        onChange={(e) => setImageUrlInput(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                addImageUrl();
                             }
-                            className="px-4 bg-button-secondary-bg text-text-body-main font-headline font-black text-xl rounded-input hover:bg-button-secondary-bg-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            +
-                        </button>
-                    </div>
+                        }}
+                        onBlur={addImageUrl}
+                        placeholder={copy.imageUrlPlaceholder}
+                        className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors placeholder:text-text-caption rounded-input"
+                        disabled={imageUrls.length >= 4}
+                    />
                 </div>
             )}
 
@@ -364,7 +360,7 @@ export function PlayGenerator({
                 <div className="mb-6">
                     {/* Responsive auto-fill grid: fills rows completely */}
                     <div
-                        className="grid gap-3"
+                        className="grid gap-3 items-end"
                         style={{
                             gridTemplateColumns:
                                 "repeat(auto-fit, minmax(120px, 1fr))",
@@ -407,10 +403,10 @@ export function PlayGenerator({
                             />
                         </div>
                         <div>
-                            <div className="relative group/seed inline-block">
+                            <div className="relative group/seed inline-block mb-2">
                                 <label
                                     htmlFor="image-seed"
-                                    className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black cursor-help"
+                                    className="block font-headline text-text-body-main uppercase text-xs tracking-wider font-black cursor-help"
                                 >
                                     {copy.seedLabel}
                                 </label>
@@ -432,10 +428,10 @@ export function PlayGenerator({
                             />
                         </div>
                         <div>
-                            <div className="relative group/enhance inline-block">
+                            <div className="relative group/enhance inline-block mb-2">
                                 <label
                                     htmlFor="enhance-prompt"
-                                    className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black cursor-help"
+                                    className="block font-headline text-text-body-main uppercase text-xs tracking-wider font-black cursor-help"
                                 >
                                     {copy.enhanceLabel}
                                 </label>
@@ -444,7 +440,7 @@ export function PlayGenerator({
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
                                 </div>
                             </div>
-                            <label className="relative flex items-center justify-center h-[52px] bg-input-background hover:bg-input-background transition-colors cursor-pointer select-none group">
+                            <label className="relative flex items-center justify-center p-3 bg-input-background hover:bg-input-background transition-colors cursor-pointer select-none group rounded-input">
                                 <input
                                     id="enhance-prompt"
                                     name="enhance-prompt"
@@ -511,7 +507,13 @@ export function PlayGenerator({
                     size={null}
                     className={isLoading ? "animate-pulse" : ""}
                     data-type={
-                        isAudioModel ? "audio" : isImageModel ? "image" : "text"
+                        isVideoModel
+                            ? "video"
+                            : isAudioModel
+                              ? "audio"
+                              : isImageModel
+                                ? "image"
+                                : "text"
                     }
                 >
                     {isLoading ? (
@@ -523,6 +525,8 @@ export function PlayGenerator({
                             </span>
                             {copy.generatingText}
                         </span>
+                    ) : isVideoModel ? (
+                        copy.generateVideoButton
                     ) : isAudioModel ? (
                         copy.generateAudioButton
                     ) : isImageModel ? (

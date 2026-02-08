@@ -1,0 +1,50 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/Is%20Berlin%20the%20capital%20of%20Germany%3F%20Reply%20yes%20or%20no.?model=nomnom&seed=42",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 530,
+    "statusText": "unknown",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "331",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Feb 2026 00:05:45 GMT",
+      "etag": "W/\"14b-hoaTxU3/he3ZEZwKS4EAnT8MknU\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "error": "Internal Server Error",
+        "message": "530 <none>",
+        "requestId": "1pgjfl",
+        "requestParameters": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "Is Berlin the capital of Germany? Reply yes or no."
+            }
+          ],
+          "jsonMode": false,
+          "seed": 42,
+          "model": "nomnom",
+          "referrer": null,
+          "isPrivate": false,
+          "voice": "alloy"
+        },
+        "details": {
+          "html-message": "error code: 1033"
+        }
+      }
+    }
+  }
+}

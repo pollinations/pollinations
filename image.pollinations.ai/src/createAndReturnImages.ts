@@ -1154,14 +1154,14 @@ const generateImage = async (
         }
     }
 
-    // api.airforce models (imagen)
-    if (safeParams.model === "imagen") {
+    // api.airforce image models
+    if (safeParams.model === "imagen-4" || safeParams.model === "flux-2-dev") {
         return await callAirforceImageAPI(
             prompt,
             safeParams,
             progress,
             requestId,
-            "imagen-3",
+            safeParams.model,
         );
     }
 

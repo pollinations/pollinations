@@ -114,13 +114,23 @@ curl 'https://gen.pollinations.ai/text/Hello%20world'
 
 ### Audio Generation
 
+**Simple GET endpoint:**
+
 ```bash
-curl 'https://gen.pollinations.ai/v1/chat/completions' \
-  -H 'Content-Type: application/json' \
-  -d '{"model": "openai-audio", "messages": [{"role": "user", "content": "Say hello"}], "modalities": ["text", "audio"], "audio": {"voice": "nova", "format": "wav"}}'
+curl 'https://gen.pollinations.ai/audio/Hello%20from%20Pollinations?voice=nova&key=YOUR_API_KEY' -o speech.mp3
 ```
 
-Explore voices at [OpenAI.fm](https://www.openai.fm/).
+**OpenAI TTS compatible:**
+
+```bash
+curl 'https://gen.pollinations.ai/v1/audio/speech' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -d '{"model": "tts-1", "input": "Hello from Pollinations!", "voice": "nova"}' \
+  -o speech.mp3
+```
+
+Available voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`, plus [30+ ElevenLabs voices](https://enter.pollinations.ai/api/docs).
 
 ### MCP Server for AI Assistants
 
@@ -240,12 +250,18 @@ To generate text:
 
 ### Audio Generation
 
-Use the OpenAI-compatible endpoint with `openai-audio` model:
+Generate speech from text:
+
+    https://gen.pollinations.ai/audio/Hello%20from%20Pollinations?voice=alloy&key=YOUR_API_KEY
+
+Or use the OpenAI TTS-compatible endpoint:
 
 ```bash
-curl 'https://gen.pollinations.ai/v1/chat/completions' \
+curl 'https://gen.pollinations.ai/v1/audio/speech' \
   -H 'Content-Type: application/json' \
-  -d '{"model": "openai-audio", "messages": [{"role": "user", "content": "Hello"}], "modalities": ["text", "audio"], "audio": {"voice": "nova", "format": "wav"}}'
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -d '{"model": "tts-1", "input": "Hello from Pollinations!", "voice": "alloy"}' \
+  -o speech.mp3
 ```
 
 ## 🛠️ Integration
@@ -269,10 +285,13 @@ graph LR
 
     ENTER --> IMG[Image Service]
     ENTER --> TXT[Text Service]
+    ENTER --> AUD[Audio Service]
 
     IMG --> CF[Cloudflare Worker with R2 Cache]
     CF --> B[image-origin.pollinations.ai]
     B --> D[FLUX / GPT Image / Seedream - GPU VMs]
+
+    AUD --> EL[ElevenLabs TTS API]
 
     TXT --> C[text.pollinations.ai]
     C --> SC[Scaleway API]

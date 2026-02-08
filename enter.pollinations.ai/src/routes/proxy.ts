@@ -1,7 +1,6 @@
 import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import type { StandardSchemaV1 } from "hono-openapi";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
 import { type BalanceVariables, balance } from "@/middleware/balance.ts";
@@ -17,13 +16,13 @@ import type { Env } from "../env.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
-const resolver = <T extends StandardSchemaV1>(schema: T) =>
+const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
+import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import {
     getImageModelsInfo,
     getTextModelsInfo,
-    ModelInfoSchema,
 } from "@shared/registry/model-info.ts";
 import { getServiceDefinition } from "@shared/registry/registry.ts";
 import { createFactory } from "hono/factory";
@@ -40,6 +39,7 @@ import {
 } from "@/schemas/openai.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
+import { generateSpeech } from "./audio.ts";
 
 const factory = createFactory<Env>();
 
@@ -170,7 +170,7 @@ export const proxyRoutes = new Hono<Env>()
                     content: {
                         "application/json": {
                             schema: resolver(
-                                z.array(ModelInfoSchema).meta({
+                                z.array(z.any()).meta({
                                     description:
                                         "List of models with pricing and metadata",
                                 }),
@@ -209,7 +209,7 @@ export const proxyRoutes = new Hono<Env>()
                     content: {
                         "application/json": {
                             schema: resolver(
-                                z.array(ModelInfoSchema).meta({
+                                z.array(z.any()).meta({
                                     description:
                                         "List of models with pricing and metadata",
                                 }),
@@ -473,6 +473,98 @@ export const proxyRoutes = new Hono<Env>()
             }
 
             return response;
+        },
+    )
+    .get(
+        "/audio/:text",
+        describeRoute({
+            tags: ["gen.pollinations.ai"],
+            description: [
+                "Generate speech audio from text.",
+                "",
+                `**Available Voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                "",
+                "**Output Formats:** mp3, opus, aac, flac, wav, pcm",
+                "",
+                "**Authentication:**",
+                "",
+                "Include your API key either:",
+                "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
+                "- As a query parameter: `?key=YOUR_API_KEY`",
+                "",
+                "API keys can be created from your dashboard at enter.pollinations.ai.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success - Returns audio data",
+                    content: {
+                        "audio/mpeg": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                text: z.string().min(1).meta({
+                    description: "Text to convert to speech",
+                    example: "Hello, welcome to Pollinations!",
+                }),
+            }),
+        ),
+        validator(
+            "query",
+            z.object({
+                voice: z
+                    .enum(ELEVENLABS_VOICES as unknown as [string, ...string[]])
+                    .default("alloy")
+                    .meta({
+                        description: "Voice to use for speech generation",
+                        example: "nova",
+                    }),
+                response_format: z
+                    .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
+                    .default("mp3")
+                    .meta({
+                        description: "Audio output format",
+                        example: "mp3",
+                    }),
+                model: z.string().optional().meta({
+                    description: "TTS model to use",
+                    example: "tts-1",
+                }),
+                key: z.string().optional().meta({
+                    description:
+                        "API key (alternative to Authorization header)",
+                }),
+            }),
+        ),
+        resolveModel("generate.audio"),
+        track("generate.audio"),
+        async (c) => {
+            const log = c.get("log").getChild("generate");
+            await c.var.auth.requireAuthorization();
+            await checkBalance(c.var);
+
+            const text = decodeURIComponent(c.req.param("text"));
+            const { voice, response_format } = c.req.valid(
+                "query" as never,
+            ) as {
+                voice: string;
+                response_format: string;
+            };
+
+            return generateSpeech({
+                text,
+                voice: voice || "alloy",
+                responseFormat: response_format || "mp3",
+                apiKey: (c.env as unknown as { ELEVENLABS_API_KEY: string })
+                    .ELEVENLABS_API_KEY,
+                log,
+            });
         },
     );
 

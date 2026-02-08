@@ -2,6 +2,7 @@
  * Data fetching and transformation for pricing
  */
 
+import { AUDIO_SERVICES } from "../../../../../shared/registry/audio.ts";
 import { IMAGE_SERVICES } from "../../../../../shared/registry/image.ts";
 import type { CostDefinition } from "../../../../../shared/registry/registry.ts";
 import { TEXT_SERVICES } from "../../../../../shared/registry/text.ts";
@@ -120,6 +121,38 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
                 perImagePrice: formatPrice(
                     latestCost.completionImageTokens,
                     formatPricePerImage,
+                ),
+            });
+        }
+    }
+
+    // Add audio models (TTS and STT)
+    for (const [serviceName, serviceConfig] of Object.entries(AUDIO_SERVICES)) {
+        const costHistory = serviceConfig.cost;
+        if (!costHistory) continue;
+
+        const latestCost: CostDefinition = costHistory[0];
+
+        if (latestCost.promptAudioSeconds) {
+            // Speech-to-text (Whisper) — billed per second
+            prices.push({
+                name: serviceName,
+                type: "audio",
+                perToken: false,
+                perSecondPrice: formatPrice(
+                    latestCost.promptAudioSeconds,
+                    (v: number) => v.toFixed(5),
+                ),
+            });
+        } else {
+            // Text-to-speech (ElevenLabs) — billed per character
+            prices.push({
+                name: serviceName,
+                type: "audio",
+                perToken: false,
+                perCharPrice: formatPrice(
+                    latestCost.completionAudioTokens,
+                    (v: number) => (v * 1000).toFixed(2),
                 ),
             });
         }

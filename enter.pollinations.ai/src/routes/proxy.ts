@@ -21,6 +21,7 @@ const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
 
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import {
+    getAudioModelsInfo,
     getImageModelsInfo,
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
@@ -39,7 +40,7 @@ import {
 } from "@/schemas/openai.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
-import { generateSpeech } from "./audio.ts";
+import { generateMusic, generateSpeech } from "./audio.ts";
 
 const factory = createFactory<Env>();
 
@@ -123,6 +124,10 @@ export const proxyRoutes = new Hono<Env>()
         auth({ allowApiKey: true, allowSessionCookie: false }),
     )
     .use("/text/models", auth({ allowApiKey: true, allowSessionCookie: false }))
+    .use(
+        "/audio/models",
+        auth({ allowApiKey: true, allowSessionCookie: false }),
+    )
     .get(
         "/v1/models",
         describeRoute({
@@ -224,6 +229,38 @@ export const proxyRoutes = new Hono<Env>()
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const models = filterModelsByPermissions(
                 getTextModelsInfo(),
+                allowedModels,
+            );
+            return c.json(models);
+        },
+    )
+    .get(
+        "/audio/models",
+        describeRoute({
+            tags: ["gen.pollinations.ai"],
+            description:
+                "Get a list of available audio models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(z.any()).meta({
+                                    description:
+                                        "List of models with pricing and metadata",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(500),
+            },
+        }),
+        (c) => {
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const models = filterModelsByPermissions(
+                getAudioModelsInfo(),
                 allowedModels,
             );
             return c.json(models);
@@ -480,11 +517,17 @@ export const proxyRoutes = new Hono<Env>()
         describeRoute({
             tags: ["gen.pollinations.ai"],
             description: [
-                "Generate speech audio from text.",
+                "Generate audio from text — speech (TTS) or music.",
                 "",
-                `**Available Voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                "**Models:** Use `model` query param to select:",
+                "- TTS (default): `elevenlabs`, `tts-1`, etc.",
+                "- Music: `elevenmusic` (or `music`)",
                 "",
-                "**Output Formats:** mp3, opus, aac, flac, wav, pcm",
+                `**TTS Voices:** ${ELEVENLABS_VOICES.join(", ")}`,
+                "",
+                "**Output Formats (TTS only):** mp3, opus, aac, flac, wav, pcm",
+                "",
+                "**Music options:** `duration` in seconds (3-300), `instrumental=true`",
                 "",
                 "**Authentication:**",
                 "",
@@ -510,7 +553,8 @@ export const proxyRoutes = new Hono<Env>()
             "param",
             z.object({
                 text: z.string().min(1).meta({
-                    description: "Text to convert to speech",
+                    description:
+                        "Text to convert to speech, or a music description when model=elevenmusic",
                     example: "Hello, welcome to Pollinations!",
                 }),
             }),
@@ -522,20 +566,40 @@ export const proxyRoutes = new Hono<Env>()
                     .enum(ELEVENLABS_VOICES as unknown as [string, ...string[]])
                     .default("alloy")
                     .meta({
-                        description: "Voice to use for speech generation",
+                        description:
+                            "Voice to use for speech generation (TTS only)",
                         example: "nova",
                     }),
                 response_format: z
                     .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
                     .default("mp3")
                     .meta({
-                        description: "Audio output format",
+                        description: "Audio output format (TTS only)",
                         example: "mp3",
                     }),
                 model: z.string().optional().meta({
-                    description: "TTS model to use",
+                    description:
+                        "Audio model: TTS (default) or elevenmusic for music generation",
                     example: "tts-1",
                 }),
+                duration: z
+                    .string()
+                    .optional()
+                    .transform((v) => (v ? parseFloat(v) : undefined))
+                    .meta({
+                        description:
+                            "Music duration in seconds, 3-300 (elevenmusic only)",
+                        example: "30",
+                    }),
+                instrumental: z
+                    .enum(["true", "false"])
+                    .default("false")
+                    .transform((v) => v === "true")
+                    .meta({
+                        description:
+                            "If true, guarantees instrumental output (elevenmusic only)",
+                        example: "false",
+                    }),
                 key: z.string().optional().meta({
                     description:
                         "API key (alternative to Authorization header)",
@@ -550,6 +614,25 @@ export const proxyRoutes = new Hono<Env>()
             await checkBalance(c.var);
 
             const text = decodeURIComponent(c.req.param("text"));
+            const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
+                .ELEVENLABS_API_KEY;
+
+            if (c.var.model.resolved === "elevenmusic") {
+                const { duration, instrumental } = c.req.valid(
+                    "query" as never,
+                ) as {
+                    duration?: number;
+                    instrumental?: boolean;
+                };
+                return generateMusic({
+                    prompt: text,
+                    durationSeconds: duration,
+                    forceInstrumental: instrumental,
+                    apiKey,
+                    log,
+                });
+            }
+
             const { voice, response_format } = c.req.valid(
                 "query" as never,
             ) as {
@@ -561,8 +644,7 @@ export const proxyRoutes = new Hono<Env>()
                 text,
                 voice: voice || "alloy",
                 responseFormat: response_format || "mp3",
-                apiKey: (c.env as unknown as { ELEVENLABS_API_KEY: string })
-                    .ELEVENLABS_API_KEY,
+                apiKey,
                 log,
             });
         },

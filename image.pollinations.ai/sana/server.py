@@ -49,9 +49,8 @@ async def send_heartbeat():
         try:
             port = int(os.getenv("PUBLIC_PORT", os.getenv("PORT", "10003")))
             url = f"http://{public_ip}:{port}"
-            service_type = os.getenv("SERVICE_TYPE", "zimage")
-            # Use direct EC2 endpoint to bypass Cloudflare (some io.net IPs are blocked)
-            register_url = os.getenv("REGISTER_URL", "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register")
+            service_type = os.getenv("SERVICE_TYPE", "sana")
+            register_url = os.getenv("REGISTER_URL", "https://image.pollinations.ai/register")
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     register_url,
@@ -80,7 +79,7 @@ async def periodic_heartbeat():
 
 MODEL_ID = "Efficient-Large-Model/Sana_Sprint_1.6B_1024px_diffusers"
 MODEL_CACHE = "model_cache"
-NUM_INFERENCE_STEPS = 2  # SANA-Sprint only supports 2 steps (SCM constraint)
+NUM_INFERENCE_STEPS = 4  # Using 4 steps for better quality (especially multi-subject scenes)
 MAX_PIXELS = 1024 * 1024  # Max output size
 
 generate_lock = threading.Lock()
@@ -196,6 +195,8 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
                     width=gen_w,
                     height=gen_h,
                     num_inference_steps=NUM_INFERENCE_STEPS,
+                    guidance_scale=4.5,
+                    intermediate_timesteps=None,
                 )
             image = output.images[0]
         gen_time = time.time() - gen_start

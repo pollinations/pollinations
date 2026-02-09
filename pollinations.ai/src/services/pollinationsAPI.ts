@@ -9,12 +9,13 @@ export async function generateText(
     prompt: string,
     seed?: number | number[],
     model = DEFAULTS.TEXT_MODEL,
+    apiKey = API_KEY,
 ): Promise<string> {
     const response = await fetchWithRetry(API.TEXT_GENERATION, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${API_KEY}`,
+            Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
             messages: [{ role: "user", content: prompt }],

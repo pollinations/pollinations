@@ -6,6 +6,7 @@ on:
       - production
     paths:
       - 'pollinations.ai/**'
+      - 'shared/**'
       - '.github/workflows/deploy-pollinations-ai-cloudflare.yml'
   workflow_dispatch:
 

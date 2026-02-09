@@ -62,21 +62,37 @@ function perThousandChars(dollarsPerThousand: number): number {
 export const AUDIO_SERVICES = {
     elevenlabs: {
         aliases: ["tts", "text-to-speech", "eleven", "tts-1", "tts-1-hd"],
-        modelId: "eleven_multilingual_v2",
+        modelId: "eleven_v3",
         provider: "elevenlabs",
         cost: [
             {
                 date: new Date("2026-02-07").getTime(),
-                // ElevenLabs pricing: ~$0.18 per 1000 characters (average across plans)
-                // Based on: 1 credit = 1 character, ~$0.15-0.22 per 1000 credits depending on plan
-                // We use completionAudioTokens to track character usage
+                // ElevenLabs pricing: 1 credit = 1 character, ~$0.18 per 1000 chars
                 completionAudioTokens: perThousandChars(0.18),
             },
         ],
-        description: "ElevenLabs Text-to-Speech - Natural & Expressive Voices",
+        description:
+            "ElevenLabs v3 TTS - Expressive voices with emotions & audio tags",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
+    },
+    elevenmusic: {
+        aliases: ["music"],
+        modelId: "music_v1",
+        provider: "elevenlabs",
+        cost: [
+            {
+                date: new Date("2026-02-07").getTime(),
+                // ElevenLabs Music: billed by output audio duration
+                // ~$0.30 per minute ≈ $0.005 per second (Scale plan pricing)
+                completionAudioSeconds: 0.005,
+            },
+        ],
+        description:
+            "ElevenLabs Music - Generate studio-grade music from text prompts",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
     },
     whisper: {
         aliases: ["whisper-1", "whisper-large-v3"],

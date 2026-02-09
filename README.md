@@ -42,17 +42,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-02-06** – **🎨 Imagen 3 & Grok Video** New image and video generation models powered by [api.airforce](https://api.airforce). Generate with `imagen` and `grok-video`.
+- **2026-02-09** – **🚀 Massive Model Drop** Added `imagen-4`, `flux-2-dev`, `grok-video`, and `LTX-2` for next-level image and video generation.
+- **2026-02-09** – **🎵 Audio Studio** Generate music with `elevenmusic`, transcribe with `whisper`, and use emotive TTS with `eleven_v3`.
+- **2026-02-09** – **🧠 Smarter Claude** Upgraded `claude-large` to the latest Claude 3 Opus 4.6 for enhanced reasoning.
+- **2026-02-06** – **🚀 New Provider: api.airforce** Added `imagen` (Google Imagen 3) and `grok-video` (xAI Grok Imagine Video) models via [api.airforce](https://api.airforce).
+- **2026-02-05** – **💎 Paid Models Update** `claude`, `grok`, `kontext`, `seedream`, and `seedance-pro` are moving to paid-only.
 - **2026-02-02** – **🚀 Kimi K2.5** Upgraded model with vision support and improved reasoning capabilities.
 - **2026-02-02** – **🧠 Web Research** Claude can now use `perplexity` and `gemini-search` tools for real-time answers.
 - **2026-02-02** – **💎 Premium Access** High-end models `veo`, `claude-large`, and `seedream-pro` are now available for credit holders.
 - **2026-02-02** – **📱 Moltbot Integration** Use Pollinations on Telegram & WhatsApp via the new Moltbot provider.
 - **2026-01-30** – **💎 Paid-Only Models** `claude-large`, `gemini-large`, `veo`, `seedream-pro`, and `nanobanana-pro` will require purchased pollen. Free credits work for all other models.
-- **2026-01-30** – **🆕 Kimi K2.5 Thinking** New open-source reasoning model rivaling Claude Opus at ~1/8th the cost.
-- **2026-01-30** – **💳 New Payment Methods** PayPal, Apple Pay, and Google Pay now accepted via Stripe.
-- **2026-01-26** – **🚀 Alibaba Wan 2.6** Generate videos from images with audio support using the new `wan` model. [API Docs](https://enter.pollinations.ai/api/docs)
-- **2026-01-26** – **🎨 Klein Large (9B)** Experience higher quality image generation and editing with the new `klein-large` model.
-- **2026-01-26** – **🛠️ Vercel AI SDK** Build apps easily with the new official Pollinations provider for Vercel AI SDK.
 ---
 
 ## 🌟 Google Summer of Code 2026 (GSOC)

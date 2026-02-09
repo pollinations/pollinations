@@ -1,0 +1,469 @@
+{
+    "annotations": {
+        "list": [{
+            "builtIn": 1,
+            "datasource": {
+                "type": "grafana",
+                "uid": "-- Grafana --"
+            },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+        }]
+    },
+    "description": "BYOP (Bring Your Own Pollen) — apps where multiple users each bring their own API key. Filters to key names shared by 2+ distinct users.",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [],
+    "panels": [
+        {
+            "collapsed": false,
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+            "id": 100,
+            "panels": [],
+            "title": "BYOP Overview",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Total pollen consumed through BYOP apps (key names shared by 2+ users).",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "fixedColor": "green", "mode": "fixed" },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+            "id": 1,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+                "format": 0,
+                "rawSql": "SELECT sum(total_pollen) as total_pollen FROM (SELECT api_key_name, sum(total_price) as total_pollen FROM generation_event WHERE $__timeFilter(start_time) AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND length(api_key_name) > 0 AND api_key_name != 'undefined' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58')) GROUP BY api_key_name HAVING countDistinct(user_github_id) >= 2)",
+                "refId": "A"
+            }],
+            "title": "Total BYOP Pollen",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "BYOP pollen from tier (free daily) balance.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "fixedColor": "orange", "mode": "fixed" },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "orange", "value": null }]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+            "id": 2,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+                "format": 0,
+                "rawSql": "SELECT sum(tier_pollen) as tier_pollen FROM (SELECT api_key_name, sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen FROM generation_event WHERE $__timeFilter(start_time) AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND length(api_key_name) > 0 AND api_key_name != 'undefined' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58')) GROUP BY api_key_name HAVING countDistinct(user_github_id) >= 2)",
+                "refId": "A"
+            }],
+            "title": "Tier ρ (Free)",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "BYOP pollen from pack (purchased) balance.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "fixedColor": "green", "mode": "fixed" },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+            "id": 3,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+                "format": 0,
+                "rawSql": "SELECT sum(pack_pollen) as pack_pollen FROM (SELECT api_key_name, sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen FROM generation_event WHERE $__timeFilter(start_time) AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND length(api_key_name) > 0 AND api_key_name != 'undefined' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58')) GROUP BY api_key_name HAVING countDistinct(user_github_id) >= 2)",
+                "refId": "A"
+            }],
+            "title": "Pack ρ (Paid)",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Number of unique users participating in BYOP apps.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "fixedColor": "blue", "mode": "fixed" },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "blue", "value": null }]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 4, "w": 3, "x": 18, "y": 1 },
+            "id": 4,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+                "format": 0,
+                "rawSql": "SELECT sum(user_count) as unique_users FROM (SELECT api_key_name, countDistinct(user_github_id) as user_count FROM generation_event WHERE $__timeFilter(start_time) AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND length(api_key_name) > 0 AND api_key_name != 'undefined' AND user_github_id != '' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58')) GROUP BY api_key_name HAVING user_count >= 2)",
+                "refId": "A"
+            }],
+            "title": "BYOP Users",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Number of distinct BYOP apps (key names shared by 2+ users).",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "fixedColor": "purple", "mode": "fixed" },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "purple", "value": null }]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 4, "w": 3, "x": 21, "y": 1 },
+            "id": 5,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+                "format": 0,
+                "rawSql": "SELECT count() as byop_apps FROM (SELECT api_key_name FROM generation_event WHERE $__timeFilter(start_time) AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND length(api_key_name) > 0 AND api_key_name != 'undefined' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58')) GROUP BY api_key_name HAVING countDistinct(user_github_id) >= 2)",
+                "refId": "A"
+            }],
+            "title": "BYOP Apps",
+            "type": "stat"
+        },
+        {
+            "collapsed": false,
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+            "id": 103,
+            "panels": [],
+            "title": "BYOP Rankings",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Apps (key names) used by multiple users — the core BYOP pattern. Ranked by total pollen consumed. Shows top spender (owner) and average pollen per user.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": { "type": "auto" },
+                        "filterable": true,
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": { "id": "byName", "options": "app" },
+                        "properties": [
+                            { "id": "displayName", "value": "App (Key Name)" }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "owner" },
+                        "properties": [
+                            { "id": "displayName", "value": "Top Spender" }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "users" },
+                        "properties": [
+                            { "id": "displayName", "value": "Users" }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "avg_per_user" },
+                        "properties": [
+                            { "id": "displayName", "value": "Avg/User" },
+                            { "id": "unit", "value": "currencyUSD" },
+                            { "id": "decimals", "value": 4 }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "tier_pollen" },
+                        "properties": [
+                            { "id": "displayName", "value": "Tier ρ" },
+                            { "id": "unit", "value": "currencyUSD" },
+                            { "id": "decimals", "value": 4 }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "pack_pollen" },
+                        "properties": [
+                            { "id": "displayName", "value": "Pack ρ" },
+                            { "id": "unit", "value": "currencyUSD" },
+                            { "id": "decimals", "value": 4 }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "total_pollen" },
+                        "properties": [
+                            { "id": "displayName", "value": "Total ρ" },
+                            { "id": "unit", "value": "currencyUSD" },
+                            { "id": "decimals", "value": 4 },
+                            { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "gradient" } },
+                            { "id": "color", "value": { "mode": "continuous-GrYlRd" } }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "pack_ratio" },
+                        "properties": [
+                            { "id": "displayName", "value": "Profitability" },
+                            { "id": "unit", "value": "percentunit" },
+                            { "id": "decimals", "value": 0 },
+                            { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "gradient" } },
+                            { "id": "color", "value": { "mode": "continuous-RdYlGr" } },
+                            { "id": "min", "value": -1 },
+                            { "id": "max", "value": 1 }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "requests" },
+                        "properties": [
+                            { "id": "displayName", "value": "Requests" }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": { "h": 30, "w": 24, "x": 0, "y": 6 },
+            "id": 30,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": true,
+                    "fields": "",
+                    "reducer": ["sum"],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [{ "desc": true, "displayName": "Total ρ" }]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+                "format": 1,
+                "rawSql": "SELECT\n  app,\n  if(pack_pollen + tier_pollen > 0, (pack_pollen - tier_pollen) / (pack_pollen + tier_pollen), 0) as pack_ratio,\n  avg_per_user, owner, users, tier_pollen, pack_pollen, total_pollen, requests\nFROM (\n  SELECT\n    app,\n    argMax(user, user_total) as owner,\n    count() as users,\n    sum(user_total) / count() as avg_per_user,\n    sum(tier_pollen) as tier_pollen,\n    sum(pack_pollen) as pack_pollen,\n    sum(user_total) as total_pollen,\n    sum(requests) as requests\n  FROM (\n    SELECT\n      api_key_name as app,\n      if(user_github_username != '' AND user_github_username != 'undefined', user_github_username, user_github_id) as user,\n      sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen,\n      sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen,\n      sum(total_price) as user_total,\n      count() as requests\n    FROM generation_event\n    WHERE $__timeFilter(start_time)\n      AND environment = 'production'\n      AND response_status >= 200 AND response_status < 300\n      AND total_price > 0\n      AND length(api_key_name) > 0\n      AND api_key_name != 'undefined'\n      AND user_github_id != ''\n      AND user_github_id != '241978997'\n      AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\n    GROUP BY app, user\n  )\n  GROUP BY app\n  HAVING count() >= 2\n  ORDER BY total_pollen DESC\n)",
+                "refId": "A"
+            }],
+            "title": "BYOP App Ranking",
+            "type": "table"
+        },
+        {
+            "collapsed": false,
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+            "id": 102,
+            "panels": [],
+            "title": "BYOP Spending Over Time",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Daily pollen consumption through BYOP apps, split by Tier (orange) and Pack (green).",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "palette-classic" },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "Pollen",
+                        "axisPlacement": "left",
+                        "barAlignment": 0,
+                        "drawStyle": "bars",
+                        "fillOpacity": 80,
+                        "gradientMode": "none",
+                        "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": { "type": "linear" },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": { "group": "A", "mode": "normal" },
+                        "thresholdsStyle": { "mode": "off" }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": [
+                    {
+                        "matcher": { "id": "byName", "options": "pack_pollen" },
+                        "properties": [
+                            { "id": "displayName", "value": "Pack ρ" },
+                            { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "tier_pollen" },
+                        "properties": [
+                            { "id": "displayName", "value": "Tier ρ" },
+                            { "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "tier_pct" },
+                        "properties": [
+                            { "id": "displayName", "value": "Tier %" },
+                            { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } },
+                            { "id": "custom.axisPlacement", "value": "right" },
+                            { "id": "custom.axisLabel", "value": "Tier %" },
+                            { "id": "custom.drawStyle", "value": "line" },
+                            { "id": "custom.lineWidth", "value": 2 },
+                            { "id": "custom.fillOpacity", "value": 0 },
+                            { "id": "custom.stacking", "value": { "mode": "none" } },
+                            { "id": "unit", "value": "percentunit" },
+                            { "id": "min", "value": 0 },
+                            { "id": "max", "value": 1 }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": { "h": 10, "w": 24, "x": 0, "y": 37 },
+            "id": 20,
+            "options": {
+                "legend": {
+                    "calcs": ["sum", "mean"],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": { "mode": "multi", "sort": "desc" },
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 200
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+                "format": 0,
+                "range": true,
+                "rawSql": "SELECT\n  time,\n  sumIf(pack_pollen, user_count >= 2) as pack_pollen,\n  sumIf(tier_pollen, user_count >= 2) as tier_pollen,\n  if(pack_pollen + tier_pollen > 0, tier_pollen / (pack_pollen + tier_pollen), 0) as tier_pct\nFROM (\n  SELECT\n    toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n    api_key_name,\n    sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen,\n    sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen,\n    countDistinct(user_github_id) as user_count\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND environment = 'production'\n    AND response_status >= 200 AND response_status < 300\n    AND total_price > 0\n    AND length(api_key_name) > 0\n    AND api_key_name != 'undefined'\n    AND user_github_id != '241978997'\n    AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\n  GROUP BY time, api_key_name\n)\nGROUP BY time\nORDER BY time",
+                "refId": "A"
+            }],
+            "title": "Daily BYOP Consumption — Pack vs Tier",
+            "type": "timeseries"
+        }
+    ],
+    "schemaVersion": 40,
+    "tags": ["byop", "economics"],
+    "templating": { "list": [] },
+    "time": { "from": "now-30d", "to": "now" },
+    "timepicker": {},
+    "timezone": "utc",
+    "title": "BYOP — Bring Your Own Pollen",
+    "uid": "byop-dashboard",
+    "version": 2
+}

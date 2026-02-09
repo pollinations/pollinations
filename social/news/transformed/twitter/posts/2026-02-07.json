@@ -1,0 +1,34 @@
+{
+  "date": "2026-02-07",
+  "generated_at": "2026-02-07T00:13:21.329317+00:00",
+  "platform": "twitter",
+  "tweet_type": "shipped",
+  "tweet": "video generation shouldn't keep you guessing.\n\njust shipped SSE support for api.airforce models — streaming status updates vs silent loading screens. \n\nhad to disable grok-video momentarily (upstream 500s) but the rest of the fleet is flying. 🐝",
+  "alt_tweet": "streaming > polling.\n\nadded SSE support for the new video models. no more black box waiting—you get real-time signal now.\n\nalso squashed some nasty rate limits. shipping daily. 🚢",
+  "full_tweet": "video generation shouldn't keep you guessing.\n\njust shipped SSE support for api.airforce models — streaming status updates vs silent loading screens. \n\nhad to disable grok-video momentarily (upstream 500s) but the rest of the fleet is flying. 🐝 #OpenSource #BuildInPublic",
+  "hashtags": [
+    "#OpenSource",
+    "#BuildInPublic"
+  ],
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/twitter/posts/2026-02-07-image.jpg",
+    "prompt": "Dynamic pixel art scene of a high-tech data stream. A glowing lime green (#ecf874) river of code and tiny film strips flows smoothly from left to right against a deep purple (#110518) background. The Pollinations bee is surfing on the data stream, wearing pixelated sunglasses. Text overlay in chunky 8-bit font: 'STREAMING'. Energetic, high contrast, arcade vibes."
+  },
+  "reasoning": "Focuses on a specific DevX/UX improvement (SSE/Streaming) rather than a generic 'update'. It admits a fault (disabling a broken model) which builds trust/authenticity. The tone is technical but accessible.",
+  "pr_references": [
+    "#8023",
+    "#7996",
+    "#7997",
+    "#7995",
+    "#8024",
+    "#8016",
+    "#8015",
+    "#8004",
+    "#7903",
+    "#8001",
+    "#7922",
+    "#8000",
+    "#7994"
+  ],
+  "char_count": 271
+}

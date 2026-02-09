@@ -47,6 +47,8 @@ export async function atomicDeductUserBalance(
 
 /**
  * Atomically deducts pollen from API key balance.
+ * The `AND pollen_balance IS NOT NULL` guard means keys with NULL balance
+ * (= unlimited budget) are never touched — no COALESCE needed here.
  *
  * @param db - Drizzle database instance
  * @param apiKeyTable - API key table

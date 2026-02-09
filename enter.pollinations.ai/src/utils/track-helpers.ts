@@ -99,6 +99,9 @@ async function deductUserBalance(
         }
 
         // Regular deduction flow
+        // Note: TOCTOU — balances may shift between this read and the UPDATE in
+        // atomicDeductUserBalance due to concurrent requests.  The SQL CASE always
+        // picks the correct bucket; only the logged split below may mismatch.
         const balancesBefore = await getUserBalances(db, userId);
         const deductionSplit = calculateDeductionSplit(
             balancesBefore.tierBalance,

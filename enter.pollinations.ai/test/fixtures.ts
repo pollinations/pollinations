@@ -1,9 +1,11 @@
-import { SELF } from "cloudflare:test";
+import { SELF, env } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
 import { createAuthClient } from "better-auth/client";
 import { adminClient, apiKeyClient } from "better-auth/client/plugins";
+import { drizzle } from "drizzle-orm/d1";
 import { test as base, expect } from "vitest";
+import { user as userTable } from "@/db/schema/better-auth.ts";
 import { ensureConfigured } from "@/logger.ts";
 import { createFetchMock, teardownFetchMock } from "./mocks/fetch.ts";
 import { createMockGithub } from "./mocks/github.ts";
@@ -36,6 +38,8 @@ type Fixtures = {
     auth: ReturnType<typeof createAuthClientInstance>;
     sessionToken: string;
     apiKey: string;
+    /** API key for a user with pack balance (can use paidOnly models) */
+    paidApiKey: string;
     pubApiKey: string;
     /** API key restricted to only ["openai-fast", "flux"] models */
     restrictedApiKey: string;
@@ -139,6 +143,27 @@ export const test = base.extend<Fixtures>({
         const apiKey = createApiKeyResponse.data.key;
         // expect(apiKey.startsWith("sk_")).toBe(true);
         await use(apiKey);
+    },
+    /**
+     * API key for a user with pack balance, enabling paidOnly model access.
+     * Grants 100 pollen pack balance via direct DB update.
+     */
+    paidApiKey: async ({ auth, sessionToken }, use) => {
+        // Each test has an isolated DB with exactly one user — update all users
+        const db = drizzle(env.DB);
+        await db.update(userTable).set({ packBalance: 100 });
+
+        const createApiKeyResponse = await auth.apiKey.create({
+            name: "paid-test-api-key",
+            fetchOptions: {
+                headers: {
+                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        });
+        if (!createApiKeyResponse.data)
+            throw new Error("Failed to create paid API key");
+        await use(createApiKeyResponse.data.key);
     },
     pubApiKey: async ({ auth, sessionToken }, use) => {
         const createApiKeyResponse = await auth.apiKey.create({

@@ -46,7 +46,8 @@ const hosts = [
 
 async function getSnapshotHash(request: Request): Promise<string> {
     const hash = crypto.createHash("md5");
-    hash.update(request.headers.get("authorization") || "");
+    // Exclude authorization header — it changes per test run and doesn't affect
+    // backend response content. This allows VCR snapshots to be reused across runs.
     hash.update(request.headers.get("content-type") || "");
     hash.update(`${request.method}:${request.url}`);
     try {

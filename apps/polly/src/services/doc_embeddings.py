@@ -1,6 +1,6 @@
 """Documentation embeddings service for semantic search across documentation sites.
 
-Uses Jina Embeddings v2 Base Code + ChromaDB for local documentation search.
+Uses OpenAI text-embedding-3-small + ChromaDB for documentation search.
 Crawls and indexes: enter.pollinations.ai, kpi.myceli.ai, gsoc.pollinations.ai
 """
 
@@ -16,9 +16,13 @@ from urllib.parse import urljoin, urlparse
 logger = logging.getLogger(__name__)
 
 # Lazy imports - only load heavy dependencies when needed
-_model = None
+_openai_client = None
 _chroma_client = None
 _collection = None
+
+# OpenAI embedding config
+EMBEDDING_MODEL = "text-embedding-3-small"
+EMBEDDING_DIMENSIONS = 1536  # Default for text-embedding-3-small
 
 # Data directories
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
@@ -45,18 +49,47 @@ MIN_CHUNK_SIZE = 100
 _update_lock = asyncio.Lock()
 
 
-def _get_model():
-    """Lazy load the embedding model (reuse same as code_search)."""
-    global _model
-    if _model is None:
-        from sentence_transformers import SentenceTransformer
+def _get_openai_client():
+    """Lazy load the OpenAI client."""
+    global _openai_client
+    if _openai_client is None:
+        from openai import AsyncOpenAI
+        import os
 
-        logger.info("Loading Jina embeddings model for documentation...")
-        _model = SentenceTransformer(
-            "jinaai/jina-embeddings-v2-base-code", trust_remote_code=True
-        )
-        logger.info("Documentation embedding model loaded")
-    return _model
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY environment variable is required for embeddings")
+
+        _openai_client = AsyncOpenAI(api_key=api_key)
+        logger.info("OpenAI embeddings client initialized for documentation")
+    return _openai_client
+
+
+async def _generate_embedding(text: str) -> list[float]:
+    """Generate embedding using OpenAI API."""
+    client = _get_openai_client()
+
+    response = await client.embeddings.create(
+        model=EMBEDDING_MODEL,
+        input=text,
+        dimensions=EMBEDDING_DIMENSIONS
+    )
+
+    return response.data[0].embedding
+
+
+async def _generate_embeddings_batch(texts: list[str]) -> list[list[float]]:
+    """Generate embeddings for multiple texts in a batch (more efficient)."""
+    client = _get_openai_client()
+
+    # OpenAI allows up to 2048 texts per batch for embeddings
+    response = await client.embeddings.create(
+        model=EMBEDDING_MODEL,
+        input=texts,
+        dimensions=EMBEDDING_DIMENSIONS
+    )
+
+    return [item.embedding for item in response.data]
 
 
 def _get_collection():
@@ -369,7 +402,6 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
     Returns:
         Number of chunks embedded
     """
-    model = _get_model()
     collection = _get_collection()
 
     # Crawl the site
@@ -381,10 +413,11 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
 
     # Track embeddings
     embedded_count = 0
-    all_ids = []
-    all_embeddings = []
-    all_documents = []
-    all_metadatas = []
+    batch_size = 100  # Process 100 chunks at a time for efficiency
+    batch_ids = []
+    batch_texts = []
+    batch_documents = []
+    batch_metadatas = []
 
     for page in pages:
         url = page["url"]
@@ -408,40 +441,58 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
                     if existing["metadatas"][0].get("hash") == content_hash:
                         continue
 
-            # Generate embedding
-            try:
-                embedding = await asyncio.to_thread(model.encode, chunk["content"])
+            # Add to batch
+            batch_ids.append(chunk_id)
+            batch_texts.append(chunk["content"])
+            batch_documents.append(chunk["content"])
+            batch_metadatas.append(
+                {
+                    "url": chunk["url"],
+                    "page_title": chunk["page_title"],
+                    "section": chunk["section"],
+                    "site": urlparse(base_url).netloc,
+                    "hash": content_hash,
+                    "last_updated": datetime.utcnow().isoformat(),
+                }
+            )
 
-                all_ids.append(chunk_id)
-                all_embeddings.append(embedding.tolist())
-                all_documents.append(chunk["content"])
-                all_metadatas.append(
-                    {
-                        "url": chunk["url"],
-                        "page_title": chunk["page_title"],
-                        "section": chunk["section"],
-                        "site": urlparse(base_url).netloc,
-                        "hash": content_hash,
-                        "last_updated": datetime.utcnow().isoformat(),
-                    }
-                )
+            # Process batch when full
+            if len(batch_texts) >= batch_size:
+                try:
+                    embeddings = await _generate_embeddings_batch(batch_texts)
+                    collection.upsert(
+                        ids=batch_ids,
+                        embeddings=embeddings,
+                        documents=batch_documents,
+                        metadatas=batch_metadatas,
+                    )
+                    embedded_count += len(batch_ids)
+                    logger.info(f"Embedded batch of {len(batch_ids)} doc chunks")
+                except Exception as e:
+                    logger.warning(f"Failed to embed batch: {e}")
 
-                embedded_count += 1
+                # Clear batch
+                batch_ids = []
+                batch_texts = []
+                batch_documents = []
+                batch_metadatas = []
 
-            except Exception as e:
-                logger.warning(f"Failed to embed chunk from {url}: {e}")
-                continue
+    # Process remaining batch
+    if batch_ids:
+        try:
+            embeddings = await _generate_embeddings_batch(batch_texts)
+            collection.upsert(
+                ids=batch_ids,
+                embeddings=embeddings,
+                documents=batch_documents,
+                metadatas=batch_metadatas,
+            )
+            embedded_count += len(batch_ids)
+            logger.info(f"Embedded final batch of {len(batch_ids)} doc chunks")
+        except Exception as e:
+            logger.warning(f"Failed to embed final batch: {e}")
 
-    # Batch upsert to ChromaDB
-    if all_ids:
-        collection.upsert(
-            ids=all_ids,
-            embeddings=all_embeddings,
-            documents=all_documents,
-            metadatas=all_metadatas,
-        )
-        logger.info(f"Embedded {embedded_count} chunks from {base_url}")
-
+    logger.info(f"Total embedded: {embedded_count} chunks from {base_url}")
     return embedded_count
 
 
@@ -456,18 +507,17 @@ async def search_docs(query: str, top_k: int = 5) -> list[dict]:
     Returns:
         List of matching documentation chunks with URLs
     """
-    model = _get_model()
     collection = _get_collection()
 
     if collection.count() == 0:
         return []
 
     # Generate query embedding
-    query_embedding = await asyncio.to_thread(model.encode, query)
+    query_embedding = await _generate_embedding(query)
 
     # Search
     results = collection.query(
-        query_embeddings=[query_embedding.tolist()],
+        query_embeddings=[query_embedding],
         n_results=min(top_k, collection.count()),
         include=["documents", "metadatas", "distances"],
     )
@@ -550,10 +600,14 @@ def get_doc_stats() -> dict:
 
 async def close():
     """Clean up resources on shutdown."""
-    global _model, _chroma_client, _collection
+    global _openai_client, _chroma_client, _collection
+
+    # Close OpenAI client
+    if _openai_client:
+        await _openai_client.close()
 
     # Clear references (ChromaDB handles its own cleanup)
-    _model = None
+    _openai_client = None
     _collection = None
     _chroma_client = None
     logger.info("Documentation embeddings service closed")

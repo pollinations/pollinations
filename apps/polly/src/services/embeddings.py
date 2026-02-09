@@ -139,6 +139,9 @@ async def _generate_embeddings_batch(texts: list[str]) -> list[list[float]]:
     )
 
     return [item.embedding for item in response.data]
+
+
+def _get_collection():
     """Lazy load ChromaDB collection."""
     global _chroma_client, _collection
     if _collection is None:

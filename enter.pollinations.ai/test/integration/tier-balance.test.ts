@@ -371,13 +371,14 @@ describe("Tier Balance Management", () => {
 
         test("tierNames should contain all valid tier names", () => {
             expect(tierNames).toEqual([
+                "microbe",
                 "spore",
                 "seed",
                 "flower",
                 "nectar",
                 "router",
             ]);
-            expect(tierNames).toHaveLength(5);
+            expect(tierNames).toHaveLength(6);
 
             // Verify each name exists in TIER_POLLEN
             for (const tier of tierNames) {
@@ -765,21 +766,21 @@ describe("Tier Balance Management", () => {
 
         test("should show paid_only field in model info", async () => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/generate/v1/models",
+                "http://localhost:3000/api/generate/text/models",
             );
 
             expect(response.status).toBe(200);
-            const data = await response.json();
+            const models = (await response.json()) as any[];
 
             // Check that paid-only models have the flag
-            const claudeLarge = data.data.find(
+            const claudeLarge = models.find(
                 (m: any) => m.name === "claude-large",
             );
             expect(claudeLarge).toBeDefined();
             expect(claudeLarge.paid_only).toBe(true);
 
             // Check that regular models don't have the flag or have it as false
-            const openai = data.data.find((m: any) => m.name === "openai");
+            const openai = models.find((m: any) => m.name === "openai");
             expect(openai).toBeDefined();
             expect(openai.paid_only).toBeUndefined();
         });

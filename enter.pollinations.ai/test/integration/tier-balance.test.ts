@@ -8,8 +8,8 @@ import { getTierPollen, TIER_POLLEN, tierNames } from "@/tier-config.ts";
 import {
     atomicDeductPaidBalance,
     atomicDeductUserBalance,
-    identifyDeductionSource,
     getUserBalances,
+    identifyDeductionSource,
 } from "@/utils/balance-deduction.ts";
 import { test } from "../fixtures.ts";
 

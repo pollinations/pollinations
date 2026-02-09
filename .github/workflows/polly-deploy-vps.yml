@@ -41,23 +41,23 @@ jobs:
             pip3 install -r requirements.txt --quiet
 
             # Restart bot service
-            sudo systemctl restart polly-bot.service
+            sudo systemctl restart polly.service
 
             # Wait and check status
             sleep 10
 
             # Verify bot is actually running
-            if ! sudo systemctl is-active --quiet polly-bot.service; then
+            if ! sudo systemctl is-active --quiet polly.service; then
               echo "❌ Bot failed to start"
-              sudo journalctl -u polly-bot.service -n 50 --no-pager
+              sudo journalctl -u polly.service -n 50 --no-pager
               exit 1
             fi
 
             # Check for crashes in first 10s
             sleep 10
-            if ! sudo systemctl is-active --quiet polly-bot.service; then
+            if ! sudo systemctl is-active --quiet polly.service; then
               echo "❌ Bot crashed after startup"
-              sudo journalctl -u polly-bot.service -n 50 --no-pager
+              sudo journalctl -u polly.service -n 50 --no-pager
               exit 1
             fi
 

@@ -204,32 +204,14 @@ export function getAudioServices(): ServiceId[] {
     return Object.keys(AUDIO_SERVICES) as ServiceId[];
 }
 
-/**
- * Get visible (non-hidden) text service IDs
- */
-export function getVisibleTextServices(): ServiceId[] {
-    return getTextServices().filter(
-        (id) => !SERVICE_REGISTRY[id as ServiceId]?.hidden,
-    );
+/** Filter out hidden services */
+function filterVisible(ids: ServiceId[]): ServiceId[] {
+    return ids.filter((id) => !SERVICE_REGISTRY[id]?.hidden);
 }
 
-/**
- * Get visible (non-hidden) image service IDs
- */
-export function getVisibleImageServices(): ServiceId[] {
-    return getImageServices().filter(
-        (id) => !SERVICE_REGISTRY[id as ServiceId]?.hidden,
-    );
-}
-
-/**
- * Get visible (non-hidden) audio service IDs
- */
-export function getVisibleAudioServices(): ServiceId[] {
-    return getAudioServices().filter(
-        (id) => !SERVICE_REGISTRY[id as ServiceId]?.hidden,
-    );
-}
+export const getVisibleTextServices = () => filterVisible(getTextServices());
+export const getVisibleImageServices = () => filterVisible(getImageServices());
+export const getVisibleAudioServices = () => filterVisible(getAudioServices());
 
 /**
  * Get service definition by ID

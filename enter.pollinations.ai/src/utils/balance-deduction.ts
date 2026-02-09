@@ -108,27 +108,27 @@ export async function getUserBalances(
     };
 }
 
-export type DeductionSplit = {
+export type DeductionSource = {
     fromTier: number;
     fromCrypto: number;
     fromPack: number;
 };
 
 /**
- * Calculates which single balance bucket a deduction comes from.
+ * Identifies which single balance bucket a deduction comes from.
  * Picks the first bucket with balance > 0 (tier → crypto → pack).
- * The full amount is attributed to that one bucket.
+ * The full amount is attributed to that one bucket (no splitting).
  *
  * @param tierBalance - Current tier balance
  * @param cryptoBalance - Current crypto balance
  * @param amount - Amount to deduct
  * @returns Object showing which balance type the deduction comes from
  */
-export function calculateDeductionSplit(
+export function identifyDeductionSource(
     tierBalance: number,
     cryptoBalance: number,
     amount: number,
-): DeductionSplit {
+): DeductionSource {
     if (tierBalance > 0)
         return { fromTier: amount, fromCrypto: 0, fromPack: 0 };
     if (cryptoBalance > 0)

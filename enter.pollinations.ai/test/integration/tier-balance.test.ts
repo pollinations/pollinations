@@ -8,7 +8,7 @@ import { getTierPollen, TIER_POLLEN, tierNames } from "@/tier-config.ts";
 import {
     atomicDeductPaidBalance,
     atomicDeductUserBalance,
-    calculateDeductionSplit,
+    identifyDeductionSource,
     getUserBalances,
 } from "@/utils/balance-deduction.ts";
 import { test } from "../fixtures.ts";
@@ -307,43 +307,43 @@ describe("Tier Balance Management", () => {
             expect(balances.packBalance).toBe(5);
         });
 
-        test("calculateDeductionSplit should pick single bucket", () => {
+        test("identifyDeductionSource should pick single bucket", () => {
             // Tier is positive — full amount attributed to tier
-            const fromTier = calculateDeductionSplit(5, 3, 7);
+            const fromTier = identifyDeductionSource(5, 3, 7);
             expect(fromTier.fromTier).toBe(7);
             expect(fromTier.fromCrypto).toBe(0);
             expect(fromTier.fromPack).toBe(0);
 
             // Tier is zero, crypto is positive — full amount from crypto
-            const fromCrypto = calculateDeductionSplit(0, 3, 7);
+            const fromCrypto = identifyDeductionSource(0, 3, 7);
             expect(fromCrypto.fromTier).toBe(0);
             expect(fromCrypto.fromCrypto).toBe(7);
             expect(fromCrypto.fromPack).toBe(0);
 
             // Tier and crypto are zero — full amount from pack
-            const fromPack = calculateDeductionSplit(0, 0, 8);
+            const fromPack = identifyDeductionSource(0, 0, 8);
             expect(fromPack.fromTier).toBe(0);
             expect(fromPack.fromCrypto).toBe(0);
             expect(fromPack.fromPack).toBe(8);
 
             // All zero — falls through to pack
-            const allZero = calculateDeductionSplit(0, 0, 3);
+            const allZero = identifyDeductionSource(0, 0, 3);
             expect(allZero.fromPack).toBe(3);
 
             // Negative tier, zero crypto — falls through to pack
-            const negTier = calculateDeductionSplit(-3, 0, 4);
+            const negTier = identifyDeductionSource(-3, 0, 4);
             expect(negTier.fromTier).toBe(0);
             expect(negTier.fromCrypto).toBe(0);
             expect(negTier.fromPack).toBe(4);
 
             // Negative tier, positive crypto — skips tier, uses crypto
-            const negTierPosCrypto = calculateDeductionSplit(-3, 2, 4);
+            const negTierPosCrypto = identifyDeductionSource(-3, 2, 4);
             expect(negTierPosCrypto.fromTier).toBe(0);
             expect(negTierPosCrypto.fromCrypto).toBe(4);
             expect(negTierPosCrypto.fromPack).toBe(0);
 
             // All negative — falls through to pack
-            const allNeg = calculateDeductionSplit(-3, -1, 5);
+            const allNeg = identifyDeductionSource(-3, -1, 5);
             expect(allNeg.fromTier).toBe(0);
             expect(allNeg.fromCrypto).toBe(0);
             expect(allNeg.fromPack).toBe(5);

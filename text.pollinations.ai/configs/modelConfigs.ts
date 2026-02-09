@@ -122,61 +122,21 @@ export const portkeyConfig: PortkeyConfigMap = {
     }),
 
     // ============================================================================
-    // Fallback Configs - AWS Bedrock primary, Google Vertex AI fallback
-    // Uses snake_case for x-portkey-config JSON format
+    // Claude Models - Bedrock only (no fallback needed since Claude is paid tier)
     // ============================================================================
-    "claude-sonnet-4-5-fallback": () => ({
-        strategy: { mode: "fallback" },
-        defaultOptions: { max_tokens: 16384 },
-        targets: [
-            // Primary: AWS Bedrock (native)
-            {
-                provider: "bedrock",
-                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
-                aws_region: process.env.AWS_REGION || "us-east-1",
-                override_params: {
-                    model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-                },
-            },
-            // Fallback: Google Vertex AI
-            {
-                provider: "vertex-ai",
-                authKey: googleCloudAuth.getAccessToken,
-                vertex_project_id: process.env.GOOGLE_PROJECT_ID,
-                vertex_region: "europe-west1",
-                override_params: {
-                    model: "anthropic.claude-sonnet-4-5@20250929",
-                },
-            },
-        ],
-    }),
-    "claude-opus-4-6-fallback": () => ({
-        strategy: { mode: "fallback" },
-        defaultOptions: { max_tokens: 16384 },
-        targets: [
-            // Primary: AWS Bedrock (native)
-            {
-                provider: "bedrock",
-                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
-                aws_region: process.env.AWS_REGION || "us-east-1",
-                override_params: {
-                    model: "global.anthropic.claude-opus-4-6-v1",
-                },
-            },
-            // Fallback: Google Vertex AI (still Opus 4.5 until Vertex gets 4.6)
-            {
-                provider: "vertex-ai",
-                authKey: googleCloudAuth.getAccessToken,
-                vertex_project_id: process.env.GOOGLE_PROJECT_ID,
-                vertex_region: "europe-west1",
-                override_params: {
-                    model: "anthropic.claude-opus-4-5@20251101",
-                },
-            },
-        ],
-    }),
+    "claude-sonnet-4-5": () =>
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        }),
+    "claude-opus-4-6": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-opus-4-6-v1",
+        }),
+    // Opus 4.5 - Bedrock only (no fallback needed since Claude is paid tier)
+    "claude-opus-4-5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        }),
     "amazon.nova-micro-v1:0": () =>
         createBedrockNativeConfig({
             model: "amazon.nova-micro-v1:0",

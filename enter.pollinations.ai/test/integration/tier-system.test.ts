@@ -70,9 +70,10 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            // Should have exhausted tier (10) and used 10 from pack
-            expect(afterUsage[0]?.tierBalance).toBe(0);
-            expect(afterUsage[0]?.packBalance).toBe(40);
+            // Single-bucket deduction: tier absorbs [3,2,4,5]=14, going to -4;
+            // remaining [2,3,1]=6 deducted from pack (first positive bucket)
+            expect(afterUsage[0]?.tierBalance).toBe(-4);
+            expect(afterUsage[0]?.packBalance).toBe(44);
 
             // Trigger tier refill
             await triggerTierRefill();
@@ -88,9 +89,9 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            // Tier should be refilled, pack unchanged
+            // Tier should be refilled (hard SET), pack unchanged
             expect(afterRefill[0]?.tierBalance).toBe(10);
-            expect(afterRefill[0]?.packBalance).toBe(40);
+            expect(afterRefill[0]?.packBalance).toBe(44);
             expect(afterRefill[0]?.lastTierGrant).toBeGreaterThan(
                 Date.now() - 5000,
             );
@@ -492,7 +493,7 @@ describe("Tier System End-to-End", () => {
                     },
                 });
 
-            // Use 30 pollen (1 from tier, 29 from crypto)
+            // Use 30 pollen — tier is first positive bucket, full amount deducted there
             await atomicDeductUserBalance(db, userId, 30);
 
             const balance = await db
@@ -505,8 +506,8 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            expect(balance[0]?.tierBalance).toBe(0);
-            expect(balance[0]?.cryptoBalance).toBe(21); // 50 - 29
+            expect(balance[0]?.tierBalance).toBe(-29); // 1 - 30 (single bucket, goes negative)
+            expect(balance[0]?.cryptoBalance).toBe(50); // Untouched
             expect(balance[0]?.packBalance).toBe(100); // Untouched
         });
     });

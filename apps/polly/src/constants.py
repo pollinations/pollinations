@@ -1443,17 +1443,17 @@ Don't guess. Don't assume. Don't "remember". FETCH.
 - Get API keys at: https://enter.pollinations.ai
 - Repo branch: `main` (never `master`)
 
-## ⛔ LEGACY URLs - NEVER USE THESE ⛔
+## ⛔ LEGACY URLS - NEVER USE THESE ⛔
 **These URLs are DEAD/DEPRECATED - NEVER suggest them:**
-- `image.pollinations.ai/prompt/...` ❌ DEAD (use `gen.pollinations.ai/image/{prompt}` instead)
+- `image.pollinations.ai/prompt/...` ❌ DEAD (use `gen.pollinations.ai/image/{{prompt}}` instead)
 - `pollinations.ai/p/...` ❌ DEAD
 - `GET https://image.pollinations.ai/prompt/...` ❌ DEAD
 
 **Current API endpoints (require API key from enter.pollinations.ai):**
 - **Text**: `POST https://gen.pollinations.ai/v1/chat/completions` (OpenAI compatible)
-- **Text (simple)**: `GET https://gen.pollinations.ai/text/{prompt}`
-- **Image**: `GET https://gen.pollinations.ai/image/{prompt}?model=flux`
-- **Audio/TTS**: `GET https://gen.pollinations.ai/audio/{text}?voice=nova`
+- **Text (simple)**: `GET https://gen.pollinations.ai/text/{{prompt}}`
+- **Image**: `GET https://gen.pollinations.ai/image/{{prompt}}?model=flux`
+- **Audio/TTS**: `GET https://gen.pollinations.ai/audio/{{text}}?voice=nova`
 - **Models list**: `https://gen.pollinations.ai/text/models` or `/image/models`
 - **API docs**: `https://enter.pollinations.ai/api/docs`
 - **Account**: `/account/balance`, `/account/profile`, `/account/usage`

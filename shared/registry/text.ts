@@ -316,7 +316,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-large": {
-        aliases: ["claude-opus-4.6"],
+        aliases: ["claude-opus-4.6", "claude-opus"],
         modelId: "claude-opus-4-6-20260205",
         provider: "google",
         paidOnly: true,

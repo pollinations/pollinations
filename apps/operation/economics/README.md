@@ -9,7 +9,33 @@ Local:   Browser → localhost:3000 → Grafana → Tinybird/D1
 Prod:    Browser → economics.myceli.ai → Cloudflare Tunnel → Grafana → Tinybird/D1
 ```
 
-## Quick Start (Local)
+**Production server:** DigitalOcean Droplet `207.154.253.25`
+
+The Grafana container mounts `provisioning/` directly from the git checkout at `/opt/pollinations/apps/operation/economics/`. No copy steps needed — `git pull` + `docker restart` is all it takes.
+
+## Deploy to Production
+
+**One-liner (copy-paste this):**
+
+```bash
+ssh root@207.154.253.25 "cd /opt/pollinations && git fetch origin && git reset --hard origin/main && docker restart economics-grafana"
+```
+
+That's it. The container volume-mounts the provisioning dir from the git repo, so pulling new code is enough.
+
+**To deploy a branch instead of main:**
+
+```bash
+ssh root@207.154.253.25 "cd /opt/pollinations && git fetch origin && git checkout BRANCH_NAME && git reset --hard origin/BRANCH_NAME && docker restart economics-grafana"
+```
+
+**Verify it worked:**
+
+```bash
+ssh root@207.154.253.25 "docker logs economics-grafana --tail 5"
+```
+
+## Local Development
 
 ```bash
 cd apps/operation/economics
@@ -20,29 +46,29 @@ cp /path/to/shared/.env .env
 # 2. Start Grafana
 docker compose up -d
 
-# 3. Access Grafana
-open http://localhost:3000
+# 3. Access at http://localhost:3000
 ```
+
+### Editing Dashboards
+
+1. Edit dashboard in Grafana UI at http://localhost:3000
+2. Dashboard → Settings → JSON Model → Copy
+3. Paste into the matching file in `provisioning/dashboards/`
+4. Restart to verify: `docker compose restart grafana`
 
 ## Data Sources
 
-### Tinybird (ClickHouse)
-- **Host:** `clickhouse.europe-west2.gcp.tinybird.co`
-- **Database:** `default`
-- **Token:** `TINYBIRD_GENERATION_EVENT_READ`
-- **UID:** `PAD1A0A25CD30D456`
+| Source | Type | UID |
+|--------|------|-----|
+| Tinybird (ClickHouse) | `grafana-clickhouse-datasource` | `PAD1A0A25CD30D456` |
+| Cloudflare D1 | Infinity plugin (REST) | `P33A123E5D474E8F3` |
 
-### Cloudflare D1
-- **Type:** Infinity plugin (REST API)
-- **Auth:** Bearer token via `CLOUDFLARE_API_TOKEN`
-- **UID:** `P33A123E5D474E8F3`
+## Secrets
 
-## Secrets Management
-
-Secrets are stored in `.env` (gitignored) locally and on the production server.
+Stored in `.env` (gitignored) — both locally and on the server at `/opt/pollinations/apps/operation/economics/.env`.
 
 | Variable | Purpose |
-|----------|--------|
+|----------|---------|
 | `GF_ADMIN_USER` | Grafana admin username |
 | `GF_ADMIN_PASSWORD` | Grafana admin password |
 | `CLOUDFLARE_TUNNEL_TOKEN` | Cloudflare Tunnel token (prod) |
@@ -50,109 +76,36 @@ Secrets are stored in `.env` (gitignored) locally and on the production server.
 | `TINYBIRD_GENERATION_EVENT_READ` | Read token for generation_event |
 | `DISCORD_WEBHOOK_URL` | Discord webhook for alerts |
 
-**Security:** `.env` is gitignored. Share secrets securely via 1Password or similar.
+## First Time Server Setup
 
-## Creating/Editing Panels
-
-1. Open http://localhost:3000
-2. Edit dashboard in UI
-3. Dashboard → Settings → JSON Model → Copy
-4. Replace `provisioning/dashboards/economics.json`
-5. Restart to verify: `docker compose restart grafana`
-
-## Production Deployment
-
-### Prerequisites
-- DigitalOcean Droplet (Ubuntu 24.04, $6/mo)
-- Cloudflare Tunnel configured for `economics.myceli.ai`
-- Droplet IP: `207.154.253.25`
-
-### Architecture on Production
-
-The production server has two paths:
-- **Source code:** `/opt/pollinations/apps/operation/economics/` (from git)
-- **Running container mounts:** `/opt/pollinations/apps/economics-dashboard/provisioning/`
-
-The Grafana container mounts provisioning files from the `economics-dashboard` path, so updates require copying files there.
-
-### First Time Setup
+Only needed if rebuilding the droplet from scratch.
 
 ```bash
 ssh root@207.154.253.25
 
-cd /opt
-git clone https://github.com/pollinations/pollinations.git
-
-# Create provisioning directory structure
-mkdir -p /opt/pollinations/apps/economics-dashboard/provisioning/{dashboards,datasources}
-
-# Copy provisioning files
-cp -r /opt/pollinations/apps/operation/economics/provisioning/* \
-   /opt/pollinations/apps/economics-dashboard/provisioning/
+# Clone repo
+cd /opt && git clone https://github.com/pollinations/pollinations.git
 
 # Create .env with secrets
-cd /opt/pollinations/apps/economics-dashboard
+cd /opt/pollinations/apps/operation/economics
 nano .env  # Add GF_ADMIN_PASSWORD, TINYBIRD_*, CLOUDFLARE_* tokens
 
-# Start
-docker compose -f /opt/pollinations/apps/operation/economics/docker-compose.prod.yml up -d
-```
-
-### Update Dashboards (Most Common)
-
-```bash
-ssh root@207.154.253.25
-
-# Pull latest code
-cd /opt/pollinations && git fetch origin && git reset --hard origin/main
-
-# Copy updated provisioning files to mount path
-cp -r /opt/pollinations/apps/operation/economics/provisioning/* \
-   /opt/pollinations/apps/economics-dashboard/provisioning/
-
-# Restart Grafana to pick up changes
-docker restart economics-grafana
-```
-
-### One-Liner Deploy
-
-```bash
-ssh root@207.154.253.25 "cd /opt/pollinations && git fetch origin && git reset --hard origin/main && cp -r apps/operation/economics/provisioning/* apps/economics-dashboard/provisioning/ && docker restart economics-grafana"
-```
-
-## Common Commands
-
-```bash
-# Local
-docker compose up -d
-docker compose logs -f grafana
-docker compose down
-
-# Production
+# Start Grafana + Cloudflare Tunnel
 docker compose -f docker-compose.prod.yml up -d
-docker compose -f docker-compose.prod.yml logs -f
-docker compose -f docker-compose.prod.yml restart grafana
-
-# Reset admin password
-docker compose exec grafana grafana-cli admin reset-admin-password NEW_PASSWORD
-
-# Test datasource health
-curl -s -u admin:$GF_ADMIN_PASSWORD 'http://localhost:3000/api/datasources/uid/PAD1A0A25CD30D456/health'
 ```
 
 ## Troubleshooting
 
-### Plugin health check failed
-- Verify tokens in `.env` are correct
-- Check Docker container can reach external hosts
-
-### Tunnel not connecting (prod)
 ```bash
-docker compose -f docker-compose.prod.yml logs cloudflared
-```
+# Check Grafana logs
+ssh root@207.154.253.25 "docker logs economics-grafana --tail 20"
 
-### Dashboard not loading
-- Check datasource UIDs match between dashboard JSON and provisioning
+# Check tunnel
+ssh root@207.154.253.25 "docker logs economics-tunnel --tail 20"
+
+# Reset admin password
+ssh root@207.154.253.25 "docker exec economics-grafana grafana-cli admin reset-admin-password NEW_PASSWORD"
+```
 
 ## Resources
 

@@ -1,0 +1,69 @@
+{
+  "date": "2026-02-09",
+  "generated_at": "2026-02-09T00:36:39.462593+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art",
+  "linked_images": true,
+  "strategy_reasoning": "Using the 'Cozy Garden Maintenance' metaphor to represent technical fixes and optimizations. This aligns with the organic/growth brand identity while making dry technical updates (APIs, dashboards, bug fixes) feel satisfying and warm.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-09-image-1.jpg",
+      "prompt": "Cozy pixel art scene of the Pollinations bee mascot wearing a tiny toolbelt, polishing a glowing lime green (#ecf874) gem in a cluttered but cute workshop. Soft lavender and peach gradient background. Warm lighting, chunky 8-bit sprites, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'Weekly Polish'. Nostalgic, productive vibes.",
+      "description": "Cover image establishing the theme of maintenance and polish."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-09-image-2.jpg",
+      "prompt": "Retro 8-bit pixel art showing a painting canvas stretching from a square into a wide panoramic landscape. A tiny pixel artist character is painting a sunset. Soft lime green (#ecf874) grass, pastel sky. Visualizing 'aspect ratio freedom'. Cozy, warm lighting, clean UI elements like a creative app. Text: 'No More Squares'.",
+      "description": "Visualizing the Klein-9b aspect ratio fix – freedom from square constraints."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-09-image-3.jpg",
+      "prompt": "Close-up of a retro game inventory screen or dashboard. Very clean and organized. One large glowing gold coin stack representing 'Unified Balance'. Background is a soft lime green (#ecf874) grid. Pixel art graphs and charts in the background looking tidy. Satisfying, organized, lo-fi UI. Text: 'Clean Stats'.",
+      "description": "Representing the simplified Balance API and new Grafana dashboards."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-09-image-4.jpg",
+      "prompt": "A beautiful pixel art door or portal glowing with warm inviting light. A tiny pixel character is walking through. Represents the new 'Authorize Page' and account polish. Soft lime green (#ecf874) vines growing around the door frame. Magical, welcoming, cozy atmosphere like a safe save point in a game. Text: 'Fresh Entry'.",
+      "description": "Visualizing the Account API improvements and Auth page redesign."
+    }
+  ],
+  "caption": "Dev log diary entry: The vibes are immaculate today. 🐝✨\n\nWe’ve been doing some spring cleaning in the code garden. Nothing feels better than a fresh UI and squashing bugs, am I right? 🔧\n\nHere’s the tea on the latest updates:\n\n🖼️ **Klein-9b Unlocked:** No more forced squares! Your aspect ratios are now free to roam.\n💰 **Simple Math:** We simplified the Balance API. One number, zero stress.\n📊 **Dashboard Glow Up:** New Grafana boards for BYOP and API usage. Satisfying stats only.\n🚪 **Fresh Entrance:** The login/auth pages got a total makeover. It’s giving cozy.\n\nBuilding soft tools for hard problems. 🌱\n\nLink in bio to check the new dashboards!\n\n#pollinations #opensource #pixelart #indiedev #cozyvibes #8bit #devlog #generativeai #buildinpublic",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#indiedev",
+    "#cozyvibes",
+    "#8bit",
+    "#devlog",
+    "#generativeai",
+    "#buildinpublic"
+  ],
+  "alt_text": "A carousel of cozy 8-bit pixel art images featuring a bee mascot, retro game UI elements, and glowing portals, all in soft pastel and lime green colors.",
+  "pr_references": [
+    "#8104",
+    "#8102",
+    "#8103",
+    "#8095",
+    "#8097",
+    "#8087",
+    "#8091",
+    "#8029",
+    "#8040",
+    "#8090",
+    "#8085",
+    "#8084",
+    "#8083",
+    "#8082",
+    "#8078",
+    "#8038",
+    "#8039",
+    "#8067",
+    "#8069",
+    "#8076",
+    "#8073",
+    "#8072",
+    "#8068"
+  ]
+}

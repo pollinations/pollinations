@@ -535,4 +535,21 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
         alpha: true,
     },
+    "qwen-character": {
+        aliases: [],
+        modelId: "qwen-character",
+        provider: "airforce",
+        cost: [
+            {
+                date: new Date("2026-02-09").getTime(),
+                promptTextTokens: perMillion(0.0), // Free via api.airforce
+                completionTextTokens: perMillion(0.0),
+            },
+        ],
+        description:
+            "Qwen Character - Alibaba's character roleplay model (via api.airforce)",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        isSpecialized: true,
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

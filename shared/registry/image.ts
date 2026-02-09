@@ -283,38 +283,6 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
-    "flux-2-dev": {
-        aliases: ["flux2", "flux-2"],
-        modelId: "flux-2-dev",
-        provider: "airforce",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-02-07").getTime(),
-                completionImageTokens: 0.005, // $0.005 per image
-            },
-        ],
-        description:
-            "FLUX.2 Dev (api.airforce) - Black Forest Labs' latest image model",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-    },
-    "grok-video": {
-        aliases: ["grok-imagine-video"],
-        modelId: "grok-video",
-        provider: "airforce",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-02-07").getTime(),
-                completionVideoSeconds: 0.005, // $0.005 per second
-            },
-        ],
-        description:
-            "Grok Imagine Video (api.airforce) - xAI's video generation model",
-        inputModalities: ["text"],
-        outputModalities: ["video"],
-    },
     "ltx-2": {
         aliases: ["ltx2", "ltxvideo", "ltx-video"],
         modelId: "ltx-2",

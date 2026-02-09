@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
+    createAirforceModelConfig,
     createAzureModelConfig,
     createBedrockNativeConfig,
     createFireworksModelConfig,
@@ -261,5 +262,13 @@ export const portkeyConfig: PortkeyConfigMap = {
     "nomnom": () =>
         createNomNomConfig({
             model: "nomnom",
+        }),
+
+    // ============================================================================
+    // api.airforce - qwen-character (RP/character model)
+    // ============================================================================
+    "qwen-character": () =>
+        createAirforceModelConfig({
+            model: "qwen-character",
         }),
 };

@@ -149,23 +149,6 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // FLUX.2 Dev - Black Forest Labs' latest image model via api.airforce
-    "flux-2-dev": {
-        type: "airforce",
-        enhance: false,
-        defaultSideLength: 1024,
-    },
-
-    // Grok Imagine Video - xAI video generation via api.airforce (alpha - ~90% success rate)
-    "grok-video": {
-        type: "airforce-video",
-        enhance: false,
-        isVideo: true,
-        defaultDuration: 5,
-        maxDuration: 10,
-        defaultResolution: "720p",
-    },
-
     // LTX-2 - Fast video generation with audio on Modal
     "ltx-2": {
         type: "modal-ltx2",

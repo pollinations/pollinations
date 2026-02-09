@@ -333,8 +333,12 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "opus-large-legacy": {
-        aliases: ["claude-opus-4.5"],
+    "claude-legacy": {
+        aliases: [
+            "claude-opus-4.5",
+            "claude-large-legacy",
+            "opus-large-legacy",
+        ],
         modelId: "claude-opus-4-5-20251101",
         provider: "google",
         paidOnly: true,

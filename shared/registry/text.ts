@@ -316,7 +316,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-large": {
-        aliases: ["claude-opus-4.6", "claude-opus"],
+        aliases: ["claude-opus-4.6"],
         modelId: "claude-opus-4-6-20260205",
         provider: "google",
         paidOnly: true,
@@ -334,11 +334,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-legacy": {
-        aliases: [
-            "claude-opus-4.5",
-            "claude-large-legacy",
-            "opus-large-legacy",
-        ],
+        aliases: ["claude-opus-4.5", "claude-large-legacy"],
         modelId: "claude-opus-4-5-20251101",
         provider: "google",
         paidOnly: true,

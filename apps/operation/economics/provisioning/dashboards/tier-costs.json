@@ -347,7 +347,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "ACTUAL average daily cost over the selected time period. This is how much we spend per day on average subsidizing free tier usage.",
+      "description": "Average daily cost of free tier usage (pollen subsidized by Pollinations). Only includes tier meter usage, not pack purchases.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -376,7 +376,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 8,
+        "w": 4,
         "x": 16,
         "y": 1
       },
@@ -401,10 +401,69 @@
         },
         "format": 0,
         "range": true,
-        "rawSql": "SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE $__timeFilter(start_time) AND selected_meter_slug IN ('v1:meter:tier', 'local:tier') AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time ORDER BY time",
+        "rawSql": "SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE $__timeFilter(start_time) AND selected_meter_slug = 'v1:meter:tier' AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time ORDER BY time",
         "refId": "A"
       }],
-      "title": "Avg Daily Cost",
+      "title": "Avg Daily Tier Cost",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Average daily cost from pack (purchased pollen) usage. This is revenue-backed spend, not subsidized.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+              "color": "blue",
+              "value": null
+            }, {
+              "color": "purple",
+              "value": 50
+            }]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "id": 16,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["mean"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE $__timeFilter(start_time) AND selected_meter_slug = 'v1:meter:pack' AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time ORDER BY time",
+        "refId": "A"
+      }],
+      "title": "Avg Daily Pack Cost",
       "type": "stat"
     },
     {
@@ -582,7 +641,7 @@
         },
         "format": 0,
         "range": true,
-        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  sumIf(total_price, user_tier = 'microbe') as microbe,\n  sumIf(total_price, user_tier = 'spore') as spore,\n  sumIf(total_price, user_tier = 'seed') as seed,\n  sumIf(total_price, user_tier = 'flower') as flower,\n  sumIf(total_price, user_tier = 'nectar') as nectar\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\nGROUP BY time\nORDER BY time",
+        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  sumIf(total_price, user_tier = 'microbe') as microbe,\n  sumIf(total_price, user_tier = 'spore') as spore,\n  sumIf(total_price, user_tier = 'seed') as seed,\n  sumIf(total_price, user_tier = 'flower') as flower,\n  sumIf(total_price, user_tier = 'nectar') as nectar\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\n  AND user_tier IN ('microbe', 'spore', 'seed', 'flower', 'nectar')\nGROUP BY time\nORDER BY time",
         "refId": "A"
       }],
       "title": "Daily Tier Consumption by Tier",
@@ -700,7 +759,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 0.1)) * 100 as Microbe FROM generation_event WHERE $__timeFilter(start_time) AND user_tier = 'microbe' AND is_billed_usage = true AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')",
+          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 0.1)) * 100 as Microbe FROM generation_event WHERE $__timeFilter(start_time) AND user_tier = 'microbe' AND is_billed_usage = true AND selected_meter_slug = 'v1:meter:tier'",
           "refId": "E"
         },
         {
@@ -710,7 +769,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 1)) * 100 as Spore FROM generation_event WHERE $__timeFilter(start_time) AND user_tier = 'spore' AND is_billed_usage = true AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')",
+          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 1)) * 100 as Spore FROM generation_event WHERE $__timeFilter(start_time) AND user_tier = 'spore' AND is_billed_usage = true AND selected_meter_slug = 'v1:meter:tier'",
           "refId": "A"
         },
         {
@@ -720,7 +779,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 3)) * 100 as Seed FROM generation_event WHERE $__timeFilter(start_time) AND user_tier = 'seed' AND is_billed_usage = true AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')",
+          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 3)) * 100 as Seed FROM generation_event WHERE $__timeFilter(start_time) AND user_tier = 'seed' AND is_billed_usage = true AND selected_meter_slug = 'v1:meter:tier'",
           "refId": "B"
         },
         {
@@ -730,7 +789,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 10)) * 100 as Flower FROM generation_event WHERE $__timeFilter(start_time) AND user_tier = 'flower' AND is_billed_usage = true AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')",
+          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 10)) * 100 as Flower FROM generation_event WHERE $__timeFilter(start_time) AND user_tier = 'flower' AND is_billed_usage = true AND selected_meter_slug = 'v1:meter:tier'",
           "refId": "C"
         },
         {
@@ -740,7 +799,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 20)) * 100 as Nectar FROM generation_event WHERE $__timeFilter(start_time) AND user_tier = 'nectar' AND is_billed_usage = true AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')",
+          "rawSql": "SELECT (SUM(total_price) / (uniq(user_github_username) * GREATEST(1, dateDiff('day', min(toDate(start_time)), max(toDate(start_time))) + 1) * 20)) * 100 as Nectar FROM generation_event WHERE $__timeFilter(start_time) AND user_tier = 'nectar' AND is_billed_usage = true AND selected_meter_slug = 'v1:meter:tier'",
           "refId": "D"
         }
       ],
@@ -843,7 +902,7 @@
         },
         "format": 0,
         "range": true,
-        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_tier_cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
+        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_tier_cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
         "refId": "A"
       }],
       "title": "Total Daily Tier Cost",
@@ -905,7 +964,7 @@
         },
         "format": 0,
         "range": true,
-        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
+        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
         "refId": "A"
       }],
       "title": "Avg Daily Cost",
@@ -961,7 +1020,7 @@
         },
         "format": 0,
         "range": true,
-        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
+        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  SUM(total_price) as daily_cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
         "refId": "A"
       }],
       "title": "Period Total Cost",
@@ -1023,7 +1082,7 @@
         },
         "format": 0,
         "range": true,
-        "rawSql": "SELECT AVG(daily_cost) * 30 as projected_monthly_cost FROM (SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE $__timeFilter(start_time) AND selected_meter_slug IN ('v1:meter:tier', 'local:tier') AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time)",
+        "rawSql": "SELECT AVG(daily_cost) * 30 as projected_monthly_cost FROM (SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE $__timeFilter(start_time) AND selected_meter_slug = 'v1:meter:tier' AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time)",
         "refId": "A"
       }],
       "title": "Projected Monthly (30d)",
@@ -1112,7 +1171,7 @@
         },
         "format": 0,
         "range": true,
-        "rawSql": "SELECT\n  toStartOfWeek(start_time) as time,\n  SUM(total_price) as weekly_cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
+        "rawSql": "SELECT\n  toStartOfWeek(start_time) as time,\n  SUM(total_price) as weekly_cost\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND selected_meter_slug = 'v1:meter:tier'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time\nORDER BY time",
         "refId": "A"
       }],
       "title": "Weekly Tier Cost",
@@ -1257,7 +1316,7 @@
         },
         "format": 0,
         "range": true,
-        "rawSql": "SELECT time, daily_cost, sum(daily_cost) OVER (ORDER BY time) as cumulative_cost FROM (SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE $__timeFilter(start_time) AND selected_meter_slug IN ('v1:meter:tier', 'local:tier') AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time ORDER BY time)",
+        "rawSql": "SELECT time, daily_cost, sum(daily_cost) OVER (ORDER BY time) as cumulative_cost FROM (SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost FROM generation_event WHERE $__timeFilter(start_time) AND selected_meter_slug = 'v1:meter:tier' AND is_billed_usage = true AND response_status >= 200 AND response_status < 300 GROUP BY time ORDER BY time)",
         "refId": "A"
       }],
       "title": "Cost Trend & Cumulative",
@@ -1319,7 +1378,7 @@
         },
         "format": 0,
         "range": true,
-        "rawSql": "SELECT\n  'Next 30 Days' as period,\n  AVG(daily_cost) * 30 as projected_cost\nFROM (\n  SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n  GROUP BY time\n)\nUNION ALL\nSELECT\n  'Next 90 Days' as period,\n  AVG(daily_cost) * 90 as projected_cost\nFROM (\n  SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n  GROUP BY time\n)",
+        "rawSql": "SELECT\n  'Next 30 Days' as period,\n  AVG(daily_cost) * 30 as projected_cost\nFROM (\n  SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND selected_meter_slug = 'v1:meter:tier'\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n  GROUP BY time\n)\nUNION ALL\nSELECT\n  'Next 90 Days' as period,\n  AVG(daily_cost) * 90 as projected_cost\nFROM (\n  SELECT toStartOfInterval(start_time, INTERVAL 1 DAY) as time, SUM(total_price) as daily_cost\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND selected_meter_slug = 'v1:meter:tier'\n    AND is_billed_usage = true\n    AND response_status >= 200 AND response_status < 300\n  GROUP BY time\n)",
         "refId": "A"
       }],
       "title": "Growth-Adjusted Projections",
@@ -1365,6 +1424,7 @@
       "targets": [{
         "datasource": {"type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456"},
         "format": 1,
+        "range": true,
         "rawSql": "SELECT\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'nectar'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0",
         "refId": "A"
       }],
@@ -1398,6 +1458,7 @@
       "targets": [{
         "datasource": {"type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456"},
         "format": 1,
+        "range": true,
         "rawSql": "SELECT\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'flower'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0",
         "refId": "A"
       }],
@@ -1431,6 +1492,7 @@
       "targets": [{
         "datasource": {"type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456"},
         "format": 1,
+        "range": true,
         "rawSql": "SELECT\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'seed'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0",
         "refId": "A"
       }],
@@ -1464,6 +1526,7 @@
       "targets": [{
         "datasource": {"type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456"},
         "format": 1,
+        "range": true,
         "rawSql": "SELECT\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'spore'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0",
         "refId": "A"
       }],
@@ -1497,6 +1560,7 @@
       "targets": [{
         "datasource": {"type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456"},
         "format": 1,
+        "range": true,
         "rawSql": "SELECT\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'microbe'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0",
         "refId": "A"
       }],
@@ -1618,6 +1682,7 @@
           "uid": "PAD1A0A25CD30D456"
         },
         "format": 1,
+        "range": true,
         "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'nectar'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
         "refId": "A"
       }],
@@ -1739,6 +1804,7 @@
           "uid": "PAD1A0A25CD30D456"
         },
         "format": 1,
+        "range": true,
         "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'flower'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
         "refId": "A"
       }],
@@ -1860,6 +1926,7 @@
           "uid": "PAD1A0A25CD30D456"
         },
         "format": 1,
+        "range": true,
         "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'seed'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
         "refId": "A"
       }],
@@ -1981,6 +2048,7 @@
           "uid": "PAD1A0A25CD30D456"
         },
         "format": 1,
+        "range": true,
         "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'spore'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
         "refId": "A"
       }],
@@ -2102,6 +2170,7 @@
           "uid": "PAD1A0A25CD30D456"
         },
         "format": 1,
+        "range": true,
         "rawSql": "SELECT\n  resolved_model_requested as Model,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 1) as Tier_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 1) as Pack_Cost,\n  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%') * 100.0 / nullIf(sumIf(total_cost, selected_meter_slug LIKE '%tier%') + sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 0), 1) as Pack_Pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND user_tier = 'microbe'\n  AND response_status >= 200 AND response_status < 300\n  AND total_cost > 0\nGROUP BY resolved_model_requested\nORDER BY Tier_Cost DESC",
         "refId": "A"
       }],

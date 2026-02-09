@@ -1,0 +1,43 @@
+name: Deploy Polly Bot to VPS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/polly/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.POLLY_VPS_HOST }}
+          username: ${{ secrets.POLLY_VPS_USER }}
+          key: ${{ secrets.POLLY_VPS_SSH_KEY }}
+          script: |
+            set -e
+            echo "🦜 Deploying Polly bot..."
+
+            cd ~/pollinations
+            git pull origin main
+
+            cd apps/polly
+
+            # Install dependencies
+            pip3 install -r requirements.txt --quiet
+
+            # Restart bot service
+            sudo systemctl restart polly-bot.service
+
+            # Wait and check status
+            sleep 5
+            sudo systemctl status polly-bot.service --no-pager
+
+            echo "✅ Polly deployed and restarted"

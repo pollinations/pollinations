@@ -22,19 +22,23 @@ export async function atomicDeductUserBalance(
 
     // Deduct entire amount from the first positive bucket (tier → crypto → pack).
     // CASE picks exactly one column to deduct from; others stay untouched.
+    // COALESCE on both conditions AND subtraction operands guards against NULL columns.
+    // Note: the balance check (requirePositiveBalance) runs before the request, but by the
+    // time this UPDATE runs the selected bucket may have changed due to concurrent requests.
+    // The deduction itself is always correct; only the logged meter source may mismatch.
     await db.run(sql`
 		UPDATE ${userTable}
 		SET
 			tier_balance = CASE
-				WHEN COALESCE(tier_balance, 0) > 0 THEN tier_balance - ${amount}
+				WHEN COALESCE(tier_balance, 0) > 0 THEN COALESCE(tier_balance, 0) - ${amount}
 				ELSE tier_balance
 			END,
 			crypto_balance = CASE
-				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) > 0 THEN crypto_balance - ${amount}
+				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) > 0 THEN COALESCE(crypto_balance, 0) - ${amount}
 				ELSE crypto_balance
 			END,
 			pack_balance = CASE
-				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) <= 0 THEN pack_balance - ${amount}
+				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
 				ELSE pack_balance
 			END
 		WHERE id = ${userId}
@@ -115,14 +119,12 @@ export type DeductionSplit = {
  *
  * @param tierBalance - Current tier balance
  * @param cryptoBalance - Current crypto balance
- * @param packBalance - Current pack balance
  * @param amount - Amount to deduct
  * @returns Object showing which balance type the deduction comes from
  */
 export function calculateDeductionSplit(
     tierBalance: number,
     cryptoBalance: number,
-    packBalance: number,
     amount: number,
 ): DeductionSplit {
     if (tierBalance > 0)
@@ -149,15 +151,16 @@ export async function atomicDeductPaidBalance(
     if (amount <= 0) return;
 
     // Deduct entire amount from first positive paid bucket (crypto → pack)
+    // COALESCE guards against NULL columns in both conditions and subtraction
     await db.run(sql`
 		UPDATE ${userTable}
 		SET
 			crypto_balance = CASE
-				WHEN COALESCE(crypto_balance, 0) > 0 THEN crypto_balance - ${amount}
+				WHEN COALESCE(crypto_balance, 0) > 0 THEN COALESCE(crypto_balance, 0) - ${amount}
 				ELSE crypto_balance
 			END,
 			pack_balance = CASE
-				WHEN COALESCE(crypto_balance, 0) <= 0 THEN pack_balance - ${amount}
+				WHEN COALESCE(crypto_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
 				ELSE pack_balance
 			END
 		WHERE id = ${userId}

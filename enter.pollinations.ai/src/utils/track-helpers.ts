@@ -103,7 +103,6 @@ async function deductUserBalance(
         const deductionSplit = calculateDeductionSplit(
             balancesBefore.tierBalance,
             balancesBefore.cryptoBalance,
-            balancesBefore.packBalance,
             amount,
         );
 

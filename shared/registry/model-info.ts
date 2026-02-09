@@ -1,10 +1,10 @@
 import { z } from "zod";
 import {
     getActivePriceDefinition,
-    getAudioServices,
-    getImageServices,
     getServiceDefinition,
-    getTextServices,
+    getVisibleAudioServices,
+    getVisibleImageServices,
+    getVisibleTextServices,
     type ServiceId,
 } from "./registry";
 
@@ -71,25 +71,19 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
  * Get all text models with enriched information
  */
 export function getTextModelsInfo(): ModelInfo[] {
-    return getTextServices()
-        .filter((id) => !getServiceDefinition(id).hidden)
-        .map(getModelInfo);
+    return getVisibleTextServices().map(getModelInfo);
 }
 
 /**
  * Get all image models with enriched information
  */
 export function getImageModelsInfo(): ModelInfo[] {
-    return getImageServices()
-        .filter((id) => !getServiceDefinition(id).hidden)
-        .map(getModelInfo);
+    return getVisibleImageServices().map(getModelInfo);
 }
 
 /**
  * Get all audio models with enriched information
  */
 export function getAudioModelsInfo(): ModelInfo[] {
-    return getAudioServices()
-        .filter((id) => !getServiceDefinition(id).hidden)
-        .map(getModelInfo);
+    return getVisibleAudioServices().map(getModelInfo);
 }

@@ -205,6 +205,33 @@ export function getAudioServices(): ServiceId[] {
 }
 
 /**
+ * Get visible (non-hidden) text service IDs
+ */
+export function getVisibleTextServices(): ServiceId[] {
+    return getTextServices().filter(
+        (id) => !SERVICE_REGISTRY[id as ServiceId]?.hidden,
+    );
+}
+
+/**
+ * Get visible (non-hidden) image service IDs
+ */
+export function getVisibleImageServices(): ServiceId[] {
+    return getImageServices().filter(
+        (id) => !SERVICE_REGISTRY[id as ServiceId]?.hidden,
+    );
+}
+
+/**
+ * Get visible (non-hidden) audio service IDs
+ */
+export function getVisibleAudioServices(): ServiceId[] {
+    return getAudioServices().filter(
+        (id) => !SERVICE_REGISTRY[id as ServiceId]?.hidden,
+    );
+}
+
+/**
  * Get service definition by ID
  */
 export function getServiceDefinition(

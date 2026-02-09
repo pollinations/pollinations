@@ -439,6 +439,7 @@ export const TEXT_SERVICES = {
         modelId: "gemini-2.5-pro",
         provider: "google",
         paidOnly: true,
+        hidden: true,
         cost: [
             {
                 date: COST_START_DATE,

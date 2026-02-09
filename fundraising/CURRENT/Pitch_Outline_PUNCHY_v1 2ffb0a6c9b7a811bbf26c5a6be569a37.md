@@ -52,10 +52,10 @@ Developer gets credits → Builds app → App goes live → End users buy Pollen
 
 No API keys. No backend. No billing integration. Just build.
 
-**For end users:** One wallet. 1,000 AI apps. Buy Pollen once, use it everywhere.
+**For end users:** "Sign in with Pollinations" — one account, one wallet, 1,000 AI apps. Set your own spending limits per app. Buy Pollen once, use it everywhere.
 
 **Developers are our distribution.**
-Every app they ship is a revenue channel we didn't build.
+Every app they ship is a revenue channel we didn't build. They earn rev-share on every Pollen spent.
 
 ---
 
@@ -110,10 +110,10 @@ Switching means breaking live products.
 
 **Two customers. One economy.**
 
-Dev builds free → App launches → Users buy Pollen → We collect revenue.
+Dev builds free → App launches → Users buy Pollen → Revenue splits: us + developer.
 
 Users don't buy per app. They buy Pollen once and spend it everywhere.
-More apps = more reasons to buy. More users = more revenue per app.
+Developers earn rev-share on every Pollen their users spend. More apps = more reasons to buy. More users = more revenue per app.
 
 **Proof:**
 Roblox game. 51M visits. $12K/month revenue.
@@ -175,6 +175,11 @@ Full-stack. Infra at scale. Makes it run.
 50% — Engineering
 30% — Compute
 20% — Community
+
+**Roadmap:**
+- Now: Unified API + Pollen economy live
+- Next: "Sign in with Pollinations" — AI's OpenID. Per-app spending limits. Developer rev-share payouts.
+- Vision: The identity + payments layer for every AI app
 
 ---
 

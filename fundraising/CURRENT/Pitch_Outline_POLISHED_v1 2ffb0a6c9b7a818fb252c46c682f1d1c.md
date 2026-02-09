@@ -59,9 +59,9 @@ Developer gets credits → Builds app → App goes live → End users buy Pollen
 
 No API keys. No backend. No billing integration. Text, image, audio, video — just build.
 
-**For end users:** One wallet. 1,000 AI apps. Buy Pollen once, use it everywhere.
+**For end users:** "Sign in with Pollinations" — one account, one wallet, 1,000 AI apps. Users set their own spending limits per app. Buy Pollen once, use it everywhere.
 
-**Every app developers ship is a new revenue channel we didn't have to build.**
+**Every app developers ship is a new revenue channel we didn't have to build. Developers earn rev-share on every Pollen spent.**
 
 ---
 
@@ -130,16 +130,18 @@ We don't need developers to pay — we need their users to pay.
 **How Money Flows:**
 
 ```
-Developer builds free → launches app → end users buy Pollen → we collect revenue
+Developer builds free → launches app → end users buy Pollen → revenue splits: us + developer
 ```
 
 Users don't buy per app. They buy Pollen once and spend it everywhere.
+Developers earn rev-share on every Pollen their users spend — aligning incentives at every layer.
 More apps = more reasons to buy. More users = more revenue per app.
 
 **Unit Economics:**
 - Developer acquisition: $0
 - End user acquisition: $0 (developers bring them)
 - Revenue: Usage-based pricing on advanced models
+- Developer rev-share: Developers earn on every Pollen spent in their apps
 
 **Proof Point:**
 One developer built a Roblox game on our platform — 51M visits, $12K/month revenue. They pay us $500/month in Pollen. *That’s the model at work.*
@@ -185,6 +187,11 @@ We're B2B2C. Teens are the next wave of entrepreneurs. Everyone is going to be i
 **Own the Long Tail**
 
 **Vision:** Become the default AI infrastructure layer for the next wave of AI-native products.
+
+**Roadmap:**
+- **Now:** Unified API + Pollen economy live across 1,000+ apps
+- **Next:** "Sign in with Pollinations" — AI's OpenID. Per-app spending limits. Developer rev-share payouts. Capability-based model routing.
+- **End state:** The identity + payments layer for every AI app. One login, one wallet, infinite apps.
 
 **The Ask:**
 Raising €2.5M Seed for 18–24 months runway.

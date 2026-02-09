@@ -8,6 +8,7 @@ import { getTierPollen, TIER_POLLEN, tierNames } from "@/tier-config.ts";
 import {
     atomicDeductPaidBalance,
     atomicDeductUserBalance,
+    calculateDeductionSplit,
     getUserBalances,
 } from "@/utils/balance-deduction.ts";
 import { test } from "../fixtures.ts";
@@ -304,6 +305,29 @@ describe("Tier Balance Management", () => {
             expect(balances.tierBalance).toBe(10);
             expect(balances.cryptoBalance).toBe(3);
             expect(balances.packBalance).toBe(5);
+        });
+
+        test("should cap calculateDeductionSplit when amount exceeds all balances", () => {
+            // Amount fits within balances — split sums to amount
+            const normal = calculateDeductionSplit(5, 3, 10, 7);
+            expect(normal.fromTier).toBe(5);
+            expect(normal.fromCrypto).toBe(2);
+            expect(normal.fromPack).toBe(0);
+            expect(normal.fromTier + normal.fromCrypto + normal.fromPack).toBe(7);
+
+            // Amount exceeds all balances — split is capped, does NOT sum to amount
+            const overage = calculateDeductionSplit(2, 1, 3, 10);
+            expect(overage.fromTier).toBe(2);
+            expect(overage.fromCrypto).toBe(1);
+            expect(overage.fromPack).toBe(3); // capped at pack balance, not 7
+            expect(overage.fromTier + overage.fromCrypto + overage.fromPack).toBe(6); // less than 10
+
+            // Pack is zero — overage absorbed silently
+            const noPack = calculateDeductionSplit(1, 0, 0, 5);
+            expect(noPack.fromTier).toBe(1);
+            expect(noPack.fromCrypto).toBe(0);
+            expect(noPack.fromPack).toBe(0);
+            expect(noPack.fromTier + noPack.fromCrypto + noPack.fromPack).toBe(1);
         });
     });
 

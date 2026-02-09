@@ -1,4 +1,4 @@
-import { SELF, env } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
 import { createAuthClient } from "better-auth/client";

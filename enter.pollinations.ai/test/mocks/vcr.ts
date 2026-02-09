@@ -1,9 +1,9 @@
-import crypto from "node:crypto";
-import { createHonoMockHandler, MockAPI } from "./fetch";
 import { env } from "cloudflare:test";
+import crypto from "node:crypto";
+import { getLogger } from "@logtape/logtape";
 import { Hono } from "hono";
 import { expect, inject } from "vitest";
-import { getLogger } from "@logtape/logtape";
+import { createHonoMockHandler, type MockAPI } from "./fetch";
 
 const log = getLogger(["test", "mock", "vcr"]);
 const snapshotServerUrl = inject("snapshotServerUrl");
@@ -338,7 +338,7 @@ function replayChunks(
             yield encoder.encode(chunk.data);
         }
     }
-    // @ts-ignore - ReadableStream.from is supported
+    // @ts-expect-error - ReadableStream.from is supported
     return ReadableStream.from(streamGenerator());
 }
 

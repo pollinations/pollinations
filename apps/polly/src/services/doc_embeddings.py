@@ -1,11 +1,14 @@
 import asyncio
 import hashlib
 import logging
+import os
 import re
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urljoin, urlparse
+
+from .embeddings_utils import validate_and_get_openai_client
 
 logger = logging.getLogger(__name__)
 
@@ -36,27 +39,8 @@ _update_lock = asyncio.Lock()
 def _get_model():
     global _model
     if _model is None:
-        import os
-        from openai import OpenAI
-
         api_key = os.getenv("OPENAI_EMBEDDINGS_API")
-        if not api_key:
-            logger.error("OPENAI_EMBEDDINGS_API environment variable not set")
-            raise ValueError("OPENAI_EMBEDDINGS_API is required")
-        
-        # Validate API key format
-        if not api_key.startswith("sk-"):
-            logger.error(
-                "⚠️ OPENAI_EMBEDDINGS_API is invalid!\n"
-                "  Expected: OpenAI API key starting with 'sk-'\n"
-                f"  Got: {api_key[:20]}...\n"
-                "  \n"
-                "  Get a valid OpenAI API key from: https://platform.openai.com/api-keys\n"
-                "  Make sure your key has Embedding API access enabled."
-            )
-            raise ValueError("Invalid OPENAI_EMBEDDINGS_API - must be a valid OpenAI API key starting with 'sk-'")
-        
-        _model = OpenAI(api_key=api_key)
+        _model = validate_and_get_openai_client(api_key, service_name="doc_embeddings")
         logger.info("OpenAI embeddings client initialized for documentation")
     return _model
 
@@ -382,54 +366,18 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
         for idx, chunk in enumerate(chunks):
             chunk_id = f"{url}#chunk-{idx}"
 
-            try:
-                embedding_response = await asyncio.to_thread(
-                    lambda: model.embeddings.create(
-                        model="text-embedding-3-small",
-                        input=chunk["content"],
-                        dimensions=1536
-                    )
-                )
-                embedding = embedding_response.data[0].embedding
-
-                all_ids.append(chunk_id)
-                all_embeddings.append(embedding)
-                all_documents.append(chunk["content"])
-                all_metadatas.append(
-                    {
-                        "url": chunk["url"],
-                        "page_title": chunk["page_title"],
-                        "section": chunk["section"],
-                        "site": urlparse(base_url).netloc,
-                        "page_hash": content_hash,
-                        "last_updated": datetime.utcnow().isoformat(),
-                    }
-                )
-
-                embedded_count += 1
-
-            except Exception as e:
-                error_msg = str(e)
-                if "401" in error_msg or "permission" in error_msg.lower() or "scope" in error_msg.lower():
-                    logger.error(
-                        "❌ OpenAI API Error - Authentication Failed!\n"
-                        f"  Error: {error_msg}\n"
-                        "  \n"
-                        "  This likely means:\n"
-                        "  1. Your OPENAI_EMBEDDINGS_API key is invalid or expired\n"
-                        "  2. Your key doesn't have Embedding API access\n"
-                        "  3. You're using the wrong API key (not OpenAI)\n"
-                        "  \n"
-                        "  Fix:\n"
-                        "  1. Get a valid key from: https://platform.openai.com/api-keys\n"
-                        "  2. Make sure it has Embedding model access (text-embedding-3-small)\n"
-                        "  3. Update OPENAI_EMBEDDINGS_API in your .env file\n"
-                        "  4. Restart the bot"
-                    )
-                    raise
-                else:
-                    logger.warning(f"Failed to embed chunk from {url}: {e}")
-                    continue
+            all_ids.append(chunk_id)
+            all_documents.append(chunk["content"])
+            all_metadatas.append(
+                {
+                    "url": chunk["url"],
+                    "page_title": chunk["page_title"],
+                    "section": chunk["section"],
+                    "site": urlparse(base_url).netloc,
+                    "page_hash": content_hash,
+                    "last_updated": datetime.utcnow().isoformat(),
+                }
+            )
         
         pages_processed += 1
         progress_pct = (pages_processed / total_pages) * 100
@@ -444,16 +392,49 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
         collection.delete(ids=ids_to_delete)
         logger.info(f"Deleted {len(ids_to_delete)} old chunks from changed pages")
 
-    # Upsert new chunks
+    # Batch embed all collected chunks
     if all_ids:
-        collection.upsert(
-            ids=all_ids,
-            embeddings=all_embeddings,
-            documents=all_documents,
-            metadatas=all_metadatas,
-        )
-        unique_urls = len(set(m["url"] for m in all_metadatas))
-        logger.info(f"Embedded {embedded_count} chunks from {unique_urls} pages (TTL: skipped {pages_skipped} unchanged pages)")
+        try:
+            embedding_response = await asyncio.to_thread(
+                lambda: model.embeddings.create(
+                    model="text-embedding-3-small",
+                    input=all_documents,
+                    dimensions=1536
+                )
+            )
+            all_embeddings = [item.embedding for item in embedding_response.data]
+            embedded_count = len(all_ids)
+            
+            collection.upsert(
+                ids=all_ids,
+                embeddings=all_embeddings,
+                documents=all_documents,
+                metadatas=all_metadatas,
+            )
+            unique_urls = len(set(m["url"] for m in all_metadatas))
+            logger.info(f"Embedded {embedded_count} chunks from {unique_urls} pages (TTL: skipped {pages_skipped} unchanged pages)")
+        except Exception as e:
+            error_msg = str(e)
+            if "401" in error_msg or "permission" in error_msg.lower() or "scope" in error_msg.lower():
+                logger.error(
+                    "❌ OpenAI API Error - Authentication Failed!\n"
+                    f"  Error: {error_msg}\n"
+                    "  \n"
+                    "  This likely means:\n"
+                    "  1. Your OPENAI_EMBEDDINGS_API key is invalid or expired\n"
+                    "  2. Your key doesn't have Embedding API access\n"
+                    "  3. You're using the wrong API key (not OpenAI)\n"
+                    "  \n"
+                    "  Fix:\n"
+                    "  1. Get a valid key from: https://platform.openai.com/api-keys\n"
+                    "  2. Make sure it has Embedding model access (text-embedding-3-small)\n"
+                    "  3. Update OPENAI_EMBEDDINGS_API in your .env file\n"
+                    "  4. Restart the bot"
+                )
+                raise
+            else:
+                logger.error(f"Failed to embed chunks: {e}")
+                raise
 
     return embedded_count
 

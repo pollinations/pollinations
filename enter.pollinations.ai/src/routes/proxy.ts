@@ -797,7 +797,7 @@ async function checkBalance({
     if (isPaidOnly) {
         await balance.requirePaidBalance(
             auth.user.id,
-            "This premium model requires a paid balance. Tier balance cannot be used.",
+            "This model requires a paid balance. Tier balance cannot be used.",
         );
     } else {
         await balance.requirePositiveBalance(

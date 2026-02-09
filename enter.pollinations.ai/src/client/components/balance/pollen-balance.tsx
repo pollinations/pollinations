@@ -70,15 +70,17 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
         setEmailCopied(true);
         setTimeout(() => setEmailCopied(false), 2000);
     };
-    const paidBalance = packBalance + cryptoBalance;
-    const totalPollen = Math.max(0, tierBalance + paidBalance);
+    // Clamp at 0 for display — individual buckets can go slightly negative from overage
+    const displayTier = Math.max(0, tierBalance);
+    const displayPaid = Math.max(0, packBalance) + Math.max(0, cryptoBalance);
+    const totalPollen = displayTier + displayPaid;
 
     function calculatePercentage(value: number, total: number): number {
         return total > 0 ? (value / total) * 100 : 0;
     }
 
-    const rawPaidPercentage = calculatePercentage(paidBalance, totalPollen);
-    const rawFreePercentage = calculatePercentage(tierBalance, totalPollen);
+    const rawPaidPercentage = calculatePercentage(displayPaid, totalPollen);
+    const rawFreePercentage = calculatePercentage(displayTier, totalPollen);
 
     // Ensure paid segment is always visible (min 18% width to fit label)
     const MIN_SEGMENT = 18;
@@ -102,19 +104,19 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             {/* Paid Pollen - Soft purple for paid (pack + crypto) */}
                             <PollenGaugeSegment
                                 percentage={paidPercentage}
-                                value={paidBalance}
+                                value={displayPaid}
                                 label="💎"
                                 color="purple"
-                                title={`💎 Purchased: ${paidBalance.toFixed(2)} pollen\nFrom packs you've bought\nRequired for 💎 Paid Only models; used after daily grants for others`}
+                                title={`💎 Purchased: ${displayPaid.toFixed(2)} pollen\nFrom packs you've bought\nRequired for 💎 Paid Only models; used after daily grants for others`}
                                 position="left"
                             />
                             {/* Free Pollen - Soft teal for free */}
                             <PollenGaugeSegment
                                 percentage={freePercentage}
-                                value={tierBalance}
+                                value={displayTier}
                                 label={tierEmoji}
                                 color="teal"
-                                title={`${tierEmoji} Daily: ${tierBalance.toFixed(2)} pollen\nFree pollen from your tier, refills at 00:00 UTC\nUsed first, except for 💎 Paid Only models`}
+                                title={`${tierEmoji} Daily: ${displayTier.toFixed(2)} pollen\nFree pollen from your tier, refills at 00:00 UTC\nUsed first, except for 💎 Paid Only models`}
                                 position="right"
                                 offset={paidPercentage}
                             />

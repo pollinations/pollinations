@@ -1,8 +1,8 @@
 import {
-    getAudioServices,
-    getImageServices,
     getServiceDefinition,
-    getTextServices,
+    getVisibleAudioServices,
+    getVisibleImageServices,
+    getVisibleTextServices,
     type ServiceId,
 } from "@shared/registry/registry";
 import { useEffect, useState } from "react";
@@ -60,25 +60,23 @@ function serviceToModel(
 }
 
 // Build the full model lists from the shared registry (instant, no fetch)
-const REGISTRY_IMAGE_MODELS: Model[] = getImageServices().map((id) =>
+const REGISTRY_IMAGE_MODELS: Model[] = getVisibleImageServices().map((id) =>
     serviceToModel(id, "image"),
 );
-const REGISTRY_TEXT_MODELS: Model[] = getTextServices()
-    .filter((id) => {
-        const def = getServiceDefinition(id);
-        return !def.outputModalities?.includes("audio");
-    })
+const REGISTRY_TEXT_MODELS: Model[] = getVisibleTextServices()
+    .filter(
+        (id) => !getServiceDefinition(id).outputModalities?.includes("audio"),
+    )
     .map((id) => serviceToModel(id, "text"));
 const REGISTRY_AUDIO_MODELS: Model[] = [
     // Audio models from text services (output_modalities includes "audio")
-    ...getTextServices()
-        .filter((id) => {
-            const def = getServiceDefinition(id);
-            return def.outputModalities?.includes("audio");
-        })
+    ...getVisibleTextServices()
+        .filter((id) =>
+            getServiceDefinition(id).outputModalities?.includes("audio"),
+        )
         .map((id) => serviceToModel(id, "audio")),
     // Dedicated audio services
-    ...getAudioServices().map((id) => serviceToModel(id, "audio")),
+    ...getVisibleAudioServices().map((id) => serviceToModel(id, "audio")),
 ];
 const ALL_MODELS: Model[] = [
     ...REGISTRY_IMAGE_MODELS,

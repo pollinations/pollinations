@@ -85,6 +85,7 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
     persona?: boolean;
     paidOnly?: boolean; // Models that require paid balance only
     alpha?: boolean; // Experimental models with potential instability
+    hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
 };
 
 /** Sorts the cost and price definitions by date, in descending order */
@@ -202,6 +203,15 @@ export function getImageServices(): ServiceId[] {
 export function getAudioServices(): ServiceId[] {
     return Object.keys(AUDIO_SERVICES) as ServiceId[];
 }
+
+/** Filter out hidden services */
+function filterVisible(ids: ServiceId[]): ServiceId[] {
+    return ids.filter((id) => !SERVICE_REGISTRY[id]?.hidden);
+}
+
+export const getVisibleTextServices = () => filterVisible(getTextServices());
+export const getVisibleImageServices = () => filterVisible(getImageServices());
+export const getVisibleAudioServices = () => filterVisible(getAudioServices());
 
 /**
  * Get service definition by ID

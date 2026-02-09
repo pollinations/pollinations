@@ -281,8 +281,13 @@ export const accountRoutes = new Hono<Env>()
             const packBalance = users[0]?.packBalance ?? 0;
             const cryptoBalance = users[0]?.cryptoBalance ?? 0;
 
+            // Clamp each bucket at 0 before summing — individual buckets can go negative
+            // from overage but shouldn't reduce the visible total
             return c.json({
-                balance: tierBalance + packBalance + cryptoBalance,
+                balance:
+                    Math.max(0, tierBalance) +
+                    Math.max(0, packBalance) +
+                    Math.max(0, cryptoBalance),
             });
         },
     )

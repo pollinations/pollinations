@@ -1,0 +1,41 @@
+{
+  "date": "2026-02-09",
+  "generated_at": "2026-02-09T00:13:54.431877+00:00",
+  "platform": "twitter",
+  "tweet_type": "shipped",
+  "tweet": "image gen shouldn't be boxed in. fixed dimension clamping on klein-9b — aspect ratios are fully unlocked.\n\nalso shipped memory optimizations for flux (bye OOMs) & new grafana dashboards to track your api usage.\n\n23 PRs today. we don't stop.",
+  "alt_tweet": "shipping fixes > hype.\n\njust unclamped klein-9b dimensions (aspect ratios work now) and pushed memory optimizations to fix OOMs on flux models.\n\nplus new usage dashboards for api keys. 23 PRs merged.",
+  "full_tweet": "image gen shouldn't be boxed in. fixed dimension clamping on klein-9b — aspect ratios are fully unlocked.\n\nalso shipped memory optimizations for flux (bye OOMs) & new grafana dashboards to track your api usage.\n\n23 PRs today. we don't stop.",
+  "hashtags": [],
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/twitter/posts/2026-02-09-image.jpg",
+    "prompt": "Cozy pixel art scene of the Pollinations bee painting on a massive, wide panoramic canvas that is bursting out of a small, rigid square frame. The painting flows over the edges. Soft lime green (#ecf874) and pastel gradient background. 8-bit aesthetic, warm lighting, creative breakthrough vibe. High contrast, dynamic composition."
+  },
+  "reasoning": "Focuses on the most tangible builder-facing improvements (aspect ratio fix + OOM/memory fixes). 'Bye OOMs' speaks directly to the pain points of AI engineers. Ends with the sheer volume of work (23 PRs) to show velocity.",
+  "pr_references": [
+    "#8104",
+    "#8102",
+    "#8103",
+    "#8095",
+    "#8097",
+    "#8087",
+    "#8091",
+    "#8029",
+    "#8040",
+    "#8090",
+    "#8085",
+    "#8084",
+    "#8083",
+    "#8082",
+    "#8078",
+    "#8038",
+    "#8039",
+    "#8067",
+    "#8069",
+    "#8076",
+    "#8073",
+    "#8072",
+    "#8068"
+  ],
+  "char_count": 240
+}

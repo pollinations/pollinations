@@ -1,5 +1,8 @@
 name: Deploy Polly Bot to VPS
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:

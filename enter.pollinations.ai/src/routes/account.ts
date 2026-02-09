@@ -81,6 +81,10 @@ const profileResponseSchema = z.object({
     name: z.string().nullable().describe("User's display name"),
     email: z.email().nullable().describe("User's email address"),
     githubUsername: z.string().nullable().describe("GitHub username if linked"),
+    image: z
+        .string()
+        .nullable()
+        .describe("Profile picture URL (e.g. GitHub avatar)"),
     tier: z
         .enum(["anonymous", ...tierNames])
         .describe("User's current tier level"),
@@ -193,6 +197,7 @@ export const accountRoutes = new Hono<Env>()
                     name: userTable.name,
                     email: userTable.email,
                     githubUsername: userTable.githubUsername,
+                    image: userTable.image,
                     tier: userTable.tier,
                     createdAt: userTable.createdAt,
                     lastTierGrant: userTable.lastTierGrant,
@@ -213,6 +218,7 @@ export const accountRoutes = new Hono<Env>()
                 name: profile.name,
                 email: profile.email,
                 githubUsername: profile.githubUsername ?? null,
+                image: profile.image ?? null,
                 tier: profile.tier,
                 createdAt: profile.createdAt,
                 nextResetAt,

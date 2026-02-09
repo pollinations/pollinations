@@ -9,6 +9,10 @@ on:
       - 'enter.pollinations.ai/src/routes/**/*.ts'
       - 'enter.pollinations.ai/scripts/generate-apidocs.ts'
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   regenerate-docs:
     runs-on: ubuntu-latest
@@ -38,11 +42,20 @@ jobs:
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Commit and push
+      - name: Create PR with updated docs
         if: steps.changes.outputs.changed == 'true'
         run: |
+          BRANCH="docs/regenerate-apidocs-$(date +%s)"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
           git add APIDOCS.md
           git commit -m "docs: regenerate APIDOCS.md"
-          git push
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "docs: regenerate APIDOCS.md" \
+            --body "Auto-generated from OpenAPI spec changes." \
+            --base main \
+            --head "$BRANCH"
+        env:
+          GH_TOKEN: ${{ github.token }}

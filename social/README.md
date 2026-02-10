@@ -1,133 +1,137 @@
-# Social Media Automation
+# Social Media Pipeline
 
-Automated social media posting for pollinations.ai across multiple platforms.
+Automated social media posting for pollinations.ai — 3-tier event-centric architecture.
+
+## Architecture
+
+```
+TIER 1: PER-PR (on merge, real-time)
+  PR merged → generate_pr_gist.py → gist JSON + image → Discord post
+
+TIER 2: DAILY (00:00 UTC)
+  Read gists → generate_daily_summary.py → platform posts (X, LI, IG, Reddit) + diary
+  → single PR for review → on merge: publish_daily.py (Buffer + Reddit API + highlights + README)
+
+TIER 3: WEEKLY (Sunday → Monday)
+  Read daily summaries → generate_weekly_summary.py → platform posts (X, LI, IG, Discord)
+  → PR for review → Monday 08:00 UTC: publish_weekly.py (Buffer + Discord webhook)
+```
+
+See [PIPELINE.md](PIPELINE.md) for the full design document.
 
 ## Platform Overview
 
-| | LinkedIn | Twitter/X | Instagram | Discord | Reddit |
+| | Twitter/X | LinkedIn | Instagram | Reddit | Discord |
 |---|---|---|---|---|---|
-| **Frequency** | Wed + Fri | Daily | Daily | On PR merge + weekly | Daily |
-| **Human review?** | Yes (PR) | Yes (PR) | Yes (PR) | No (automatic) | No (automatic) |
-| **Publishing API** | Buffer GraphQL | Buffer GraphQL | Buffer GraphQL | Discord Webhook | Devvit (Reddit API) |
-| **Content source** | Merged PRs (5d/2d) | Merged PRs (24h) | Merged PRs (24h) | PR metadata / NEWS | Merged PRs from GitHub |
-| **Content type** | Text + 1 image | Text + 1 image | Text + 3-5 images | Text + 1 image | Text + 1 image |
-| **Image model** | `nanobanana-pro` | `nanobanana-pro` | `nanobanana-pro` | `nanobanana-pro` | `nanobanana-pro` |
-| **Text model** | `gemini-large` | `gemini-large` | `gemini-large` | `gemini-large` | `gemini-large` |
+| **Daily** | Buffer 17:00 UTC | Buffer 14:00 UTC (Wed+Fri) | Buffer 15:00 UTC | Reddit API (immediate) | Per-PR (immediate) |
+| **Weekly** | Buffer Mon 08:00 | Buffer Mon 08:00 | Buffer Mon 08:00 | -- | Webhook Mon 08:00 |
+| **Review** | Yes (daily PR) | Yes (daily PR) | Yes (daily PR) | Yes (daily PR) | No (automatic) |
+| **Images** | 1 per post | 1 per post | 3-5 carousel | 1 per post | 1 per PR |
+| **Model** | `nanobanana-pro` | `nanobanana-pro` | `nanobanana-pro` | `nanobanana-pro` | `nanobanana-pro` |
 
-> See platform-specific READMEs for detailed pipelines: [LinkedIn](README-linkedin.md) | [Twitter](README-twitter.md) | [Instagram](README-instagram.md) | [Discord](README-discord.md) | [GitHub/NEWS](README-github.md) | [Reddit](README-reddit.md)
+## Workflows
 
----
+| Workflow | Trigger | Script |
+|---|---|---|
+| `NEWS_pr_gist.yml` | PR merged to main | `generate_pr_gist.py` |
+| `NEWS_daily_summary.yml` | Cron 00:00 UTC daily | `generate_daily_summary.py` |
+| `NEWS_daily_publish.yml` | Daily PR merged (`social/news/daily/**`) | `publish_daily.py` |
+| `NEWS_weekly_summary.yml` | Cron Sunday 00:00 UTC | `generate_weekly_summary.py` |
+| `NEWS_weekly_publish.yml` | Cron Monday 08:00 UTC | `publish_weekly.py` |
 
-## Shared Components
+## Scripts
 
-### Visual Style
+| Script | Tier | Purpose |
+|---|---|---|
+| `generate_pr_gist.py` | 1 | AI analyzes PR → gist JSON + image → Discord post |
+| `generate_daily_summary.py` | 2 | Clusters gists into arcs → twitter/linkedin/instagram/reddit JSONs + diary + images → PR |
+| `publish_daily.py` | 2 | On daily PR merge → Buffer (X, LI, IG) + Reddit API + highlights + README |
+| `generate_weekly_summary.py` | 3 | Synthesizes daily summaries → all platform posts + images → PR |
+| `publish_weekly.py` | 3 | Monday cron → Buffer (X, LI, IG) + Discord webhook |
+| `common.py` | -- | Shared utilities: prompt loading, API calls, gist I/O |
+| `buffer_stage_post.py` | -- | Buffer API staging with scheduled delivery |
+| `buffer_utils.py` | -- | Buffer GraphQL helpers |
 
-All visual platforms share a unified pixel art style defined in [`prompts/_shared/visual_style.md`](prompts/_shared/visual_style.md). This is injected via the `{visual_style}` placeholder in system prompts.
+## Prompts
 
-### Shared Prompts
+### Shared (`prompts/_shared/`)
 
 | File | Placeholder | Purpose |
-|------|-------------|---------|
-| `_shared/about.md` | `{about}` | Company description, Pollen system, tier info |
-| `_shared/visual_style.md` | `{visual_style}` | Unified pixel art visual identity |
+|---|---|---|
+| `brand_about.md` | `{about}` | Company description, tiers, brand identity |
+| `brand_visual.md` | `{visual_style}` | Cozy 8-bit pixel art style guide, color palette |
+| `pr_analyzer.md` | -- | Tier 1: Analyzes PRs into structured gist JSON |
+| `daily_summary.md` | -- | Tier 2: Clusters gists into narrative arcs |
+| `daily_diary.md` | -- | Tier 2: Whimsical pixel art dev diary entries |
+| `weekly_summary.md` | -- | Tier 3: Synthesizes weekly recap from dailies |
 
-**How it works:** `common.py`'s `load_prompt()` automatically replaces `{about}` and `{visual_style}` with shared content. Reddit's `loadPrompt.ts` does the same for its TypeScript pipeline.
+`common.py`'s `load_prompt()` auto-injects `{about}` and `{visual_style}` into all prompts.
 
-### Prompt Variables
+### Per-Platform (`prompts/{platform}/`)
 
-| Variable | Description |
-|----------|-------------|
-| `{pr_summary}` | Formatted list of merged PRs |
-| `{pr_titles}` | PR title list |
-| `{pr_count}` | Number of PRs |
-| `{about}` | Shared company description |
-| `{visual_style}` | Shared visual style definition |
+| Folder | Files | Tone |
+|---|---|---|
+| `twitter/` | system, user_with_prs, user_engagement | Builder credibility, substance with personality |
+| `linkedin/` | system, user_with_prs, user_thought_leadership | Professional, milestone-focused |
+| `instagram/` | system, user_with_prs, user_brand_content | Gen-Z aesthetic, carousel support |
+| `reddit/` | system | Factual, dev meme energy, non-promotional |
+| `discord/` | merged_pr_system/user, weekly_news_system/user, image_prompt_system | Dev community announcement |
+| `github/` | highlights_system/user, weekly_news_system/user/user_final | Markdown changelogs |
 
----
-
-## Setup: API Keys & Secrets
-
-### Required GitHub Secrets
-
-| Secret | How to get it | Used by |
-|--------|---------------|---------|
-| `BUFFER_ACCESS_TOKEN` | [Buffer Developer Settings](https://publish.buffer.com/settings/developer) | LinkedIn, Twitter, Instagram |
-| `POLLINATIONS_TOKEN` | [enter.pollinations.ai](https://enter.pollinations.ai) | All AI generation |
-| `DISCORD_WEBHOOK_URL` | Discord Server Settings > Integrations > Webhooks | Discord |
-| `GITHUB_TOKEN` | Automatically provided by GitHub Actions | All scripts |
-| `POLLY_BOT_APP_ID` | GitHub App settings | PR creation |
-| `POLLY_BOT_PRIVATE_KEY` | GitHub App settings | PR creation |
-
-### Buffer Setup
-
-Buffer uses the **GraphQL API** at `https://api.buffer.com`:
-
-1. Create a Buffer account at [buffer.com/signup](https://buffer.com/signup)
-2. Connect LinkedIn, Twitter/X, and Instagram channels
-3. Generate an API token at [publish.buffer.com/settings/developer](https://publish.buffer.com/settings/developer)
-4. Add the token as `BUFFER_ACCESS_TOKEN` in GitHub repo secrets
-5. Scripts auto-discover your organization and channels via the API
-
-### Buffer Delivery Schedule
-
-Defined in [`buffer-schedule.yml`](buffer-schedule.yml). Each post is generated once and delivered once at the scheduled time.
-
-| Platform | Days | Delivery Time (UTC) |
-|----------|------|---------------------|
-| **LinkedIn** | Wed + Fri | 14:00 |
-| **Twitter/X** | Every day | 17:00 |
-| **Instagram** | Every day | 15:00 |
-
----
-
-## Directory Structure
+## Storage
 
 ```
-social/
-├── README.md                 # This overview
-├── README-{platform}.md      # Per-platform details
-├── buffer-schedule.yml       # Buffer posting schedule
-│
-├── prompts/                  # AI prompts
-│   ├── _shared/              # Shared: about.md, visual_style.md
-│   ├── discord/              # Discord announcement prompts
-│   ├── github/               # Weekly news & highlights prompts
-│   ├── instagram/            # Instagram post prompts
-│   ├── linkedin/             # LinkedIn post prompts
-│   └── twitter/              # Twitter post prompts
-│
-├── scripts/                  # Python automation scripts
-│   ├── common.py             # Shared utilities (prompt loading, API calls)
-│   ├── buffer_stage_post.py
-│   ├── buffer_utils.py
-│   ├── discord_post_merged_pr.py
-│   ├── discord_post_weekly_news.py
-│   ├── github_update_highlights.py
-│   ├── github_generate_weekly_news.py
-│   ├── github_update_readme.py
-│   ├── instagram_generate_post.py
-│   ├── linkedin_generate_post.py
-│   └── twitter_generate_post.py
-│
-├── news/                     # Generated content
-│   └── transformed/          # Post JSONs and images
-│       ├── linkedin/posts/
-│       ├── twitter/posts/
-│       └── instagram/posts/
-│
-└── reddit/                   # Devvit app (TypeScript, self-hosted)
-    ├── src/
-    │   ├── main.ts           # Entry point
-    │   ├── pipeline.ts       # Content generation
-    │   ├── loadPrompt.ts     # Prompt loading with shared injection
-    │   └── system_prompt.ts  # Embedded AI prompt
-    └── bash/deploy.sh        # Deployment script
+social/news/
+├── gists/YYYY-MM-DD/                    # Tier 1: per-PR gists
+│   ├── PR-{number}.json                 #   structured gist
+│   └── PR-{number}.jpg                  #   pixel art image
+├── daily/YYYY-MM-DD/                    # Tier 2: daily posts
+│   ├── summary.json                     #   narrative arcs
+│   ├── diary.json                       #   dev diary
+│   ├── twitter.json, linkedin.json      #   platform posts
+│   ├── instagram.json, reddit.json      #   platform posts
+│   └── images/                          #   generated images
+│       ├── twitter.jpg, linkedin.jpg
+│       ├── instagram-{1,2,3}.jpg
+│       └── reddit.jpg
+├── weekly/YYYY-MM-DD/                   # Tier 3: weekly posts
+│   ├── summary.md                       #   changelog
+│   ├── twitter.json, linkedin.json      #   platform posts
+│   ├── instagram.json, discord.json     #   platform posts
+│   └── images/                          #   generated images
+├── highlights.md                        # Curated highlights (updated on daily publish)
+└── LINKS.md                             # Official link collection
 ```
 
----
+## Delivery Schedule
 
-## Editing Prompts
+Defined in [`buffer-schedule.yml`](buffer-schedule.yml).
 
-1. Edit file in `prompts/{platform}/`
-2. Test via manual workflow trigger
-3. Review generated PR
+| Platform | Daily | Weekly | Time (UTC) |
+|---|---|---|---|
+| **Twitter/X** | Every day | Monday | 17:00 / 08:00 |
+| **LinkedIn** | Wed + Fri | Monday | 14:00 / 08:00 |
+| **Instagram** | Every day | Monday | 15:00 / 08:00 |
+| **Reddit** | Every day | -- | Immediate on daily PR merge |
+| **Discord** | Per PR merge | Monday | Immediate / 08:00 |
+
+## Secrets
+
+| Secret | Used by |
+|---|---|
+| `BUFFER_ACCESS_TOKEN` | Buffer staging (X, LI, IG) |
+| `POLLINATIONS_TOKEN` | All AI generation |
+| `DISCORD_WEBHOOK_URL` | Tier 1 + Tier 3 Discord posts |
+| `GITHUB_TOKEN` | PR creation, file commits |
+| `POLLY_BOT_APP_ID` | PR creation (GitHub App) |
+| `POLLY_BOT_PRIVATE_KEY` | PR creation (GitHub App) |
+| `REDDIT_CLIENT_ID` | Reddit OAuth2 posting |
+| `REDDIT_CLIENT_SECRET` | Reddit OAuth2 posting |
+| `REDDIT_USERNAME` | Reddit bot account |
+| `REDDIT_PASSWORD` | Reddit bot account |
+
+## Legacy
+
+The old per-platform standalone scripts and workflows have been removed. The 3-tier pipeline above replaces all of them.
+
+The old Devvit-based Reddit pipeline (`social/reddit/`) is also superseded — Reddit now posts via direct OAuth2 API in `publish_daily.py`.

@@ -7,6 +7,7 @@ Shared code for LinkedIn, Twitter, and other platforms.
 import os
 import sys
 import time
+import json
 import random
 import requests
 from typing import Dict, List, Optional
@@ -93,13 +94,13 @@ def _inject_shared_prompts(content: str) -> str:
     """Inject shared prompt components into content
 
     Replaces placeholders with shared content:
-    - {about} -> _shared/about.md
-    - {visual_style} -> _shared/visual_style.md
+    - {about} -> _shared/brand_about.md
+    - {visual_style} -> _shared/brand_visual.md
     """
     if "{about}" in content:
-        content = content.replace("{about}", load_shared("about"))
+        content = content.replace("{about}", load_shared("brand_about"))
     if "{visual_style}" in content:
-        content = content.replace("{visual_style}", load_shared("visual_style"))
+        content = content.replace("{visual_style}", load_shared("brand_visual"))
     return content
 
 
@@ -116,8 +117,8 @@ def load_prompt(platform: str, prompt_name: str) -> str:
     """Load a prompt file from social/prompts/{platform}/{prompt_name}.md
     
     Automatically injects shared components:
-    - {about} -> content from _shared/about.md
-    - {visual_style} -> content from _shared/visual_style.md
+    - {about} -> content from _shared/brand_about.md
+    - {visual_style} -> content from _shared/brand_visual.md
     
     Args:
         platform: 'linkedin', 'twitter', 'instagram', 'reddit', etc.
@@ -509,6 +510,172 @@ def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branc
     if response.status_code == 200:
         return response.json().get("sha", "")
     return ""
+
+
+# ── Gist I/O helpers ─────────────────────────────────────────────────
+
+# Directory where gist JSONs live, relative to repo root
+GISTS_REL_DIR = "social/news/gists"
+
+# Required top-level keys for a valid gist
+_GIST_REQUIRED_KEYS = {"pr_number", "title", "author", "url", "merged_at"}
+
+# Required keys inside gist.gist (the AI-generated analysis)
+_GIST_AI_KEYS = {"category", "user_facing", "publish_tier", "importance",
+                 "summary", "impact", "keywords", "discord_snippet"}
+
+VALID_CATEGORIES = {"feature", "bug_fix", "improvement", "docs", "infrastructure", "community"}
+VALID_PUBLISH_TIERS = {"none", "discord_only", "daily"}
+VALID_IMPORTANCE = {"major", "minor"}
+
+
+def validate_gist(gist: Dict) -> List[str]:
+    """Validate a gist dict against the schema. Returns list of error strings (empty = valid)."""
+    errors = []
+
+    for key in _GIST_REQUIRED_KEYS:
+        if key not in gist:
+            errors.append(f"missing top-level key: {key}")
+
+    ai = gist.get("gist")
+    if ai is None:
+        errors.append("missing 'gist' object")
+        return errors
+
+    for key in _GIST_AI_KEYS:
+        if key not in ai:
+            errors.append(f"missing gist.{key}")
+
+    if ai.get("category") and ai["category"] not in VALID_CATEGORIES:
+        errors.append(f"invalid category: {ai['category']}")
+    if ai.get("publish_tier") and ai["publish_tier"] not in VALID_PUBLISH_TIERS:
+        errors.append(f"invalid publish_tier: {ai['publish_tier']}")
+    if ai.get("importance") and ai["importance"] not in VALID_IMPORTANCE:
+        errors.append(f"invalid importance: {ai['importance']}")
+    if "user_facing" in ai and not isinstance(ai["user_facing"], bool):
+        errors.append("user_facing must be boolean")
+    if "keywords" in ai and not isinstance(ai["keywords"], list):
+        errors.append("keywords must be a list")
+
+    return errors
+
+
+def apply_publish_tier_rules(gist: Dict) -> str:
+    """Apply hard rules for publish_tier. Returns the corrected tier."""
+    ai = gist.get("gist", {})
+    labels = [l.lower() for l in gist.get("labels", [])]
+    ai_tier = ai.get("publish_tier", "daily")
+
+    # Rule 1: deps/chore + not user-facing → discord_only
+    if ("deps" in labels or "chore" in labels) and not ai.get("user_facing", False):
+        return "discord_only"
+
+    # Rule 2: feature label → at least daily
+    if "feature" in labels:
+        return "daily"
+
+    return ai_tier
+
+
+def build_minimal_gist(pr_number: int, title: str, author: str, url: str,
+                       merged_at: str, labels: List[str]) -> Dict:
+    """Build a minimal gist with PR metadata only (no AI fields).
+    Used as fallback when AI analysis fails."""
+    return {
+        "pr_number": pr_number,
+        "title": title,
+        "author": author,
+        "url": url,
+        "merged_at": merged_at,
+        "labels": labels,
+        "gist": {
+            "category": "infrastructure",
+            "user_facing": False,
+            "publish_tier": "discord_only",
+            "importance": "minor",
+            "summary": title,
+            "impact": "",
+            "keywords": [],
+            "discord_snippet": title,
+        },
+        "image": {"url": None, "prompt": None},
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "_minimal": True,
+    }
+
+
+def gist_path_for_pr(pr_number: int, merged_at: str) -> str:
+    """Return the repo-relative path for a gist file: social/news/gists/YYYY-MM-DD/PR-{n}.json"""
+    date_str = merged_at[:10]  # YYYY-MM-DD from ISO timestamp
+    return f"{GISTS_REL_DIR}/{date_str}/PR-{pr_number}.json"
+
+
+def commit_gist_to_main(gist: Dict, github_token: str, owner: str, repo: str) -> bool:
+    """Commit a gist JSON file to main via the GitHub Contents API.
+    Returns True on success, False on failure."""
+    file_path = gist_path_for_pr(gist["pr_number"], gist["merged_at"])
+    content = json.dumps(gist, indent=2, ensure_ascii=False)
+
+    import base64 as _b64
+    encoded = _b64.b64encode(content.encode()).decode()
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {github_token}",
+    }
+
+    # Check if file already exists (re-run / retry scenario)
+    sha = get_file_sha(github_token, owner, repo, file_path, "main")
+
+    payload = {
+        "message": f"chore(news): add gist for PR #{gist['pr_number']}",
+        "content": encoded,
+        "branch": "main",
+    }
+    if sha:
+        payload["sha"] = sha
+
+    resp = requests.put(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
+        headers=headers,
+        json=payload,
+    )
+
+    if resp.status_code in [200, 201]:
+        print(f"  Committed gist to {file_path}")
+        return True
+
+    print(f"  Failed to commit gist: {resp.status_code} {resp.text[:200]}")
+    return False
+
+
+def read_gists_for_date(date_str: str, repo_root: str = None) -> List[Dict]:
+    """Read all gist JSON files for a given date from the local repo.
+
+    Args:
+        date_str: YYYY-MM-DD
+        repo_root: path to repo root (auto-detected if None)
+
+    Returns:
+        List of gist dicts sorted by pr_number
+    """
+    if repo_root is None:
+        repo_root = get_repo_root()
+
+    gist_dir = Path(repo_root) / GISTS_REL_DIR / date_str
+
+    if not gist_dir.exists():
+        return []
+
+    gists = []
+    for f in sorted(gist_dir.glob("PR-*.json")):
+        try:
+            with open(f, "r", encoding="utf-8") as fh:
+                gists.append(json.load(fh))
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"  Warning: skipping malformed gist {f}: {e}")
+
+    return sorted(gists, key=lambda g: g.get("pr_number", 0))
 
 
 def format_pr_summary(prs: List[Dict], time_label: str = "TODAY") -> str:

@@ -48,14 +48,27 @@ INFORMATIVE, HONEST, NON-MARKETING. Think:
 - Dev meme composition: slightly irreverent, community-first energy
 
 ### Prompt Structure for Reddit:
-"[Pixel art dev meme infographic] showing [topic]. Large chunky pixel headline reads '[HEADLINE]'.
+"[Pixel art dev meme infographic] showing [topic]. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Large chunky pixel headline reads '[HEADLINE]'.
 [Layout of stats and feature callouts in retro game UI panels]. Bee mascot [doing action].
-Composition: [layout for readability at mobile size]. Mood: joyful, nerdy, slightly irreverent."
+Composition: [layout for readability at mobile size]. Warm lighting, lo-fi vibes. Mood: joyful, nerdy, slightly irreverent. Follow the shared visual style."
+
+## Output Format (JSON only)
+
+```json
+{
+    "title": "Short factual Reddit post title (5-12 words, must include 'Pollinations'). Non-promotional, peer-to-peer tone.",
+    "image_prompt": "Pixel art dev meme infographic scene description. Must follow the shared visual style — cozy 8-bit, lime green (#ecf874), bee mascot, warm pastels. Add Reddit dev meme energy on top.",
+    "body": "Optional 1-2 sentence context. Factual, non-promotional. Can be empty string.",
+    "reasoning": "Why this angle works for the Reddit dev community"
+}
+```
+
+Return ONLY the JSON object. No markdown fences, no explanation.
 
 ## Example Image Prompts
 
-1. "Pixel art retro game achievement screen. Headline '50 PRs MERGED' with pixel confetti. Four retro UI panels: 'Stripe Checkout (USD)', 'Auto Star Updates', 'Economics Dashboard Live', 'Vercel AI SDK'. Bee developer holds a clipboard while hovering near the panels."
+1. "Cozy pixel art dev meme infographic — retro game achievement screen. Soft lime green (#ecf874) and warm cream background. Headline '50 PRs MERGED' in chunky pixel font with pixel confetti. Four retro UI panels: 'Stripe Checkout', 'Auto Star Updates', 'Economics Dashboard', 'Vercel AI SDK'. Bee developer holds a clipboard while hovering near the panels. Warm lighting, lo-fi vibes like Stardew Valley. Readable at mobile size."
 
-2. "Pixel art garden-themed infographic titled 'POLLINATIONS WEEKLY DEV RECAP'. Large stat '500+ Apps Built' in center. Smaller pixel panels with bullet updates. Bee mascot waters a pixelated plant with a watering can labeled 'Open Source'. Readable at mobile size."
+2. "Cozy pixel art garden-themed infographic titled 'POLLINATIONS DEV RECAP'. Soft pastel gradient background (mint to peach). Large stat '500+ Apps Built' in center with lime green (#ecf874) glow. Smaller pixel panels with bullet updates. Bee mascot waters a pixelated plant with a watering can labeled 'Open Source'. 8-bit aesthetic, warm lighting, nostalgic but beautiful."
 
-3. "Pixel art retro RPG inventory screen titled 'THIS WEEK IN POLLINATIONS'. Stats as inventory items: '51 PRs', '4 Features', '1 Dashboard'. Bee character points proudly while standing on a pixel branch. Centered, clean hierarchy, scannable in 2 seconds."
+3. "Cozy pixel art retro RPG inventory screen titled 'THIS WEEK IN POLLINATIONS'. Soft lime green (#ecf874) and lavender gradient. Stats as inventory items: '51 PRs', '4 Features', '1 Dashboard'. Bee character points proudly while standing on a pixel branch. Centered, clean hierarchy, scannable in 2 seconds. Warm lo-fi vibes like A Short Hike."

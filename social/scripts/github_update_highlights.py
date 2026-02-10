@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from common import load_prompt, get_env, get_file_sha, call_pollinations_api, GITHUB_API_BASE, MODEL
 
 NEWS_FOLDER = "social/news"
-HIGHLIGHTS_PATH = "social/news/transformed/highlights.md"
+HIGHLIGHTS_PATH = "social/news/highlights.md"
 
 # Platform name for prompt loading
 PLATFORM = "github"

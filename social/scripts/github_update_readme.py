@@ -5,7 +5,7 @@ import base64
 import requests
 from datetime import datetime, timezone
 from common import get_env, GITHUB_API_BASE
-HIGHLIGHTS_PATH = "social/news/transformed/highlights.md"
+HIGHLIGHTS_PATH = "social/news/highlights.md"
 README_PATH = "README.md"
 MAX_README_ENTRIES = 10
 

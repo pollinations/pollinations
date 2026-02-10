@@ -20,8 +20,41 @@ instagram:
   days: [1, 2, 3, 4, 5, 6, 7]
   preferred: "15:00"  # 3pm UTC (4pm CET, 10am ET) — EU afternoon + US morning
 
+# Reddit — not scheduled via Buffer; posted immediately via Reddit OAuth2 API
+# on daily PR merge (publish_daily.py). No weekly Reddit post.
+reddit:
+  delivery: "immediate"  # Reddit API, not Buffer
+
+# Weekly delivery — Monday morning via Buffer (X, LI, IG) + Discord webhook
+# publish_weekly.py stages each platform through Buffer using the time below,
+# then posts to Discord via webhook separately.
+weekly:
+  days: [1]  # Monday only
+  preferred: "08:00"  # 8am UTC — EU morning + US Sunday evening (peak engagement)
+
+# Non-social outputs (repo artifacts, not scheduled via Buffer):
+#
+# diary:
+#   Generated during daily summary (generate_daily_summary.py, 00:00 UTC cron).
+#   Whimsical pixel art narrative of the day's gists → social/news/daily/{date}/diary.json
+#
+# highlights:
+#   Updated on daily PR merge (publish_daily.py).
+#   AI distills summary arcs into curated highlights → social/news/highlights.md
+#
+# readme:
+#   Updated on daily PR merge (publish_daily.py).
+#   Injects top 10 highlights into README.md "## 🆕 Latest News" section.
+
 # How it works:
+# Daily:
 # 1. Cron generates post → creates PR for review
 # 2. PR merged → Buffer publish workflow triggers
 # 3. buffer_stage_post.py reads this schedule, picks next valid day at preferred time
 # 4. Buffer delivers the post at that scheduled time
+# 5. Reddit is posted immediately via API (not Buffer)
+#
+# Weekly:
+# 1. Sunday 00:00 UTC cron generates weekly summary → creates PR for review
+# 2. PR reviewed and merged before Monday 08:00 UTC
+# 3. Monday 08:00 UTC cron stages X/LI/IG via Buffer + posts to Discord webhook

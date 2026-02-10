@@ -15,10 +15,10 @@ function loadShared(name: string): string {
 
 function injectSharedPrompts(content: string): string {
     if (content.includes('{about}')) {
-        content = content.replaceAll('{about}', loadShared('about'));
+        content = content.replaceAll('{about}', loadShared('brand_about'));
     }
     if (content.includes('{visual_style}')) {
-        content = content.replaceAll('{visual_style}', loadShared('visual_style'));
+        content = content.replaceAll('{visual_style}', loadShared('brand_visual'));
     }
     return content;
 }

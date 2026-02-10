@@ -19,12 +19,12 @@ TIER 1: PER-PR (real-time)
   PR merged → AI analyzes → gist JSON committed to repo → image generated → Discord post
 
 TIER 2: DAILY (00:00 UTC)
-  Read day's gists → AI generates daily summary → platform posts (X, IG, LI) + website diary
-  → single PR for review → on merge: Buffer + highlights + README
+  Read day's gists → AI generates daily summary → platform posts (X, IG, LI, Reddit) + website diary
+  → single PR for review → on merge: Buffer + Reddit API + highlights + README
 
 TIER 3: WEEKLY (Sunday 00:00 UTC + Monday 08:00 UTC)
-  Read week's daily summaries → synthesize weekly themes → platform posts (X, IG, LI, Discord)
-  Generated Sun 00:00 UTC → PR for review → Mon 08:00 UTC cron publishes all 4 platforms
+  Read week's daily summaries → synthesize weekly themes → platform posts (X, IG, LI, Reddit, Discord)
+  Generated Sun 00:00 UTC → PR for review → Mon 08:00 UTC cron publishes all 5 platforms
 ```
 
 ### Data Flow
@@ -57,6 +57,7 @@ PR merge ──→ generate_pr_gist.py
                             ├──→ twitter.json   + 🎨 GENERATE 1 image (platform style)
                             ├──→ linkedin.json  + 🎨 GENERATE 1 image (platform style)
                             ├──→ instagram.json + 🎨 GENERATE 3 images (carousel)
+                            ├──→ reddit.json    + 🎨 GENERATE 1 image (platform style)
                             ├──→ diary.json     + 🔗 REUSE per-PR pixel art from gists
                             │                     (collects image.url from each gist —
                             │                      zero extra generation)
@@ -65,11 +66,12 @@ PR merge ──→ generate_pr_gist.py
                                   social/news/daily/YYYY-MM-DD/
                                          │ (on merge)
                                          ├──→ Buffer staging (X, LI, IG)
+                                         ├──→ Reddit API post (immediate)
                                          ├──→ Website diary update
                                          ├──→ Highlights update
                                          └──→ README update
 
-             Images generated: 5 (1 twitter + 1 linkedin + 3 instagram)
+             Images generated: 6 (1 twitter + 1 linkedin + 3 instagram + 1 reddit)
              Images reused:    N (one per PR, from Tier 1 gists → diary only)
 
 ═══════════════════════════════════════════════════════════════════════
@@ -84,17 +86,19 @@ PR merge ──→ generate_pr_gist.py
                                     ├──→ twitter.json   + 🎨 GENERATE 1 image (weekly recap)
                                     ├──→ linkedin.json  + 🎨 GENERATE 1 image (weekly recap)
                                     ├──→ instagram.json + 🎨 GENERATE 3 images (weekly carousel)
+                                    ├──→ reddit.json    + 🎨 GENERATE 1 image (weekly recap)
                                     ├──→ discord.json     (text only, no image)
                                     └──→ Creates PR for review
 
              Monday 08:00 UTC ──→ NEWS_weekly_publish.yml (cron)
                                     │ (checks if weekly PR was merged)
                                     ├── Not merged → skip
-                                    └── Merged → publish all 4 platforms:
+                                    └── Merged → publish all 5 platforms:
                                           ├──→ Buffer staging (X, LI, IG)
+                                          ├──→ Reddit API post (immediate)
                                           └──→ Discord webhook post
 
-             Images generated: 5 (1 twitter + 1 linkedin + 3 instagram)
+             Images generated: 6 (1 twitter + 1 linkedin + 3 instagram + 1 reddit)
              Images reused:    none
 ```
 
@@ -225,9 +229,10 @@ When the frontend is ready, it reads from `social/news/daily/YYYY-MM-DD/diary.js
 - `twitter.json` — weekly recap tweet (1 image)
 - `linkedin.json` — weekly recap post (1 image)
 - `instagram.json` — weekly recap carousel (3 images)
+- `reddit.json` — weekly Reddit post (1 image)
 - `discord.json` — weekly Discord digest
 - `images/` — all generated images
-- Generated **Sunday 00:00 UTC**, published **Monday 08:00 UTC** via cron: Buffer (X, LI, IG) + Discord webhook — all 4 platforms at the same time. Monday morning hits peak engagement (EU morning, US Sunday evening).
+- Generated **Sunday 00:00 UTC**, published **Monday 08:00 UTC** via cron: Buffer (X, LI, IG) + Reddit API + Discord webhook — all 5 platforms at the same time. Monday morning hits peak engagement (EU morning, US Sunday evening).
 
 ---
 
@@ -299,7 +304,7 @@ Step 3: Discord post
 All workflows support `workflow_dispatch` for manual re-triggering:
 - `NEWS_pr_gist.yml`: accepts `pr_number` input to regenerate a specific gist
 - `NEWS_daily_summary.yml`: accepts `date` input to regenerate a specific day
-- `NEWS_weekly_summary.yml`: accepts `week_start_date` input
+- `NEWS_weekly_summary.yml`: accepts `target_date` input
 
 ---
 
@@ -358,8 +363,8 @@ There are **3 independent families of images**. Each tier generates its own imag
 | Family | Generated by | When | Style | Count | Used by |
 |---|---|---|---|---|---|
 | **Per-PR pixel art** | `generate_pr_gist.py` | Tier 1 (on PR merge) | 8-bit pixel art | 1 per PR | Discord post, website diary |
-| **Daily platform images** | `generate_daily_summary.py` | Tier 2 (00:00 UTC) | Platform-appropriate (matches current style) | 1 Twitter + 1 LinkedIn + 3 Instagram = **5 per day** | Twitter, LinkedIn, Instagram daily posts |
-| **Weekly platform images** | `generate_weekly_summary.py` | Tier 3 (Sunday 00:00 UTC) | Platform-appropriate (weekly recap style) | 1 Twitter + 1 LinkedIn + 3 Instagram = **5 per week** | Twitter, LinkedIn, Instagram weekly posts |
+| **Daily platform images** | `generate_daily_summary.py` | Tier 2 (00:00 UTC) | Platform-appropriate (matches current style) | 1 Twitter + 1 LinkedIn + 3 Instagram + 1 Reddit = **6 per day** | Twitter, LinkedIn, Instagram, Reddit daily posts |
+| **Weekly platform images** | `generate_weekly_summary.py` | Tier 3 (Sunday 00:00 UTC) | Platform-appropriate (weekly recap style) | 1 Twitter + 1 LinkedIn + 3 Instagram + 1 Reddit = **6 per week** | Twitter, LinkedIn, Instagram, Reddit weekly posts |
 
 **Key points:**
 
@@ -385,12 +390,12 @@ There are **3 independent families of images**. Each tier generates its own imag
 | Step | AI calls | Image gens |
 |---|---|---|
 | PR gists (5x) | 5 | 5 |
-| Daily summary (1x) | 2 | 5 (1 twitter + 1 linkedin + 3 instagram) |
-| **Total** | **7** | **10** |
+| Daily summary (1x) | 2 | 6 (1 twitter + 1 linkedin + 3 instagram + 1 reddit) |
+| **Total** | **7** | **11** |
 
 **AI calls reduced ~50%.** Image generation stays similar (same number of images needed). The real savings grow with PR volume — current system scales as N×platforms, new system scales as N+1.
 
-Weekly adds ~3 AI calls + ~5 image gens on Sundays. Net weekly savings: ~35-45 fewer AI calls.
+Weekly adds ~3 AI calls + ~6 image gens on Sundays. Net weekly savings: ~35-45 fewer AI calls.
 
 ---
 

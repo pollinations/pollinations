@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262 # v1.0.0
+        uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262
         with:
           host: ${{ secrets.POLLY_VPS_HOST }}
           username: ${{ secrets.POLLY_VPS_USER }}
@@ -30,35 +30,51 @@ jobs:
             set -e
             echo "🦜 Deploying Polly bot..."
 
-            cd ~/pollinations
+            cd /root/Polly
 
             # Pull with fast-forward only (fail if merge conflicts)
             git pull --ff-only origin main
 
-            cd apps/polly
-
+            source venv/bin/activate
             # Install dependencies
-            pip3 install -r requirements.txt --quiet
+            pip install -r requirements.txt --quiet
+
+            # Verify service exists
+            if sudo systemctl list-unit-files | grep -q polly.service; then
+              echo "Service polly.service found"
+            else
+              echo "Service polly.service not found!"
+              sudo systemctl list-unit-files | grep service || true
+              exit 1
+            fi
 
             # Restart bot service
-            sudo systemctl restart polly.service
+            echo " Restarting polly.service..."
+            sudo systemctl restart polly.service || {
+              echo "Failed to restart service - checking permissions..."
+              sudo -l
+              exit 1
+            }
 
             # Wait and check status
-            sleep 10
+            echo "Waiting for service to start..."
+            sleep 5
 
             # Verify bot is actually running
-            if ! sudo systemctl is-active --quiet polly.service; then
-              echo "❌ Bot failed to start"
+            if sudo systemctl is-active --quiet polly.service; then
+              echo "Service is active"
+            else
+              echo "Bot failed to start"
               sudo journalctl -u polly.service -n 50 --no-pager
               exit 1
             fi
 
             # Check for crashes in first 10s
             sleep 10
-            if ! sudo systemctl is-active --quiet polly.service; then
-              echo "❌ Bot crashed after startup"
+            if sudo systemctl is-active --quiet polly.service; then
+              echo "Polly deployed and running healthy"
+            else
+              echo "Bot crashed after startup"
               sudo journalctl -u polly.service -n 50 --no-pager
               exit 1
             fi
-
-            echo "✅ Polly deployed and running healthy"

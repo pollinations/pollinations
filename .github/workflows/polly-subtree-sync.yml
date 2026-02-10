@@ -1,0 +1,78 @@
+name: Polly Subtree Sync
+
+on:
+  schedule:
+    # Run every 24 hours at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-polly:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pollinations repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add Polly remote
+        run: |
+          git remote add polly https://github.com/Itachi-1824/Polly.git@${{ secrets.POLLI_ORIGINAL_ACCESS_TOKEN }}
+
+      - name: Fetch Polly repo
+        run: |
+          git fetch polly main
+
+      - name: Pull subtree changes
+        id: subtree
+        continue-on-error: true
+        run: |
+          git subtree pull --prefix apps/polly polly main --squash
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: Check if there are changes
+        id: check-changes
+        run: |
+          if git diff --quiet HEAD; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create feature branch
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          git checkout -b polly-sync/${{ github.run_number }}
+
+      - name: Push branch
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          git push origin polly-sync/${{ github.run_number }}
+
+      - name: Create Pull Request
+        if: steps.check-changes.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --title "chore: sync polly subtree" \
+            --body "Automated sync of Polly repo changes via subtree pull
+
+This PR contains updates from https://github.com/Itachi-1824/Polly
+
+- Branch: main
+- Trigger: Scheduled subtree sync (24 hourly)
+- No manual changes should be made to apps/polly folder
+
+The actual deployment happens on bot-vps from /root/Polly" \
+            --base main \
+            --head polly-sync/${{ github.run_number }}

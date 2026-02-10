@@ -1,74 +1,75 @@
+
 # Pitch_Latest_10/2
 
-# POLLINATIONS PITCH DECK — PUNCHY VERSION
-
-*Bold, memorable, cuts to the chase*
+# POLLINATIONS PITCH DECK
 
 ---
 
 ## **POLLINATIONS**
 
-Developers build free. Users pay.
-Every app, a storefront.
-We have 1000+ today, reaching millions of users.
+The open-source AI platform for creators.
+Community-driven. 1,000+ apps live. 3M+ users/month.
 
 ---
 
-# The New Creators
+## The Problem
 
-Apps are now built with prompts. AI is the new electricity.
-A new creator space is emerging — indie developers, hackers, students, gamers — making apps for the next billion users.
-Cloud aggregators focus on startups and enterprise. These **creators** don't fit that mold.
+**Millions of builders. No infrastructure that fits.**
 
-Pollinations is the open platform made for them.
+Every week, a new wave of developers ships AI-powered apps — Discord bots, browser tools, game mods, image generators, creative instruments.
 
----
+They're not startups. They don't have backend teams.
+They build with prompts, ship on GitHub, and find users overnight.
 
-## Problem → Solution
+But the moment an app gets traction, they hit a wall:
+API keys they can't afford. Billing systems they can't build. Costs they can't predict.
 
-**Enterprise AI is complex. API keys, backend setup, billing infrastructure.**
+*"What if my app takes off and I can't afford the bill?"*
 
-Creators who ship real products can't fund the experimentation phase.
-The fear: "What if my app takes off and I can't afford the bill?"
-Creators don't want complexity. They want to build the **fun** part.
+And users? They won't pay for 10 separate AI subscriptions. Subscription hell.
 
-**Our answer: Pollen.**
-
-**1 Pollen = $1.** One credit, one wallet, every AI app.
-
-Developers integrate Pollen into their apps. Users buy Pollen to unlock AI features. No per-app logins, no per-app billing. Just build.
-
----
-
-## How It Works
-
-**The Distribution Layer for Generative AI**
-
-One API call. Any AI model. No setup.
-
-Developer gets Pollen → Builds app → App goes live → End users buy Pollen → Revenue flows
-
-**For Developers:** Zero friction. No backends, no API key management, no billing code. Every app they ship is a revenue channel we didn't build.
-
-**For Users:** One account, one Pollen balance across every AI app. Buy once, use everywhere. A user might use 10 AI apps and never visit our website — but they all run on Pollen.
-
-**Think of Pollen like:**
-- **Stripe** for payments → but for AI credits
-- **Auth0** for authentication → but with built-in AI usage consent
-- **OpenRouter** for AI routing → but user centric, they choose which model they pay for
+That fear kills more AI apps than bad code.
 
 ---
 
 ## Why Now
 
-**Natural language is the new programming.**
+**Natural language is the new programming.** "Vibe coding" is Collins Word of the Year 2025.
 
-- "Vibe coding" is Collins Word of the Year 2025 — natural language replaces programming
-- Meta's Alexandr Wang: "If you're 13, spend all your time vibe coding" — the next Bill Gates is a teenager
-- Teenagers, indie devs, and small teams are shipping real products
-- Models are commodity — value is shifting to distribution and orchestration
+A new creator space is emerging — indie developers, hackers, students, gamers — shipping real products on Discord, Reddit, and GitHub. Models are commodity. **Distribution wins.**
 
-**Technical moats are gone. Distribution wins.**
+Cloud aggregators focus on startups and enterprise. These **creators** don't fit that mold. Pollinations is the open platform made for them.
+
+---
+
+## Team
+
+**Thomas Haferlach — CEO**
+Amazon AI. Published neural networks researcher. Edinburgh AI top of class.
+9 years building creative tech communities in Brazil and Berlin.
+
+*"I built this because I needed it at 16. No credit card, no access — so the next generation doesn't face those barriers."*
+
+**Elliot Fouchy — CPO**
+Full-stack engineer. Infrastructure at scale. Shipped and runs the entire backend from day one.
+
+*"I keep it running so builders can keep building."*
+
+---
+
+## Pollen
+
+**One currency for all AI apps.**
+
+**1 Pollen = $1.** One credit, one wallet, every AI app.
+
+Developers add Pollen with one API call. Users buy Pollen once — spend it across 1,000+ apps. No API keys. No backend. No billing code. Just build.
+
+**Think of it like electricity.** We power the apps. Users pay for the electricity. Creators share the revenue.
+
+Developer builds free → Users buy Pollen inside the app → We take a cut, developer gets the rest
+
+**Developers are our distribution.** Every app is a storefront we didn't have to build. Creators earn on every Pollen spent inside their app — and can cash out to their bank account.
 
 ---
 
@@ -79,11 +80,13 @@ Developer gets Pollen → Builds app → App goes live → End users buy Pollen 
 | **3M+** | end-users/month (across developer apps) |
 | --- | --- |
 | **1,000+** | live apps |
-| **400+** | new devs/day |
+| **600+** | new devs/day |
 | **17K+** | Discord members |
 | **3.9K** | GitHub stars |
 
 We're growing because we're the easiest way to build.
+
+*[INSERT: Monthly end-user growth chart]*
 
 ---
 
@@ -98,57 +101,40 @@ We're growing because we're the easiest way to build.
 | Entry | Use models | Pay-per-use API | API key | No signup needed |
 | Revenue | Enterprise | Contracts | Usage fees | End users buy Pollen |
 
-Fal ($4.5B valuation) and OpenRouter ($40M from a16z + Sequoia, $500M valuation, ~8 people) charge developers. **We go further — end users pay, not developers.**
+Fal ($4.5B) and OpenRouter ($500M, ~8 people) charge developers. **We go further — end users pay, not developers.** The developer isn't our customer — the developer is our distribution channel.
 
-**The moat:** 17K Discord community onboards new devs for us. Zero support cost. Switching means breaking live products.
+**The moat:** 17K Discord community onboards new devs, handles support, and ships starter kits. Zero support cost. Switching means breaking live products.
 
-Stripe started with side projects. Firebase started with hobbyists. We're already inside 1,000+ products. A thousand seeds. We only need a few to bloom.
+Stripe started with side projects. Firebase started with hobbyists. We're already inside 1,000+ products.
 
 ---
 
 ## Business Model
 
-**50M+ indie builders globally. $50–100B in consumer AI spend. Revenue scales with end users, not developer headcount.**
+**Revenue scales with end users, not developer headcount.**
 
-**Two customers. One economy.**
-
-Users don't buy per app. They buy Pollen once and spend it everywhere.
+Users buy Pollen once and spend it everywhere.
 More apps = more reasons to buy. More users = more revenue per app.
 
 **Proof:**
-Roblox game. 51M visits. $12K/month revenue.
-Pays us $500/month.
+One creator-built gaming app: 51M visits. $12K/month in user spend.
 
 *That's the flywheel.* Millions of creators, a unified wallet, and users paying inside experiences.
-
-We're bringing that model to *all* AI apps.
-
----
-
-# Team
-
-**Creators, Technical Founders, Who Ship**
-
-**Thomas Haferlach — CEO**
-Amazon AI. Published neural networks researcher. Edinburgh AI top of class.
-Built this because he needed it at 16.
-
-"*As a teenager without a credit card, I hacked my way into apps. I've been building AI-native products ever since — so the next generation of devs don't face those hurdles"*
-
-**Elliot Fouchy — CPO**
-Full-stack. Infra at scale. Makes it run.
-
-"*Learning resilience as an engineer on a remote island, I channel that grit to lead ops, ship infra, and keep Pollinations moving forward."*
 
 ---
 
 ## The Ask
 
-**We're the Stripe of generative AI.** Power the long tail of AI apps.
+Power the long tail of AI apps.
 
 **Raise: €2.5M Seed**
 50% Compute-Infrastructure · 30% Engineering · 20% Community
 
-Developers build. Users pay. We're already inside 1,000+ products.
+**Milestones:**
+- Q1: In-app payments live — users buy Pollen inside any creator app
+- Q2: Creator rev-share — devs earn on every Pollen spent in their apps
+- Q3: App discovery + curation — become the go-to place for AI apps
+
+We're already inside 1,000+ products.
 
 **pollinations.ai**

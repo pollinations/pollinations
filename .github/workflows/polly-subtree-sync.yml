@@ -65,14 +65,6 @@ jobs:
         run: |
           gh pr create \
             --title "chore: sync polly subtree" \
-            --body "Automated sync of Polly repo changes via subtree pull
-
-This PR contains updates from https://github.com/Itachi-1824/Polly
-
-- Branch: main
-- Trigger: Scheduled subtree sync (24 hourly)
-- No manual changes should be made to apps/polly folder
-
-The actual deployment happens on bot-vps from /root/Polly" \
+            --body "Automated sync of Polly repo changes via subtree pull" \
             --base main \
             --head polly-sync/${{ github.run_number }}

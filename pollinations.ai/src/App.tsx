@@ -9,7 +9,6 @@ import { PresetEditor } from "./ui/components/theme";
 const HelloPage = lazy(() => import("./ui/pages/HelloPage"));
 const PlayPage = lazy(() => import("./ui/pages/PlayPage"));
 const AppsPage = lazy(() => import("./ui/pages/AppsPage"));
-const DocsPage = lazy(() => import("./ui/pages/DocsPage"));
 const CommunityPage = lazy(() => import("./ui/pages/CommunityPage"));
 const TermsPage = lazy(() => import("./ui/pages/TermsPage"));
 const PrivacyPage = lazy(() => import("./ui/pages/PrivacyPage"));
@@ -32,7 +31,7 @@ function App() {
                         <Route index element={<HelloPage />} />
                         <Route path="play" element={<PlayPage />} />
                         <Route path="apps" element={<AppsPage />} />
-                        <Route path="docs" element={<DocsPage />} />
+                        <Route path="docs" element={<Navigate to="/play" replace />} />
                         <Route path="community" element={<CommunityPage />} />
                         <Route path="terms" element={<TermsPage />} />
                         <Route path="privacy" element={<PrivacyPage />} />

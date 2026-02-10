@@ -26,7 +26,7 @@ const buttonVariants = cva(
                 icon: "flex-shrink-0 w-6 h-6 lg:w-8 lg:h-8 flex items-center justify-center bg-surface-page backdrop-blur-md border-r-4 border-b-4 border-border-main hover:bg-button-secondary-bg hover:border-border-brand hover:shadow-shadow-brand-md transition-all p-1 lg:p-1.5",
                 // Icon with text button (Enter button) - Matches nav button padding
                 iconText:
-                    "flex-shrink-0 px-3 py-1.5 lg:px-3 lg:py-3 flex items-center justify-center gap-1 bg-surface-page backdrop-blur-md border-r-4 border-b-4 border-border-main hover:bg-button-secondary-bg hover:border-border-brand hover:shadow-shadow-brand-md transition-all",
+                    "flex-shrink-0 px-3 py-1.5 flex items-center justify-center gap-1 bg-surface-page backdrop-blur-md border-r-4 border-b-4 border-border-main hover:bg-button-secondary-bg hover:border-border-brand hover:shadow-shadow-brand-md transition-all",
                 // Remove button (square rose) - PlayPage image upload remove
                 remove: "absolute top-1 right-1 w-6 h-6 bg-indicator-image flex items-center justify-center transition-colors",
                 // Navigation tab (header nav) - Active/inactive states

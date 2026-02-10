@@ -182,6 +182,11 @@ const models: ModelDefinition[] = [
         name: "nomnom",
         config: portkeyConfig["nomnom"],
     },
+    {
+        name: "qwen-character",
+        config: portkeyConfig["qwen-character"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.character),
+    },
 ];
 
 // Export models - metadata is in registry (single source of truth)

@@ -25,8 +25,8 @@ from pydantic import BaseModel
 # Different app name to avoid conflicts with 4B deployment
 app = modal.App("flux-klein-9b")
 
-# Expected Enter token for authentication (set via Modal secret)
-ENTER_TOKEN_HEADER = "x-enter-token"
+# Expected Backend token for authentication (set via Modal secret)
+ENTER_TOKEN_HEADER = "x-backend-token"
 
 # CUDA base image with Python
 cuda_version = "12.4.0"
@@ -75,6 +75,25 @@ MODEL_ID = "black-forest-labs/FLUX.2-klein-9B"
 
 MINUTES = 60
 
+# Maximum resolution to prevent OOM - 9B model is memory-hungry
+MAX_TOTAL_PIXELS = 1024 * 1024  # 1 megapixel max
+
+def clamp_dimensions(width: int, height: int) -> tuple[int, int]:
+    """Scale down dimensions while maintaining aspect ratio to prevent OOM errors."""
+    # Scale down proportionally if total pixels exceed max
+    total_pixels = width * height
+    if total_pixels > MAX_TOTAL_PIXELS:
+        scale = (MAX_TOTAL_PIXELS / total_pixels) ** 0.5
+        width = int(width * scale)
+        height = int(height * scale)
+    
+    # Ensure divisible by 16 (required by model)
+    width = (width // 16) * 16
+    height = (height // 16) * 16
+    
+    return max(width, 256), max(height, 256)
+
+
 class EditRequest(BaseModel):
     prompt: str
     images: list[str] | None = None
@@ -91,7 +110,7 @@ class EditRequest(BaseModel):
     scaledown_window=5 * MINUTES,
     timeout=10 * MINUTES,
     max_containers=2,
-    concurrency_limit=2,
+    concurrency_limit=1,  # Reduced from 2 - 9B model uses ~44GB VRAM, can't handle concurrent requests
     volumes={
         "/cache": modal.Volume.from_name("hf-hub-cache", create_if_missing=True),
         "/root/.nv": modal.Volume.from_name("nv-cache", create_if_missing=True),
@@ -99,7 +118,7 @@ class EditRequest(BaseModel):
         "/root/.inductor-cache": modal.Volume.from_name("inductor-cache", create_if_missing=True),
     },
     secrets=[
-        modal.Secret.from_name("enter-token", required_keys=["ENTER_TOKEN"]),
+        modal.Secret.from_name("backend-token", required_keys=["PLN_IMAGE_BACKEND_TOKEN"]),
         modal.Secret.from_name("huggingface-secret", required_keys=["HF_TOKEN"]),
     ],
 )
@@ -142,10 +161,13 @@ class FluxKlein9B:
         image_bytes_list: list[bytes] | None = None,
     ) -> bytes:
         """Generate an image from a text prompt, optionally with reference images."""
+        import gc
         import torch
         from PIL import Image
         
-        print(f"🎨 Generating: {prompt[:50]}...")
+        # Clamp dimensions to prevent OOM
+        width, height = clamp_dimensions(width, height)
+        print(f"🎨 Generating: {prompt[:50]}... (clamped to {width}x{height})")
         
         generator = None
         if seed is not None:
@@ -177,22 +199,30 @@ class FluxKlein9B:
         
         byte_stream = BytesIO()
         image.save(byte_stream, format="PNG")
+        
+        # Clean up to prevent memory fragmentation
+        del image
+        if reference_images is not None:
+            del reference_images
+        gc.collect()
+        torch.cuda.empty_cache()
+        
         return byte_stream.getvalue()
     
     def _verify_token(self, token: str | None) -> None:
-        """Verify the Enter token."""
+        """Verify the Backend token."""
         import os
-        expected_token = os.environ.get("ENTER_TOKEN")
+        expected_token = os.environ.get("PLN_IMAGE_BACKEND_TOKEN")
         if not expected_token:
-            raise HTTPException(status_code=500, detail="ENTER_TOKEN not configured")
+            raise HTTPException(status_code=500, detail="PLN_IMAGE_BACKEND_TOKEN not configured")
         
         if not token:
-            print("❌ No Enter token provided")
-            raise HTTPException(status_code=401, detail="Missing x-enter-token header")
+            print("❌ No Backend token provided")
+            raise HTTPException(status_code=401, detail="Missing x-backend-token header")
         
         if token != expected_token:
-            print("❌ Invalid Enter token")
-            raise HTTPException(status_code=401, detail="Invalid x-enter-token")
+            print("❌ Invalid Backend token")
+            raise HTTPException(status_code=401, detail="Invalid x-backend-token")
 
     @modal.fastapi_endpoint(method="GET")
     def generate_web(
@@ -203,12 +233,12 @@ class FluxKlein9B:
         guidance_scale: float = 4.0,
         num_inference_steps: int = 4,
         seed: int | None = None,
-        x_enter_token: str | None = Header(default=None),
+        x_backend_token: str | None = Header(default=None),
     ):
         """Web endpoint for text-to-image generation (GET)."""
         from fastapi.responses import Response
 
-        self._verify_token(x_enter_token)
+        self._verify_token(x_backend_token)
 
         image_bytes = self.generate.local(
             prompt=prompt,
@@ -231,7 +261,7 @@ class FluxKlein9B:
         guidance_scale: float = 4.0,
         num_inference_steps: int = 4,
         seed: int | None = None,
-        x_enter_token: str | None = Header(default=None),
+        x_backend_token: str | None = Header(default=None),
     ):
         """Web endpoint for image editing (POST).
         
@@ -241,7 +271,7 @@ class FluxKlein9B:
         from fastapi.responses import Response
         import base64
 
-        self._verify_token(x_enter_token)
+        self._verify_token(x_backend_token)
 
         ref_image_bytes_list = None
         if images and len(images) > 0:

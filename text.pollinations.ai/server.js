@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import express from "express";
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
+import { logIp } from "../shared/ipLogger.js";
 import { getServiceDefinition } from "../shared/registry/registry.js";
 import {
     buildUsageHeaders,
@@ -31,6 +32,14 @@ const authLog = debug("pollinations:auth");
 // Remove the custom JSON parsing middleware and use the standard bodyParser
 app.use(bodyParser.json({ limit: "20mb" }));
 app.use(cors());
+
+// IP logging middleware - log all incoming request IPs for security investigation
+app.use((req, _res, next) => {
+    const ip = getIp(req);
+    const model = req.body?.model || req.query?.model || "unknown";
+    logIp(ip, "text", `path=${req.path} model=${model}`);
+    next();
+});
 
 // Middleware to verify PLN_ENTER_TOKEN (after CORS for consistency)
 app.use((req, res, next) => {
@@ -249,6 +258,11 @@ export async function sendErrorResponse(
     // Include upstream error details if available
     const errorDetails = error.details || error.response?.data;
     if (errorDetails) errorResponse.details = errorDetails;
+
+    // For ImageFetchError, include the problematic URL for debugging
+    if (error.url) {
+        errorResponse.imageUrl = error.url;
+    }
 
     // Extract client information (for logs only)
     const clientInfo = {

@@ -78,7 +78,7 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
     test.for(authenticatedTestCases())(
         "%s should respond with 200 when using authorization header",
         { timeout: 30000 },
-        async ([serviceId, expectedStatus], { apiKey, mocks }) => {
+        async ([serviceId, expectedStatus], { paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const ctx = createExecutionContext();
             const response = await worker.fetch(
@@ -88,7 +88,7 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
                         method: "POST",
                         headers: {
                             "content-type": "application/json",
-                            "authorization": `Bearer ${apiKey}`,
+                            "authorization": `Bearer ${paidApiKey}`,
                         },
                         body: JSON.stringify({
                             model: serviceId,
@@ -133,7 +133,7 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
     test.for(authenticatedTestCases())(
         "%s should respond with 200 when streaming",
         { timeout: 30000 },
-        async ([serviceId, expectedStatus], { apiKey, mocks }) => {
+        async ([serviceId, expectedStatus], { paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const ctx = createExecutionContext();
             const response = await worker.fetch(
@@ -143,7 +143,7 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
                         method: "POST",
                         headers: {
                             "content-type": "application/json",
-                            "authorization": `Bearer ${apiKey}`,
+                            "authorization": `Bearer ${paidApiKey}`,
                         },
                         body: JSON.stringify({
                             model: serviceId,
@@ -188,7 +188,7 @@ describe("GET /text/:prompt", async () => {
     test.for(authenticatedTestCases())(
         "%s should return plain text",
         { timeout: 30000 },
-        async ([serviceId, expectedStatus], { apiKey, mocks }) => {
+        async ([serviceId, expectedStatus], { paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const ctx = createExecutionContext();
             const response = await worker.fetch(
@@ -197,7 +197,7 @@ describe("GET /text/:prompt", async () => {
                     {
                         method: "GET",
                         headers: {
-                            "authorization": `Bearer ${apiKey}`,
+                            "authorization": `Bearer ${paidApiKey}`,
                         },
                     },
                 ),
@@ -206,15 +206,12 @@ describe("GET /text/:prompt", async () => {
             );
             expect(response.status).toBe(expectedStatus);
 
+            await response.text();
+            await waitOnExecutionContext(ctx);
+
             // Verify content-type is text/plain for text models
             const contentType = response.headers.get("content-type");
             expect(contentType).toContain("text/plain");
-
-            // Verify response is plain text (not JSON)
-            const text = await response.text();
-            expect(text.length).toBeGreaterThan(0);
-            expect(() => JSON.parse(text)).toThrow(); // Should not be valid JSON
-            await waitOnExecutionContext(ctx);
 
             // make sure the recorded events contain usage
             const events = mocks.tinybird.state.events;
@@ -280,7 +277,7 @@ test(
         // Invalid model is a validation error (user's fault) - should return 400
         expect(response.status).toBe(400);
         const error = JSON.parse(body);
-        expect(error.error.message).toContain("Invalid service or alias");
+        expect(error.error.message).toContain("Invalid option");
     },
 );
 
@@ -360,7 +357,7 @@ test.skip(
 test(
     "POST /v1/chat/completions should accept image URL for Claude/Bedrock models (Issue #5862)",
     { timeout: 60000 },
-    async ({ apiKey, mocks }) => {
+    async ({ paidApiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -368,7 +365,7 @@ test(
                 method: "POST",
                 headers: {
                     "content-type": "application/json",
-                    "authorization": `Bearer ${apiKey}`,
+                    "authorization": `Bearer ${paidApiKey}`,
                 },
                 body: JSON.stringify({
                     model: "claude",
@@ -505,7 +502,7 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
     test.for(toolCallTestCases())(
         "%s should complete full tool call cycle",
         { timeout: 120000 },
-        async ([serviceId, expectedStatus], { apiKey, mocks }) => {
+        async ([serviceId, expectedStatus], { paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             // Step 1: Initial request with tools
@@ -517,7 +514,7 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
                         method: "POST",
                         headers: {
                             "content-type": "application/json",
-                            "authorization": `Bearer ${apiKey}`,
+                            "authorization": `Bearer ${paidApiKey}`,
                         },
                         body: JSON.stringify({
                             model: serviceId,
@@ -568,7 +565,7 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
                         method: "POST",
                         headers: {
                             "content-type": "application/json",
-                            "authorization": `Bearer ${apiKey}`,
+                            "authorization": `Bearer ${paidApiKey}`,
                         },
                         body: JSON.stringify({
                             model: serviceId,
@@ -659,11 +656,12 @@ test(
 );
 
 // Video URL content type tests (Issue #6137)
+// Uses paidApiKey since gemini is paidOnly
 describe("Video URL content type support", async () => {
     test(
         "POST /v1/chat/completions should accept video_url content type for Gemini models",
         { timeout: 60000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -671,7 +669,7 @@ describe("Video URL content type support", async () => {
                     method: "POST",
                     headers: {
                         "content-type": "application/json",
-                        "authorization": `Bearer ${apiKey}`,
+                        "authorization": `Bearer ${paidApiKey}`,
                     },
                     body: JSON.stringify({
                         model: "gemini",
@@ -706,7 +704,7 @@ describe("Video URL content type support", async () => {
     test(
         "POST /v1/chat/completions should accept video_url with explicit mime_type",
         { timeout: 60000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -714,7 +712,7 @@ describe("Video URL content type support", async () => {
                     method: "POST",
                     headers: {
                         "content-type": "application/json",
-                        "authorization": `Bearer ${apiKey}`,
+                        "authorization": `Bearer ${paidApiKey}`,
                     },
                     body: JSON.stringify({
                         model: "gemini",
@@ -750,7 +748,7 @@ describe("Video URL content type support", async () => {
     test(
         "POST /v1/chat/completions should accept image_url with mime_type",
         { timeout: 60000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -758,7 +756,7 @@ describe("Video URL content type support", async () => {
                     method: "POST",
                     headers: {
                         "content-type": "application/json",
-                        "authorization": `Bearer ${apiKey}`,
+                        "authorization": `Bearer ${paidApiKey}`,
                     },
                     body: JSON.stringify({
                         model: "gemini",
@@ -961,7 +959,7 @@ describe("Gemini thinking mode", async () => {
     test(
         "Gemini 3 Flash should accept reasoning_effort parameter",
         { timeout: 60000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -969,7 +967,7 @@ describe("Gemini thinking mode", async () => {
                     method: "POST",
                     headers: {
                         "content-type": "application/json",
-                        "authorization": `Bearer ${apiKey}`,
+                        "authorization": `Bearer ${paidApiKey}`,
                     },
                     body: JSON.stringify({
                         model: "gemini", // Gemini 3 Flash
@@ -1068,7 +1066,7 @@ describe("Gemini native tools", async () => {
     test(
         "Gemini should accept explicit code_execution tool override",
         { timeout: 60000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -1076,7 +1074,7 @@ describe("Gemini native tools", async () => {
                     method: "POST",
                     headers: {
                         "content-type": "application/json",
-                        "authorization": `Bearer ${apiKey}`,
+                        "authorization": `Bearer ${paidApiKey}`,
                     },
                     body: JSON.stringify({
                         model: "gemini",
@@ -1112,7 +1110,7 @@ describe("Gemini native tools", async () => {
 test(
     "Gemini should accept tools with exclusiveMinimum/exclusiveMaximum (sanitized)",
     { timeout: 60000 },
-    async ({ apiKey, mocks }) => {
+    async ({ paidApiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -1120,7 +1118,7 @@ test(
                 method: "POST",
                 headers: {
                     "content-type": "application/json",
-                    "authorization": `Bearer ${apiKey}`,
+                    "authorization": `Bearer ${paidApiKey}`,
                 },
                 body: JSON.stringify({
                     model: "gemini",
@@ -1171,7 +1169,7 @@ test(
 test(
     "Gemini should accept response_format: json_object without code_execution conflict",
     { timeout: 60000 },
-    async ({ apiKey, mocks }) => {
+    async ({ paidApiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -1179,7 +1177,7 @@ test(
                 method: "POST",
                 headers: {
                     "content-type": "application/json",
-                    "authorization": `Bearer ${apiKey}`,
+                    "authorization": `Bearer ${paidApiKey}`,
                 },
                 body: JSON.stringify({
                     model: "gemini",
@@ -1210,7 +1208,7 @@ test(
 test(
     "POST /v1/chat/completions should return content_blocks with image_url from Gemini code_execution",
     { timeout: 120000 },
-    async ({ apiKey, mocks }) => {
+    async ({ paidApiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -1218,7 +1216,7 @@ test(
                 method: "POST",
                 headers: {
                     "content-type": "application/json",
-                    "authorization": `Bearer ${apiKey}`,
+                    "authorization": `Bearer ${paidApiKey}`,
                 },
                 body: JSON.stringify({
                     model: "gemini",

@@ -1,6 +1,6 @@
 import { SELF } from "cloudflare:test";
-import { test } from "../fixtures.ts";
 import { describe, expect } from "vitest";
+import { test } from "../fixtures.ts";
 
 type CacheHeaders = {
     cache: "HIT" | "MISS";
@@ -235,6 +235,117 @@ describe("Image Integration Tests", () => {
 
             // Should return 200, not 404 "Resource not found"
             // If this fails with 404, the API version is likely wrong (needs 2025-04-01-preview)
+            expect(response.status).toBe(200);
+            await response.arrayBuffer();
+        },
+    );
+
+    test(
+        "should return 402 when user has no balance",
+        { timeout: 10000 },
+        async ({ apiKey, mocks, sessionToken }) => {
+            await mocks.enable("polar", "tinybird");
+            const { drizzle } = await import("drizzle-orm/d1");
+            const { env } = await import("cloudflare:test");
+            const { user: userTable } = await import(
+                "@/db/schema/better-auth.ts"
+            );
+            const { eq } = await import("drizzle-orm");
+
+            const db = drizzle(env.DB);
+
+            // Get the authenticated user ID from session
+            const sessionResponse = await SELF.fetch(
+                "http://localhost:3000/api/auth/get-session",
+                {
+                    headers: {
+                        cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const session = await sessionResponse.json();
+            const userId = session.user.id;
+
+            // Set all balances to 0
+            await db
+                .update(userTable)
+                .set({
+                    tierBalance: 0,
+                    packBalance: 0,
+                    cryptoBalance: 0,
+                })
+                .where(eq(userTable.id, userId));
+
+            // Try to generate image with no balance
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/test-no-balance?model=flux&width=256&height=256`,
+                {
+                    method: "GET",
+                    headers: {
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            expect(response.status).toBe(402);
+            const data = await response.json();
+            // The error might be in a different format (error can be a string or array)
+            const errorMessage = Array.isArray(data.error)
+                ? data.error.join(" ")
+                : typeof data.error === "string"
+                  ? data.error
+                  : data.message || JSON.stringify(data);
+            expect(String(errorMessage).toLowerCase()).toContain("balance");
+        },
+    );
+
+    test(
+        "should use crypto balance when tier balance is exhausted",
+        { timeout: 10000 },
+        async ({ apiKey, mocks, sessionToken }) => {
+            await mocks.enable("polar", "tinybird");
+            const { drizzle } = await import("drizzle-orm/d1");
+            const { env } = await import("cloudflare:test");
+            const { user: userTable } = await import(
+                "@/db/schema/better-auth.ts"
+            );
+            const { eq } = await import("drizzle-orm");
+
+            const db = drizzle(env.DB);
+
+            // Get the authenticated user ID from session
+            const sessionResponse = await SELF.fetch(
+                "http://localhost:3000/api/auth/get-session",
+                {
+                    headers: {
+                        cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const session = await sessionResponse.json();
+            const userId = session.user.id;
+
+            // Set tier to 0, crypto to 10
+            await db
+                .update(userTable)
+                .set({
+                    tierBalance: 0,
+                    packBalance: 0,
+                    cryptoBalance: 10,
+                })
+                .where(eq(userTable.id, userId));
+
+            // Should succeed using crypto balance
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/test-crypto-balance?model=flux&width=256&height=256&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
             expect(response.status).toBe(200);
             await response.arrayBuffer();
         },

@@ -1,0 +1,4889 @@
+{
+  "annotations": {
+    "list": [{
+      "builtIn": 1,
+      "datasource": {
+        "type": "grafana",
+        "uid": "-- Grafana --"
+      },
+      "enable": true,
+      "hide": true,
+      "iconColor": "rgba(0, 211, 255, 1)",
+      "name": "Annotations & Alerts",
+      "type": "dashboard"
+    }]
+  },
+  "description": "J",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 30,
+  "links": [],
+  "panels": [{
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 5766,
+      "panels": [{
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "P33A123E5D474E8F3"
+          },
+          "description": "Daily new user registrations and cumulative user count based on actual user creation dates from the Cloudflare D1 database. Shows real signup data, not first usage.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                  "color": "green",
+                  "value": 0
+                }]
+              },
+              "unit": "short"
+            },
+            "overrides": [{
+                "matcher": {
+                  "id": "byName",
+                  "options": "new_users"
+                },
+                "properties": [{
+                    "id": "custom.drawStyle",
+                    "value": "bars"
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 80
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "blue",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "displayName",
+                    "value": "New Users"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "cumulative_users"
+                },
+                "properties": [{
+                    "id": "custom.drawStyle",
+                    "value": "line"
+                  },
+                  {
+                    "id": "custom.lineWidth",
+                    "value": 2
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  },
+                  {
+                    "id": "displayName",
+                    "value": "Cumulative Users (right y-axis)"
+                  },
+                  {
+                    "id": "custom.hideFrom",
+                    "value": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 8,
+            "x": 0,
+            "y": 1
+          },
+          "id": 5779,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": false
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "columns": [],
+            "datasource": {
+              "type": "yesoreyeram-infinity-datasource",
+              "uid": "P33A123E5D474E8F3"
+            },
+            "filters": [],
+            "format": "table",
+            "global_query_id": "",
+            "parser": "backend",
+            "queryType": "range",
+            "range": true,
+            "refId": "A",
+            "root_selector": "$.result[0].results",
+            "source": "url",
+            "type": "json",
+            "url": "https://api.cloudflare.com/client/v4/accounts/efdcb0933eaac64f27c0b295039b28f2/d1/database/f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3/query",
+            "url_options": {
+              "body_content_type": "application/json",
+              "body_type": "raw",
+              "data": "{\n  \"sql\": \"WITH user_dates AS (SELECT strftime('%Y-%m-%d %H:%M:00', datetime(created_at, 'unixepoch')) AS time_bucket, COUNT(*) as new_users FROM user GROUP BY strftime('%Y-%m-%d %H:%M:00', datetime(created_at, 'unixepoch'))), buckets AS (SELECT CASE WHEN '$granularity' = 'minute' THEN time_bucket WHEN '$granularity' = 'hour' THEN strftime('%Y-%m-%d %H:00:00', time_bucket) WHEN '$granularity' = 'day' THEN strftime('%Y-%m-%d 00:00:00', time_bucket) WHEN '$granularity' = 'week' THEN strftime('%Y-%m-%d 00:00:00', date(time_bucket, 'weekday 0', '-7 days')) WHEN '$granularity' = 'month' THEN strftime('%Y-%m-01 00:00:00', time_bucket) END AS creation_bucket, SUM(new_users) as bucket_users FROM user_dates GROUP BY creation_bucket) SELECT creation_bucket AS creation_day, bucket_users as new_users, SUM(bucket_users) OVER (ORDER BY creation_bucket) as cumulative_users FROM buckets ORDER BY creation_bucket ASC\"\n}",
+              "method": "POST"
+            }
+          }],
+          "title": "User Growth (Real Signups)",
+          "transformations": [{
+            "disabled": false,
+            "id": "convertFieldType",
+            "options": {
+              "conversions": [{
+                "destinationType": "time",
+                "targetField": "creation_day"
+              }],
+              "fields": {}
+            }
+          }],
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Daily new user registrations and cumulative user count. Tracks when users first appear in the system based on their earliest event.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": [{
+                "matcher": {
+                  "id": "byName",
+                  "options": "New Users"
+                },
+                "properties": [{
+                    "id": "custom.drawStyle",
+                    "value": "bars"
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 80
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "blue",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Cumulative Users"
+                },
+                "properties": [{
+                    "id": "custom.drawStyle",
+                    "value": "line"
+                  },
+                  {
+                    "id": "custom.lineWidth",
+                    "value": 2
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "revenue"
+                },
+                "properties": []
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "cost"
+                },
+                "properties": []
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 8,
+            "x": 8,
+            "y": 1
+          },
+          "id": 2,
+          "options": {
+            "barRadius": 0,
+            "barWidth": 0.97,
+            "fullHighlight": false,
+            "groupWidth": 0.7,
+            "legend": {
+              "calcs": [
+                "last",
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": false
+            },
+            "orientation": "auto",
+            "showValue": "never",
+            "stacking": "none",
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "none"
+            },
+            "xTickLabelRotation": 0,
+            "xTickLabelSpacing": 100
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "format": 0,
+            "range": true,
+            "rawSql": "WITH first_seen AS (\n  SELECT \n    user_github_username,\n    toDateTime(min(start_time)) as first_day\n  FROM generation_event\n  WHERE \n    user_github_username != 'undefined'\n    AND user_github_username != ''\n  GROUP BY user_github_username\n),\ntime_range AS (\n  SELECT \n    min(start_time) as range_start\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n),\npre_period_count AS (\n  SELECT count() as pre_users\n  FROM first_seen, time_range\n  WHERE toDate(first_day) < toDate(range_start)\n),\nfiltered_users AS (\n  SELECT \n    first_day,\n    user_github_username\n  FROM first_seen\n  WHERE $__timeFilter(first_day)\n),\ndaily_new AS (\n  SELECT \n    date_trunc('$granularity', first_day) as time_bucket,\n    count() as new_users\n  FROM filtered_users\n  GROUP BY time_bucket\n  ORDER BY time_bucket\n)\nSELECT \n  time_bucket as time,\n  new_users as \"New Users\",\n  (SELECT pre_users FROM pre_period_count) + sum(new_users) OVER (ORDER BY time_bucket ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as \"Cumulative Users\"\nFROM daily_new\nORDER BY time_bucket",
+            "refId": "A"
+          }],
+          "title": "Usage Growth",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "P33A123E5D474E8F3"
+          },
+          "description": "Count of users grouped by their tier category",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "fillOpacity": 80,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineWidth": 1,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 50
+                  },
+                  {
+                    "color": "orange",
+                    "value": 100
+                  },
+                  {
+                    "color": "red",
+                    "value": 500
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 8,
+            "x": 16,
+            "y": 1
+          },
+          "id": 5771,
+          "options": {
+            "barRadius": 0,
+            "barWidth": 0.97,
+            "colorMode": "value",
+            "fullHighlight": false,
+            "graphMode": "none",
+            "groupWidth": 0.7,
+            "justifyMode": "auto",
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": false
+            },
+            "orientation": "horizontal",
+            "percentChangeColorMode": "standard",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": true
+            },
+            "showPercentChange": false,
+            "showValue": "always",
+            "stacking": "none",
+            "textMode": "value_and_name",
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "single",
+              "sort": "none"
+            },
+            "wideLayout": true,
+            "xTickLabelRotation": 0,
+            "xTickLabelSpacing": 0
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "columns": [],
+            "datasource": {
+              "type": "yesoreyeram-infinity-datasource",
+              "uid": "P33A123E5D474E8F3"
+            },
+            "filters": [],
+            "format": "table",
+            "parser": "backend",
+            "queryType": "range",
+            "range": true,
+            "refId": "A",
+            "root_selector": "$.result[0].results",
+            "source": "url",
+            "type": "json",
+            "url": "https://api.cloudflare.com/client/v4/accounts/efdcb0933eaac64f27c0b295039b28f2/d1/database/f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3/query",
+            "url_options": {
+              "body_content_type": "application/json",
+              "body_type": "raw",
+              "data": "{\"sql\":\"SELECT tier, COUNT(*) as user_count FROM user GROUP BY tier ORDER BY user_count DESC\"}",
+              "method": "POST"
+            }
+          }],
+          "title": "Total Users by Tier",
+          "type": "barchart"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Shows the average percentage of daily free credits consumed per user over time, grouped by tier. Uses the same calculation as the bar gauge: total consumed divided by (days × daily limit). Only supports day granularity.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "fillOpacity": 80,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineWidth": 1,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                  "color": "green",
+                  "value": 0
+                }]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 8,
+            "x": 0,
+            "y": 192
+          },
+          "id": 5780,
+          "options": {
+            "barRadius": 0,
+            "barWidth": 0.97,
+            "fullHighlight": false,
+            "groupWidth": 0.7,
+            "legend": {
+              "calcs": [
+                "mean",
+                "last"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "orientation": "auto",
+            "showValue": "never",
+            "stacking": "normal",
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "xTickLabelRotation": 0,
+            "xTickLabelSpacing": 100
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "format": 0,
+            "range": true,
+            "rawSql": "WITH \n  deduplicated_events AS (\n    SELECT \n      date_trunc('day', start_time) AS ts,\n      user_github_username,\n      user_tier,\n      request_id,\n      total_price,\n      ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n    FROM generation_event\n    WHERE \n      $__timeFilter(start_time)\n      AND is_billed_usage = true\n      AND user_github_username != 'undefined'\n      AND selected_meter_slug = 'v1:meter:tier'\n  ),\n  user_daily_consumption AS (\n    SELECT \n      ts,\n      user_github_username,\n      user_tier,\n      SUM(total_price) as daily_consumed\n    FROM deduplicated_events\n    WHERE rn = 1\n    GROUP BY ts, user_github_username, user_tier\n  ),\n  tier_limits AS (\n    SELECT 'spore' AS tier, 1 AS daily_limit\n    UNION ALL SELECT 'seed', 10\n    UNION ALL SELECT 'flower', 15\n    UNION ALL SELECT 'nectar', 20\n  ),\n  user_daily_percentages AS (\n    SELECT \n      uc.ts,\n      uc.user_tier,\n      (uc.daily_consumed / tl.daily_limit) * 100 as daily_usage_percentage\n    FROM user_daily_consumption uc\n    INNER JOIN tier_limits tl ON uc.user_tier = tl.tier\n    WHERE uc.daily_consumed > 0\n  )\nSELECT \n  user_daily_percentages.ts AS ts,\n  CASE user_daily_percentages.user_tier\n    WHEN 'spore' THEN 'Spore (1/day)'\n    WHEN 'seed' THEN 'Seed (10/day)'\n    WHEN 'flower' THEN 'Flower (15/day)'\n    WHEN 'nectar' THEN 'Nectar (20/day)'\n  END as tier,\n  AVG(user_daily_percentages.daily_usage_percentage) as avg_daily_usage_percentage\nFROM user_daily_percentages\nGROUP BY user_daily_percentages.ts, user_daily_percentages.user_tier\nORDER BY user_daily_percentages.ts ASC, user_daily_percentages.user_tier ASC",
+            "refId": "A"
+          }],
+          "title": "Average Free Credit Usage by Tier Over Time",
+          "type": "barchart"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Shows the average percentage of daily free credits consumed per user, grouped by tier. Only includes v1:meter:tier usage (excludes pack-based metering). Deduplicates by request_id to ensure accurate calculations. Formula: (total_price per user / (days × tier_limit)) × 100, then averaged across all users in each tier.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": [{
+                "matcher": {
+                  "id": "byName",
+                  "options": "Microbe"
+                },
+                "properties": [{
+                  "id": "displayName",
+                  "value": "Microbe (0.1/day)"
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Spore"
+                },
+                "properties": [{
+                  "id": "displayName",
+                  "value": "Spore (1/day)"
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Seed"
+                },
+                "properties": [{
+                  "id": "displayName",
+                  "value": "Seed (3/day)"
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Flower"
+                },
+                "properties": [{
+                  "id": "displayName",
+                  "value": "Flower (10/day)"
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Nectar"
+                },
+                "properties": [{
+                  "id": "displayName",
+                  "value": "Nectar (20/day)"
+                }]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 6,
+            "x": 8,
+            "y": 192
+          },
+          "id": 5770,
+          "options": {
+            "displayMode": "basic",
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": false
+            },
+            "maxVizHeight": 300,
+            "minVizHeight": 16,
+            "minVizWidth": 8,
+            "namePlacement": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "sizing": "auto",
+            "valueMode": "color"
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+              "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+              },
+              "format": 1,
+              "range": true,
+              "rawSql": "WITH \n  time_params AS (\n    SELECT \n      GREATEST(1, \n        dateDiff('day', \n          toDate(min(start_time)), \n          toDate(max(start_time))\n        ) + 1\n      ) as days\n    FROM generation_event\n    WHERE $__timeFilter(start_time)\n      AND selected_meter_slug = 'v1:meter:tier'\n  ),\n  deduplicated_events AS (\n    SELECT \n      user_github_username,\n      request_id,\n      total_price,\n      ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n    FROM generation_event\n    WHERE \n      $__timeFilter(start_time)\n      AND user_tier = 'spore'\n      AND is_billed_usage = true\n      AND user_github_username != 'undefined'\n      AND selected_meter_slug = 'v1:meter:tier'\n  ),\n  user_consumption AS (\n    SELECT \n      user_github_username,\n      SUM(total_price) as total_consumed\n    FROM deduplicated_events\n    WHERE rn = 1\n    GROUP BY user_github_username\n  )\nSELECT \n  AVG((total_consumed / (days * 1)) * 100) as Spore\nFROM user_consumption, time_params\nWHERE total_consumed > 0",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+              },
+              "editorType": "sql",
+              "format": 1,
+              "meta": {},
+              "pluginVersion": "4.11.4",
+              "queryType": "table",
+              "range": true,
+              "rawSql": "WITH \n  time_params AS (\n    SELECT \n      GREATEST(1, \n        dateDiff('day', \n          toDate(min(start_time)), \n          toDate(max(start_time))\n        ) + 1\n      ) as days\n    FROM generation_event\n    WHERE $__timeFilter(start_time)\n      AND selected_meter_slug = 'v1:meter:tier'\n  ),\n  deduplicated_events AS (\n    SELECT \n      user_github_username,\n      request_id,\n      total_price,\n      ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n    FROM generation_event\n    WHERE \n      $__timeFilter(start_time)\n      AND user_tier = 'seed'\n      AND is_billed_usage = true\n      AND user_github_username != 'undefined'\n      AND selected_meter_slug = 'v1:meter:tier'\n  ),\n  user_consumption AS (\n    SELECT \n      user_github_username,\n      SUM(total_price) as total_consumed\n    FROM deduplicated_events\n    WHERE rn = 1\n    GROUP BY user_github_username\n  )\nSELECT \n  AVG((total_consumed / (days * 3)) * 100) as Seed\nFROM user_consumption, time_params\nWHERE total_consumed > 0",
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+              },
+              "editorType": "sql",
+              "format": 1,
+              "meta": {},
+              "pluginVersion": "4.11.4",
+              "queryType": "table",
+              "range": true,
+              "rawSql": "WITH \n  time_params AS (\n    SELECT \n      GREATEST(1, \n        dateDiff('day', \n          toDate(min(start_time)), \n          toDate(max(start_time))\n        ) + 1\n      ) as days\n    FROM generation_event\n    WHERE $__timeFilter(start_time)\n      AND selected_meter_slug = 'v1:meter:tier'\n  ),\n  deduplicated_events AS (\n    SELECT \n      user_github_username,\n      request_id,\n      total_price,\n      ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n    FROM generation_event\n    WHERE \n      $__timeFilter(start_time)\n      AND user_tier = 'flower'\n      AND is_billed_usage = true\n      AND user_github_username != 'undefined'\n      AND selected_meter_slug = 'v1:meter:tier'\n  ),\n  user_consumption AS (\n    SELECT \n      user_github_username,\n      SUM(total_price) as total_consumed\n    FROM deduplicated_events\n    WHERE rn = 1\n    GROUP BY user_github_username\n  )\nSELECT \n  AVG((total_consumed / (days * 10)) * 100) as Flower\nFROM user_consumption, time_params\nWHERE total_consumed > 0",
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+              },
+              "format": 1,
+              "range": true,
+              "rawSql": "WITH \n  time_params AS (\n    SELECT \n      GREATEST(1, \n        dateDiff('day', \n          toDate(min(start_time)), \n          toDate(max(start_time))\n        ) + 1\n      ) as days\n    FROM generation_event\n    WHERE $__timeFilter(start_time)\n      AND selected_meter_slug = 'v1:meter:tier'\n  ),\n  deduplicated_events AS (\n    SELECT \n      user_github_username,\n      request_id,\n      total_price,\n      ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n    FROM generation_event\n    WHERE \n      $__timeFilter(start_time)\n      AND user_tier = 'nectar'\n      AND is_billed_usage = true\n      AND user_github_username != 'undefined'\n      AND selected_meter_slug = 'v1:meter:tier'\n  ),\n  user_consumption AS (\n    SELECT \n      user_github_username,\n      SUM(total_price) as total_consumed\n    FROM deduplicated_events\n    WHERE rn = 1\n    GROUP BY user_github_username\n  )\nSELECT \n  AVG((total_consumed / (days * 20)) * 100) as Nectar\nFROM user_consumption, time_params\nWHERE total_consumed > 0",
+              "refId": "D"
+            }
+          ],
+          "title": "Average Free Credit Usage by Tier",
+          "type": "bargauge"
+        },
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "P33A123E5D474E8F3"
+          },
+          "description": "See all individual user creation dates",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "footer": {
+                  "reducers": []
+                },
+                "hideFrom": {
+                  "viz": false
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": [{
+                "matcher": {
+                  "id": "byName",
+                  "options": "email"
+                },
+                "properties": [{
+                  "id": "custom.width",
+                  "value": 289
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "name"
+                },
+                "properties": [{
+                  "id": "custom.width",
+                  "value": 217
+                }]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 10,
+            "x": 14,
+            "y": 192
+          },
+          "id": 5773,
+          "options": {
+            "barRadius": 0,
+            "barWidth": 0.97,
+            "cellHeight": "sm",
+            "fullHighlight": false,
+            "groupWidth": 0.7,
+            "legend": {
+              "calcs": [
+                "sum",
+                "last"
+              ],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "orientation": "auto",
+            "showHeader": true,
+            "showValue": "auto",
+            "sortBy": [],
+            "stacking": "none",
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "xTickLabelRotation": -45,
+            "xTickLabelSpacing": 0
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "columns": [],
+            "datasource": {
+              "type": "yesoreyeram-infinity-datasource",
+              "uid": "P33A123E5D474E8F3"
+            },
+            "filters": [],
+            "format": "table",
+            "global_query_id": "",
+            "parser": "backend",
+            "queryType": "range",
+            "range": true,
+            "refId": "A",
+            "root_selector": "$.result[0].results",
+            "source": "url",
+            "type": "json",
+            "url": "https://api.cloudflare.com/client/v4/accounts/efdcb0933eaac64f27c0b295039b28f2/d1/database/f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3/query",
+            "url_options": {
+              "body_content_type": "application/json",
+              "body_type": "raw",
+              "data": "{\"sql\":\"SELECT name, email, tier, datetime(created_at, 'unixepoch') AS creation_datetime FROM user ORDER BY created_at DESC\"}",
+              "method": "POST"
+            }
+          }],
+          "title": "User Creation Dates (Debug)",
+          "type": "table"
+        }
+      ],
+      "title": "Users",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 5765,
+      "panels": [{
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Percentage of error requests (excluding 403) as a proportion of total requests (errors + successes), grouped by event type. Shows what percentage of all requests result in errors.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.5,
+                "drawStyle": "bars",
+                "fillOpacity": 0,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 8,
+            "x": 0,
+            "y": 2
+          },
+          "id": 5781,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "format": 0,
+            "range": true,
+            "rawSql": "WITH error_counts AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    event_type,\n    count() AS error_requests\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND (response_status < 200 OR response_status >= 300)\n    AND response_status != 403\n    AND event_type IN ('generate.text', 'generate.image')\n  GROUP BY ts, event_type\n),\nsuccess_counts AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    event_type,\n    count() AS success_requests\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND response_status >= 200 AND response_status < 300\n    AND event_type IN ('generate.text', 'generate.image')\n  GROUP BY ts, event_type\n)\nSELECT\n  COALESCE(e.ts, s.ts) AS ts,\n  COALESCE(e.event_type, s.event_type) AS event_type,\n  (COALESCE(e.error_requests, 0) * 100.0 / (COALESCE(e.error_requests, 0) + COALESCE(s.success_requests, 1))) AS error_percentage\nFROM error_counts e\nFULL OUTER JOIN success_counts s ON e.ts = s.ts AND e.event_type = s.event_type\nWHERE (COALESCE(e.error_requests, 0) + COALESCE(s.success_requests, 0)) > 0\nORDER BY ts ASC, event_type;",
+            "refId": "A"
+          }],
+          "title": "Error Rate by Event Type",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Distribution of responses by category for text models: 2xx (success), 4xx (client errors), 5xx (server errors) as percentages. 403 responses are excluded from calculations.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "fixedColor": "blue",
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                  "color": "green",
+                  "value": 0
+                }]
+              },
+              "unit": "percent"
+            },
+            "overrides": [{
+                "matcher": {
+                  "id": "byName",
+                  "options": "2xx Success"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*2xx.*"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*Success.*"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "4xx Client Errors"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "yellow",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*4xx.*"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "yellow",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "5xx Server Errors"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*5xx.*"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*Server.*"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "5xx Server Errors"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*5xx.*"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*Server.*"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 8,
+            "x": 8,
+            "y": 2
+          },
+          "id": 5758,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "last",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Mean",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "format": 0,
+            "range": true,
+            "rawSql": "WITH total_requests AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    count() AS total\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND response_status != 403\n    AND event_type = 'generate.text'\n  GROUP BY ts\n),\nstatus_counts AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    CASE\n      WHEN response_status >= 200 AND response_status < 300 THEN '2xx Success'\n      WHEN response_status >= 400 AND response_status < 500 THEN '4xx Client Errors'\n      WHEN response_status >= 500 AND response_status < 600 THEN '5xx Server Errors'\n      ELSE 'Other'\n    END AS status_category,\n    count() AS status_count\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND response_status != 403\n    AND event_type = 'generate.text'\n  GROUP BY ts, status_category\n)\nSELECT\n  s.ts,\n  s.status_category,\n  (s.status_count * 100.0 / t.total) AS percentage\nFROM status_counts s\nINNER JOIN total_requests t ON s.ts = t.ts\nWHERE s.status_category != 'Other'\nORDER BY s.ts ASC, s.status_category ASC;",
+            "refId": "A"
+          }],
+          "title": "Response Status Distribution - Text Models (403 ignored)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Distribution of responses by category for image models: 2xx (success), 4xx (client errors), 5xx (server errors) as percentages. 403 responses are excluded from calculations.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "fixedColor": "blue",
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                  "color": "green",
+                  "value": 0
+                }]
+              },
+              "unit": "percent"
+            },
+            "overrides": [{
+                "matcher": {
+                  "id": "byName",
+                  "options": "2xx Success"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*2xx.*"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*Success.*"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "4xx Client Errors"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "yellow",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*4xx.*"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "yellow",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "5xx Server Errors"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*5xx.*"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*Server.*"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "5xx Server Errors"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*5xx.*"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*Server.*"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 8,
+            "x": 16,
+            "y": 2
+          },
+          "id": 5786,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "last",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Mean",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "format": 0,
+            "range": true,
+            "rawSql": "WITH total_requests AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    count() AS total\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND response_status != 403\n    AND event_type = 'generate.image'\n  GROUP BY ts\n),\nstatus_counts AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    CASE\n      WHEN response_status >= 200 AND response_status < 300 THEN '2xx Success'\n      WHEN response_status >= 400 AND response_status < 500 THEN '4xx Client Errors'\n      WHEN response_status >= 500 AND response_status < 600 THEN '5xx Server Errors'\n      ELSE 'Other'\n    END AS status_category,\n    count() AS status_count\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND response_status != 403\n    AND event_type = 'generate.image'\n  GROUP BY ts, status_category\n)\nSELECT\n  s.ts,\n  s.status_category,\n  (s.status_count * 100.0 / t.total) AS percentage\nFROM status_counts s\nINNER JOIN total_requests t ON s.ts = t.ts\nWHERE s.status_category != 'Other'\nORDER BY s.ts ASC, s.status_category ASC;",
+            "refId": "A"
+          }],
+          "title": "Response Status Distribution - Image Models (403 ignored)",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Errors",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 2
+      },
+      "id": 5764,
+      "panels": [{
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Count of unique generation requests (response_status 200-299) grouped by provider and model. Deduplicates by request_id to ensure one request = one request_id.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 13,
+            "w": 24,
+            "x": 0,
+            "y": 3
+          },
+          "id": 5800,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "format": 0,
+            "range": true,
+            "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', model_used) AS provider_model,\n  count(DISTINCT request_id) AS requests\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\nGROUP BY\n  ts, model_provider_used, model_used\nORDER BY\n  ts ASC, model_provider_used, model_used;",
+            "refId": "A"
+          }],
+          "title": "Requests per Provider per Model",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Count of unique generation requests (response_status 200-299) grouped by model and time granularity. Deduplicates by request_id to ensure one request = one request_id.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 8,
+            "x": 0,
+            "y": 131
+          },
+          "id": 5742,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "meta": {},
+            "pluginVersion": "4.11.2",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  resolved_model_requested AS model,\n  count(DISTINCT request_id) AS requests\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\nGROUP BY\n  ts, model\nORDER BY\n  ts ASC, model;",
+            "refId": "A"
+          }],
+          "title": "Requests per Model",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Count of successful generation requests (response_status 200-299) grouped by user and time granularity",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": [{
+              "__systemRef": "hideSeriesFrom",
+              "matcher": {
+                "id": "byNames",
+                "options": {
+                  "mode": "exclude",
+                  "names": [
+                    "requests pollen-router"
+                  ],
+                  "prefix": "All except:",
+                  "readOnly": true
+                }
+              },
+              "properties": [{
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }]
+            }]
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 8,
+            "x": 8,
+            "y": 131
+          },
+          "id": 5751,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "instant": false,
+            "meta": {},
+            "pluginVersion": "4.11.2",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  user_github_username AS user,\n  count(DISTINCT request_id) AS requests\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\nGROUP BY\n  ts, user\nORDER BY\n  ts ASC, user;",
+            "refId": "A"
+          }],
+          "title": "Requests per User",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Count of successful generation requests (response_status 200-299) grouped by API key ID and time granularity",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 8,
+            "x": 16,
+            "y": 131
+          },
+          "id": 5749,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "instant": false,
+            "meta": {},
+            "pluginVersion": "4.11.4",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  api_key_name AS api_key,\n  count(DISTINCT request_id) AS requests\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\nGROUP BY\n  ts, api_key\nORDER BY\n  ts ASC, api_key;",
+            "refId": "A"
+          }],
+          "title": "Requests per API Key ID",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Shows API key requests (blue), referrer URL requests (orange), and the percentage of API key requests that ALSO have pollinations.ai referrer (green, right Y-axis)",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                  "color": "green",
+                  "value": 0
+                }]
+              },
+              "unit": "short"
+            },
+            "overrides": [{
+                "matcher": {
+                  "id": "byName",
+                  "options": "API Key: pollinations.ai-ui.assets"
+                },
+                "properties": [{
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "blue",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "left"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Referrer: pollinations.ai"
+                },
+                "properties": [{
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "orange",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "left"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Percentage: Referrer in API Key Requests"
+                },
+                "properties": [{
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  },
+                  {
+                    "id": "custom.axisLabel",
+                    "value": "% of API Key Requests"
+                  },
+                  {
+                    "id": "custom.axisSoftMin",
+                    "value": 0
+                  },
+                  {
+                    "id": "custom.axisSoftMax",
+                    "value": 100
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 8,
+            "x": 0,
+            "y": 145
+          },
+          "id": 5799,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum",
+                "mean",
+                "last"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "format": 0,
+            "range": true,
+            "rawSql": "SELECT ts, series, requests\nFROM (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    'API Key: pollinations.ai-ui.assets' AS series,\n    toFloat64(count(DISTINCT request_id)) AS requests\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND response_status >= 200 AND response_status < 300\n    AND api_key_name = 'pollinations.ai-ui.assets'\n  GROUP BY ts\n\n  UNION ALL\n\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    'Referrer: pollinations.ai' AS series,\n    toFloat64(count(DISTINCT request_id)) AS requests\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND response_status >= 200 AND response_status < 300\n    AND referrer_url LIKE '%pollinations.ai%'\n  GROUP BY ts\n\n  UNION ALL\n\n  SELECT\n    ts,\n    'Percentage: Referrer in API Key Requests' AS series,\n    CASE \n      WHEN api_key_requests > 0 THEN (both_conditions * 100.0 / api_key_requests)\n      ELSE 0.0\n    END AS requests\n  FROM (\n    SELECT\n      date_trunc('$granularity', start_time) AS ts,\n      toFloat64(countDistinctIf(request_id, api_key_name = 'pollinations.ai-ui.assets' AND referrer_url LIKE '%pollinations.ai%')) AS both_conditions,\n      toFloat64(countDistinctIf(request_id, api_key_name = 'pollinations.ai-ui.assets')) AS api_key_requests\n    FROM generation_event\n    WHERE\n      $__timeFilter(start_time)\n      AND response_status >= 200 AND response_status < 300\n    GROUP BY ts\n  )\n) AS combined\nORDER BY ts ASC, series ASC",
+            "refId": "A"
+          }],
+          "title": "Request Comparison: API Key vs Referrer URL",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Count of successful generation requests (response_status 200-299) grouped by user and time granularity",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 8,
+            "x": 8,
+            "y": 145
+          },
+          "id": 5804,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "instant": false,
+            "meta": {},
+            "pluginVersion": "4.12.0",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "SELECT\n  ts,\n  avg(requests) AS avg_requests_per_user\nFROM (\n  SELECT\n    date_trunc('${granularity}', start_time) AS ts,\n    user_github_username AS user,\n    countDistinct(request_id) AS requests\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND response_status >= 200 AND response_status < 300\n  GROUP BY\n    ts, user\n)\nGROUP BY\n  ts\nORDER BY\n  ts ASC;\n",
+            "refId": "A"
+          }],
+          "title": "Avg Requests per User",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Percentage of cache hits over time for generate-text and generate-image events",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 8,
+            "x": 16,
+            "y": 145
+          },
+          "id": 5752,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "last"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "instant": false,
+            "meta": {},
+            "pluginVersion": "4.11.4",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  event_type,\n  (countIf(cache_hit = true) * 100.0 / count()) AS cache_hit_percentage\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND event_type IN ('generate.text', 'generate.image')\nGROUP BY\n  ts, event_type\nORDER BY\n  ts ASC, event_type;",
+            "refId": "A"
+          }],
+          "title": "Cache Hit Percentage by Event Type",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Total requests for generate.image and generate.text events",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                  "color": "green",
+                  "value": 0
+                }]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 8,
+            "x": 0,
+            "y": 155
+          },
+          "id": 5761,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum",
+                "mean",
+                "last"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "meta": {},
+            "pluginVersion": "4.11.2",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  event_type,\n  count(DISTINCT request_id) AS requests\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND event_type IN ('generate.image', 'generate.text')\nGROUP BY\n  ts, event_type\nORDER BY\n  ts ASC, event_type;",
+            "refId": "A"
+          }],
+          "title": "Requests by Event Type",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Count of successful generation requests (response_status 200-299) grouped by referrer URL and time granularity",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 8,
+            "x": 8,
+            "y": 159
+          },
+          "id": 5748,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "instant": false,
+            "meta": {},
+            "pluginVersion": "4.11.2",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  referrer_url AS referrer,\n  count(DISTINCT request_id) AS requests\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\nGROUP BY\n  ts, referrer\nORDER BY\n  ts ASC, referrer;",
+            "refId": "A"
+          }],
+          "title": "Requests per Referrer URL",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Count of unique generation requests (response_status 200-299) grouped by model and time granularity. Deduplicates by request_id to ensure one request = one request_id.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 24,
+            "x": 0,
+            "y": 169
+          },
+          "id": 5795,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20866657294",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "meta": {},
+            "pluginVersion": "4.11.2",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  model_provider_used AS model_provider_used,\n  count(DISTINCT request_id) AS requests\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND response_status >= 200 AND response_status < 300\nGROUP BY\n  ts, model_provider_used\nORDER BY\n  ts ASC, model_provider_used;",
+            "refId": "A"
+          }],
+          "title": "Requests per Provider",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Requests",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 3
+      },
+      "id": 5763,
+      "panels": [{
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Shows pack spending (revenue) vs total costs (pack + tier) and the balance deficit over time",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": true,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                  "color": "green",
+                  "value": 0
+                }]
+              },
+              "unit": "currencyUSD"
+            },
+            "overrides": [{
+                "matcher": {
+                  "id": "byName",
+                  "options": "Revenue (Pack Spending)"
+                },
+                "properties": [{
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "blue",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 20
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Costs (Negative)"
+                },
+                "properties": [{
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 20
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Balance"
+                },
+                "properties": [{
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.lineWidth",
+                    "value": 3
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 12,
+            "w": 24,
+            "x": 0,
+            "y": 4
+          },
+          "id": 5801,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum",
+                "mean",
+                "last"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "format": 0,
+            "range": true,
+            "rawSql": "WITH deduplicated_events AS (\n  SELECT \n    date_trunc('hour', start_time) AS ts,\n    selected_meter_slug,\n    request_id,\n    total_cost,\n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n),\naggregated_costs AS (\n  SELECT \n    ts,\n    SUM(CASE WHEN selected_meter_slug = 'v1:meter:pack' THEN total_cost ELSE 0 END) as pack_spending,\n    SUM(total_cost) as total_costs\n  FROM deduplicated_events\n  WHERE rn = 1\n  GROUP BY ts\n)\nSELECT \n  ts,\n  pack_spending as \"Revenue (Pack Spending)\",\n  -total_costs as \"Costs (Negative)\",\n  (pack_spending - total_costs) as \"Balance\"\nFROM aggregated_costs\nORDER BY ts ASC",
+            "refId": "A"
+          }],
+          "title": "Cost/Revenue Balance Over Time",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Sum of total costs for unique generation requests (response_status 200-299) grouped by model and time granularity. Deduplicates by request_id to ensure accurate cost aggregation - one request = one request_id.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "currencyUSD"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 8,
+            "x": 0,
+            "y": 31
+          },
+          "id": 5743,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "meta": {},
+            "pluginVersion": "4.11.4",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "WITH deduplicated_events AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    model_used AS model,\n    request_id,\n    total_cost,\n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND response_status >= 200 AND response_status < 300\n)\nSELECT\n  ts,\n  model,\n  sum(total_cost) AS total_cost_usd\nFROM deduplicated_events\nWHERE rn = 1\nGROUP BY\n  ts, model\nORDER BY\n  ts ASC, model;",
+            "refId": "A"
+          }],
+          "title": "Costs per Model",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Sum of total costs for unique generation requests (response_status 200-299) grouped by GitHub username and time granularity. Deduplicates by request_id to ensure accurate cost aggregation - one request = one request_id.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "currencyUSD"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 8,
+            "x": 8,
+            "y": 31
+          },
+          "id": 5768,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "format": 0,
+            "range": true,
+            "rawSql": "WITH deduplicated_events AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    user_github_username AS user,\n    request_id,\n    total_cost,\n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND response_status >= 200 AND response_status < 300\n)\nSELECT\n  ts,\n  user,\n  sum(total_cost) AS total_cost_usd\nFROM deduplicated_events\nWHERE rn = 1\nGROUP BY\n  ts, user\nORDER BY\n  ts ASC, user;",
+            "refId": "A"
+          }],
+          "title": "Total Costs per Github Username",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Sum of total costs for unique generation requests (response_status 200-299) grouped by API key and time granularity. Deduplicates by request_id to ensure accurate cost aggregation - one request = one request_id.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "currencyUSD"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 8,
+            "x": 16,
+            "y": 31
+          },
+          "id": 5750,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "format": 0,
+            "range": true,
+            "rawSql": "WITH deduplicated_events AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    api_key_name AS api_key,\n    request_id,\n    total_cost,\n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND response_status >= 200 AND response_status < 300\n)\nSELECT\n  ts,\n  api_key,\n  sum(total_cost) AS total_cost_usd\nFROM deduplicated_events\nWHERE rn = 1\nGROUP BY\n  ts, api_key\nORDER BY\n  ts ASC, api_key;",
+            "refId": "A"
+          }],
+          "title": "Costs per API Key ID",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Evolution of cost per cumulative user over time. Shows how much each user costs on average as the user base grows.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "continuous-GrYlRd"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 90,
+                "gradientMode": "scheme",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 12,
+            "x": 0,
+            "y": 45
+          },
+          "id": 5796,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "hidden",
+              "placement": "right",
+              "showLegend": false
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "format": 0,
+            "range": true,
+            "rawSql": "WITH first_seen AS (\n  SELECT \n    user_github_username,\n    toDateTime(min(start_time)) as first_day\n  FROM generation_event\n  WHERE \n    user_github_username != 'undefined'\n    AND user_github_username != ''\n  GROUP BY user_github_username\n),\ntime_range AS (\n  SELECT \n    min(start_time) as range_start\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n),\npre_period_count AS (\n  SELECT count() as pre_users\n  FROM first_seen, time_range\n  WHERE toDate(first_day) < toDate(range_start)\n),\nfiltered_users AS (\n  SELECT \n    first_day,\n    user_github_username\n  FROM first_seen\n  WHERE $__timeFilter(first_day)\n),\ndaily_new AS (\n  SELECT \n    date_trunc('$granularity', first_day) as time_bucket,\n    count() as new_users\n  FROM filtered_users\n  GROUP BY time_bucket\n  ORDER BY time_bucket\n),\ncumulative_users AS (\n  SELECT \n    time_bucket,\n    (SELECT pre_users FROM pre_period_count) + sum(new_users) OVER (ORDER BY time_bucket ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as total_users\n  FROM daily_new\n),\ndeduplicated_costs AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    request_id,\n    total_cost,\n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND response_status >= 200 AND response_status < 300\n),\naggregated_costs AS (\n  SELECT\n    ts,\n    sum(total_cost) as total_cost\n  FROM deduplicated_costs\n  WHERE rn = 1\n  GROUP BY ts\n)\nSELECT \n  c.ts as time,\n  CASE \n    WHEN u.total_users > 0 THEN c.total_cost / u.total_users\n    ELSE 0\n  END as \"Cost per User\"\nFROM aggregated_costs c\nLEFT JOIN cumulative_users u ON c.ts = u.time_bucket\nORDER BY time",
+            "refId": "A"
+          }],
+          "title": "Cost per User",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Evolution of cost per successful request over time. Shows the average cost efficiency of each request.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                  "color": "green",
+                  "value": 0
+                }]
+              },
+              "unit": "currencyUSD"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 12,
+            "x": 12,
+            "y": 45
+          },
+          "id": 5797,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "last"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "format": 0,
+            "range": true,
+            "rawSql": "WITH deduplicated_events AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    request_id,\n    total_cost,\n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND response_status >= 200 AND response_status < 300\n)\nSELECT\n  ts as time,\n  CASE \n    WHEN count(*) > 0 THEN sum(total_cost) / count(*)\n    ELSE 0\n  END as \"Cost per Request\"\nFROM deduplicated_events\nWHERE rn = 1\nGROUP BY ts\nORDER BY time",
+            "refId": "A"
+          }],
+          "title": "Cost per Request",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Sum of total costs for user pollen-router grouped by api_key_name and time granularity. Deduplicates by request_id to ensure accurate cost aggregation - one request = one request_id.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 70,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "fieldMinMax": false,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "currencyUSD"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 8,
+            "x": 0,
+            "y": 55
+          },
+          "id": 5769,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum",
+                "last"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "format": 0,
+            "range": true,
+            "rawSql": "WITH deduplicated_events AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    api_key_name AS api_key,\n    request_id,\n    total_cost,\n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND response_status >= 200 AND response_status < 300\n    AND user_github_username = 'pollen-router'\n)\nSELECT\n  ts,\n  api_key,\n  sum(total_cost) AS total_cost_usd\nFROM deduplicated_events\nWHERE rn = 1\nGROUP BY\n  ts, api_key\nORDER BY\n  ts ASC, api_key;",
+            "refId": "A"
+          }],
+          "title": "Total Costs for pollen-router by API Key",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Calculates the actual daily cost of providing free credits to users based on real usage. Shows breakdown by tier (Microbe, Spore, Seed, Flower, Nectar).",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 80,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                  "color": "green",
+                  "value": 0
+                }]
+              },
+              "unit": "currencyUSD"
+            },
+            "overrides": [{
+                "matcher": {
+                  "id": "byName",
+                  "options": "microbe"
+                },
+                "properties": [{
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "super-light-green",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "displayName",
+                    "value": "Microbe (0.1/day)"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "spore"
+                },
+                "properties": [{
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "light-blue",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "displayName",
+                    "value": "Spore (1/day)"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "seed"
+                },
+                "properties": [{
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "light-green",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "displayName",
+                    "value": "Seed (10/day)"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "flower"
+                },
+                "properties": [{
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "light-yellow",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "displayName",
+                    "value": "Flower (15/day)"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "nectar"
+                },
+                "properties": [{
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "light-purple",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "displayName",
+                    "value": "Nectar (20/day)"
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 8,
+            "x": 8,
+            "y": 55
+          },
+          "id": 5774,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum",
+                "mean"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "format": 0,
+            "range": true,
+            "rawSql": "WITH deduplicated_events AS (\n  SELECT \n    date_trunc('$granularity', start_time) AS ts,\n    user_tier,\n    request_id,\n    total_cost,\n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n  FROM generation_event\n  WHERE \n    $__timeFilter(start_time)\n    AND is_billed_usage = true\n    AND user_github_username != 'undefined'\n    AND user_github_username != ''\n    AND selected_meter_slug = 'v1:meter:tier'\n    AND response_status >= 200 \n    AND response_status < 300\n)\nSELECT \n  ts,\n  user_tier as tier,\n  SUM(total_cost) as cost_usd\nFROM deduplicated_events\nWHERE rn = 1\n  AND user_tier IN ('spore', 'seed', 'flower', 'nectar')\nGROUP BY ts, tier\nORDER BY ts ASC, tier ASC",
+            "refId": "A"
+          }],
+          "title": "Daily Sponsorship Cost by Tier",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Daily costs comparison between tier-based free credits and pack-based usage. Stacked bars show the total cost split by meter type.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 80,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                  "color": "green",
+                  "value": 0
+                }]
+              },
+              "unit": "currencyUSD"
+            },
+            "overrides": [{
+                "matcher": {
+                  "id": "byName",
+                  "options": "Tier Meter (Free Sponsorship)"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "blue",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Pack Meter (Paid Usage)"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  }
+                }]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 8,
+            "x": 16,
+            "y": 55
+          },
+          "id": 5778,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum",
+                "mean",
+                "last"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "meta": {},
+            "pluginVersion": "4.11.2",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "WITH deduplicated_events AS (\n  SELECT \n    date_trunc('$granularity', start_time) AS ts,\n    CASE \n      WHEN selected_meter_slug = 'v1:meter:tier' THEN 'Tier Meter (Free Sponsorship)'\n      ELSE 'Pack Meter (Paid Usage)'\n    END as meter_type,\n    request_id,\n    total_cost,\n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n  FROM generation_event\n  WHERE \n    $__timeFilter(start_time)\n    AND is_billed_usage = true\n    AND user_github_username != 'undefined'\n    AND user_github_username != ''\n    AND selected_meter_slug != ''\n    AND response_status >= 200 \n    AND response_status < 300\n)\nSELECT \n  ts,\n  meter_type,\n  SUM(total_cost) as cost_usd\nFROM deduplicated_events\nWHERE rn = 1\nGROUP BY ts, meter_type\nORDER BY ts ASC, meter_type ASC",
+            "refId": "A"
+          }],
+          "title": "Daily Cost by Meter Type",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Sum of total costs for unique generation requests (response_status 200-299) grouped by GitHub username and time granularity. Deduplicates by request_id to ensure accurate cost aggregation - one request = one request_id.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "currencyUSD"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 8,
+            "x": 0,
+            "y": 65
+          },
+          "id": 5794,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "meta": {},
+            "pluginVersion": "4.11.2",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "WITH deduplicated_events AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    user_github_username AS user,\n    request_id,\n    total_cost,\n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND response_status >= 200 AND response_status < 300\n    AND selected_meter_slug = 'v1:meter:pack' \n)\nSELECT\n  ts,\n  user,\n  sum(total_cost) AS total_cost_usd\nFROM deduplicated_events\nWHERE rn = 1\nGROUP BY\n  ts, user\nORDER BY\n  ts ASC, user;",
+            "refId": "A"
+          }],
+          "title": "Pack Spending per Github Username",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Sum of total costs for unique generation requests (response_status 200-299) grouped by GitHub username and time granularity. Deduplicates by request_id to ensure accurate cost aggregation - one request = one request_id.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "currencyUSD"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 8,
+            "x": 8,
+            "y": 65
+          },
+          "id": 5790,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "meta": {},
+            "pluginVersion": "4.11.2",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "WITH deduplicated_events AS (  \n  SELECT  \n    date_trunc('$granularity', start_time) AS ts,  \n    user_github_username AS user,  \n    request_id,  \n    total_cost,  \n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn  \n  FROM generation_event  \n  WHERE  \n    $__timeFilter(start_time)  \n    AND response_status >= 200   \n    AND response_status < 300   \n    AND selected_meter_slug = 'v1:meter:tier'  \n    AND user_tier = 'spore'\n)  \nSELECT  \n  ts,  \n  user,  \n  sum(total_cost) AS total_cost_usd  \nFROM deduplicated_events  \nWHERE rn = 1  \nGROUP BY  \n  ts, user  \nORDER BY  \n  ts ASC, user;  ",
+            "refId": "A"
+          }],
+          "title": "Spore Tier Costs per Github Username",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Sum of total costs for unique generation requests (response_status 200-299) grouped by GitHub username and time granularity. Deduplicates by request_id to ensure accurate cost aggregation - one request = one request_id.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "currencyUSD"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 8,
+            "x": 16,
+            "y": 65
+          },
+          "id": 5791,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "meta": {},
+            "pluginVersion": "4.11.2",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "WITH deduplicated_events AS (  \n  SELECT  \n    date_trunc('$granularity', start_time) AS ts,  \n    user_github_username AS user,  \n    request_id,  \n    total_cost,  \n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn  \n  FROM generation_event  \n  WHERE  \n    $__timeFilter(start_time)  \n    AND response_status >= 200   \n    AND response_status < 300   \n    AND selected_meter_slug = 'v1:meter:tier'\n    AND user_tier = 'seed'\n)  \nSELECT  \n  ts,  \n  user,  \n  sum(total_cost) AS total_cost_usd  \nFROM deduplicated_events  \nWHERE rn = 1  \nGROUP BY  \n  ts, user  \nORDER BY  \n  ts ASC, user;  ",
+            "refId": "A"
+          }],
+          "title": "Seed Tier Costs per Github Username",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Comparison of unique billed requests (successful) vs unique requests refused due to insufficient pollen balance. Deduplicates by request_id to ensure accurate counts - one request = one request_id.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": [{
+                "matcher": {
+                  "id": "byName",
+                  "options": "Billed"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  }
+                }]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Insufficient Funds"
+                },
+                "properties": [{
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "orange",
+                    "mode": "fixed"
+                  }
+                }]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 8,
+            "x": 0,
+            "y": 79
+          },
+          "id": 5755,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum",
+                "mean"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "format": 0,
+            "range": true,
+            "rawSql": "WITH deduplicated_billed AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    'Billed' AS request_type,\n    request_id,\n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND response_status >= 200 AND response_status < 300\n),\ndeduplicated_insufficient AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    'Insufficient Funds' AS request_type,\n    request_id,\n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND error_message = 'Insufficient pollen balance to use this model'\n)\nSELECT ts, request_type, count(*) AS requests\nFROM (\n  SELECT ts, request_type FROM deduplicated_billed WHERE rn = 1\n  UNION ALL\n  SELECT ts, request_type FROM deduplicated_insufficient WHERE rn = 1\n)\nGROUP BY ts, request_type\nORDER BY ts ASC, request_type ASC;",
+            "refId": "A"
+          }],
+          "title": "Billed vs Insufficient Funds Requests",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Sum of total costs for unique generation requests (response_status 200-299) grouped by GitHub username and time granularity. Deduplicates by request_id to ensure accurate cost aggregation - one request = one request_id.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "currencyUSD"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 8,
+            "x": 8,
+            "y": 79
+          },
+          "id": 5792,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "meta": {},
+            "pluginVersion": "4.11.2",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "WITH deduplicated_events AS (  \n  SELECT  \n    date_trunc('$granularity', start_time) AS ts,  \n    user_github_username AS user,  \n    request_id,  \n    total_cost,  \n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn  \n  FROM generation_event  \n  WHERE  \n    $__timeFilter(start_time)  \n    AND response_status >= 200   \n    AND response_status < 300   \n    AND selected_meter_slug = 'v1:meter:tier'\n    AND user_tier = 'flower'  \n)  \nSELECT  \n  ts,  \n  user,  \n  sum(total_cost) AS total_cost_usd  \nFROM deduplicated_events  \nWHERE rn = 1  \nGROUP BY  \n  ts, user  \nORDER BY  \n  ts ASC, user;  ",
+            "refId": "A"
+          }],
+          "title": "Flower Tier Costs per Github Username",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Sum of total costs for unique generation requests (response_status 200-299) grouped by GitHub username and time granularity. Deduplicates by request_id to ensure accurate cost aggregation - one request = one request_id.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "currencyUSD"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 8,
+            "x": 16,
+            "y": 79
+          },
+          "id": 5793,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "meta": {},
+            "pluginVersion": "4.11.2",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "WITH deduplicated_events AS (  \n  SELECT  \n    date_trunc('$granularity', start_time) AS ts,  \n    user_github_username AS user,  \n    request_id,  \n    total_cost,  \n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn  \n  FROM generation_event  \n  WHERE  \n    $__timeFilter(start_time)  \n    AND response_status >= 200   \n    AND response_status < 300   \n    AND selected_meter_slug = 'v1:meter:tier'\n    AND user_tier = 'nectar'  \n)  \nSELECT  \n  ts,  \n  user,  \n  sum(total_cost) AS total_cost_usd  \nFROM deduplicated_events  \nWHERE rn = 1  \nGROUP BY  \n  ts, user  \nORDER BY  \n  ts ASC, user;  ",
+            "refId": "A"
+          }],
+          "title": "Nectar Tier Costs per Github Username",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Count of unique generation requests (response_status 200-299) grouped by provider and model. Deduplicates by request_id to ensure one request = one request_id.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 13,
+            "w": 24,
+            "x": 0,
+            "y": 93
+          },
+          "id": 5802,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "meta": {},
+            "pluginVersion": "4.11.4",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "WITH deduplicated_events AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    model_provider_used,\n    model_used,\n    request_id,\n    total_cost,\n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND response_status >= 200 AND response_status < 300\n)\nSELECT\n  ts,\n  concat(model_provider_used, ' - ', model_used) AS provider_model,\n  sum(total_cost) AS cost\nFROM deduplicated_events\nWHERE rn = 1\nGROUP BY\n  ts, model_provider_used, model_used\nORDER BY\n  ts ASC, model_provider_used, model_used;\n",
+            "refId": "A"
+          }],
+          "title": "Cost per Provider per Model",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "description": "Count of unique generation requests (response_status 200-299) grouped by provider and model. Deduplicates by request_id to ensure one request = one request_id.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "hue",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "showValues": false,
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 13,
+            "w": 24,
+            "x": 0,
+            "y": 106
+          },
+          "id": 5803,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true,
+              "sortBy": "Total",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.0-20983762500",
+          "targets": [{
+            "datasource": {
+              "type": "grafana-clickhouse-datasource",
+              "uid": "PAD1A0A25CD30D456"
+            },
+            "editorType": "sql",
+            "format": 0,
+            "meta": {},
+            "pluginVersion": "4.11.4",
+            "queryType": "timeseries",
+            "range": true,
+            "rawSql": "WITH deduplicated_events AS (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    model_provider_used,\n    request_id,\n    total_cost,\n    ROW_NUMBER() OVER (PARTITION BY request_id ORDER BY start_time DESC) AS rn\n  FROM generation_event\n  WHERE\n    $__timeFilter(start_time)\n    AND response_status >= 200 AND response_status < 300\n)\nSELECT\n  ts,\n  model_provider_used AS provider,\n  sum(total_cost) AS total_cost_usd\nFROM deduplicated_events\nWHERE rn = 1\nGROUP BY\n  ts, model_provider_used\nORDER BY\n  ts ASC, model_provider_used;\n",
+            "refId": "A"
+          }],
+          "title": "Cost per Provider",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Costs",
+      "type": "row"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "id": 5798,
+      "panels": [],
+      "title": "RAW TINYBIRD",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Raw events showing all columns from the generation_event table",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [{
+            "matcher": {
+              "id": "byName",
+              "options": "request_id"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 372
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "start_time"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 209
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "end_time"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 183
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "token_price_completion_image"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 166
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "user_id"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 369
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "moderation_prompt_self_harm_severity"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 135
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "referrer_url"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 209
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "model_used"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 129
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "api_key_id"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 338
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "environment"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 122
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error_message"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 143
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error_source"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 123
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error_response_code"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 179
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error_stack"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 127
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "resolved_model_requested"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 160
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "free_model_requested"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 191
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "api_key_name"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 284
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "selected_meter_id"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 332
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "selected_meter_slug"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 188
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "request_path"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 344
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "user_github_username"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 303
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "balances"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 324
+            }]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "model_provider_used"
+            },
+            "properties": [{
+              "id": "custom.width",
+              "value": 281
+            }]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [{
+          "desc": true,
+          "displayName": "resolved_model_requested"
+        }]
+      },
+      "pluginVersion": "12.4.0-21083638843",
+      "targets": [{
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "editorType": "sql",
+        "format": 1,
+        "instant": false,
+        "meta": {},
+        "pluginVersion": "4.11.2",
+        "queryType": "table",
+        "range": true,
+        "rawSql": "SELECT * FROM generation_event AND ORDER BY start_time DESC LIMIT 10",
+        "refId": "A"
+      }],
+      "title": "Last 100 events from generation_event",
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": [{
+      "current": {
+        "text": "minute",
+        "value": "minute"
+      },
+      "description": "Select the time granularity for aggregation",
+      "includeAll": false,
+      "label": "granularity",
+      "name": "granularity",
+      "options": [],
+      "query": "minute, hour, day, week, month",
+      "type": "custom",
+      "valuesFormat": "csv"
+    }]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Overview",
+  "uid": "PAD1A0A25CD30D456",
+  "version": 136,
+  "weekStart": ""
+}

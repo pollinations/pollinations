@@ -30,6 +30,11 @@ export const PLAY_PAGE = {
     enhanceLabel: "Enhance",
     logoLabel: "Logo",
 
+    // Reference images
+    referenceImagesLabel: "Reference images",
+    referenceImagesCount: "/4 images",
+    imageUrlPlaceholder: "Image URL",
+
     // Button states
     generatingText: "Generating...",
     generateImageButton: "Generate Image",
@@ -71,7 +76,7 @@ export const PLAY_PAGE = {
     loginCtaOr: "or",
     loginCtaRegister: "Register",
     loginCtaSuffix: "to unlock all models and get API keys",
-    loggedInCtaText: "🔓 Selected models are now unlocked!",
+    loggedInCtaText: "Selected models are now unlocked!",
 
     // Validation
     enterPromptFirst: "First, enter a prompt",
@@ -80,10 +85,36 @@ export const PLAY_PAGE = {
     gatedModelTooltip:
         "Login to unlock · Get API keys at enter.pollinations.ai",
 
-    // Reference images
-    imageUrlPlaceholder: "Image URL",
-
     // Error messages
     somethingWentWrong: "Something went wrong",
     noResponse: "No response",
+
+    // Integrate section (API URL + Auth combined)
+    integrateTitle: "Integrate",
+    integrateIntro:
+        "Simple GET URLs for image, text, and audio. Embed in <img> tags, fetch, or open in a browser. An API key is required for all requests.",
+    copyButton: "Copy",
+    copiedLabel: "Copied!",
+    fullApiDocsButton: "Full API Docs",
+    agentPromptButton: "Agent Prompt",
+
+    // Authentication
+    authTitle: "Authentication",
+    authIntro:
+        "API keys authenticate your requests. Create multiple keys for different apps and track usage separately.",
+    publishableLabel: "Publishable",
+    publishableFeature1: "Client-side demos & prototypes",
+    publishableFeature2: "Rate limited: 1 pollen per IP per hour",
+    publishableBetaWarning:
+        "Beta — Turnstile protection coming soon. Not recommended for production yet.",
+    secretLabel: "Secret",
+    secretFeature1: "Server-side only",
+    secretFeature2: "No rate limits",
+    secretWarning:
+        "Never expose in client-side code, git repos, or public URLs",
+    byopLabel: "Bring Your Own Pollen",
+    byopDescription:
+        "Building an app? Let users pay for their own AI usage — you pay $0.",
+    getKeyButton: "Get Your Key",
+    byopButton: "Learn more",
 };

@@ -542,8 +542,8 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: new Date("2026-02-09").getTime(),
-                promptTextTokens: perMillion(0.0), // Free via api.airforce
-                completionTextTokens: perMillion(0.0),
+                promptTextTokens: perMillion(0.01), // $0.01/M via api.airforce
+                completionTextTokens: perMillion(0.01),
             },
         ],
         description:

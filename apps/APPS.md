@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| 🌐 | NebulaAPI | https://nebulaapi.app | Free Brazilian API gateway for AI and gaming with Pollinations backend. | pt-BR | Dev_Tools | @MatheusHMafra | 127265280 |  |  | st4rx3 | | 2026-02-02 | https://github.com/pollinations/pollinations/issues/7873 | 2026-02-10 |
 | 📖 | Korpi.AI | https://korpi.ai | Generates AI stories with the Pollinations Flux model. | en | Creative | @Reksely | 69013710 |  |  |  |  | 2026-01-14 | https://github.com/pollinations/pollinations/issues/7290 |  |
 | 🤖 | Moltbot With Pollinations.ai provider |  | Multi-channel AI assistant for Telegram and WhatsApp using Pollinations AI. | en | Social_Bots | @its3li | 143140806 | https://github.com/its3li/moltbot-with-pollinations.ai |  | 87_9 | | 2026-01-30 | https://github.com/pollinations/pollinations/issues/7778 | 2026-01-30 |
 | 🔌 | Pollinations Provider for Vercel AI SDK | https://ai-sdk-pollinations-example.vercel.app | Vercel AI SDK provider for Pollinations: text, image, and speech generation. | en | Dev_Tools | @artsiombarouski | 3390868 | https://github.com/artsiombarouski/ai-sdk-pollinations |  | artsiombarouski_49005 | | 2026-01-22 | https://github.com/pollinations/pollinations/issues/7551 | 2026-01-22 |

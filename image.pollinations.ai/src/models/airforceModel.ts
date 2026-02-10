@@ -104,7 +104,7 @@ async function fetchFromAirforce(
 }
 
 /**
- * Image generation via api.airforce (e.g. imagen-4, flux-2-dev)
+ * Image generation via api.airforce (e.g. imagen-4)
  */
 export async function callAirforceImageAPI(
     prompt: string,

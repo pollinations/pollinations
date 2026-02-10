@@ -275,27 +275,11 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-02-07").getTime(),
-                completionImageTokens: 0.005, // $0.005 per image
+                completionImageTokens: 0.0025, // $0.0025 per image
             },
         ],
         description:
-            "Imagen 4 (api.airforce) - Google's latest image generation model",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-    },
-    "flux-2-dev": {
-        aliases: ["flux2", "flux-2"],
-        modelId: "flux-2-dev",
-        provider: "airforce",
-        alpha: true,
-        cost: [
-            {
-                date: new Date("2026-02-07").getTime(),
-                completionImageTokens: 0.005, // $0.005 per image
-            },
-        ],
-        description:
-            "FLUX.2 Dev (api.airforce) - Black Forest Labs' latest image model",
+            "Imagen 4 (alpha) - Google's latest image gen, powered by api.airforce",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -307,11 +291,11 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-02-07").getTime(),
-                completionVideoSeconds: 0.005, // $0.005 per second
+                completionVideoSeconds: 0.0025, // $0.0025 per second
             },
         ],
         description:
-            "Grok Imagine Video (api.airforce) - xAI's video generation model",
+            "Grok Video (alpha) - xAI video gen, powered by api.airforce",
         inputModalities: ["text"],
         outputModalities: ["video"],
     },

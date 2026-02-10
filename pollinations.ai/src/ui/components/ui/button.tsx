@@ -7,13 +7,13 @@ const buttonVariants = cva(
     {
         variants: {
             variant: {
-                // Primary CTA: Black bg + Yellow border (used in HelloPage, CommunityPage, DocsPage)
+                // Primary CTA: Black bg + Yellow border (used in HelloPage, CommunityPage, PlayPage)
                 primary:
                     "gap-2 font-headline uppercase tracking-wider font-black bg-button-primary-bg border-r-4 border-b-4 border-border-highlight shadow-shadow-highlight-md text-text-on-color hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-shadow-highlight-sm",
-                // Secondary CTA: Yellow bg + Black border (used in HelloPage, DocsPage)
+                // Secondary CTA: Yellow bg + Black border (used in HelloPage, PlayPage)
                 secondary:
                     "gap-2 font-headline uppercase tracking-wider font-black bg-button-secondary-bg border-r-4 border-b-4 border-border-strong shadow-shadow-dark-md text-text-body-main hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-shadow-dark-sm",
-                // Toggle buttons (DocsPage prompts/parameters) - uses data-active attribute
+                // Toggle buttons (PlayPage prompts/parameters) - uses data-active attribute
                 toggle: "px-3 py-1.5 font-mono text-xs border-2 transition-all text-text-body-main data-[active=true]:bg-button-secondary-bg data-[active=true]:border-border-brand data-[active=true]:font-black data-[active=true]:shadow-shadow-brand-sm data-[active=false]:bg-input-background data-[active=false]:border-border-main data-[active=false]:hover:bg-input-background data-[active=false]:hover:border-border-brand data-[active=true]:hover:shadow-shadow-brand-md",
                 // Copy button (small, lime bg, rose border) - used for Copy URL actions
                 copy: "px-4 py-2 font-headline uppercase text-xs font-black text-text-body-main bg-button-secondary-bg border-2 border-border-brand hover:shadow-shadow-brand-md transition-all",

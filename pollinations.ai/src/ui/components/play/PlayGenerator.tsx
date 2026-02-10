@@ -12,107 +12,32 @@ import { Body, Heading, Label } from "../ui/typography";
 interface PlayGeneratorProps {
     selectedModel: string;
     prompt: string;
-    onPromptChange?: (prompt: string) => void;
     imageModels: Model[];
     textModels: Model[];
     audioModels: Model[];
     apiKey: string;
 }
 
-/** Renders a color-coded image API URL */
-function ColoredImageUrl({
+/** Renders a color-coded GET API URL: base/{type}/{prompt}?params&key=YOUR_API_KEY */
+function ColoredUrl({
     base,
+    type,
     prompt,
+    placeholder = "your-prompt-here",
     params,
 }: {
     base: string;
+    type: string;
     prompt: string;
+    placeholder?: string;
     params: Record<string, string>;
 }) {
-    const encodedPrompt = encodeURIComponent(prompt || "your-prompt-here");
+    const encodedPrompt = encodeURIComponent(prompt || placeholder);
     return (
         <span className="font-mono text-sm break-all">
-            <span className="text-text-caption">{base}/image/</span>
-            <span className="text-text-brand font-bold">{encodedPrompt}</span>
-            {Object.keys(params).length > 0 && (
-                <>
-                    <span className="text-text-caption">?</span>
-                    {Object.entries(params).map(([k, v], i) => (
-                        <span key={k}>
-                            {i > 0 && (
-                                <span className="text-text-caption">&</span>
-                            )}
-                            <span className="text-text-highlight">{k}</span>
-                            <span className="text-text-caption">=</span>
-                            <span className="text-text-body-main">{v}</span>
-                        </span>
-                    ))}
-                    <span className="text-text-caption">&</span>
-                    <span className="text-text-highlight">key</span>
-                    <span className="text-text-caption">=</span>
-                    <span className="text-text-brand font-bold">
-                        YOUR_API_KEY
-                    </span>
-                </>
-            )}
-        </span>
-    );
-}
-
-/** Renders a color-coded simple GET text URL */
-function ColoredTextUrl({
-    base,
-    prompt,
-    params,
-}: {
-    base: string;
-    prompt: string;
-    params: Record<string, string>;
-}) {
-    const encodedPrompt = encodeURIComponent(prompt || "your-prompt-here");
-    return (
-        <span className="font-mono text-sm break-all">
-            <span className="text-text-caption">{base}/text/</span>
-            <span className="text-text-brand font-bold">{encodedPrompt}</span>
-            {Object.keys(params).length > 0 && (
-                <>
-                    <span className="text-text-caption">?</span>
-                    {Object.entries(params).map(([k, v], i) => (
-                        <span key={k}>
-                            {i > 0 && (
-                                <span className="text-text-caption">&</span>
-                            )}
-                            <span className="text-text-highlight">{k}</span>
-                            <span className="text-text-caption">=</span>
-                            <span className="text-text-body-main">{v}</span>
-                        </span>
-                    ))}
-                    <span className="text-text-caption">&</span>
-                    <span className="text-text-highlight">key</span>
-                    <span className="text-text-caption">=</span>
-                    <span className="text-text-brand font-bold">
-                        YOUR_API_KEY
-                    </span>
-                </>
-            )}
-        </span>
-    );
-}
-
-/** Renders a color-coded simple GET audio URL */
-function ColoredAudioUrl({
-    base,
-    prompt,
-    params,
-}: {
-    base: string;
-    prompt: string;
-    params: Record<string, string>;
-}) {
-    const encodedPrompt = encodeURIComponent(prompt || "your-text-here");
-    return (
-        <span className="font-mono text-sm break-all">
-            <span className="text-text-caption">{base}/audio/</span>
+            <span className="text-text-caption">
+                {base}/{type}/
+            </span>
             <span className="text-text-brand font-bold">{encodedPrompt}</span>
             {Object.keys(params).length > 0 && (
                 <>
@@ -179,12 +104,15 @@ export function PlayGenerator({
 
     // Fetch agent prompt for copy button
     useEffect(() => {
+        const controller = new AbortController();
         fetch(
             "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md",
+            { signal: controller.signal },
         )
             .then((res) => res.text())
             .then(setAgentPrompt)
-            .catch(console.error);
+            .catch(() => {});
+        return () => controller.abort();
     }, []);
 
     // Cleanup blob URLs when result changes
@@ -765,20 +693,24 @@ export function PlayGenerator({
                 <div className="relative">
                     <div className="bg-input-background p-3 pr-16 rounded-input overflow-x-auto">
                         {isImageModel ? (
-                            <ColoredImageUrl
+                            <ColoredUrl
                                 base={API_BASE}
+                                type="image"
                                 prompt={prompt}
                                 params={imageParams}
                             />
                         ) : isAudioModel ? (
-                            <ColoredAudioUrl
+                            <ColoredUrl
                                 base={API_BASE}
+                                type="audio"
                                 prompt={prompt}
+                                placeholder="your-text-here"
                                 params={audioParams}
                             />
                         ) : (
-                            <ColoredTextUrl
+                            <ColoredUrl
                                 base={API_BASE}
+                                type="text"
                                 prompt={prompt}
                                 params={textParams}
                             />

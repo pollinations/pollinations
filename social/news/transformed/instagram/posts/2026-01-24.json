@@ -1,0 +1,58 @@
+{
+  "date": "2026-01-24",
+  "generated_at": "2026-01-24T16:09:31.326186+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art_carousel",
+  "linked_images": false,
+  "strategy_reasoning": "Using a 'Garden Maintenance' metaphor in a cozy pixel art style makes technical updates (error codes, API endpoints) feel approachable and warm. The visual progression from fixing a gate (429 error) to expanding the map (socials) tells a story of growth consistent with the Pollinations brand.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Close%20up%20of%20a%20pixel%20art%20gardening%20journal%20lying%20on%20soft%20grass.%20Title%20text%20%27Update%20Log%27%20in%20pixel%20font%20on%20the%20cover.%20A%20cute%208-bit%20bee%20rests%20on%20it.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20lighting.%20Cozy%2C%20nostalgic%2C%20lo-fi%20aesthetic%20like%20Unpacking.%20Chunky%20retro%20sprites%2C%20warm%20atmosphere.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=2131422916",
+      "prompt": "Close up of a pixel art gardening journal lying on soft grass. Title text 'Update Log' in pixel font on the cover. A cute 8-bit bee rests on it. Soft lime green (#ecf874) and lavender lighting. Cozy, nostalgic, lo-fi aesthetic like Unpacking. Chunky retro sprites, warm atmosphere.",
+      "description": "Title card establishing the 'Garden Update' theme."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%208-bit%20pixel%20art%20scene.%20A%20friendly%20wooden%20garden%20gate%20labeled%20%27429%27%20with%20a%20sign%20saying%20%27Busy%2C%20wait%20a%20sec%27.%20A%20tiny%20pixel%20character%20waits%20patiently%20with%20a%20clock%20icon.%20Soft%20pastel%20gradient%20background%20%28mint%20to%20peach%29.%20Contrast%20with%20a%20scary%20red%20%27401%27%20sign%20lying%20on%20the%20ground%20%28discarded%29.%20Warm%20lighting%2C%20retro%20gaming%20vibes%20like%20Stardew%20Valley.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=447509851",
+      "prompt": "Cozy 8-bit pixel art scene. A friendly wooden garden gate labeled '429' with a sign saying 'Busy, wait a sec'. A tiny pixel character waits patiently with a clock icon. Soft pastel gradient background (mint to peach). Contrast with a scary red '401' sign lying on the ground (discarded). Warm lighting, retro gaming vibes like Stardew Valley.",
+      "description": "Visualizing the fix where rate limits now return a friendly 'wait' (429) instead of a scary 'unauthorized' (401)."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20cozy%20pixel%20art%20workbench%20in%20a%20garden%20shed.%20A%20glowing%20green%20scanner%20labeled%20%27Key%20Check%27.%20A%20golden%20pixel%20key%20is%20floating%20above%20it%2C%20showing%20a%20green%20checkmark.%20Soft%20lime%20green%20%28%23ecf874%29%20glow%2C%20warm%20brown%20wood%20tones.%20Chunky%20pixels%2C%20isometric%20view%20like%20Unpacking.%20Detailed%20and%20cute.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=622099761",
+      "prompt": "A cozy pixel art workbench in a garden shed. A glowing green scanner labeled 'Key Check'. A golden pixel key is floating above it, showing a green checkmark. Soft lime green (#ecf874) glow, warm brown wood tones. Chunky pixels, isometric view like Unpacking. Detailed and cute.",
+      "description": "Illustrating the new /api/account/key endpoint for validating keys easily."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20pixel%20art%20world%20map%20in%20retro%20RPG%20style.%20A%20central%20garden%20labeled%20%27Pollinations%27%20connecting%20to%20new%20floating%20islands%20with%20pixel%20icons%20for%20LinkedIn%2C%20Twitter%20%28X%29%2C%20and%20Reddit.%20Cute%20pixel%20birds%20carrying%20messages%20between%20them.%20Soft%20pastel%20clouds%2C%20lime%20green%20%28%23ecf874%29%20accents.%20Wholesome%20and%20adventurous.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=767977508",
+      "prompt": "A pixel art world map in retro RPG style. A central garden labeled 'Pollinations' connecting to new floating islands with pixel icons for LinkedIn, Twitter (X), and Reddit. Cute pixel birds carrying messages between them. Soft pastel clouds, lime green (#ecf874) accents. Wholesome and adventurous.",
+      "description": "Showing the expansion of the news workflow to new social platforms."
+    }
+  ],
+  "caption": "Garden maintenance complete! 🛠️🌱 We've been busy tending to the code-base and planting new seeds.\n\n✨ **The Updates:**\n\n🛑 **No more scary errors:** Rate limits now correctly say \"429 Too Many Requests\" (wait a sec) instead of \"401 Unauthorized\" (go away). Much friendlier!\n\n🔑 **Key Check:** Added a new `/api/account/key` endpoint so you can check your API key status without the heavy lifting.\n\n🐦 **Social Sprawl:** Our news workflow now officially supports LinkedIn, Twitter, and a new Reddit folder! The hive is growing.\n\nBuilding with heart, one pixel at a time. 🌸🐝\n\n#pollinations #opensource #indiedev #pixelart #cozyvibes #devlog #generativeai #8bit",
+  "hashtags": [
+    "#pollinations",
+    "#aiart",
+    "#opensource",
+    "#pixelart",
+    "#retrogaming",
+    "#indiedev",
+    "#8bit",
+    "#cozygames"
+  ],
+  "alt_text": "A carousel of cozy 8-bit pixel art images. 1. A gardening journal on grass. 2. A friendly garden gate labeled 429 replacing a scary 401 sign. 3. A pixelated workbench checking a golden API key. 4. A retro RPG map showing connections to LinkedIn, Twitter, and Reddit.",
+  "pr_references": [
+    "#7629",
+    "#7624",
+    "#7628",
+    "#7600",
+    "#7599",
+    "#7609",
+    "#7617",
+    "#7606",
+    "#7614",
+    "#7613",
+    "#7601",
+    "#7610",
+    "#7603"
+  ]
+}

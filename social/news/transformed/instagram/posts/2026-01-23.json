@@ -1,0 +1,48 @@
+{
+  "date": "2026-01-23",
+  "generated_at": "2026-01-23T16:12:10.271423+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art_carousel",
+  "linked_images": false,
+  "strategy_reasoning": "Adopting a 'Dev Garden Journal' theme in a cozy pixel art style makes technical updates (payments, webhooks) feel welcoming and gamified rather than corporate. The retro aesthetic taps into developer nostalgia while keeping the vibe soft and organic.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20title%20screen%20featuring%20a%20cute%208-bit%20bee%20character%20holding%20a%20small%20open%20journal.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20gradient%20background.%20Chunky%20pixels%2C%20warm%20lighting%2C%20lo-fi%20aesthetic.%20Text%20in%20pixel%20font%20says%20%27DEV%20GARDEN%20UPDATE%27.%20Like%20Stardew%20Valley%20meets%20coding.%20Emotionally%20warm%2C%20nostalgic%20but%20beautiful.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1361470764",
+      "prompt": "Cozy pixel art title screen featuring a cute 8-bit bee character holding a small open journal. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Text in pixel font says 'DEV GARDEN UPDATE'. Like Stardew Valley meets coding. Emotionally warm, nostalgic but beautiful.",
+      "description": "Title card establishing the 'Dev Garden' theme with our mascot"
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20market%20stall%20scene%20in%20a%20garden.%20A%20tiny%20wooden%20stand%20displaying%20glowing%20pollen%20jars%20with%20pixelated%20%27%24%27%20signs.%20Soft%20mint%20and%20peach%20pastel%20background.%20Retro%20game%20UI%20box%20at%20the%20bottom%20says%20%27Stripe%20USD%20Support%20Added%27.%20Cozy%208-bit%20aesthetic%2C%20warm%20lighting%2C%20wholesome%20vibes%20like%20A%20Short%20Hike.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=904546161",
+      "prompt": "Pixel art market stall scene in a garden. A tiny wooden stand displaying glowing pollen jars with pixelated '$' signs. Soft mint and peach pastel background. Retro game UI box at the bottom says 'Stripe USD Support Added'. Cozy 8-bit aesthetic, warm lighting, wholesome vibes like A Short Hike.",
+      "description": "Visualizing the Stripe USD update as a friendly garden market"
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%20game%20power-up%20screen.%20A%20large%2C%20glowing%20golden%20jar%20of%20nectar%20in%20the%20center%20with%20%272x%27%20floating%20above%20it%20in%20chunky%20pixel%20text.%20Sparkles%20and%20confetti%20effects.%20Soft%20lime%20green%20%28%23ecf874%29%20background%20with%20scanlines.%20High%20energy%20but%20cozy%208-bit%20style.%20Text%3A%20%27BETA%20BONUS%20ACTIVE%27.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=380727352",
+      "prompt": "Retro game power-up screen. A large, glowing golden jar of nectar in the center with '2x' floating above it in chunky pixel text. Sparkles and confetti effects. Soft lime green (#ecf874) background with scanlines. High energy but cozy 8-bit style. Text: 'BETA BONUS ACTIVE'.",
+      "description": "Gamifying the 2x multiplier promotion"
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Tiny%208-bit%20bee%20developer%20character%20connecting%20two%20green%20pixel%20vines%20together%20like%20wires.%20A%20dialogue%20box%20shows%20%27Webhook%20Test%3A%20PASS%27.%20Cozy%20workspace%20background%20with%20a%20small%20CRT%20monitor.%20Soft%20lighting%2C%20pastel%20palette.%20Retro%20gaming%20vibes%2C%20clean%20and%20cute.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1434770573",
+      "prompt": "Tiny 8-bit bee developer character connecting two green pixel vines together like wires. A dialogue box shows 'Webhook Test: PASS'. Cozy workspace background with a small CRT monitor. Soft lighting, pastel palette. Retro gaming vibes, clean and cute.",
+      "description": "Illustrating local webhook testing as tending to garden connections"
+    }
+  ],
+  "caption": "Dev Garden Log: Day 2026 🐝🌱\n\nBig updates blooming in the ecosystem today! We're keeping things cozy but making the tech powerful.\n\n✨ **What's New:**\n💳 **Shop Open:** Stripe checkout is live with USD pricing for pollen packs!\n⚡ **Power Up:** It's Beta season, so we're running a **2x Multiplier** on all packs. Double the pollen, double the fun.\n🛠️ **Dev Tools:** Local webhook testing is now smoother than ever.\n\nGrab your watering can (and your code editor) and come build with us. \n\nLink in bio to start generating! 🌸\n\n#pollinations #pixelart #indiedev #opensource #generativeai #cozyvibes #8bit #devlife #retrogaming",
+  "hashtags": [
+    "#pollinations",
+    "#pixelart",
+    "#indiedev",
+    "#opensource",
+    "#generativeai",
+    "#cozyvibes",
+    "#8bit",
+    "#devlife",
+    "#retrogaming"
+  ],
+  "alt_text": "A carousel of 4 cozy pixel art images. 1. A cute pixel bee holding a journal against a lime green background. 2. A pixel art market stall selling pollen jars for USD. 3. A glowing golden nectar jar with a 2x multiplier sign. 4. A pixel bee connecting vines to represent webhook testing.",
+  "pr_references": [
+    "#7571",
+    "#7495"
+  ]
+}

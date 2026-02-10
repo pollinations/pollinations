@@ -1,0 +1,70 @@
+name: GitHub Update Highlights
+
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - 'social/news/*.md'
+  workflow_dispatch: 
+
+jobs:
+  create-highlights:
+    # Only run if PR was merged (not just closed) and targeted main
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main  # Checkout main to get the merged NEWS file
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Create Highlights and PR
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_LABELS: NEWS
+        run: python social/scripts/github_update_highlights.py
+
+      - name: Enable Auto-merge on PR
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: |
+          # Read PR number from file written by script
+          if [ -f .pr_number ]; then
+            PR_NUMBER=$(cat .pr_number)
+            echo "Enabling auto-merge on PR #$PR_NUMBER"
+
+            # Get PR node ID for GraphQL
+            PR_NODE_ID=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER" \
+              | jq -r '.node_id')
+
+            # Enable auto-merge via GraphQL (respects branch protection)
+            curl -X POST https://api.github.com/graphql \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"query\":\"mutation {enablePullRequestAutoMerge(input:{pullRequestId:\\\"$PR_NODE_ID\\\",mergeMethod:SQUASH}){pullRequest{number}}}\"}"
+          else
+            echo "No .pr_number file found - PR not created"
+          fi

@@ -1,7 +1,7 @@
-import type { PriceDefinition, TokenUsage } from "@shared/registry/registry.ts";
+import type { PriceDefinition, Usage } from "@shared/registry/registry.ts";
 import type { ContentFilterResult } from "@/schemas/openai";
 
-export type EventType = "generate.text" | "generate.image";
+export type EventType = "generate.text" | "generate.image" | "generate.audio";
 export type ApiKeyType = "secret" | "publishable";
 
 // Plain TypeScript type for Tinybird events (no D1 table - events sent directly to Tinybird)
@@ -159,9 +159,7 @@ export function priceToEventParams(
     };
 }
 
-export function usageToEventParams(
-    usage?: TokenUsage,
-): GenerationEventUsageParams {
+export function usageToEventParams(usage?: Usage): GenerationEventUsageParams {
     return {
         tokenCountPromptText: usage?.promptTextTokens || 0,
         tokenCountPromptCached: usage?.promptCachedTokens || 0,

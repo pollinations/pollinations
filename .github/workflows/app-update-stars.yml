@@ -1,0 +1,53 @@
+name: App Update Stars
+
+on:
+  schedule:
+    - cron: '0 4 * * 0'  # Every Sunday at 4am UTC
+  workflow_dispatch:
+
+jobs:
+  update-stars:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.pollinations-ai.outputs.token }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Update GitHub stars
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: node .github/scripts/app-update-stars.js --verbose
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet apps/APPS.md; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "pollinations-ai[bot]"
+          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
+          git add apps/APPS.md
+          git commit -m "chore: update GitHub stars for apps"
+          git push

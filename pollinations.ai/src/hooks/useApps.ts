@@ -45,8 +45,8 @@ function parseAppsMarkdown(markdown: string): App[] {
         cols.shift();
         cols.pop();
 
-        // Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted |
-        if (cols.length < 13) continue;
+        // Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date |
+        if (cols.length < 15) continue;
 
         const name = cols[1];
         let url = cols[2];

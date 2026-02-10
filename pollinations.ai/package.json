@@ -6,7 +6,8 @@
     "scripts": {
         "dev": "vite",
         "build": "tsc && vite build",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "deploy:production": "npm run build && wrangler deploy"
     },
     "dependencies": {
         "@types/webfontloader": "^1.6.38",

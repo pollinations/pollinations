@@ -1,0 +1,53 @@
+{
+  "date": "2026-01-17",
+  "generated_at": "2026-01-17T16:09:05.765359+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art_carousel",
+  "linked_images": false,
+  "strategy_reasoning": "Using a 'Digital Garden Maintenance' theme in a cozy pixel art style perfectly bridges the gap between technical chores (removing workflows, fixing docs) and our nature-inspired brand. The 8-bit aesthetic evokes nostalgia and warmth, making dry updates feel like satisfying gameplay moments (like Stardew Valley).",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%208-bit%20pixel%20art%20scene.%20A%20cute%20tiny%20pixel%20bee%20character%20wearing%20a%20gardener%20hat%20holding%20a%20pixelated%20wrench%20and%20a%20flower.%20Background%20is%20a%20soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20pastel%20gradient.%20Foreground%20has%20a%20retro%20RPG%20text%20box%20saying%20%27UPDATE%20LOG%27.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20aesthetic%20like%20A%20Short%20Hike.%20Wholesome%20and%20inviting.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=256636770",
+      "prompt": "Cozy 8-bit pixel art scene. A cute tiny pixel bee character wearing a gardener hat holding a pixelated wrench and a flower. Background is a soft lime green (#ecf874) and lavender pastel gradient. Foreground has a retro RPG text box saying 'UPDATE LOG'. Chunky retro sprites, warm lighting, lo-fi aesthetic like A Short Hike. Wholesome and inviting.",
+      "description": "Cover slide introducing the update log as a cozy gardening session."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%208-bit%20pixel%20art%20close-up%20of%20a%20magical%20item%20shop%20counter.%20A%20pixelated%20chat%20window%20glowing%20on%20a%20CRT%20monitor.%20Next%20to%20it%2C%20a%20glowing%20jar%20labeled%20%27POLLEN%27.%20Soft%20pastel%20mint%20and%20peach%20gradient%20background.%20Text%20in%20pixel%20font%20floating%3A%20%27BRING%20YOUR%20OWN%20POLLEN%27.%20Cozy%20vibes%2C%20warm%20glow%20effects%2C%20Stardew%20Valley%20item%20shop%20aesthetic.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=770706453",
+      "prompt": "Retro 8-bit pixel art close-up of a magical item shop counter. A pixelated chat window glowing on a CRT monitor. Next to it, a glowing jar labeled 'POLLEN'. Soft pastel mint and peach gradient background. Text in pixel font floating: 'BRING YOUR OWN POLLEN'. Cozy vibes, warm glow effects, Stardew Valley item shop aesthetic.",
+      "description": "Visualizing the BYOP (Bring Your Own Pollen) integration for Chat."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20scene%20of%20a%20digital%20bonsai%20tree%20being%20pruned.%20The%20leaves%20are%20tiny%20pixel%20code%20blocks.%20Some%20grey%20%27bug%27%20pixels%20are%20falling%20off.%20A%20clean%2C%20simplified%20retro%20UI%20health%20bar%20is%20visible%20at%20the%20top%2C%20full%20green.%20Soft%20lime%20green%20%28%23ecf874%29%20background%20with%20scanlines.%20Chunky%20sprites%2C%20peaceful%20atmosphere%20like%20Unpacking%20game.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=973537455",
+      "prompt": "Cozy pixel art scene of a digital bonsai tree being pruned. The leaves are tiny pixel code blocks. Some grey 'bug' pixels are falling off. A clean, simplified retro UI health bar is visible at the top, full green. Soft lime green (#ecf874) background with scanlines. Chunky sprites, peaceful atmosphere like Unpacking game.",
+      "description": "Representing the cleanup of redundant workflows and simplified health monitor logic."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20illustration%20of%20an%20open%20ancient%20book%20on%20a%20wooden%20desk.%20A%20quill%20pen%20is%20correcting%20a%20map%20inside.%20Sunlight%20streaming%20through%20a%20window%20in%208-bit%20style.%20Soft%20pastel%20colors%2C%20warm%20lighting.%20Represents%20%27Documentation%20Update%27.%20Cozy%2C%20nostalgic%2C%20lo-fi%20study%20beats%20vibe.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=93559781",
+      "prompt": "Pixel art illustration of an open ancient book on a wooden desk. A quill pen is correcting a map inside. Sunlight streaming through a window in 8-bit style. Soft pastel colors, warm lighting. Represents 'Documentation Update'. Cozy, nostalgic, lo-fi study beats vibe.",
+      "description": "Visualizing the documentation fixes and URL updates."
+    }
+  ],
+  "caption": "Tending to the digital garden today! 🌸🐝 We've been doing some weeding and planting to keep things blooming.\n\nHere’s what’s new in the patch:\n\n✨ **New Feature:** BYOP (Bring Your Own Pollen) is now live for Chat! Connect your own API key for personalized usage.\n🌱 **Pruning:** Removed redundant workflows to keep our CI/CD clean.\n🐛 **Bug Squashing:** Fixed those pesky API doc truncations & simplified our model health monitor.\n\nBuilding with heart, one pixel at a time. 💚\n\nLink in bio to try the new features!\n\n#pollinations #opensource #pixelart #indiedev #aiart #8bit #cozyvibes #generativeai #devlog",
+  "hashtags": [
+    "#pollinations",
+    "#aiart",
+    "#opensource",
+    "#pixelart",
+    "#retrogaming",
+    "#indiedev",
+    "#8bit",
+    "#cozyvibes",
+    "#gamedev"
+  ],
+  "alt_text": "A carousel of cozy 8-bit pixel art images. 1. A pixel bee gardener with a wrench. 2. A retro item shop with a jar of pollen. 3. A digital bonsai tree being pruned with a health bar. 4. An open book on a desk with warm sunlight.",
+  "pr_references": [
+    "#7392",
+    "#7386",
+    "#7383",
+    "#7311",
+    "#7379",
+    "#7372",
+    "#7363"
+  ]
+}

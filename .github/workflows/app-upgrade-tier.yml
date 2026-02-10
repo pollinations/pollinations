@@ -127,7 +127,6 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
           TARGETS: ${{ steps.targets.outputs.targets }}
         run: |
           npm install -g wrangler
@@ -156,7 +155,7 @@ jobs:
               RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" --arg num "$TARGET_NUMBER" --arg on "$CELEBRATE_ON" --arg type "$TYPE" \
                 '. + [{"user": $user, "targetNumber": $num, "celebrateOn": $on, "type": $type, "success": "skipped"}]')
             elif echo "$OUTPUT" | grep -q "Tier update complete"; then
-              # Verify the tier was actually set correctly in both D1 and Polar
+              # Verify the tier was actually set correctly in D1
               echo "🔍 Verifying tier upgrade for $USERNAME..."
               VERIFY_OUTPUT=$(npx tsx scripts/tier-update-user.ts verify-tier \
                 --githubUsername "$USERNAME" \

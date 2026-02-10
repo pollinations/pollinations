@@ -1,0 +1,11 @@
+# Use the existing base image with nunchaku pre-compiled
+FROM pollinations/flux-svdquant:latest
+
+# Copy the updated server.py with fixes
+COPY server.py /app/server.py
+
+# Environment variables can be set at runtime, but we'll set sensible defaults
+ENV SERVICE_TYPE=flux
+ENV REGISTER_URL=http://3.80.56.235:16384/register
+
+# The entrypoint and CMD are inherited from the base image

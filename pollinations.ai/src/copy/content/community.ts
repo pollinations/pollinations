@@ -122,6 +122,12 @@ export const COMMUNITY_PAGE = {
             description:
                 "AI-optimized cloud infrastructure with NVIDIA GPU clusters",
         },
+        {
+            name: "api.airforce",
+            url: "https://api.airforce/",
+            description:
+                "AI API gateway — alpha models (imagen-4, grok-video, qwen-character)",
+        },
     ],
 
     // Top Contributors section

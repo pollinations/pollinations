@@ -1,0 +1,50 @@
+{
+  "date": "2026-01-19",
+  "generated_at": "2026-01-19T16:11:16.563755+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art_carousel",
+  "linked_images": false,
+  "strategy_reasoning": "Using a retro 'New Item Acquired' gaming theme fits the 8-bit visual identity perfectly. The 'NomNom' model naturally lends itself to a cute character design (eating data/web scraping), while the 167 PRs can be visualized as a 'High Score' to celebrate community momentum without being boringly technical.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%208-bit%20pixel%20art%20close-up%20of%20a%20cute%2C%20round%2C%20hungry%20pixel%20creature%20%28the%20%27NomNom%27%20model%29%20munching%20on%20a%20pixelated%20webpage%20leaf.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20gradient%20background.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20aesthetic.%20Pixel%20text%20bubble%20says%20%27NOMNOM%27.%20Wholesome%20and%20nostalgic.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=170257462",
+      "prompt": "Cozy 8-bit pixel art close-up of a cute, round, hungry pixel creature (the 'NomNom' model) munching on a pixelated webpage leaf. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic. Pixel text bubble says 'NOMNOM'. Wholesome and nostalgic.",
+      "description": "Introduces the new NomNom model as a cute character."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%20game%20UI%20%27Level%20Complete%27%20screen%20in%20cozy%20pixel%20art.%20Large%20golden%20pixel%20numbers%20%27167%20PRs%27%20floating%20in%20the%20center.%20Background%20is%20a%20pixelated%20garden%20in%20soft%20mint%20and%20peach%20pastels.%20Tiny%208-bit%20bees%20flying%20around.%20Lime%20green%20accents.%20Celebrate%20growth%20and%20open%20source%20activity.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=2127860041",
+      "prompt": "Retro game UI 'Level Complete' screen in cozy pixel art. Large golden pixel numbers '167 PRs' floating in the center. Background is a pixelated garden in soft mint and peach pastels. Tiny 8-bit bees flying around. Lime green accents. Celebrate growth and open source activity.",
+      "description": "Visualizes the massive weekly update (167 PRs) as a gaming high score."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20scene%20of%20a%20tiny%208-bit%20gardener%20character%20fixing%20a%20small%20wooden%20fence%20%28symbolizing%20the%20BYOD%20validation%20fix%29.%20Soft%20pastel%20sunset%20background%20with%20lime%20green%20grass.%20Cozy%2C%20calm%20vibes%20like%20the%20game%20Unpacking.%20Text%20%27BUGS%20SQUASHED%27%20in%20retro%20font%20at%20bottom.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=417409870",
+      "prompt": "Pixel art scene of a tiny 8-bit gardener character fixing a small wooden fence (symbolizing the BYOD validation fix). Soft pastel sunset background with lime green grass. Cozy, calm vibes like the game Unpacking. Text 'BUGS SQUASHED' in retro font at bottom.",
+      "description": "Highlights the bug fixes and validation improvements in a friendly way."
+    }
+  ],
+  "caption": "New character unlocked: NOMNOM! 👾🍃\n\nWe just dropped the new `nomnom` model (aka gemini-scrape) for all your web-munching, research, and crawling needs. It's hungry for data so you don't have to be. 🍽️\n\nPLUS: We smashed a massive 167 PRs this week! 🤯 The digital garden is blooming like crazy.\n\nUpdates:\n✨ New Model: NomNom (Web Scrape)\n🛠️ Fixed BYOD name validation (no more fence errors)\n📈 167 merged PRs in one week\n\nCheck the full changelog in our bio! Open source & free forever. 🌸\n\n#pollinations #opensource #pixelart #indiedev #aiart #webscraping #buildinpublic #retrogaming #cozyvibes #8bit",
+  "hashtags": [
+    "#pollinations",
+    "#aiart",
+    "#opensource",
+    "#pixelart",
+    "#retrogaming",
+    "#indiedev",
+    "#8bit",
+    "#nomnom",
+    "#generativeai",
+    "#cozyvibes"
+  ],
+  "alt_text": "Carousel of cozy pixel art images. 1. A cute pixel creature named NomNom eating a digital leaf against a lime green background. 2. A retro game score screen showing 167 PRs in a pixel garden. 3. A tiny pixel gardener fixing a fence to represent bug fixes.",
+  "pr_references": [
+    "#7457",
+    "#7456",
+    "#7430",
+    "#7439",
+    "#7438",
+    "#7437",
+    "#7355",
+    "#7431"
+  ]
+}

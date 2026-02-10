@@ -1,0 +1,50 @@
+{
+  "date": "2026-01-30",
+  "generated_at": "2026-01-30T16:13:01.368807+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art",
+  "linked_images": true,
+  "strategy_reasoning": "Translating technical backend updates (GPUs, dependency removal, refactoring) into a cozy 'Spring Cleaning & Level Up' narrative fits the Stardew Valley/Unpacking aesthetic perfectly. It makes infrastructure changes feel like satisfying gameplay progression.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20title%20screen.%20A%20cute%208-bit%20computer%20monitor%20sitting%20on%20a%20wooden%20desk%20with%20a%20small%20potted%20plant.%20The%20screen%20glows%20with%20soft%20lime%20green%20%28%23ecf874%29%20text.%20Soft%20lavender%20and%20peach%20gradient%20background.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20vibes%20like%20Unpacking.%20Text%20on%20screen%20in%20pixel%20font%3A%20%27WEEKLY%20LEVEL%20UP%27.%20Nostalgic%2C%20clean%2C%20emotionally%20warm.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1756553855",
+      "prompt": "Cozy pixel art title screen. A cute 8-bit computer monitor sitting on a wooden desk with a small potted plant. The screen glows with soft lime green (#ecf874) text. Soft lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Unpacking. Text on screen in pixel font: 'WEEKLY LEVEL UP'. Nostalgic, clean, emotionally warm.",
+      "description": "Cover image setting the cozy dev-log vibe."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20scene%20of%20a%20tiny%208-bit%20bee%20character%20lifting%20a%20glowing%20server%20rack%20that%20looks%20like%20a%20treasure%20chest.%20Representing%208x%20L40%20GPUs.%20Soft%20mint%20green%20and%20lime%20green%20%28%23ecf874%29%20background.%20Chunky%20pixels%2C%20warm%20lighting%2C%20magical%20sparkles.%20Like%20a%20power-up%20in%20a%20retro%20game.%20Cozy%2C%20cute%2C%20powerful.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1953353618",
+      "prompt": "Pixel art scene of a tiny 8-bit bee character lifting a glowing server rack that looks like a treasure chest. Representing 8x L40 GPUs. Soft mint green and lime green (#ecf874) background. Chunky pixels, warm lighting, magical sparkles. Like a power-up in a retro game. Cozy, cute, powerful.",
+      "description": "Visualizing the massive GPU upgrade as a cute character gaining a power-up."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%20RPG%20inventory%20screen%20UI.%20A%20pixel%20hand%20selecting%20a%20%27Cleanup%27%20broom%20icon.%20Removing%20an%20item%20labeled%20%27Nix%27.%20The%20inventory%20looks%20organized%20and%20clean.%20Soft%20pastel%20colors%2C%20lime%20green%20%28%23ecf874%29%20selection%20border.%20Cozy%20vibes%20like%20Stardew%20Valley%20menu.%20Satisfying%20organization.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1020855124",
+      "prompt": "Retro RPG inventory screen UI. A pixel hand selecting a 'Cleanup' broom icon. Removing an item labeled 'Nix'. The inventory looks organized and clean. Soft pastel colors, lime green (#ecf874) selection border. Cozy vibes like Stardew Valley menu. Satisfying organization.",
+      "description": "Visualizing the removal of Nix dependency as inventory management/cleanup."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20glowing%20magical%20pixel%20art%20banana%20floating%20in%20the%20center.%20It%20represents%20the%20%27nanobanana%27%20model.%20Sparkles%20and%20soft%20light%20beams%20around%20it.%20Lavender%20and%20lime%20green%20%28%23ecf874%29%20gradient%20background.%20Chunky%208-bit%20style%2C%20cute%20and%20funny.%20Retro%20gaming%20item%20pickup%20aesthetic.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1738349262",
+      "prompt": "A glowing magical pixel art banana floating in the center. It represents the 'nanobanana' model. Sparkles and soft light beams around it. Lavender and lime green (#ecf874) gradient background. Chunky 8-bit style, cute and funny. Retro gaming item pickup aesthetic.",
+      "description": "Highlighting the switch to the 'nanobanana' model with a literal pixel banana."
+    }
+  ],
+  "caption": "Dev log updated! 👾✨ We've been doing some digital gardening and the harvest is looking good. \n\nHere’s what’s new in the patch notes:\n\n🔋 **Power Up:** Deployed new primary instances with 8x L40 GPUs. The engine is purring.\n🧹 **Spring Cleaning:** Removed Nix dependency. Keeping the dev setup clean and minimal like a fresh save file.\n🍌 **Model Swaps:** Switched to 'nanobanana' for better efficiency. Yes, it's really called that.\n\nBuilding in the open, one pixel at a time. 🌱\n\n#pollinations #opensource #pixelart #indiedev #buildinpublic #cozyvibes #8bit #devlog",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#indiedev",
+    "#buildinpublic",
+    "#cozyvibes",
+    "#8bit",
+    "#devlog",
+    "#aiart"
+  ],
+  "alt_text": "A carousel of cozy 8-bit pixel art images showing a computer workspace, a bee lifting a server rack, a retro inventory screen, and a glowing magical banana.",
+  "pr_references": [
+    "#7799",
+    "#7794",
+    "#7789",
+    "#7787"
+  ]
+}

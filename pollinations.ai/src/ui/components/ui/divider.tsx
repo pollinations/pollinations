@@ -11,7 +11,7 @@ import { cn } from "../../../utils";
 // Examples:
 // - HelloPage: Between major sections (Pollen, Get Pollen, Tiers, etc.)
 // - CommunityPage: Between community info and supporters
-// - DocsPage: Between API sections
+// - PlayPage: Between generate and integrate sections
 //
 // Spacing variants control vertical margin above/below
 // ============================================

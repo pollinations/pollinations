@@ -146,7 +146,6 @@ function PlayPage() {
                         <PlayGenerator
                             selectedModel={selectedModel}
                             prompt={prompt}
-                            onPromptChange={setPrompt}
                             imageModels={imageModels}
                             textModels={textModels}
                             audioModels={audioModels}

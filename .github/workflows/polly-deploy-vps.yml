@@ -30,13 +30,12 @@ jobs:
             set -e
             echo "🦜 Deploying Polly bot..."
 
-            cd ~/pollinations
+            cd /home/Polly
 
             # Pull with fast-forward only (fail if merge conflicts)
             git pull --ff-only origin main
 
-            cd apps/polly
-
+            source venv/bin/activate
             # Install dependencies
             pip install -r requirements.txt --quiet
 

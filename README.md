@@ -323,6 +323,14 @@ pollinations.ai envisions a future where AI technology is:
 
 We're committed to developing AI technology that serves humanity while respecting ethical boundaries and promoting responsible innovation. Join us in shaping the future of AI.
 
+<!-- Additional Contributors Section -->
+### Active Supporters & Contributors
+
+We're grateful to everyone supporting our open-source AI ecosystem:
+
+- [DrTechn](https://github.com/DrTechn) - Testing tier upgrade process and contributing to documentation.
+<!-- End of Additional Contributors -->
+
 ## 🤝 Community and Development
 
 We believe in community-driven development. You can contribute to pollinations.ai in several ways:

@@ -33,14 +33,16 @@ from common import (
     commit_image_to_branch,
     get_file_sha,
     get_merged_prs,
+    github_api_request,
     GITHUB_API_BASE,
+    IMAGE_SIZE,
+    DEFAULT_TIMEOUT,
 )
 
 # ── Constants ────────────────────────────────────────────────────────
 
 DAILY_REL_DIR = "social/news/daily"
 WEEKLY_REL_DIR = "social/news/weekly"
-IMAGE_SIZE = 2048
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
@@ -107,7 +109,8 @@ def read_daily_summaries(week_start: str, week_end: str, github_token: str,
                 "Accept": "application/vnd.github+json",
                 "Authorization": f"Bearer {github_token}",
             }
-            resp = requests.get(
+            resp = github_api_request(
+                "GET",
                 f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{api_path}",
                 headers=headers,
             )
@@ -218,6 +221,28 @@ def generate_instagram_post(digest: Dict, token: str) -> Optional[Dict]:
     return parse_json_response(response)
 
 
+def generate_reddit_post(digest: Dict, token: str) -> Optional[Dict]:
+    """Generate weekly reddit.json using the existing Reddit system prompt."""
+    pr_summary = digest.get("pr_summary", "")
+    system_template = load_prompt("reddit", "system")
+    system_prompt = system_template.replace("{pr_summary}", pr_summary)
+
+    arc_titles = [a["headline"] for a in digest.get("arcs", [])]
+    user_prompt = (
+        f"Create a Reddit post for this week's update based on these highlights:\n"
+        f"{chr(10).join('- ' + t for t in arc_titles)}\n\n"
+        f"Follow the Output Format specified above. Return ONLY the JSON object."
+    )
+
+    response = call_pollinations_api(
+        system_prompt, user_prompt, token,
+        temperature=0.7, exit_on_failure=False
+    )
+    if not response:
+        return None
+    return parse_json_response(response)
+
+
 def generate_discord_post(digest: Dict, token: str, week_end: str) -> Optional[Dict]:
     """Generate weekly discord.json using existing Discord weekly prompt."""
     system_prompt = load_prompt("discord", "weekly_news_system")
@@ -258,6 +283,7 @@ def generate_platform_images(
     owner: str,
     repo: str,
     branch: str,
+    reddit_post: Optional[Dict] = None,
 ) -> None:
     """Generate images for all platforms and commit to branch."""
     image_dir = f"{WEEKLY_REL_DIR}/{week_end}/images"
@@ -286,9 +312,9 @@ def generate_platform_images(
             if url:
                 linkedin_post["image"] = {"url": url, "prompt": linkedin_post["image_prompt"]}
 
-    # Instagram: 3 images
+    # Instagram: up to 3 images (carousel)
     if instagram_post and instagram_post.get("images"):
-        for i, img_info in enumerate(instagram_post["images"][:5]):
+        for i, img_info in enumerate(instagram_post["images"][:3]):
             prompt = img_info.get("prompt", "")
             if not prompt:
                 continue
@@ -302,6 +328,18 @@ def generate_platform_images(
                 if url:
                     img_info["url"] = url
             time.sleep(3)
+
+    # Reddit: 1 image
+    if reddit_post and reddit_post.get("image_prompt"):
+        print("  Generating Reddit image...")
+        img_bytes, _ = generate_image(reddit_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
+        if img_bytes:
+            url = commit_image_to_branch(
+                img_bytes, f"{image_dir}/reddit.jpg", branch,
+                github_token, owner, repo
+            )
+            if url:
+                reddit_post["image"] = {"url": url, "prompt": reddit_post["image_prompt"]}
 
 
 # ── Step 4: Create PR ───────────────────────────────────────────────
@@ -317,6 +355,7 @@ def create_weekly_pr(
     github_token: str,
     owner: str,
     repo: str,
+    reddit_post: Optional[Dict] = None,
 ) -> Optional[int]:
     """Create a single PR with all weekly files."""
     headers = {
@@ -325,7 +364,8 @@ def create_weekly_pr(
     }
 
     # Get base SHA
-    ref_resp = requests.get(
+    ref_resp = github_api_request(
+        "GET",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/ref/heads/main",
         headers=headers,
     )
@@ -336,7 +376,8 @@ def create_weekly_pr(
 
     # Create branch
     branch = f"weekly-digest-{week_end}"
-    create_resp = requests.post(
+    create_resp = github_api_request(
+        "POST",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/refs",
         headers=headers,
         json={"ref": f"refs/heads/{branch}", "sha": base_sha},
@@ -356,6 +397,7 @@ def create_weekly_pr(
         twitter_post, linkedin_post, instagram_post,
         week_end, pollinations_token,
         github_token, owner, repo, branch,
+        reddit_post=reddit_post,
     )
 
     # Prepare files
@@ -372,6 +414,7 @@ def create_weekly_pr(
         ("twitter", twitter_post, "twitter.json"),
         ("linkedin", linkedin_post, "linkedin.json"),
         ("instagram", instagram_post, "instagram.json"),
+        ("reddit", reddit_post, "reddit.json"),
         ("discord", discord_post, "discord.json"),
     ]:
         if not post:
@@ -406,7 +449,8 @@ def create_weekly_pr(
         if sha:
             payload["sha"] = sha
 
-        resp = requests.put(
+        resp = github_api_request(
+            "PUT",
             f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
             headers=headers,
             json=payload,
@@ -440,7 +484,8 @@ Generated automatically by GitHub Actions.
 """
 
     # Create PR
-    pr_resp = requests.post(
+    pr_resp = github_api_request(
+        "POST",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls",
         headers=headers,
         json={
@@ -453,13 +498,15 @@ Generated automatically by GitHub Actions.
 
     if pr_resp.status_code not in [200, 201]:
         if "A pull request already exists" in pr_resp.text:
-            list_resp = requests.get(
+            list_resp = github_api_request(
+                "GET",
                 f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=open",
                 headers=headers,
             )
             if list_resp.status_code == 200 and list_resp.json():
                 existing = list_resp.json()[0]
-                requests.patch(
+                github_api_request(
+                    "PATCH",
                     f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls/{existing['number']}",
                     headers=headers,
                     json={"title": f"Weekly Digest — {week_start} to {week_end}", "body": pr_body},
@@ -477,7 +524,8 @@ Generated automatically by GitHub Actions.
     pr_labels = get_env("PR_LABELS", required=False)
     if pr_labels:
         labels_list = [l.strip() for l in pr_labels.split(",")]
-        requests.post(
+        github_api_request(
+            "POST",
             f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_number}/labels",
             headers=headers,
             json={"labels": labels_list},
@@ -531,6 +579,9 @@ def main():
     print("  Instagram...")
     instagram_post = generate_instagram_post(digest, pollinations_token)
 
+    print("  Reddit...")
+    reddit_post = generate_reddit_post(digest, pollinations_token)
+
     print("  Discord...")
     discord_post = generate_discord_post(digest, pollinations_token, week_end)
 
@@ -540,6 +591,7 @@ def main():
         week_start, week_end, digest,
         twitter_post, linkedin_post, instagram_post, discord_post,
         github_token, owner, repo,
+        reddit_post=reddit_post,
     )
 
     if pr_number:

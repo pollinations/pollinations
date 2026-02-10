@@ -35,15 +35,17 @@ from common import (
     read_gists_for_date,
     get_merged_prs,
     format_pr_summary,
+    github_api_request,
     GITHUB_API_BASE,
+    OWNER,
+    REPO,
+    IMAGE_SIZE,
+    DEFAULT_TIMEOUT,
 )
 
 # ── Constants ────────────────────────────────────────────────────────
 
-OWNER = "pollinations"
-REPO = "pollinations"
 DAILY_REL_DIR = "social/news/daily"
-IMAGE_SIZE = 2048
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
@@ -288,9 +290,9 @@ def generate_platform_images(
                 urls["linkedin"].append(url)
                 linkedin_post["image"] = {"url": url, "prompt": linkedin_post["image_prompt"]}
 
-    # Instagram: 3 images (carousel)
+    # Instagram: up to 3 images (carousel)
     if instagram_post and instagram_post.get("images"):
-        for i, img_info in enumerate(instagram_post["images"][:5]):
+        for i, img_info in enumerate(instagram_post["images"][:3]):
             prompt = img_info.get("prompt", "")
             if not prompt:
                 continue
@@ -343,7 +345,8 @@ def create_daily_pr(
     }
 
     # Get base SHA
-    ref_resp = requests.get(
+    ref_resp = github_api_request(
+        "GET",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/ref/heads/main",
         headers=headers,
     )
@@ -354,7 +357,8 @@ def create_daily_pr(
 
     # Create branch
     branch = f"daily-summary-{date_str}"
-    create_resp = requests.post(
+    create_resp = github_api_request(
+        "POST",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/refs",
         headers=headers,
         json={"ref": f"refs/heads/{branch}", "sha": base_sha},
@@ -429,7 +433,8 @@ def create_daily_pr(
         if sha:
             payload["sha"] = sha
 
-        resp = requests.put(
+        resp = github_api_request(
+            "PUT",
             f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
             headers=headers,
             json=payload,
@@ -490,7 +495,8 @@ Generated automatically by GitHub Actions.
 """
 
     # Create PR
-    pr_resp = requests.post(
+    pr_resp = github_api_request(
+        "POST",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls",
         headers=headers,
         json={
@@ -504,13 +510,15 @@ Generated automatically by GitHub Actions.
     if pr_resp.status_code not in [200, 201]:
         if "A pull request already exists" in pr_resp.text:
             # Update existing PR
-            list_resp = requests.get(
+            list_resp = github_api_request(
+                "GET",
                 f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=open",
                 headers=headers,
             )
             if list_resp.status_code == 200 and list_resp.json():
                 existing = list_resp.json()[0]
-                requests.patch(
+                github_api_request(
+                    "PATCH",
                     f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls/{existing['number']}",
                     headers=headers,
                     json={"title": f"Daily Summary — {date_str}", "body": pr_body},
@@ -530,7 +538,8 @@ Generated automatically by GitHub Actions.
     pr_labels = get_env("PR_LABELS", required=False)
     if pr_labels:
         labels_list = [l.strip() for l in pr_labels.split(",")]
-        requests.post(
+        github_api_request(
+            "POST",
             f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_number}/labels",
             headers=headers,
             json={"labels": labels_list},

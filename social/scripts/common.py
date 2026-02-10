@@ -30,6 +30,14 @@ WEBSEARCH_MODEL = "perplexity-reasoning"  # Web search model (used by Instagram)
 MAX_SEED = 2147483647
 MAX_RETRIES = 3
 INITIAL_RETRY_DELAY = 2
+DEFAULT_TIMEOUT = 30  # seconds for GitHub API / general requests
+
+# Repository constants
+OWNER = "pollinations"
+REPO = "pollinations"
+
+# Image generation
+IMAGE_SIZE = 2048
 
 # Discord-specific
 DISCORD_CHAR_LIMIT = 2000
@@ -42,6 +50,35 @@ SHARED_PROMPTS_DIR = PROMPTS_DIR / "_shared"
 
 # Cache for shared prompts (loaded once)
 _shared_prompts_cache: Dict[str, str] = {}
+
+
+def github_api_request(
+    method: str,
+    url: str,
+    headers: Dict,
+    timeout: int = None,
+    max_retries: int = 3,
+    **kwargs,
+) -> requests.Response:
+    """Make a GitHub API request with retry on transient failures (5xx, 429)."""
+    _timeout = timeout or DEFAULT_TIMEOUT
+    last_exc = None
+    for attempt in range(max_retries):
+        try:
+            resp = requests.request(method, url, headers=headers, timeout=_timeout, **kwargs)
+            if resp.status_code < 500 and resp.status_code != 429:
+                return resp
+            print(f"  GitHub API {resp.status_code} on attempt {attempt + 1}/{max_retries}")
+        except requests.exceptions.RequestException as e:
+            last_exc = e
+            print(f"  GitHub API request error on attempt {attempt + 1}/{max_retries}: {e}")
+        if attempt < max_retries - 1:
+            delay = INITIAL_RETRY_DELAY * (2 ** attempt)
+            time.sleep(delay)
+    # Return last response if we have one, otherwise raise
+    if last_exc:
+        raise last_exc
+    return resp
 
 
 def get_repo_root() -> str:
@@ -206,11 +243,12 @@ def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> L
     while True:
         variables = {"owner": owner, "repo": repo, "cursor": cursor}
 
-        response = requests.post(
+        response = github_api_request(
+            "POST",
             GITHUB_GRAPHQL_API,
             headers=headers,
             json={"query": query, "variables": variables},
-            timeout=60
+            timeout=60,
         )
 
         if response.status_code != 200:
@@ -484,6 +522,7 @@ def commit_image_to_branch(
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
         headers=headers,
         json=payload,
+        timeout=DEFAULT_TIMEOUT,
     )
 
     if resp.status_code in [200, 201]:
@@ -504,7 +543,8 @@ def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branc
 
     response = requests.get(
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={branch}",
-        headers=headers
+        headers=headers,
+        timeout=DEFAULT_TIMEOUT,
     )
 
     if response.status_code == 200:
@@ -639,6 +679,7 @@ def commit_gist_to_main(gist: Dict, github_token: str, owner: str, repo: str) ->
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
         headers=headers,
         json=payload,
+        timeout=DEFAULT_TIMEOUT,
     )
 
     if resp.status_code in [200, 201]:

@@ -31,13 +31,11 @@ from common import (
     commit_gist_to_main,
     GITHUB_API_BASE,
     MODEL,
+    OWNER,
+    REPO,
     DISCORD_CHAR_LIMIT,
+    DEFAULT_TIMEOUT,
 )
-
-# ── Constants ────────────────────────────────────────────────────────
-
-REPO_OWNER = "pollinations"
-REPO_NAME = "pollinations"
 
 
 # ── GitHub helpers ───────────────────────────────────────────────────
@@ -50,7 +48,7 @@ def fetch_pr_data(repo: str, pr_number: str, token: str) -> Dict:
         "X-GitHub-Api-Version": "2022-11-28",
     }
     url = f"{GITHUB_API_BASE}/repos/{repo}/pulls/{pr_number}"
-    resp = requests.get(url, headers=headers)
+    resp = requests.get(url, headers=headers, timeout=DEFAULT_TIMEOUT)
     if resp.status_code != 200:
         print(f"GitHub API error: {resp.status_code} {resp.text[:300]}")
         sys.exit(1)
@@ -67,7 +65,7 @@ def fetch_pr_files(repo: str, pr_number: str, token: str) -> str:
     page = 1
     while True:
         url = f"{GITHUB_API_BASE}/repos/{repo}/pulls/{pr_number}/files?per_page=100&page={page}"
-        resp = requests.get(url, headers=headers)
+        resp = requests.get(url, headers=headers, timeout=DEFAULT_TIMEOUT)
         if resp.status_code != 200:
             break
         files = resp.json()
@@ -97,6 +95,8 @@ def analyze_pr(pr_data: Dict, files_summary: str, token: str) -> Optional[Dict]:
     system_prompt = load_prompt("_shared", "pr_analyzer")
 
     # Build user prompt with PR context
+    # Trust boundary: PR body comes from merged PRs (requires repo write access),
+    # not arbitrary user input. Truncated to 2000 chars as a size guard.
     labels = [l["name"] for l in pr_data.get("labels", [])]
     body = pr_data.get("body") or ""
     user_prompt = f"""PR #{pr_data['number']}: {pr_data['title']}

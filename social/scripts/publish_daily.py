@@ -66,7 +66,8 @@ def find_daily_date_from_pr(github_token: str, repo: str, pr_number: int) -> Opt
         # Match social/news/daily/YYYY-MM-DD/anything
         if filename.startswith(f"{DAILY_DIR}/"):
             parts = filename.split("/")
-            if len(parts) >= 4:
+            # Expected: social/news/daily/YYYY-MM-DD/file.json → parts[3] = date
+            if len(parts) >= 5:
                 return parts[3]  # YYYY-MM-DD
     return None
 
@@ -241,6 +242,7 @@ def update_highlights(
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{HIGHLIGHTS_PATH}",
         headers=headers,
         json=payload,
+        timeout=30,
     )
     if resp.status_code in [200, 201]:
         print(f"  Updated {HIGHLIGHTS_PATH}")
@@ -288,6 +290,7 @@ def update_readme(github_token: str, owner: str, repo: str) -> bool:
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{README_PATH}",
         headers=headers,
         json=payload,
+        timeout=30,
     )
     if resp.status_code in [200, 201]:
         print(f"  Updated README.md")

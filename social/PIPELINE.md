@@ -458,22 +458,22 @@ Weekly adds ~3 AI calls + ~5 image gens on Sundays. Net weekly savings: ~35-45 f
 
 | File | Role |
 |---|---|
-| `social/scripts/common.py` | Extend with `read_gists_for_date()`, `read_daily_summaries()`, `commit_json_to_main()`, `validate_gist_schema()` |
-| `social/scripts/discord_post_merged_pr.py` | Primary reference for gist generator (PR fetching, Discord posting, image gen) |
-| `social/scripts/twitter_generate_post.py` | Reference for platform post JSON schema |
-| `social/scripts/buffer_stage_post.py` | Update path detection for new `daily/` + `weekly/` structure |
-| `social/buffer-schedule.yml` | Add weekly Monday 08:00 UTC delivery slot for all platforms |
+| `social/scripts/common.py` | Shared utilities: prompt loading, API calls, gist I/O, retry logic, constants |
+| `social/scripts/buffer_stage_post.py` | Buffer API staging with scheduled delivery |
+| `social/buffer-schedule.yml` | Delivery schedule for all platforms |
 
-## New Prompts
+## Prompts
+
+All shared prompts live in `social/prompts/_shared/`:
 
 ```
-social/prompts/
-  gist/
-    system.md              # "Analyze this PR, produce structured gist JSON"
-  daily/
-    summary_system.md      # "Cluster related PRs into 3-5 narrative arcs, synthesize don't list"
-    platform_system.md     # "Generate platform-specific posts from daily summary"
-    diary_system.md        # "Generate 8-bit diary entry from gists"
-  weekly/
-    digest_system.md       # "Synthesize weekly themes from daily summaries — weave recurring arcs, don't concatenate"
+social/prompts/_shared/
+  brand_about.md           # Company description, injected as {about}
+  brand_visual.md          # Pixel art style guide, injected as {visual_style}
+  pr_analyzer.md           # Tier 1: Analyze PR → structured gist JSON
+  daily_summary.md         # Tier 2: Cluster gists into 3-5 narrative arcs
+  daily_diary.md           # Tier 2: Whimsical pixel art dev diary entries
+  weekly_summary.md        # Tier 3: Synthesize weekly recap from dailies
 ```
+
+Per-platform prompts in `social/prompts/{platform}/` (twitter, linkedin, instagram, reddit, discord, github).

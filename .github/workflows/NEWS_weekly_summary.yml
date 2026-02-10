@@ -5,7 +5,7 @@ on:
     - cron: '0 0 * * 0'  # Sunday 00:00 UTC
   workflow_dispatch:
     inputs:
-      week_start_date:
+      target_date:
         description: 'Week start date (Monday, YYYY-MM-DD). Defaults to current week.'
         required: false
         type: string
@@ -43,6 +43,6 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          WEEK_START_DATE: ${{ github.event.inputs.week_start_date || '' }}
+          WEEK_START_DATE: ${{ github.event.inputs.target_date || '' }}
           PR_LABELS: 'social,weekly-summary'
         run: python social/scripts/generate_weekly_summary.py

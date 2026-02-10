@@ -58,6 +58,7 @@ def find_merged_weekly_pr(github_token: str, owner: str, repo: str,
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls"
         f"?head={owner}:{branch}&state=closed&per_page=5",
         headers=headers,
+        timeout=30,
     )
 
     if resp.status_code != 200:
@@ -90,6 +91,7 @@ def read_weekly_file(path: str, github_token: str, owner: str, repo: str) -> Opt
     resp = requests.get(
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{path}",
         headers=headers,
+        timeout=30,
     )
     if resp.status_code == 200:
         content = base64.b64decode(resp.json()["content"]).decode()
@@ -114,11 +116,11 @@ def chunk_message(message: str, max_length: int = DISCORD_CHUNK_SIZE):
         chunk = remaining[:max_length]
         # Split at paragraph break
         split = chunk.rfind("\n\n")
-        if split > max_length * 0.5:
+        if split >= max_length * 0.5:
             split_point = split + 2
         else:
             split = chunk.rfind("\n")
-            if split > max_length * 0.5:
+            if split >= max_length * 0.5:
                 split_point = split + 1
             else:
                 split_point = max_length
@@ -131,7 +133,7 @@ def post_to_discord(webhook_url: str, message: str) -> bool:
     """Post weekly summary to Discord. Returns True on success."""
     chunks = chunk_message(message)
     for i, chunk in enumerate(chunks):
-        resp = requests.post(webhook_url, json={"content": chunk})
+        resp = requests.post(webhook_url, json={"content": chunk}, timeout=30)
         if resp.status_code not in [200, 204]:
             print(f"  Discord error on chunk {i+1}: {resp.status_code} {resp.text[:200]}")
             return False

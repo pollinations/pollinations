@@ -24,9 +24,9 @@ See [PIPELINE.md](PIPELINE.md) for the full design document.
 | | Twitter/X | LinkedIn | Instagram | Reddit | Discord |
 |---|---|---|---|---|---|
 | **Daily** | Buffer 17:00 UTC | Buffer 14:00 UTC (Wed+Fri) | Buffer 15:00 UTC | Reddit API (immediate) | Per-PR (immediate) |
-| **Weekly** | Buffer Mon 08:00 | Buffer Mon 08:00 | Buffer Mon 08:00 | -- | Webhook Mon 08:00 |
+| **Weekly** | Buffer Mon 08:00 | Buffer Mon 08:00 | Buffer Mon 08:00 | Reddit API (immediate) | Webhook Mon 08:00 |
 | **Review** | Yes (daily PR) | Yes (daily PR) | Yes (daily PR) | Yes (daily PR) | No (automatic) |
-| **Images** | 1 per post | 1 per post | 3-5 carousel | 1 per post | 1 per PR |
+| **Images** | 1 per post | 1 per post | up to 5 carousel | 1 per post | 1 per PR |
 | **Model** | `nanobanana-pro` | `nanobanana-pro` | `nanobanana-pro` | `nanobanana-pro` | `nanobanana-pro` |
 
 ## Workflows
@@ -88,16 +88,17 @@ social/news/
 ├── daily/YYYY-MM-DD/                    # Tier 2: daily posts
 │   ├── summary.json                     #   narrative arcs
 │   ├── diary.json                       #   dev diary
-│   ├── twitter.json, linkedin.json      #   platform posts
-│   ├── instagram.json, reddit.json      #   platform posts
+│   ├── twitter.json, linkedin.json      #   platform posts (generated per day)
+│   ├── instagram.json, reddit.json      #   platform posts (generated per day)
 │   └── images/                          #   generated images
 │       ├── twitter.jpg, linkedin.jpg
-│       ├── instagram-{1,2,3}.jpg
+│       ├── instagram-{1..3}.jpg         #   up to 3 carousel images
 │       └── reddit.jpg
 ├── weekly/YYYY-MM-DD/                   # Tier 3: weekly posts
 │   ├── summary.md                       #   changelog
 │   ├── twitter.json, linkedin.json      #   platform posts
-│   ├── instagram.json, discord.json     #   platform posts
+│   ├── instagram.json, reddit.json      #   platform posts
+│   ├── discord.json                     #   platform posts
 │   └── images/                          #   generated images
 ├── highlights.md                        # Curated highlights (updated on daily publish)
 └── LINKS.md                             # Official link collection

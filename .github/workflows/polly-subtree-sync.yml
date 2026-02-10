@@ -26,7 +26,7 @@ jobs:
 
       - name: Add Polly remote
         run: |
-          git remote add polly https://github.com/Itachi-1824/Polly.git@${{ secrets.POLLI_ORIGINAL_ACCESS_TOKEN }}
+          git remote add polly https://x-access-token:${{ secrets.POLLI_ORIGINAL_ACCESS_TOKEN }}@github.com/Itachi-1824/Polly.git
 
       - name: Fetch Polly repo
         run: |
@@ -36,7 +36,7 @@ jobs:
         id: subtree
         continue-on-error: true
         run: |
-          git subtree pull --prefix apps/polly polly main --squash
+          git subtree pull --prefix apps/polly polly main
           echo "exit_code=$?" >> $GITHUB_OUTPUT
 
       - name: Check if there are changes

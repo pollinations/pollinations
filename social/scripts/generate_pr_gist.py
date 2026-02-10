@@ -29,6 +29,7 @@ from common import (
     build_minimal_gist,
     gist_path_for_pr,
     commit_gist_to_main,
+    github_api_request,
     GITHUB_API_BASE,
     MODEL,
     OWNER,
@@ -48,7 +49,7 @@ def fetch_pr_data(repo: str, pr_number: str, token: str) -> Dict:
         "X-GitHub-Api-Version": "2022-11-28",
     }
     url = f"{GITHUB_API_BASE}/repos/{repo}/pulls/{pr_number}"
-    resp = requests.get(url, headers=headers, timeout=DEFAULT_TIMEOUT)
+    resp = github_api_request("GET", url, headers=headers)
     if resp.status_code != 200:
         print(f"GitHub API error: {resp.status_code} {resp.text[:300]}")
         sys.exit(1)
@@ -65,7 +66,7 @@ def fetch_pr_files(repo: str, pr_number: str, token: str) -> str:
     page = 1
     while True:
         url = f"{GITHUB_API_BASE}/repos/{repo}/pulls/{pr_number}/files?per_page=100&page={page}"
-        resp = requests.get(url, headers=headers, timeout=DEFAULT_TIMEOUT)
+        resp = github_api_request("GET", url, headers=headers)
         if resp.status_code != 200:
             break
         files = resp.json()

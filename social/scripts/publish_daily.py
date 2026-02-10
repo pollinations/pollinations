@@ -19,7 +19,7 @@ import requests
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
-from common import get_env, GITHUB_API_BASE
+from common import get_env, github_api_request, GITHUB_API_BASE
 from buffer_stage_post import (
     publish_twitter_post,
     publish_linkedin_post,
@@ -53,10 +53,10 @@ def find_daily_date_from_pr(github_token: str, repo: str, pr_number: int) -> Opt
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {github_token}",
     }
-    resp = requests.get(
+    resp = github_api_request(
+        "GET",
         f"{GITHUB_API_BASE}/repos/{repo}/pulls/{pr_number}/files",
         headers=headers,
-        timeout=30,
     )
     if resp.status_code != 200:
         return None
@@ -238,11 +238,11 @@ def update_highlights(
     if sha:
         payload["sha"] = sha
 
-    resp = requests.put(
+    resp = github_api_request(
+        "PUT",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{HIGHLIGHTS_PATH}",
         headers=headers,
         json=payload,
-        timeout=30,
     )
     if resp.status_code in [200, 201]:
         print(f"  Updated {HIGHLIGHTS_PATH}")
@@ -286,11 +286,11 @@ def update_readme(github_token: str, owner: str, repo: str) -> bool:
         "branch": "main",
         "sha": readme_sha,
     }
-    resp = requests.put(
+    resp = github_api_request(
+        "PUT",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{README_PATH}",
         headers=headers,
         json=payload,
-        timeout=30,
     )
     if resp.status_code in [200, 201]:
         print(f"  Updated README.md")

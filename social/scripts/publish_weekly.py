@@ -19,7 +19,7 @@ import requests
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Optional
 
-from common import get_env, GITHUB_API_BASE, DISCORD_CHAR_LIMIT
+from common import get_env, github_api_request, GITHUB_API_BASE, DISCORD_CHAR_LIMIT
 from buffer_stage_post import (
     publish_twitter_post,
     publish_linkedin_post,
@@ -54,11 +54,11 @@ def find_merged_weekly_pr(github_token: str, owner: str, repo: str,
     }
 
     # Search for closed PRs from this branch
-    resp = requests.get(
+    resp = github_api_request(
+        "GET",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls"
         f"?head={owner}:{branch}&state=closed&per_page=5",
         headers=headers,
-        timeout=30,
     )
 
     if resp.status_code != 200:
@@ -88,10 +88,10 @@ def read_weekly_file(path: str, github_token: str, owner: str, repo: str) -> Opt
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {github_token}",
     }
-    resp = requests.get(
+    resp = github_api_request(
+        "GET",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{path}",
         headers=headers,
-        timeout=30,
     )
     if resp.status_code == 200:
         content = base64.b64decode(resp.json()["content"]).decode()

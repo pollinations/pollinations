@@ -75,9 +75,10 @@ def github_api_request(
         if attempt < max_retries - 1:
             delay = INITIAL_RETRY_DELAY * (2 ** attempt)
             time.sleep(delay)
-    # Return last response if we have one, otherwise raise
+    # Exhausted retries — raise on network error, return 5xx response for callers to handle
     if last_exc:
         raise last_exc
+    print(f"  WARNING: GitHub API returned {resp.status_code} after {max_retries} retries: {url}")
     return resp
 
 
@@ -518,11 +519,11 @@ def commit_image_to_branch(
     if sha:
         payload["sha"] = sha
 
-    resp = requests.put(
+    resp = github_api_request(
+        "PUT",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
         headers=headers,
         json=payload,
-        timeout=DEFAULT_TIMEOUT,
     )
 
     if resp.status_code in [200, 201]:
@@ -541,10 +542,10 @@ def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branc
         "Authorization": f"Bearer {github_token}"
     }
 
-    response = requests.get(
+    response = github_api_request(
+        "GET",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={branch}",
         headers=headers,
-        timeout=DEFAULT_TIMEOUT,
     )
 
     if response.status_code == 200:
@@ -675,11 +676,11 @@ def commit_gist_to_main(gist: Dict, github_token: str, owner: str, repo: str) ->
     if sha:
         payload["sha"] = sha
 
-    resp = requests.put(
+    resp = github_api_request(
+        "PUT",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
         headers=headers,
         json=payload,
-        timeout=DEFAULT_TIMEOUT,
     )
 
     if resp.status_code in [200, 201]:

@@ -31,7 +31,10 @@ function App() {
                         <Route index element={<HelloPage />} />
                         <Route path="play" element={<PlayPage />} />
                         <Route path="apps" element={<AppsPage />} />
-                        <Route path="docs" element={<Navigate to="/play" replace />} />
+                        <Route
+                            path="docs"
+                            element={<Navigate to="/play" replace />}
+                        />
                         <Route path="community" element={<CommunityPage />} />
                         <Route path="terms" element={<TermsPage />} />
                         <Route path="privacy" element={<PrivacyPage />} />

@@ -551,5 +551,6 @@ export const TEXT_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         isSpecialized: true,
+        alpha: true,
     },
 } as const satisfies Record<string, ServiceDefinition<string>>;

@@ -1,0 +1,31 @@
+{
+  "date": "2026-02-10",
+  "generated_at": "2026-02-10T00:17:12.527480+00:00",
+  "platform": "twitter",
+  "tweet_type": "shipped",
+  "tweet": "transparency is a feature.\n\nshipped new economics dashboards to track daily infra spend & gpu load down to the cent.\n\nplus: polly got a brain transplant. switched to openai embeddings for smarter context.\n\nshipping daily. 🌸",
+  "alt_tweet": "shipped granular economics dashboards today. seeing exactly where the compute goes.\n\nalso: upgraded polly to openai embeddings (1536 dim). better retrieval, smarter chat.\n\nbuilding in the open.",
+  "full_tweet": "transparency is a feature.\n\nshipped new economics dashboards to track daily infra spend & gpu load down to the cent.\n\nplus: polly got a brain transplant. switched to openai embeddings for smarter context.\n\nshipping daily. 🌸 #OpenSource #BuildInPublic",
+  "hashtags": [
+    "#OpenSource",
+    "#BuildInPublic"
+  ],
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/twitter/posts/2026-02-10-image.jpg",
+    "prompt": "Cozy 8-bit pixel art control room. A tiny pixel bee mascot studies a glowing wall of monitors displaying charts and graphs in bright lime green (#ecf874). Soft pastel gradient background (lavender to mint). Chunky retro tech sprites, warm ambient lighting. Lo-fi aesthetic like Stardew Valley. Text on screen: 'METRICS'. Nostalgic, smart, and welcoming."
+  },
+  "reasoning": "Focuses on the 'Economics Dashboard' as a sign of maturity/transparency (appeals to builders/founders) and the 'OpenAI Embeddings' as a technical upgrade (appeals to devs). The tone is confident and operational.",
+  "pr_references": [
+    "#8118",
+    "#8123",
+    "#8111",
+    "#8117",
+    "#8101",
+    "#8109",
+    "#8108",
+    "#8107",
+    "#8105",
+    "#8106"
+  ],
+  "char_count": 250
+}

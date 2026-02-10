@@ -547,7 +547,7 @@ export const TEXT_SERVICES = {
             },
         ],
         description:
-            "Qwen Character - Alibaba's character roleplay model (via api.airforce)",
+            "Qwen Character (alpha) - roleplay & character chat, powered by api.airforce",
         inputModalities: ["text"],
         outputModalities: ["text"],
         isSpecialized: true,

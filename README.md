@@ -45,7 +45,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-02-09** – **🚀 Massive Model Drop** Added `imagen-4`, `flux-2-dev`, `grok-video`, and `LTX-2` for next-level image and video generation.
 - **2026-02-09** – **🎵 Audio Studio** Generate music with `elevenmusic`, transcribe with `whisper`, and use emotive TTS with `eleven_v3`.
 - **2026-02-09** – **🧠 Smarter Claude** Upgraded `claude-large` to the latest Claude 3 Opus 4.6 for enhanced reasoning.
-- **2026-02-06** – **🚀 New Provider: api.airforce** Added `imagen` (Google Imagen 3) and `grok-video` (xAI Grok Imagine Video) models via [api.airforce](https://api.airforce).
+- **2026-02-06** – **🧪 New Provider: api.airforce (alpha)** Added `imagen` and `grok-video` via [api.airforce](https://api.airforce) — experimental models, may be unstable.
 - **2026-02-05** – **💎 Paid Models Update** `claude`, `grok`, `kontext`, `seedream`, and `seedance-pro` are moving to paid-only.
 - **2026-02-02** – **🚀 Kimi K2.5** Upgraded model with vision support and improved reasoning capabilities.
 - **2026-02-02** – **🧠 Web Research** Claude can now use `perplexity` and `gemini-search` tools for real-time answers.
@@ -377,7 +377,7 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 - [Modal](https://modal.com/): High-performance AI infrastructure
 - [NavyAI](https://api.navy/): AI API provider for OpenAI o3 and Gemini models
 - [Nebius](https://nebius.com/): AI-optimized cloud infrastructure with NVIDIA GPU clusters
-- [api.airforce](https://api.airforce): AI API gateway powering Imagen 3 and Grok Imagine Video models
+- [api.airforce](https://api.airforce): AI API gateway — alpha models (imagen-4, grok-video, qwen-character), may be unstable
 
 ## 💚 Support Us
 

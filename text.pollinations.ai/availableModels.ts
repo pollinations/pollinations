@@ -185,7 +185,7 @@ const models: ModelDefinition[] = [
     {
         name: "qwen-character",
         config: portkeyConfig["qwen-character"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: createSystemPromptTransform(BASE_PROMPTS.character),
     },
 ];
 

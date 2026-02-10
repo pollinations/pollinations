@@ -92,6 +92,8 @@ async function routeToVideoModel(
             return callSeedanceProAPI(prompt, safeParams, progress, requestId);
         case "wan":
             return callWanAPI(prompt, safeParams, progress, requestId);
+        case "ltx-2":
+            return callLtx2API(prompt, safeParams, progress, requestId);
         case "grok-video":
             return callAirforceVideoAPI(
                 prompt,
@@ -100,8 +102,6 @@ async function routeToVideoModel(
                 requestId,
                 "grok-imagine-video",
             );
-        case "ltx-2":
-            return callLtx2API(prompt, safeParams, progress, requestId);
         default:
             throw new Error(
                 `Video generation not supported for model: ${safeParams.model}`,

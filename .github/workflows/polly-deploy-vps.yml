@@ -30,7 +30,7 @@ jobs:
             set -e
             echo "🦜 Deploying Polly bot..."
 
-            cd /home/Polly
+            cd /root/Polly
 
             # Pull with fast-forward only (fail if merge conflicts)
             git pull --ff-only origin main

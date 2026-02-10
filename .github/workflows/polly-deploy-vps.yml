@@ -1,0 +1,64 @@
+name: Deploy Polly Bot to VPS
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/polly/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262 # v1.0.0
+        with:
+          host: ${{ secrets.POLLY_VPS_HOST }}
+          username: ${{ secrets.POLLY_VPS_USER }}
+          key: ${{ secrets.POLLY_VPS_SSH_KEY }}
+          script: |
+            set -e
+            echo "🦜 Deploying Polly bot..."
+
+            cd ~/pollinations
+
+            # Pull with fast-forward only (fail if merge conflicts)
+            git pull --ff-only origin main
+
+            cd apps/polly
+
+            # Install dependencies
+            pip3 install -r requirements.txt --quiet
+
+            # Restart bot service
+            sudo systemctl restart polly.service
+
+            # Wait and check status
+            sleep 10
+
+            # Verify bot is actually running
+            if ! sudo systemctl is-active --quiet polly.service; then
+              echo "❌ Bot failed to start"
+              sudo journalctl -u polly.service -n 50 --no-pager
+              exit 1
+            fi
+
+            # Check for crashes in first 10s
+            sleep 10
+            if ! sudo systemctl is-active --quiet polly.service; then
+              echo "❌ Bot crashed after startup"
+              sudo journalctl -u polly.service -n 50 --no-pager
+              exit 1
+            fi
+
+            echo "✅ Polly deployed and running healthy"

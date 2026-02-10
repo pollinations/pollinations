@@ -40,14 +40,31 @@ jobs:
             # Install dependencies
             pip3 install -r requirements.txt --quiet
 
+            # Verify service exists
+            if sudo systemctl list-unit-files | grep -q polly.service; then
+              echo "✅ Service polly.service found"
+            else
+              echo "❌ Service polly.service not found!"
+              sudo systemctl list-unit-files | grep service || true
+              exit 1
+            fi
+
             # Restart bot service
-            sudo systemctl restart polly.service
+            echo "🔄 Restarting polly.service..."
+            sudo systemctl restart polly.service || {
+              echo "❌ Failed to restart service - checking permissions..."
+              sudo -l
+              exit 1
+            }
 
             # Wait and check status
-            sleep 10
+            echo "⏳ Waiting for service to start..."
+            sleep 5
 
             # Verify bot is actually running
-            if ! sudo systemctl is-active --quiet polly.service; then
+            if sudo systemctl is-active --quiet polly.service; then
+              echo "✅ Service is active"
+            else
               echo "❌ Bot failed to start"
               sudo journalctl -u polly.service -n 50 --no-pager
               exit 1
@@ -55,10 +72,10 @@ jobs:
 
             # Check for crashes in first 10s
             sleep 10
-            if ! sudo systemctl is-active --quiet polly.service; then
+            if sudo systemctl is-active --quiet polly.service; then
+              echo "✅ Polly deployed and running healthy"
+            else
               echo "❌ Bot crashed after startup"
               sudo journalctl -u polly.service -n 50 --no-pager
               exit 1
             fi
-
-            echo "✅ Polly deployed and running healthy"

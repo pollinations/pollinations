@@ -1,0 +1,46 @@
+{
+  "date": "2026-02-10",
+  "generated_at": "2026-02-10T00:40:48.997198+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art",
+  "linked_images": true,
+  "strategy_reasoning": "Technical updates about economics (dashboards), logic (Polly prompts), and balance buckets fit perfectly into a 'Cozy Inventory Management' or 'Garden Shed Organization' metaphor. Using retro RPG UI elements (like inventory slots or stats screens) makes dry financial/backend data feel playful and satisfying, aligning with the Stardew Valley/Unpacking aesthetic.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-10-image-1.jpg",
+      "prompt": "A cozy pixel art close-up of a retro RPG inventory screen or 'stats menu' resting on a wooden garden table. The menu shows a pixelated graph titled 'Daily Spending' drawn in lime green (#ecf874) on parchment. To the side, a cute 8-bit bee mascot is holding a quill, looking organized. Soft afternoon sunlight filters through leaves, casting dappled shadows on the desk. Warm, nostalgic atmosphere like the menu screen of a wholesome indie game. Chunky pixels, soft pastel details.",
+      "description": "Visualizing the new Economics Dashboard as a cozy RPG stats screen."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-10-image-2.jpg",
+      "prompt": "A magical pixel art library scene inside a tree hollow. A tiny 8-bit robot (representing Polly) is reading a glowing book titled 'Embeddings'. The book emits soft lime green (#ecf874) sparkles. The Pollinations bee mascot is adjusting the robot's antenna. The background is filled with pixelated books and hanging plants. Warm, amber lighting with soft shadows. Represents the Polly system prompt improvements and OpenAI embeddings. Cozy, studious vibes like Stardew Valley library.",
+      "description": "Polly getting smarter with new embeddings and prompts, depicted as studying in a cozy library."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/instagram/posts/2026-02-10-image-3.jpg",
+      "prompt": "A peaceful pixel art garden scene focusing on a single, large wooden bucket overflowing with glowing lime green (#ecf874) pollen dust. Previously there were many small cups, now just one sturdy bucket. The 8-bit bee mascot is happily sitting on the rim of the bucket. Soft pastel garden background with pixel flowers blooming. Represents the 'single-bucket balance deduction' fix. Wholesome, clean, low-res aesthetic with modern lighting effects.",
+      "description": "Visualizing the balance deduction fix as a single, reliable bucket of pollen."
+    }
+  ],
+  "caption": "spring cleaning came early to the codebase 🧹✨ we’ve been tidying up the garden shed to make everything run smoother for you.\n\nwhat’s new in the patch notes:\n📊 **eco dashboards:** new visuals for daily spending & platform load (we love a good graph)\n🧠 **polly upgrade:** smarter system prompts + switching to openai embeddings = big brain energy\n🪣 **bucket fix:** simplified how we handle credit balances (no more splitting, just vibes)\n\nkeeping it cozy and functional. check the repo for the full changelog.\n\nwhich pixel vibe are you today? 1, 2, or 3? 👇\n\n#pollinations #opensource #pixelart #indiedev #cozyvibes #devlog #generativeai #8bitart",
+  "hashtags": [
+    "#pollinations",
+    "#pixelart",
+    "#opensource",
+    "#cozygames",
+    "#devlog",
+    "#gamedev",
+    "#aiart"
+  ],
+  "alt_text": "A carousel of cozy 8-bit pixel art images. 1: A retro RPG stats screen showing graphs on a wooden desk with a bee mascot. 2: A tiny robot reading a glowing book in a tree library. 3: A large wooden bucket filled with glowing lime green pollen in a garden.",
+  "pr_references": [
+    "#8118",
+    "#8123",
+    "#8111",
+    "#8117",
+    "#8101",
+    "#8109",
+    "#8108"
+  ]
+}

@@ -16,7 +16,6 @@ import { Button } from "./ui/button";
 const tabs = [
     { path: "/", label: "Hello" },
     { path: "/play", label: "Play" },
-    { path: "/docs", label: "Docs" },
     { path: "/apps", label: "Apps" },
     { path: "/community", label: "Community" },
 ];
@@ -187,7 +186,7 @@ function Layout() {
                                     )}
                             </div>
                             {/* Row 2: Theme Creator + Login + Register (right-aligned) */}
-                            <div className="flex items-end justify-end gap-2 overflow-visible pb-1">
+                            <div className="flex items-center justify-end gap-2 overflow-visible pb-1">
                                 <AIPromptInput
                                     isLoggedIn={isLoggedIn}
                                     onLoginRequired={login}

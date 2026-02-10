@@ -125,7 +125,8 @@ export const COMMUNITY_PAGE = {
         {
             name: "api.airforce",
             url: "https://api.airforce/",
-            description: "AI API provider for Imagen and Grok video models",
+            description:
+                "AI API gateway — alpha models (imagen-4, grok-video, qwen-character)",
         },
     ],
 

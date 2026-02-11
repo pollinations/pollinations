@@ -1,0 +1,13 @@
+{
+  "title": "Shipped seamless OpenClaw integration with auto-onboarding support",
+  "image_prompt": "[Pixel art dev meme infographic] showing a retro game console 'cartridge' labeled 'OpenClaw' being slotted into a main system. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Large chunky pixel headline reads 'AUTO-ONBOARDING'. Retro UI panels show status: 'Installation: AUTOMATED', 'Config: ZERO-TOUCH', 'Branding: FIXED'. Bee mascot wearing engineer goggles gives a thumbs up next to the console. Composition: Central object with floating stats, readable at mobile size. Warm lighting, lo-fi vibes. Mood: satisfying, nerdy, efficient. Follow the shared visual style.",
+  "body": "Just merged a few PRs cleaning up the OpenClaw integration (#8165, #8167, #8168). The main change is that OpenClaw is now auto-installed and auto-onboarded directly within the setup script—removing the manual configuration steps previously required.\n\nWe also shipped a dedicated landing page and fixed up the branding assets (favicons, logos, fonts) to keep the UI consistent. If you're self-hosting or contributing, the setup process should be significantly smoother now. Code is live in the repo.",
+  "reasoning": "Focuses purely on the 'quality of life' improvement for developers (automation vs. manual setup). The image uses the 'cartridge' metaphor to visualize 'plug-and-play' integration, which resonates well with the retro gaming aesthetic and the engineering mindset of the subreddit.",
+  "date": "2026-02-11",
+  "generated_at": "2026-02-11T21:47:46.572065+00:00",
+  "platform": "reddit",
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/daily/2026-02-11/images/reddit.jpg",
+    "prompt": "[Pixel art dev meme infographic] showing a retro game console 'cartridge' labeled 'OpenClaw' being slotted into a main system. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Large chunky pixel headline reads 'AUTO-ONBOARDING'. Retro UI panels show status: 'Installation: AUTOMATED', 'Config: ZERO-TOUCH', 'Branding: FIXED'. Bee mascot wearing engineer goggles gives a thumbs up next to the console. Composition: Central object with floating stats, readable at mobile size. Warm lighting, lo-fi vibes. Mood: satisfying, nerdy, efficient. Follow the shared visual style."
+  }
+}

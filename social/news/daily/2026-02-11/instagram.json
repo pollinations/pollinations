@@ -1,0 +1,47 @@
+{
+  "content_type": "pixel_art",
+  "linked_images": true,
+  "strategy_reasoning": "Using the 'OpenClaw' name to create a literal retro arcade claw machine metaphor fits perfectly with our 8-bit aesthetic. It translates technical setup updates into a fun, gamified visual of 'grabbing' the tools you need effortlessly.",
+  "visual_style": "Cozy 8-bit pixel art with soft lighting, chunky sprites, and prominent lime green (#ecf874) accents. Reminiscent of Stardew Valley interiors or Unpacking.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy 8-bit pixel art close-up of a retro arcade claw machine. The claw is gently lowering to grab a glowing lime green (#ecf874) orb. Inside the machine are soft pastel prizes. The glass reflects a warm, cozy room. Soft purple accents on the machine casing. Chunky pixels, lo-fi aesthetic like Stardew Valley. Text in pixel font on the machine display: 'OPENCLAW'. Nostalgic, magical, warm lighting.",
+      "description": "Visualizing the 'OpenClaw' integration as a literal, cute arcade game.",
+      "text_in_image": "OPENCLAW",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/daily/2026-02-11/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Wide shot of a cozy pixel art workspace. A retro CRT monitor glows with scrolling green code lines. As the code scrolls, 8-bit flowers and vines are magically blooming out of the screen and onto the desk. A tiny pixel bee mascot is watching happily. Background is a soft lime green (#ecf874) and lavender gradient. Warm atmosphere, representing 'auto-install' as magic growth. Cozy vibes.",
+      "description": "Metaphor for the new auto-install/auto-onboard scripts—code creating organic growth.",
+      "text_in_image": "AUTO MAGIC",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/daily/2026-02-11/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Pixel art scene of the Pollinations bee mascot holding a pixelated paintbrush, putting the final touches on a shiny new sign. The sign has clean typography. Sparkles around the sign to show it's polished. Background is a warm cream with soft lime green (#ecf874) light rays. Represents the branding and font fixes. Wholesome, proud energy. High quality pixel art.",
+      "description": "Highlighting the branding, favicon, and font fixes as a 'fresh coat of paint'.",
+      "text_in_image": "",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/daily/2026-02-11/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "The claw has chosen... YOU! 🕹️✨\n\nBig upgrades just dropped for OpenClaw and the vibes are immaculate. We’ve made the integration seamless—like, 'first try at the arcade' seamless.\n\n✨ **What’s New:**\n🌱 **Auto-Magic Setup:** New scripts handle the install & onboarding for you. No stress, just press play.\n🎨 **Glow Up:** Fresh branding, fonts, and logos. The UI is looking extra cozy.\n\nWe’re keeping it open, simple, and cute. Because building AI tools should feel like playing your favorite game. 🌸\n\nCheck the new docs via link in bio!\n\n#pollinations #openclaw #pixelart #retrogaming #opensource #cozyvibes #indiedev #aiart #8bit #buildinpublic #generativeai #creativecoding",
+  "hashtags": [
+    "#pollinations",
+    "#openclaw",
+    "#pixelart",
+    "#retrogaming",
+    "#opensource",
+    "#cozyvibes",
+    "#indiedev",
+    "#aiart",
+    "#8bit",
+    "#buildinpublic",
+    "#generativeai",
+    "#creativecoding"
+  ],
+  "alt_text": "A carousel of cozy 8-bit pixel art images. 1. A retro arcade claw machine grabbing a glowing lime green orb. 2. A computer screen where code turns into blooming flowers. 3. A cute pixel bee mascot painting a sign. The style is warm, nostalgic, and features soft pastel colors.",
+  "date": "2026-02-11",
+  "generated_at": "2026-02-11T21:47:46.572050+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

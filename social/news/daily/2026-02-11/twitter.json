@@ -1,0 +1,19 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "just shipped openclaw auto-install + onboarding. no more config hell.\n\nrun the script -> environment ready.\nbranding & docs polished too.\n\nless time configuring, more time building.",
+  "alt_tweet": "openclaw integration is live. landing page, docs, and a setup script that actually handles the heavy lifting. run it once, start shipping.",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image_prompt": "Dynamic pixel art arcade scene. A lime green (#ecf874) claw machine (OpenClaw) successfully grabbing a pixelated box labeled 'SETUP'. The Pollinations bee mascot cheering with victory pose. Warm pastel background, glowing neon accents, pixel confetti. Text 'AUTO-EQUIP' in chunky 8-bit font. Cozy, nostalgic, but energetic victory moment.",
+  "reasoning": "Directly addresses a common developer pain point (configuration) and offers an immediate solution. The 'shipped' framing builds credibility by showing actual progress.",
+  "char_count": 180,
+  "date": "2026-02-11",
+  "generated_at": "2026-02-11T21:47:46.571981+00:00",
+  "platform": "twitter",
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/daily/2026-02-11/images/twitter.jpg",
+    "prompt": "Dynamic pixel art arcade scene. A lime green (#ecf874) claw machine (OpenClaw) successfully grabbing a pixelated box labeled 'SETUP'. The Pollinations bee mascot cheering with victory pose. Warm pastel background, glowing neon accents, pixel confetti. Text 'AUTO-EQUIP' in chunky 8-bit font. Cozy, nostalgic, but energetic victory moment."
+  }
+}

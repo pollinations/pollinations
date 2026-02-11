@@ -24,8 +24,8 @@
     "image_prompt": "Cozy pixel art scene of the Pollinations bee artist adding finishing touches to a pixelated 'OpenClaw' signboard. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel peach gradient background. The bee holds a tiny pixel brush with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-11/PR-8168.jpg",
+    "prompt": "Cozy pixel art scene of the Pollinations bee artist adding finishing touches to a pixelated 'OpenClaw' signboard. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel peach gradient background. The bee holds a tiny pixel brush with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
   },
   "generated_at": "2026-02-11T20:11:34.138984+00:00"
 }

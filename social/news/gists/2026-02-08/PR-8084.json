@@ -1,0 +1,31 @@
+{
+  "pr_number": 8084,
+  "title": "Send Discord announcement as single message with text + image",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/8084",
+  "merged_at": "2026-02-08T12:35:56Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Refactors the Discord announcement script to bundle text and images into a single multipart request.",
+    "impact": "Improves the reliability and presentation of automated PR announcements in the community server.",
+    "keywords": [
+      "discord",
+      "bot",
+      "automation",
+      "infrastructure",
+      "python"
+    ],
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot neatly packing a letter and a photo into a single envelope. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'delivery'. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T19:44:02.324544+00:00"
+}

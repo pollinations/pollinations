@@ -1,0 +1,31 @@
+{
+  "pr_number": 8083,
+  "title": "Fix manual dispatch for Discord workflow",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/8083",
+  "merged_at": "2026-02-08T11:54:35Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "The Discord notification workflow now supports manual triggering by fetching PR details directly from the GitHub API.",
+    "impact": "Maintainers can reliably dispatch social workflows manually without encountering missing environment variable errors.",
+    "keywords": [
+      "workflow",
+      "discord",
+      "automation",
+      "github-api",
+      "internal-tools"
+    ],
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot connecting glowing wires on a tiny retro server rack. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky 8-bit sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Pixel text 'workflow fixed'. Emotionally warm, nostalgic."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T19:42:03.152711+00:00"
+}

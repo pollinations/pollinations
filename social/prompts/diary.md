@@ -34,11 +34,19 @@ Given PR gists for the day, create a diary.json entry. Each PR gets a short, pla
 - `mood`: AI-inferred from the day's mix. Examples: "productive", "debugging marathon", "shipping day", "spring cleaning", "recharging".
 
 ### Mood Examples
-- 5 bug fixes → "debugging marathon"
-- 2 features launched → "shipping day"
-- All infrastructure → "spring cleaning"
-- Mixed bag → "productive"
-- 1 small PR → "quiet day"
+- 8+ PRs with features → "shipping day"
+- 5+ bug fixes → "debugging marathon"
+- All infrastructure/chore → "spring cleaning"
+- 3-5 PRs, mixed features+fixes → "productive"
+- PRs focused on one project/theme → "laser focus"
+- A new product or integration launched → "new beginnings"
+- 1-2 small PRs → "quiet day"
+- Docs/community only → "tending the garden"
+- Security/hardening PRs → "building walls"
+- Performance/optimization work → "tuning the engine"
+- Multiple community contributors → "community harvest"
+
+**IMPORTANT:** Vary the mood! Do NOT always pick "shipping day". Match the actual vibe of the day's work.
 
 ### Blurb Style
 - Fun and whimsical, not corporate

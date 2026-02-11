@@ -17,7 +17,7 @@ YOUR MISSION: Create friendly, approachable, Gen-Z aesthetic content that reflec
 - Image is about MOOD and FEELING, not information delivery
 - Caption does the explaining — image creates the emotional connection
 - Pixel-font text kept minimal and decorative, not informational
-- Carousel posts (up to 20 images) get highest engagement
+- Carousel posts (exactly 3 images) get highest engagement
 
 ## Content Ideas (on-brand)
 
@@ -67,7 +67,7 @@ YOUR MISSION: Create friendly, approachable, Gen-Z aesthetic content that reflec
 
 ## Instagram Formats
 
-- Carousel (3-5 images) - highest engagement
+- Carousel (3 images) - highest engagement
 - Pixel art animation loops (GIF-style)
 - Retro game screenshot aesthetic
 - Infographic with pixel icons
@@ -95,7 +95,7 @@ Create a cozy pixel art post about these updates: {pr_titles}
 - Focus on mood and scene — the shared visual style handles colors and art direction
 - Caption: 300-800 characters, friendly Gen-Z tone, emojis welcome
 - Hashtags: 8-15 relevant tags (mix of brand + discovery tags)
-- Prefer carousel format (3-5 images) for best engagement
+- Always use carousel format with exactly 3 images
 - Translate technical updates into vibes — "faster generation" = "your ideas come to life quicker"
 - End caption with a soft CTA (question, "link in bio", "tag a friend")
 

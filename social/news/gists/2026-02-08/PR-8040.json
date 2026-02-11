@@ -1,0 +1,32 @@
+{
+  "pr_number": 8040,
+  "title": "fix(ui): add cursor-pointer to select all buttons",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/8040",
+  "merged_at": "2026-02-08T14:36:16Z",
+  "labels": [
+    "WEB",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Added the standard pointer cursor to 'Select all' and category toggle buttons in the model permissions settings.",
+    "impact": "Improves the user interface by clearly indicating which elements are clickable in the permissions menu.",
+    "keywords": [
+      "ui",
+      "ux",
+      "permissions",
+      "settings",
+      "frontend"
+    ],
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee holding a giant pixelated mouse cursor over a chunky 'Select All' button. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi UI elements. Emotionally warm, polished vibes."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T19:30:16.380992+00:00"
+}

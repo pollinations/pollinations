@@ -1,0 +1,31 @@
+{
+  "pr_number": 8076,
+  "title": "[PATCH]: GSOC Project Page Refactor",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/8076",
+  "merged_at": "2026-02-08T07:18:15Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Updated the Google Summer of Code dashboard with new mentor assignments and defined project capacity limits.",
+    "impact": "Ensures a smoother coordination process for students and mentors in the open-source program.",
+    "keywords": [
+      "gsoc",
+      "open source",
+      "mentorship",
+      "community",
+      "students"
+    ],
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee organizing a pixelated bulletin board with project notes. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'GSOC'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T19:38:59.194157+00:00"
+}

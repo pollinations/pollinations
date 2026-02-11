@@ -20,6 +20,17 @@ POLLINATIONS_API_KEY="$1"
 CONFIG_DIR="${HOME}/.openclaw"
 CONFIG_FILE="${CONFIG_DIR}/openclaw.json"
 
+# Install OpenClaw if not present
+if ! command -v openclaw >/dev/null 2>&1; then
+    echo "OpenClaw not found. Installing via npm..."
+    if command -v npm >/dev/null 2>&1; then
+        npm install -g @anthropic-ai/openclaw
+    else
+        echo "Error: npm not found. Install Node.js first: https://nodejs.org"
+        exit 1
+    fi
+fi
+
 # Create config directory if it doesn't exist
 mkdir -p "$CONFIG_DIR"
 
@@ -165,6 +176,9 @@ echo "  Primary model: Kimi K2.5 (256K context, vision, tools, reasoning)"
 echo "  Fallbacks:     DeepSeek V3.2, GLM-4.7"
 echo "  Also available: Gemini Flash Lite, Claude Haiku 4.5, + premium models"
 echo ""
-echo "  Switch models in chat: /model pollinations/gemini"
+echo "  Switch models in chat: /model pollinations/deepseek"
 echo "  Manage your account:   https://enter.pollinations.ai"
 echo ""
+echo "Starting OpenClaw onboarding..."
+echo ""
+openclaw onboard --install-daemon

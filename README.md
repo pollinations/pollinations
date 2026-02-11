@@ -15,6 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [StoryTale](https://storytale.onrender.com/) | Create and share interactive Markdown stories in English and Thai. | @Yorism7 |
 | [Korpi.AI](https://korpi.ai) | Generates AI stories with the Pollinations Flux model. | @Reksely |
 | Moltbot With Pollinations.ai provider | Multi-channel AI assistant for Telegram and WhatsApp using Pollinations AI. | @its3li |
 | [Sage](https://discord.com/oauth2/authorize?client_id=1462117382398017667&scope=bot%20applications.commands&permissions=8) | Discord bot offering assistant-style features and server utilities. | @BokX1 |
@@ -24,9 +25,6 @@
 | [Lapse Game 2075](https://makeypocket.github.io/LapseGame/) | AI-powered game where decisions shape a country's future over four pillars | @makeypocket |
 | [PixArt AI](https://apps.apple.com/us/app/pixart-ai-ai-image-generator/id6749236127) | iOS app that turns text prompts into AI-generated artwork via Pollinations. | @bhyahmed86-maker |
 | Polly IDE | IDE to generate Angular and React sites using Pollinations AI models | @nulls-brawl-site |
-| [SteamKit](https://steamkit.dev/) | AI toolkit for Steam developers to generate marketing and store page assets. | @zouspants123321 |
-| [CHATTY AI](https://ai.studio/apps/drive/1LrJOAZdc-qwB__D736EjWboWs4PPrjYK) | Enhance and update CHATTY AI web app to work seamlessly on Free Tier. | @tefa2007h-dev |
-| [Presintation web site](https://astro-prezintatsiya.vercel.app/) | AI-powered web app that creates professional presentations in seconds. | @cyberuz001 |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

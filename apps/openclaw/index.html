@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pollinations × OpenClaw — 25+ AI Models for Your Agent</title>
+
+    <meta property="og:title" content="Pollinations × OpenClaw — 25+ AI Models for Your Agent">
+    <meta property="og:description" content="Use Kimi K2.5, GPT, Claude, Gemini, DeepSeek and 20+ more models as your OpenClaw brain. One API, one setup command.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://openclaw.pollinations.ai">
+    <meta property="og:image" content="https://openclaw.pollinations.ai/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="description" content="Use 25+ AI models as your OpenClaw brain through Pollinations' unified API. Kimi K2.5, GPT, Claude, Gemini, DeepSeek, Grok, Mistral and more.">
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧬</text></svg>">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0a0f;
+            --surface: #13131a;
+            --border: #1e1e2a;
+            --text: #e4e4e7;
+            --muted: #71717a;
+            --accent: #a3e635;
+            --accent-dim: rgba(163, 230, 53, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Header */
+        header {
+            padding: 24px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        header .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .logo span { color: var(--muted); font-weight: 400; }
+        .header-links { display: flex; gap: 20px; font-size: 14px; }
+
+        /* Hero */
+        .hero {
+            padding: 80px 0 60px;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
+        }
+        .hero h1 .accent { color: var(--accent); }
+        .hero p {
+            font-size: 18px;
+            color: var(--muted);
+            max-width: 540px;
+            margin: 0 auto 40px;
+        }
+
+        /* Setup box */
+        .setup-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: left;
+            margin-bottom: 60px;
+        }
+        .step {
+            margin-bottom: 24px;
+        }
+        .step:last-child { margin-bottom: 0; }
+        .step-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+        .step-text {
+            font-size: 15px;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+        .step-text a { font-weight: 600; }
+
+        /* Code block */
+        .code-block {
+            position: relative;
+            background: #0d0d14;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 48px 16px 16px;
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 13px;
+            color: var(--accent);
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.5;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--border);
+            border: none;
+            border-radius: 6px;
+            color: var(--muted);
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .copy-btn:hover { background: #2a2a3a; color: var(--text); }
+
+        /* Models grid */
+        .section { padding: 60px 0; }
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .section-subtitle {
+            color: var(--muted);
+            margin-bottom: 32px;
+            font-size: 15px;
+        }
+
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .model-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            transition: border-color 0.15s;
+        }
+        .model-card:hover { border-color: var(--accent); }
+        .model-card.primary { border-color: var(--accent); background: var(--accent-dim); }
+        .model-name {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+        .model-id {
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+        .model-desc {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+        .model-badges {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 100px;
+            background: var(--accent-dim);
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        /* Features */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 24px;
+            margin-top: 32px;
+        }
+        .feature h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .feature p {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        /* Skill section */
+        .skill-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-top: 32px;
+        }
+        .skill-box h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        .skill-box p {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .skill-caps {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 14px;
+        }
+        .skill-caps span { color: var(--muted); }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 32px 0;
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+        }
+        footer .links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 16px;
+        }
+
+        /* Manual config toggle */
+        .toggle-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: all 0.15s;
+        }
+        .toggle-btn:hover { border-color: var(--accent); color: var(--text); }
+        .manual-config { display: none; margin-top: 16px; }
+        .manual-config.open { display: block; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container">
+        <div class="logo">🧬 pollinations.ai <span>× OpenClaw</span></div>
+        <div class="header-links">
+            <a href="https://enter.pollinations.ai">Get API Key</a>
+            <a href="https://github.com/pollinations/pollinations">GitHub</a>
+        </div>
+    </div>
+</header>
+
+<main>
+    <div class="container">
+
+        <section class="hero">
+            <h1>25+ AI models for your <span class="accent">OpenClaw</span> agent</h1>
+            <p>One API key. One setup command. Switch between Kimi K2.5, GPT, Claude, Gemini, DeepSeek, Grok, and more — all through Pollinations.</p>
+        </section>
+
+        <div class="setup-box">
+            <div class="step">
+                <div class="step-label">Step 1</div>
+                <div class="step-text">Get your API key (comes with free credits) at <a href="https://enter.pollinations.ai">enter.pollinations.ai</a></div>
+            </div>
+            <div class="step">
+                <div class="step-label">Step 2</div>
+                <div class="step-text">Run the setup script:</div>
+                <div class="code-block" id="setup-cmd">curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- YOUR_API_KEY<button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
+            </div>
+            <div class="step">
+                <div class="step-label">Step 3</div>
+                <div class="step-text">Install or restart OpenClaw:</div>
+                <div class="code-block" id="onboard-cmd">openclaw onboard --install-daemon<button class="copy-btn" onclick="copyCode('onboard-cmd')">Copy</button></div>
+            </div>
+
+            <button class="toggle-btn" onclick="toggleManual()">Manual JSON config ▾</button>
+            <div class="manual-config" id="manual-config">
+                <div class="step-text">Or paste this into <code style="color:var(--accent)">~/.openclaw/openclaw.json</code>:</div>
+                <div class="code-block" id="json-config" style="white-space:pre; font-size:12px;">{
+  "env": { "POLLINATIONS_API_KEY": "YOUR_API_KEY" },
+  "agents": {
+    "defaults": {
+      "model": { "primary": "pollinations/kimi" },
+      "models": {
+        "pollinations/kimi": { "alias": "Kimi K2.5" },
+        "pollinations/openai": { "alias": "GPT" },
+        "pollinations/gemini": { "alias": "Gemini" }
+      }
+    }
+  },
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "pollinations": {
+        "baseUrl": "https://gen.pollinations.ai/v1",
+        "apiKey": "${POLLINATIONS_API_KEY}",
+        "api": "openai-completions",
+        "models": [
+          { "id": "kimi", "name": "Kimi K2.5", "reasoning": true,
+            "input": ["text","image"], "contextWindow": 256000, "maxTokens": 8192 },
+          { "id": "openai", "name": "GPT",
+            "input": ["text","image"], "contextWindow": 128000, "maxTokens": 8192 },
+          { "id": "gemini", "name": "Gemini", "reasoning": true,
+            "input": ["text","image"], "contextWindow": 1000000, "maxTokens": 8192 }
+        ]
+      }
+    }
+  }
+}<button class="copy-btn" onclick="copyCode('json-config')">Copy</button></div>
+            </div>
+        </div>
+
+        <section class="section" style="padding-top:0">
+            <h2 class="section-title">Available Models</h2>
+            <p class="section-subtitle">Switch anytime in chat with <code style="color:var(--accent)">/model pollinations/&lt;name&gt;</code></p>
+
+            <div class="models-grid">
+                <div class="model-card primary">
+                    <div class="model-name">Kimi K2.5 ⭐</div>
+                    <div class="model-id">pollinations/kimi</div>
+                    <div class="model-desc">Flagship agentic model by Moonshot AI</div>
+                    <div class="model-badges">
+                        <span class="badge">256K context</span>
+                        <span class="badge">vision</span>
+                        <span class="badge">tools</span>
+                        <span class="badge">reasoning</span>
+                    </div>
+                </div>
+                <div class="model-card">
+                    <div class="model-name">GPT</div>
+                    <div class="model-id">pollinations/openai</div>
+                    <div class="model-desc">OpenAI GPT — fast, reliable, general purpose</div>
+                    <div class="model-badges">
+                        <span class="badge">128K</span>
+                        <span class="badge">vision</span>
+                    </div>
+                </div>
+                <div class="model-card">
+                    <div class="model-name">Gemini</div>
+                    <div class="model-id">pollinations/gemini</div>
+                    <div class="model-desc">Google Gemini — code execution, thinking</div>
+                    <div class="model-badges">
+                        <span class="badge">1M context</span>
+                        <span class="badge">vision</span>
+                        <span class="badge">reasoning</span>
+                    </div>
+                </div>
+                <div class="model-card">
+                    <div class="model-name">Claude</div>
+                    <div class="model-id">pollinations/claude</div>
+                    <div class="model-desc">Anthropic Claude Sonnet — complex reasoning</div>
+                    <div class="model-badges">
+                        <span class="badge">200K</span>
+                        <span class="badge">vision</span>
+                    </div>
+                </div>
+                <div class="model-card">
+                    <div class="model-name">DeepSeek</div>
+                    <div class="model-id">pollinations/deepseek</div>
+                    <div class="model-desc">DeepSeek V3 — strong reasoning</div>
+                    <div class="model-badges">
+                        <span class="badge">128K</span>
+                    </div>
+                </div>
+                <div class="model-card">
+                    <div class="model-name">Grok</div>
+                    <div class="model-id">pollinations/grok</div>
+                    <div class="model-desc">xAI Grok — tool calling, fast</div>
+                    <div class="model-badges">
+                        <span class="badge">128K</span>
+                        <span class="badge">tools</span>
+                    </div>
+                </div>
+                <div class="model-card">
+                    <div class="model-name">Mistral</div>
+                    <div class="model-id">pollinations/mistral</div>
+                    <div class="model-desc">Mistral Small — vision, fast responses</div>
+                    <div class="model-badges">
+                        <span class="badge">128K</span>
+                        <span class="badge">vision</span>
+                    </div>
+                </div>
+                <div class="model-card">
+                    <div class="model-name">Qwen Coder</div>
+                    <div class="model-id">pollinations/qwen-coder</div>
+                    <div class="model-desc">Qwen 3 Coder — coding specialist</div>
+                    <div class="model-badges">
+                        <span class="badge">128K</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">Why Pollinations?</h2>
+            <div class="features">
+                <div class="feature">
+                    <h3>25+ models, one API</h3>
+                    <p>OpenAI, Claude, Gemini, DeepSeek, Grok, Kimi, Mistral — all through a single OpenAI-compatible endpoint.</p>
+                </div>
+                <div class="feature">
+                    <h3>Free credits included</h3>
+                    <p>Sign up and start building immediately. Pay-as-you-go when you need more.</p>
+                </div>
+                <div class="feature">
+                    <h3>OpenAI-compatible</h3>
+                    <p>Standard <code>/v1/chat/completions</code> — works with any OpenAI client library or tool.</p>
+                </div>
+                <div class="feature">
+                    <h3>Beyond text</h3>
+                    <p>Same API for image generation, video, and audio. Add the Pollinations skill for multi-modal agents.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">Layer 2: Multi-Modal Skill</h2>
+            <p class="section-subtitle">Give your OpenClaw agent image, video, and audio generation powers</p>
+            <div class="skill-box">
+                <h3>Pollinations Skill on ClawHub</h3>
+                <p>Install the community skill to add image/video/audio generation to your agent:</p>
+                <div class="code-block" id="skill-cmd">/skill install isaacgounton/pollinations<button class="copy-btn" onclick="copyCode('skill-cmd')">Copy</button></div>
+                <div class="skill-caps" style="margin-top:16px">
+                    <span>🖼️ Image (Flux, GPT Image, Seedream, Imagen 4)</span>
+                    <span>🎬 Video (Veo 3.1, Seedance, Wan)</span>
+                    <span>🔊 TTS (13 voices)</span>
+                    <span>👁️ Vision analysis</span>
+                </div>
+            </div>
+        </section>
+
+    </div>
+</main>
+
+<footer>
+    <div class="container">
+        <div class="links">
+            <a href="https://enter.pollinations.ai">Get API Key</a>
+            <a href="https://gen.pollinations.ai/api/docs">API Docs</a>
+            <a href="https://gen.pollinations.ai/v1/models">Text Models</a>
+            <a href="https://gen.pollinations.ai/image/models">Image Models</a>
+            <a href="https://github.com/pollinations/pollinations">GitHub</a>
+            <a href="https://discord.gg/pollinations-ai-885844321461485618">Discord</a>
+        </div>
+        <p>pollinations.ai — Open-source AI generation platform</p>
+    </div>
+</footer>
+
+<script>
+function copyCode(id) {
+    const el = document.getElementById(id);
+    const text = el.textContent.replace('Copy', '').trim();
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = el.querySelector('.copy-btn');
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+}
+
+function toggleManual() {
+    const el = document.getElementById('manual-config');
+    const btn = el.previousElementSibling;
+    el.classList.toggle('open');
+    btn.textContent = el.classList.contains('open') ? 'Manual JSON config ▴' : 'Manual JSON config ▾';
+}
+</script>
+
+</body>
+</html>

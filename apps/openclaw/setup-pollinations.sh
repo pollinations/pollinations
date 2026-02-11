@@ -24,7 +24,12 @@ CONFIG_FILE="${CONFIG_DIR}/openclaw.json"
 if ! command -v openclaw >/dev/null 2>&1; then
     echo "OpenClaw not found. Installing via npm..."
     if command -v npm >/dev/null 2>&1; then
-        npm install -g @anthropic-ai/openclaw
+        if npm install -g openclaw; then
+            echo "✓ OpenClaw installed successfully"
+        else
+            echo "Failed to install globally. Try: sudo npm install -g openclaw"
+            exit 1
+        fi
     else
         echo "Error: npm not found. Install Node.js first: https://nodejs.org"
         exit 1

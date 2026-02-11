@@ -1,0 +1,44 @@
+{
+  "date": "2026-01-31",
+  "generated_at": "2026-01-31T16:06:26.202256+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art",
+  "linked_images": true,
+  "strategy_reasoning": "Using the 'digital garden' metaphor fits our brand perfectly. The switch from Cloudflare cron to GitHub Actions is technical, but visually representing it as a reliable 'watering/refill' system in a Stardew Valley style makes it understandable and cozy. The removal of 'Turbo' and secret standardization is framed as 'inventory management' or 'spring cleaning', which is satisfying and relatable to gamers.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20scene%20of%20a%20tiny%208-bit%20automated%20watering%20system%20tending%20to%20a%20row%20of%20glowing%20digital%20flowers.%20The%20water%20is%20glowing%20golden%20%28pollen%29.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20gradient%20background.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20vibes%20like%20Stardew%20Valley.%20Text%20in%20pixel%20font%3A%20%27AUTO%20REFILLS%27.%20Nostalgic%20but%20beautiful%2C%20emotionally%20warm.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1935635201",
+      "prompt": "Cozy pixel art scene of a tiny 8-bit automated watering system tending to a row of glowing digital flowers. The water is glowing golden (pollen). Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'AUTO REFILLS'. Nostalgic but beautiful, emotionally warm.",
+      "description": "Visualizes the new GitHub Actions workflow for tier refills as an automated garden system."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Close%20up%20pixel%20art%20of%20a%20retro%20RPG%20inventory%20screen.%20A%20pixel%20cursor%20is%20organizing%20shiny%20golden%20keys%20%28secrets%29%20and%20removing%20a%20grayed-out%20item%20labeled%20%27Turbo%27.%20Pastel%20peach%20and%20mint%20background.%208-bit%20UI%20elements%2C%20clean%20lines.%20Cozy%2C%20organized%20vibe%20like%20Unpacking.%20Warm%20lighting.%20Text%3A%20%27INVENTORY%20CLEANUP%27.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1321830664",
+      "prompt": "Close up pixel art of a retro RPG inventory screen. A pixel cursor is organizing shiny golden keys (secrets) and removing a grayed-out item labeled 'Turbo'. Pastel peach and mint background. 8-bit UI elements, clean lines. Cozy, organized vibe like Unpacking. Warm lighting. Text: 'INVENTORY CLEANUP'.",
+      "description": "Represents the removal of the Turbo model and standardization of API keys/secrets."
+    }
+  ],
+  "caption": "Tending to the digital garden today! 🌻🤖\n\nWe've swapped out some backend machinery to make your daily Pollen refills smoother and more reliable (hello GitHub Actions! 👋). Also did some inventory management—organizing our API secrets and saying goodbye to the old Turbo model to keep things lightweight and fast. 🧹✨\n\nLess clutter, more creation. Go build something beautiful! 🌸\n\n#pollinations #opensource #pixelart #indiedev #cozyvibes #8bit #buildinpublic #generativeai",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#indiedev",
+    "#cozyvibes",
+    "#8bit",
+    "#buildinpublic",
+    "#generativeai"
+  ],
+  "alt_text": "Pixel art illustrations in a cozy 8-bit style. Image 1: An automated watering system filling flowers with golden light, representing daily refills. Image 2: A retro game inventory screen showing keys being organized and items being tidied up.",
+  "pr_references": [
+    "#7720",
+    "#7719",
+    "#7821",
+    "#7801",
+    "#7819",
+    "#7708",
+    "#7779",
+    "#7818",
+    "#7807"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+    "name": "kpi-dashboard",
+    "private": true,
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "decrypt-vars": "sops decrypt secrets/env.json --output-type dotenv > .dev.vars",
+        "dev": "npm run decrypt-vars && npx wrangler dev",
+        "dev:vite": "vite",
+        "build": "vite build",
+        "deploy": "npm run build && npx wrangler deploy",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@cloudflare/kv-asset-handler": "^0.4.1",
+        "date-fns": "^3.0.0",
+        "hono": "^4.0.0",
+        "lucide-react": "^0.294.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "recharts": "^2.10.3"
+    },
+    "devDependencies": {
+        "@types/react": "^18.2.43",
+        "@types/react-dom": "^18.2.17",
+        "@vitejs/plugin-react": "^4.2.1",
+        "tailwindcss": "^4.0.0",
+        "@tailwindcss/vite": "^4.0.0",
+        "vite": "^5.0.8"
+    }
+}

@@ -17,3 +17,6 @@ SCHEMA >
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
 ENGINE_SORTING_KEY "timestamp, environment, event_type"
+
+FORWARD_QUERY >
+    SELECT event_type, environment, user_id, tier, pollen_amount, defaultValueOfTypeName('Nullable(Float64)') AS previous_balance, user_count, timestamp

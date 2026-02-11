@@ -631,6 +631,18 @@
             </div>
         </div>
 
+        <div class="setup-box" style="margin-top:24px; border:1px solid rgba(139,92,246,0.15); background:rgba(139,92,246,0.03)">
+            <div class="step">
+                <div class="step-label" style="color:var(--accent)">Already have OpenClaw running?</div>
+                <div class="step-text">Paste this into your agent chat — it will configure Pollinations as a provider:</div>
+                <div class="code-block" id="agent-msg" style="white-space:pre-wrap; font-size:12px; line-height:1.6">Add pollinations.ai as a model provider. Run this command:
+
+curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- <span class="key-in-json">YOUR_API_KEY</span>
+
+Then start a new session so the config is picked up. After that, switch to the new provider with: /model pollinations/kimi<button class="copy-btn" onclick="copyCode('agent-msg')">Copy</button></div>
+            </div>
+        </div>
+
         <section class="section" style="padding-top:0">
             <h2 class="section-title">Which model should I use?</h2>
 

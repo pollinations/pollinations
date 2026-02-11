@@ -11,22 +11,22 @@
   "gist": {
     "category": "bug_fix",
     "user_facing": true,
-    "publish_tier": "daily",
+    "publish_tier": "discord_only",
     "importance": "minor",
-    "summary": "Added the standard pointer cursor to 'Select all' and category toggle buttons in the model permissions settings.",
-    "impact": "Improves the user interface by clearly indicating which elements are clickable in the permissions menu.",
+    "summary": "Added the pointer cursor style to selection and toggle buttons in the account permissions UI.",
+    "impact": "Users will now see the correct interactive cursor when hovering over these controls, improving usability.",
     "keywords": [
       "ui",
       "ux",
+      "css",
       "permissions",
-      "settings",
-      "frontend"
+      "web"
     ],
-    "image_prompt": "Cozy pixel art scene of the Pollinations bee holding a giant pixelated mouse cursor over a chunky 'Select All' button. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi UI elements. Emotionally warm, polished vibes."
+    "image_prompt": "Cozy pixel art close-up of a tiny 8-bit bee clicking a 'Select All' button with a large pixel mouse cursor. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Unpacking. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
-    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8040.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations bee holding a giant pixelated mouse cursor over a chunky 'Select All' button. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi UI elements. Emotionally warm, polished vibes."
+    "url": null,
+    "prompt": null
   },
-  "generated_at": "2026-02-11T19:30:16.380992+00:00"
+  "generated_at": "2026-02-11T19:33:57.787252+00:00"
 }

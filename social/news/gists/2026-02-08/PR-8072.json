@@ -1,0 +1,31 @@
+{
+  "pr_number": 8072,
+  "title": "feat: add elevenmusic model with duration-based billing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8072",
+  "merged_at": "2026-02-08T03:31:20Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Adds the 'elevenmusic' model to audio endpoints, enabling AI music generation with custom duration and instrumental options.",
+    "impact": "Users can now generate music tracks up to 5 minutes long with precise duration control and transparent per-second pricing.",
+    "keywords": [
+      "elevenlabs",
+      "music generation",
+      "audio api",
+      "duration billing",
+      "new model"
+    ],
+    "image_prompt": "Cozy pixel art scene of the 8-bit bee mascot wearing headphones and mixing tracks on a retro synthesizer. Soft lime green (#ecf874) and pastel violet gradient background. Musical notes floating in the air like fireflies. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T19:36:24.647318+00:00"
+}

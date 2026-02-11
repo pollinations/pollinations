@@ -41,6 +41,6 @@ Given a set of PR gists (JSON objects with category, summary, impact, importance
 
 - `arcs`: 3-5 thematic groups. Each has a headline, summary, list of PR numbers, and the dominant importance/category.
 - `one_liner`: A single sentence capturing the day's theme. Used as context for platform generators.
-- `pr_summary`: Formatted PR list in the same format the existing platform prompts expect (injected as `{pr_summary}`).
+- `pr_summary`: Formatted PR list for platform prompts (injected as `{updates}`).
 
 Return ONLY the JSON object. No markdown fences, no explanation.

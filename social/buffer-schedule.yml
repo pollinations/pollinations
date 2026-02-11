@@ -1,6 +1,6 @@
 # Social Media Posting Schedule
 # All times in UTC
-# Used by buffer_stage_post.py to schedule posts via Buffer's customScheduled mode
+# Used by buffer_publish.py to schedule posts via Buffer's customScheduled mode
 #
 # Each post is generated once, reviewed via PR, and delivered once at the preferred time.
 # Generation frequency = delivery frequency. Lookback window matches the gap between generations.
@@ -35,7 +35,7 @@ weekly:
 # Non-social outputs (repo artifacts, not scheduled via Buffer):
 #
 # diary:
-#   Generated during daily summary (generate_daily_summary.py, 00:00 UTC cron).
+#   Generated during daily summary (generate_daily.py, 00:00 UTC cron).
 #   Whimsical pixel art narrative of the day's gists → social/news/daily/{date}/diary.json
 #
 # highlights:
@@ -50,7 +50,7 @@ weekly:
 # Daily:
 # 1. Cron generates post → creates PR for review
 # 2. PR merged → Buffer publish workflow triggers
-# 3. buffer_stage_post.py reads this schedule, picks next valid day at preferred time
+# 3. buffer_publish.py reads this schedule, picks next valid day at preferred time
 # 4. Buffer delivers the post at that scheduled time
 # 5. Reddit is posted immediately via API (not Buffer)
 #

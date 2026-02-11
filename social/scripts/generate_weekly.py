@@ -6,7 +6,7 @@ Sunday 00:00 UTC:
   1. Read daily summaries for the past 7 days
   2. AI synthesizes weekly themes → summary.md
   3. Generate platform posts (Twitter, LinkedIn, Instagram, Discord)
-  4. Generate 5 platform images (1 twitter + 1 linkedin + 3 instagram)
+  4. Generate 7 platform images (1 twitter + 1 linkedin + 3 instagram + 1 reddit + 1 discord)
   5. Create PR for review
 
 Monday 08:00 UTC cron (publish_weekly.py) checks if PR was merged and publishes.
@@ -133,7 +133,7 @@ def read_daily_summaries(week_start: str, week_end: str, github_token: str,
 def generate_digest(summaries: List[Dict], week_start: str, week_end: str,
                     token: str) -> Optional[Dict]:
     """Synthesize daily summaries into weekly summary."""
-    system_prompt = load_prompt("_shared", "weekly_summary")
+    system_prompt = load_prompt("_shared/weekly_summary")
 
     # Build context from daily summaries
     daily_context = []
@@ -164,17 +164,14 @@ Daily summaries:
 # ── Step 2: Generate platform posts ─────────────────────────────────
 
 def generate_twitter_post(digest: Dict, token: str) -> Optional[Dict]:
-    """Generate weekly twitter.json using existing Twitter system prompt."""
+    """Generate weekly twitter.json using the Twitter system prompt."""
     pr_summary = digest.get("pr_summary", "")
-    system_template = load_prompt("twitter", "system")
-    system_prompt = system_template.replace("{pr_summary}", pr_summary)
-
-    user_template = load_prompt("twitter", "user_with_prs")
     arc_titles = [a["headline"] for a in digest.get("arcs", [])]
-    user_prompt = user_template.replace("{pr_titles}", str(arc_titles))
+    template = load_prompt("twitter")
+    system_prompt = template.replace("{updates}", pr_summary).replace("{pr_titles}", str(arc_titles))
 
     response = call_pollinations_api(
-        system_prompt, user_prompt, token,
+        system_prompt, "Generate the post now.", token,
         temperature=0.8, exit_on_failure=False
     )
     if not response:
@@ -183,18 +180,17 @@ def generate_twitter_post(digest: Dict, token: str) -> Optional[Dict]:
 
 
 def generate_linkedin_post(digest: Dict, token: str) -> Optional[Dict]:
-    """Generate weekly linkedin.json using existing LinkedIn system prompt."""
+    """Generate weekly linkedin.json using the LinkedIn system prompt."""
     pr_summary = digest.get("pr_summary", "")
-    system_template = load_prompt("linkedin", "system")
-    system_prompt = system_template.replace("{pr_summary}", pr_summary)
-
-    user_template = load_prompt("linkedin", "user_with_prs")
     arc_titles = [a["headline"] for a in digest.get("arcs", [])]
-    user_prompt = user_template.replace("{pr_titles}", str(arc_titles))
-    user_prompt = user_prompt.replace("{pr_count}", str(digest.get("pr_count", 0)))
+    pr_count = str(digest.get("pr_count", 0))
+    template = load_prompt("linkedin")
+    system_prompt = (template.replace("{updates}", pr_summary)
+                     .replace("{pr_titles}", str(arc_titles))
+                     .replace("{pr_count}", pr_count))
 
     response = call_pollinations_api(
-        system_prompt, user_prompt, token,
+        system_prompt, "Generate the post now.", token,
         temperature=0.7, exit_on_failure=False
     )
     if not response:
@@ -203,17 +199,14 @@ def generate_linkedin_post(digest: Dict, token: str) -> Optional[Dict]:
 
 
 def generate_instagram_post(digest: Dict, token: str) -> Optional[Dict]:
-    """Generate weekly instagram.json using existing Instagram system prompt."""
+    """Generate weekly instagram.json using the Instagram system prompt."""
     pr_summary = digest.get("pr_summary", "")
-    system_template = load_prompt("instagram", "system")
-    system_prompt = system_template.replace("{pr_summary}", pr_summary)
-
-    user_template = load_prompt("instagram", "user_with_prs")
     arc_titles = [a["headline"] for a in digest.get("arcs", [])]
-    user_prompt = user_template.replace("{pr_titles}", str(arc_titles))
+    template = load_prompt("instagram")
+    system_prompt = template.replace("{updates}", pr_summary).replace("{pr_titles}", str(arc_titles))
 
     response = call_pollinations_api(
-        system_prompt, user_prompt, token,
+        system_prompt, "Generate the post now.", token,
         temperature=0.7, exit_on_failure=False
     )
     if not response:
@@ -222,20 +215,14 @@ def generate_instagram_post(digest: Dict, token: str) -> Optional[Dict]:
 
 
 def generate_reddit_post(digest: Dict, token: str) -> Optional[Dict]:
-    """Generate weekly reddit.json using the existing Reddit system prompt."""
+    """Generate weekly reddit.json using the Reddit system prompt."""
     pr_summary = digest.get("pr_summary", "")
-    system_template = load_prompt("reddit", "system")
-    system_prompt = system_template.replace("{pr_summary}", pr_summary)
-
     arc_titles = [a["headline"] for a in digest.get("arcs", [])]
-    user_prompt = (
-        f"Create a Reddit post for this week's update based on these highlights:\n"
-        f"{chr(10).join('- ' + t for t in arc_titles)}\n\n"
-        f"Follow the Output Format specified above. Return ONLY the JSON object."
-    )
+    template = load_prompt("reddit")
+    system_prompt = template.replace("{updates}", pr_summary).replace("{pr_titles}", str(arc_titles))
 
     response = call_pollinations_api(
-        system_prompt, user_prompt, token,
+        system_prompt, "Generate the post now.", token,
         temperature=0.7, exit_on_failure=False
     )
     if not response:
@@ -244,31 +231,30 @@ def generate_reddit_post(digest: Dict, token: str) -> Optional[Dict]:
 
 
 def generate_discord_post(digest: Dict, token: str, week_end: str) -> Optional[Dict]:
-    """Generate weekly discord.json using existing Discord weekly prompt."""
-    system_prompt = load_prompt("discord", "weekly_news_system")
-    changelog = digest.get("changelog_md", "")
-
-    user_template = load_prompt("discord", "weekly_news_user")
-    user_prompt = user_template.replace("{date_str}", week_end).replace("{news_content}", changelog)
+    """Generate weekly discord.json using the Discord system prompt."""
+    pr_summary = digest.get("pr_summary", "")
+    arc_titles = [a["headline"] for a in digest.get("arcs", [])]
+    template = load_prompt("discord")
+    system_prompt = (template
+                     .replace("{updates}", pr_summary)
+                     .replace("{pr_titles}", str(arc_titles))
+                     .replace("{date_str}", week_end))
 
     response = call_pollinations_api(
-        system_prompt, user_prompt, token,
+        system_prompt, "Generate the post now.", token,
         temperature=0.7, exit_on_failure=False
     )
     if not response:
         return None
 
-    # Discord returns raw text, not JSON
     text = response.strip()
-    if text.startswith("```"):
-        lines = text.split("\n")
-        lines = [l for l in lines if not l.strip().startswith("```")]
-        text = "\n".join(lines)
-
     if text.upper().strip() == "SKIP":
         return None
 
-    return {"message": text, "date": week_end}
+    result = parse_json_response(text)
+    if result:
+        result["date"] = week_end
+    return result
 
 
 # ── Step 3: Generate images ────────────────────────────────────────
@@ -284,6 +270,7 @@ def generate_platform_images(
     repo: str,
     branch: str,
     reddit_post: Optional[Dict] = None,
+    discord_post: Optional[Dict] = None,
 ) -> None:
     """Generate images for all platforms and commit to branch."""
     image_dir = f"{WEEKLY_REL_DIR}/{week_end}/images"
@@ -340,6 +327,18 @@ def generate_platform_images(
             )
             if url:
                 reddit_post["image"] = {"url": url, "prompt": reddit_post["image_prompt"]}
+
+    # Discord: 1 image
+    if discord_post and discord_post.get("image_prompt"):
+        print("  Generating Discord image...")
+        img_bytes, _ = generate_image(discord_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
+        if img_bytes:
+            url = commit_image_to_branch(
+                img_bytes, f"{image_dir}/discord.jpg", branch,
+                github_token, owner, repo
+            )
+            if url:
+                discord_post["image"] = {"url": url, "prompt": discord_post["image_prompt"]}
 
 
 # ── Step 4: Create PR ───────────────────────────────────────────────
@@ -398,6 +397,7 @@ def create_weekly_pr(
         week_end, pollinations_token,
         github_token, owner, repo, branch,
         reddit_post=reddit_post,
+        discord_post=discord_post,
     )
 
     # Prepare files

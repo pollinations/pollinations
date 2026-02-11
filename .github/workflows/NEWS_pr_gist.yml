@@ -46,7 +46,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
+          PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number || github.event.pull_request.number }}
+          REPO_FULL_NAME: ${{ github.repository }}
+        run: python social/scripts/generate_realtime.py
+
+      - name: Post to Discord
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number || github.event.pull_request.number }}
           REPO_FULL_NAME: ${{ github.repository }}
-        run: python social/scripts/generate_pr_gist.py
+        run: python social/scripts/publish_realtime.py

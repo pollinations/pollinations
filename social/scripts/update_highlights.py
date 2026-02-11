@@ -12,9 +12,6 @@ from common import load_prompt, get_env, get_file_sha, call_pollinations_api, GI
 NEWS_FOLDER = "social/news"
 HIGHLIGHTS_PATH = "social/news/highlights.md"
 
-# Platform name for prompt loading
-PLATFORM = "github"
-
 
 def get_latest_news_file(github_token: str, owner: str, repo: str) -> tuple[str, str, str]:
     """
@@ -126,10 +123,7 @@ def get_links_file(github_token: str, owner: str, repo: str) -> str:
 
 
 def create_highlights_prompt(news_content: str, news_date: str, links_content: str = "") -> tuple:
-    """Create prompt to extract only the most significant highlights
-    
-    Prompts are loaded from social/prompts/github/
-    """
+    """Create prompt to extract only the most significant highlights."""
 
     links_section = ""
     if links_content:
@@ -141,15 +135,13 @@ Add links naturally in the description using markdown format: [text](url)
 {links_content}
 """
 
-    # Load system prompt and inject links_section
-    system_prompt_template = load_prompt(PLATFORM, "highlights_system")
-    system_prompt = system_prompt_template.replace("{links_section}", links_section)
+    # Load single system prompt and inject all variables
+    template = load_prompt("highlights")
+    system_prompt = (template.replace("{links_section}", links_section)
+                     .replace("{news_date}", news_date)
+                     .replace("{news_content}", news_content))
 
-    # Load user prompt and inject news_date and news_content
-    user_prompt_template = load_prompt(PLATFORM, "highlights_user")
-    user_prompt = user_prompt_template.replace("{news_date}", news_date).replace("{news_content}", news_content)
-
-    return system_prompt, user_prompt
+    return system_prompt, "Generate the highlights now."
 
 
 def parse_response(response: str) -> str:

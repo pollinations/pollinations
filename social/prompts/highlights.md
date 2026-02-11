@@ -60,3 +60,17 @@ Rules:
 - Use your judgment - if something feels exciting and user-facing, include it
 - Typical weeks: 3-4 highlights. Slow weeks: 0-2. Big release weeks: up to 10
 - Trust your instincts on what users would find exciting
+
+## Your Task
+
+Review this pollinations.ai changelog and extract ONLY highlights worthy of the website and README.
+
+**DATE FOR THIS CHANGELOG: {news_date}**
+Use this date for all highlights from this changelog.
+
+Typical week: 3-4 highlights. Some weeks: 0. Be very selective.
+
+CHANGELOG:
+{news_content}
+
+Output markdown bullets only, or SKIP if nothing qualifies.

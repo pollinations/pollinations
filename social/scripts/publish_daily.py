@@ -8,7 +8,7 @@ Triggered when a daily summary PR is merged. Does four things:
   3. Update highlights.md
   4. Update README.md "Latest News" section
 
-Reuses existing buffer_stage_post.py and github_update_highlights/readme logic.
+Reuses existing buffer_publish.py and update_highlights/update_readme logic.
 """
 
 import os
@@ -20,20 +20,20 @@ from datetime import datetime, timezone
 from typing import Dict, Optional
 
 from common import get_env, github_api_request, GITHUB_API_BASE
-from buffer_stage_post import (
+from buffer_publish import (
     publish_twitter_post,
     publish_linkedin_post,
     publish_instagram_post,
     add_pr_comment,
 )
-from github_update_highlights import (
+from update_highlights import (
     get_current_highlights,
     get_links_file,
     create_highlights_prompt,
     parse_response,
     merge_highlights,
 )
-from github_update_readme import (
+from update_readme import (
     get_file_content,
     get_top_highlights,
     update_readme_news_section,

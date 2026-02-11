@@ -20,7 +20,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Optional
 
 from common import get_env, github_api_request, GITHUB_API_BASE, DISCORD_CHAR_LIMIT
-from buffer_stage_post import (
+from buffer_publish import (
     publish_twitter_post,
     publish_linkedin_post,
     publish_instagram_post,
@@ -129,18 +129,36 @@ def chunk_message(message: str, max_length: int = DISCORD_CHUNK_SIZE):
     return chunks
 
 
-def post_to_discord(webhook_url: str, message: str) -> bool:
-    """Post weekly summary to Discord. Returns True on success."""
+def post_to_discord(webhook_url: str, message: str, image_url: str = None) -> bool:
+    """Post weekly summary to Discord with optional image. Returns True on success."""
+    # Download image if available
+    image_bytes = None
+    if image_url:
+        try:
+            resp = requests.get(image_url, timeout=30)
+            if resp.status_code == 200 and "image" in resp.headers.get("content-type", ""):
+                image_bytes = resp.content
+        except Exception as e:
+            print(f"  Could not download image for Discord: {e}")
+
     chunks = chunk_message(message)
     for i, chunk in enumerate(chunks):
-        resp = requests.post(webhook_url, json={"content": chunk}, timeout=30)
+        # Attach image to the first chunk only
+        if i == 0 and image_bytes:
+            files = {
+                "payload_json": (None, json.dumps({"content": chunk}), "application/json"),
+                "files[0]": ("image.jpg", image_bytes, "image/jpeg"),
+            }
+            resp = requests.post(webhook_url, files=files, timeout=30)
+        else:
+            resp = requests.post(webhook_url, json={"content": chunk}, timeout=30)
         if resp.status_code not in [200, 204]:
             print(f"  Discord error on chunk {i+1}: {resp.status_code} {resp.text[:200]}")
             return False
         if i < len(chunks) - 1:
             import time
             time.sleep(1)
-    print(f"  Discord: posted {len(chunks)} chunk(s)")
+    print(f"  Discord: posted {len(chunks)} chunk(s)" + (" with image" if image_bytes else ""))
     return True
 
 
@@ -203,7 +221,8 @@ def main():
     discord_data = read_weekly_file(f"{weekly_dir}/discord.json", github_token, owner, repo)
     if discord_data and discord_data.get("message"):
         print("  Discord...")
-        results["discord"] = post_to_discord(discord_webhook, discord_data["message"])
+        discord_image = discord_data.get("image", {}).get("url")
+        results["discord"] = post_to_discord(discord_webhook, discord_data["message"], discord_image)
     else:
         print("  No discord.json — skipping")
 

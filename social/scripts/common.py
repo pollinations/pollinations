@@ -151,21 +151,21 @@ def get_env(key: str, required: bool = True) -> Optional[str]:
     return value
 
 
-def load_prompt(platform: str, prompt_name: str) -> str:
-    """Load a prompt file from social/prompts/{platform}/{prompt_name}.md
-    
+def load_prompt(name: str) -> str:
+    """Load a prompt file from social/prompts/{name}.md
+
     Automatically injects shared components:
     - {about} -> content from _shared/brand_about.md
     - {visual_style} -> content from _shared/brand_visual.md
-    
+
     Args:
-        platform: 'linkedin', 'twitter', 'instagram', 'reddit', etc.
-        prompt_name: 'system', 'user_with_prs', 'user_thought_leadership', etc.
-    
+        name: 'twitter', 'linkedin', 'discord', 'highlights', 'diary', etc.
+              For shared prompts, use '_shared/daily_summary', '_shared/pr_gist', etc.
+
     Returns:
         The prompt content as a string with shared components injected
     """
-    prompt_path = PROMPTS_DIR / platform / f"{prompt_name}.md"
+    prompt_path = PROMPTS_DIR / f"{name}.md"
     
     if not prompt_path.exists():
         print(f"Warning: Prompt file not found: {prompt_path}")
@@ -563,7 +563,7 @@ _GIST_REQUIRED_KEYS = {"pr_number", "title", "author", "url", "merged_at"}
 
 # Required keys inside gist.gist (the AI-generated analysis)
 _GIST_AI_KEYS = {"category", "user_facing", "publish_tier", "importance",
-                 "summary", "impact", "keywords", "discord_snippet"}
+                 "summary", "impact", "keywords", "image_prompt"}
 
 VALID_CATEGORIES = {"feature", "bug_fix", "improvement", "docs", "infrastructure", "community"}
 VALID_PUBLISH_TIERS = {"none", "discord_only", "daily"}
@@ -637,7 +637,7 @@ def build_minimal_gist(pr_number: int, title: str, author: str, url: str,
             "summary": title,
             "impact": "",
             "keywords": [],
-            "discord_snippet": title,
+            "image_prompt": "",
         },
         "image": {"url": None, "prompt": None},
         "generated_at": datetime.now(timezone.utc).isoformat(),

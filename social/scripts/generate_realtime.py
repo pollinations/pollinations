@@ -5,15 +5,14 @@ Tier 1: PR Gist Generator
 On PR merge:
   Step 1: AI analyzes PR → structured gist JSON → committed to main
   Step 2: Generate pixel art image → update gist with image URL
-  Step 3: Post to Discord (best-effort)
 
+Discord posting is handled separately by publish_realtime.py.
 See social/PIPELINE.md for full architecture.
 """
 
 import os
 import sys
 import json
-import requests
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
@@ -34,7 +33,6 @@ from common import (
     MODEL,
     OWNER,
     REPO,
-    DISCORD_CHAR_LIMIT,
     DEFAULT_TIMEOUT,
 )
 
@@ -93,7 +91,7 @@ def analyze_pr(pr_data: Dict, files_summary: str, token: str) -> Optional[Dict]:
 
     Returns parsed dict on success, None on failure (after retries).
     """
-    system_prompt = load_prompt("_shared", "pr_analyzer")
+    system_prompt = load_prompt("_shared/pr_gist")
 
     # Build user prompt with PR context
     # Trust boundary: PR body comes from merged PRs (requires repo write access),
@@ -164,20 +162,11 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict) -> Dict:
 def generate_gist_image(gist: Dict, pollinations_token: str,
                         github_token: str, owner: str, repo: str) -> Optional[str]:
     """Generate pixel art image for a gist. Returns image URL or None."""
-    # Generate image prompt from discord_snippet
-    image_prompt_system = load_prompt("discord", "image_prompt_system")
-    snippet = gist["gist"].get("discord_snippet", gist["title"])
-
-    image_prompt = call_pollinations_api(
-        image_prompt_system, snippet, pollinations_token,
-        temperature=0.7, exit_on_failure=False
-    )
-
+    image_prompt = gist["gist"].get("image_prompt", "")
     if not image_prompt:
-        print("  Failed to generate image prompt")
+        print("  No image prompt in gist")
         return None
 
-    image_prompt = image_prompt.strip()
     print(f"  Image prompt: {image_prompt[:100]}...")
 
     # Generate the image
@@ -197,71 +186,6 @@ def generate_gist_image(gist: Dict, pollinations_token: str,
     return image_url
 
 
-# ── Step 3: Discord post ────────────────────────────────────────────
-
-def post_to_discord(webhook_url: str, gist: Dict, image_url: Optional[str]):
-    """Post gist announcement to Discord. Best-effort — failures are logged, not fatal."""
-    snippet = gist["gist"].get("discord_snippet", gist["title"])
-
-    # Format message with PR metadata footer
-    pr_number = gist["pr_number"]
-    pr_url = gist["url"]
-    author = gist["author"]
-    merged_at = gist.get("merged_at", "")
-
-    # Discord timestamp
-    timestamp_str = ""
-    if merged_at:
-        try:
-            if merged_at.endswith("Z"):
-                dt = datetime.fromisoformat(merged_at.replace("Z", "+00:00"))
-            else:
-                dt = datetime.fromisoformat(merged_at)
-            unix_ts = int(dt.timestamp())
-            timestamp_str = f" <t:{unix_ts}:F>"
-        except Exception:
-            pass
-
-    pr_link = f"[PR #{pr_number}](<{pr_url}>)"
-    author_link = f"[{author}](<https://github.com/{author}>)"
-    footer = f"\n\n{pr_link} | By {author_link}{timestamp_str}"
-
-    message = snippet + footer
-
-    # Truncate if needed
-    if len(message) > DISCORD_CHAR_LIMIT:
-        available = DISCORD_CHAR_LIMIT - len(footer) - 3
-        message = snippet[:available] + "..." + footer
-
-    # Download image for embed if available
-    image_bytes = None
-    if image_url:
-        try:
-            resp = requests.get(image_url, timeout=30)
-            if resp.status_code == 200 and "image" in resp.headers.get("content-type", ""):
-                image_bytes = resp.content
-        except Exception as e:
-            print(f"  Could not download image for Discord: {e}")
-
-    # Post to Discord
-    try:
-        if image_bytes:
-            files = {
-                "payload_json": (None, json.dumps({"content": message}), "application/json"),
-                "files[0]": ("image.jpg", image_bytes, "image/jpeg"),
-            }
-            resp = requests.post(webhook_url, files=files)
-        else:
-            resp = requests.post(webhook_url, json={"content": message})
-
-        if resp.status_code in [200, 204]:
-            print("  Discord post sent")
-        else:
-            print(f"  Discord webhook error: {resp.status_code} {resp.text[:200]}")
-    except Exception as e:
-        print(f"  Discord post failed: {e}")
-
-
 # ── Main ─────────────────────────────────────────────────────────────
 
 def main():
@@ -270,14 +194,13 @@ def main():
     # Environment
     github_token = get_env("GITHUB_TOKEN")
     pollinations_token = get_env("POLLINATIONS_TOKEN")
-    discord_webhook = get_env("DISCORD_WEBHOOK_URL")
     pr_number = get_env("PR_NUMBER")
     repo_full_name = get_env("REPO_FULL_NAME")
 
     owner, repo = repo_full_name.split("/")
 
     # ── Fetch PR data ────────────────────────────────────────────────
-    print(f"\n[1/3] Analyzing PR #{pr_number}...")
+    print(f"\n[1/2] Analyzing PR #{pr_number}...")
     pr_data = fetch_pr_data(repo_full_name, pr_number, github_token)
     files_summary = fetch_pr_files(repo_full_name, pr_number, github_token)
 
@@ -317,7 +240,7 @@ def main():
           f"importance={gist['gist']['importance']}")
 
     # ── Step 2: Generate image → update gist ─────────────────────────
-    print(f"\n[2/3] Generating image...")
+    print(f"\n[2/2] Generating image...")
     image_url = generate_gist_image(gist, pollinations_token, github_token, owner, repo)
 
     if image_url:
@@ -327,10 +250,6 @@ def main():
         print(f"  Image URL: {image_url}")
     else:
         print("  No image generated — continuing without image")
-
-    # ── Step 3: Discord post ─────────────────────────────────────────
-    print(f"\n[3/3] Posting to Discord...")
-    post_to_discord(discord_webhook, gist, image_url)
 
     print("\n=== Done ===")
 

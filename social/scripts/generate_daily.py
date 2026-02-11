@@ -82,7 +82,7 @@ def parse_json_response(response: str) -> Optional[Dict]:
 
 def generate_summary(gists: List[Dict], date_str: str, token: str) -> Optional[Dict]:
     """Cluster gists into narrative arcs and produce summary.json."""
-    system_prompt = load_prompt("_shared", "daily_summary")
+    system_prompt = load_prompt("_shared/daily_summary")
 
     # Build gist context for AI
     gist_lines = []
@@ -119,18 +119,14 @@ PR Gists:
 # ── Step 2: Generate platform posts ─────────────────────────────────
 
 def generate_twitter_post(summary: Dict, token: str) -> Optional[Dict]:
-    """Generate twitter.json using the existing Twitter system prompt."""
+    """Generate twitter.json using the Twitter system prompt."""
     pr_summary = summary.get("pr_summary", "")
-    system_template = load_prompt("twitter", "system")
-    system_prompt = system_template.replace("{pr_summary}", pr_summary)
-
-    # Use user_with_prs prompt with arc headlines as "titles"
-    user_template = load_prompt("twitter", "user_with_prs")
     arc_titles = [a["headline"] for a in summary.get("arcs", [])]
-    user_prompt = user_template.replace("{pr_titles}", str(arc_titles))
+    template = load_prompt("twitter")
+    system_prompt = template.replace("{updates}", pr_summary).replace("{pr_titles}", str(arc_titles))
 
     response = call_pollinations_api(
-        system_prompt, user_prompt, token,
+        system_prompt, "Generate the post now.", token,
         temperature=0.8, exit_on_failure=False
     )
     if not response:
@@ -139,18 +135,17 @@ def generate_twitter_post(summary: Dict, token: str) -> Optional[Dict]:
 
 
 def generate_linkedin_post(summary: Dict, token: str) -> Optional[Dict]:
-    """Generate linkedin.json using the existing LinkedIn system prompt."""
+    """Generate linkedin.json using the LinkedIn system prompt."""
     pr_summary = summary.get("pr_summary", "")
-    system_template = load_prompt("linkedin", "system")
-    system_prompt = system_template.replace("{pr_summary}", pr_summary)
-
-    user_template = load_prompt("linkedin", "user_with_prs")
     arc_titles = [a["headline"] for a in summary.get("arcs", [])]
-    user_prompt = user_template.replace("{pr_titles}", str(arc_titles))
-    user_prompt = user_prompt.replace("{pr_count}", str(summary.get("pr_count", 0)))
+    pr_count = str(summary.get("pr_count", 0))
+    template = load_prompt("linkedin")
+    system_prompt = (template.replace("{updates}", pr_summary)
+                     .replace("{pr_titles}", str(arc_titles))
+                     .replace("{pr_count}", pr_count))
 
     response = call_pollinations_api(
-        system_prompt, user_prompt, token,
+        system_prompt, "Generate the post now.", token,
         temperature=0.7, exit_on_failure=False
     )
     if not response:
@@ -159,17 +154,14 @@ def generate_linkedin_post(summary: Dict, token: str) -> Optional[Dict]:
 
 
 def generate_instagram_post(summary: Dict, token: str) -> Optional[Dict]:
-    """Generate instagram.json using the existing Instagram system prompt."""
+    """Generate instagram.json using the Instagram system prompt."""
     pr_summary = summary.get("pr_summary", "")
-    system_template = load_prompt("instagram", "system")
-    system_prompt = system_template.replace("{pr_summary}", pr_summary)
-
-    user_template = load_prompt("instagram", "user_with_prs")
     arc_titles = [a["headline"] for a in summary.get("arcs", [])]
-    user_prompt = user_template.replace("{pr_titles}", str(arc_titles))
+    template = load_prompt("instagram")
+    system_prompt = template.replace("{updates}", pr_summary).replace("{pr_titles}", str(arc_titles))
 
     response = call_pollinations_api(
-        system_prompt, user_prompt, token,
+        system_prompt, "Generate the post now.", token,
         temperature=0.7, exit_on_failure=False
     )
     if not response:
@@ -178,20 +170,14 @@ def generate_instagram_post(summary: Dict, token: str) -> Optional[Dict]:
 
 
 def generate_reddit_post(summary: Dict, token: str) -> Optional[Dict]:
-    """Generate reddit.json using the existing Reddit system prompt."""
+    """Generate reddit.json using the Reddit system prompt."""
     pr_summary = summary.get("pr_summary", "")
-    system_template = load_prompt("reddit", "system")
-    system_prompt = system_template.replace("{pr_summary}", pr_summary)
-
     arc_titles = [a["headline"] for a in summary.get("arcs", [])]
-    user_prompt = (
-        f"Create a Reddit post for today's update based on these highlights:\n"
-        f"{chr(10).join('- ' + t for t in arc_titles)}\n\n"
-        f"Follow the Output Format specified above. Return ONLY the JSON object."
-    )
+    template = load_prompt("reddit")
+    system_prompt = template.replace("{updates}", pr_summary).replace("{pr_titles}", str(arc_titles))
 
     response = call_pollinations_api(
-        system_prompt, user_prompt, token,
+        system_prompt, "Generate the post now.", token,
         temperature=0.7, exit_on_failure=False
     )
     if not response:
@@ -203,7 +189,7 @@ def generate_reddit_post(summary: Dict, token: str) -> Optional[Dict]:
 
 def generate_diary(gists: List[Dict], date_str: str, token: str) -> Optional[Dict]:
     """Generate diary.json — reuses Tier 1 pixel art image URLs."""
-    system_prompt = load_prompt("_shared", "daily_diary")
+    system_prompt = load_prompt("diary")
 
     # Build gist context including image URLs
     gist_summaries = []
@@ -397,7 +383,7 @@ def create_daily_pr(
     if instagram_post:
         instagram_post["date"] = date_str
         instagram_post["generated_at"] = datetime.now(timezone.utc).isoformat()
-        instagram_post["platform"] = "instagram"  # used by buffer_stage_post to detect platform
+        instagram_post["platform"] = "instagram"  # used by buffer_publish to detect platform
         instagram_post["post_type"] = "carousel" if len(instagram_post.get("images", [])) > 1 else "single"
         files_to_commit.append((f"{base_path}/instagram.json", instagram_post))
     if reddit_post:

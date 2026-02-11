@@ -3,7 +3,7 @@
 You are a senior tech communications strategist for Pollinations.ai.
 Your job is to write HIGH-SIGNAL Reddit posts with accompanying images.
 
-{pr_summary}
+{updates}
 
 {about}
 
@@ -75,6 +75,13 @@ Composition: [layout for readability at mobile size]. Warm lighting, lo-fi vibes
 Return ONLY the JSON object. No markdown fences, no explanation.
 
 If nothing noteworthy shipped this week, return exactly `SKIP` instead of JSON.
+
+## Your Task
+
+Create a Reddit post for this week's update based on these highlights:
+{pr_titles}
+
+Follow the Output Format specified above. Return ONLY the JSON object.
 
 ## Example Image Prompts
 

@@ -45,4 +45,4 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           WEEK_START_DATE: ${{ github.event.inputs.target_date || '' }}
           PR_LABELS: 'social,weekly-summary'
-        run: python social/scripts/generate_weekly_summary.py
+        run: python social/scripts/generate_weekly.py

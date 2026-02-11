@@ -43,6 +43,6 @@ Given 7 daily summary.json files (each with narrative arcs), weave them into a w
 - `arcs`: 3-7 thematic groups spanning the whole week. Each has a headline, summary, which days contributed, and importance.
 - `theme`: One sentence capturing the week's overall direction.
 - `changelog_md`: Markdown-formatted weekly changelog (same format as existing `social/news/YYYY-MM-DD.md` files).
-- `pr_summary`: Formatted PR list for platform prompts (injected as `{pr_summary}`).
+- `pr_summary`: Formatted PR list for platform prompts (injected as `{updates}`).
 
 Return ONLY the JSON object. No markdown fences, no explanation.

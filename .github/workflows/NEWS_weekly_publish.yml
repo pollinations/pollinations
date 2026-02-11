@@ -2,11 +2,11 @@ name: Weekly Publish
 
 on:
   schedule:
-    - cron: '0 8 * * 1'  # Monday 08:00 UTC
+    - cron: '0 15 * * 5'  # Friday 15:00 UTC
   workflow_dispatch:
     inputs:
       target_date:
-        description: 'Week end date (Sunday, YYYY-MM-DD) to publish'
+        description: 'Week end date (Wednesday, YYYY-MM-DD) to publish'
         required: false
         type: string
 
@@ -43,6 +43,10 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+          REDDIT_USERNAME: ${{ secrets.REDDIT_USERNAME }}
+          REDDIT_PASSWORD: ${{ secrets.REDDIT_PASSWORD }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           WEEK_END_DATE: ${{ github.event.inputs.target_date || '' }}
         run: python social/scripts/publish_weekly.py

@@ -6,9 +6,10 @@ At 00:00 UTC daily:
   1. Read gists for yesterday (by merged_at date)
   2. Filter to publish_tier >= "daily"
   3. AI clusters gists into 3-5 narrative arcs → summary.json
-  4. Generate platform posts using existing prompts: twitter.json, linkedin.json, instagram.json, reddit.json
+  4. Generate platform posts using existing prompts: twitter.json, instagram.json, reddit.json
   5. Generate diary.json (reuses Tier 1 pixel art images)
-  6. Generate platform images (1 twitter + 1 linkedin + 3 instagram + 1 reddit)
+  6. Generate platform images (1 twitter + 3 instagram + 1 reddit)
+  Note: LinkedIn is weekly-only — no daily LinkedIn posts.
   7. Create single PR with all files
 
 See social/PIPELINE.md for full architecture.
@@ -134,24 +135,6 @@ def generate_twitter_post(summary: Dict, token: str) -> Optional[Dict]:
     return parse_json_response(response)
 
 
-def generate_linkedin_post(summary: Dict, token: str) -> Optional[Dict]:
-    """Generate linkedin.json using the LinkedIn system prompt."""
-    pr_summary = summary.get("pr_summary", "")
-    arc_titles = [a["headline"] for a in summary.get("arcs", [])]
-    pr_count = str(summary.get("pr_count", 0))
-    template = load_prompt("linkedin")
-    system_prompt = (template.replace("{updates}", pr_summary)
-                     .replace("{pr_titles}", str(arc_titles))
-                     .replace("{pr_count}", pr_count))
-
-    response = call_pollinations_api(
-        system_prompt, "Generate the post now.", token,
-        temperature=0.7, exit_on_failure=False
-    )
-    if not response:
-        return None
-    return parse_json_response(response)
-
 
 def generate_instagram_post(summary: Dict, token: str) -> Optional[Dict]:
     """Generate instagram.json using the Instagram system prompt."""
@@ -236,7 +219,6 @@ Gists:
 
 def generate_platform_images(
     twitter_post: Optional[Dict],
-    linkedin_post: Optional[Dict],
     instagram_post: Optional[Dict],
     date_str: str,
     token: str,
@@ -246,9 +228,10 @@ def generate_platform_images(
     branch: str,
     reddit_post: Optional[Dict] = None,
 ) -> Dict[str, List[str]]:
-    """Generate images for all platforms. Returns {platform: [urls]}."""
+    """Generate images for all platforms. Returns {platform: [urls]}.
+    Note: LinkedIn is weekly-only, no daily image generation."""
     image_dir = f"{DAILY_REL_DIR}/{date_str}/images"
-    urls = {"twitter": [], "linkedin": [], "instagram": [], "reddit": []}
+    urls = {"twitter": [], "instagram": [], "reddit": []}
 
     # Twitter: 1 image
     if twitter_post and twitter_post.get("image_prompt"):
@@ -262,19 +245,6 @@ def generate_platform_images(
             if url:
                 urls["twitter"].append(url)
                 twitter_post["image"] = {"url": url, "prompt": twitter_post["image_prompt"]}
-
-    # LinkedIn: 1 image
-    if linkedin_post and linkedin_post.get("image_prompt"):
-        print("  Generating LinkedIn image...")
-        img_bytes, _ = generate_image(linkedin_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if img_bytes:
-            url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/linkedin.jpg", branch,
-                github_token, owner, repo
-            )
-            if url:
-                urls["linkedin"].append(url)
-                linkedin_post["image"] = {"url": url, "prompt": linkedin_post["image_prompt"]}
 
     # Instagram: up to 3 images (carousel)
     if instagram_post and instagram_post.get("images"):
@@ -316,7 +286,6 @@ def create_daily_pr(
     date_str: str,
     summary: Dict,
     twitter_post: Optional[Dict],
-    linkedin_post: Optional[Dict],
     instagram_post: Optional[Dict],
     diary: Optional[Dict],
     github_token: str,
@@ -368,18 +337,6 @@ def create_daily_pr(
         twitter_post["generated_at"] = datetime.now(timezone.utc).isoformat()
         twitter_post["platform"] = "twitter"
         files_to_commit.append((f"{base_path}/twitter.json", twitter_post))
-    if linkedin_post:
-        linkedin_post["date"] = date_str
-        linkedin_post["generated_at"] = datetime.now(timezone.utc).isoformat()
-        linkedin_post["platform"] = "linkedin"
-        # Build full_post for Buffer
-        full_post = linkedin_post.get("hook", "") + "\n\n" + linkedin_post.get("body", "")
-        if linkedin_post.get("cta"):
-            full_post += "\n\n" + linkedin_post["cta"]
-        if linkedin_post.get("hashtags"):
-            full_post += "\n\n" + " ".join(linkedin_post["hashtags"][:5])
-        linkedin_post["full_post"] = full_post
-        files_to_commit.append((f"{base_path}/linkedin.json", linkedin_post))
     if instagram_post:
         instagram_post["date"] = date_str
         instagram_post["generated_at"] = datetime.now(timezone.utc).isoformat()
@@ -395,7 +352,7 @@ def create_daily_pr(
     # Generate images (commits them to the branch)
     print("\n  Generating platform images...")
     generate_platform_images(
-        twitter_post, linkedin_post, instagram_post,
+        twitter_post, instagram_post,
         date_str, get_env("POLLINATIONS_TOKEN"),
         github_token, owner, repo, branch,
         reddit_post=reddit_post,
@@ -446,12 +403,6 @@ def create_daily_pr(
         tweet = twitter_post.get("tweet", twitter_post.get("full_tweet", ""))
         twitter_preview = f"\n### Twitter\n```\n{tweet}\n```\n"
 
-    # LinkedIn preview
-    linkedin_preview = ""
-    if linkedin_post:
-        hook = linkedin_post.get("hook", "")
-        linkedin_preview = f"\n### LinkedIn\n**Hook:** {hook}\n"
-
     # Instagram preview
     instagram_preview = ""
     if instagram_post:
@@ -473,9 +424,9 @@ def create_daily_pr(
 
 ### Story Arcs
 {arc_preview}
-{twitter_preview}{linkedin_preview}{instagram_preview}{reddit_preview}
+{twitter_preview}{instagram_preview}{reddit_preview}
 ---
-When this PR is merged, posts will be staged to Buffer (Twitter, LinkedIn, Instagram), posted to Reddit, and highlights + README updated.
+When this PR is merged, posts will be staged to Buffer (Twitter, Instagram) and highlights + README updated. Reddit daily is handled by the TypeScript app. LinkedIn is weekly-only.
 
 Generated automatically by GitHub Actions.
 """
@@ -609,11 +560,6 @@ def main():
         tweet = twitter_post.get("tweet", "")
         print(f"  Twitter: {tweet[:80]}... ({len(tweet)} chars)")
 
-    print("  LinkedIn...")
-    linkedin_post = generate_linkedin_post(summary, pollinations_token)
-    if linkedin_post:
-        print(f"  LinkedIn: {linkedin_post.get('hook', '')[:80]}...")
-
     print("  Instagram...")
     instagram_post = generate_instagram_post(summary, pollinations_token)
     if instagram_post:
@@ -635,7 +581,7 @@ def main():
     print(f"\n[5/5] Creating PR...")
     pr_number = create_daily_pr(
         date_str, summary,
-        twitter_post, linkedin_post, instagram_post, diary,
+        twitter_post, instagram_post, diary,
         github_token, owner, repo,
         reddit_post=reddit_post,
     )

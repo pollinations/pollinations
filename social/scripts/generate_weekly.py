@@ -2,14 +2,14 @@
 """
 Tier 3: Weekly Digest Generator
 
-Sunday 00:00 UTC:
-  1. Read daily summaries for the past 7 days
+Thursday 00:00 UTC:
+  1. Read daily summaries for the past 7 days (Thu→Wed)
   2. AI synthesizes weekly themes → summary.md
-  3. Generate platform posts (Twitter, LinkedIn, Instagram, Discord)
+  3. Generate platform posts (Twitter, LinkedIn, Instagram, Reddit, Discord)
   4. Generate 7 platform images (1 twitter + 1 linkedin + 3 instagram + 1 reddit + 1 discord)
   5. Create PR for review
 
-Monday 08:00 UTC cron (publish_weekly.py) checks if PR was merged and publishes.
+Friday 15:00 UTC cron (publish_weekly.py) checks if PR was merged and publishes.
 
 See social/PIPELINE.md for full architecture.
 """
@@ -49,15 +49,18 @@ WEEKLY_REL_DIR = "social/news/weekly"
 
 def get_week_range(override_start: Optional[str] = None):
     """Return (week_start, week_end) as YYYY-MM-DD strings.
-    Default: Monday-Sunday of the week that just ended (when run Sunday 00:00 UTC)."""
+    Default: Thursday-Wednesday of the week that just ended (when run Thursday 00:00 UTC).
+    This covers 7 days of work. The weekly publishes on Friday 15:00 UTC."""
     if override_start:
         start = datetime.strptime(override_start, "%Y-%m-%d")
     else:
-        # Sunday 00:00 UTC — the week is Mon-Sun that just ended
+        # Thursday 00:00 UTC — the week is Thu-Wed that just ended
         today = datetime.now(timezone.utc).date()
-        # Go back to the most recent Monday
-        days_since_monday = (today.weekday()) % 7  # Monday=0
-        start = today - timedelta(days=days_since_monday)
+        # Go back to the most recent Thursday (today if Thursday)
+        # Thursday = weekday 3
+        days_since_thursday = (today.weekday() - 3) % 7
+        # We want LAST Thursday (7 days ago), not today
+        start = today - timedelta(days=days_since_thursday + 7)
 
     end = start + timedelta(days=6)
     return start.strftime("%Y-%m-%d") if hasattr(start, 'strftime') else str(start)[:10], \
@@ -478,7 +481,7 @@ def create_weekly_pr(
 {arc_preview}
 
 ---
-When this PR is merged, the Monday 08:00 UTC cron will publish to all 4 platforms (Twitter, LinkedIn, Instagram via Buffer + Discord webhook).
+When this PR is merged, the Friday 15:00 UTC cron will publish to all 5 platforms (Twitter, LinkedIn, Instagram via Buffer + Reddit API + Discord webhook).
 
 Generated automatically by GitHub Actions.
 """

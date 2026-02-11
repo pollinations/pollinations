@@ -6,17 +6,16 @@ import {
     ApiKeyList,
     type CreateApiKey,
     type CreateApiKeyResponse,
-} from "../components/api-key.tsx";
+} from "../components/api-keys";
+import { PollenBalance, TierPanel } from "../components/balance";
 import { Button } from "../components/button.tsx";
 import { FAQ } from "../components/faq.tsx";
-import { Footer } from "../components/footer.tsx";
-import { Header } from "../components/header.tsx";
-import { NewsBanner } from "../components/news-banner.tsx";
-import { PollenBalance } from "../components/pollen-balance.tsx";
-import { Pricing } from "../components/pricing/index.ts";
-import { TierPanel } from "../components/tier-panel.tsx";
+import { Footer } from "../components/layout/footer.tsx";
+import { Header } from "../components/layout/header.tsx";
+import { NewsBanner } from "../components/layout/news-banner.tsx";
+import { User } from "../components/layout/user.tsx";
+import { Pricing } from "../components/pricing";
 import { UsageGraph } from "../components/usage-analytics";
-import { User } from "../components/user.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,

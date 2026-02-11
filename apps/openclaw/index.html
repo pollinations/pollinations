@@ -509,7 +509,7 @@
     <div class="container">
         <div class="logo">🧬 pollinations.ai <span>× OpenClaw</span></div>
         <div class="header-links">
-            <a href="https://enter.pollinations.ai">Get API Key</a>
+            <a href="#" onclick="startAuthorize(); return false;">Get API Key</a>
             <a href="https://github.com/pollinations/pollinations">GitHub</a>
         </div>
     </div>
@@ -639,7 +639,7 @@
 
         <section class="section">
             <h2 class="section-title">Image, video & audio</h2>
-            <p class="section-subtitle">There's also a Pollinations skill on ClawHub that gives your agent multi-modal generation.</p>
+            <p class="section-subtitle">Community-built Pollinations skill by <a href="https://github.com/isaacgounton" target="_blank">@isaacgounton</a> — gives your agent multi-modal generation.</p>
             <div class="skill-box">
                 <div class="code-block" id="skill-cmd">/skill install isaacgounton/pollinations<button class="copy-btn" onclick="copyCode('skill-cmd')">Copy</button></div>
                 <p style="margin-top:16px">This adds image generation (Flux, GPT Image, Imagen 4), video (Veo 3.1, Seedance), text-to-speech (13 voices), and vision analysis to your agent. Separate from the LLM provider setup above.</p>
@@ -657,7 +657,7 @@
             <a href="https://github.com/pollinations/pollinations">GitHub</a>
             <a href="https://discord.gg/pollinations-ai-885844321461485618">Discord</a>
         </div>
-        <p>pollinations.ai — open-source AI platform</p>
+        <p>pollinations.ai — open-source AI platform · Hosted at <a href="https://www.antler.co" target="_blank" style="color:var(--muted); text-decoration:underline">Antler</a></p>
     </div>
 </footer>
 
@@ -680,8 +680,9 @@ function toggleManual() {
 }
 
 function startAuthorize() {
-    const redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
-    window.location.href = 'https://enter.pollinations.ai/authorize?redirect_url=' + redirectUrl;
+    var redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
+    var models = encodeURIComponent('kimi,deepseek,glm,gemini-fast,claude-fast');
+    window.location.href = 'https://enter.pollinations.ai/authorize?redirect_url=' + redirectUrl + '&models=' + models;
 }
 
 function maskKey(key) {

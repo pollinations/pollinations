@@ -11,10 +11,14 @@ const DATA_START_TIMESTAMP_MS = new Date(DATA_START_DATE).getTime();
 const DATA_START_TIMESTAMP_SEC = Math.floor(DATA_START_TIMESTAMP_MS / 1000); // D1 uses seconds
 
 // Calculate weeks since start date for Tinybird queries
+// Cap at 20 weeks - optimized Tinybird pipe handles this well now
+const MAX_WEEKS_BACK = 20;
+
 function getWeeksSinceStart(): number {
     const now = Date.now();
     const weeksMs = now - DATA_START_TIMESTAMP_MS;
-    return Math.ceil(weeksMs / (7 * 24 * 60 * 60 * 1000)) + 1;
+    const weeks = Math.ceil(weeksMs / (7 * 24 * 60 * 60 * 1000)) + 1;
+    return Math.min(weeks, MAX_WEEKS_BACK);
 }
 
 type Env = {
@@ -449,10 +453,13 @@ app.get("/api/kpi/churn", async (c) => {
     // Transform retention data to churn data
     // Each cohort's w4_retention tells us what % returned after 4 weeks
     // Churn = 100 - w4_retention
+    // Filter out cohorts that haven't had 4 weeks to mature (w4_retained = 0)
     const churnData = data.data
         .filter(
             (row) =>
-                row.w4_retention !== null && row.w4_retention !== undefined,
+                row.w4_retention !== null &&
+                row.w4_retention !== undefined &&
+                row.w4_retained > 0, // Only include cohorts with actual w4 data
         )
         .map((row) => ({
             week: row.cohort,

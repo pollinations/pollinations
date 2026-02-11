@@ -1,0 +1,31 @@
+{
+  "pr_number": 8167,
+  "title": "feat: auto-install OpenClaw and auto-onboard in setup script",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8167",
+  "merged_at": "2026-02-11T19:18:19Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "The setup script now automatically installs OpenClaw and handles the full onboarding process in a single step.",
+    "impact": "New users can get started faster with a simplified 2-step landing page and automated configuration.",
+    "keywords": [
+      "OpenClaw",
+      "onboarding",
+      "automation",
+      "setup",
+      "UX"
+    ],
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee watching a cute robot claw machine assemble itself. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text 'AUTO SETUP' in pixel font. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T20:10:30.977567+00:00"
+}

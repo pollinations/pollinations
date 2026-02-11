@@ -684,7 +684,8 @@ function toggleManual() {
 function startAuthorize() {
     var redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
     var models = encodeURIComponent('kimi,deepseek,glm,gemini-fast,claude-fast');
-    window.location.href = 'https://enter.pollinations.ai/authorize?redirect_url=' + redirectUrl + '&models=' + models;
+    var ref = encodeURIComponent('openclaw-hackathon');
+    window.location.href = 'https://enter.pollinations.ai/authorize?redirect_url=' + redirectUrl + '&models=' + models + '&ref=' + ref;
 }
 
 function maskKey(key) {

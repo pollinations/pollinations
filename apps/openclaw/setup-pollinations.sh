@@ -20,26 +20,6 @@ POLLINATIONS_API_KEY="$1"
 CONFIG_DIR="${HOME}/.openclaw"
 CONFIG_FILE="${CONFIG_DIR}/openclaw.json"
 
-# Install OpenClaw if not present
-if ! command -v openclaw >/dev/null 2>&1; then
-    echo "OpenClaw not found. Installing via npm..."
-    if ! command -v node >/dev/null 2>&1; then
-        echo "Error: Node.js not found. Install Node.js 22+ first: https://nodejs.org"
-        exit 1
-    fi
-    NODE_MAJOR=$(node -e 'console.log(process.versions.node.split(".")[0])')
-    if [ "$NODE_MAJOR" -lt 22 ] 2>/dev/null; then
-        echo "Error: Node.js 22+ required (found v$(node -v)). Update at: https://nodejs.org"
-        exit 1
-    fi
-    if npm install -g openclaw; then
-        echo "✓ OpenClaw installed successfully"
-    else
-        echo "Failed to install globally. Try: sudo npm install -g openclaw"
-        exit 1
-    fi
-fi
-
 # Create config directory if it doesn't exist
 mkdir -p "$CONFIG_DIR"
 
@@ -185,9 +165,13 @@ echo "  Primary model: Kimi K2.5 (256K context, vision, tools, reasoning)"
 echo "  Fallbacks:     DeepSeek V3.2, GLM-4.7"
 echo "  Also available: Gemini Flash Lite, Claude Haiku 4.5, + premium models"
 echo ""
-echo "  Switch models in chat: /model pollinations/deepseek"
+echo "  Switch models in chat: /model pollinations/gemini"
 echo "  Manage your account:   https://enter.pollinations.ai"
 echo ""
-echo "Starting OpenClaw onboarding..."
-echo ""
-openclaw onboard --install-daemon
+if ! command -v openclaw >/dev/null 2>&1; then
+    echo "Next: Install OpenClaw with:"
+    echo "  curl -fsSL https://openclaw.ai/install.sh | bash"
+else
+    echo "Next: Restart OpenClaw to pick up the new config:"
+    echo "  openclaw onboard --install-daemon"
+fi

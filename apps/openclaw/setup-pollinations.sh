@@ -33,17 +33,17 @@ NEW_CONFIG=$(cat <<EOF
     "defaults": {
       "model": {
         "primary": "pollinations/kimi",
-        "fallbacks": ["pollinations/openai", "pollinations/gemini"]
+        "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
       },
       "models": {
         "pollinations/kimi": { "alias": "Kimi K2.5 (Pollinations)" },
-        "pollinations/openai": { "alias": "GPT (Pollinations)" },
-        "pollinations/gemini": { "alias": "Gemini (Pollinations)" },
-        "pollinations/deepseek": { "alias": "DeepSeek (Pollinations)" },
-        "pollinations/mistral": { "alias": "Mistral (Pollinations)" },
-        "pollinations/claude": { "alias": "Claude (Pollinations)" },
-        "pollinations/grok": { "alias": "Grok (Pollinations)" },
-        "pollinations/qwen-coder": { "alias": "Qwen Coder (Pollinations)" }
+        "pollinations/deepseek": { "alias": "DeepSeek V3.2 (Pollinations)" },
+        "pollinations/glm": { "alias": "GLM-4.7 (Pollinations)" },
+        "pollinations/gemini-fast": { "alias": "Gemini Flash Lite (Pollinations)" },
+        "pollinations/claude-fast": { "alias": "Claude Haiku 4.5 (Pollinations)" },
+        "pollinations/claude": { "alias": "Claude Sonnet (Pollinations, paid)" },
+        "pollinations/gemini": { "alias": "Gemini 3 (Pollinations, paid)" },
+        "pollinations/grok": { "alias": "Grok 4 (Pollinations, paid)" }
       }
     }
   },
@@ -65,26 +65,8 @@ NEW_CONFIG=$(cat <<EOF
             "maxTokens": 8192
           },
           {
-            "id": "openai",
-            "name": "GPT — OpenAI GPT (fast, reliable)",
-            "reasoning": false,
-            "input": ["text", "image"],
-            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-            "contextWindow": 128000,
-            "maxTokens": 8192
-          },
-          {
-            "id": "gemini",
-            "name": "Gemini — Google Gemini (code execution, thinking)",
-            "reasoning": true,
-            "input": ["text", "image"],
-            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-            "contextWindow": 1000000,
-            "maxTokens": 8192
-          },
-          {
             "id": "deepseek",
-            "name": "DeepSeek — DeepSeek V3 (strong reasoning)",
+            "name": "DeepSeek V3.2 — Strong reasoning & tool calling",
             "reasoning": false,
             "input": ["text"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
@@ -92,8 +74,17 @@ NEW_CONFIG=$(cat <<EOF
             "maxTokens": 8192
           },
           {
-            "id": "mistral",
-            "name": "Mistral — Mistral Small (vision, fast)",
+            "id": "glm",
+            "name": "GLM-4.7 — Coding, reasoning, agentic workflows",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000,
+            "maxTokens": 8192
+          },
+          {
+            "id": "gemini-fast",
+            "name": "Gemini 2.5 Flash Lite — Fast, vision support",
             "reasoning": false,
             "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
@@ -101,30 +92,12 @@ NEW_CONFIG=$(cat <<EOF
             "maxTokens": 8192
           },
           {
-            "id": "claude",
-            "name": "Claude — Anthropic Claude Sonnet (strong reasoning)",
+            "id": "claude-fast",
+            "name": "Claude Haiku 4.5 — Fast with good reasoning",
             "reasoning": false,
             "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
             "contextWindow": 200000,
-            "maxTokens": 8192
-          },
-          {
-            "id": "grok",
-            "name": "Grok — xAI Grok (tools, fast)",
-            "reasoning": false,
-            "input": ["text"],
-            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-            "contextWindow": 128000,
-            "maxTokens": 8192
-          },
-          {
-            "id": "qwen-coder",
-            "name": "Qwen Coder — Qwen 3 Coder (coding specialist)",
-            "reasoning": false,
-            "input": ["text"],
-            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-            "contextWindow": 128000,
             "maxTokens": 8192
           }
         ]
@@ -189,8 +162,8 @@ echo "  Config:  $CONFIG_FILE"
 echo "  API Key: $MASKED_KEY"
 echo ""
 echo "  Primary model: Kimi K2.5 (256K context, vision, tools, reasoning)"
-echo "  Fallbacks:     GPT, Gemini"
-echo "  Also available: DeepSeek, Mistral, Claude, Grok, Qwen Coder"
+echo "  Fallbacks:     DeepSeek V3.2, GLM-4.7"
+echo "  Also available: Gemini Flash Lite, Claude Haiku 4.5, + premium models"
 echo ""
 echo "  Switch models in chat: /model pollinations/gemini"
 echo "  Manage your account:   https://enter.pollinations.ai"

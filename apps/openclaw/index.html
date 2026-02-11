@@ -571,8 +571,10 @@
       "model": { "primary": "pollinations/kimi" },
       "models": {
         "pollinations/kimi": { "alias": "Kimi K2.5" },
-        "pollinations/openai": { "alias": "GPT" },
-        "pollinations/gemini": { "alias": "Gemini" }
+        "pollinations/deepseek": { "alias": "DeepSeek V3.2" },
+        "pollinations/glm": { "alias": "GLM-4.7" },
+        "pollinations/gemini-fast": { "alias": "Gemini Flash Lite" },
+        "pollinations/claude-fast": { "alias": "Claude Haiku 4.5" }
       }
     }
   },
@@ -586,10 +588,10 @@
         "models": [
           { "id": "kimi", "name": "Kimi K2.5", "reasoning": true,
             "input": ["text","image"], "contextWindow": 256000, "maxTokens": 8192 },
-          { "id": "openai", "name": "GPT",
-            "input": ["text","image"], "contextWindow": 128000, "maxTokens": 8192 },
-          { "id": "gemini", "name": "Gemini", "reasoning": true,
-            "input": ["text","image"], "contextWindow": 1000000, "maxTokens": 8192 }
+          { "id": "deepseek", "name": "DeepSeek V3.2",
+            "input": ["text"], "contextWindow": 128000, "maxTokens": 8192 },
+          { "id": "glm", "name": "GLM-4.7",
+            "input": ["text"], "contextWindow": 128000, "maxTokens": 8192 }
         ]
       }
     }

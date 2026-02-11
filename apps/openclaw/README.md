@@ -1,8 +1,8 @@
 # 🧬 Pollinations × OpenClaw
 
-Use **25+ AI models** as your OpenClaw brain — OpenAI, Claude, Gemini, DeepSeek, Grok, Kimi, and more through a single API.
+Use **25+ AI models** as your OpenClaw brain through a single API.
 
-**Kimi K2.5** as default (256K context, vision, tools, reasoning), with GPT, Gemini, Claude, DeepSeek, Grok, Mistral, and Qwen Coder as alternatives.
+**Kimi K2.5** as default (256K context, vision, tools, reasoning), with DeepSeek, GLM-4.7, Gemini Flash Lite, and Claude Haiku as free alternatives. Premium models (Claude Sonnet, Gemini 3, Grok 4) available on paid tier.
 
 ## 30-Second Setup
 
@@ -31,13 +31,13 @@ Switch models anytime in chat with `/model pollinations/<name>`:
 | Model | ID | Best for |
 |---|---|---|
 | **Kimi K2.5** ⭐ | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
-| **GPT** | `pollinations/openai` | General purpose, fast, reliable |
-| **Gemini** | `pollinations/gemini` | Code execution, thinking, 1M context |
-| **DeepSeek** | `pollinations/deepseek` | Strong reasoning |
-| **Mistral** | `pollinations/mistral` | Vision, fast responses |
-| **Claude** | `pollinations/claude` | Complex reasoning, long context |
-| **Grok** | `pollinations/grok` | Tool calling, fast |
-| **Qwen Coder** | `pollinations/qwen-coder` | Coding specialist |
+| **DeepSeek V3.2** | `pollinations/deepseek` | Strong reasoning & tool calling |
+| **GLM-4.7** | `pollinations/glm` | Coding, reasoning, agentic workflows |
+| **Gemini Flash Lite** | `pollinations/gemini-fast` | Fast, vision support |
+| **Claude Haiku 4.5** | `pollinations/claude-fast` | Fast with good reasoning |
+| **Claude Sonnet** 💰 | `pollinations/claude` | Complex reasoning (paid) |
+| **Gemini 3** 💰 | `pollinations/gemini` | 1M context (paid) |
+| **Grok 4** 💰 | `pollinations/grok` | Tool calling, fast (paid) |
 
 ## Manual Configuration
 
@@ -50,17 +50,14 @@ If you prefer to edit `~/.openclaw/openclaw.json` directly:
     "defaults": {
       "model": {
         "primary": "pollinations/kimi",
-        "fallbacks": ["pollinations/openai", "pollinations/gemini"]
+        "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
       },
       "models": {
         "pollinations/kimi": { "alias": "Kimi K2.5 (Pollinations)" },
-        "pollinations/openai": { "alias": "GPT (Pollinations)" },
-        "pollinations/gemini": { "alias": "Gemini (Pollinations)" },
-        "pollinations/deepseek": { "alias": "DeepSeek (Pollinations)" },
-        "pollinations/mistral": { "alias": "Mistral (Pollinations)" },
-        "pollinations/claude": { "alias": "Claude (Pollinations)" },
-        "pollinations/grok": { "alias": "Grok (Pollinations)" },
-        "pollinations/qwen-coder": { "alias": "Qwen Coder (Pollinations)" }
+        "pollinations/deepseek": { "alias": "DeepSeek V3.2 (Pollinations)" },
+        "pollinations/glm": { "alias": "GLM-4.7 (Pollinations)" },
+        "pollinations/gemini-fast": { "alias": "Gemini Flash Lite (Pollinations)" },
+        "pollinations/claude-fast": { "alias": "Claude Haiku 4.5 (Pollinations)" }
       }
     }
   },
@@ -81,18 +78,17 @@ If you prefer to edit `~/.openclaw/openclaw.json` directly:
             "maxTokens": 8192
           },
           {
-            "id": "openai",
-            "name": "GPT",
-            "input": ["text", "image"],
+            "id": "deepseek",
+            "name": "DeepSeek V3.2",
+            "input": ["text"],
             "contextWindow": 128000,
             "maxTokens": 8192
           },
           {
-            "id": "gemini",
-            "name": "Gemini",
-            "reasoning": true,
-            "input": ["text", "image"],
-            "contextWindow": 1000000,
+            "id": "glm",
+            "name": "GLM-4.7",
+            "input": ["text"],
+            "contextWindow": 128000,
             "maxTokens": 8192
           }
         ]
@@ -107,7 +103,7 @@ Add more models by adding entries to the `models` array. See all available model
 ## Why Pollinations?
 
 - **Free credits included** — Sign up and start building immediately
-- **25+ models, one API** — OpenAI, Claude, Gemini, DeepSeek, Grok, Mistral, Kimi, and more
+- **25+ models, one API** — Kimi, DeepSeek, GLM, Gemini, Claude, and more
 - **OpenAI-compatible** — Standard `/v1/chat/completions` endpoint, works with any OpenAI client
 - **Unified API** — Same endpoint for text, image, video, and audio generation
 - **Pay-as-you-go** — Only pay for what you use, top up anytime at [enter.pollinations.ai](https://enter.pollinations.ai)

@@ -1,0 +1,31 @@
+{
+  "pr_number": 8117,
+  "title": "fix(enter): single-bucket balance deduction — no splitting, allow negative",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8117",
+  "merged_at": "2026-02-09T15:49:19Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Refactors the credit deduction system to a single-bucket model, ensuring perfect accounting accuracy and simplified usage tracking.",
+    "impact": "Users benefit from more reliable balance tracking, as requests now deduct cleanly from one source rather than splitting across multiple pools.",
+    "keywords": [
+      "billing",
+      "pollen",
+      "credits",
+      "accounting",
+      "balance"
+    ],
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee organizing distinct jars of honey on a wooden shelf, selecting one specific jar. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T19:27:36.336381+00:00"
+}

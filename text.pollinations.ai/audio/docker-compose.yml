@@ -1,0 +1,54 @@
+services:
+  tts-api:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: audio-tts-api
+    ports:
+      - "8001:8001"
+    
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    
+    volumes:
+      - ./model_cache:/app/model_cache
+      - ./temp_audio:/tmp
+    
+    environment:
+      - TORCH_HOME=/app/model_cache
+      - PYTHONUNBUFFERED=1
+      - CUDA_VISIBLE_DEVICES=0
+      - FLASK_ENV=production
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    networks:
+      - tts-network
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+networks:
+  tts-network:
+    driver: bridge
+
+volumes:
+  model_cache:
+    driver: local
+  temp_audio:
+    driver: local

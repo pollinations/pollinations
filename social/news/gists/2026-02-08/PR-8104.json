@@ -1,0 +1,31 @@
+{
+  "pr_number": 8104,
+  "title": "fix: preserve aspect ratio in klein-9b dimension clamping",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8104",
+  "merged_at": "2026-02-08T23:46:04Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Fixed an issue in the Klein-9B model where non-square images were incorrectly forced into a square format.",
+    "impact": "Generated images now correctly respect requested aspect ratios like 16:9 while maintaining optimal resolution.",
+    "keywords": [
+      "klein-9b",
+      "aspect ratio",
+      "image generation",
+      "bug fix",
+      "resolution"
+    ],
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee stretching a digital canvas from a square into a wide cinematic frame. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8104.jpg",
+    "prompt": "Cozy pixel art scene of the Pollinations bee stretching a digital canvas from a square into a wide cinematic frame. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-11T19:56:43.241224+00:00"
+}

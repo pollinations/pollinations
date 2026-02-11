@@ -1,0 +1,32 @@
+{
+  "pr_number": 8087,
+  "title": "feat: pollinations.ai frontend redesign — header auth, theme bar, Play page polish",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8087",
+  "merged_at": "2026-02-08T15:43:03Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Introduces a frontend redesign with a new user menu, audio model support, and an always-visible AI theme bar.",
+    "impact": "Users gain a more polished interface with streamlined account access and new creative capabilities for audio generation.",
+    "keywords": [
+      "frontend",
+      "redesign",
+      "audio",
+      "auth",
+      "ui",
+      "ux"
+    ],
+    "image_prompt": "Cozy pixel art scene of the 8-bit bee mascot arranging colorful pixel UI blocks and musical notes on a screen. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic. Like Stardew Valley meets a design studio. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8087.jpg",
+    "prompt": "Cozy pixel art scene of the 8-bit bee mascot arranging colorful pixel UI blocks and musical notes on a screen. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic. Like Stardew Valley meets a design studio. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-11T19:46:19.303703+00:00"
+}

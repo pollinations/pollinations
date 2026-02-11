@@ -1,0 +1,31 @@
+{
+  "pr_number": 8168,
+  "title": "fix: OpenClaw branding — favicon, logos, fonts",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8168",
+  "merged_at": "2026-02-11T18:51:10Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Updated OpenClaw branding with proper logos, corrected font weights, and a responsive mobile header.",
+    "impact": "Users get a cleaner, more consistent visual experience that looks great on all devices.",
+    "keywords": [
+      "branding",
+      "ui",
+      "openclaw",
+      "design",
+      "mobile"
+    ],
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee artist adding finishing touches to a pixelated 'OpenClaw' signboard. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel peach gradient background. The bee holds a tiny pixel brush with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-11/PR-8168.jpg",
+    "prompt": "Cozy pixel art scene of the Pollinations bee artist adding finishing touches to a pixelated 'OpenClaw' signboard. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel peach gradient background. The bee holds a tiny pixel brush with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-11T20:11:34.138984+00:00"
+}

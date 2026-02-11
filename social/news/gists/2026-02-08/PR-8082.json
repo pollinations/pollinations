@@ -1,0 +1,31 @@
+{
+  "pr_number": 8082,
+  "title": "Improve Discord PR announcement workflow",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/8082",
+  "merged_at": "2026-02-08T11:47:46Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "The Discord announcement workflow now supports manual triggers and processes PRs faster by utilizing titles and descriptions instead of raw code diffs.",
+    "impact": "Maintainers can now easily retry failed announcements, and the system uses fewer API resources while generating more focused updates.",
+    "keywords": [
+      "github actions",
+      "workflow",
+      "automation",
+      "discord",
+      "optimization"
+    ],
+    "image_prompt": "Cozy pixel art scene of the 8-bit bee mascot tuning a small, friendly robot with a wrench. Soft lime green (#ecf874) and pastel lavender background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixelated gears and tools. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8082.jpg",
+    "prompt": "Cozy pixel art scene of the 8-bit bee mascot tuning a small, friendly robot with a wrench. Soft lime green (#ecf874) and pastel lavender background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixelated gears and tools. Nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-11T19:40:56.737562+00:00"
+}

@@ -1,0 +1,32 @@
+{
+  "pr_number": 8130,
+  "title": "feat: merge Docs page into Play page Integrate section",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8130",
+  "merged_at": "2026-02-10T01:15:14Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "The standalone documentation has been merged into the Play page, creating a new 'Integrate' section with live API URL generation.",
+    "impact": "Developers can now generate and copy ready-to-use API requests for all models directly within the playground workflow.",
+    "keywords": [
+      "docs",
+      "playground",
+      "api",
+      "integration",
+      "dx",
+      "ui"
+    ],
+    "image_prompt": "Cozy pixel art scene of the 8-bit bee mascot connecting a pixelated documentation scroll into a retro gaming console. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Represents merging docs into the playground. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-10/PR-8130.jpg",
+    "prompt": "Cozy pixel art scene of the 8-bit bee mascot connecting a pixelated documentation scroll into a retro gaming console. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Represents merging docs into the playground. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-11T20:04:42.042207+00:00"
+}

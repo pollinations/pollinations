@@ -1,0 +1,32 @@
+{
+  "pr_number": 8078,
+  "title": "Add Polly Discord Bot",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/8078",
+  "merged_at": "2026-02-08T11:30:36Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "We've added Polly, a powerful AI Discord bot that bridges community conversations directly with GitHub development.",
+    "impact": "Users can now search the codebase, manage issues, and collaborate with an autonomous coding agent without leaving Discord.",
+    "keywords": [
+      "discord",
+      "ai-agent",
+      "github",
+      "automation",
+      "polly",
+      "bot"
+    ],
+    "image_prompt": "Cozy pixel art scene of a cute robot bee character connecting a pixelated chat bubble to a glowing code block. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'POLLY'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8078.jpg",
+    "prompt": "Cozy pixel art scene of a cute robot bee character connecting a pixelated chat bubble to a glowing code block. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'POLLY'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-11T19:39:58.113555+00:00"
+}

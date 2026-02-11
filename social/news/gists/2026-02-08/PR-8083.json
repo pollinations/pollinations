@@ -24,8 +24,8 @@
     "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot connecting glowing wires on a tiny retro server rack. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky 8-bit sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Pixel text 'workflow fixed'. Emotionally warm, nostalgic."
   },
   "image": {
-    "url": null,
-    "prompt": null
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8083.jpg",
+    "prompt": "Cozy pixel art scene of the Pollinations bee mascot connecting glowing wires on a tiny retro server rack. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky 8-bit sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Pixel text 'workflow fixed'. Emotionally warm, nostalgic."
   },
   "generated_at": "2026-02-11T19:42:03.152711+00:00"
 }

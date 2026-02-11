@@ -1,0 +1,31 @@
+{
+  "pr_number": 8068,
+  "title": "feat: add OVH Whisper speech-to-text transcription",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8068",
+  "merged_at": "2026-02-08T01:17:16Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Introduces Whisper Large V3 speech-to-text transcription capabilities via a new API endpoint.",
+    "impact": "Developers can now transcribe audio files with high accuracy and transparent per-second pricing.",
+    "keywords": [
+      "whisper",
+      "speech-to-text",
+      "audio",
+      "transcription",
+      "api"
+    ],
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee wearing retro headphones, watching golden sound waves transform into scrolling pixel text. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The bee character with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Pixel text showing 'speech to text'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T19:35:09.451482+00:00"
+}

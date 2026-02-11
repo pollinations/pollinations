@@ -1,0 +1,31 @@
+{
+  "pr_number": 8095,
+  "title": "feat: account API improvements + authorize page restyle",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8095",
+  "merged_at": "2026-02-08T21:31:39Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "The authorization page receives a sleek visual overhaul matching the dashboard theme, while the Account API now provides profile avatars and detailed balance breakdowns.",
+    "impact": "Users get a smoother, more consistent login experience, and developers can now access granular balance data and user avatars via the API.",
+    "keywords": [
+      "authorize",
+      "ui design",
+      "account api",
+      "profile",
+      "balance"
+    ],
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot holding a shiny new pixelated ID card in front of a glowing green security gate. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Pixel text 'ACCESS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T19:50:04.289308+00:00"
+}

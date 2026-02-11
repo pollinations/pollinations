@@ -51,6 +51,13 @@ YOUR MISSION: Create friendly, approachable, Gen-Z aesthetic content that reflec
 }
 ```
 
+## Caption & Hashtag Guidelines
+
+- **Caption length**: 300-800 characters (short and punchy beats long and wordy)
+- **Hashtags**: 8-15 per post (mix brand tags like #pollinations with discovery tags like #aiart)
+- **Tone**: Friendly, casual, Gen-Z — like texting a creative friend
+- **CTA**: End with a soft hook (question, "link in bio", "save for later")
+
 ## Rules
 
 - Cozy pixel art > hyper-realistic

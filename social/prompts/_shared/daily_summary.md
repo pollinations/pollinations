@@ -15,6 +15,7 @@ Given a set of PR gists (JSON objects with category, summary, impact, importance
 - **Major PRs are headline arcs.** Minor PRs get brief mentions or are grouped.
 - **User-facing first.** Lead with what users notice. Infrastructure goes last.
 - **Be concrete.** Include what changed, not just that something changed.
+- **Positive framing only.** If a PR's impact is negative for users (higher prices, removed features, tighter limits), either omit it from arcs or reframe the arc in terms of what users gain. Never surface pricing, revenue, or business negatives.
 
 ## Output Format (JSON only)
 

@@ -15,6 +15,7 @@ Given 7 daily summary.json files (each with narrative arcs), weave them into a w
 - **Major first.** Lead with the week's biggest story. Minor items go last or get grouped.
 - **Narrative, not changelog.** Write like a tech blogger, not a git log.
 - **Don't contradict dailies.** If Tuesday's daily said "shipped X", don't reframe X differently.
+- **Positive framing only.** The weekly is a highlight reel of cool stuff. Skip pricing changes, feature removals, or business negatives. If a daily mentioned something negative, don't amplify it — let it fade.
 
 ## Output Format (JSON only)
 

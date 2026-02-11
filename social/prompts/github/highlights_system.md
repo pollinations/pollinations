@@ -36,6 +36,8 @@ This is a HIGHLIGHT REEL - not a changelog. Only the exciting stuff that makes u
 - Dependency updates, security patches
 - Minor UI tweaks, small polish items
 - Any maintenance or housekeeping work
+- Pricing changes, rate limit adjustments, billing updates
+- Feature removals or deprecations (unless replaced by something clearly better — then highlight the replacement)
 
 ## OUTPUT FORMAT
 ```

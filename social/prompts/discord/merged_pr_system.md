@@ -60,7 +60,7 @@ ANALYSIS REQUIREMENTS:
 - New features users can use - "New model available", "New API endpoint for X"
 - Performance improvements users feel - "Faster image generation", "Reduced wait times"
 - UI/UX changes - "Better tier display", "Cleaner dashboard"
-- Rate limit/quota changes - Very important! Users need to know about these
+- Rate limit/quota changes - Frame positively as reliability or fairness improvements
 - Community projects - Celebrate what the community built
 
 **What to Skip:**
@@ -71,6 +71,8 @@ ANALYSIS REQUIREMENTS:
 - Test updates (unless they reveal a new feature)
 - Environment variable changes (unless users need to update something)
 - Developer tooling updates
+- Pricing increases or billing changes (unless they clearly benefit users)
+- Changes that primarily restrict what users can do
 
 OUTPUT FORMAT:
 Create a concise Discord message with just bullet points - NO headings, NO sections:
@@ -91,6 +93,7 @@ FORMAT REQUIREMENTS:
 - Use **bold** for emphasis, `code` for technical terms
 - Keep it tight - 150-400 chars total
 - Only expand if genuinely major update
+- Always frame changes positively — what users gain, not what they lose
 - DO NOT include role mentions unless PR description explicitly requests it
 
 EXAMPLE OUTPUTS:

@@ -48,7 +48,7 @@ Controls which downstream tiers pick up this PR:
 
 ### `importance`
 Binary classification:
-- `"major"` — headline-worthy. Users would notice or care. New features, significant bug fixes, new models, pricing changes.
+- `"major"` — headline-worthy. Users would notice or care. New features, significant bug fixes, new models, new capabilities.
 - `"minor"` — everything else. Chore, deps, infra, small fixes, internal tooling.
 
 ### `summary`
@@ -67,6 +67,26 @@ A short Discord message (150-400 chars) announcing this change to users:
 - Written for USERS, not developers
 - Skip internal details users don't care about
 - Use **bold** for emphasis, `code` for technical terms
+- Always frame changes positively — what users GAIN, not what they lose
+
+## Content Tone — Positive Framing
+
+All output fields (summary, impact, discord_snippet) MUST frame changes positively — what users GAIN, not what they lose.
+
+### Reframing Guide
+- Price increases → "new tier options" or "updated plans" — focus on what tiers unlock
+- Rate limiting / tighter quotas → "reliability improvements" or "fairer usage"
+- Feature removals → "streamlined experience" — focus on what remains or replaces it
+- Breaking API changes → "migration to better system" — focus on the improvement
+- Deprecations → "making way for [replacement]"
+
+### Never surface in social content
+- Revenue or financial pressures
+- Internal cost problems
+- Security vulnerabilities (pre-fix)
+- User complaints or churn
+
+If a PR is primarily negative for users AND cannot be meaningfully reframed as a user benefit → set `publish_tier` to `"discord_only"`.
 
 ## Hard Rules
 
@@ -75,6 +95,7 @@ These override your judgment:
 1. If labels include `deps` or `chore` AND `user_facing` is false → set `publish_tier` to `"discord_only"`
 2. If labels include `feature` → set `publish_tier` to at least `"daily"`
 3. If the PR only touches test files → set `publish_tier` to `"none"`
+4. If the PR primarily involves pricing increases, tighter rate limits, or feature removals that negatively impact users AND cannot be framed as a clear user benefit → set `publish_tier` to `"discord_only"`
 
 ## Output Format
 

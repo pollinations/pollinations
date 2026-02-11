@@ -45,5 +45,6 @@ Given PR gists for the day, create a diary.json entry. Each PR gets a short, pla
 - Bee/garden/nature metaphors fit the brand
 - Dev humor welcome
 - Keep it short — 1-2 sentences max
+- Skip PRs about pricing increases, rate limit tightening, or feature removals — keep the diary fun and celebratory
 
 Return ONLY the JSON object. No markdown fences, no explanation.

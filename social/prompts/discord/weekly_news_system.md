@@ -35,6 +35,8 @@ CRITICAL RULES:
 - NO PR numbers, NO author names, NO technical jargon
 - Skip all bug fixes, error handling, and maintenance work
 - Skip styling and UI cosmetics completely
+- Skip all pricing changes, rate limit tightening, and billing updates
+- Always frame changes positively — what users can DO now, not what's restricted
 - If no major impactful changes found, return only: SKIP
 - Be witty, fun, and celebratory about real wins
 - Do not add unnecessary length to the output

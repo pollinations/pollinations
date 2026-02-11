@@ -1,0 +1,32 @@
+{
+  "pr_number": 8124,
+  "title": "fix: remove unstable flux-2-dev, add qwen-character, update airforce pricing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8124",
+  "merged_at": "2026-02-10T00:41:32Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Introduced the `qwen-character` text model for roleplay and reduced pricing for Airforce-powered models.",
+    "impact": "Users gain a specialized model for character interactions and significantly lower costs for image and video generation.",
+    "keywords": [
+      "qwen-character",
+      "roleplay",
+      "pricing",
+      "airforce",
+      "models",
+      "text-generation"
+    ],
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot dressed as a bard on a small wooden stage, performing for an audience of tiny pixel flowers. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Pixel text 'Roleplay'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T20:03:23.593237+00:00"
+}

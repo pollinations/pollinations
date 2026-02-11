@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pollinations × OpenClaw — 25+ AI Models for Your Agent</title>
+    <title>Pollinations × OpenClaw — Builders Night Berlin</title>
 
-    <meta property="og:title" content="Pollinations × OpenClaw — 25+ AI Models for Your Agent">
-    <meta property="og:description" content="Use Kimi K2.5, GPT, Claude, Gemini, DeepSeek and 20+ more models as your OpenClaw brain. One API, one setup command.">
+    <meta property="og:title" content="Pollinations × OpenClaw — Builders Night Berlin">
+    <meta property="og:description" content="Get set up with Pollinations models for the OpenClaw Builders Night at Antler Berlin. Kimi K2.5, DeepSeek, Claude, Gemini and more.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://openclaw.pollinations.ai">
-    <meta property="og:image" content="https://openclaw.pollinations.ai/og-image.png">
+    <meta property="og:image" content="https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,dpr=2,background=white,quality=75,width=800,height=400/event-covers/cq/7f1f074d-d37e-4b21-a8dc-ab3bff38efd9.jpg">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="description" content="Use 25+ AI models as your OpenClaw brain through Pollinations' unified API. Kimi K2.5, GPT, Claude, Gemini, DeepSeek, Grok, Mistral and more.">
+    <meta name="description" content="Get set up with Pollinations models for the OpenClaw Builders Night at Antler Berlin. Free API keys for all attendees.">
 
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧬</text></svg>">
 
@@ -332,6 +332,75 @@
         .manual-config { display: none; margin-top: 16px; }
         .manual-config.open { display: block; }
 
+        /* Event banner */
+        .event-banner {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 32px;
+            text-decoration: none;
+            color: var(--text);
+            transition: transform 0.15s;
+        }
+        .event-banner:hover { transform: translateY(-2px); opacity: 1; }
+        .event-banner img {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .event-date {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 2px;
+        }
+        .event-title {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .event-desc {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+        @media (max-width: 480px) {
+            .event-banner { flex-direction: column; text-align: center; }
+            .event-banner img { width: 100%; height: auto; max-height: 160px; }
+        }
+
+        /* Recommendations */
+        .recommendation {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+        .recommendation h3 {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .rec-id {
+            font-family: 'SF Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+        .recommendation p {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
         /* Connect button */
         .connect-btn {
             display: inline-block;
@@ -353,24 +422,55 @@
             cursor: default;
         }
 
-        /* Key display */
-        .key-display {
+        /* Success banner */
+        .success-banner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
             background: var(--accent-bg);
             border: 2px solid var(--accent-strong);
-            border-radius: 8px;
-            padding: 10px 16px;
+            border-radius: 10px;
+            padding: 16px 20px;
+            animation: fadeSlideIn 0.4s ease-out;
+        }
+        .success-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent-strong);
+            color: #bbf7d0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .success-title {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .key-display {
             font-family: 'SF Mono', monospace;
-            font-size: 13px;
+            font-size: 14px;
             color: var(--text);
             word-break: break-all;
+            font-weight: 600;
+        }
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Highlight injected key */
+        /* Highlight injected key in commands */
         .key-injected {
             background: var(--accent-bg);
             border-radius: 3px;
-            padding: 0 2px;
+            padding: 1px 4px;
             font-weight: 600;
+            border-bottom: 2px solid var(--accent-strong);
         }
     </style>
 </head>
@@ -390,26 +490,41 @@
     <div class="container">
 
         <section class="hero">
-            <h1>25+ AI models for your <span class="accent">OpenClaw</span> agent</h1>
-            <p>One API key. One setup command. Switch between Kimi K2.5, GPT, Claude, Gemini, DeepSeek, Grok, and more — all through Pollinations.</p>
+            <h1>Pollinations × <span class="accent">OpenClaw</span> Builders Night</h1>
+            <p>Get your OpenClaw agent running on Pollinations models. Free API keys for all hackathon attendees — set up in 30 seconds, then start building your skill.</p>
         </section>
+
+        <a href="https://lu.ma/openclaw-berlin" class="event-banner" target="_blank" rel="noopener noreferrer">
+            <img src="https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,dpr=2,background=white,quality=75,width=400,height=400/event-covers/cq/7f1f074d-d37e-4b21-a8dc-ab3bff38efd9.jpg" alt="OpenClaw Builders Night Berlin" />
+            <div class="event-info">
+                <div class="event-date">Feb 12 · 19:00 – 23:00</div>
+                <div class="event-title">OpenClaw Builders Night (Berlin)</div>
+                <div class="event-desc">Hands-on evening at Antler Berlin. Set up OpenClaw, build a skill, demo it. Pollinations is providing free API keys for all attendees.</div>
+            </div>
+        </a>
 
         <div class="setup-box">
             <div class="step" id="step-connect">
                 <div class="step-label">Step 1</div>
-                <div class="step-text">Connect your Pollinations account (comes with free credits):</div>
+                <div class="step-text">Get your free API key for the hackathon:</div>
                 <button class="connect-btn" id="connect-btn" onclick="startAuthorize()">Connect with Pollinations</button>
                 <div class="step-text" style="margin-top:8px; font-size:13px;">or paste your key manually: <a href="https://enter.pollinations.ai">enter.pollinations.ai</a></div>
             </div>
             <div class="step" id="step-connected" style="display:none">
-                <div class="step-label">Step 1 ✓</div>
-                <div class="step-text" style="color:var(--text)">Connected! Your API key is ready.</div>
-                <div class="key-display" id="key-display"></div>
+                <div class="success-banner">
+                    <div class="success-icon">&#10003;</div>
+                    <div>
+                        <div class="success-title">Connected! Your API key:</div>
+                        <div class="key-display" id="key-display"></div>
+                    </div>
+                </div>
+                <div class="step-text" style="font-size:13px; margin-top:8px; color:var(--muted)">Your key has been inserted into the commands below. Just copy and run.</div>
             </div>
             <div class="step">
                 <div class="step-label">Step 2</div>
                 <div class="step-text">Run the setup script:</div>
-                <div class="code-block" id="setup-cmd">curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
+                <div class="code-block" id="setup-cmd">curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh \
+  | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
             </div>
             <div class="step">
                 <div class="step-label">Step 3</div>
@@ -455,121 +570,53 @@
         </div>
 
         <section class="section" style="padding-top:0">
-            <h2 class="section-title">Available Models</h2>
-            <p class="section-subtitle">Switch anytime in chat with <code style="color:var(--accent)">/model pollinations/&lt;name&gt;</code></p>
+            <h2 class="section-title">Which model should I use?</h2>
 
-            <div class="models-grid">
-                <div class="model-card primary">
-                    <div class="model-name">Kimi K2.5 ⭐</div>
-                    <div class="model-id">pollinations/kimi</div>
-                    <div class="model-desc">Flagship agentic model by Moonshot AI</div>
-                    <div class="model-badges">
-                        <span class="badge">256K context</span>
-                        <span class="badge">vision</span>
-                        <span class="badge">tools</span>
-                        <span class="badge">reasoning</span>
-                    </div>
-                </div>
-                <div class="model-card">
-                    <div class="model-name">GPT</div>
-                    <div class="model-id">pollinations/openai</div>
-                    <div class="model-desc">OpenAI GPT — fast, reliable, general purpose</div>
-                    <div class="model-badges">
-                        <span class="badge">128K</span>
-                        <span class="badge">vision</span>
-                    </div>
-                </div>
-                <div class="model-card">
-                    <div class="model-name">Gemini</div>
-                    <div class="model-id">pollinations/gemini</div>
-                    <div class="model-desc">Google Gemini — code execution, thinking</div>
-                    <div class="model-badges">
-                        <span class="badge">1M context</span>
-                        <span class="badge">vision</span>
-                        <span class="badge">reasoning</span>
-                    </div>
-                </div>
-                <div class="model-card">
-                    <div class="model-name">Claude</div>
-                    <div class="model-id">pollinations/claude</div>
-                    <div class="model-desc">Anthropic Claude Sonnet — complex reasoning</div>
-                    <div class="model-badges">
-                        <span class="badge">200K</span>
-                        <span class="badge">vision</span>
-                    </div>
-                </div>
-                <div class="model-card">
-                    <div class="model-name">DeepSeek</div>
-                    <div class="model-id">pollinations/deepseek</div>
-                    <div class="model-desc">DeepSeek V3 — strong reasoning</div>
-                    <div class="model-badges">
-                        <span class="badge">128K</span>
-                    </div>
-                </div>
-                <div class="model-card">
-                    <div class="model-name">Grok</div>
-                    <div class="model-id">pollinations/grok</div>
-                    <div class="model-desc">xAI Grok — tool calling, fast</div>
-                    <div class="model-badges">
-                        <span class="badge">128K</span>
-                        <span class="badge">tools</span>
-                    </div>
-                </div>
-                <div class="model-card">
-                    <div class="model-name">Mistral</div>
-                    <div class="model-id">pollinations/mistral</div>
-                    <div class="model-desc">Mistral Small — vision, fast responses</div>
-                    <div class="model-badges">
-                        <span class="badge">128K</span>
-                        <span class="badge">vision</span>
-                    </div>
-                </div>
-                <div class="model-card">
-                    <div class="model-name">Qwen Coder</div>
-                    <div class="model-id">pollinations/qwen-coder</div>
-                    <div class="model-desc">Qwen 3 Coder — coding specialist</div>
-                    <div class="model-badges">
-                        <span class="badge">128K</span>
-                    </div>
-                </div>
+            <div class="recommendation">
+                <h3>Recommended: Kimi K2.5</h3>
+                <div class="rec-id">pollinations/kimi</div>
+                <p>The setup script defaults to Kimi K2.5 for good reason. It's currently the strongest open model for agentic coding — 77% on SWE-Bench, 256K context window, vision, tool calling, and reasoning. It handles complex multi-step tasks well and is especially good at tool calling loops, which is exactly what OpenClaw needs. Runs on free credits.</p>
             </div>
+
+            <div class="recommendation">
+                <h3>Also good: DeepSeek V3.2</h3>
+                <div class="rec-id">pollinations/deepseek</div>
+                <p>Strong reasoning and agentic capabilities. A solid alternative to Kimi if you want a second opinion on hard problems. Tool calling support, 128K context. Runs on free credits.</p>
+            </div>
+
+            <div class="recommendation">
+                <h3>Strong alternative: GLM-4.7</h3>
+                <div class="rec-id">pollinations/glm</div>
+                <p>Z.ai's latest model, built for coding, reasoning, and agentic workflows. Competitive with Kimi on benchmarks and good at tool calling. Runs on free credits.</p>
+            </div>
+
+            <div class="recommendation">
+                <h3>Fast & cheap: Gemini 2.5 Flash Lite</h3>
+                <div class="rec-id">pollinations/gemini-fast</div>
+                <p>Google's lightweight model. Very fast responses, vision support, good enough for simple tasks. Great as a fallback or for high-volume use. Runs on free credits.</p>
+            </div>
+
+            <div class="recommendation">
+                <h3>Fast & smart: Claude Haiku 4.5</h3>
+                <div class="rec-id">pollinations/claude-fast</div>
+                <p>Anthropic's fast model. Surprisingly capable for its speed — good reasoning, vision, tool calling. A solid daily driver if you want Claude quality without the cost. Runs on free credits.</p>
+            </div>
+
+            <div class="recommendation" style="opacity:0.75">
+                <h3>Premium (paid): Claude Sonnet, Gemini 3, Grok 4</h3>
+                <div class="rec-id">pollinations/claude · pollinations/gemini · pollinations/grok</div>
+                <p>Claude Sonnet 4.5 is excellent for complex reasoning. Gemini 3 Flash has a 1M token context window. Grok 4 is fast with good tool calling. These require a paid tier.</p>
+            </div>
+
+            <p style="margin-top:24px; font-size:14px; color:var(--muted)">Switch models anytime: <code style="color:var(--text)">/model pollinations/deepseek</code></p>
         </section>
 
         <section class="section">
-            <h2 class="section-title">Why Pollinations?</h2>
-            <div class="features">
-                <div class="feature">
-                    <h3>25+ models, one API</h3>
-                    <p>OpenAI, Claude, Gemini, DeepSeek, Grok, Kimi, Mistral — all through a single OpenAI-compatible endpoint.</p>
-                </div>
-                <div class="feature">
-                    <h3>Free credits included</h3>
-                    <p>Sign up and start building immediately. Pay-as-you-go when you need more.</p>
-                </div>
-                <div class="feature">
-                    <h3>OpenAI-compatible</h3>
-                    <p>Standard <code>/v1/chat/completions</code> — works with any OpenAI client library or tool.</p>
-                </div>
-                <div class="feature">
-                    <h3>Beyond text</h3>
-                    <p>Same API for image generation, video, and audio. Add the Pollinations skill for multi-modal agents.</p>
-                </div>
-            </div>
-        </section>
-
-        <section class="section">
-            <h2 class="section-title">Layer 2: Multi-Modal Skill</h2>
-            <p class="section-subtitle">Give your OpenClaw agent image, video, and audio generation powers</p>
+            <h2 class="section-title">Image, video & audio</h2>
+            <p class="section-subtitle">There's also a Pollinations skill on ClawHub that gives your agent multi-modal generation.</p>
             <div class="skill-box">
-                <h3>Pollinations Skill on ClawHub</h3>
-                <p>Install the community skill to add image/video/audio generation to your agent:</p>
                 <div class="code-block" id="skill-cmd">/skill install isaacgounton/pollinations<button class="copy-btn" onclick="copyCode('skill-cmd')">Copy</button></div>
-                <div class="skill-caps" style="margin-top:16px">
-                    <span>🖼️ Image (Flux, GPT Image, Seedream, Imagen 4)</span>
-                    <span>🎬 Video (Veo 3.1, Seedance, Wan)</span>
-                    <span>🔊 TTS (13 voices)</span>
-                    <span>👁️ Vision analysis</span>
-                </div>
+                <p style="margin-top:16px">This adds image generation (Flux, GPT Image, Imagen 4), video (Veo 3.1, Seedance), text-to-speech (13 voices), and vision analysis to your agent. Separate from the LLM provider setup above.</p>
             </div>
         </section>
 
@@ -579,14 +626,12 @@
 <footer>
     <div class="container">
         <div class="links">
-            <a href="https://enter.pollinations.ai">Get API Key</a>
-            <a href="https://gen.pollinations.ai/api/docs">API Docs</a>
-            <a href="https://gen.pollinations.ai/v1/models">Text Models</a>
-            <a href="https://gen.pollinations.ai/image/models">Image Models</a>
+            <a href="https://enter.pollinations.ai">API Keys</a>
+            <a href="https://gen.pollinations.ai/v1/models">All Models</a>
             <a href="https://github.com/pollinations/pollinations">GitHub</a>
             <a href="https://discord.gg/pollinations-ai-885844321461485618">Discord</a>
         </div>
-        <p>pollinations.ai — Open-source AI generation platform</p>
+        <p>pollinations.ai — open-source AI platform</p>
     </div>
 </footer>
 
@@ -621,20 +666,27 @@ function maskKey(key) {
 function injectApiKey(apiKey) {
     // Update Step 1: show connected state
     document.getElementById('step-connect').style.display = 'none';
-    document.getElementById('step-connected').style.display = 'block';
-    document.getElementById('key-display').textContent = maskKey(apiKey);
+    var connectedEl = document.getElementById('step-connected');
+    connectedEl.style.display = 'block';
+    document.getElementById('key-display').textContent = apiKey;
 
     // Update setup command
-    const placeholder = document.getElementById('key-placeholder');
+    var placeholder = document.getElementById('key-placeholder');
     placeholder.textContent = apiKey;
     placeholder.classList.add('key-injected');
 
     // Update JSON config
-    const jsonSpans = document.querySelectorAll('.key-in-json');
+    var jsonSpans = document.querySelectorAll('.key-in-json');
     jsonSpans.forEach(function(span) {
         span.textContent = apiKey;
         span.classList.add('key-injected');
     });
+
+    // Flash the setup box to draw attention
+    var setupBox = document.querySelector('.setup-box');
+    setupBox.style.transition = 'box-shadow 0.3s';
+    setupBox.style.boxShadow = '0 0 0 3px var(--accent-strong)';
+    setTimeout(function() { setupBox.style.boxShadow = 'none'; }, 2000);
 }
 
 // Check for API key in URL fragment on page load

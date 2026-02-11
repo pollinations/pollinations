@@ -1,0 +1,31 @@
+{
+  "pr_number": 8101,
+  "title": "feat: hidden model support, remove Claude fallbacks, add claude-legacy",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8101",
+  "merged_at": "2026-02-09T12:31:16Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Introduced support for hidden models in the registry and added accessible legacy versions for Claude and Gemini.",
+    "impact": "Developers can now access specific legacy model versions via API calls without cluttering the main public model list.",
+    "keywords": [
+      "models",
+      "api",
+      "claude",
+      "legacy",
+      "registry"
+    ],
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee opening a secret glowing chest containing old data scrolls in a magical archive. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'Legacy Access'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T19:52:44.183557+00:00"
+}

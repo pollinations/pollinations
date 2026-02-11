@@ -1,0 +1,31 @@
+{
+  "pr_number": 8103,
+  "title": "feat: add BYOP and API Key Usage Grafana dashboards",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8103",
+  "merged_at": "2026-02-08T23:22:37Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Adds new Grafana dashboards to track 'Bring Your Own Pollen' usage and analyze API key consumption patterns.",
+    "impact": "Provides the team with better visibility into app profitability and how credits are consumed across shared keys.",
+    "keywords": [
+      "grafana",
+      "monitoring",
+      "analytics",
+      "byop",
+      "economics"
+    ],
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee analyzing a retro computer monitor with colorful 8-bit graphs and charts. Soft lime green (#ecf874) and pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Pixel text 'METRICS'. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T19:55:21.995967+00:00"
+}

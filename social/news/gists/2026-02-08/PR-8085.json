@@ -1,0 +1,31 @@
+{
+  "pr_number": 8085,
+  "title": "Auto-merge social media PRs (Discord, Instagram, highlights, README)",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/8085",
+  "merged_at": "2026-02-08T13:40:13Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Automates the merging process for routine social media content PRs including Instagram and GitHub updates.",
+    "impact": "Streamlines the content publishing workflow by removing manual review steps for standard updates.",
+    "keywords": [
+      "automation",
+      "github-actions",
+      "workflow",
+      "social-media",
+      "infrastructure"
+    ],
+    "image_prompt": "Cozy pixel art scene of the 8-bit bee mascot watching a conveyor belt of pixelated envelopes being automatically stamped by a cute robot arm. Soft lime green (#ecf874) and pastel lavender background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, efficient but cozy."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T19:45:17.298644+00:00"
+}

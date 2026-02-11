@@ -1,0 +1,31 @@
+{
+  "pr_number": 8090,
+  "title": "fix: add audio models to API key permissions UI",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8090",
+  "merged_at": "2026-02-08T14:33:15Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Added audio models to the API key permissions selector, enabling granular access control for sound generation services.",
+    "impact": "Users can now create API keys specifically restricted to audio models like ElevenLabs and Whisper.",
+    "keywords": [
+      "api keys",
+      "audio",
+      "permissions",
+      "security",
+      "ui"
+    ],
+    "image_prompt": "Cozy pixel art scene of a tiny 8-bit bee DJ adjusting sliders on a retro mixing board with a golden key. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, musical notes floating in air, warm lighting. Lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T19:47:55.352645+00:00"
+}

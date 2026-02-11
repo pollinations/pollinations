@@ -1,0 +1,31 @@
+{
+  "pr_number": 8029,
+  "title": "fix: align gemini-search registry with actual model",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8029",
+  "merged_at": "2026-02-08T14:49:25Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Updates the gemini-search registry to correctly identify the underlying model as gemini-2.5-flash-lite and reflects the lower pricing structure.",
+    "impact": "Ensures accurate model reporting and displays the reduced cost of $0.10/$0.40 per million tokens for users.",
+    "keywords": [
+      "gemini",
+      "pricing",
+      "metadata",
+      "registry",
+      "fix"
+    ],
+    "image_prompt": "Cozy pixel art scene of the 8-bit bee mascot adjusting a digital price tag on a glowing gemini crystal. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T19:29:04.386951+00:00"
+}

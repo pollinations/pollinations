@@ -331,6 +331,47 @@
         .toggle-btn:hover { background: var(--accent-strong); color: #bbf7d0; }
         .manual-config { display: none; margin-top: 16px; }
         .manual-config.open { display: block; }
+
+        /* Connect button */
+        .connect-btn {
+            display: inline-block;
+            background: var(--accent-strong);
+            color: #bbf7d0;
+            border: none;
+            border-radius: 9999px;
+            padding: 12px 32px 14px;
+            font-family: "Uncut Sans", sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: filter 0.15s;
+        }
+        .connect-btn:hover { filter: brightness(1.2); }
+        .connect-btn.connected {
+            background: var(--accent-bg);
+            color: var(--text);
+            cursor: default;
+        }
+
+        /* Key display */
+        .key-display {
+            background: var(--accent-bg);
+            border: 2px solid var(--accent-strong);
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-family: 'SF Mono', monospace;
+            font-size: 13px;
+            color: var(--text);
+            word-break: break-all;
+        }
+
+        /* Highlight injected key */
+        .key-injected {
+            background: var(--accent-bg);
+            border-radius: 3px;
+            padding: 0 2px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -354,14 +395,21 @@
         </section>
 
         <div class="setup-box">
-            <div class="step">
+            <div class="step" id="step-connect">
                 <div class="step-label">Step 1</div>
-                <div class="step-text">Get your API key (comes with free credits) at <a href="https://enter.pollinations.ai">enter.pollinations.ai</a></div>
+                <div class="step-text">Connect your Pollinations account (comes with free credits):</div>
+                <button class="connect-btn" id="connect-btn" onclick="startAuthorize()">Connect with Pollinations</button>
+                <div class="step-text" style="margin-top:8px; font-size:13px;">or paste your key manually: <a href="https://enter.pollinations.ai">enter.pollinations.ai</a></div>
+            </div>
+            <div class="step" id="step-connected" style="display:none">
+                <div class="step-label">Step 1 ✓</div>
+                <div class="step-text" style="color:var(--text)">Connected! Your API key is ready.</div>
+                <div class="key-display" id="key-display"></div>
             </div>
             <div class="step">
                 <div class="step-label">Step 2</div>
                 <div class="step-text">Run the setup script:</div>
-                <div class="code-block" id="setup-cmd">curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- YOUR_API_KEY<button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
+                <div class="code-block" id="setup-cmd">curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
             </div>
             <div class="step">
                 <div class="step-label">Step 3</div>
@@ -373,7 +421,7 @@
             <div class="manual-config" id="manual-config">
                 <div class="step-text">Or paste this into <code style="color:var(--accent)">~/.openclaw/openclaw.json</code>:</div>
                 <div class="code-block" id="json-config" style="white-space:pre; font-size:12px;">{
-  "env": { "POLLINATIONS_API_KEY": "YOUR_API_KEY" },
+  "env": { "POLLINATIONS_API_KEY": "<span class="key-in-json">YOUR_API_KEY</span>" },
   "agents": {
     "defaults": {
       "model": { "primary": "pollinations/kimi" },
@@ -545,7 +593,7 @@
 <script>
 function copyCode(id) {
     const el = document.getElementById(id);
-    const text = el.textContent.replace('Copy', '').trim();
+    const text = el.textContent.replace('Copy', '').replace('Copied!', '').trim();
     navigator.clipboard.writeText(text).then(() => {
         const btn = el.querySelector('.copy-btn');
         btn.textContent = 'Copied!';
@@ -559,6 +607,49 @@ function toggleManual() {
     el.classList.toggle('open');
     btn.textContent = el.classList.contains('open') ? 'Manual JSON config ▴' : 'Manual JSON config ▾';
 }
+
+function startAuthorize() {
+    const redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
+    window.location.href = 'https://enter.pollinations.ai/authorize?redirect_url=' + redirectUrl;
+}
+
+function maskKey(key) {
+    if (key.length <= 10) return key;
+    return key.slice(0, 6) + '...' + key.slice(-4);
+}
+
+function injectApiKey(apiKey) {
+    // Update Step 1: show connected state
+    document.getElementById('step-connect').style.display = 'none';
+    document.getElementById('step-connected').style.display = 'block';
+    document.getElementById('key-display').textContent = maskKey(apiKey);
+
+    // Update setup command
+    const placeholder = document.getElementById('key-placeholder');
+    placeholder.textContent = apiKey;
+    placeholder.classList.add('key-injected');
+
+    // Update JSON config
+    const jsonSpans = document.querySelectorAll('.key-in-json');
+    jsonSpans.forEach(function(span) {
+        span.textContent = apiKey;
+        span.classList.add('key-injected');
+    });
+}
+
+// Check for API key in URL fragment on page load
+(function() {
+    var hash = window.location.hash;
+    if (hash && hash.indexOf('api_key=') !== -1) {
+        var match = hash.match(/api_key=([^&]+)/);
+        if (match && match[1]) {
+            var apiKey = decodeURIComponent(match[1]);
+            // Remove the key from the URL for security
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+            injectApiKey(apiKey);
+        }
+    }
+})();
 </script>
 
 </body>

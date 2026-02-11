@@ -176,18 +176,40 @@ function tierPlugin(
 /**
  * Set initial tier balance in D1 after user creation.
  * This guarantees new users get their default tier pollen.
+ * Also checks for referral codes and upgrades tier if eligible.
  */
 function onAfterUserCreate(
     env: Cloudflare.Env,
     executionCtx?: ExecutionContext,
 ) {
-    return async (user: GenericUser, _ctx?: GenericEndpointContext) => {
+    return async (user: GenericUser, ctx: GenericEndpointContext | null) => {
         try {
             const db = drizzle(env.DB);
-            const tierBalance = getTierPollen(DEFAULT_TIER);
+
+            // Check for referral code in cookies
+            const cookies = ctx?.request?.headers.get("cookie") || "";
+            const refCode = cookies
+                .split(";")
+                .find((c) => c.trim().startsWith("ref_code="))
+                ?.split("=")[1]
+                ?.trim();
+
+            // Check if this code grants seed tier (from env var)
+            const seedCodes = (env.SEED_TIER_REFERRAL_CODES || "")
+                .split(",")
+                .map((c) => c.trim())
+                .filter(Boolean);
+
+            const shouldGrantSeed = refCode && seedCodes.includes(refCode);
+
+            // Set tier based on referral
+            const tier = shouldGrantSeed ? "seed" : DEFAULT_TIER;
+            const tierBalance = getTierPollen(tier);
+
             await db
                 .update(userTable)
                 .set({
+                    tier,
                     tierBalance,
                     lastTierGrant: Date.now(),
                 })
@@ -201,8 +223,11 @@ function onAfterUserCreate(
                         event_type: "user_registration",
                         environment: env.ENVIRONMENT || "unknown",
                         user_id: user.id,
-                        tier: DEFAULT_TIER,
+                        tier,
                         pollen_amount: tierBalance,
+                        ...(refCode && {
+                            metadata: JSON.stringify({ ref_code: refCode }),
+                        }),
                     },
                     env.TINYBIRD_TIER_INGEST_URL,
                     env.TINYBIRD_INGEST_TOKEN,

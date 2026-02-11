@@ -70,6 +70,7 @@ declare namespace Cloudflare {
         REFILL_TOKEN: string;
         ELEVENLABS_API_KEY: string;
         OVHCLOUD_API_KEY: string;
+        SEED_TIER_REFERRAL_CODES?: string;
         POLLEN_RATE_LIMITER: DurableObjectNamespace /* PollenRateLimiter from pollinations-enter */;
         IMAGE_BUCKET: R2Bucket;
         TEXT_BUCKET: R2Bucket;

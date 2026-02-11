@@ -9,7 +9,7 @@ import {
     user as userTable,
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
-import { tierNames } from "@/tier-config.ts";
+import { getTierPollen, tierNames } from "@/tier-config.ts";
 
 // Calculate next tier refill time (midnight UTC) - cron runs daily at 00:00 UTC
 function getNextRefillAt(): string {
@@ -720,6 +720,74 @@ export const accountRoutes = new Hono<Env>()
                 rateLimitEnabled: keyDetails?.rateLimitEnabled ?? true,
             });
         },
-    );
+    )
+    .post("/upgrade-tier-referral", async (c) => {
+        // Upgrade existing spore users to seed tier via referral code
+        await c.var.auth.requireAuthorization();
+        const user = c.var.auth.requireUser();
+
+        // Only upgrade spore users
+        if (user.tier !== "spore") {
+            return c.json({ success: false, reason: "Already upgraded" });
+        }
+
+        // Get ref code from cookie
+        const cookies = c.req.header("cookie") || "";
+        const refCode = cookies
+            .split(";")
+            .find((cookie) => cookie.trim().startsWith("ref_code="))
+            ?.split("=")[1]
+            ?.trim();
+
+        if (!refCode) {
+            return c.json({ success: false, reason: "No referral code found" });
+        }
+
+        // Check if code is valid
+        const seedCodes = (c.env.SEED_TIER_REFERRAL_CODES || "")
+            .split(",")
+            .map((code) => code.trim())
+            .filter(Boolean);
+
+        if (!seedCodes.includes(refCode)) {
+            return c.json({ success: false, reason: "Invalid referral code" });
+        }
+
+        // Upgrade tier
+        const db = drizzle(c.env.DB);
+        const seedTierBalance = getTierPollen("seed");
+        await db
+            .update(userTable)
+            .set({
+                tier: "seed",
+                tierBalance: seedTierBalance,
+                lastTierGrant: Date.now(),
+            })
+            .where(eq(userTable.id, user.id));
+
+        // Log upgrade event
+        c.executionCtx.waitUntil(
+            (async () => {
+                const { sendTierEventToTinybird } = await import("@/events.ts");
+                await sendTierEventToTinybird(
+                    {
+                        event_type: "tier_upgrade_via_referral",
+                        environment: c.env.ENVIRONMENT || "unknown",
+                        user_id: user.id,
+                        tier: "seed",
+                        pollen_amount: seedTierBalance,
+                        metadata: JSON.stringify({
+                            ref_code: refCode,
+                            previous_tier: "spore",
+                        }),
+                    },
+                    c.env.TINYBIRD_TIER_INGEST_URL,
+                    c.env.TINYBIRD_INGEST_TOKEN,
+                );
+            })(),
+        );
+
+        return c.json({ success: true, tier: "seed" });
+    });
 
 export default accountRoutes;

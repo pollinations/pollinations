@@ -34,6 +34,7 @@ export const Route = createFileRoute("/authorize")({
             budget?: number | null;
             expiry?: number | null;
             permissions?: string[] | null;
+            ref?: string | null;
         } = {
             redirect_url: (search.redirect_url as string) || "",
         };
@@ -51,6 +52,9 @@ export const Route = createFileRoute("/authorize")({
         const permissions = parseList(search.permissions);
         if (permissions !== null) result.permissions = permissions;
 
+        const ref = search.ref as string | undefined;
+        if (ref) result.ref = ref;
+
         return result;
     },
     // No beforeLoad redirect - handle auth state in component for better UX
@@ -63,6 +67,7 @@ function AuthorizeComponent() {
         budget,
         expiry,
         permissions: urlPermissions,
+        ref,
     } = Route.useSearch();
     const navigate = useNavigate();
 
@@ -84,6 +89,13 @@ function AuthorizeComponent() {
         expiryDays: expiry ?? 30, // Default 30 days for authorize flow
         accountPermissions: urlPermissions ?? ["profile"], // Default profile enabled
     });
+
+    // Set referral cookie when ref param is present
+    useEffect(() => {
+        if (ref) {
+            document.cookie = `ref_code=${ref}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
+        }
+    }, [ref]);
 
     // Hide page scrollbar behind the overlay
     useEffect(() => {
@@ -135,6 +147,19 @@ function AuthorizeComponent() {
         setError(null);
 
         try {
+            // Check for referral code and upgrade if eligible
+            if (ref && user?.tier === "spore") {
+                try {
+                    await fetch("/api/account/upgrade-tier-referral", {
+                        method: "POST",
+                        credentials: "include",
+                    });
+                    // Upgrade happens silently - continue with key creation
+                } catch {
+                    // Ignore upgrade errors - continue with key creation
+                }
+            }
+
             // Create a temporary API key using better-auth's built-in endpoint
             const result = await authClient.apiKey.create({
                 name: redirectHostname,

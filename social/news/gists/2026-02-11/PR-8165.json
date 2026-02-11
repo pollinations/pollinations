@@ -1,0 +1,32 @@
+{
+  "pr_number": 8165,
+  "title": "feat: OpenClaw integration — landing page, setup script, docs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8165",
+  "merged_at": "2026-02-11T17:17:19Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Launched a seamless OpenClaw integration with a dedicated landing page and one-line setup script.",
+    "impact": "OpenClaw users can now instantly power their agents with Pollinations' full model suite, including Kimi, Gemini, and Claude.",
+    "keywords": [
+      "OpenClaw",
+      "integration",
+      "agents",
+      "LLMs",
+      "Kimi",
+      "setup script"
+    ],
+    "image_prompt": "Pixel art scene of a friendly robot claw connecting a glowing cable to a blooming digital flower patch tended by the Pollinations bee. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Pixel text 'OpenClaw'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T20:09:18.783066+00:00"
+}

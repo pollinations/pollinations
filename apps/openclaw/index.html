@@ -3,17 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pollinations × OpenClaw — Builders Night Berlin</title>
+    <title>pollinations.ai × OpenClaw — Builders Night Berlin</title>
 
-    <meta property="og:title" content="Pollinations × OpenClaw — Builders Night Berlin">
-    <meta property="og:description" content="Get set up with Pollinations models for the OpenClaw Builders Night at Antler Berlin. Kimi K2.5, DeepSeek, Claude, Gemini and more.">
+    <meta property="og:title" content="pollinations.ai × OpenClaw — Builders Night Berlin">
+    <meta property="og:description" content="Get set up with pollinations.ai models for the OpenClaw Builders Night at Antler Berlin. Kimi K2.5, DeepSeek, Claude, Gemini and more.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://openclaw.pollinations.ai">
     <meta property="og:image" content="https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,dpr=2,background=white,quality=75,width=800,height=400/event-covers/cq/7f1f074d-d37e-4b21-a8dc-ab3bff38efd9.jpg">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="description" content="Get set up with Pollinations models for the OpenClaw Builders Night at Antler Berlin. Free API keys for all attendees.">
+    <meta name="description" content="Get set up with pollinations.ai models for the OpenClaw Builders Night at Antler Berlin. Free API keys for all attendees.">
 
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧬</text></svg>">
+    <link rel="icon" type="image/png" sizes="32x32" href="./public/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="./public/favicon-16x16.png" />
+    <link rel="icon" href="./public/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./public/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="./public/apple-touch-icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="./public/apple-touch-icon-167x167.png" />
+    <link rel="manifest" href="./public/manifest.json" />
+    <meta name="theme-color" content="#d1fae5" />
 
     <style>
         @font-face {
@@ -28,7 +35,7 @@
             font-family: "Fraunces";
             src: url("./fonts/fraunces-soft-bold.woff2") format("woff2"),
                  url("./fonts/fraunces-soft-bold.woff") format("woff");
-            font-weight: 500;
+            font-weight: normal;
             font-style: normal;
             font-display: swap;
         }
@@ -61,7 +68,7 @@
             background: var(--bg);
             color: var(--text);
             line-height: 1.6;
-            font-weight: 500;
+            font-weight: 400;
             font-size: 16px;
             -webkit-font-smoothing: antialiased;
         }
@@ -70,6 +77,8 @@
         a:hover { opacity: 0.7; }
 
         code { font-family: 'SF Mono', 'Fira Code', monospace; }
+        .brand { font-weight: 600; color: var(--accent-strong); }
+        h1 .brand, h2 .brand, h3 .brand { font-weight: inherit; }
 
         .container {
             max-width: 800px;
@@ -98,7 +107,17 @@
             gap: 8px;
             text-decoration: none;
         }
-        .logo span { font-family: "Fraunces", ui-serif, serif; font-weight: 500; }
+        .logo .pollinations-logo {
+            height: 32px;
+            width: auto;
+            /* Invert white SVG to near-black, then shift hue to dark green #052e16 */
+            filter: brightness(0) saturate(100%) invert(10%) sepia(40%) saturate(2000%) hue-rotate(100deg) brightness(0.5);
+        }
+        .logo .openclaw-logo {
+            height: 24px;
+            width: auto;
+        }
+        .logo span { font-family: "Fraunces", ui-serif, serif; font-weight: normal; }
         .header-links { display: flex; gap: 20px; font-size: 14px; }
         .header-links a {
             background: var(--accent-strong);
@@ -111,6 +130,14 @@
         }
         .header-links a:hover { filter: brightness(1.2); opacity: 1; }
 
+        @media (max-width: 640px) {
+            header .container {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+        }
+
         /* Hero */
         .hero {
             padding: 64px 0 48px;
@@ -119,6 +146,7 @@
         .hero h1 {
             font-family: "LCT Mogi", ui-sans-serif, sans-serif;
             font-size: clamp(32px, 5vw, 48px);
+            font-weight: normal;
             line-height: 1.1;
             margin-bottom: 20px;
         }
@@ -143,7 +171,7 @@
         .step-label {
             font-family: "Fraunces", ui-serif, serif;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: normal;
             color: var(--text);
             margin-bottom: 6px;
         }
@@ -190,6 +218,7 @@
         .section-title {
             font-family: "Fraunces", ui-serif, serif;
             font-size: 28px;
+            font-weight: normal;
             letter-spacing: -0.01em;
             margin-bottom: 8px;
         }
@@ -216,7 +245,7 @@
         .model-card.primary { background: var(--accent-bg); }
         .model-name {
             font-family: "Fraunces", ui-serif, serif;
-            font-weight: 500;
+            font-weight: normal;
             font-size: 16px;
             margin-bottom: 4px;
         }
@@ -262,7 +291,7 @@
         .feature h3 {
             font-family: "Fraunces", ui-serif, serif;
             font-size: 16px;
-            font-weight: 500;
+            font-weight: normal;
             margin-bottom: 6px;
         }
         .feature p {
@@ -282,6 +311,7 @@
         .skill-box h3 {
             font-family: "Fraunces", ui-serif, serif;
             font-size: 20px;
+            font-weight: normal;
             margin-bottom: 8px;
         }
         .skill-box p {
@@ -362,7 +392,7 @@
         .event-title {
             font-family: "Fraunces", ui-serif, serif;
             font-size: 18px;
-            font-weight: 500;
+            font-weight: normal;
             margin-bottom: 4px;
         }
         .event-desc {
@@ -395,7 +425,7 @@
         .model-label {
             font-family: "Fraunces", ui-serif, serif;
             font-size: 15px;
-            font-weight: 500;
+            font-weight: normal;
             white-space: nowrap;
             min-width: 140px;
         }
@@ -478,7 +508,7 @@
         .success-title {
             font-family: "Fraunces", ui-serif, serif;
             font-size: 16px;
-            font-weight: 500;
+            font-weight: normal;
             margin-bottom: 4px;
         }
         .key-display {
@@ -507,7 +537,7 @@
 
 <header>
     <div class="container">
-        <div class="logo">🧬 pollinations.ai <span>× OpenClaw</span></div>
+        <div class="logo"><img class="pollinations-logo" src="./logo-text.svg" alt="pollinations.ai" /> <span>×</span> <img class="openclaw-logo" src="./openclaw-logo.svg" alt="OpenClaw" /> <span>OpenClaw</span></div>
         <div class="header-links">
             <a href="#" onclick="startAuthorize(); return false;">Get API Key</a>
             <a href="https://github.com/pollinations/pollinations">GitHub</a>
@@ -519,8 +549,8 @@
     <div class="container">
 
         <section class="hero">
-            <h1>Pollinations × <span class="accent">OpenClaw</span> Builders Night</h1>
-            <p>Get your OpenClaw agent running on Pollinations models in 30 seconds. Hackathon attendees get free API credits — connect your account and start building.</p>
+            <h1><span class="brand">pollinations.ai</span> × <span class="accent">OpenClaw</span> Builders Night</h1>
+            <p>Get your OpenClaw agent running on <span class="brand">pollinations.ai</span> models in 30 seconds. Hackathon attendees get free API credits — connect your account and start building.</p>
         </section>
 
         <a href="https://luma.com/8k58g33a" class="event-banner" target="_blank" rel="noopener noreferrer">
@@ -528,7 +558,7 @@
             <div class="event-info">
                 <div class="event-date">Feb 12 · 19:00 – 23:00 · Antler Berlin</div>
                 <div class="event-title">OpenClaw Builders Night</div>
-                <div class="event-desc">Hands-on evening: set up OpenClaw, build a skill, demo it. Hackathon attendees get free Pollinations API credits.</div>
+                <div class="event-desc">Hands-on evening: set up OpenClaw, build a skill, demo it. Hackathon attendees get free <span class="brand">pollinations.ai</span> API credits.</div>
             </div>
         </a>
 
@@ -536,7 +566,7 @@
             <div class="step" id="step-connect">
                 <div class="step-label">Step 1</div>
                 <div class="step-text">Get your free API key for the hackathon:</div>
-                <button class="connect-btn" id="connect-btn" onclick="startAuthorize()">Connect with Pollinations</button>
+                <button class="connect-btn" id="connect-btn" onclick="startAuthorize()">Connect with pollinations.ai</button>
                 <div class="step-text" style="margin-top:8px; font-size:13px;">or paste your key manually: <a href="https://enter.pollinations.ai">enter.pollinations.ai</a></div>
             </div>
             <div class="step" id="step-connected" style="display:none">
@@ -641,7 +671,7 @@
 
         <section class="section">
             <h2 class="section-title">Image, video & audio</h2>
-            <p class="section-subtitle">Community-built Pollinations skill by <a href="https://github.com/isaacgounton" target="_blank">@isaacgounton</a> — gives your agent multi-modal generation.</p>
+            <p class="section-subtitle">Community-built <span class="brand">pollinations.ai</span> skill by <a href="https://github.com/isaacgounton" target="_blank">@isaacgounton</a> — gives your agent multi-modal generation.</p>
             <div class="skill-box">
                 <div class="code-block" id="skill-cmd">/skill install isaacgounton/pollinations<button class="copy-btn" onclick="copyCode('skill-cmd')">Copy</button></div>
                 <p style="margin-top:16px">This adds image generation (Flux, GPT Image, Imagen 4), video (Veo 3.1, Seedance), text-to-speech (13 voices), and vision analysis to your agent. Separate from the LLM provider setup above.</p>

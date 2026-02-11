@@ -1,0 +1,29 @@
+{
+  "pr_number": 8118,
+  "title": "feat: economics dashboards — Daily Spending, Platform Load, tier-costs fixes",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8118",
+  "merged_at": "2026-02-09T23:59:15Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Implements new internal dashboards for tracking daily infrastructure spending, platform load, and revenue metrics.",
+    "impact": "Enables better visibility into system performance and financial sustainability for the operations team.",
+    "keywords": [
+      "dashboards",
+      "monitoring",
+      "economics",
+      "tinybird",
+      "infrastructure"
+    ],
+    "image_prompt": "Cozy pixel art scene of the 8-bit bee mascot studying glowing monitors with pixelated charts and graphs in a control room filled with potted plants. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T20:00:48.142074+00:00"
+}

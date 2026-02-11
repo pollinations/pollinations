@@ -1,0 +1,31 @@
+{
+  "pr_number": 8123,
+  "title": "Improve Polly system prompt and add auto-deploy",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/8123",
+  "merged_at": "2026-02-09T18:49:00Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Polly's system prompt has been refined for conciseness and natural tone, alongside a new auto-deployment workflow for faster updates.",
+    "impact": "Users will experience sharper, more helpful interactions with Polly while developers benefit from streamlined deployment.",
+    "keywords": [
+      "polly",
+      "system prompt",
+      "automation",
+      "infrastructure",
+      "ux"
+    ],
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot tuning a friendly tiny robot assistant. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text: 'Polly Upgrade'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T20:02:07.691122+00:00"
+}

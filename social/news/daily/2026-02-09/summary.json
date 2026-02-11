@@ -1,0 +1,27 @@
+{
+  "date": "2026-02-09",
+  "pr_count": 3,
+  "arcs": [
+    {
+      "headline": "Polly gets smarter and more natural",
+      "summary": "Our AI assistant Polly received a major intelligence upgrade using OpenAI embeddings for better search accuracy, combined with a refined system prompt for sharper, more natural conversations.",
+      "prs": [
+        8111,
+        8123
+      ],
+      "importance": "major",
+      "category": "feature"
+    },
+    {
+      "headline": "Streamlined model access for developers",
+      "summary": "We've introduced support for hidden models and legacy versions (like Claude and Gemini), keeping the main registry clean while ensuring older versions remain accessible via API.",
+      "prs": [
+        8101
+      ],
+      "importance": "major",
+      "category": "feature"
+    }
+  ],
+  "one_liner": "Polly gets a major intelligence upgrade with OpenAI embeddings, while developers gain cleaner access to legacy models.",
+  "pr_summary": "TODAY'S UPDATES (3 merged PRs):\n- #8111: [FEAT] : Polly now uses openai embeddings\n- #8101: feat: hidden model support, remove Claude fallbacks, add claude-legacy\n- #8123: Improve Polly system prompt and add auto-deploy"
+}

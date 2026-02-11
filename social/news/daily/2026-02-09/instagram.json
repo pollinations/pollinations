@@ -1,69 +1,46 @@
 {
-  "date": "2026-02-09",
-  "generated_at": "2026-02-09T00:36:39.462593+00:00",
-  "post_type": "carousel",
   "content_type": "pixel_art",
   "linked_images": true,
-  "strategy_reasoning": "Using the 'Cozy Garden Maintenance' metaphor to represent technical fixes and optimizations. This aligns with the organic/growth brand identity while making dry technical updates (APIs, dashboards, bug fixes) feel satisfying and warm.",
-  "story_arc": "",
+  "strategy_reasoning": "Translating technical backend updates (embeddings, model cleanup) into a cozy RPG 'level up' narrative fits the gaming aesthetic perfectly. The carousel format allows us to tell a story: from the 'brain boost' to the 'inventory cleanup', keeping engagement high while informing users.",
+  "visual_style": "Cozy 8-bit pixel art, Studio Ghibli meets Stardew Valley. Chunky sprites, soft ambient lighting, and the signature lime green (#ecf874) glow.",
+  "image_count": 3,
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/daily/2026-02-09/images/instagram-1.jpg",
-      "prompt": "Cozy pixel art scene of the Pollinations bee mascot wearing a tiny toolbelt, polishing a glowing lime green (#ecf874) gem in a cluttered but cute workshop. Soft lavender and peach gradient background. Warm lighting, chunky 8-bit sprites, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'Weekly Polish'. Nostalgic, productive vibes.",
-      "description": "Cover image establishing the theme of maintenance and polish."
+      "prompt": "Close-up pixel art portrait of a cute 8-bit bee mascot wearing oversized smart glasses, holding a glowing magical book. Background is a soft lime green (#ecf874) and lavender gradient with floating pixel sparkles. Warm lighting, cozy lo-fi aesthetic like Stardew Valley. Expression is happy and enlightened. Text in a retro bubble: 'LEVEL UP!'. Nostalgic and adorable.",
+      "description": "Announcing Polly's intelligence upgrade via embeddings.",
+      "text_in_image": "LEVEL UP!",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/daily/2026-02-09/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/daily/2026-02-09/images/instagram-2.jpg",
-      "prompt": "Retro 8-bit pixel art showing a painting canvas stretching from a square into a wide panoramic landscape. A tiny pixel artist character is painting a sunset. Soft lime green (#ecf874) grass, pastel sky. Visualizing 'aspect ratio freedom'. Cozy, warm lighting, clean UI elements like a creative app. Text: 'No More Squares'.",
-      "description": "Visualizing the Klein-9b aspect ratio fix – freedom from square constraints."
+      "prompt": "Wide shot of a cozy pixel art library inside a tree hollow. The bee mascot is connecting glowing constellations of thoughts (representing embeddings). Soft pastel mint and peach atmosphere with lime green (#ecf874) magical dust in the air. Chunky retro furniture, warm candle lighting. Peaceful and studious vibes like the game Unpacking. No text, just vibes.",
+      "description": "Visualizing 'embeddings' as connecting ideas in a cozy space.",
+      "text_in_image": "",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/daily/2026-02-09/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/daily/2026-02-09/images/instagram-3.jpg",
-      "prompt": "Close-up of a retro game inventory screen or dashboard. Very clean and organized. One large glowing gold coin stack representing 'Unified Balance'. Background is a soft lime green (#ecf874) grid. Pixel art graphs and charts in the background looking tidy. Satisfying, organized, lo-fi UI. Text: 'Clean Stats'.",
-      "description": "Representing the simplified Balance API and new Grafana dashboards."
-    },
-    {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/daily/2026-02-09/images/instagram-4.jpg",
-      "prompt": "A beautiful pixel art door or portal glowing with warm inviting light. A tiny pixel character is walking through. Represents the new 'Authorize Page' and account polish. Soft lime green (#ecf874) vines growing around the door frame. Magical, welcoming, cozy atmosphere like a safe save point in a game. Text: 'Fresh Entry'.",
-      "description": "Visualizing the Account API improvements and Auth page redesign."
+      "prompt": "Retro RPG inventory screen UI. Pixel art style. The inventory slots are tidy and organized. One slot contains a scroll labeled 'Legacy', another contains a glowing potion. Background is a warm cream with soft lime green (#ecf874) borders. A tiny pixel hand cursor hovers over the clean layout. Gamified representation of the model cleanup. 8-bit aesthetic.",
+      "description": "Representing the model cleanup and legacy support as inventory management.",
+      "text_in_image": "INVENTORY SORTED",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/daily/2026-02-09/images/instagram-3.jpg"
     }
   ],
-  "caption": "Dev log diary entry: The vibes are immaculate today. 🐝✨\n\nWe’ve been doing some spring cleaning in the code garden. Nothing feels better than a fresh UI and squashing bugs, am I right? 🔧\n\nHere’s the tea on the latest updates:\n\n🖼️ **Klein-9b Unlocked:** No more forced squares! Your aspect ratios are now free to roam.\n💰 **Simple Math:** We simplified the Balance API. One number, zero stress.\n📊 **Dashboard Glow Up:** New Grafana boards for BYOP and API usage. Satisfying stats only.\n🚪 **Fresh Entrance:** The login/auth pages got a total makeover. It’s giving cozy.\n\nBuilding soft tools for hard problems. 🌱\n\nLink in bio to check the new dashboards!\n\n#pollinations #opensource #pixelart #indiedev #cozyvibes #8bit #devlog #generativeai #buildinpublic",
+  "caption": "POV: Polly just got a massive brain boost and she’s never looked better 💅🧠✨\n\nWe’ve upgraded the vibes with OpenAI embeddings, meaning Polly actually *gets* the nuance of what you’re saying now. No more confusion, just smooth sailing (and flying 🐝).\n\nPlus, we did some spring cleaning in the backend! 🧹\n👾 Hidden model support unlocked\n📜 Claude Legacy added for the OGs\n✨ System prompts are sharper than ever\n\nIt’s giving organized. It’s giving growth. Come chat with the new & improved Polly! Link in bio. 🌱\n\n#pollinations #aiart #pixelart #indiedev #opensource #cozyvibes #8bit #retrogaming #generativeai #buildinpublic #devlife",
   "hashtags": [
     "#pollinations",
-    "#opensource",
+    "#aiart",
     "#pixelart",
+    "#opensource",
     "#indiedev",
     "#cozyvibes",
     "#8bit",
-    "#devlog",
+    "#retrogaming",
     "#generativeai",
-    "#buildinpublic"
+    "#buildinpublic",
+    "#devlife"
   ],
-  "alt_text": "A carousel of cozy 8-bit pixel art images featuring a bee mascot, retro game UI elements, and glowing portals, all in soft pastel and lime green colors.",
-  "pr_references": [
-    "#8104",
-    "#8102",
-    "#8103",
-    "#8095",
-    "#8097",
-    "#8087",
-    "#8091",
-    "#8029",
-    "#8040",
-    "#8090",
-    "#8085",
-    "#8084",
-    "#8083",
-    "#8082",
-    "#8078",
-    "#8038",
-    "#8039",
-    "#8067",
-    "#8069",
-    "#8076",
-    "#8073",
-    "#8072",
-    "#8068"
-  ]
+  "alt_text": "A carousel of cozy 8-bit pixel art images. 1. A cute pixel bee with glasses reading a book against a lime green background. 2. A magical pixel library with glowing constellations. 3. A retro RPG inventory screen showing organized items.",
+  "date": "2026-02-09",
+  "generated_at": "2026-02-11T21:35:55.505147+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
 }

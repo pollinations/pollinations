@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| 📖 | StoryTale | https://storytale.onrender.com/ | Create and share interactive Markdown stories in English and Thai. | en, th | Creative | @Yorism7 | 190521295 | https://github.com/Yorism7/STORYTALE/ |  |  | | 2026-02-11 | https://github.com/pollinations/pollinations/issues/8162 | 2026-02-11 |
 | 📖 | Korpi.AI | https://korpi.ai | Generates AI stories with the Pollinations Flux model. | en | Creative | @Reksely | 69013710 |  |  |  |  | 2026-01-14 | https://github.com/pollinations/pollinations/issues/7290 |  |
 | 🤖 | Moltbot With Pollinations.ai provider |  | Multi-channel AI assistant for Telegram and WhatsApp using Pollinations AI. | en | Social_Bots | @its3li | 143140806 | https://github.com/its3li/moltbot-with-pollinations.ai |  | 87_9 | | 2026-01-30 | https://github.com/pollinations/pollinations/issues/7778 | 2026-01-30 |
 | 🧙‍♂️ | Sage | https://discord.com/oauth2/authorize?client_id=1462117382398017667&scope=bot%20applications.commands&permissions=8 | Discord bot offering assistant-style features and server utilities. | en | Social_Bots | @BokX1 | 143122409 | https://github.com/BokX1/Sage |  | .Itris | | 2026-01-24 | https://github.com/pollinations/pollinations/issues/7639 | 2026-01-24 |

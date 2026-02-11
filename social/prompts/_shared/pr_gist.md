@@ -23,6 +23,33 @@ Given a PR's title, description, labels, and file changes, produce a JSON object
 }
 ```
 
+## File Path Classification
+
+Use the changed files list to determine PR type, user impact, and what to highlight:
+
+**Core Platform** (`user_facing: true`):
+- `enter.pollinations.ai/` — auth gateway, billing, API routing. Focus on: new endpoints, rate limit changes, model additions, billing fixes
+- `image.pollinations.ai/` — image generation backend. Focus on: new models, faster generation, quality improvements, new parameters
+- `text.pollinations.ai/` — text/chat generation backend. Focus on: new models, streaming improvements, compatibility changes
+- `pollinations.ai/` — main frontend. Focus on: UI redesigns, new pages, UX improvements users see directly
+- `packages/sdk/` — client SDK. Focus on: new hooks, API changes developers use
+- `packages/mcp/` — MCP server for AI agents. Focus on: new tools, model access
+
+**Community & Apps** (category: `community`):
+- `apps/`, `projects/`, `examples/`, `notebooks/` — community submissions. Focus on: what the app does, who built it, celebrate the contributor
+
+**Documentation** (category: `docs`):
+- `*.md` (at root or in docs/), `APIDOCS.md`, `guides/`, `tutorials/` — learning resources. Focus on: what's easier to understand now
+
+**Infrastructure** (usually `user_facing: false`):
+- `.github/`, `deploy/`, `scripts/`, `docker-compose.yml`, CI/CD files — deployment, monitoring
+- Only mark `user_facing: true` if it improves performance or reliability users notice (faster deploys, better uptime)
+
+**Social / News pipeline** (category: `infrastructure`, `publish_tier: "none"`):
+- `social/` — the social media pipeline itself, never user-facing
+
+**Mixed PRs** — when files span multiple categories, classify by the most user-impactful change. A PR touching both `enter.pollinations.ai/` and `.github/` is a core platform change, not infrastructure.
+
 ## Field Definitions
 
 ### `category`

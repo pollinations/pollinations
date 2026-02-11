@@ -348,8 +348,8 @@
         }
         .event-banner:hover { transform: translateY(-2px); opacity: 1; }
         .event-banner img {
-            width: 100px;
-            height: 100px;
+            width: 140px;
+            height: 140px;
             border-radius: 8px;
             object-fit: cover;
             flex-shrink: 0;
@@ -375,30 +375,59 @@
             .event-banner img { width: 100%; height: auto; max-height: 160px; }
         }
 
-        /* Recommendations */
-        .recommendation {
-            background: var(--surface);
+        /* Model table */
+        .model-table {
             border: 2px solid var(--border);
             border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 12px;
+            overflow: hidden;
         }
-        .recommendation h3 {
+        .model-row {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--surface);
+        }
+        .model-row:last-child { border-bottom: none; }
+        .model-row.recommended { background: var(--accent-bg); }
+        .model-row.dimmed { opacity: 0.6; }
+        .model-label {
             font-family: "Fraunces", ui-serif, serif;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 500;
-            margin-bottom: 4px;
+            white-space: nowrap;
+            min-width: 140px;
         }
-        .rec-id {
+        .model-id {
             font-family: 'SF Mono', monospace;
             font-size: 12px;
             color: var(--muted);
-            margin-bottom: 8px;
+            white-space: nowrap;
+            min-width: 160px;
         }
-        .recommendation p {
-            font-size: 14px;
+        .model-note {
+            font-size: 13px;
             color: var(--muted);
-            line-height: 1.5;
+            line-height: 1.4;
+        }
+        .model-tag {
+            font-size: 11px;
+            padding: 1px 8px 3px;
+            border-radius: 9999px;
+            background: var(--accent-strong);
+            color: #bbf7d0;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .model-tag.paid {
+            background: var(--muted);
+            color: white;
+        }
+        @media (max-width: 640px) {
+            .model-row { flex-wrap: wrap; gap: 4px; }
+            .model-label { min-width: auto; }
+            .model-id { min-width: auto; }
         }
 
         /* Connect button */
@@ -491,15 +520,15 @@
 
         <section class="hero">
             <h1>Pollinations × <span class="accent">OpenClaw</span> Builders Night</h1>
-            <p>Get your OpenClaw agent running on Pollinations models. Free API keys for all hackathon attendees — set up in 30 seconds, then start building your skill.</p>
+            <p>Get your OpenClaw agent running on Pollinations models in 30 seconds. Hackathon attendees get free API credits — connect your account and start building.</p>
         </section>
 
-        <a href="https://lu.ma/openclaw-berlin" class="event-banner" target="_blank" rel="noopener noreferrer">
+        <a href="https://luma.com/8k58g33a" class="event-banner" target="_blank" rel="noopener noreferrer">
             <img src="https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,dpr=2,background=white,quality=75,width=400,height=400/event-covers/cq/7f1f074d-d37e-4b21-a8dc-ab3bff38efd9.jpg" alt="OpenClaw Builders Night Berlin" />
             <div class="event-info">
-                <div class="event-date">Feb 12 · 19:00 – 23:00</div>
-                <div class="event-title">OpenClaw Builders Night (Berlin)</div>
-                <div class="event-desc">Hands-on evening at Antler Berlin. Set up OpenClaw, build a skill, demo it. Pollinations is providing free API keys for all attendees.</div>
+                <div class="event-date">Feb 12 · 19:00 – 23:00 · Antler Berlin</div>
+                <div class="event-title">OpenClaw Builders Night</div>
+                <div class="event-desc">Hands-on evening: set up OpenClaw, build a skill, demo it. Hackathon attendees get free Pollinations API credits.</div>
             </div>
         </a>
 
@@ -572,40 +601,37 @@
         <section class="section" style="padding-top:0">
             <h2 class="section-title">Which model should I use?</h2>
 
-            <div class="recommendation">
-                <h3>Recommended: Kimi K2.5</h3>
-                <div class="rec-id">pollinations/kimi</div>
-                <p>The setup script defaults to Kimi K2.5 for good reason. It's currently the strongest open model for agentic coding — 77% on SWE-Bench, 256K context window, vision, tool calling, and reasoning. It handles complex multi-step tasks well and is especially good at tool calling loops, which is exactly what OpenClaw needs. Runs on free credits.</p>
-            </div>
-
-            <div class="recommendation">
-                <h3>Also good: DeepSeek V3.2</h3>
-                <div class="rec-id">pollinations/deepseek</div>
-                <p>Strong reasoning and agentic capabilities. A solid alternative to Kimi if you want a second opinion on hard problems. Tool calling support, 128K context. Runs on free credits.</p>
-            </div>
-
-            <div class="recommendation">
-                <h3>Strong alternative: GLM-4.7</h3>
-                <div class="rec-id">pollinations/glm</div>
-                <p>Z.ai's latest model, built for coding, reasoning, and agentic workflows. Competitive with Kimi on benchmarks and good at tool calling. Runs on free credits.</p>
-            </div>
-
-            <div class="recommendation">
-                <h3>Fast & cheap: Gemini 2.5 Flash Lite</h3>
-                <div class="rec-id">pollinations/gemini-fast</div>
-                <p>Google's lightweight model. Very fast responses, vision support, good enough for simple tasks. Great as a fallback or for high-volume use. Runs on free credits.</p>
-            </div>
-
-            <div class="recommendation">
-                <h3>Fast & smart: Claude Haiku 4.5</h3>
-                <div class="rec-id">pollinations/claude-fast</div>
-                <p>Anthropic's fast model. Surprisingly capable for its speed — good reasoning, vision, tool calling. A solid daily driver if you want Claude quality without the cost. Runs on free credits.</p>
-            </div>
-
-            <div class="recommendation" style="opacity:0.75">
-                <h3>Premium (paid): Claude Sonnet, Gemini 3, Grok 4</h3>
-                <div class="rec-id">pollinations/claude · pollinations/gemini · pollinations/grok</div>
-                <p>Claude Sonnet 4.5 is excellent for complex reasoning. Gemini 3 Flash has a 1M token context window. Grok 4 is fast with good tool calling. These require a paid tier.</p>
+            <div class="model-table">
+                <div class="model-row recommended">
+                    <div class="model-label">Kimi K2.5 <span class="model-tag">default</span></div>
+                    <div class="model-id">pollinations/kimi</div>
+                    <div class="model-note">Best open model for agentic coding. 256K context, vision, tools, reasoning. 77% SWE-Bench.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">DeepSeek V3.2</div>
+                    <div class="model-id">pollinations/deepseek</div>
+                    <div class="model-note">Strong reasoning & tool calling. Good alternative to Kimi for hard problems.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">GLM-4.7</div>
+                    <div class="model-id">pollinations/glm</div>
+                    <div class="model-note">Z.ai — coding, reasoning, agentic workflows. Competitive with Kimi.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Gemini Flash Lite</div>
+                    <div class="model-id">pollinations/gemini-fast</div>
+                    <div class="model-note">Google — very fast, vision support. Great as a fallback.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Claude Haiku 4.5</div>
+                    <div class="model-id">pollinations/claude-fast</div>
+                    <div class="model-note">Anthropic — fast with good reasoning. Claude quality, lower cost.</div>
+                </div>
+                <div class="model-row dimmed">
+                    <div class="model-label">Claude / Gemini / Grok <span class="model-tag paid">paid</span></div>
+                    <div class="model-id">pollinations/claude · gemini · grok</div>
+                    <div class="model-note">Premium models. Require paid tier.</div>
+                </div>
             </div>
 
             <p style="margin-top:24px; font-size:14px; color:var(--muted)">Switch models anytime: <code style="color:var(--text)">/model pollinations/deepseek</code></p>

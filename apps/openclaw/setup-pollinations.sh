@@ -168,3 +168,10 @@ echo ""
 echo "  Switch models in chat: /model pollinations/gemini"
 echo "  Manage your account:   https://enter.pollinations.ai"
 echo ""
+if ! command -v openclaw >/dev/null 2>&1; then
+    echo "Next: Install OpenClaw with:"
+    echo "  curl -fsSL https://openclaw.ai/install.sh | bash"
+else
+    echo "Next: Restart OpenClaw to pick up the new config:"
+    echo "  openclaw onboard --install-daemon"
+fi

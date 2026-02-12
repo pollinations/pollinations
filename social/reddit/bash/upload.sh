@@ -75,11 +75,10 @@ echo "⏳ Waiting 10 seconds before proceeding..."
 sleep 10
 echo ""
 
-cat > /root/reddit_post_automation/src/postConfig.json << EOF
-{
-  "imageLink": "$IMAGE_LINK",
-  "title": "$TITLE"
-}
+cat > /root/reddit_post_automation/src/link.ts << 'EOF'
+const LINK = "$IMAGE_LINK";
+const TITLE = "$TITLE";
+export {LINK, TITLE};
 EOF
 
 pkill -f "devvit playtest" 2>/dev/null || true

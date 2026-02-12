@@ -1,31 +1,16 @@
 import { Devvit} from '@devvit/public-api';
-import * as fs from 'fs';
+import { LINK, TITLE } from './link.js';
 
 Devvit.configure({
   redditAPI: true,
   media: true,
 });
 
-let LINK = '';
-let TITLE = '';
-
-try {
-  console.log("Running the devvit app!")
-  const configPath = '/root/reddit_post_automation/src/postConfig.json';
-  if (fs.existsSync(configPath)) {
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    LINK = config.imageLink || '';
-    TITLE = config.title || '';
-  }
-} catch (error) {
-  console.warn('postConfig.json not found, will use environment variables if available');
-}
-
 Devvit.addTrigger({
   event: 'AppUpgrade',
   onEvent: async (event, context) => {
     if (!LINK || !TITLE) {
-      console.error('❌ Image link and title are required in postConfig.json');
+      console.error('❌ Image link and title are required in link.ts');
       process.exit(1);
     }
 
@@ -61,6 +46,7 @@ Devvit.addTrigger({
 });
 
 export default Devvit;
+
 
 
 

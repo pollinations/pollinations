@@ -56,7 +56,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number || github.event.pull_request.number }}
           TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
-          POLLY_VPS_HOST: ${{ secrets.POLLY_VPS_HOST }}
-          POLLY_VPS_USER: ${{ secrets.POLLY_VPS_USER }}
-          POLLY_VPS_SSH_KEY: ${{ secrets.POLLY_VPS_SSH_KEY }}
+          REDDIT_VPS_HOST: ${{ secrets.REDDIT_VPS_HOST }}
+          REDDIT_VPS_USER: ${{ secrets.REDDIT_VPS_USER }}
+          REDDIT_VPS_SSH_KEY: ${{ secrets.REDDIT_VPS_SSH_KEY }}
         run: python social/scripts/publish_daily.py

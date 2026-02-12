@@ -270,9 +270,9 @@ def main():
 
     # ── 2. Deploy Reddit to VPS ────────────────────────────────────
     print(f"\n[2/4] Deploying Reddit to VPS...")
-    vps_host = get_env("POLLY_VPS_HOST", required=False)
-    vps_user = get_env("POLLY_VPS_USER", required=False)
-    vps_ssh_key = get_env("POLLY_VPS_SSH_KEY", required=False)
+    vps_host = get_env("REDDIT_VPS_HOST", required=False)
+    vps_user = get_env("REDDIT_VPS_USER", required=False)
+    vps_ssh_key = get_env("REDDIT_VPS_SSH_KEY", required=False)
 
     if vps_host and vps_user and vps_ssh_key:
         reddit_data = {}

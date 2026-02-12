@@ -1,12 +1,12 @@
 {
   "tweet_type": "shipped",
-  "tweet": "just shipped the full A/V stack. LTX-2 video, ElevenMusic, and Whisper transcription are live.\n\nyour apps can now see, hear, and speak.\n\nopen source, permissionless, and ready to ship.\n\ngo build something weird. 🌸",
-  "alt_tweet": "text-to-video (LTX-2), text-to-music, and speech-to-text (Whisper) just landed.\n\npollinations is now a full multi-modal studio.\n\nno subscriptions, just code. link in bio.",
+  "tweet": "huge week for the hive. 40 PRs merged. 🐝\n\nshipped:\n- OVH Whisper & ElevenLabs v3 (audio stack complete)\n- LTX-2, Imagen-4, Grok (SOTA media)\n- OpenClaw integration\n\nbuilding the open source creative engine. one PR at a time. 🌱 #OpenSource #AI",
+  "alt_tweet": "the audio suite is complete. the video stack is SOTA. 40 PRs merged this week. 🌸\n\n- OVH Whisper STT\n- ElevenMusic + V3 TTS\n- LTX-2 & Imagen-4\n- Open sourced Polly bot\n\njust heads down building the best open platform for creatives. 🐝 #BuildInPublic",
   "hashtags": [
     "#OpenSource",
     "#AI"
   ],
-  "image_prompt": "Cozy pixel art scene of the cute chubby bee mascot in a retro recording studio. Bee is wearing headphones, adjusting a large pixelated mixing board with a video camera and microphone nearby. Soft lime green (#ecf874) and pastel purple gradient background. 'ON AIR' sign in pixel font. Warm lighting, lo-fi aesthetic like Stardew Valley. Dynamic, excited vibe.",
-  "reasoning": "Highlights the massive expansion of capabilities (Video/Audio/Text) in a concise, builder-focused way. Encourages immediate action ('go build').",
-  "char_count": 196
+  "image_prompt": "Cozy pixel art scene of the cute chubby bee mascot standing proudly atop a stack of glowing futuristic server crates labeled 'AUDIO', 'VIDEO', and 'CODE'. Soft lime green (#ecf874) and pastel lavender gradient background. Floating text in chunky pixel font: 'WEEKLY SHIP'. Warm lighting, lo-fi vibes like Stardew Valley. The bee is giving a thumbs up. Nostalgic, productive, and emotionally warm.",
+  "reasoning": "Summarizes a massive volume of work (40 PRs) by categorizing the major wins (Audio, Media, Integration). The list format is scannable and high-signal for devs. The tone is humble but confident ('one PR at a time').",
+  "char_count": 236
 }

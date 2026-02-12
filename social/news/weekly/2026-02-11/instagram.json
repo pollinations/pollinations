@@ -1,40 +1,39 @@
 {
-  "content_type": "cozy_scene",
+  "content_type": "pixel_art",
   "linked_images": true,
-  "strategy_reasoning": "Translating technical updates (new models, docs merger) into a cozy narrative about a creative studio and community growth keeps the vibe friendly and accessible. Using the 'A/V Club' metaphor makes the new video/audio models feel playful rather than complex.",
-  "visual_style": "Cozy 8-bit pixel art, chunky low-res sprites, warm ambient lighting, lime green (#ecf874) accents, pastel gradients, nostalgic retro gaming aesthetic.",
+  "strategy_reasoning": "Using a cozy 'This Week's Buzz' recurring theme builds habit. The visuals transition from a welcoming cover to specific creative tools (audio/video) and finally to the developer experience/community aspect, mirroring the user journey from interest to creation to building.",
+  "visual_style": "Cozy 8-bit pixel art, Studio Ghibli meets retro gaming. Chunky sprites, soft pastel gradients, and mandatory lime green (#ecf874) accents. Warm, nostalgic lighting.",
   "image_count": 3,
   "images": [
     {
-      "prompt": "Cozy pixel art scene of the cute round bee mascot (chubby yellow body, brown stripes, pink blush, small wings) wearing big pixelated headphones, sitting at a retro lo-fi mixing desk. The desk has CRT monitors glowing with soft lime green (#ecf874) waveforms and video frames. Soft lavender and peach gradient background. Chunky sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'A/V STUDIO'. Emotionally warm, nostalgic.",
-      "description": "The bee mascot enjoying the new Audio/Video capabilities (LTX-2, ElevenMusic, Whisper) in a cozy retro studio setting.",
-      "text_in_image": "A/V STUDIO"
+      "prompt": "The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is sitting on a comfortable lime green (#ecf874) beanbag chair holding a retro game controller. Above her, pixelated sparkles and a speech bubble. Background is a soft lavender-to-cream gradient with floating pixel clouds. Text 'This Week's Buzz' in a chunky white 8-bit font with a dark purple shadow. Cozy, warm lighting, lo-fi aesthetic like Unpacking.",
+      "description": "Weekly intro card establishing the cozy, welcoming vibe.",
+      "text_in_image": "This Week's Buzz"
     },
     {
-      "prompt": "Cozy pixel art scene of the chubby bee mascot planting a digital garden alongside a cute tiny pixel robot. They are working together. Soft pastel mint and lime green (#ecf874) background. Pixel flowers are blooming. Wholesome vibes like A Short Hike or Unpacking. Represents open source collaboration. Warm, inviting, not harsh. Text in pixel font: 'OPEN SOURCE'.",
-      "description": "Visualizing the open source updates (Polly bot, OpenClaw) as the bee gardening with a robot friend.",
-      "text_in_image": "OPEN SOURCE"
+      "prompt": "The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing oversized pixel headphones and DJing on a lime green (#ecf874) mixing deck. Floating around her are colorful pixel musical notes and retro film strips. Background is a warm peach and mint pastel gradient. Soft glow effects from the equipment. Cozy pixel art style, nostalgic and creative.",
+      "description": "Visualizing the Audio Suite and Video/Image updates as a creative jam session.",
+      "text_in_image": "Audio + Video"
     },
     {
-      "prompt": "Retro 8-bit pixel art close-up of a crafting workbench. The bee mascot is holding a pixelated guidebook that is merging into the table itself. Represents documentation merging with the Play page. Soft lime green (#ecf874) glow from the table. Retro game UI elements (inventory slots). Warm, cozy atmosphere. Text in pixel font: 'LEVEL UP'.",
-      "description": "Metaphor for the Docs merging into the Play page - learning and building happening in the same space.",
-      "text_in_image": "LEVEL UP"
+      "prompt": "The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is watering a digital garden where a tiny friendly pixel robot (representing agents) is sprouting from a lime green (#ecf874) flower pot. A retro computer monitor in the background shows clean code blocks. Soft warm lighting, wholesome vibes like Stardew Valley. Community and growth focus.",
+      "description": "Representing Agents Taking Root and the Frictionless Developer Experience.",
+      "text_in_image": "Agents & UI"
     }
   ],
-  "caption": "The creative studio just got a major upgrade besties! 🎧✨\n\nWe’ve added a whole suite of new toys to the toybox. Whether you’re making movies, generating music, or building the next big bot, the vibes are immaculate. \n\n🌸 **New Drop:** Video generation & music models are live (full A/V experience unlocked!)\n🤖 **Bot Life:** Open source code for our Discord bots is now yours to explore\n📚 **Easy Mode:** We merged the Docs right into the Play page—so you can learn while you create without tab-switching fatigue.\n\nEverything is open, everything is growing. Come build something cozy with us. 🌱\n\nLink in bio to start creating! 🐝\n\n#pollinations #aiart #pixelart #retrogaming #cozyvibes #indiedev #opensource #creativecoding #generativeai #8bit #buildinpublic #techforgood",
+  "caption": "Besties, the shipping news is HUGE this week! 🐝✨ We just dropped the ultimate creative suite and the vibes are immaculate.\n\n🎧 **Audio Glow-up:** ElevenMusic & TTS v3 are here, plus OVH Whisper for speech-to-text. Your bots can literally sing now?\n🎬 **Movie Magic:** LTX-2, Imagen-4, and Flux-2 just landed. The pixels are pixel-ing hard.\n🤖 **Agent Era:** OpenClaw integration + the open-source Polly Discord bot. The garden is growing!\n✨ **Smooth Sailing:** We merged Docs into the Play page and redesigned the frontend. It’s giving *frictionless*.\n\nGrab your pollen and start building. Which model are you trying first? 👇\n\nLink in bio to play! 🌸",
   "hashtags": [
     "#pollinations",
-    "#aiart",
-    "#pixelart",
-    "#retrogaming",
-    "#cozyvibes",
-    "#indiedev",
     "#opensource",
-    "#creativecoding",
-    "#generativeai",
-    "#8bit",
+    "#genztech",
+    "#pixelart",
+    "#indiedev",
     "#buildinpublic",
-    "#techforgood"
+    "#aiart",
+    "#cozyvibes",
+    "#weeklyupdate",
+    "#retrogaming",
+    "#generativeai"
   ],
-  "alt_text": "A carousel of 3 cozy pixel art images. 1: A cute pixel bee wearing headphones at a retro mixing desk with lime green screens. 2: The bee gardening with a small robot friend in a pastel field. 3: The bee at a crafting table merging a book with tools, representing the new docs integration."
+  "alt_text": "A carousel of 3 cozy pixel art images featuring a cute chubby bee mascot. 1: Bee on a beanbag with 'This Week's Buzz' text. 2: Bee DJing with musical notes and film strips. 3: Bee gardening with a tiny robot and computer screen. Dominant colors are lime green and soft pastels."
 }

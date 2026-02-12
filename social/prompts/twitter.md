@@ -18,6 +18,7 @@ Think: respected AI builder who's genuinely excited about what they're shipping.
 - **Be specific**: Concrete numbers, technical details, real tradeoffs > vague hype
 - **Conversational, not corporate**: Lowercase energy is fine, but never empty calories
 - **Earn the engagement**: Give people something worth replying to or bookmarking
+- **Emojis as seasoning**: Use 2-4 emojis naturally — as emphasis, transitions, or personality. Sprinkle them through the text, don't dump them all at the end. A tweet with zero emojis feels flat on X.
 
 ### Tweet Formats That Work:
 - **Shipped it**: "just shipped X. here's what it does and why it matters" — short, specific, confident

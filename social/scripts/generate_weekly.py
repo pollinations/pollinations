@@ -40,6 +40,16 @@ from common import (
 
 WEEKLY_REL_DIR = "social/news/weekly"
 
+WEEKLY_IMAGE_CONTEXT = """
+
+## Weekly Identity
+This is a WEEKLY recap post. The image should feel like a recurring episode:
+- Include a creative weekly label as text-in-image (e.g. "Weekly Wrap", "This Week's Buzz", "Week in Review", "The Week That Was", "7 Days of Shipping", "Productive Week")
+- Pick a label that matches the week's mood — celebratory, productive, chill, etc.
+- Make it feel like a series the audience looks forward to, not a one-off post
+- Don't use dry labels like "Week 47" — keep it creative and on-brand
+"""
+
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -154,7 +164,7 @@ def generate_twitter_post(digest: Dict, token: str) -> Optional[Dict]:
     pr_summary = digest.get("pr_summary", "")
     arc_titles = [a["headline"] for a in digest.get("arcs", [])]
     template = load_prompt("twitter")
-    system_prompt = template.replace("{updates}", pr_summary).replace("{pr_titles}", str(arc_titles))
+    system_prompt = template.replace("{updates}", pr_summary).replace("{pr_titles}", str(arc_titles)) + WEEKLY_IMAGE_CONTEXT
 
     response = call_pollinations_api(
         system_prompt, "Generate the post now.", token,
@@ -173,7 +183,7 @@ def generate_linkedin_post(digest: Dict, token: str) -> Optional[Dict]:
     template = load_prompt("linkedin")
     system_prompt = (template.replace("{updates}", pr_summary)
                      .replace("{pr_titles}", str(arc_titles))
-                     .replace("{pr_count}", pr_count))
+                     .replace("{pr_count}", pr_count)) + WEEKLY_IMAGE_CONTEXT
 
     response = call_pollinations_api(
         system_prompt, "Generate the post now.", token,
@@ -189,7 +199,7 @@ def generate_instagram_post(digest: Dict, token: str) -> Optional[Dict]:
     pr_summary = digest.get("pr_summary", "")
     arc_titles = [a["headline"] for a in digest.get("arcs", [])]
     template = load_prompt("instagram")
-    system_prompt = template.replace("{updates}", pr_summary).replace("{pr_titles}", str(arc_titles))
+    system_prompt = template.replace("{updates}", pr_summary).replace("{pr_titles}", str(arc_titles)) + WEEKLY_IMAGE_CONTEXT
 
     response = call_pollinations_api(
         system_prompt, "Generate the post now.", token,
@@ -205,7 +215,7 @@ def generate_reddit_post(digest: Dict, token: str) -> Optional[Dict]:
     pr_summary = digest.get("pr_summary", "")
     arc_titles = [a["headline"] for a in digest.get("arcs", [])]
     template = load_prompt("reddit")
-    system_prompt = template.replace("{updates}", pr_summary).replace("{pr_titles}", str(arc_titles))
+    system_prompt = template.replace("{updates}", pr_summary).replace("{pr_titles}", str(arc_titles)) + WEEKLY_IMAGE_CONTEXT
 
     response = call_pollinations_api(
         system_prompt, "Generate the post now.", token,
@@ -224,7 +234,7 @@ def generate_discord_post(digest: Dict, token: str, week_end: str) -> Optional[D
     system_prompt = (template
                      .replace("{updates}", pr_summary)
                      .replace("{pr_titles}", str(arc_titles))
-                     .replace("{date_str}", week_end))
+                     .replace("{date_str}", week_end)) + WEEKLY_IMAGE_CONTEXT
 
     response = call_pollinations_api(
         system_prompt, "Generate the post now.", token,

@@ -1,12 +1,12 @@
 {
   "tweet_type": "shipped",
-  "tweet": "just merged openclaw integration. the setup script now handles auto-install & onboarding automatically.\n\none command to go from zero to building. removing friction from open source AI, one PR at a time. 🌸",
-  "alt_tweet": "seamless openclaw integration is live. updated the setup script to auto-install and onboard you instantly. less config, more shipping. open source should be easy.",
+  "tweet": "instant agents are here. just merged OpenClaw integration. run one script -> auto-install & onboard your own AI agent. ⚡️\n\nno config hell, just code. check the new docs. 🐝🌱 #OpenSourceAI",
+  "alt_tweet": "shipping beats waiting. OpenClaw is live on pollinations. auto-install, auto-onboard, zero friction. building agents shouldn't be a headache. 🌸🐝 #BuildInPublic",
   "hashtags": [
-    "#OpenSource",
-    "#BuildPublic"
+    "#OpenSourceAI",
+    "#AI"
   ],
-  "image_prompt": "Dynamic pixel art arcade scene in cozy 8-bit style. The cute chubby bee mascot is skillfully operating a retro claw machine labeled 'OpenClaw'. The mechanical claw smoothly lifts a glowing lime green (#ecf874) orb. Screen displays 'AUTO-INSTALL COMPLETE' in pixel font. Warm lighting, pastel gradients, victory energy. High contrast and clean lines.",
-  "reasoning": "Focuses on the technical benefit (auto-install/onboard) rather than just the feature name. Shows respect for the user's time ('removing friction'). The image puns on the 'Claw' name while maintaining the cozy brand identity.",
-  "char_count": 199
+  "image_prompt": "Cozy 8-bit pixel art scene. The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is standing next to a glowing retro computer terminal showing scrolling green code and a 'SYSTEM READY' status. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Emotionally warm, nostalgic but technical.",
+  "reasoning": "Focuses on the 'instant' value proposition and the removal of friction ('no config hell'), which appeals to developers. Uses emojis for pacing but keeps the core message technical.",
+  "char_count": 178
 }

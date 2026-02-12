@@ -1,41 +1,38 @@
 {
-  "content_type": "pixel_art",
+  "content_type": "cozy_scene",
   "linked_images": true,
-  "strategy_reasoning": "Using the 'level up' gaming trope perfectly visualizes the technical upgrades (embeddings/intelligence) while keeping the cozy, approachable vibe. The inventory screen metaphor makes complex model routing feel like a fun game mechanic, and the smooth flying scene translates 'frictionless credits' into a relaxing visual feeling.",
-  "visual_style": "Cozy 8-bit pixel art with chunky sprites, soft ambient lighting, and a mandatory lime green (#ecf874) accent. Studio Ghibli meets Stardew Valley.",
+  "strategy_reasoning": "Using the 'Level Up' RPG metaphor connects technical backend updates (embeddings, system prompts) with our gaming-adjacent aesthetic. It translates abstract code changes into a tangible sense of progression and reward.",
+  "visual_style": "Cozy 8-bit pixel art with chunky sprites, soft ambient occlusion, and a specific focus on the lime green (#ecf874) to pastel gradient palette.",
   "image_count": 3,
   "images": [
     {
-      "prompt": "Cozy pixel art scene of the cute chubby 8-bit bee mascot floating in a meditative pose, surrounded by glowing magical data sparkles. Soft lime green (#ecf874) and lavender gradient background. The bee has a round yellow body, dark brown stripes, pink blush, and small blue wings. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Pixel text: 'BRAIN BOOST'. Nostalgic but beautiful, emotionally warm.",
-      "description": "Visualizing the intelligence upgrade (OpenAI embeddings) as the mascot gaining a magical power-up.",
-      "text_in_image": "BRAIN BOOST"
+      "prompt": "Cozy pixel art scene of the cute bee mascot hovering in front of a glowing retro computer terminal. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing pixelated wizard glasses. The screen glows with lime green (#ecf874) code. Soft pastel lavender and cream background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'POLLY LEVEL UP'. Nostalgic but beautiful, emotionally warm. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Visualizing the 'IQ upgrade' via OpenAI embeddings as the mascot learning from a retro terminal.",
+      "text_in_image": "POLLY LEVEL UP"
     },
     {
-      "prompt": "Retro 8-bit pixel art game UI screen showing the cute chubby bee mascot selecting different magical scrolls from a cozy wooden shelf. Soft lime green (#ecf874) and peach gradient background. The bee has a round yellow body, dark brown stripes, pink blush. Chunky retro sprites, warm lighting, lo-fi vibes like A Short Hike. Pixel text: 'PICK YOUR GEAR'. Nostalgic but beautiful, emotionally warm.",
-      "description": "Representing the flexible model routing and legacy support as a fun RPG inventory selection screen.",
-      "text_in_image": "PICK YOUR GEAR"
+      "prompt": "Cozy pixel art scene of the cute bee mascot organizing glowing jars of honey (pollen) on a rustic wooden shelf. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She wears a tiny merchant apron. Soft lime green (#ecf874) sparkles float around the jars. Peach to mint pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'SMOOTHER FLOW'. Nostalgic but beautiful, emotionally warm. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Representing the single-bucket balance fix as organizing honey jars—satisfying and clean.",
+      "text_in_image": "SMOOTHER FLOW"
     },
     {
-      "prompt": "Cozy pixel art scene of the cute chubby bee mascot gliding smoothly through a digital garden of pixel flowers, leaving a trail of golden sparkles. Soft lime green (#ecf874) and mint gradient background. The bee has a round yellow body, dark brown stripes, pink blush. Chunky retro sprites, warm lighting, lo-fi aesthetic like Unpacking. Pixel text: 'SMOOTH FLOW'. Nostalgic but beautiful, emotionally warm.",
-      "description": "Illustrating the single-bucket balance update as a frictionless, enjoyable flight experience.",
-      "text_in_image": "SMOOTH FLOW"
+      "prompt": "Cozy pixel art scene of the cute bee mascot holding an old-school pixel game cartridge labeled 'LEGACY'. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is standing in a digital garden with lime green (#ecf874) vines. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'SECRET MENU'. Nostalgic but beautiful, emotionally warm. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Highlighting the hidden model support and legacy Claude options as unlocking a 'secret menu' or retro cartridge.",
+      "text_in_image": "SECRET MENU"
     }
   ],
-  "caption": "Polly just had a major glow up ✨🧠 We pushed some cozy updates to make your AI generation smoother than fresh honey.\n\n🍄 Polly System Upgrade: She’s rocking OpenAI embeddings now = better context and smarter replies.\n🌱 Flexible Routing: We fixed the model fallback issues and added legacy support. You choose the tools, we make it work.\n🌸 Frictionless Flow: Credit balance logic is now single-bucket. No math, just vibes.\n\nBuild something beautiful today. 🐝\n\nLink in bio to test the new brains!\n\n#pollinations #opensource #pixelart #cozyvibes #indiedev #aiart #retrogaming #8bit #buildinpublic #generativeai #creativecoding #gamedev #relaxing",
+  "caption": "Besties, Polly just drank her morning matcha and she is FOCUSED 🍵✨ We pushed some cozy updates to the repo today!\n\n🧠 Polly’s brain got a major glow-up with new embeddings and system prompts (she understands the assignment better now).\n\n🍯 We fixed the math on pollen buckets—credits now flow smoother than honey. No more splitting headaches.\n\n👾 Plus, for our dev friends: we unlocked the secret menu. Hidden model support and legacy Claude versions are live.\n\nGo build something wholesome today. 🌸\n\nLink in bio to read the changelog!\n\n#pollinations #opensource #pixelart #cozyvibes #indiedev #generativeai #8bit #retrogaming #buildinpublic #aiart",
   "hashtags": [
     "#pollinations",
     "#opensource",
     "#pixelart",
     "#cozyvibes",
     "#indiedev",
-    "#aiart",
-    "#retrogaming",
-    "#8bit",
-    "#buildinpublic",
     "#generativeai",
-    "#creativecoding",
-    "#gamedev",
-    "#relaxing"
+    "#8bit",
+    "#retrogaming",
+    "#buildinpublic",
+    "#aiart"
   ],
-  "alt_text": "A carousel of three cozy 8-bit pixel art images featuring a cute round bee mascot. 1. The bee glowing with magical knowledge against a lime green and lavender background. 2. The bee looking at a retro game inventory screen choosing magical scrolls. 3. The bee flying smoothly through a pixelated garden."
+  "alt_text": "Three cozy pixel art images. 1. A cute bee mascot with wizard glasses at a glowing green computer terminal. 2. The bee mascot organizing glowing honey jars. 3. The bee mascot holding a retro game cartridge in a garden. All images feature lime green accents and soft pastel backgrounds."
 }

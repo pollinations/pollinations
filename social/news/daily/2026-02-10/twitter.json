@@ -1,12 +1,12 @@
 {
   "tweet_type": "shipped",
-  "tweet": "friction is the enemy of shipping.\n\njust merged docs directly into the play page. context switching is dead—grab snippets and test endpoints in one view.\n\nplus:\n- new qwen-character model\n- hardened prompt defenses\n- fixed gemini executable code\n\nbuild faster. 🌸",
-  "alt_tweet": "why have docs in one tab and code in another?\n\nwe just merged them. docs are now live inside the play page.\n\nless tabbing, more shipping. also pushed fixes for gemini reasoning and added qwen-character.\n\nopen source & moving fast. 🐝",
+  "tweet": "just merged docs directly into the play page. no more tab switching while testing endpoints. ⚡️\n\nalso dropped qwen-character for better roleplay & hardened polly against prompt injection.\n\nshipping daily. 🌸🐝 #OpenSource #AI",
+  "alt_tweet": "shipped qwen-character for better roleplay and merged docs into the play page today. less context switching, better models. open source means we build what you actually need. 🌱🌸 #BuildInPublic #AI",
   "hashtags": [
     "#OpenSource",
-    "#BuildInPublic"
+    "#AI"
   ],
-  "image_prompt": "Dynamic pixel art close-up of a retro monitor screen. A UI window labeled 'DOCS' snaps into a window labeled 'PLAY', fusing into one glowing lime green (#ecf874) interface. The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is giving a thumbs up. High contrast, warm lighting, cozy 8-bit aesthetic, soft pastel background.",
-  "reasoning": "Focuses on a tangible UX improvement (Docs integration) that developers immediately understand and value. 'Friction is the enemy' is a strong builder-centric hook. Lists technical updates (Qwen, Gemini) to show breadth of shipping without cluttering the main message.",
-  "char_count": 226
+  "image_prompt": "Cozy pixel art scene of the cute bee mascot (yellow/brown stripes, pink blush, blue wings) wearing oversized pixel nerd glasses, connecting two large glowing puzzle pieces labeled 'DOCS' and 'PLAY'. Soft lime green (#ecf874) and pastel lavender gradient background. Floating pixel code blocks and sparkles. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'MERGED'. Nostalgic but beautiful.",
+  "reasoning": "Focuses on a tangible UX improvement (docs merge) that developers appreciate, while mentioning the new model to appeal to the broader user base. Tone is casual but productive.",
+  "char_count": 218
 }

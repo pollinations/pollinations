@@ -1,27 +1,27 @@
 {
   "content_type": "pixel_art",
   "linked_images": true,
-  "strategy_reasoning": "Visualizing technical updates (audio, UI, bots) through the lens of a cozy 'level up' keeps the tech accessible and friendly. Using the bee mascot with headphones and retro computer setups bridges the gap between complex AI features and our nostalgic, warm brand identity.",
-  "visual_style": "Cozy 8-bit pixel art, Stardew Valley aesthetic, chunky sprites, soft lighting, lime green (#ecf874) accents",
+  "strategy_reasoning": "Using a cozy 'level up' gaming aesthetic connects the technical updates (new models, UI refresh) to the feeling of unlocking new items in a game like Stardew Valley. The pixel art style softens the tech jargon, making 'transcription' and 'frontend redesign' feel like fun, creative tools rather than dry changelogs.",
+  "visual_style": "Cozy 8-bit pixel art with chunky sprites, soft warm lighting, and prominent lime green (#ecf874) accents. Lo-fi, nostalgic atmosphere similar to Stardew Valley or A Short Hike.",
   "image_count": 3,
   "images": [
     {
-      "prompt": "Cozy pixel art scene of the main character, a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. The bee is wearing chunky pixel headphones and DJing on a turntable made of a large sunflower. Musical notes floating in the air. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic. Text in pixel font: 'AUDIO MODE'. Nostalgic but beautiful.",
-      "description": "Visualizing the massive audio expansion (Music, TTS, Whisper) with the mascot jamming out.",
-      "text_in_image": "AUDIO MODE"
+      "prompt": "Cozy pixel art scene. The cute pixel art bee mascot wearing large pastel headphones and cool pixel sunglasses, floating in a lush lime green (#ecf874) meadow. Pixel musical notes and sound waves are drifting in the air like pollen. Soft peach and lavender gradient sky. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Pixel text reads 'AUDIO BLOOM'. Nostalgic, emotionally warm.",
+      "description": "Visualizing the new Audio Suite features (Music, Transcription, TTS v3) as a musical garden party.",
+      "text_in_image": "AUDIO BLOOM"
     },
     {
-      "prompt": "Retro 8-bit pixel art close-up of a vintage CRT monitor glowing in a cozy room. On the screen, a fresh, clean pixelated UI layout with a tiny pixel robot icon waving (representing Polly). The cute chubby bee mascot is sleeping peacefully on top of the warm monitor. Soft pastel mint and peach gradient atmosphere. Lime green (#ecf874) glow effects. Text in pixel font: 'FRESH LOOK'. Warm hug energy, not corporate.",
-      "description": "Showcasing the Frontend redesign and the new Polly Discord bot in a cozy gaming setup.",
+      "prompt": "Cozy pixel art scene. The cute pixel art bee mascot wearing a red painter's beret and holding a pixel paintbrush, putting the finishing touches on a floating retro computer window frame. The window glows with lime green (#ecf874) light. A tiny friendly pixel robot (Polly) stands nearby holding an open scroll of blueprints. Soft pastel background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Pixel text reads 'FRESH LOOK'. Nostalgic, emotionally warm.",
+      "description": "Highlighting the Frontend Redesign and Open Source Polly bot as a renovation/painting activity.",
       "text_in_image": "FRESH LOOK"
     },
     {
-      "prompt": "Pixel art garden scene where digital flowers are blooming rapidly (representing speed/optimizations). The cute chubby bee mascot is zooming through the air leaving a trail of sparkles. A signpost shows a pixel coin with a down arrow (cheaper search). Soft lime green (#ecf874) and warm cream background. Chunky pixels, modern soft lighting. Text in pixel font: 'LEVEL UP'. Wholesome, like A Short Hike.",
-      "description": "Highlighting the optimizations, cheaper search, and faster generation speeds.",
+      "prompt": "Cozy pixel art scene. The cute pixel art bee mascot wearing a tiny wizard hat, casting a spell on a garden patch. Pixel flowers and vines are growing rapidly in a sparkle of lime green (#ecf874) magic. A retro UI bar at the bottom shows a 'Performance' stat maxed out. Soft pastel gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Pixel text reads 'LEVEL UP'. Nostalgic, emotionally warm.",
+      "description": "Representing performance tuning and optimizations as a magical growth spurt or stat boost.",
       "text_in_image": "LEVEL UP"
     }
   ],
-  "caption": "Bestie, the glow-up is REAL. ✨🎧 We just dropped a massive update and the vibes are immaculate.\n\n🔊 AUDIO UNLOCKED: We're talking speech-to-text, new music models, and upgraded TTS. Your creations just got a voice.\n🎨 FRESH FIT: The dashboard and play page got a total redesign. It’s giving clean, it’s giving cozy.\n🤖 MEET POLLY: Our new AI coding agent for Discord is ready to help you build.\n⚡️ SPEED RUN: Faster images, cheaper search, and smoother optimizations.\n\nBuild something loud (or quiet) today. Link in bio! 🌸🐝\n\n#pollinations #opensource #pixelart #generativeai #indiedev #cozyvibes #8bit #aiart #creativecoding #retrogaming #buildinpublic",
+  "caption": "Wake up besties, new texture pack just dropped 🌿✨ The hive has been BIZZ-y (sorry had to) cooking up some sweet updates for your creative toolkit. \n\nHere’s what’s blooming in the garden:\n🎶 Audio Suite is POPPING off: We got music generation, speech-to-text transcription, and v3 speech. Your ears are gonna love this.\n🎨 Fresh Paint: The Dashboard and Play page got a cozy glow-up. It’s giving clean, it’s giving aesthetic.\n🤖 Polly is Free: Our discord bot code is now open source! Go fork it, break it, build it.\n⚡ Speed Run: Optimized search and stable diffusion models = less waiting, more creating.\n\nNo gatekeeping, just good vibes and better tools. Go touch some digital grass. 🌱\n\nLink in bio to try the new toys! 🔗\n\n#pollinations #opensource #pixelart #generativeai #indiedev #cozyvibes #retrogaming #aiart #buildinpublic #creativecoding #8bit",
   "hashtags": [
     "#pollinations",
     "#opensource",
@@ -29,11 +29,11 @@
     "#generativeai",
     "#indiedev",
     "#cozyvibes",
-    "#8bit",
-    "#aiart",
-    "#creativecoding",
     "#retrogaming",
-    "#buildinpublic"
+    "#aiart",
+    "#buildinpublic",
+    "#creativecoding",
+    "#8bit"
   ],
-  "alt_text": "A carousel of 3 cozy 8-bit pixel art images featuring a round chubby bee mascot. 1: The bee wearing headphones DJing on a sunflower with a lime green background. 2: A retro computer monitor showing a new UI and a robot friend, with the bee sleeping on top. 3: The bee zooming through a rapidly blooming digital garden."
+  "alt_text": "A carousel of cozy 8-bit pixel art images featuring a cute bee mascot in a lime green world. 1. The bee wearing headphones surrounded by music notes. 2. The bee painting a user interface with a robot friend. 3. The bee casting a magic spell to make flowers grow faster."
 }

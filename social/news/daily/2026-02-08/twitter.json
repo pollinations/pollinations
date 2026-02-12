@@ -1,12 +1,13 @@
 {
   "tweet_type": "shipped",
-  "tweet": "major audio upgrade live 🔊\n\n- whisper speech-to-text\n- elevenmusic generation\n- tts v3\n\nplus a total UI refresh because powerful tools should feel good to use.\n\n14 PRs merged today. all open source.\n\ngo build: pollinations.ai",
-  "alt_tweet": "just dropped a massive audio overhaul. added whisper STT, elevenmusic, and upgraded TTS. wrapped it all in a fresh UI redesign.\n\n14 PRs merged. open source and ready for you.",
+  "tweet": "audio stack just leveled up 🔊\n\nshipped Whisper transcription, ElevenMusic generation, and v3 TTS. all live.\n\nalso: just open sourced Polly, our discord agent. grab the code and build your own.\n\n14 PRs merged today. we move. 🐝🌸",
+  "alt_tweet": "big shipping day:\n\n- audio transcription (Whisper)\n- music generation (ElevenMusic)\n- TTS upgraded to v3\n- Polly discord bot source code released\n\nopen source, no subscriptions, just raw credits. build something loud today. 🐝🔊",
   "hashtags": [
     "#OpenSource",
-    "#AI"
+    "#AI",
+    "#BuildPublic"
   ],
-  "image_prompt": "Dynamic pixel art scene. Center: The cute chubby bee mascot wearing large headphones, adjusting a glowing lime green (#ecf874) holographic equalizer interface. Background: energetic sound waves and floating pixel music notes in soft pastels. High contrast, exciting 'shipped it' energy. Cozy 8-bit aesthetic, warm lighting, retro gaming vibes.",
-  "reasoning": "Highlights the specific technical additions (Whisper, ElevenMusic) while emphasizing the improved developer experience (UI). Shows momentum with the PR count.",
-  "char_count": 218
+  "image_prompt": "Dynamic pixel art scene of the cute bee mascot wearing chunky pixel headphones, DJing on a retro mixing deck made of code blocks. Sound waves visualizing as lime green (#ecf874) and pastel equalizer bars. Background is a cozy studio with soft warm lighting. Text in pixel font floating: 'AUDIO LIVE'. High contrast, energetic composition. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+  "reasoning": "Highlights technical velocity (14 PRs) and specific high-value features (Audio suite + Open Source code). The tone is confident ('we move') and targets builders who want to use the tools or see the code.",
+  "char_count": 216
 }

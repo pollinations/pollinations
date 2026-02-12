@@ -56,16 +56,16 @@ This is a WEEKLY recap post. The image should feel like a recurring episode:
 
 def get_week_range(override_start: Optional[str] = None):
     """Return (week_start, week_end) as YYYY-MM-DD strings.
-    Default: Mon→Sun of the current week (when run Sunday 06:00 UTC).
-    This covers 7 days of work. The weekly publishes Sunday 18:00 UTC."""
+    Covers Sunday-to-Saturday: everything since last Sunday 6am UTC.
+    Cron runs Sunday 06:00 UTC, so 'today' is the new Sunday and
+    we look back 7 days to last Sunday through yesterday (Saturday)."""
     if override_start:
         start = datetime.strptime(override_start, "%Y-%m-%d").date()
     else:
-        # Sunday 06:00 UTC — the week is Mon-Sun
         today = datetime.now(timezone.utc).date()
-        start = today - timedelta(days=6)  # Monday
+        start = today - timedelta(days=7)  # last Sunday
 
-    end = start + timedelta(days=6)
+    end = start + timedelta(days=6)  # Saturday
     return start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
 
 

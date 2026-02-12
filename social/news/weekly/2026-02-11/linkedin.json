@@ -1,16 +1,16 @@
 {
   "post_type": "milestone",
-  "hook": "AI isn't just text anymore. It's seeing, hearing, and speaking. This week, we gave developers the full sensory stack.",
-  "body": "Shipping velocity is the only metric that matters in open source. This week, our team merged 40 PRs, effectively transforming pollinations.ai from a generation tool into a fully multimodal development platform.\n\nHere is what that looks like in practice:\n\n1. THE AUDIO REVOLUTION\nWe have integrated ElevenMusic for high-fidelity music generation and OVH Whisper for speech-to-text transcription. Developers can now build apps that listen and sing, not just read and write.\n\n2. NEXT-GEN VIDEO\nVideo is the next frontier. We added LTX-2, Grok-Video, and Imagen-4. Whether you are building marketing tools or creative suites, the pipeline is ready.\n\n3. RISE OF THE AGENTS\nWe are moving beyond simple prompts. With the OpenClaw integration and the new Polly Discord Bot source code, we are laying the groundwork for autonomous agents that can navigate the web and interact with communities.\n\n4. UNIFIED DEV EXPERIENCE\nGreat models are useless without great documentation. We merged our Docs directly into the Play page. You can now read the manual and test the API in the exact same interface. Friction removed.\n\nWe are building the most accessible, transparent AI infrastructure on the web. No gatekeeping, just shipping.\n\nCheck the new audio capabilities:",
-  "cta": "https://pollinations.ai",
+  "hook": "MOMENTUM UPDATE: 40 PRs merged this week.\n\nWe are moving fast to expand beyond images into a fully multimodal infrastructure. The goal is simple: give developers the best open-source tools to build AI apps without the headache.",
+  "body": "Here is what shipped to the Pollinations platform this week:\n\n1. AUDIO STACK COMPLETE → We enabled ElevenMusic with precise duration-based billing and added OVH Whisper for speech-to-text. Whether you are generating soundtracks or transcribing voice, the pipelines are now fully operational.\n\n2. NEXT-GEN VIDEO → Video generation got a major upgrade with the LTX-2 model and Grok Imagine Video integration. The quality and consistency of motion are improving rapidly.\n\n3. AGENT INFRASTRUCTURE → We simplified the setup for autonomous agents. OpenClaw now auto-installs and onboards directly in the setup script. Plus, we open-sourced the code for our own Polly Discord Bot so you can fork and modify it.\n\n4. UNIFIED DEV EXPERIENCE → We merged the Documentation directly into the Play page. You can now test models and read the docs in the same interface. Less context switching, more shipping.\n\nWhy this matters:\nWe are seeing over 500 apps built on our platform. Every efficiency gain we ship ripples out to thousands of end-users immediately.\n\nWe build in the open because we believe the future of AI belongs to the community, not black boxes.",
+  "cta": "Check out the new models on the platform. Link in the comments.",
   "hashtags": [
     "#OpenSource",
-    "#GenerativeAI",
-    "#SoftwareEngineering",
-    "#BuildInPublic",
-    "#DevTools"
+    "#AI",
+    "#ShipIt",
+    "#DevTools",
+    "#GenerativeAI"
   ],
-  "image_prompt": "Pixel art infographic scene titled 'THE WEEKLY BUZZ'. A large retro RPG quest board shows the headline text '40 PRs MERGED'. Below the headline, three pixelated panels display icons: a musical note (Audio), a film strip (Video), and a robot head (Agents). The cute chubby bee mascot is center stage, wearing a construction hard hat and holding a blueprint, looking proud. Background is a soft lime green (#ecf874) and lavender gradient. 16-bit SNES pixel art, Stardew Valley style, chunky sprites, visible pixels, soft pastel gradients, warm lighting. Image must be SELF-EXPLANATORY without reading the caption.",
-  "image_text": "THE WEEKLY BUZZ: 40 PRs MERGED - Audio, Video, Agents",
-  "reasoning": "This post signals massive platform maturity. By grouping 40 PRs into 'Audio, Video, Agents,' we move the narrative from 'we fixed some bugs' to 'we are building a comprehensive ecosystem.' The hook targets the multimodal trend, and the metric (40 PRs) proves execution speed."
+  "image_prompt": "Pixel art infographic displaying a weekly progress report. Large, chunky pixel headline at the top reads 'WEEKLY SHIP'. Below it, a prominent stat: '40 PRs MERGED'. The visual layout features three pixel-art panels or cards: one showing a musical note (Audio), one showing a film strip (Video), and one showing a robot arm (Agents). The cute bee mascot is wearing large headphones and holding a pixelated clapperboard, directing the scene. Background is a soft lime green (#ecf874) with pastel gradients. The style is cozy, clean, and legible, resembling a retro game status screen. Text must be large and clear.",
+  "image_text": "WEEKLY SHIP: 40 PRs MERGED. New Audio & Video Models. Docs Unified.",
+  "reasoning": "This post emphasizes velocity (40 PRs) and capability expansion (Audio/Video). The 'Weekly Ship' framing establishes a rhythm of reliability. The image uses the infographic style to convey the volume of work at a glance, catering to LinkedIn's visual-first feed while keeping the cozy brand identity."
 }

@@ -20,30 +20,22 @@ cleanup() {
   
   rm -f src/postConfig.json
   
-  echo "📤 Committing and pushing changes to GitHub..."
-  git add .
-  git commit -m "Deploy post to Reddit with image and title" 2>/dev/null || true
-  git push origin main 2>/dev/null || true
-  
   if [ ! -z "$PLAYTEST_PID" ] && kill -0 $PLAYTEST_PID 2>/dev/null; then
-    kill -TERM $PLAYTEST_PID 2>/dev/null
-    sleep 1
-    kill -KILL $PLAYTEST_PID 2>/dev/null
+    kill -9 $PLAYTEST_PID 2>/dev/null
+    wait $PLAYTEST_PID 2>/dev/null
   fi
   
-  pkill -f "devvit playtest" 2>/dev/null || true
-  pkill -f "node.*devvit" 2>/dev/null || true
-  pkill -f "^node$" 2>/dev/null || true
+  pkill -9 -f "devvit playtest" 2>/dev/null || true
+  pkill -9 -f "tsx" 2>/dev/null || true
   
   lsof -ti:5678 2>/dev/null | xargs kill -9 2>/dev/null || true
   
-  zombies=$(ps aux | grep -c " <defunct>")
-  if [ $zombies -gt 1 ]; then
-    echo "⚠️  Found zombie processes, cleaning up..."
-    ps aux | grep " <defunct>" | awk '{print $2}' | xargs -r kill -9 2>/dev/null || true
-  fi
-  
   sleep 1
+  
+  echo "📤 Committing and pushing changes to GitHub..."
+  git add . 2>/dev/null || true
+  git commit -m "Deploy post to Reddit with image and title" 2>/dev/null || true
+  git push origin main 2>/dev/null || true
   
   echo "✓ Cleanup complete"
   exit $exit_code

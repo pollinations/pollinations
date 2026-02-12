@@ -156,11 +156,7 @@ else
     printf '%s\n' "$NEW_CONFIG" | jq '.' > "$CONFIG_FILE"
 fi
 
-if [ ${#POLLINATIONS_API_KEY} -gt 12 ]; then
-    MASKED_KEY="${POLLINATIONS_API_KEY:0:8}...${POLLINATIONS_API_KEY: -4}"
-else
-    MASKED_KEY="${POLLINATIONS_API_KEY:0:4}..."
-fi
+MASKED_KEY="${POLLINATIONS_API_KEY:0:8}...${POLLINATIONS_API_KEY: -4}"
 
 echo ""
 echo "🧬 Pollinations.ai configured for OpenClaw!"

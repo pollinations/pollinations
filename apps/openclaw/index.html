@@ -774,76 +774,58 @@ Then start a new session so the config is picked up. After that, switch to the n
 <script>
 function copyCode(id) {
     const el = document.getElementById(id);
-    const text = el.textContent.replace('Copy', '').replace('Copied!', '').trim();
+    const text = el.textContent.replace(/Copy|Copied!/g, '').trim();
     navigator.clipboard.writeText(text).then(() => {
         const btn = el.querySelector('.copy-btn');
         btn.textContent = 'Copied!';
-        setTimeout(() => btn.textContent = 'Copy', 1500);
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
     });
 }
 
 function toggleManual() {
     const el = document.getElementById('manual-config');
-    const btn = el.previousElementSibling;
     el.classList.toggle('open');
-    btn.textContent = el.classList.contains('open') ? 'Manual JSON config ▴' : 'Manual JSON config ▾';
+    el.previousElementSibling.textContent = el.classList.contains('open') ? 'Manual JSON config ▴' : 'Manual JSON config ▾';
 }
 
 function startAuthorize() {
     var redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
     var models = encodeURIComponent('kimi,deepseek,glm,gemini-search,perplexity-fast,claude-fast');
-    window.location.href = 'https://enter.pollinations.ai/authorize?redirect_url=' + redirectUrl + '&models=' + models;
-}
-
-function maskKey(key) {
-    if (key.length <= 10) return key;
-    return key.slice(0, 6) + '...' + key.slice(-4);
+    window.location.href = `https://enter.pollinations.ai/authorize?redirect_url=${redirectUrl}&models=${models}`;
 }
 
 function switchTab(tab, btn) {
-    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
-    document.getElementById('tab-' + tab).classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(p => { p.classList.remove('active'); });
+    document.getElementById(`tab-${tab}`).classList.add('active');
     btn.classList.add('active');
 }
 
 function injectApiKey(apiKey) {
     // Show connected state
     document.getElementById('step-connect').style.display = 'none';
-    var connectedEl = document.getElementById('step-connected');
-    connectedEl.style.display = 'block';
+    document.getElementById('step-connected').style.display = 'block';
     document.getElementById('key-display').textContent = apiKey;
 
-    // Update setup command
+    // Update setup command placeholder
     var placeholder = document.getElementById('key-placeholder');
     placeholder.textContent = apiKey;
     placeholder.classList.add('key-injected');
 
-    // Update all key placeholders (JSON config + agent message)
-    var jsonSpans = document.querySelectorAll('.key-in-json');
-    jsonSpans.forEach(function(span) {
+    // Update JSON config and agent message placeholders
+    document.querySelectorAll('.key-in-json').forEach(span => {
         span.textContent = apiKey;
         span.classList.add('key-injected');
     });
-
-    // Flash the setup box to draw attention
-    var setupBox = document.querySelector('.setup-box');
-    setupBox.style.transition = 'box-shadow 0.3s';
-    setupBox.style.boxShadow = '0 0 0 3px var(--accent-strong)';
-    setTimeout(function() { setupBox.style.boxShadow = 'none'; }, 2000);
 }
 
 // Check for API key in URL fragment on page load
-(function() {
-    var hash = window.location.hash;
-    if (hash && hash.indexOf('api_key=') !== -1) {
-        var match = hash.match(/api_key=([^&]+)/);
-        if (match && match[1]) {
-            var apiKey = decodeURIComponent(match[1]);
-            // Remove the key from the URL for security
-            history.replaceState(null, '', window.location.pathname + window.location.search);
-            injectApiKey(apiKey);
-        }
+(() => {
+    const match = window.location.hash.match(/api_key=([^&]+)/);
+    if (match) {
+        const apiKey = decodeURIComponent(match[1]);
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        injectApiKey(apiKey);
     }
 })();
 </script>

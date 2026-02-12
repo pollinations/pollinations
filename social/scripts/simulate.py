@@ -212,7 +212,6 @@ def run_daily(date_str: str, token: str, with_images: bool = True) -> None:
         print("  Summary generation FAILED")
         return
     print(f"  {len(summary.get('arcs', []))} arcs: {summary.get('one_liner', '')}")
-    save_json(output_dir, "summary.json", summary)
 
     # Platform posts
     print(f"\n[3/4] Generating platform posts...")
@@ -290,7 +289,6 @@ def run_weekly(week_start: str, token: str, with_images: bool = True) -> None:
         return
     print(f"  Theme: {digest.get('theme', '')}")
     print(f"  {len(digest.get('arcs', []))} arcs, {digest.get('pr_count', 0)} PRs")
-    save_json(output_dir, "digest.json", digest)
 
     # Platform posts
     print(f"\n[3/4] Generating platform posts...")

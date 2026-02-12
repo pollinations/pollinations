@@ -135,6 +135,7 @@ def _inject_shared_prompts(content: str) -> str:
     Replaces placeholders with shared content:
     - {about} -> _shared/brand_about.md
     - {visual_style} -> _shared/brand_visual.md
+    - {links} -> _shared/links.md
     """
     if "{about}" in content:
         content = content.replace("{about}", load_shared("brand_about"))
@@ -142,6 +143,8 @@ def _inject_shared_prompts(content: str) -> str:
         content = content.replace("{visual_style}", load_shared("brand_visual"))
     if "{bee_character}" in content:
         content = content.replace("{bee_character}", load_shared("bee_character"))
+    if "{links}" in content:
+        content = content.replace("{links}", load_shared("links"))
     return content
 
 

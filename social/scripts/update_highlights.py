@@ -63,21 +63,10 @@ def load_gists_as_changelog(date_str: str) -> tuple[str, int]:
     return "\n".join(lines), len(filtered)
 
 
-def create_highlights_prompt(news_content: str, news_date: str, links_content: str = "") -> tuple:
+def create_highlights_prompt(news_content: str, news_date: str) -> tuple:
     """Create prompt to extract only the most significant highlights."""
-    links_section = ""
-    if links_content:
-        links_section = f"""
-## REFERENCE LINKS
-Use these links when relevant to add helpful references in your highlights.
-Add links naturally in the description using markdown format: [text](url)
-
-{links_content}
-"""
-
     template = load_prompt("highlights")
-    system_prompt = (template.replace("{links_section}", links_section)
-                     .replace("{news_date}", news_date)
+    system_prompt = (template.replace("{news_date}", news_date)
                      .replace("{news_content}", news_content))
 
     return system_prompt, "Generate the highlights now."
@@ -276,17 +265,9 @@ def main():
         return
     print(f"Found {gist_count} qualifying gists")
 
-    # Step 2: Read LINKS.md locally
-    repo_root = get_repo_root()
-    links_path = os.path.join(repo_root, "social", "news", "LINKS.md")
-    links_content = ""
-    if os.path.exists(links_path):
-        with open(links_path, "r") as f:
-            links_content = f.read()
-
-    # Step 3: Generate highlights via AI
+    # Step 2: Generate highlights via AI
     print("Generating highlights...")
-    system_prompt, user_prompt = create_highlights_prompt(changelog, date_str, links_content)
+    system_prompt, user_prompt = create_highlights_prompt(changelog, date_str)
     ai_response = call_pollinations_api(
         system_prompt, user_prompt, pollinations_token,
         temperature=0.3, exit_on_failure=True,
@@ -303,7 +284,8 @@ def main():
 
     print(f"Generated highlights:\n{new_highlights}")
 
-    # Step 4: Merge with existing highlights (read locally)
+    # Step 3: Merge with existing highlights (read locally)
+    repo_root = get_repo_root()
     highlights_path = os.path.join(repo_root, HIGHLIGHTS_PATH)
     existing_highlights = ""
     if os.path.exists(highlights_path):
@@ -311,7 +293,7 @@ def main():
             existing_highlights = f.read()
     merged_highlights = merge_highlights(new_highlights, existing_highlights)
 
-    # Step 5: Update README (read locally)
+    # Step 4: Update README (read locally)
     readme_path = os.path.join(repo_root, README_PATH)
     updated_readme = None
     if os.path.exists(readme_path):
@@ -326,7 +308,7 @@ def main():
             else:
                 print("No changes to README")
 
-    # Step 6: Create single PR with both files
+    # Step 5: Create single PR with both files
     create_highlights_pr(
         merged_highlights, updated_readme, new_highlights,
         github_token, owner, repo, date_str,

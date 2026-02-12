@@ -188,13 +188,10 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 
 ### Daily Posts: `social/news/daily/YYYY-MM-DD/`
 
-- `summary.json` — aggregated narrative + highlights (3-5 story arcs, clustered)
 - `twitter.json` — platform post JSON
 - `instagram.json` — same schema
 - `reddit.json` — same schema (LinkedIn is weekly-only, no daily file)
 - `images/` — all generated images
-
-**Note:** The website diary view reads directly from gists (which include `headline`, `blurb`, `category`, `importance`) and the daily summary (which includes `mood`). No separate `diary.json` is needed.
 
 ### Weekly: `social/news/weekly/YYYY-MM-DD/`
 

@@ -5,7 +5,7 @@ Tier 2: Daily Summary Generator
 At 00:00 UTC daily:
   1. Read gists for yesterday (by merged_at date)
   2. Filter to publish_tier >= "daily"
-  3. AI clusters gists into 3-5 narrative arcs → summary.json
+  3. AI clusters gists into 3-5 narrative arcs
   4. Generate platform posts using existing prompts: twitter.json, instagram.json, reddit.json
   5. Generate platform images (1 twitter + 3 instagram + 1 reddit)
   Note: LinkedIn is weekly-only — no daily LinkedIn posts.
@@ -278,9 +278,7 @@ def create_daily_pr(
     base_path = f"{DAILY_REL_DIR}/{date_str}"
 
     # Commit JSON files
-    files_to_commit = [
-        (f"{base_path}/summary.json", summary),
-    ]
+    files_to_commit = []
     if twitter_post:
         # Add platform metadata
         twitter_post["date"] = date_str

@@ -54,7 +54,13 @@ Rules:
 6. 1-2 lines max per entry
 7. Output ONLY the markdown bullets
 8. Add relevant links from REFERENCE LINKS section when they add value (don't force links)
-{links_section}
+
+## REFERENCE LINKS
+Use these links when relevant to add helpful references in your highlights.
+Add links naturally in the description using markdown format: [text](url)
+
+{links}
+
 ## CRITICAL
 - Output exactly `SKIP` if nothing qualifies
 - Use your judgment - if something feels exciting and user-facing, include it

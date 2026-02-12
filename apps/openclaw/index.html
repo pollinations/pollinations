@@ -629,7 +629,7 @@
                     <div class="step-text" style="margin-top:16px">Run the setup script — configures OpenClaw for <span class="brand">pollinations.ai</span>:</div>
                     <ul style="margin:8px 0 8px 20px; font-size:14px; line-height:1.5; color:var(--muted)">
                         <li>🔑 Saves API key to <code style="color:var(--accent); font-size:13px">~/.openclaw/openclaw.json</code></li>
-                        <li>🤖 Adds 6 models: Kimi K2.5, DeepSeek, GLM, Gemini + Search, Perplexity, Claude Haiku</li>
+                        <li>🤖 Adds 5 models: Kimi K2.5, DeepSeek, GLM, Gemini + Search, Claude Haiku</li>
                         <li>🔍 Configures web search tool with Perplexity (preserves existing if already set)</li>
                     </ul>
                     <div style="font-size:12px; color:var(--muted)"><a href="https://github.com/pollinations/pollinations/blob/main/apps/openclaw/setup-pollinations.sh" target="_blank">View setup script source →</a></div>
@@ -649,7 +649,6 @@
         "pollinations/deepseek": { "alias": "DeepSeek V3.2" },
         "pollinations/glm": { "alias": "GLM-4.7" },
         "pollinations/gemini-search": { "alias": "Gemini + Search" },
-        "pollinations/perplexity-fast": { "alias": "Perplexity" },
         "pollinations/claude-fast": { "alias": "Claude Haiku 4.5" },
         "pollinations/claude-large": { "alias": "Claude Opus 4.6" },
         "pollinations/gemini-large": { "alias": "Gemini 3 Pro" }
@@ -672,8 +671,6 @@
             "input": ["text"], "contextWindow": 128000, "maxTokens": 8192 },
           { "id": "gemini-search", "name": "Gemini + Search",
             "input": ["text","image"], "contextWindow": 128000, "maxTokens": 8192 },
-          { "id": "perplexity-fast", "name": "Perplexity",
-            "input": ["text"], "contextWindow": 128000, "maxTokens": 8192 },
           { "id": "claude-fast", "name": "Claude Haiku 4.5",
             "input": ["text","image"], "contextWindow": 200000, "maxTokens": 8192 }
         ]
@@ -720,11 +717,6 @@ Then start a new session so the config is picked up. After that, switch to the n
                     <div class="model-label">Gemini + Search <span class="model-tag">web search</span></div>
                     <div class="model-id">pollinations/gemini-search</div>
                     <div class="model-note">Google Gemini with always-on web search. Vision support. Look up docs, APIs, recent changes.</div>
-                </div>
-                <div class="model-row">
-                    <div class="model-label">Perplexity <span class="model-tag">web search</span></div>
-                    <div class="model-id">pollinations/perplexity-fast</div>
-                    <div class="model-note">Perplexity Sonar with web search. Fast research, fact-checking, real-time info.</div>
                 </div>
                 <div class="model-row">
                     <div class="model-label">DeepSeek V3.2</div>
@@ -800,7 +792,7 @@ function toggleManual() {
 
 function startAuthorize() {
     var redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
-    var models = encodeURIComponent('kimi,deepseek,glm,gemini-search,perplexity-fast,claude-fast');
+    var models = encodeURIComponent('kimi,deepseek,glm,gemini-search,claude-fast');
     window.location.href = 'https://enter.pollinations.ai/authorize?redirect_url=' + redirectUrl + '&models=' + models;
 }
 

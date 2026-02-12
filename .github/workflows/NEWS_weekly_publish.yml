@@ -36,7 +36,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests PyYAML Jinja2
+        run: pip install requests PyYAML Jinja2 paramiko
 
       - name: Publish weekly content
         env:
@@ -49,4 +49,7 @@ jobs:
           REDDIT_PASSWORD: ${{ secrets.REDDIT_PASSWORD }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           WEEK_END_DATE: ${{ github.event.inputs.target_date || '' }}
+          POLLY_VPS_HOST: ${{ secrets.POLLY_VPS_HOST }}
+          POLLY_VPS_USER: ${{ secrets.POLLY_VPS_USER }}
+          POLLY_VPS_SSH_KEY: ${{ secrets.POLLY_VPS_SSH_KEY }}
         run: python social/scripts/publish_weekly.py

@@ -18,7 +18,14 @@ import json
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
-from common import get_env, github_api_request, GITHUB_API_BASE
+from common import (
+    get_env,
+    github_api_request,
+    GITHUB_API_BASE,
+    call_pollinations_api,
+    get_file_sha,
+    deploy_reddit_post,
+)
 from buffer_publish import (
     publish_twitter_post,
     publish_instagram_post,
@@ -36,7 +43,6 @@ from update_readme import (
     get_top_highlights,
     update_readme_news_section,
 )
-from common import call_pollinations_api, get_file_sha
 
 # Paths
 DAILY_DIR = "social/news/daily"
@@ -256,18 +262,39 @@ def main():
             summary = json.load(f)
 
     # ── 1. Buffer staging (Twitter + Instagram) ─────────────────────
-    print(f"\n[1/3] Staging to Buffer...")
+    print(f"\n[1/4] Staging to Buffer...")
     results = stage_buffer_posts(daily_dir, buffer_token)
     for platform, success in results.items():
         status = "OK" if success else "FAILED"
         print(f"  {platform}: {status}")
 
-    # ── 2. Update highlights ─────────────────────────────────────────
-    print(f"\n[2/3] Updating highlights...")
+    # ── 2. Deploy Reddit to VPS ────────────────────────────────────
+    print(f"\n[2/4] Deploying Reddit to VPS...")
+    vps_host = get_env("POLLY_VPS_HOST", required=False)
+    vps_user = get_env("POLLY_VPS_USER", required=False)
+    vps_ssh_key = get_env("POLLY_VPS_SSH_KEY", required=False)
+
+    reddit_vps_result = False
+    if vps_host and vps_user and vps_ssh_key:
+        reddit_data = {}
+        reddit_path = os.path.join(daily_dir, "reddit.json")
+        if os.path.exists(reddit_path):
+            with open(reddit_path, "r", encoding="utf-8") as f:
+                reddit_data = json.load(f)
+
+        if reddit_data:
+            reddit_vps_result = deploy_reddit_post(reddit_data, vps_host, vps_user, vps_ssh_key)
+        else:
+            print("  No reddit.json — skipping VPS deployment")
+    else:
+        print("  VPS credentials not configured — skipping VPS deployment")
+
+    # ── 3. Update highlights ─────────────────────────────────────────
+    print(f"\n[3/4] Updating highlights...")
     update_highlights(summary, github_token, pollinations_token, owner, repo)
 
-    # ── 3. Update README ─────────────────────────────────────────────
-    print(f"\n[3/3] Updating README...")
+    # ── 4. Update README ─────────────────────────────────────────────
+    print(f"\n[4/4] Updating README...")
     update_readme(github_token, owner, repo)
 
     # PR comment

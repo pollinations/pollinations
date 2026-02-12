@@ -743,3 +743,78 @@ def format_pr_summary(prs: List[Dict], time_label: str = "TODAY") -> str:
         pr_summary = f"NO UPDATES {time_label}"
     
     return pr_summary
+
+
+def deploy_reddit_post(
+    reddit_data: Dict,
+    vps_host: str,
+    vps_user: str,
+    vps_ssh_key: str,
+) -> bool:
+    try:
+        import paramiko
+    except ImportError:
+        print("  VPS: paramiko not installed")
+        return False
+
+    title = reddit_data.get("title", "")
+    image_url = reddit_data.get("image", {}).get("url", "")
+
+    if not all([title, image_url, vps_host, vps_user, vps_ssh_key]):
+        print("  VPS: Missing required arguments")
+        return False
+
+    try:
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem') as f:
+            f.write(vps_ssh_key)
+            ssh_key_path = f.name
+        
+        os.chmod(ssh_key_path, 0o600)
+
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+        print(f"  VPS: Connecting to {vps_user}@{vps_host}...")
+        ssh.connect(
+            hostname=vps_host,
+            username=vps_user,
+            key_filename=ssh_key_path,
+            timeout=30,
+            allow_agent=False,
+            look_for_keys=False,
+        )
+
+        title_escaped = title.replace("'", "'\\''")
+        url_escaped = image_url.replace("'", "'\\''")
+
+        cmd = f"/root/reddit_post_automation/bash/deploy.sh '{url_escaped}' '{title_escaped}'"
+        print(f"  VPS: Executing deployment script...")
+
+        stdin, stdout, stderr = ssh.exec_command(cmd, timeout=60)
+        exit_code = stdout.channel.recv_exit_status()
+
+        output = stdout.read().decode('utf-8', errors='ignore')
+        error = stderr.read().decode('utf-8', errors='ignore')
+
+        ssh.close()
+        os.unlink(ssh_key_path)
+
+        if exit_code != 0:
+            print(f"  VPS: Script failed with exit code {exit_code}")
+            if error:
+                print(f"  VPS: Error: {error[:500]}")
+            return False
+
+        print(f"  VPS: Deployment successful")
+        if output:
+            print(f"  VPS: {output[:200]}")
+        return True
+
+    except Exception as e:
+        print(f"  VPS: {type(e).__name__}: {e}")
+        try:
+            os.unlink(ssh_key_path)
+        except:
+            pass
+        return False

@@ -20,7 +20,7 @@ import requests
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Optional
 
-from common import get_env, github_api_request, GITHUB_API_BASE, DISCORD_CHAR_LIMIT
+from common import get_env, github_api_request, GITHUB_API_BASE, deploy_reddit_post, DISCORD_CHAR_LIMIT
 from buffer_publish import (
     publish_twitter_post,
     publish_linkedin_post,
@@ -301,6 +301,17 @@ def main():
                 reddit_data, reddit_client_id, reddit_client_secret,
                 reddit_username, reddit_password,
             )
+
+            vps_host = get_env("POLLY_VPS_HOST", required=False)
+            vps_user = get_env("POLLY_VPS_USER", required=False)
+            vps_ssh_key = get_env("POLLY_VPS_SSH_KEY", required=False)
+
+            if vps_host and vps_user and vps_ssh_key:
+                print("  Reddit (VPS deployment)...")
+                vps_result = deploy_reddit_post(reddit_data, vps_host, vps_user, vps_ssh_key)
+                results["reddit_vps"] = vps_result
+            else:
+                print("  VPS credentials not configured — skipping VPS deployment")
         else:
             print("  No reddit.json — skipping")
     else:

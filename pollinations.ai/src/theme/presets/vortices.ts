@@ -94,6 +94,8 @@ export const AHyperAbstractStormOfCuteBiologicalFormsInConstantTransformationSwi
         "borderRadius": {
             "radius.button": "24px",
             "radius.card": "20px",
+            "radius.input": "12px",
+            "radius.subcard": "12px",
         },
         "fonts": {
             "font.title": "Fredoka",

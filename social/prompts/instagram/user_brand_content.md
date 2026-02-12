@@ -11,6 +11,5 @@ Pick ONE of these on-brand themes:
 - Welcome new creators to the platform
 - Retro game achievement unlocked: "First AI Art Generated!"
 
-Remember: RETRO 8-BIT PIXEL ART style - cozy, warm, nostalgic but beautiful. 
-Like Stardew Valley, A Short Hike, or Unpacking. Chunky pixels, soft pastel gradients, warm lighting.
+Focus on mood and scene — the shared visual style handles colors and art direction.
 Output valid JSON only.

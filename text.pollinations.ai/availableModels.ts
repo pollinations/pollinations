@@ -74,12 +74,17 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude",
-        config: portkeyConfig["claude-sonnet-4-5-fallback"],
+        config: portkeyConfig["claude-sonnet-4-5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "claude-large",
-        config: portkeyConfig["claude-opus-4-5-fallback"],
+        config: portkeyConfig["claude-opus-4-6"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "claude-legacy",
+        config: portkeyConfig["claude-opus-4-5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -176,6 +181,11 @@ const models: ModelDefinition[] = [
     {
         name: "nomnom",
         config: portkeyConfig["nomnom"],
+    },
+    {
+        name: "qwen-character",
+        config: portkeyConfig["qwen-character"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.character),
     },
 ];
 

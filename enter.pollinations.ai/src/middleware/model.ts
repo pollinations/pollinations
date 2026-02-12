@@ -1,9 +1,10 @@
-import { createMiddleware } from "hono/factory";
-import { HTTPException } from "hono/http-exception";
-import type { EventType } from "@shared/registry/types.ts";
+import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { resolveServiceId, type ServiceId } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
-import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import type { EventType } from "@shared/registry/types.ts";
+import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 
 export type ModelVariables = {
     model: {
@@ -38,7 +39,9 @@ export function resolveModel(eventType: EventType) {
         const defaultModel =
             eventType === "generate.text"
                 ? DEFAULT_TEXT_MODEL
-                : DEFAULT_IMAGE_MODEL;
+                : eventType === "generate.audio"
+                  ? DEFAULT_AUDIO_MODEL
+                  : DEFAULT_IMAGE_MODEL;
         const model = rawModel || defaultModel;
 
         // Resolve alias to canonical service ID

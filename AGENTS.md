@@ -143,6 +143,12 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 ```
 
+### Audio (Text-to-Speech)
+
+```bash
+curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o speech.mp3
+```
+
 ### Model Discovery
 
 - **Image models**: `https://gen.pollinations.ai/image/models`

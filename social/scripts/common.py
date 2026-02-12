@@ -91,11 +91,15 @@ def load_shared(name: str) -> str:
 
 def _inject_shared_prompts(content: str) -> str:
     """Inject shared prompt components into content
-    
-    Replaces {about} placeholder with shared content.
+
+    Replaces placeholders with shared content:
+    - {about} -> _shared/about.md
+    - {visual_style} -> _shared/visual_style.md
     """
     if "{about}" in content:
         content = content.replace("{about}", load_shared("about"))
+    if "{visual_style}" in content:
+        content = content.replace("{visual_style}", load_shared("visual_style"))
     return content
 
 
@@ -113,6 +117,7 @@ def load_prompt(platform: str, prompt_name: str) -> str:
     
     Automatically injects shared components:
     - {about} -> content from _shared/about.md
+    - {visual_style} -> content from _shared/visual_style.md
     
     Args:
         platform: 'linkedin', 'twitter', 'instagram', 'reddit', etc.
@@ -364,7 +369,7 @@ def call_pollinations_api(
     return None
 
 
-def generate_image(prompt: str, token: str, width: int = 1200, height: int = 675, index: int = 0) -> tuple[Optional[bytes], Optional[str]]:
+def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0) -> tuple[Optional[bytes], Optional[str]]:
     """Generate a single image using Pollinations nanobanana"""
 
     encoded_prompt = quote(prompt)
@@ -440,6 +445,53 @@ def generate_image(prompt: str, token: str, width: int = 1200, height: int = 675
 
     print(f"  Failed to generate image after {MAX_RETRIES} attempts")
     return None, None
+
+
+def commit_image_to_branch(
+    image_bytes: bytes,
+    file_path: str,
+    branch: str,
+    github_token: str,
+    owner: str,
+    repo: str,
+) -> Optional[str]:
+    """Commit an image file to a GitHub branch and return a raw URL.
+
+    Returns the raw.githubusercontent.com URL on success, None on failure.
+    """
+    import base64 as _b64
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {github_token}",
+    }
+
+    encoded = _b64.b64encode(image_bytes).decode()
+
+    # Check if file already exists on this branch
+    sha = get_file_sha(github_token, owner, repo, file_path, branch)
+
+    payload = {
+        "message": f"add image {file_path.split('/')[-1]}",
+        "content": encoded,
+        "branch": branch,
+    }
+    if sha:
+        payload["sha"] = sha
+
+    resp = requests.put(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
+        headers=headers,
+        json=payload,
+    )
+
+    if resp.status_code in [200, 201]:
+        raw_url = f"https://raw.githubusercontent.com/{owner}/{repo}/main/{file_path}"
+        print(f"  Committed image to {file_path}")
+        return raw_url
+
+    print(f"  Failed to commit image: {resp.status_code} {resp.text[:200]}")
+    return None
 
 
 def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branch: str = "main") -> str:

@@ -1,0 +1,46 @@
+{
+  "date": "2026-02-06",
+  "generated_at": "2026-02-06T00:11:08.069953+00:00",
+  "platform": "linkedin",
+  "post_type": "milestone",
+  "hook": "Open source sustainability is a feature, not a bug.\n\nThis week, we made the strategic move to transition our heavy-compute models to paid-only tiers while keeping the core accessible.",
+  "body": "For an open-source platform to truly serve its community long-term, it has to be around long-term. That means building a business model that supports the infrastructure without compromising the mission.\n\nHere is the reality of shipping AI tools in 2025:\n\n1. **The Shift to Sustainable Tiers**\nWe moved `claude`, `grok`, `kontext`, and `seedream` to our paid tiers. These models require significant compute, and aligning their cost with our 'Flower' and 'Nectar' tiers ensures we can maintain high availability.\n\n2. **Keeping Creativity Free**\nCrucially, `gemini-fast` remains completely free. We are committed to ensuring that students, tinkerers, and first-time coders always have a powerful engine to build on, zero credit card required.\n\n3. **Hardening the Infrastructure**\nBeyond the business logic, the engineering team shipped **20 merged PRs** this week focused on reliability at scale:\n\n• **Rate Limit Handling:** We patched a critical bottleneck in our 'Spore-to-Seed' upgrade path, handling GitHub's 403/429 rate limits more gracefully. As the community grows, these 'invisible' backend fixes are what keep the experience smooth.\n• **Dashboard Polish:** A major refactor of the API key management UI and Azure resource consolidation means a cleaner, faster experience for developers managing their budgets.\n\nWe aren't just building a wrapper; we are building a permanent home for open-source AI creativity. This week was about reinforcing the foundation.\n\nAre you building on the free tier or scaling with pro? Let us know below.",
+  "cta": "Check out the updated tiers and start building.",
+  "full_post": "Open source sustainability is a feature, not a bug.\n\nThis week, we made the strategic move to transition our heavy-compute models to paid-only tiers while keeping the core accessible.\n\nFor an open-source platform to truly serve its community long-term, it has to be around long-term. That means building a business model that supports the infrastructure without compromising the mission.\n\nHere is the reality of shipping AI tools in 2025:\n\n1. **The Shift to Sustainable Tiers**\nWe moved `claude`, `grok`, `kontext`, and `seedream` to our paid tiers. These models require significant compute, and aligning their cost with our 'Flower' and 'Nectar' tiers ensures we can maintain high availability.\n\n2. **Keeping Creativity Free**\nCrucially, `gemini-fast` remains completely free. We are committed to ensuring that students, tinkerers, and first-time coders always have a powerful engine to build on, zero credit card required.\n\n3. **Hardening the Infrastructure**\nBeyond the business logic, the engineering team shipped **20 merged PRs** this week focused on reliability at scale:\n\n• **Rate Limit Handling:** We patched a critical bottleneck in our 'Spore-to-Seed' upgrade path, handling GitHub's 403/429 rate limits more gracefully. As the community grows, these 'invisible' backend fixes are what keep the experience smooth.\n• **Dashboard Polish:** A major refactor of the API key management UI and Azure resource consolidation means a cleaner, faster experience for developers managing their budgets.\n\nWe aren't just building a wrapper; we are building a permanent home for open-source AI creativity. This week was about reinforcing the foundation.\n\nAre you building on the free tier or scaling with pro? Let us know below.\n\nCheck out the updated tiers and start building.\n\n#OpenSource #AI #SaaS #DevTools #SustainableTech",
+  "hashtags": [
+    "#OpenSource",
+    "#AI",
+    "#SaaS",
+    "#DevTools",
+    "#SustainableTech"
+  ],
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/linkedin/posts/2026-02-06-image.jpg",
+    "prompt": "Pixel art infographic with a split-screen layout. Large headline text at top: 'WEEKLY UPDATE: 20 PRs'. \n\nLeft side: A glowing lime green (#ecf874) open gate labeled 'FREE TIER' with pixel art sparks. \nRight side: A golden, fortified gate labeled 'PRO MODELS'. \n\nCenter: The 8-bit Bee mascot holding a wrench, balancing the two sides. \n\nBottom text stats: 'Infra Hardened', 'New Model Tiers', 'Rate Limits Fixed'. \n\nStyle: Cozy Stardew Valley aesthetic, soft pastel gradients (mint/peach), warm lighting. Text must be chunky pixel font and clearly readable.",
+    "text": "WEEKLY UPDATE: 20 PRs\nFREE TIER vs PRO MODELS\nInfra Hardened • Rate Limits Fixed"
+  },
+  "reasoning": "This post addresses the 'Paid Models' update head-on, framing it as a maturity/sustainability move rather than a restriction. This signals to investors that the business model is solidifying. Highlighting the 20 PRs and technical fixes (rate limits) reassures developers that the platform is robust and actively maintained.",
+  "pr_references": [
+    "#7986",
+    "#7984",
+    "#7983",
+    "#7982",
+    "#7981",
+    "#7980",
+    "#7979",
+    "#7976",
+    "#7972",
+    "#7974",
+    "#7973",
+    "#7959",
+    "#7877",
+    "#7949",
+    "#7926",
+    "#7947",
+    "#7943",
+    "#7930",
+    "#7917",
+    "#7537"
+  ],
+  "char_count": 1823
+}

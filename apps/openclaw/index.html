@@ -537,7 +537,7 @@
             border: none;
             border-radius: 6px;
             background: transparent;
-            color: var(--muted);
+            color: rgba(255,255,255,0.6);
             font-family: "Uncut Sans", sans-serif;
             font-size: 13px;
             font-weight: 500;
@@ -549,7 +549,7 @@
             color: var(--text);
             box-shadow: 0 1px 3px rgba(0,0,0,0.15);
         }
-        .tab-btn:hover:not(.active) { color: var(--text); }
+        .tab-btn:hover:not(.active) { color: rgba(255,255,255,0.85); }
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
 
@@ -593,44 +593,41 @@
         </a>
 
         <div class="setup-box">
-            <div class="tab-bar">
-                <button class="tab-btn active" onclick="switchTab('install')">Fresh Install</button>
-                <button class="tab-btn" onclick="switchTab('agent')">For Your Agent</button>
+            <div class="step" id="step-connect">
+                <div class="step-label">Step 1</div>
+                <div class="step-text">Get your free API key for the hackathon:</div>
+                <button class="connect-btn" id="connect-btn" onclick="startAuthorize()">Connect with pollinations.ai</button>
+                <div class="step-text" style="margin-top:8px; font-size:13px;">or paste your key manually: <a href="https://enter.pollinations.ai">enter.pollinations.ai</a></div>
+            </div>
+            <div class="step" id="step-connected" style="display:none">
+                <div class="success-banner">
+                    <div class="success-icon">&#10003;</div>
+                    <div>
+                        <div class="success-title">Connected! Your API key:</div>
+                        <div class="key-display" id="key-display"></div>
+                    </div>
+                </div>
+                <div class="step-text" style="font-size:13px; margin-top:8px; color:var(--muted)">Your key has been inserted into the commands below. Just copy and run.</div>
             </div>
 
-            <div class="tab-panel active" id="tab-install">
-                <div class="step">
-                    <div class="step-label">Step 1</div>
-                    <div class="step-text">Install OpenClaw:</div>
-                    <div class="code-block" id="install-cmd">curl -fsSL https://openclaw.ai/install.sh | bash<button class="copy-btn" onclick="copyCode('install-cmd')">Copy</button></div>
-                </div>
-                <div class="step" id="step-connect">
-                    <div class="step-label">Step 2</div>
-                    <div class="step-text">Get your free API key for the hackathon:</div>
-                    <button class="connect-btn" id="connect-btn" onclick="startAuthorize()">Connect with pollinations.ai</button>
-                    <div class="step-text" style="margin-top:8px; font-size:13px;">or paste your key manually: <a href="https://enter.pollinations.ai">enter.pollinations.ai</a></div>
-                </div>
-                <div class="step" id="step-connected" style="display:none">
-                    <div class="success-banner">
-                        <div class="success-icon">&#10003;</div>
-                        <div>
-                            <div class="success-title">Connected! Your API key:</div>
-                            <div class="key-display" id="key-display"></div>
-                        </div>
-                    </div>
-                    <div class="step-text" style="font-size:13px; margin-top:8px; color:var(--muted)">Your key has been inserted into the commands below. Just copy and run.</div>
-                </div>
-                <div class="step">
-                    <div class="step-label">Step 3</div>
-                    <div class="step-text">Run the setup script — writes your API key and model config to <code style="color:var(--accent)">~/.openclaw/openclaw.json</code>. <a href="https://github.com/pollinations/pollinations/blob/main/apps/openclaw/setup-pollinations.sh" target="_blank" style="font-size:12px">(view source)</a></div>
-                    <div class="code-block" id="setup-cmd">curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh \
-  | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
+            <div class="step">
+                <div class="step-label">Step 2</div>
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab('install')">Fresh Install</button>
+                    <button class="tab-btn" onclick="switchTab('agent')">For Your Agent</button>
                 </div>
 
-                <button class="toggle-btn" onclick="toggleManual()">Manual JSON config ▾</button>
-                <div class="manual-config" id="manual-config">
-                    <div class="step-text">Or paste this into <code style="color:var(--accent)">~/.openclaw/openclaw.json</code>:</div>
-                    <div class="code-block" id="json-config" style="white-space:pre; font-size:12px;">{
+                <div class="tab-panel active" id="tab-install">
+                    <div class="step-text">Install OpenClaw, then run the setup script:</div>
+                    <div class="code-block" id="install-cmd">curl -fsSL https://openclaw.ai/install.sh | bash<button class="copy-btn" onclick="copyCode('install-cmd')">Copy</button></div>
+                    <div class="step-text" style="margin-top:16px">Run the setup script — writes your API key and model config to <code style="color:var(--accent)">~/.openclaw/openclaw.json</code>: <a href="https://github.com/pollinations/pollinations/blob/main/apps/openclaw/setup-pollinations.sh" target="_blank" style="font-size:12px">(view source)</a></div>
+                    <div class="code-block" id="setup-cmd">curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh \
+  | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
+
+                    <button class="toggle-btn" onclick="toggleManual()">Manual JSON config ▾</button>
+                    <div class="manual-config" id="manual-config">
+                        <div class="step-text">Or paste this into <code style="color:var(--accent)">~/.openclaw/openclaw.json</code>:</div>
+                        <div class="code-block" id="json-config" style="white-space:pre; font-size:12px;">{
   "env": { "POLLINATIONS_API_KEY": "<span class="key-in-json">YOUR_API_KEY</span>" },
   "agents": {
     "defaults": {
@@ -663,27 +660,10 @@
     }
   }
 }<button class="copy-btn" onclick="copyCode('json-config')">Copy</button></div>
-                </div>
-            </div>
-
-            <div class="tab-panel" id="tab-agent">
-                <div class="step" id="step-connect-agent">
-                    <div class="step-label">Step 1</div>
-                    <div class="step-text">Get your API key:</div>
-                    <button class="connect-btn" onclick="startAuthorize()">Connect with pollinations.ai</button>
-                    <div class="step-text" style="margin-top:8px; font-size:13px;">or paste your key manually: <a href="https://enter.pollinations.ai">enter.pollinations.ai</a></div>
-                </div>
-                <div class="step" id="step-connected-agent" style="display:none">
-                    <div class="success-banner">
-                        <div class="success-icon">&#10003;</div>
-                        <div>
-                            <div class="success-title">Connected! Your API key:</div>
-                            <div class="key-display key-display-agent"></div>
-                        </div>
                     </div>
                 </div>
-                <div class="step">
-                    <div class="step-label">Step 2</div>
+
+                <div class="tab-panel" id="tab-agent">
                     <div class="step-text">Paste this into your agent chat — it will configure Pollinations as a provider:</div>
                     <div class="code-block" id="agent-msg" style="white-space:pre-wrap; font-size:12px; line-height:1.6">Add pollinations.ai as a model provider. Run this command:
 
@@ -794,17 +774,11 @@ function switchTab(tab) {
 }
 
 function injectApiKey(apiKey) {
-    // Update install tab: show connected state
+    // Show connected state
     document.getElementById('step-connect').style.display = 'none';
     var connectedEl = document.getElementById('step-connected');
     connectedEl.style.display = 'block';
     document.getElementById('key-display').textContent = apiKey;
-
-    // Update agent tab: show connected state
-    document.getElementById('step-connect-agent').style.display = 'none';
-    var connectedAgentEl = document.getElementById('step-connected-agent');
-    connectedAgentEl.style.display = 'block';
-    document.querySelectorAll('.key-display-agent').forEach(function(el) { el.textContent = apiKey; });
 
     // Update setup command
     var placeholder = document.getElementById('key-placeholder');

@@ -1,0 +1,33 @@
+{
+  "pr_number": 8004,
+  "title": "Upgrade claude-large from Opus 4.5 to Opus 4.6 on Bedrock",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8004",
+  "merged_at": "2026-02-06T03:27:42Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Upgrades the 'claude-large' model alias to use the newly released Claude Opus 4.6 via AWS Bedrock.",
+    "impact": "Users accessing 'claude-large' will automatically benefit from the latest Opus capabilities while retaining existing pricing.",
+    "keywords": [
+      "claude",
+      "opus",
+      "bedrock",
+      "models",
+      "upgrade",
+      "ai"
+    ],
+    "visual_concept": "The Pollinations bee upgrading a massive, glowing book or server labeled 'Opus'. Represents the transition to a smarter, newer version (4.6).",
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee placing a glowing golden chip into a high-tech server tower labeled 'Opus'. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text '4.6'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-06/PR-8004.jpg",
+    "prompt": "Cozy pixel art scene of the Pollinations bee placing a glowing golden chip into a high-tech server tower labeled 'Opus'. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text '4.6'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-11T23:46:12.589999+00:00"
+}

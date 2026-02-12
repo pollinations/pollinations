@@ -1,0 +1,32 @@
+{
+  "pr_number": 7994,
+  "title": "feat(dashboard): add model usage by tier panels",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/7994",
+  "merged_at": "2026-02-06T00:47:39Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Added detailed model usage panels to the internal economics dashboard to track consumption by user tier.",
+    "impact": "Provides the team with granular visibility into which models are driving costs across Nectar, Flower, Seed, and Spore tiers.",
+    "keywords": [
+      "dashboard",
+      "economics",
+      "monitoring",
+      "tiers",
+      "usage-tracking"
+    ],
+    "visual_concept": "The Pollinations bee analyzing data charts on a retro computer monitor, with icons representing the different tiers (flower, seed, spore).",
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot analyzing colorful bar charts on a retro computer monitor. Soft lime green (#ecf874) and pastel gradient background. Pixel icons of flowers and seeds on the screen. Chunky retro sprites, warm lighting, lo-fi office vibes. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-06/PR-7994.jpg",
+    "prompt": "Cozy pixel art scene of the Pollinations bee mascot analyzing colorful bar charts on a retro computer monitor. Soft lime green (#ecf874) and pastel gradient background. Pixel icons of flowers and seeds on the screen. Chunky retro sprites, warm lighting, lo-fi office vibes. Nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-11T23:45:19.797751+00:00"
+}

@@ -8,25 +8,25 @@
     "DEV-FEATURE"
   ],
   "gist": {
-    "category": "feature",
+    "category": "community",
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "summary": "We've added Polly, a powerful AI Discord bot that bridges community conversations directly with GitHub development.",
-    "impact": "Users can now search the codebase, manage issues, and collaborate with an autonomous coding agent without leaving Discord.",
+    "summary": "Launched Polly, an intelligent Discord bot that bridges the gap between community chat and GitHub development.",
+    "impact": "Developers can now trigger autonomous coding agents, search the codebase, and manage PRs directly from Discord.",
     "keywords": [
-      "discord",
-      "ai-agent",
-      "github",
-      "automation",
-      "polly",
-      "bot"
+      "discord bot",
+      "autonomous agents",
+      "github integration",
+      "developer tools",
+      "ai assistant"
     ],
-    "image_prompt": "Cozy pixel art scene of a cute robot bee character connecting a pixelated chat bubble to a glowing code block. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'POLLY'. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "The Pollinations Bee mascot welcoming a new friend: a cute, chunky 8-bit robotic parrot named Polly. They are surrounded by pixelated chat bubbles and code blocks, symbolizing the bridge between conversation and development.",
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot sitting next to a cute 8-bit robotic parrot character on a digital branch. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The parrot holds a pixelated speech bubble with code symbols. Chunky retro sprites. Warm lighting, lo-fi vibes like A Short Hike. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8078.jpg",
-    "prompt": "Cozy pixel art scene of a cute robot bee character connecting a pixelated chat bubble to a glowing code block. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'POLLY'. Nostalgic but beautiful, emotionally warm."
+    "prompt": "Cozy pixel art scene of the Pollinations bee mascot sitting next to a cute 8-bit robotic parrot character on a digital branch. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The parrot holds a pixelated speech bubble with code symbols. Chunky retro sprites. Warm lighting, lo-fi vibes like A Short Hike. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-02-11T19:39:58.113555+00:00"
+  "generated_at": "2026-02-11T23:50:38.473143+00:00"
 }

@@ -1,0 +1,32 @@
+{
+  "pr_number": 8053,
+  "title": "fix: move Portkey gateway to custom domain to fix 524 timeouts",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8053",
+  "merged_at": "2026-02-07T14:17:59Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Moved the AI gateway to a custom domain to support long-running reasoning models and eliminate timeouts.",
+    "impact": "Users will experience reliable generation for complex tasks and large contexts without interruptions.",
+    "keywords": [
+      "reliability",
+      "infrastructure",
+      "llm",
+      "reasoning models",
+      "portkey"
+    ],
+    "visual_concept": "The Pollinations bee using a magical 'Portkey' (glowing key) to open a stable, glowing portal, representing the new reliable connection for long requests. Time/clocks in the background being paused or extended.",
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee holding a glowing magical key to open a stable portal. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting. Lo-fi vibes like Stardew Valley. Magical and reliable atmosphere. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-07/PR-8053.jpg",
+    "prompt": "Cozy pixel art scene of the Pollinations bee holding a glowing magical key to open a stable portal. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting. Lo-fi vibes like Stardew Valley. Magical and reliable atmosphere. Nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-11T23:48:37.959444+00:00"
+}

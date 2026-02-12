@@ -19,6 +19,7 @@ Given a PR's title, description, labels, and file changes, produce a JSON object
   "summary": "One sentence explaining what changed and why it matters.",
   "impact": "One sentence explaining what users/devs will notice.",
   "keywords": ["billing", "api", "models"],
+  "visual_concept": "What to depict: identify key visual symbols, mascots, metaphors. What characters or objects represent this change?",
   "image_prompt": "1-2 sentence pixel art scene description for the PR image."
 }
 ```
@@ -89,12 +90,21 @@ One sentence about the practical effect. "Users will see...", "This means...", "
 ### `keywords`
 3-7 relevant keywords for clustering related PRs in the daily summary.
 
+### `visual_concept`
+Think step-by-step about what to depict BEFORE writing the image prompt. This is your reasoning space.
+
+- **Identify the project/tool**: What is this PR about? What does the project look like, what's its logo or mascot?
+- **Key visual symbols**: What objects, characters, or metaphors represent this change? (e.g., OpenClaw = crab mascot, not a claw machine)
+- **Scene concept**: How does the Pollinations bee interact with these elements?
+- Research from context: use PR title, description, file names, and any branding clues (logo files, SVGs, mascot references) to understand the project's identity
+
 ### `image_prompt`
-A short (1-2 sentence) pixel art scene description for generating the PR's announcement image.
+A short (1-2 sentence) pixel art scene description for generating the PR's announcement image. **Must be informed by `visual_concept` above.**
 
 Rules:
 - Describe a cozy pixel art scene that captures the main theme of the update
 - Include the Pollinations bee mascot as an active character doing something related to the update
+- Include any project-specific characters/mascots identified in `visual_concept`
 - Keep it fun with dev-meme energy
 - Follow the visual style guide above exactly — use the prompt template structure
 - Output a flowing narrative scene description, NOT a keyword list

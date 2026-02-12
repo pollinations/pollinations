@@ -1,0 +1,32 @@
+{
+  "pr_number": 7903,
+  "title": "feat: Add LTX-2 video generation model",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/7903",
+  "merged_at": "2026-02-06T03:10:20Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Integrates the LTX-2 video generation model, enabling high-quality video creation with audio support.",
+    "impact": "Users can now generate 1-10 second videos with audio using the new LTX-2 model at highly competitive rates.",
+    "keywords": [
+      "video generation",
+      "LTX-2",
+      "new model",
+      "audio",
+      "modal"
+    ],
+    "visual_concept": "The Pollinations bee as a film director on a cozy retro movie set. The 'LTX-2' model is represented as a glowing vintage cinema camera or editing suite. The scene captures the magic of creating moving pictures.",
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee holding a tiny director's clapperboard next to a glowing vintage cinema camera labeled 'LTX-2'. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites of film reels and a pixelated editing monitor. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-06/PR-7903.jpg",
+    "prompt": "Cozy pixel art scene of the Pollinations bee holding a tiny director's clapperboard next to a glowing vintage cinema camera labeled 'LTX-2'. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites of film reels and a pixelated editing monitor. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-11T23:41:47.187024+00:00"
+}

@@ -12,8 +12,8 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "summary": "Introduced support for hidden models in the registry and added accessible legacy versions for Claude and Gemini.",
-    "impact": "Developers can now access specific legacy model versions via API calls without cluttering the main public model list.",
+    "summary": "Introduces support for hidden models in the registry and streamlines Claude integration configurations.",
+    "impact": "Developers can now access legacy models via API without cluttering the main dashboard, while Claude models receive optimized direct routing.",
     "keywords": [
       "models",
       "api",
@@ -21,11 +21,12 @@
       "legacy",
       "registry"
     ],
-    "image_prompt": "Cozy pixel art scene of the Pollinations bee opening a secret glowing chest containing old data scrolls in a magical archive. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'Legacy Access'. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "The Pollinations bee discovering a secret, glowing book in a cozy pixel art library. This represents the 'hidden' models that are accessible if you know where to look (the API), without cluttering the main shelves (the UI).",
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee pulling a glowing lime green book from a library shelf, revealing a secret passage. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Represents hidden model access. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-09/PR-8101.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations bee opening a secret glowing chest containing old data scrolls in a magical archive. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'Legacy Access'. Nostalgic but beautiful, emotionally warm."
+    "prompt": "Cozy pixel art scene of the Pollinations bee pulling a glowing lime green book from a library shelf, revealing a secret passage. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Represents hidden model access. Nostalgic but beautiful."
   },
-  "generated_at": "2026-02-11T19:52:44.183557+00:00"
+  "generated_at": "2026-02-11T23:54:25.244849+00:00"
 }

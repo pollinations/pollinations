@@ -1,0 +1,32 @@
+{
+  "pr_number": 8023,
+  "title": "fix: add SSE support for api.airforce video models + disable grok-video",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8023",
+  "merged_at": "2026-02-06T17:05:47Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Implemented SSE streaming support for api.airforce video models to resolve generation errors and improve stability.",
+    "impact": "Video generation is now more robust, with the unstable grok-video model temporarily paused to ensure consistent performance.",
+    "keywords": [
+      "video generation",
+      "api.airforce",
+      "SSE",
+      "reliability",
+      "bug fix"
+    ],
+    "visual_concept": "The Pollinations bee as a projectionist in a cozy booth, fixing a vintage film projector that is streaming light smoothly. A film reel labeled 'Grok' is set aside on a shelf.",
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee inside a retro projection booth fixing a vintage film projector. The projector beams a steady stream of soft lime green light (#ecf874). A film reel labeled 'Grok' sits on a nearby shelf. Warm lighting, pastel gradients, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-06/PR-8023.jpg",
+    "prompt": "Cozy pixel art scene of the Pollinations bee inside a retro projection booth fixing a vintage film projector. The projector beams a steady stream of soft lime green light (#ecf874). A film reel labeled 'Grok' sits on a nearby shelf. Warm lighting, pastel gradients, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-11T23:47:07.961843+00:00"
+}

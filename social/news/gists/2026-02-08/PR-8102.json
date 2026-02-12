@@ -11,21 +11,22 @@
     "category": "improvement",
     "user_facing": true,
     "publish_tier": "daily",
-    "importance": "minor",
-    "summary": "The balance API endpoint now returns a single unified balance field, simplifying integration for developers.",
-    "impact": "This streamlines the API response and ensures consistent behavior for API keys with specific budgets.",
+    "importance": "major",
+    "summary": "The account balance API has been streamlined to return a single unified balance field instead of separate breakdowns.",
+    "impact": "Developers will experience a simpler API response that handles API key budgets more intuitively.",
     "keywords": [
       "api",
       "balance",
-      "developer experience",
+      "billing",
       "simplification",
-      "account"
+      "developer-experience"
     ],
-    "image_prompt": "Cozy pixel art scene of the Pollinations bee organizing digital coins into a single neat stack. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'BALANCE'. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "The concept of unification and simplification. The Pollinations Bee is acting as a friendly accountant, merging two separate small piles of pixel coins (representing tier and pack balances) into one single, tidy, glowing stack. This represents the API returning a single 'balance' field.",
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee merging two small stacks of gold pixel coins into one single, glowing pile on a wooden desk. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'BALANCE'. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8102.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations bee organizing digital coins into a single neat stack. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'BALANCE'. Nostalgic but beautiful, emotionally warm."
+    "prompt": "Cozy pixel art scene of the Pollinations bee merging two small stacks of gold pixel coins into one single, glowing pile on a wooden desk. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'BALANCE'. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-02-11T19:53:58.216358+00:00"
+  "generated_at": "2026-02-11T23:54:44.158511+00:00"
 }

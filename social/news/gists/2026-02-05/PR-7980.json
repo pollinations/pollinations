@@ -1,0 +1,32 @@
+{
+  "pr_number": 7980,
+  "title": "fix(social): use main branch in Buffer image URLs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/7980",
+  "merged_at": "2026-02-05T18:03:17Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Updates the social media pipeline to reference main branch image URLs, preventing errors when feature branches are deleted.",
+    "impact": "Ensures reliable automated posting to Buffer by fixing image 404 errors.",
+    "keywords": [
+      "social-pipeline",
+      "buffer",
+      "automation",
+      "bug-fix",
+      "infrastructure"
+    ],
+    "visual_concept": "The Pollinations bee fixing a broken link in a chain or a pipe. Represents the connection to Buffer being repaired.",
+    "image_prompt": "Pixel art scene of the Pollinations bee connecting a cable to a main server hub. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Tiny bee character with chunky retro sprites fixing a connection. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Pixel text 'LINKED'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-11T23:43:50.201353+00:00"
+}

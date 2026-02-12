@@ -12,21 +12,21 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "summary": "Polly has been upgraded to use OpenAI's text-embedding-small model with optimized indexing logic.",
-    "impact": "Users will experience more accurate search results and smarter responses when interacting with the Polly assistant.",
+    "summary": "Polly upgrades to OpenAI's `text-embedding-small` model and implements hash-based diffing for efficient indexing.",
+    "impact": "Users will experience more accurate document retrieval and faster processing times due to reduced compute load.",
     "keywords": [
-      "Polly",
+      "polly",
       "embeddings",
-      "OpenAI",
+      "openai",
       "search",
-      "optimization",
-      "AI"
+      "optimization"
     ],
-    "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot helping a cute 8-bit robot organize glowing data books in a library. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'Brain Upgrade'. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "Polly (likely a parrot mascot given the name) interacting with 'smart' glowing books or data. The change is about embeddings (understanding text better) and optimization. A pixel art parrot organizing a glowing library represents this well.",
+    "image_prompt": "Cozy pixel art scene of a cute 8-bit parrot character organizing glowing magical books on a library shelf. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender gradient background. The Pollinations bee is holding a tiny lantern nearby to help. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-09/PR-8111.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations bee mascot helping a cute 8-bit robot organize glowing data books in a library. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'Brain Upgrade'. Nostalgic but beautiful, emotionally warm."
+    "prompt": "Cozy pixel art scene of a cute 8-bit parrot character organizing glowing magical books on a library shelf. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender gradient background. The Pollinations bee is holding a tiny lantern nearby to help. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-02-11T19:57:59.381150+00:00"
+  "generated_at": "2026-02-11T23:55:38.090704+00:00"
 }

@@ -10,22 +10,23 @@
   "gist": {
     "category": "infrastructure",
     "user_facing": false,
-    "publish_tier": "discord_only",
+    "publish_tier": "none",
     "importance": "minor",
-    "summary": "The Discord notification workflow now supports manual triggering by fetching PR details directly from the GitHub API.",
-    "impact": "Maintainers can reliably dispatch social workflows manually without encountering missing environment variable errors.",
+    "summary": "Fixed the manual dispatch mechanism for the Discord notification workflow by adding API fallbacks for missing environment variables.",
+    "impact": "Internal workflows can now be triggered manually without failing due to missing context.",
     "keywords": [
-      "workflow",
       "discord",
+      "workflow",
       "automation",
-      "github-api",
-      "internal-tools"
+      "github api",
+      "internal tools"
     ],
-    "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot connecting glowing wires on a tiny retro server rack. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky 8-bit sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Pixel text 'workflow fixed'. Emotionally warm, nostalgic."
+    "visual_concept": "A bee mechanic fixing a pipeline that connects to a chat bubble. Represents the internal fix to the social workflow.",
+    "image_prompt": "Cozy pixel art scene of a tiny bee mechanic fixing a small pipeline connected to a pixelated chat bubble. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Emotionally warm, fixing the connection."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8083.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations bee mascot connecting glowing wires on a tiny retro server rack. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky 8-bit sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Pixel text 'workflow fixed'. Emotionally warm, nostalgic."
+    "prompt": "Cozy pixel art scene of a tiny bee mechanic fixing a small pipeline connected to a pixelated chat bubble. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Emotionally warm, fixing the connection."
   },
-  "generated_at": "2026-02-11T19:42:03.152711+00:00"
+  "generated_at": "2026-02-11T23:51:18.213666+00:00"
 }

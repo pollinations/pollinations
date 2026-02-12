@@ -1,0 +1,32 @@
+{
+  "pr_number": 7922,
+  "title": "feat: make 5 models paid-only and migrate Mistral to OVHcloud",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/7922",
+  "merged_at": "2026-02-06T00:56:18Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Transitioning select premium models to supporter tiers and migrating Mistral to improved infrastructure.",
+    "impact": "Ensures sustainable access to high-cost models like Claude and Grok while optimizing backend performance.",
+    "keywords": [
+      "models",
+      "premium",
+      "mistral",
+      "ovhcloud",
+      "sustainability"
+    ],
+    "visual_concept": "The Pollinations bee is tending to a special 'Rare Plants' section of the garden (representing the premium models) and moving a cloud sprite (Mistral) to a new, sturdier pot. The vibe is about care, cultivation, and upgrading the home for these valuable assets.",
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee carefully tending to a special garden section with glowing rare crystal flowers. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Bee character with chunky retro sprites moving a cloud-shaped plant to a new pot. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-06/PR-7922.jpg",
+    "prompt": "Cozy pixel art scene of the Pollinations bee carefully tending to a special garden section with glowing rare crystal flowers. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Bee character with chunky retro sprites moving a cloud-shaped plant to a new pot. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-11T23:42:19.450737+00:00"
+}

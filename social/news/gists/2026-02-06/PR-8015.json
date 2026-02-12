@@ -1,0 +1,32 @@
+{
+  "pr_number": 8015,
+  "title": "Fix: Mistral model broken due to config key case mismatch",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8015",
+  "merged_at": "2026-02-06T13:32:35Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Restored full availability for the Mistral text model by resolving a configuration mismatch.",
+    "impact": "Ensures reliable text generation responses when selecting the Mistral model.",
+    "keywords": [
+      "mistral",
+      "text generation",
+      "bug fix",
+      "reliability",
+      "ovhcloud"
+    ],
+    "visual_concept": "The Pollinations bee acting as a tiny mechanic, reconnecting a disconnected cable labeled 'Mistral' to a server rack. Represents fixing the connection/configuration.",
+    "image_prompt": "Cozy pixel art scene of a tiny 8-bit bee mechanic reconnecting a glowing cable to a server rack labeled 'MISTRAL'. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'ONLINE'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-06/PR-8015.jpg",
+    "prompt": "Cozy pixel art scene of a tiny 8-bit bee mechanic reconnecting a glowing cable to a server rack labeled 'MISTRAL'. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'ONLINE'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-11T23:46:31.666008+00:00"
+}

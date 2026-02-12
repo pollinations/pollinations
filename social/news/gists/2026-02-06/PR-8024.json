@@ -1,0 +1,32 @@
+{
+  "pr_number": 8024,
+  "title": "fix(kpi): fix churn calculation and optimize Tinybird queries",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8024",
+  "merged_at": "2026-02-06T16:51:53Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Improved churn calculation accuracy and optimized Tinybird queries for 10x faster performance on internal dashboards.",
+    "impact": "Ensures accurate retention metrics and significantly faster data loading for team analytics.",
+    "keywords": [
+      "kpi",
+      "tinybird",
+      "observability",
+      "performance",
+      "analytics"
+    ],
+    "visual_concept": "The Pollinations bee acting as a data analyst, fixing a pixelated line graph on a retro monitor. The graph turns from red/broken to green/smooth. Represents fixing the churn calculation and speed.",
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee adjusting a glowing line graph on a retro computer terminal. Soft lime green (#ecf874) and pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Like a management sim game. Emotionally warm, productive."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-06/PR-8024.jpg",
+    "prompt": "Cozy pixel art scene of the Pollinations bee adjusting a glowing line graph on a retro computer terminal. Soft lime green (#ecf874) and pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Like a management sim game. Emotionally warm, productive."
+  },
+  "generated_at": "2026-02-11T23:47:25.759081+00:00"
+}

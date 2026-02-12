@@ -40,7 +40,7 @@ NEW_CONFIG=$(cat <<EOF
         "pollinations/deepseek": { "alias": "DeepSeek V3.2 (Pollinations)" },
         "pollinations/glm": { "alias": "GLM-4.7 (Pollinations)" },
         "pollinations/gemini-search": { "alias": "Gemini + Search (Pollinations)" },
-        "pollinations/perplexity-fast": { "alias": "Perplexity Fast (Pollinations)" },
+        "pollinations/perplexity-fast": { "alias": "Perplexity (Pollinations)" },
         "pollinations/claude-fast": { "alias": "Claude Haiku 4.5 (Pollinations)" },
         "pollinations/claude-large": { "alias": "Claude Opus 4.6 (Pollinations, paid)" },
         "pollinations/gemini-large": { "alias": "Gemini 3 Pro (Pollinations, paid)" }
@@ -172,7 +172,7 @@ echo "  API Key: $MASKED_KEY"
 echo ""
 echo "  Primary model: Kimi K2.5 (256K context, vision, tools, reasoning)"
 echo "  Fallbacks:     DeepSeek V3.2, GLM-4.7"
-echo "  Web search:    Gemini + Search, Perplexity Fast"
+echo "  Web search:    Gemini + Search, Perplexity"
 echo "  Also available: Claude Haiku 4.5, + premium models"
 echo ""
 echo "  Switch models in chat: /model pollinations/gemini-search"

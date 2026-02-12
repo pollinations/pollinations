@@ -754,6 +754,7 @@ def format_pr_summary(prs: List[Dict], time_label: str = "TODAY") -> str:
     return pr_summary
 
 
+
 def deploy_reddit_post(
     reddit_data: Dict,
     vps_host: str,
@@ -783,15 +784,27 @@ def deploy_reddit_post(
             look_for_keys=False,
         )
 
-        title_escaped = title.replace("'", "'\\''")
-        url_escaped = image_url.replace("'", "'\\''")
+        base_cmd = "cd /root/reddit_post_automation"
+        update_link_cmd = f"""{base_cmd} && cat > src/link.ts << 'LINKEOF'
+const LINK = "{image_url}";
+const TITLE = "{title}";
+export {{LINK, TITLE}};
+LINKEOF
+"""
 
-        cmd = f"nohup /root/reddit_post_automation/bash/upload.sh '{url_escaped}' '{title_escaped}' > /tmp/deploy.log 2>&1 &"
+        print("  VPS: Changing to /root/reddit_post_automation and updating link.ts...")
+        ssh.exec_command(update_link_cmd)
+        deploy_cmd = f"{base_cmd} && nohup bash ./bash/deploy.sh > deploy.log 2>&1 & echo \"PID: $!\""
 
-        ssh.exec_command(cmd)
+        print("  VPS: Running deploy.sh from project directory...")
+        stdin, stdout, stderr = ssh.exec_command(deploy_cmd)
+        output = stdout.read().decode().strip()
+        if output:
+            print(f"  VPS: {output}")
         ssh.close()
 
         print("  VPS: Deployment script triggered successfully")
+        print("  VPS: Logs will be available at /root/reddit_post_automation/deploy.log")
         return True
 
     except Exception as e:

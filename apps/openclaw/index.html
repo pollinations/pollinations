@@ -613,8 +613,8 @@
             <div class="step">
                 <div class="step-label">Step 2</div>
                 <div class="tab-bar">
-                    <button class="tab-btn active" onclick="switchTab('install')">🧑‍💻 Fresh Install</button>
-                    <button class="tab-btn" onclick="switchTab('agent')">🦞 For Your Agent</button>
+                    <button class="tab-btn active" onclick="switchTab('install', this)">🧑‍💻 Fresh Install</button>
+                    <button class="tab-btn" onclick="switchTab('agent', this)">🦞 For Your Agent</button>
                 </div>
 
                 <div class="tab-panel active" id="tab-install">
@@ -766,11 +766,11 @@ function maskKey(key) {
     return key.slice(0, 6) + '...' + key.slice(-4);
 }
 
-function switchTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach(function(btn) { btn.classList.remove('active'); });
+function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
     document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
     document.getElementById('tab-' + tab).classList.add('active');
-    event.target.classList.add('active');
+    btn.classList.add('active');
 }
 
 function injectApiKey(apiKey) {

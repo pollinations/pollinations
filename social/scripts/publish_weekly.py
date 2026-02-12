@@ -2,12 +2,12 @@
 """
 Tier 3: Weekly Publish
 
-Friday 15:00 UTC cron:
+Sunday 18:00 UTC cron:
   1. Find the weekly PR for this week (branch: weekly-digest-YYYY-MM-DD)
   2. If not merged → skip
   3. If merged → publish all 5 platforms:
      - Buffer staging: Twitter, LinkedIn, Instagram
-     - Reddit direct posting (OAuth2 API)
+     - Reddit via VPS/Devvit deployment
      - Discord webhook post
 
 See social/PIPELINE.md for full architecture.
@@ -31,8 +31,6 @@ from buffer_publish import (
 
 WEEKLY_REL_DIR = "social/news/weekly"
 DISCORD_CHUNK_SIZE = 1900
-REDDIT_USER_AGENT = "pollinations-news-bot/1.0"
-REDDIT_SUBREDDIT = "pollinations_ai"
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
@@ -133,69 +131,6 @@ def chunk_message(message: str, max_length: int = DISCORD_CHUNK_SIZE):
     return chunks
 
 
-def get_reddit_access_token(client_id: str, client_secret: str,
-                            username: str, password: str) -> Optional[str]:
-    """Get Reddit OAuth2 access token using script-type app credentials."""
-    resp = requests.post(
-        "https://www.reddit.com/api/v1/access_token",
-        auth=(client_id, client_secret),
-        data={"grant_type": "password", "username": username, "password": password},
-        headers={"User-Agent": REDDIT_USER_AGENT},
-        timeout=30,
-    )
-    if resp.status_code != 200:
-        print(f"  Reddit auth error: {resp.status_code} {resp.text[:200]}")
-        return None
-    data = resp.json()
-    if "access_token" not in data:
-        print(f"  Reddit auth failed: {data}")
-        return None
-    return data["access_token"]
-
-
-def post_to_reddit(reddit_data: Dict, client_id: str, client_secret: str,
-                   username: str, password: str) -> bool:
-    """Post weekly update to r/pollinations_ai. Returns True on success."""
-    title = reddit_data.get("title", "")
-    image_url = reddit_data.get("image", {}).get("url", "")
-
-    if not title or not image_url:
-        print("  Reddit: missing title or image URL — skipping")
-        return False
-
-    token = get_reddit_access_token(client_id, client_secret, username, password)
-    if not token:
-        return False
-
-    resp = requests.post(
-        "https://oauth.reddit.com/api/submit",
-        headers={
-            "Authorization": f"Bearer {token}",
-            "User-Agent": REDDIT_USER_AGENT,
-        },
-        data={
-            "sr": REDDIT_SUBREDDIT,
-            "kind": "link",
-            "title": title,
-            "url": image_url,
-            "resubmit": "true",
-        },
-        timeout=30,
-    )
-
-    if resp.status_code == 200:
-        result = resp.json()
-        if result.get("json", {}).get("errors"):
-            print(f"  Reddit submit errors: {result['json']['errors']}")
-            return False
-        post_url = result.get("json", {}).get("data", {}).get("url", "")
-        print(f"  Reddit: posted successfully — {post_url}")
-        return True
-
-    print(f"  Reddit submit error: {resp.status_code} {resp.text[:200]}")
-    return False
-
-
 def post_to_discord(webhook_url: str, message: str, image_url: str = None) -> bool:
     """Post weekly summary to Discord with optional image. Returns True on success."""
     # Download image if available
@@ -239,14 +174,6 @@ def main():
     discord_webhook = get_env("DISCORD_WEBHOOK_URL")
     repo_full = get_env("GITHUB_REPOSITORY")
     week_end_override = get_env("WEEK_END_DATE", required=False)
-
-    # Reddit credentials (optional — skip Reddit if not configured)
-    reddit_client_id = get_env("REDDIT_CLIENT_ID", required=False)
-    reddit_client_secret = get_env("REDDIT_CLIENT_SECRET", required=False)
-    reddit_username = get_env("REDDIT_USERNAME", required=False)
-    reddit_password = get_env("REDDIT_PASSWORD", required=False)
-    reddit_configured = all([reddit_client_id, reddit_client_secret,
-                             reddit_username, reddit_password])
 
     owner, repo = repo_full.split("/")
     week_end = week_end_override or get_last_wednesday()
@@ -292,29 +219,20 @@ def main():
     else:
         print("  No instagram.json — skipping")
 
-    # Reddit
-    if reddit_configured:
+    # Reddit (VPS/Devvit deployment)
+    vps_host = get_env("REDDIT_VPS_HOST", required=False)
+    vps_user = get_env("REDDIT_VPS_USER", required=False)
+    vps_ssh_key = get_env("REDDIT_VPS_SSH_KEY", required=False)
+
+    if vps_host and vps_user and vps_ssh_key:
         reddit_data = read_weekly_file(f"{weekly_dir}/reddit.json", github_token, owner, repo)
         if reddit_data:
             print("  Reddit...")
-            results["reddit"] = post_to_reddit(
-                reddit_data, reddit_client_id, reddit_client_secret,
-                reddit_username, reddit_password,
-            )
-
-            vps_host = get_env("REDDIT_VPS_HOST", required=False)
-            vps_user = get_env("REDDIT_VPS_USER", required=False)
-            vps_ssh_key = get_env("REDDIT_VPS_SSH_KEY", required=False)
-
-            if vps_host and vps_user and vps_ssh_key:
-                print("  Reddit (VPS deployment)...")
-                deploy_reddit_post(reddit_data, vps_host, vps_user, vps_ssh_key)
-            else:
-                print("  VPS credentials not configured — skipping VPS deployment")
+            results["reddit"] = deploy_reddit_post(reddit_data, vps_host, vps_user, vps_ssh_key)
         else:
             print("  No reddit.json — skipping")
     else:
-        print("  Reddit credentials not configured — skipping")
+        print("  Reddit VPS credentials not configured — skipping")
 
     # Discord
     discord_data = read_weekly_file(f"{weekly_dir}/discord.json", github_token, owner, repo)

@@ -106,7 +106,7 @@ NEW_CONFIG=$(cat <<EOF
             "id": "gemini-large",
             "name": "Gemini 3 Pro — Most Intelligent with 1M Context (Paid)",
             "reasoning": true,
-            "input": ["text", "image", "audio", "video"],
+            "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
             "contextWindow": 1000000
           }
@@ -157,14 +157,25 @@ if [ -f "$CONFIG_FILE" ]; then
             else
                 $b
             end;
-        # If existing config already has a search provider, keep it
-        (if .[0].tools.web.search // null then .[1] | del(.tools) else .[1] end) as $new |
-        deep_merge(.[0]; $new)
+        # If existing config already has a search provider, keep it intact
+        .[0] as $old | .[1] as $new |
+        (if $old.tools.web.search.provider // null
+         then $new | .tools.web.search = $old.tools.web.search
+         else $new end) as $adjusted |
+        deep_merge($old; $adjusted)
     ')
     printf '%s\n' "$MERGED_CONFIG" > "$CONFIG_FILE"
 else
     echo "Creating new config at $CONFIG_FILE..."
     printf '%s\n' "$NEW_CONFIG" | jq '.' > "$CONFIG_FILE"
+fi
+
+# Ensure gateway.mode is set (required for fresh installs)
+if command -v openclaw >/dev/null 2>&1; then
+    CURRENT_MODE=$(openclaw config get gateway.mode 2>/dev/null | grep -o '"[a-z]*"' | tr -d '"' || true)
+    if [ -z "$CURRENT_MODE" ] || [ "$CURRENT_MODE" = "null" ]; then
+        openclaw config set gateway.mode local >/dev/null 2>&1 || true
+    fi
 fi
 
 MASKED_KEY="${POLLINATIONS_API_KEY:0:8}...${POLLINATIONS_API_KEY: -4}"
@@ -187,6 +198,6 @@ if ! command -v openclaw >/dev/null 2>&1; then
     echo "Next: Install OpenClaw with:"
     echo "  curl -fsSL https://openclaw.ai/install.sh | bash"
 else
-    echo "Next: Restart OpenClaw to pick up the new config:"
-    echo "  openclaw onboard --install-daemon"
+    echo "Restarting OpenClaw gateway..."
+    openclaw gateway restart 2>/dev/null && echo "  ✓ Gateway restarted" || echo "  Run: openclaw gateway restart"
 fi

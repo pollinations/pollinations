@@ -631,7 +631,7 @@
   | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
                     <ul style="margin:8px 0 12px 20px; font-size:14px; line-height:1.5; color:var(--muted)">
                         <li>🔑 Saves API key to <code style="color:var(--accent); font-size:13px">~/.openclaw/openclaw.json</code></li>
-                        <li>🤖 Adds 5 models: Kimi K2.5, DeepSeek, GLM, Gemini + Search, Claude Haiku</li>
+                        <li>🤖 Adds 7 models: Kimi K2.5, DeepSeek, GLM, Gemini + Search, Claude Haiku + 2 paid</li>
                         <li>🔍 Configures <code style="color:var(--accent); font-size:13px">web_search</code> tool with Perplexity <em>via pollinations.ai</em> (preserves existing if already set)</li>
                     </ul>
 
@@ -642,7 +642,10 @@
   "env": { "POLLINATIONS_API_KEY": "<span class="key-in-json">YOUR_API_KEY</span>" },
   "agents": {
     "defaults": {
-      "model": { "primary": "pollinations/kimi" },
+      "model": {
+        "primary": "pollinations/kimi",
+        "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
+      },
       "models": {
         "pollinations/kimi": { "alias": "Kimi K2.5" },
         "pollinations/deepseek": { "alias": "DeepSeek V3.2" },
@@ -675,7 +678,7 @@
           { "id": "claude-large", "name": "Claude Opus 4.6 (Paid)",
             "input": ["text","image"], "contextWindow": 200000 },
           { "id": "gemini-large", "name": "Gemini 3 Pro (Paid)", "reasoning": true,
-            "input": ["text","image","audio","video"], "contextWindow": 1000000 }
+            "input": ["text","image"], "contextWindow": 1000000 }
         ]
       }
     }
@@ -691,7 +694,8 @@
         }
       }
     }
-  }
+  },
+  "gateway": { "mode": "local" }
 }<button class="copy-btn" onclick="copyCode('json-config')">Copy</button></div>
                     </div>
                 </div>
@@ -702,7 +706,7 @@
 
 curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- <span class="key-in-json">YOUR_API_KEY</span>
 
-Then start a new session so the config is picked up. After that, switch to the new provider with: /model pollinations/gemini-search<button class="copy-btn" onclick="copyCode('agent-msg')">Copy</button></div>
+The script will restart the gateway automatically. After that, switch to the new provider with: /model pollinations/gemini-search<button class="copy-btn" onclick="copyCode('agent-msg')">Copy</button></div>
                 </div>
             </div>
         </div>

@@ -788,27 +788,14 @@ def deploy_reddit_post(
         title_escaped = title.replace("'", "'\\''")
         url_escaped = image_url.replace("'", "'\\''")
 
-        cmd = f"/root/reddit_post_automation/bash/deploy.sh '{url_escaped}' '{title_escaped}'"
-        print(f"  VPS: Executing deployment script...")
+        cmd = f"nohup /root/reddit_post_automation/bash/deploy.sh '{url_escaped}' '{title_escaped}' > /tmp/deploy.log 2>&1 &"
+        print(f"  VPS: Triggering deployment script in background...")
 
-        stdin, stdout, stderr = ssh.exec_command(cmd, timeout=60)
-        exit_code = stdout.channel.recv_exit_status()
-
-        output = stdout.read().decode('utf-8', errors='ignore')
-        error = stderr.read().decode('utf-8', errors='ignore')
-
+        ssh.exec_command(cmd)
         ssh.close()
         os.unlink(ssh_key_path)
 
-        if exit_code != 0:
-            print(f"  VPS: Script failed with exit code {exit_code}")
-            if error:
-                print(f"  VPS: Error: {error[:500]}")
-            return False
-
-        print(f"  VPS: Deployment successful")
-        if output:
-            print(f"  VPS: {output[:200]}")
+        print(f"  VPS: Deployment script triggered successfully")
         return True
 
     except Exception as e:

@@ -308,8 +308,7 @@ def main():
 
             if vps_host and vps_user and vps_ssh_key:
                 print("  Reddit (VPS deployment)...")
-                vps_result = deploy_reddit_post(reddit_data, vps_host, vps_user, vps_ssh_key)
-                results["reddit_vps"] = vps_result
+                deploy_reddit_post(reddit_data, vps_host, vps_user, vps_ssh_key)
             else:
                 print("  VPS credentials not configured — skipping VPS deployment")
         else:

@@ -274,7 +274,6 @@ def main():
     vps_user = get_env("POLLY_VPS_USER", required=False)
     vps_ssh_key = get_env("POLLY_VPS_SSH_KEY", required=False)
 
-    reddit_vps_result = False
     if vps_host and vps_user and vps_ssh_key:
         reddit_data = {}
         reddit_path = os.path.join(daily_dir, "reddit.json")
@@ -283,7 +282,7 @@ def main():
                 reddit_data = json.load(f)
 
         if reddit_data:
-            reddit_vps_result = deploy_reddit_post(reddit_data, vps_host, vps_user, vps_ssh_key)
+            deploy_reddit_post(reddit_data, vps_host, vps_user, vps_ssh_key)
         else:
             print("  No reddit.json — skipping VPS deployment")
     else:

@@ -6,7 +6,7 @@ import {
     createBedrockNativeConfig,
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
-    createNomNomConfig,
+    // createNomNomConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
@@ -259,10 +259,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     // ============================================================================
     // Community Models - NomNom (web search/scrape/crawl)
     // ============================================================================
-    "nomnom": () =>
-        createNomNomConfig({
-            model: "nomnom",
-        }),
+    // "nomnom": () =>
+    //     createNomNomConfig({
+    //         model: "nomnom",
+    //     }),
 
     // ============================================================================
     // api.airforce - qwen-character (RP/character model)

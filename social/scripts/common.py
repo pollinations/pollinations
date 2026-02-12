@@ -754,7 +754,6 @@ def format_pr_summary(prs: List[Dict], time_label: str = "TODAY") -> str:
     return pr_summary
 
 
-
 def deploy_reddit_post(
     reddit_data: Dict,
     vps_host: str,
@@ -785,6 +784,7 @@ def deploy_reddit_post(
         )
 
         base_cmd = "cd /root/reddit_post_automation"
+
         update_link_cmd = f"""{base_cmd} && cat > src/link.ts << 'LINKEOF'
 const LINK = "{image_url}";
 const TITLE = "{title}";
@@ -794,13 +794,11 @@ LINKEOF
 
         print("  VPS: Changing to /root/reddit_post_automation and updating link.ts...")
         ssh.exec_command(update_link_cmd)
-        deploy_cmd = f"{base_cmd} && nohup bash ./bash/deploy.sh > deploy.log 2>&1 & echo \"PID: $!\""
+
+        deploy_cmd = f"{base_cmd} && nohup bash ./bash/deploy.sh > deploy.log 2>&1 &"
 
         print("  VPS: Running deploy.sh from project directory...")
-        stdin, stdout, stderr = ssh.exec_command(deploy_cmd)
-        output = stdout.read().decode().strip()
-        if output:
-            print(f"  VPS: {output}")
+        ssh.exec_command(deploy_cmd)
         ssh.close()
 
         print("  VPS: Deployment script triggered successfully")
@@ -810,4 +808,3 @@ LINKEOF
     except Exception as e:
         print(f"  VPS: {type(e).__name__}: {e}")
         return False
-

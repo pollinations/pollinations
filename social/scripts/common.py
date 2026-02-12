@@ -809,9 +809,12 @@ def deploy_reddit_post(
 
         base_cmd = "cd /root/reddit_post_automation"
 
+        sanitized_url = image_url.replace('LINKEOF', '').replace("'", "\\'").replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+        sanitized_title = title.replace('LINKEOF', '').replace("'", "\\'").replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+
         update_link_cmd = f"""{base_cmd} && cat > src/link.ts << 'LINKEOF'
-const LINK = "{image_url}";
-const TITLE = "{title}";
+const LINK = "{sanitized_url}";
+const TITLE = "{sanitized_title}";
 export {{LINK, TITLE}};
 LINKEOF
 """

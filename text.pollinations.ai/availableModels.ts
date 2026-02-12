@@ -178,10 +178,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p1"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
-    {
-        name: "nomnom",
-        config: portkeyConfig["nomnom"],
-    },
+    // {
+    //     name: "nomnom",
+    //     config: portkeyConfig["nomnom"],
+    // },
     {
         name: "qwen-character",
         config: portkeyConfig["qwen-character"],

@@ -626,7 +626,13 @@
                 <div class="tab-panel active" id="tab-install">
                     <div class="step-text">Install OpenClaw, then run the setup script:</div>
                     <div class="code-block" id="install-cmd">curl -fsSL https://openclaw.ai/install.sh | bash<button class="copy-btn" onclick="copyCode('install-cmd')">Copy</button></div>
-                    <div class="step-text" style="margin-top:16px">Run the setup script — writes your API key and model config to <code style="color:var(--accent)">~/.openclaw/openclaw.json</code>: <a href="https://github.com/pollinations/pollinations/blob/main/apps/openclaw/setup-pollinations.sh" target="_blank" style="font-size:12px">(view source)</a></div>
+                    <div class="step-text" style="margin-top:16px">Run the setup script — configures OpenClaw for <span class="brand">pollinations.ai</span>:</div>
+                    <ul style="margin:8px 0 12px 20px; font-size:14px; line-height:1.8; color:var(--muted)">
+                        <li>🔑 Saves API key to <code style="color:var(--accent); font-size:13px">~/.openclaw/openclaw.json</code></li>
+                        <li>🤖 Adds 6 free models: Kimi K2.5, DeepSeek, GLM, Gemini + Search, Perplexity, Claude Haiku</li>
+                        <li>🔍 Enables web search tool (preserves existing config if already set)</li>
+                    </ul>
+                    <div style="font-size:12px; color:var(--muted)"><a href="https://github.com/pollinations/pollinations/blob/main/apps/openclaw/setup-pollinations.sh" target="_blank">View setup script source →</a></div>
                     <div class="code-block" id="setup-cmd">curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh \
   | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
 
@@ -663,7 +669,13 @@
           { "id": "deepseek", "name": "DeepSeek V3.2",
             "input": ["text"], "contextWindow": 128000, "maxTokens": 8192 },
           { "id": "glm", "name": "GLM-4.7",
-            "input": ["text"], "contextWindow": 128000, "maxTokens": 8192 }
+            "input": ["text"], "contextWindow": 128000, "maxTokens": 8192 },
+          { "id": "gemini-search", "name": "Gemini + Search",
+            "input": ["text","image"], "contextWindow": 128000, "maxTokens": 8192 },
+          { "id": "perplexity-fast", "name": "Perplexity",
+            "input": ["text"], "contextWindow": 128000, "maxTokens": 8192 },
+          { "id": "claude-fast", "name": "Claude Haiku 4.5",
+            "input": ["text","image"], "contextWindow": 200000, "maxTokens": 8192 }
         ]
       }
     }

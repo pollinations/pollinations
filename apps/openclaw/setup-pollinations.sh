@@ -129,45 +129,41 @@ NEW_CONFIG=$(cat <<EOF
 EOF
 )
 
+# Require jq for JSON merging
+if ! command -v jq >/dev/null 2>&1; then
+    echo "Error: jq is required. Install it with: brew install jq (macOS) or apt install jq (Linux)"
+    exit 1
+fi
+
 # Merge or create config
-if command -v jq >/dev/null 2>&1; then
-    if [ -f "$CONFIG_FILE" ]; then
-        echo "Merging Pollinations config into existing $CONFIG_FILE..."
-        EXISTING_CONFIG=$(cat "$CONFIG_FILE")
-        MERGED_CONFIG=$(printf '%s\n%s' "$EXISTING_CONFIG" "$NEW_CONFIG" | jq -s '
-            def deep_merge(a; b):
-                a as $a | b as $b |
-                if ($a | type) == "object" and ($b | type) == "object" then
-                    ($a | keys) + ($b | keys) | unique | map(
-                        . as $key |
-                        if ($a | has($key)) and ($b | has($key)) then
-                            { ($key): deep_merge($a[$key]; $b[$key]) }
-                        elif ($b | has($key)) then
-                            { ($key): $b[$key] }
-                        else
-                            { ($key): $a[$key] }
-                        end
-                    ) | add
-                else
-                    $b
-                end;
-            deep_merge(.[0]; .[1])
-        ')
-        printf '%s\n' "$MERGED_CONFIG" > "$CONFIG_FILE"
-    else
-        echo "Creating new config at $CONFIG_FILE..."
-        printf '%s\n' "$NEW_CONFIG" | jq '.' > "$CONFIG_FILE"
-    fi
+if [ -f "$CONFIG_FILE" ]; then
+    echo "Merging Pollinations config into existing $CONFIG_FILE..."
+    EXISTING_CONFIG=$(cat "$CONFIG_FILE")
+    MERGED_CONFIG=$(printf '%s\n%s' "$EXISTING_CONFIG" "$NEW_CONFIG" | jq -s '
+        def deep_merge(a; b):
+            a as $a | b as $b |
+            if ($a | type) == "object" and ($b | type) == "object" then
+                ($a | keys) + ($b | keys) | unique | map(
+                    . as $key |
+                    if ($a | has($key)) and ($b | has($key)) then
+                        { ($key): deep_merge($a[$key]; $b[$key]) }
+                    elif ($b | has($key)) then
+                        { ($key): $b[$key] }
+                    else
+                        { ($key): $a[$key] }
+                    end
+                ) | add
+            else
+                $b
+            end;
+        # If existing config already has a search provider, keep it
+        (if .[0].tools.web.search // null then .[1] | del(.tools) else .[1] end) as $new |
+        deep_merge(.[0]; $new)
+    ')
+    printf '%s\n' "$MERGED_CONFIG" > "$CONFIG_FILE"
 else
-    echo "Note: jq not installed. Using simple file creation."
-    if [ -f "$CONFIG_FILE" ]; then
-        TIMESTAMP=$(date +%Y%m%d%H%M%S 2>/dev/null || date +%s)
-        BACKUP_FILE="${CONFIG_FILE}.${TIMESTAMP}.bak"
-        cp "$CONFIG_FILE" "$BACKUP_FILE"
-        echo "Backed up existing config to: $BACKUP_FILE"
-    fi
-    echo "Creating config at $CONFIG_FILE..."
-    printf '%s\n' "$NEW_CONFIG" > "$CONFIG_FILE"
+    echo "Creating new config at $CONFIG_FILE..."
+    printf '%s\n' "$NEW_CONFIG" | jq '.' > "$CONFIG_FILE"
 fi
 
 if [ ${#POLLINATIONS_API_KEY} -gt 12 ]; then

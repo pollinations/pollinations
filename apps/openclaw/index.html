@@ -413,9 +413,9 @@
         }
         .model-row {
             display: flex;
-            align-items: flex-start;
-            gap: 16px;
-            padding: 14px 16px;
+            align-items: baseline;
+            gap: 12px;
+            padding: 12px 16px;
             border-bottom: 1px solid var(--border-light);
             background: var(--surface);
         }
@@ -426,16 +426,15 @@
             font-family: "Fraunces", ui-serif, serif;
             font-size: 15px;
             font-weight: normal;
-            min-width: 180px;
+            width: 200px;
             flex-shrink: 0;
         }
         .model-id {
             font-family: 'SF Mono', monospace;
             font-size: 12px;
             color: var(--muted);
-            min-width: 180px;
+            width: 200px;
             flex-shrink: 0;
-            word-break: break-all;
         }
         .model-note {
             font-size: 13px;
@@ -463,8 +462,8 @@
                 flex-direction: column;
                 gap: 8px;
             }
-            .model-label { min-width: auto; }
-            .model-id { min-width: auto; }
+            .model-label { width: auto; }
+            .model-id { width: auto; }
         }
 
         /* Connect button */

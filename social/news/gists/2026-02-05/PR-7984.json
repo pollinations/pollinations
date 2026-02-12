@@ -8,26 +8,27 @@
     "DEV-BUG"
   ],
   "gist": {
-    "category": "bug_fix",
+    "category": "infrastructure",
     "user_facing": false,
     "publish_tier": "discord_only",
     "importance": "minor",
-    "summary": "Implemented smart retry logic for GitHub API rate limits during the automatic Spore-to-Seed tier upgrade process.",
-    "impact": "Ensures active community members reliably receive their tier upgrades even during periods of high API traffic.",
+    "headline": "Patience is a virtue",
+    "blurb": "Our Spore-to-Seed upgrade bot now knows how to wait its turn when GitHub is busy, preventing crashes.",
+    "summary": "Implemented retry logic for GitHub API 403/429 rate limit responses in the user upgrade script.",
+    "impact": "Improves the reliability of automatic tier upgrades by preventing crashes during API congestion.",
     "keywords": [
-      "github api",
-      "rate limits",
-      "tier upgrade",
-      "spore",
-      "seed",
-      "reliability"
+      "github",
+      "automation",
+      "rate-limit",
+      "python",
+      "ci"
     ],
-    "visual_concept": "The pollinations.ai bee tending to a glowing pixelated seed in a garden, representing the Spore-to-Seed upgrade process. The focus is on care and reliability (making sure the seed grows).",
-    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee carefully tending to a glowing pixelated seed in a digital garden. Soft lime green (#ecf874) and pastel mint gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Represents growth and reliability. Nostalgic but beautiful."
+    "visual_concept": "The Pollinations bee waiting patiently with a tiny pixelated hourglass or clock next to a closed digital gate (GitHub). Represents the script pausing for rate limits.",
+    "image_prompt": "Cozy pixel art scene of the 8-bit bee mascot holding a tiny hourglass, waiting patiently by a digital gate. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting. Represents handling rate limits gracefully. Nostalgic, calm atmosphere."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-05/PR-7984.jpg",
     "prompt": "Cozy pixel art scene of the pollinations.ai bee carefully tending to a glowing pixelated seed in a digital garden. Soft lime green (#ecf874) and pastel mint gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Represents growth and reliability. Nostalgic but beautiful."
   },
-  "generated_at": "2026-02-11T23:44:37.207606+00:00"
+  "generated_at": "2026-02-12T13:54:21.634818+00:00"
 }

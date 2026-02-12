@@ -10,23 +10,25 @@
   "gist": {
     "category": "community",
     "user_facing": true,
-    "publish_tier": "discord_only",
+    "publish_tier": "daily",
     "importance": "minor",
-    "summary": "Updated mentor contact information for the Google Summer of Code program.",
-    "impact": "Ensures aspiring contributors can successfully reach out to mentors without communication issues.",
+    "headline": "Reconnecting the lines",
+    "blurb": "Updated the contact channels for our GSoC mentors. No more messages lost in the digital void!",
+    "summary": "Corrected the contact email address for a mentor in the Google Summer of Code documentation.",
+    "impact": "Contributors can now successfully reach the correct mentor without communication errors.",
     "keywords": [
-      "GSoC",
-      "mentorship",
+      "gsoc",
       "community",
+      "mentors",
       "docs",
       "open source"
     ],
-    "visual_concept": "The pollinations.ai bee as a tiny mail carrier delivering a letter to a mentor figure. Represents fixing the communication channel (email).",
-    "image_prompt": "Cozy pixel art scene of a tiny 8-bit bee mail-carrier delivering a letter to a mentor character in a library. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel envelope icon. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "The Pollinations bee acting as a mail carrier. Since this is about fixing an email address, a scene of the bee delivering a letter or fixing a mailbox fits perfectly. The setting should be a sunny, nature-filled garden representing the GSoC community.",
+    "image_prompt": "Cozy pixel art scene of the 8-bit bee mascot putting a letter into a cute rustic mailbox in a sunny garden. Soft lime green (#ecf874) and pastel blue gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic. Like Stardew Valley mail delivery. Emotionally warm, nostalgic."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-05/PR-7959.jpg",
     "prompt": "Cozy pixel art scene of a tiny 8-bit bee mail-carrier delivering a letter to a mentor character in a library. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel envelope icon. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-02-11T23:42:43.928957+00:00"
+  "generated_at": "2026-02-12T13:52:30.702370+00:00"
 }

@@ -10,23 +10,25 @@
   "gist": {
     "category": "infrastructure",
     "user_facing": false,
-    "publish_tier": "none",
+    "publish_tier": "discord_only",
     "importance": "minor",
-    "summary": "Optimized the Discord announcement workflow by adding manual triggers and removing heavy diff fetching.",
-    "impact": "Enables manual retries for failed posts and significantly speeds up the announcement process for the team.",
+    "headline": "News about the news",
+    "blurb": "We've optimized our Discord announcement bot. It's now faster, smarter, and comes with a manual override button for when the hive gets too busy.",
+    "summary": "Refactored the Discord announcement workflow to allow manual triggers and generate content from PR descriptions instead of raw file diffs.",
+    "impact": "Reduces API usage and improves the relevance of automated announcements by focusing on intent rather than implementation details.",
     "keywords": [
-      "github actions",
-      "automation",
       "discord",
       "workflow",
-      "optimization"
+      "automation",
+      "github-actions",
+      "internal-tools"
     ],
-    "visual_concept": "The pollinations.ai bee adjusting a retro radio tower or broadcasting equipment, symbolizing the improved announcement pipeline. A 'manual override' switch or button is visible.",
-    "image_prompt": "Cozy pixel art scene of a tiny 8-bit bee adjusting a retro broadcasting antenna with a large red button nearby. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text: 'SIGNAL BOOST'. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "A pixel art bee adjusting a retro radio broadcasting tower or microphone. Represents the improved announcement system (the 'voice' of the project).",
+    "image_prompt": "Cozy pixel art scene of a cute 8-bit bee adjusting a retro radio broadcasting tower. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes. Pixel text 'ON AIR'. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8082.jpg",
     "prompt": "Cozy pixel art scene of a tiny 8-bit bee adjusting a retro broadcasting antenna with a large red button nearby. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text: 'SIGNAL BOOST'. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-02-11T23:51:03.630902+00:00"
+  "generated_at": "2026-02-12T14:02:20.468574+00:00"
 }

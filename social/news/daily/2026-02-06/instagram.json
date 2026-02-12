@@ -1,38 +1,39 @@
 {
-  "content_type": "cozy_scene",
+  "content_type": "pixel_art",
   "linked_images": true,
-  "strategy_reasoning": "Using the retro gaming 'level up' and 'shop' metaphors makes technical infrastructure changes (like paid tiers and model upgrades) feel rewarding and gamified rather than transactional. The cozy pixel art style keeps the vibe friendly and approachable, reinforcing the community-first identity.",
-  "visual_style": "Cozy 8-bit pixel art with chunky sprites, warm lighting, and soft pastel gradients. Influenced by Stardew Valley and Unpacking. Prominent use of lime green #ecf874.",
+  "strategy_reasoning": "Using the 'garden upgrade' metaphor fits our organic brand identity while translating technical backend updates (OVH migration, new models) into cozy, visual milestones. The retro game aesthetic appeals to our dev-heavy audience without feeling corporate.",
+  "visual_style": "Cozy 8-bit pixel art, Studio Ghibli meets retro gaming. Chunky sprites, soft lighting, lime green (#ecf874) accents, and pastel gradients.",
   "image_count": 3,
   "images": [
     {
-      "prompt": "Cozy pixel art scene of a retro CRT television set sitting in a lush, blooming digital garden. The TV screen glows with a vibrant, magical animation of a swirling galaxy. A tiny 8-bit bee character is filming the scene with an old-school camcorder. Soft lime green (#ecf874) and pastel peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Pixel text on the TV frame: 'VIDEO MODE'. Nostalgic, magical atmosphere.",
-      "description": "Announcing the new video generation models (LTX-2, Grok) and Imagen 3.",
-      "text_in_image": "VIDEO MODE"
+      "prompt": "Cozy pixel art scene of the cute round bee mascot (yellow body, brown stripes, pink blush, small wings) discovering two glowing magical seeds in a lush pixel garden. One seed radiates cinematic light (video), the other swirls with colors (image). Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font at top: 'NEW SEEDS'. Nostalgic, emotionally warm.",
+      "description": "Announcing LTX-2 and Imagen 3 as new 'seeds' in our creative garden.",
+      "text_in_image": "NEW SEEDS"
     },
     {
-      "prompt": "Pixel art interior scene of a cozy wizard's study room. A tiny 8-bit bee character wearing oversized glasses is reading a massive glowing spellbook labeled 'Opus'. Soft lime green (#ecf874) and lavender light filtering through a pixelated window. Chunky retro sprites, Unpacking game vibes. Warm, intellectual but cute. Floating pixel icons of lightbulbs and scrolls. Emotionally warm.",
-      "description": "Highlighting the intelligence upgrade for Claude and reliability fixes for Mistral.",
+      "prompt": "Retro 8-bit pixel art of the bee mascot zooming happily alongside a sparkling, crystal-clear pixelated stream. The water flows smoothly (representing stable streams/SSE). Soft lime green (#ecf874) and lavender sky. Speed lines behind the bee indicate faster processing. Modern soft lighting on chunky pixels. Text in pixel font: 'SMOOTH FLOW'. Wholesome, like A Short Hike. Peaceful but dynamic.",
+      "description": "Visualizing the technical fixes (SSE support, zero queues) as a smooth, flowing stream.",
+      "text_in_image": "SMOOTH FLOW"
+    },
+    {
+      "prompt": "Cozy pixel art UI screen, designed like a retro RPG status menu. Displays a 'Brain Power' stat bar filling up (Claude Opus 4.6 upgrade) and a 'Map' icon (Dashboard tiers). The bee mascot gives a thumbs up in the corner. Background is soft lime green (#ecf874) with cream borders. Clean pixel icons. Text in pixel font: 'LEVEL UP'. Nostalgic gaming vibes, clean interface.",
+      "description": "Showcasing the Claude upgrade and Dashboard tier visibility as a character stat boost.",
       "text_in_image": "LEVEL UP"
-    },
-    {
-      "prompt": "Retro RPG shop interface in pixel art. A friendly merchant bee standing behind a wooden counter with jars of glowing nectar. A menu board shows 'Free' and 'Premium' items with pixel heart icons. Soft lime green (#ecf874) and mint gradient background. UI elements like health bars and coin slots. Cozy, inviting atmosphere like a village shop in a retro RPG. Text in pixel font: 'Support the Hive'. Warm lighting.",
-      "description": "Explaining the move to paid tiers for specific models to ensure sustainability.",
-      "text_in_image": "Support the Hive"
     }
   ],
-  "caption": "Besties, the garden just got a MAJOR upgrade! 🌱✨ We’ve been cooking up some fresh updates to help your creativity bloom.\n\n🎥 **Motion Picture Magic**: We added LTX-2 and Grok Imagine Video so you can finally direct your pixel masterpieces. Plus, Imagen 3 is serving absolute visuals.\n\n🧠 **Big Brain Energy**: Claude Opus just leveled up to v4.6, and Mistral is back and more reliable than ever. Smarter tools = better builds.\n\n🍯 **Sustainable Vibes**: To keep our servers happy and the queue at zero, we’ve moved a few heavy-hitter models to our paid tiers. This helps us keep the free tier iconic for everyone! \n\nCheck the link in bio to test the new toys. What are you generating first? 👇\n\n#pollinations #aiart #pixelart #retrogaming #opensource #indiedev #cozyvibes #generativeai #8bit #buildinpublic",
+  "caption": "besties, the garden just got a major upgrade 🌸✨ we planted some new seeds and everything is blooming faster than ever.\n\n✨ new toys: LTX-2 video & Imagen 3 are live\n🧠 big brain energy: claude updated to opus 4.6\n🌊 smooth sailing: streams are stable & queues are gone\n\nwe’re keeping it cozy and open source, always. come build something cool with us.\n\nlink in bio to play 🐝\n\n#pollinations #opensource #pixelart #generativeai #cozyvibes #indiedev #buildinpublic #8bit #retrogaming #aiart #creativecoding",
   "hashtags": [
     "#pollinations",
-    "#aiart",
-    "#pixelart",
-    "#retrogaming",
     "#opensource",
-    "#indiedev",
-    "#cozyvibes",
+    "#pixelart",
     "#generativeai",
+    "#cozyvibes",
+    "#indiedev",
+    "#buildinpublic",
     "#8bit",
-    "#buildinpublic"
+    "#retrogaming",
+    "#aiart",
+    "#creativecoding"
   ],
-  "alt_text": "Three cozy pixel art images. 1: A retro TV in a garden showing video generation capabilities with a bee cameraman. 2: A wizard bee reading a glowing book representing smarter AI models. 3: A retro RPG shop interface showing free and premium tiers. All images feature lime green accents and warm pastel colors."
+  "alt_text": "A carousel of 3 cozy pixel art images featuring a cute round bee mascot. 1: The bee finding glowing magical seeds in a garden with lime green accents. 2: The bee flying fast next to a smooth blue stream. 3: A retro RPG stats screen showing upgrades to brain power and maps."
 }

@@ -1,12 +1,12 @@
 {
   "tweet_type": "shipped",
-  "tweet": "context switching is the enemy. just merged docs directly into the playground. read, test, and ship in one unified flow. also hardened polly against prompt leakage and added qwen-character. less friction, more building. 🌸",
-  "alt_tweet": "why tab switch when you can just build? merged docs into the play page for a unified workflow. plus hardened polly security and new qwen models. shipping daily. 🌸",
+  "tweet": "friction is the enemy of shipping.\n\njust merged docs directly into the play page. context switching is dead—grab snippets and test endpoints in one view.\n\nplus:\n- new qwen-character model\n- hardened prompt defenses\n- fixed gemini executable code\n\nbuild faster. 🌸",
+  "alt_tweet": "why have docs in one tab and code in another?\n\nwe just merged them. docs are now live inside the play page.\n\nless tabbing, more shipping. also pushed fixes for gemini reasoning and added qwen-character.\n\nopen source & moving fast. 🐝",
   "hashtags": [
     "#OpenSource",
     "#BuildInPublic"
   ],
-  "image_prompt": "Cozy 8-bit pixel art scene of a tiny bee developer merging two holographic interface panels into one seamless workstation. Soft lime green (#ecf874) code syntax glowing against a warm lavender gradient background. Chunky retro sprites, isometric view, warm lighting. Text 'UNIFIED FLOW' in pixel font. Productive, satisfying vibes like Stardew Valley.",
-  "reasoning": "Focuses on a tangible DX improvement (unified docs/playground) that resonates with builders who hate context switching. Mentions the technical security update (Polly hardening) to add substance. Tone is low-ego, high-utility.",
-  "char_count": 221
+  "image_prompt": "Dynamic pixel art close-up of a retro monitor screen. A UI window labeled 'DOCS' snaps into a window labeled 'PLAY', fusing into one glowing lime green (#ecf874) interface. The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is giving a thumbs up. High contrast, warm lighting, cozy 8-bit aesthetic, soft pastel background.",
+  "reasoning": "Focuses on a tangible UX improvement (Docs integration) that developers immediately understand and value. 'Friction is the enemy' is a strong builder-centric hook. Lists technical updates (Qwen, Gemini) to show breadth of shipping without cluttering the main message.",
+  "char_count": 226
 }

@@ -1,12 +1,12 @@
 {
   "tweet_type": "shipped",
-  "tweet": "video, music, and a whole new look. just shipped LTX-2, ElevenMusic, and Imagen 3 wrapped in a fresh UI redesign. 39 PRs merged to give you better tools. open source, no subscriptions, just raw creative power. go build.",
-  "alt_tweet": "39 PRs later, we've got a new UI and major model upgrades. LTX-2 for video, ElevenMusic for audio, and OVH Whisper for transcription. the platform is evolving fast. come see what open source ai can do.",
+  "tweet": "just shipped the full A/V stack. LTX-2 video, ElevenMusic, and Whisper transcription are live.\n\nyour apps can now see, hear, and speak.\n\nopen source, permissionless, and ready to ship.\n\ngo build something weird. 🌸",
+  "alt_tweet": "text-to-video (LTX-2), text-to-music, and speech-to-text (Whisper) just landed.\n\npollinations is now a full multi-modal studio.\n\nno subscriptions, just code. link in bio.",
   "hashtags": [
     "#OpenSource",
     "#AI"
   ],
-  "image_prompt": "Dynamic pixel art composition. Center: The pollinations.ai bee mascot holding a glowing pixel tool, surrounded by swirling creative elements—video tape reels, music notes, colorful canvases. Background: Bold lime green (#ecf874) rays radiating outward against a deep purple space. High contrast, energetic 'item get' pose from retro RPGs. Soft warm lighting, chunky pixels. Cozy 8-bit aesthetic.",
-  "reasoning": "Highlights the major multi-modal releases (video/audio) and the UI redesign, which are high-impact updates for users. The tone is confident and builder-focused ('go build').",
-  "char_count": 216
+  "image_prompt": "Cozy pixel art scene of the cute chubby bee mascot in a retro recording studio. Bee is wearing headphones, adjusting a large pixelated mixing board with a video camera and microphone nearby. Soft lime green (#ecf874) and pastel purple gradient background. 'ON AIR' sign in pixel font. Warm lighting, lo-fi aesthetic like Stardew Valley. Dynamic, excited vibe.",
+  "reasoning": "Highlights the massive expansion of capabilities (Video/Audio/Text) in a concise, builder-focused way. Encourages immediate action ('go build').",
+  "char_count": 196
 }

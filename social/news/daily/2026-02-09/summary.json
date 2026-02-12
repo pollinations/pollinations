@@ -1,10 +1,11 @@
 {
   "date": "2026-02-09",
-  "pr_count": 5,
+  "pr_count": 4,
+  "mood": "tuning the engine",
   "arcs": [
     {
-      "headline": "Polly gets a brain boost",
-      "summary": "Our AI assistant Polly received a major intelligence upgrade. We switched to OpenAI embeddings for more accurate document retrieval and tuned the system prompt to deliver snappier, more focused answers.",
+      "headline": "Polly gets a major intelligence upgrade",
+      "summary": "Our AI assistant Polly is now powered by OpenAI embeddings for sharper context retrieval and features a refined system prompt for clearer, more direct answers.",
       "prs": [
         8111,
         8123
@@ -13,8 +14,8 @@
       "category": "feature"
     },
     {
-      "headline": "Streamlined model access",
-      "summary": "Developers gain more control over the model registry. You can now access legacy models via API without cluttering the main dashboard, and we've optimized the routing for Claude integrations.",
+      "headline": "Flexible model routing and legacy support",
+      "summary": "We've updated the registry to support 'hidden' API-only models and restored access to legacy versions of Claude and Gemini for developers who need specific model behaviors.",
       "prs": [
         8101
       ],
@@ -22,16 +23,15 @@
       "category": "feature"
     },
     {
-      "headline": "Smoother credits & open metrics",
-      "summary": "We improved the Pollen credit system for more reliable balance updates. True to our building-in-public philosophy, we also added new dashboards to visualize platform load and economics.",
+      "headline": "Frictionless credit handling",
+      "summary": "We updated the Pollen deduction logic to allow temporary negative balances, ensuring your requests finish successfully even if they hit the limit mid-process.",
       "prs": [
-        8117,
-        8118
+        8117
       ],
       "importance": "major",
       "category": "improvement"
     }
   ],
-  "one_liner": "Polly gets smarter with new embeddings, plus smoother credit handling and new transparency dashboards.",
-  "pr_summary": "TODAY'S UPDATES (5 merged PRs):\n- #8111: [FEAT] : Polly now uses openai embeddings\n- #8123: Improve Polly system prompt and add auto-deploy\n- #8101: feat: hidden model support, remove Claude fallbacks\n- #8117: fix(enter): single-bucket balance deduction\n- #8118: feat: economics dashboards"
+  "one_liner": "Polly gets smarter with new embeddings, model access expands to include legacy versions, and credit handling becomes more forgiving.",
+  "pr_summary": "TODAY'S UPDATES (4 merged PRs):\n- #8111: [FEAT] : Polly now uses openai embeddings\n- #8123: Improve Polly system prompt and add auto-deploy\n- #8101: feat: hidden model support, remove Claude fallbacks, add claude-legacy\n- #8117: fix(enter): single-bucket balance deduction — no splitting, allow negative"
 }

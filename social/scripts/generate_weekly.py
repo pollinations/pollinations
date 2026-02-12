@@ -4,7 +4,7 @@ Tier 3: Weekly Digest Generator
 
 Sunday 06:00 UTC:
   1. Read gists for the past 7 days (Mon→Sun)
-  2. AI synthesizes weekly themes → summary.md
+  2. AI synthesizes weekly themes → digest.json
   3. Generate platform posts (Twitter, LinkedIn, Instagram, Reddit, Discord)
   4. Generate 7 platform images (1 twitter + 1 linkedin + 3 instagram + 1 reddit + 1 discord)
   5. Create PR for review
@@ -388,11 +388,6 @@ def create_weekly_pr(
 
     # Prepare files
     files_to_commit = []
-
-    # summary.md — the changelog
-    changelog = digest.get("changelog_md", "")
-    if changelog:
-        files_to_commit.append((f"{base_path}/summary.md", changelog, False))
 
     # Platform JSONs
     now_iso = datetime.now(timezone.utc).isoformat()

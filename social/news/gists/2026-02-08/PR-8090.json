@@ -12,22 +12,23 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "minor",
-    "summary": "Added audio models to the API key permissions selector, enabling granular access control for audio services.",
-    "impact": "Users can now create API keys specifically restricted to audio models like ElevenLabs and Whisper.",
+    "headline": "Keys to the studio",
+    "blurb": "Audio models have joined the party in your API key settings. You can now grant (or revoke) permission to make some noise.",
+    "summary": "Added audio models (ElevenLabs, Whisper) to the API key permissions selector in the dashboard.",
+    "impact": "Users can now restrict API keys specifically to audio models, offering better control over usage and security.",
     "keywords": [
       "api keys",
-      "audio models",
-      "permissions",
-      "security",
+      "audio",
       "dashboard",
-      "elevenlabs"
+      "security",
+      "permissions"
     ],
-    "visual_concept": "The pollinations.ai bee organizing golden API keys, attaching specific musical note tags to some of them to represent the new audio permissions.",
-    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee organizing golden API keys on a wooden desk, attaching small musical note tags to specific keys. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting. Represents audio model permissions. Lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful."
+    "visual_concept": "The Pollinations bee acting as a studio engineer or gatekeeper. The key visual metaphor is a 'musical key' - a physical key that unlocks sound.",
+    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee holding a large golden pixel key that is emitting colorful musical notes. Soft lime green (#ecf874) and lavender gradient background. The bee is standing next to a retro control panel with audio sliders. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8090.jpg",
     "prompt": "Cozy pixel art scene of the pollinations.ai bee organizing golden API keys on a wooden desk, attaching small musical note tags to specific keys. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting. Represents audio model permissions. Lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful."
   },
-  "generated_at": "2026-02-11T23:53:10.453156+00:00"
+  "generated_at": "2026-02-12T14:04:07.311563+00:00"
 }

@@ -12,21 +12,23 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "minor",
-    "summary": "Updates the Google Summer of Code (GSOC) page with new mentor assignments and improved project organization logic.",
-    "impact": "Participants will see clearer mentor allocations and a more structured project list.",
+    "headline": "Summer of Code Logistics",
+    "blurb": "We're tidying up the Google Summer of Code dashboard. Mentors are finding their projects and limits are being set!",
+    "summary": "Updated the GSoC project page to assign mentors to specific project IDs and implemented a project hard limit.",
+    "impact": "GSoC participants will now see updated mentor assignments and project constraints on the dashboard.",
     "keywords": [
-      "GSOC",
+      "GSoC",
       "mentorship",
-      "community",
       "open source",
-      "education"
+      "community",
+      "students"
     ],
-    "visual_concept": "The pollinations.ai bee acting as a summer camp counselor or mentor, reviewing a project map or board in a sunny outdoor setting. Represents the GSOC update and organization.",
-    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee as a summer camp counselor reviewing a pixelated project map. Soft lime green (#ecf874) and sunny pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like A Short Hike. Pixel text 'GSOC'. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "The Pollinations bee acting as a teacher or coordinator, organizing a project board for students. Represents the GSoC organizational updates.",
+    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee mascot standing in front of a chalkboard organizing a list of summer coding projects. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi classroom vibes like Stardew Valley schoolhouse. Pixel text on board: 'GSOC'. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8076.jpg",
     "prompt": "Cozy pixel art scene of the pollinations.ai bee as a summer camp counselor reviewing a pixelated project map. Soft lime green (#ecf874) and sunny pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like A Short Hike. Pixel text 'GSOC'. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-02-11T23:50:02.019469+00:00"
+  "generated_at": "2026-02-12T14:01:42.786844+00:00"
 }

@@ -1,20 +1,17 @@
-name: README Update
+name: Highlights Update
 
 on:
-  pull_request:
-    types: [closed]
-    paths:
-      - 'social/news/highlights.md'
+  schedule:
+    - cron: '0 6 * * *'  # Every day at 06:00 UTC (including Sunday)
   workflow_dispatch:
+    inputs:
+      target_date:
+        description: 'Date to process (YYYY-MM-DD). Defaults to yesterday.'
+        required: false
+        type: string
 
 jobs:
-  update-readme:
-    # Only run if PR was merged (not just closed), targeted main, and has NEWS label
-    if: >
-      (github.event_name == 'workflow_dispatch') ||
-      (github.event.pull_request.merged == true &&
-       github.event.pull_request.base.ref == 'main' &&
-       contains(github.event.pull_request.labels.*.name, 'NEWS'))
+  update-highlights:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -31,7 +28,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: main  # Checkout main to get the merged highlights file
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -39,35 +36,33 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: |
-          pip install requests
+        run: pip install requests
 
-      - name: Update README and Create PR
+      - name: Update highlights and README
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
           PR_LABELS: NEWS
-        run: python social/scripts/update_readme.py
+        run: python social/scripts/update_highlights.py
 
       - name: Enable Auto-merge on PR
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
         run: |
-          # Read PR number from file written by script
           if [ -f .pr_number ]; then
             PR_NUMBER=$(cat .pr_number)
             echo "Enabling auto-merge on PR #$PR_NUMBER"
 
-            # Get PR node ID for GraphQL
             PR_NODE_ID=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
               "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER" \
               | jq -r '.node_id')
 
-            # Enable auto-merge via GraphQL (respects branch protection)
             curl -X POST https://api.github.com/graphql \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
               -H "Content-Type: application/json" \
               -d "{\"query\":\"mutation {enablePullRequestAutoMerge(input:{pullRequestId:\\\"$PR_NODE_ID\\\",mergeMethod:SQUASH}){pullRequest{number}}}\"}"
           else
-            echo "No .pr_number file found - PR not created"
+            echo "No .pr_number file found - PR not created (likely SKIP or no gists)"
           fi

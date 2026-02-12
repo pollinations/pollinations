@@ -1,38 +1,41 @@
 {
-  "content_type": "cozy_scene",
+  "content_type": "pixel_art",
   "linked_images": true,
-  "strategy_reasoning": "Using the cozy retro gaming aesthetic makes technical backend updates (embeddings, balance logic) feel rewarding and tangible, like unlocking features in a favorite RPG.",
-  "visual_style": "Nostalgic 8-bit pixel art with modern soft lighting, chunky sprites, and the signature lime green (#ecf874) palette. Wholesome, Stardew Valley-esque atmosphere.",
+  "strategy_reasoning": "Using the 'level up' gaming trope perfectly visualizes the technical upgrades (embeddings/intelligence) while keeping the cozy, approachable vibe. The inventory screen metaphor makes complex model routing feel like a fun game mechanic, and the smooth flying scene translates 'frictionless credits' into a relaxing visual feeling.",
+  "visual_style": "Cozy 8-bit pixel art with chunky sprites, soft ambient lighting, and a mandatory lime green (#ecf874) accent. Studio Ghibli meets Stardew Valley.",
   "image_count": 3,
   "images": [
     {
-      "prompt": "Cozy pixel art close-up of the pollinations.ai bee mascot floating happily with a glowing pixelated lightbulb idea above its head. Soft lime green (#ecf874) and pastel peach gradient background. Chunky 8-bit sprites, warm ambient lighting, sparkles of magic dust around the bee. Lo-fi aesthetic like Stardew Valley. Simple pixel text bubble says 'Brain Boost'. Nostalgic, cute, and emotionally warm.",
-      "description": "Visualizes the 'brain boost' (OpenAI embeddings) as a character leveling up.",
-      "text_in_image": "Brain Boost"
+      "prompt": "Cozy pixel art scene of the cute chubby 8-bit bee mascot floating in a meditative pose, surrounded by glowing magical data sparkles. Soft lime green (#ecf874) and lavender gradient background. The bee has a round yellow body, dark brown stripes, pink blush, and small blue wings. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Pixel text: 'BRAIN BOOST'. Nostalgic but beautiful, emotionally warm.",
+      "description": "Visualizing the intelligence upgrade (OpenAI embeddings) as the mascot gaining a magical power-up.",
+      "text_in_image": "BRAIN BOOST"
     },
     {
-      "prompt": "Retro 8-bit pixel art inventory UI screen displayed on a soft background. A neat grid of distinct pixelated flower seeds and potions, representing different AI models. Clean, organized, and cozy. Soft mint and lime green (#ecf874) color palette. A pixel cursor hand selecting a specific glowing item. Warm lighting, comfortable vibes like the game Unpacking. Minimal pixel text: 'Streamlined'.",
-      "description": "Represents the removal of fallbacks and hidden model support as a tidy inventory management screen.",
-      "text_in_image": "Streamlined"
+      "prompt": "Retro 8-bit pixel art game UI screen showing the cute chubby bee mascot selecting different magical scrolls from a cozy wooden shelf. Soft lime green (#ecf874) and peach gradient background. The bee has a round yellow body, dark brown stripes, pink blush. Chunky retro sprites, warm lighting, lo-fi vibes like A Short Hike. Pixel text: 'PICK YOUR GEAR'. Nostalgic but beautiful, emotionally warm.",
+      "description": "Representing the flexible model routing and legacy support as a fun RPG inventory selection screen.",
+      "text_in_image": "PICK YOUR GEAR"
     },
     {
-      "prompt": "Cozy pixel art visualization of a growth chart that looks like a lush climbing vine on a trellis. Next to it, a simple transparent crystal jar collecting golden pixel pollen (credits). Soft lime green (#ecf874) glow effects. Background is a warm cream color. Isometric view, chunky pixels, wholesome atmosphere like A Short Hike. Pixel text: 'Open Metrics'. Beautiful and simple.",
-      "description": "Illustrates the economics dashboard and single-bucket balance fix as a transparent, organic resource system.",
-      "text_in_image": "Open Metrics"
+      "prompt": "Cozy pixel art scene of the cute chubby bee mascot gliding smoothly through a digital garden of pixel flowers, leaving a trail of golden sparkles. Soft lime green (#ecf874) and mint gradient background. The bee has a round yellow body, dark brown stripes, pink blush. Chunky retro sprites, warm lighting, lo-fi aesthetic like Unpacking. Pixel text: 'SMOOTH FLOW'. Nostalgic but beautiful, emotionally warm.",
+      "description": "Illustrating the single-bucket balance update as a frictionless, enjoyable flight experience.",
+      "text_in_image": "SMOOTH FLOW"
     }
   ],
-  "caption": "Besties, Polly just got a major glow up! ✨🧠 We gave our fav bot a massive brain boost with new embeddings (she literally gets you fr now). \n\nWe also Marie Kondo'd the model closet—no more random fallbacks, just the specific tools you want, exactly when you want them. 🛠️🌸 Plus, the pollen credits system is smoother than ever with new open dashboards to track the vibes. 📊\n\nSwipe to see the upgrades! What are you building this weekend? Drop a comment! 👇\n\nLink in bio to start creating. 🐝💚",
+  "caption": "Polly just had a major glow up ✨🧠 We pushed some cozy updates to make your AI generation smoother than fresh honey.\n\n🍄 Polly System Upgrade: She’s rocking OpenAI embeddings now = better context and smarter replies.\n🌱 Flexible Routing: We fixed the model fallback issues and added legacy support. You choose the tools, we make it work.\n🌸 Frictionless Flow: Credit balance logic is now single-bucket. No math, just vibes.\n\nBuild something beautiful today. 🐝\n\nLink in bio to test the new brains!\n\n#pollinations #opensource #pixelart #cozyvibes #indiedev #aiart #retrogaming #8bit #buildinpublic #generativeai #creativecoding #gamedev #relaxing",
   "hashtags": [
     "#pollinations",
-    "#aiart",
     "#opensource",
     "#pixelart",
-    "#indiedev",
     "#cozyvibes",
-    "#generativeai",
+    "#indiedev",
+    "#aiart",
+    "#retrogaming",
     "#8bit",
     "#buildinpublic",
-    "#creativecoding"
+    "#generativeai",
+    "#creativecoding",
+    "#gamedev",
+    "#relaxing"
   ],
-  "alt_text": "A carousel of cozy 8-bit pixel art images featuring a cute bee mascot, a retro game inventory screen, and a vine-based growth chart, all in lime green and pastel colors."
+  "alt_text": "A carousel of three cozy 8-bit pixel art images featuring a cute round bee mascot. 1. The bee glowing with magical knowledge against a lime green and lavender background. 2. The bee looking at a retro game inventory screen choosing magical scrolls. 3. The bee flying smoothly through a pixelated garden."
 }

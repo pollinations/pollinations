@@ -12,21 +12,23 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "summary": "Transitioning select premium models to supporter tiers and migrating Mistral to improved infrastructure.",
-    "impact": "Ensures sustainable access to high-cost models like Claude and Grok while optimizing backend performance.",
+    "headline": "Tiers, gears, and Mistral",
+    "blurb": "We're tidying up the hive! Mistral gets a new engine, and we've organized some heavy-hitter models into our supporter tiers to keep the platform blooming.",
+    "summary": "Migrated Mistral inference to OVHcloud infrastructure and updated access configurations for premium models like Claude and Grok.",
+    "impact": "Supporter tiers now have exclusive access to high-compute models, ensuring sustainable availability for everyone.",
     "keywords": [
       "models",
-      "premium",
       "mistral",
-      "ovhcloud",
-      "sustainability"
+      "claude",
+      "grok",
+      "tiers"
     ],
-    "visual_concept": "The pollinations.ai bee is tending to a special 'Rare Plants' section of the garden (representing the premium models) and moving a cloud sprite (Mistral) to a new, sturdier pot. The vibe is about care, cultivation, and upgrading the home for these valuable assets.",
-    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee carefully tending to a special garden section with glowing rare crystal flowers. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Bee character with chunky retro sprites moving a cloud-shaped plant to a new pot. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "A bee sorting valuable gems (models) into a special 'supporter' chest, representing the new tier organization. The setting is a cozy cloud workshop (OVH migration).",
+    "image_prompt": "Cozy pixel art scene of a cute bee mascot sorting glowing magical gems into a golden treasure chest in a cloud workshop. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting. Represents premium model tiers. Lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-06/PR-7922.jpg",
     "prompt": "Cozy pixel art scene of the pollinations.ai bee carefully tending to a special garden section with glowing rare crystal flowers. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Bee character with chunky retro sprites moving a cloud-shaped plant to a new pot. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-02-11T23:42:19.450737+00:00"
+  "generated_at": "2026-02-12T13:55:58.768942+00:00"
 }

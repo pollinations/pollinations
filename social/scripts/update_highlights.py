@@ -1,130 +1,70 @@
+#!/usr/bin/env python3
+"""
+Highlights + README Update
+
+Reads yesterday's PR gists, AI-curates highlights, and creates a single PR
+updating both highlights.md and README.md "Latest News" section.
+
+Triggered daily at 06:00 UTC by NEWS_highlights_update.yml.
+"""
+
 import os
 import sys
 import json
-import time
-import random
-import re
 import base64
 import requests
-from datetime import datetime, timezone
-from common import load_prompt, get_env, get_file_sha, call_pollinations_api, GITHUB_API_BASE, MODEL
+from datetime import datetime, timezone, timedelta
+from common import (
+    load_prompt,
+    get_env,
+    get_file_sha,
+    get_repo_root,
+    call_pollinations_api,
+    read_gists_for_date,
+    GITHUB_API_BASE,
+)
+from update_readme import get_top_highlights, update_readme_news_section
 
-NEWS_FOLDER = "social/news"
 HIGHLIGHTS_PATH = "social/news/highlights.md"
+README_PATH = "README.md"
 
 
-def get_latest_news_file(github_token: str, owner: str, repo: str) -> tuple[str, str, str]:
+def load_gists_as_changelog(date_str: str) -> tuple[str, int]:
+    """Read gists for a date and format as a changelog for the highlights prompt.
+
+    Filters to user-facing, publishable gists only.
+    Returns (changelog_text, gist_count).
     """
-    Find the latest NEWS file based on today's date using regex pattern matching.
-    Returns (file_path, content, date_str) or (None, None, None) if not found.
-    """
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}"
-    }
+    gists = read_gists_for_date(date_str)
 
-    response = requests.get(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{NEWS_FOLDER}",
-        headers=headers
-    )
+    filtered = [
+        g for g in gists
+        if g.get("gist", {}).get("publish_tier") != "none"
+        and g.get("gist", {}).get("user_facing", False)
+    ]
 
-    if response.status_code != 200:
-        print(f"Error fetching NEWS folder: {response.status_code}")
-        return None, None, None
+    if not filtered:
+        return "", 0
 
-    files = response.json()
+    lines = [f"# Updates for {date_str}\n"]
+    for g in filtered:
+        ai = g.get("gist", {})
+        lines.append(f"## PR #{g['pr_number']}: {g['title']}")
+        if ai.get("summary"):
+            lines.append(f"**Summary:** {ai['summary']}")
+        if ai.get("impact"):
+            lines.append(f"**Impact:** {ai['impact']}")
+        if ai.get("headline"):
+            lines.append(f"**Headline:** {ai['headline']}")
+        if ai.get("keywords"):
+            lines.append(f"**Keywords:** {', '.join(ai['keywords'])}")
+        lines.append("")
 
-    # Date pattern: YYYY-MM-DD.md
-    date_pattern = re.compile(r'^(\d{4}-\d{2}-\d{2})\.md$')
-    today = datetime.now(timezone.utc).date()
-
-    dated_files = []
-    for f in files:
-        if f['type'] != 'file':
-            continue
-        match = date_pattern.match(f['name'])
-        if match:
-            try:
-                file_date = datetime.strptime(match.group(1), '%Y-%m-%d').date()
-                dated_files.append((file_date, f['name'], f['path']))
-            except ValueError:
-                continue
-
-    if not dated_files:
-        print("No dated NEWS files found")
-        return None, None, None
-
-    # Sort by date descending and find the most recent one <= today
-    dated_files.sort(key=lambda x: x[0], reverse=True)
-
-    # First, try to find today's file
-    for file_date, name, path in dated_files:
-        if file_date == today:
-            print(f"Found today's NEWS file: {name}")
-            break
-    else:
-        # If no file for today, get the most recent one
-        file_date, name, path = dated_files[0]
-        print(f"No NEWS file for today ({today}), using most recent: {name} ({file_date})")
-
-    # Fetch the content
-    content_response = requests.get(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{path}",
-        headers=headers
-    )
-
-    if content_response.status_code != 200:
-        print(f"Error fetching file content: {content_response.status_code}")
-        return None, None, None
-
-    content = base64.b64decode(content_response.json()['content']).decode('utf-8')
-    date_str = file_date.strftime('%Y-%m-%d')
-    return path, content, date_str
-
-
-def get_current_highlights(github_token: str, owner: str, repo: str) -> str:
-    """Fetch current highlights.md content from the repo (if exists)"""
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}"
-    }
-
-    response = requests.get(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{HIGHLIGHTS_PATH}",
-        headers=headers
-    )
-
-    if response.status_code == 200:
-        content = response.json().get("content", "")
-        return base64.b64decode(content).decode("utf-8")
-    else:
-        print(f"No existing highlights.md found (status: {response.status_code}), will create new")
-        return ""
-
-
-def get_links_file(github_token: str, owner: str, repo: str) -> str:
-    """Fetch social/news/LINKS.md containing reference links for highlights"""
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}"
-    }
-
-    response = requests.get(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{NEWS_FOLDER}/LINKS.md",
-        headers=headers
-    )
-
-    if response.status_code == 200:
-        content = response.json().get("content", "")
-        return base64.b64decode(content).decode("utf-8")
-    else:
-        print(f"No LINKS.md found (status: {response.status_code}), continuing without links reference")
-        return ""
+    return "\n".join(lines), len(filtered)
 
 
 def create_highlights_prompt(news_content: str, news_date: str, links_content: str = "") -> tuple:
     """Create prompt to extract only the most significant highlights."""
-
     links_section = ""
     if links_content:
         links_section = f"""
@@ -135,7 +75,6 @@ Add links naturally in the description using markdown format: [text](url)
 {links_content}
 """
 
-    # Load single system prompt and inject all variables
     template = load_prompt("highlights")
     system_prompt = (template.replace("{links_section}", links_section)
                      .replace("{news_date}", news_date)
@@ -170,37 +109,37 @@ def merge_highlights(new_highlights: str, existing_highlights: str) -> str:
     return new_clean + "\n" + existing_clean + "\n"
 
 
-def create_highlights_pr(highlights_content: str, new_highlights: str, github_token: str, owner: str, repo: str, news_file_path: str):
-    """Create a PR with updated highlights.md"""
-
-    entry_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
+def create_highlights_pr(
+    highlights_content: str,
+    readme_content: str | None,
+    new_highlights: str,
+    github_token: str,
+    owner: str,
+    repo: str,
+    date_str: str,
+):
+    """Create a PR with updated highlights.md and README.md."""
     headers = {
         "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}"
+        "Authorization": f"Bearer {github_token}",
     }
 
-    default_branch = "main"
-
-    # Get latest commit SHA
+    # Get latest commit SHA from main
     ref_response = requests.get(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/ref/heads/{default_branch}",
-        headers=headers
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/ref/heads/main",
+        headers=headers,
     )
     if ref_response.status_code != 200:
         print(f"Error getting ref: {ref_response.text}")
         sys.exit(1)
-    base_sha = ref_response.json()['object']['sha']
+    base_sha = ref_response.json()["object"]["sha"]
 
-    # Create new branch
-    branch_name = f"highlights-update-{entry_date}"
+    # Create branch
+    branch_name = f"highlights-update-{date_str}"
     create_branch_response = requests.post(
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/refs",
         headers=headers,
-        json={
-            "ref": f"refs/heads/{branch_name}",
-            "sha": base_sha
-        }
+        json={"ref": f"refs/heads/{branch_name}", "sha": base_sha},
     )
 
     if create_branch_response.status_code not in [200, 201]:
@@ -212,45 +151,67 @@ def create_highlights_pr(highlights_content: str, new_highlights: str, github_to
 
     print(f"Created branch: {branch_name}")
 
-    # Update highlights.md
+    # Commit highlights.md
     highlights_sha = get_file_sha(github_token, owner, repo, HIGHLIGHTS_PATH, branch_name)
     if not highlights_sha:
         highlights_sha = get_file_sha(github_token, owner, repo, HIGHLIGHTS_PATH, "main")
 
-    highlights_api_path = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{HIGHLIGHTS_PATH}"
-    highlights_encoded = base64.b64encode(highlights_content.encode()).decode()
-
     highlights_payload = {
-        "message": f"docs: update highlights - {entry_date}",
-        "content": highlights_encoded,
-        "branch": branch_name
+        "message": f"docs: update highlights — {date_str}",
+        "content": base64.b64encode(highlights_content.encode()).decode(),
+        "branch": branch_name,
     }
-
     if highlights_sha:
         highlights_payload["sha"] = highlights_sha
 
-    highlights_response = requests.put(highlights_api_path, headers=headers, json=highlights_payload)
-
-    if highlights_response.status_code not in [200, 201]:
-        print(f"Error updating highlights.md: {highlights_response.text}")
+    resp = requests.put(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{HIGHLIGHTS_PATH}",
+        headers=headers,
+        json=highlights_payload,
+    )
+    if resp.status_code not in [200, 201]:
+        print(f"Error updating highlights.md: {resp.text}")
         sys.exit(1)
-
     print(f"Updated {HIGHLIGHTS_PATH} on branch {branch_name}")
 
+    # Commit README.md (if changed)
+    if readme_content:
+        readme_sha = get_file_sha(github_token, owner, repo, README_PATH, branch_name)
+        if not readme_sha:
+            readme_sha = get_file_sha(github_token, owner, repo, README_PATH, "main")
+
+        readme_payload = {
+            "message": f"docs: update README latest news — {date_str}",
+            "content": base64.b64encode(readme_content.encode()).decode(),
+            "branch": branch_name,
+        }
+        if readme_sha:
+            readme_payload["sha"] = readme_sha
+
+        resp = requests.put(
+            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{README_PATH}",
+            headers=headers,
+            json=readme_payload,
+        )
+        if resp.status_code not in [200, 201]:
+            print(f"Warning: Failed to update README.md: {resp.text[:200]}")
+        else:
+            print(f"Updated {README_PATH} on branch {branch_name}")
+
     # Count new highlights for PR title
-    new_count = len([line for line in new_highlights.split('\n') if line.strip().startswith('- **')])
+    new_count = len([line for line in new_highlights.split("\n") if line.strip().startswith("- **")])
 
     # Create PR
-    pr_title = f"✨ Highlights Update - {entry_date} ({new_count} new)"
+    pr_title = f"✨ Highlights Update — {date_str} ({new_count} new)"
     pr_body = f"""## New Highlights
 
 {new_highlights}
 
 ---
 
-**Source:** `{news_file_path}`
+**Source:** gists from `social/news/gists/{date_str}/`
 
-Generated automatically by GitHub Actions after NEWS PR merge.
+Generated automatically by NEWS_highlights_update workflow.
 """
 
     pr_response = requests.post(
@@ -260,8 +221,8 @@ Generated automatically by GitHub Actions after NEWS PR merge.
             "title": pr_title,
             "body": pr_body,
             "head": branch_name,
-            "base": default_branch
-        }
+            "base": "main",
+        },
     )
 
     if pr_response.status_code not in [200, 201]:
@@ -272,21 +233,21 @@ Generated automatically by GitHub Actions after NEWS PR merge.
         sys.exit(1)
 
     pr_data = pr_response.json()
-    pr_number = pr_data['number']
+    pr_number = pr_data["number"]
     print(f"Created PR #{pr_number}: {pr_data['html_url']}")
 
-    # Write PR number to file for workflow auto-merge
-    with open('.pr_number', 'w') as f:
+    # Write PR number for workflow auto-merge step
+    with open(".pr_number", "w") as f:
         f.write(str(pr_number))
 
-    # Add labels from PR_LABELS env var
-    pr_labels = get_env('PR_LABELS', required=False)
+    # Add labels
+    pr_labels = get_env("PR_LABELS", required=False)
     if pr_labels:
-        labels_list = [label.strip() for label in pr_labels.split(',')]
+        labels_list = [label.strip() for label in pr_labels.split(",")]
         label_response = requests.post(
             f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_number}/labels",
             headers=headers,
-            json={"labels": labels_list}
+            json={"labels": labels_list},
         )
         if label_response.status_code in [200, 201]:
             print(f"Added labels {labels_list} to PR #{pr_number}")
@@ -295,35 +256,45 @@ Generated automatically by GitHub Actions after NEWS PR merge.
 
 
 def main():
-    github_token = get_env('GITHUB_TOKEN')
-    pollinations_token = get_env('POLLINATIONS_TOKEN')
-    repo_full_name = get_env('GITHUB_REPOSITORY')
-    owner_name, repo_name = repo_full_name.split('/')
+    github_token = get_env("GITHUB_TOKEN")
+    pollinations_token = get_env("POLLINATIONS_TOKEN")
+    repo_full_name = get_env("GITHUB_REPOSITORY")
+    owner, repo = repo_full_name.split("/")
 
-    # Find the latest NEWS file
-    print("Looking for latest NEWS file...")
-    news_file_path, news_content, news_date = get_latest_news_file(github_token, owner_name, repo_name)
+    # Determine target date (yesterday by default)
+    date_str = get_env("TARGET_DATE", required=False)
+    if not date_str:
+        date_str = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
 
-    if not news_file_path or not news_content:
-        print("Could not find a valid NEWS file. Exiting.")
-        sys.exit(1)
+    print(f"=== Highlights Update for {date_str} ===")
 
-    print(f"Using NEWS file: {news_file_path} (date: {news_date})")
+    # Step 1: Load gists and format as changelog
+    print("Loading gists...")
+    changelog, gist_count = load_gists_as_changelog(date_str)
+    if not changelog:
+        print(f"No qualifying gists for {date_str}. Exiting cleanly.")
+        return
+    print(f"Found {gist_count} qualifying gists")
 
-    # Fetch links reference file
-    print("Fetching LINKS.md for reference links...")
-    links_content = get_links_file(github_token, owner_name, repo_name)
+    # Step 2: Read LINKS.md locally
+    repo_root = get_repo_root()
+    links_path = os.path.join(repo_root, "social", "news", "LINKS.md")
+    links_content = ""
+    if os.path.exists(links_path):
+        with open(links_path, "r") as f:
+            links_content = f.read()
 
-    # Generate highlights using AI
+    # Step 3: Generate highlights via AI
     print("Generating highlights...")
-    system_prompt, user_prompt = create_highlights_prompt(news_content, news_date, links_content)
-    ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token, temperature=0.3, exit_on_failure=True)
+    system_prompt, user_prompt = create_highlights_prompt(changelog, date_str, links_content)
+    ai_response = call_pollinations_api(
+        system_prompt, user_prompt, pollinations_token,
+        temperature=0.3, exit_on_failure=True,
+    )
     new_highlights = parse_response(ai_response)
 
-    # Check if AI returned SKIP
     if new_highlights.upper().strip() == "SKIP":
-        print("AI returned SKIP - no highlights worthy of website/README this week.")
-        print("Workflow complete, no PR created.")
+        print("AI returned SKIP — no highlights this day. No PR created.")
         return
 
     if not new_highlights.strip():
@@ -332,15 +303,34 @@ def main():
 
     print(f"Generated highlights:\n{new_highlights}")
 
-    # Fetch existing highlights
-    print("Fetching existing highlights.md...")
-    existing_highlights = get_current_highlights(github_token, owner_name, repo_name)
-
-    # Merge new highlights with existing
+    # Step 4: Merge with existing highlights (read locally)
+    highlights_path = os.path.join(repo_root, HIGHLIGHTS_PATH)
+    existing_highlights = ""
+    if os.path.exists(highlights_path):
+        with open(highlights_path, "r") as f:
+            existing_highlights = f.read()
     merged_highlights = merge_highlights(new_highlights, existing_highlights)
 
-    # Create PR with updated highlights
-    create_highlights_pr(merged_highlights, new_highlights, github_token, owner_name, repo_name, news_file_path)
+    # Step 5: Update README (read locally)
+    readme_path = os.path.join(repo_root, README_PATH)
+    updated_readme = None
+    if os.path.exists(readme_path):
+        with open(readme_path, "r") as f:
+            readme_content = f.read()
+        top_entries = get_top_highlights(merged_highlights)
+        if top_entries:
+            result = update_readme_news_section(readme_content, top_entries)
+            if result and result != readme_content:
+                updated_readme = result
+                print("README will be updated with new highlights")
+            else:
+                print("No changes to README")
+
+    # Step 6: Create single PR with both files
+    create_highlights_pr(
+        merged_highlights, updated_readme, new_highlights,
+        github_token, owner, repo, date_str,
+    )
     print("Highlights update completed!")
 
 

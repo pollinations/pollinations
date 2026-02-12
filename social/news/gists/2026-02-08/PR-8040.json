@@ -11,23 +11,25 @@
   "gist": {
     "category": "improvement",
     "user_facing": true,
-    "publish_tier": "daily",
+    "publish_tier": "discord_only",
     "importance": "minor",
-    "summary": "Added proper cursor feedback to 'Select all' and category toggle buttons in the permissions dashboard.",
-    "impact": "Users will experience better visual feedback when managing API key permissions.",
+    "headline": "Pointing the way",
+    "blurb": "We've polished the UI interactions in the permissions settings so buttons feel more like buttons.",
+    "summary": "Added cursor-pointer indicators to 'Select All' and category toggle buttons in the account permissions UI.",
+    "impact": "Users will see the standard hand cursor when hovering over these controls, improving UI clarity.",
     "keywords": [
       "ui",
       "ux",
-      "dashboard",
-      "permissions",
-      "css"
+      "css",
+      "frontend",
+      "permissions"
     ],
-    "visual_concept": "The pollinations.ai bee adjusting a retro control panel with toggle switches, representing the permissions UI update.",
-    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee adjusting toggle switches on a retro dashboard control panel. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Unpacking. Pixel text 'SETTINGS'. Nostalgic but beautiful."
+    "visual_concept": "A tiny bee polishing a UI button with a mouse cursor nearby. Represents the UI polish and the specific cursor change.",
+    "image_prompt": "Cozy pixel art scene of a tiny 8-bit bee polishing a pixelated UI button with a large mouse cursor pointer nearby. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8040.jpg",
     "prompt": "Cozy pixel art scene of the pollinations.ai bee adjusting toggle switches on a retro dashboard control panel. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Unpacking. Pixel text 'SETTINGS'. Nostalgic but beautiful."
   },
-  "generated_at": "2026-02-11T23:48:18.846709+00:00"
+  "generated_at": "2026-02-12T14:00:40.266289+00:00"
 }

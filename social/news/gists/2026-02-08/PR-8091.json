@@ -12,21 +12,23 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "summary": "Added a new /audio/models endpoint to the API proxy to list available audio generation models.",
-    "impact": "Developers can now programmatically discover available audio models and filter them based on API key permissions.",
+    "headline": "Sound check, one two",
+    "blurb": "We've added a dedicated endpoint to list all available audio models. Now you can programmatically see exactly which sonic tools are in the shed.",
+    "summary": "Added a `GET /audio/models` endpoint to the proxy server, enabling programmatic retrieval of available audio generation models.",
+    "impact": "Developers can now dynamically fetch the list of supported audio models and filter them based on API key permissions, matching the experience of text and image endpoints.",
     "keywords": [
       "audio",
       "api",
       "models",
-      "discovery",
-      "endpoint"
+      "proxy",
+      "developer-experience"
     ],
-    "visual_concept": "The pollinations.ai bee in a cozy, retro music studio or record shop, browsing through a collection of cassette tapes or vinyl records. The collection represents the list of available audio models. The scene implies discovery and selection of sound.",
-    "image_prompt": "Cozy pixel art scene of the 8-bit pollinations.ai bee browsing a collection of colorful cassette tapes in a tiny music studio. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'MODELS' on a shelf. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "The pollinations.ai bee mascot in a cozy retro music shop or recording studio, looking at a selection of audio equipment (representing the models). The 'list' aspect is represented by the bee checking a clipboard or browsing a rack.",
+    "image_prompt": "Cozy pixel art scene of the 8-bit bee mascot in a tiny retro recording studio, checking a rack of glowing audio synthesizers and cassette tapes. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic. Like Stardew Valley. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8091.jpg",
     "prompt": "Cozy pixel art scene of the 8-bit pollinations.ai bee browsing a collection of colorful cassette tapes in a tiny music studio. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'MODELS' on a shelf. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-02-11T23:53:26.763071+00:00"
+  "generated_at": "2026-02-12T14:04:32.098050+00:00"
 }

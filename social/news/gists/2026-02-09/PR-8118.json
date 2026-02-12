@@ -8,24 +8,26 @@
   "gist": {
     "category": "infrastructure",
     "user_facing": false,
-    "publish_tier": "daily",
+    "publish_tier": "discord_only",
     "importance": "minor",
-    "summary": "Introduced comprehensive Daily Spending and Platform Load dashboards to visualize real-time infrastructure costs, revenue, and API traffic.",
-    "impact": "Ensures platform sustainability and performance reliability through better cost and load tracking, reinforcing our building-in-public philosophy.",
+    "headline": "Counting the pollen",
+    "blurb": "New dashboards for tracking daily spending and platform load. Keeping an eye on the hive's health to ensure we stay sustainable.",
+    "summary": "Added comprehensive Grafana dashboards for monitoring daily infrastructure spending, revenue, and platform load metrics using Tinybird datasources.",
+    "impact": "Provides the team with granular visibility into costs and system performance to better manage platform growth.",
     "keywords": [
-      "economics",
       "monitoring",
-      "transparency",
-      "metrics",
+      "dashboards",
+      "economics",
+      "tinybird",
       "infrastructure",
-      "dashboards"
+      "grafana"
     ],
-    "visual_concept": "The pollinations.ai bee in a cozy 'mission control' room. The focus is on data visualization—pixelated charts, graphs, and trend lines glowing on screens. Represents the 'Economics' and 'Load' visibility.",
-    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee in a retro mission control room, studying glowing monitors with lime green (#ecf874) line graphs and bar charts. Soft pastel gradient background. Chunky 8-bit consoles and data visualizations. Warm lighting, lo-fi vibes like a sci-fi strategy game. Nostalgic but beautiful."
+    "visual_concept": "The pollinations.ai bee acting as a data analyst or accountant. The setting is a cozy control room with monitors showing graphs (up and to the right, or load metrics).",
+    "image_prompt": "Cozy pixel art scene of a smart bee character wearing cute glasses, pointing at a retro monitor displaying colorful rising line graphs and charts. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes. Pixel text on screen: 'DATA'. Studious, professional but cute atmosphere."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-09/PR-8118.jpg",
     "prompt": "Cozy pixel art scene of the pollinations.ai bee in a retro mission control room, studying glowing monitors with lime green (#ecf874) line graphs and bar charts. Soft pastel gradient background. Chunky 8-bit consoles and data visualizations. Warm lighting, lo-fi vibes like a sci-fi strategy game. Nostalgic but beautiful."
   },
-  "generated_at": "2026-02-11T23:56:35.126168+00:00"
+  "generated_at": "2026-02-12T14:07:41.828394+00:00"
 }

@@ -11,22 +11,24 @@
     "category": "bug_fix",
     "user_facing": true,
     "publish_tier": "daily",
-    "importance": "major",
-    "summary": "Fixed an issue in the Klein-9B model where non-square images were being forced into a 1:1 square format.",
-    "impact": "Users can now generate wide or tall images with Klein-9B while maintaining the correct aspect ratio and resolution limits.",
+    "importance": "minor",
+    "headline": "Breaking out of the box",
+    "blurb": "Klein-9b has learned that not everything needs to be a perfect square. Widescreen dreams are now a reality.",
+    "summary": "Updated the dimension clamping logic for the Klein-9b model to scale based on total pixel count rather than individual dimensions.",
+    "impact": "Users can now generate non-square images (portrait, landscape) with Klein-9b while maintaining the correct aspect ratio.",
     "keywords": [
-      "klein-9b",
       "image generation",
+      "klein-9b",
       "aspect ratio",
       "bug fix",
-      "flux"
+      "scaling"
     ],
-    "visual_concept": "The concept focuses on 'breaking out of the box'. The pollinations.ai bee is depicted adjusting a digital canvas or picture frame, transforming it from a rigid square into a wide, cinematic landscape format, symbolizing the restoration of proper aspect ratios.",
-    "image_prompt": "Cozy pixel art scene of a tiny 8-bit bee character stretching a digital picture frame from a square into a wide landscape shape. Soft lime green (#ecf874) and pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Like Stardew Valley UI. Emotionally warm, nostalgic but beautiful."
+    "visual_concept": "A visual metaphor for changing aspect ratios: the bee mascot stretching a rigid square frame into a wide cinematic rectangle.",
+    "image_prompt": "Cozy pixel art scene of a cute 8-bit bee stretching a glowing digital picture frame from a square into a wide rectangle. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. The frame shows a beautiful landscape. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8104.jpg",
     "prompt": "Cozy pixel art scene of a tiny 8-bit bee character stretching a digital picture frame from a square into a wide landscape shape. Soft lime green (#ecf874) and pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Like Stardew Valley UI. Emotionally warm, nostalgic but beautiful."
   },
-  "generated_at": "2026-02-11T23:55:10.956267+00:00"
+  "generated_at": "2026-02-12T14:06:10.714518+00:00"
 }

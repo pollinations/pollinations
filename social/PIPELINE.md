@@ -19,7 +19,7 @@ TIER 1: PER-PR (real-time)
   PR merged → AI analyzes → gist JSON committed to repo → image generated → Discord post
 
 TIER 2: DAILY (Mon-Sat 06:00 UTC → merge PR → Buffer 15:00 UTC)
-  Read day's gists → AI generates daily summary → platform posts (X, IG, Reddit) + website diary
+  Read day's gists → AI generates daily summary → platform posts (X, IG, Reddit)
   → single PR for review → on merge: Buffer stages X + IG for next 15:00 UTC slot + highlights + README
   LinkedIn is weekly-only. Reddit daily handled by TypeScript app.
 
@@ -59,21 +59,26 @@ PR merge ──→ generate_realtime.py
                             ├──→ twitter.json   + 🎨 GENERATE 1 image (brand pixel art)
                             ├──→ instagram.json + 🎨 GENERATE 3 images (carousel)
                             ├──→ reddit.json    + 🎨 GENERATE 1 image (brand pixel art)
-                            ├──→ diary.json     + 🔗 REUSE per-PR pixel art from gists
-                            │                     (collects image.url from each gist —
-                            │                      zero extra generation)
                             │
                             └──→ Single PR for review
                                   social/news/daily/YYYY-MM-DD/
                                          │ (on merge)
                                          ├──→ Buffer staging (X, IG) at 15:00 UTC
-                                         ├──→ Highlights update
-                                         └──→ README update
-                                  (Reddit daily = TypeScript app, not this pipeline)
+                                         └──→ Reddit VPS deployment
                                   (LinkedIn = weekly only, no daily posts)
 
+═══════════════════════════════════════════════════════════════════════
+ HIGHLIGHTS + README (daily 06:00 UTC, including Sunday)
+═══════════════════════════════════════════════════════════════════════
+
+             06:00 UTC ──→ update_highlights.py
+                            │  (reads yesterday's gists, AI curates)
+                            │
+                            ├──→ highlights.md update (prepend new entries)
+                            ├──→ README.md "Latest News" section update
+                            └──→ Single PR (auto-merge enabled)
+
              Images generated: 5 (1 twitter + 3 instagram + 1 reddit)
-             Images reused:    N (one per PR, from Tier 1 gists → diary only)
 
 ═══════════════════════════════════════════════════════════════════════
  TIER 3: WEEKLY (Sunday 06:00 UTC → Sunday 18:00 UTC)
@@ -83,7 +88,6 @@ PR merge ──→ generate_realtime.py
                                       │  (reads gists directly Mon→Sun,
                                       │   synthesizes weekly themes)
                                       │
-                                      ├──→ summary.md
                                       ├──→ twitter.json   + 🎨 GENERATE 1 image (brand pixel art)
                                       ├──→ linkedin.json  + 🎨 GENERATE 1 image (brand pixel art)
                                       ├──→ instagram.json + 🎨 GENERATE 3 images (carousel)
@@ -112,7 +116,7 @@ PR merge ──→ generate_realtime.py
 - Committed directly to main (no PR needed — small auto-generated JSON)
 - One file per merged PR per day
 - Unique filenames per PR (`PR-{number}.json`) — no git push race conditions
-- **Includes pixel art image URL** — generated at PR merge time, reused by website diary
+- **Includes pixel art image URL** — generated at PR merge time, reused by Discord posts
 - Image generation uses our own API — retries 3x with exponential backoff + different seed on 5xx errors
 
 ```json
@@ -188,45 +192,12 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 - `twitter.json` — platform post JSON
 - `instagram.json` — same schema
 - `reddit.json` — same schema (LinkedIn is weekly-only, no daily file)
-- `diary.json` — website diary entry (8-bit pixel art diary page) **(Phase 5 — see Diary section)**
 - `images/` — all generated images
 
-### Website Diary: `diary.json` — **Deferred to Phase 5**
-
-The diary is a cute 8-bit pixel art "dev diary" page for the website. It requires frontend work (routing, page component, design) that is out of scope for the pipeline redesign. The pipeline will **generate `diary.json` from Phase 2 onwards** so the data accumulates, but the frontend to display it ships separately.
-
-When the frontend is ready, it reads from `social/news/daily/YYYY-MM-DD/diary.json`:
-
-```json
-{
-  "date": "2026-02-09",
-  "title": "Day 412 of Building pollinations.ai",
-  "entries": [
-    {
-      "pr_number": 8117,
-      "headline": "Fixed the balance bug",
-      "blurb": "Squashed a sneaky billing edge case...",
-      "image_url": "https://raw.githubusercontent.com/.../PR-8117.jpg",
-      "category": "bug_fix",
-      "importance": "major"
-    }
-  ],
-  "mood": "productive",
-  "pixel_art_header": "https://..."
-}
-```
-
-**Diary `mood` field:** AI-inferred from the day's PR mix. Examples: 5 bug fixes → "debugging marathon", 2 features launched → "shipping day", quiet day → "recharging". It's a whimsical field for the pixel art aesthetic — the frontend can use it to tint colors or pick a header sprite.
-
-**Scope for diary frontend (separate task):**
-- Route: `pollinations.ai/diary/YYYY-MM-DD`
-- Component: reads `diary.json` from GitHub raw or fetched at build time
-- Design: 8-bit pixel art aesthetic, scrollable entries
-- Index page: `pollinations.ai/diary/` showing recent days
+**Note:** The website diary view reads directly from gists (which include `headline`, `blurb`, `category`, `importance`) and the daily summary (which includes `mood`). No separate `diary.json` is needed.
 
 ### Weekly: `social/news/weekly/YYYY-MM-DD/`
 
-- `summary.md` — weekly changelog
 - `twitter.json` — weekly recap tweet (1 image)
 - `linkedin.json` — weekly recap post (1 image)
 - `instagram.json` — weekly recap carousel (3 images)
@@ -243,10 +214,10 @@ When the frontend is ready, it reads from `social/news/daily/YYYY-MM-DD/diary.js
 |---|---|---|
 | `NEWS_pr_gist.yml` | `pull_request_target: closed+merged` | `NEWS_Discord_post_merged_pr.yml` |
 | `NEWS_daily_summary.yml` | `cron: 0 6 * * 1-6` (Mon-Sat) | `NEWS_Twitter_generate_posts.yml` + `NEWS_Instagram_generate_posts.yml` + `NEWS_LinkedIn_generate_posts.yml` |
-| `NEWS_daily_publish.yml` | PR closed on `social/news/daily/*/` paths | `NEWS_Buffer_stage_posts.yml` + `NEWS_GitHub_update_highlights.yml` + `NEWS_GitHub_update_readme.yml` |
+| `NEWS_daily_publish.yml` | PR closed on `social/news/daily/*/` paths | `NEWS_Buffer_stage_posts.yml` (Buffer staging + Reddit VPS only) |
+| `NEWS_highlights_update.yml` | `cron: 0 6 * * *` (daily, including Sunday) | `NEWS_GitHub_update_highlights.yml` + `NEWS_GitHub_update_readme.yml` |
 | `NEWS_weekly_summary.yml` | `cron: 0 6 * * 0` (Sunday 06:00 UTC) | `NEWS_GitHub_generate_weekly_news.yml` |
 | `NEWS_weekly_publish.yml` | `cron: 0 18 * * 0` (Sunday 18:00 UTC) — checks if weekly PR merged, publishes all 5 platforms | `NEWS_Discord_post_weekly_news.yml` + `NEWS_Buffer_stage_posts.yml` (weekly) |
-| `NEWS_readme_update.yml` | PR closed on `social/news/highlights.md` with `NEWS` label | `NEWS_GitHub_update_readme.yml` |
 
 ## Scripts: 11 → 11
 
@@ -254,12 +225,12 @@ When the frontend is ready, it reads from `social/news/daily/YYYY-MM-DD/diary.js
 |---|---|---|
 | `generate_realtime.py` | Per-PR: AI analysis → gist JSON → image gen (source of truth) | `discord_post_merged_pr.py` |
 | `publish_realtime.py` | Per-PR: reads gist → AI announcement → Discord webhook post | (new — decoupled from gist generator) |
-| `generate_daily.py` | Daily: read gists → summary + all platform posts + diary + images | `twitter_generate_post.py`, `instagram_generate_post.py`, `linkedin_generate_post.py` |
+| `generate_daily.py` | Daily: read gists → summary + all platform posts + images | `twitter_generate_post.py`, `instagram_generate_post.py`, `linkedin_generate_post.py` |
 | `generate_weekly.py` | Weekly: read gists directly (Mon→Sun) → synthesize themes → changelog + all platform posts + images | `github_generate_weekly_news.py` |
-| `publish_daily.py` | On daily PR merge: Buffer stage (X, IG) + highlights + README. LinkedIn = weekly only, Reddit = TypeScript app. | (new — consolidates publish steps) |
+| `publish_daily.py` | On daily PR merge: Buffer stage (X, IG) + Reddit VPS deployment. LinkedIn = weekly only. | (new — consolidates publish steps) |
 | `publish_weekly.py` | Sunday 18:00 UTC cron: check if weekly PR merged, then Buffer (X, LI, IG) + Reddit API + Discord webhook | `discord_post_weekly_news.py` |
-| `update_highlights.py` | AI extracts highlights from daily summary for website + README | `github_update_highlights.py` |
-| `update_readme.py` | Updates README "Latest News" section from highlights | `github_update_readme.py` |
+| `update_highlights.py` | Daily: reads yesterday's gists, AI curates highlights, updates highlights.md + README in single PR | `github_update_highlights.py` + `github_update_readme.py` |
+| `update_readme.py` | Utility functions: `get_top_highlights()`, `update_readme_news_section()` (used by update_highlights.py) | `github_update_readme.py` |
 | `common.py` | Shared utils: prompt loading, API calls, gist I/O, retry logic | Same (extended) |
 | `buffer_publish.py` | Buffer API staging with scheduled delivery | `buffer_stage_post.py` |
 | `buffer_utils.py` | Buffer GraphQL API helpers | Same (unchanged) |
@@ -286,7 +257,7 @@ Step 2: Image generation → update gist with image URL
   ├── Success: done (gist fully committed)
   └── Failure (5xx): RETRY up to 3x with exponential backoff + different seed each attempt
         └── Still fails: gist.image.url = null, continue without image
-            (Discord posts text-only; diary entry has no image)
+            (Discord posts text-only)
 ```
 
 Discord posting (`publish_realtime.py`) runs as a **separate workflow step** after the gist generator. If Discord posting fails, the gist is already committed (source of truth preserved). Discord is best-effort notification.
@@ -339,19 +310,19 @@ The daily summary runs at 06:00 UTC. A PR merged at 05:59 UTC might have its gis
 
 6. **2 sequential steps in Tier 1** — gist commit, then image gen. Gist (the anchor) commits first; image gen retries 3x on 5xx (different seed each time). Discord posting is a separate workflow step (`publish_realtime.py`) — best-effort, decoupled from the source of truth.
 
-7. **Single daily PR instead of 3** — one PR contains twitter.json + instagram.json + reddit.json + diary.json + images. LinkedIn is weekly-only. Humans review narrative, not fragments.
+7. **Single daily PR instead of 3** — one PR contains twitter.json + instagram.json + reddit.json + images. LinkedIn is weekly-only. Humans review narrative, not fragments.
 
 8. **Daily summary clusters related PRs into 3-5 story arcs** — 5 PRs about the same subsystem become one narrative beat. Editorial quality, not a changelog.
 
 9. **Three independent image families** — see Image Generation Strategy section below.
 
-10. **Highlights + README updated daily** — not just weekly. Every daily PR merge triggers highlights extraction and README update.
+10. **Highlights + README updated daily** — independent `NEWS_highlights_update.yml` workflow runs daily at 06:00 UTC (including Sunday), reads yesterday's gists, AI curates, creates a single PR with both `highlights.md` and `README.md` updates.
 
 11. **Weekly delivery at Sunday 18:00 UTC** — Sunday evening "week wrap-up" energy. All 5 platforms at once.
 
 12. **No fallback content for zero-PR days** — if no PRs merged, the daily workflow skips entirely. No PR created, no posts. Quiet days are quiet days.
 
-13. **Diary frontend deferred** — pipeline generates `diary.json` from Phase 2 so data accumulates, but the website page (`pollinations.ai/diary/*`) ships as a separate frontend task in Phase 5.
+13. **Website diary reads from gists + summary** — no separate diary generation step. Gists include `headline` and `blurb` fields; daily/weekly summaries include `mood`. The website can render a diary view directly from these sources.
 
 14. **Weekly reads gists directly, independent of dailies** — the weekly summary reads the week's gists (Mon→Sun) and synthesizes themes into a bigger narrative ("this week we shipped X, fixed Y, started Z"). This eliminates the dependency on daily summaries being generated first, ensuring no PRs are missed.
 
@@ -359,7 +330,7 @@ The daily summary runs at 06:00 UTC. A PR merged at 05:59 UTC might have its gis
 
 ## Image Generation Strategy
 
-There are **3 independent families of images**. Each tier generates its own images with its own prompts and style. They do not share images across tiers (except the diary).
+There are **3 independent families of images**. Each tier generates its own images with its own prompts and style.
 
 | Family | Generated by | When | Style | Count | Used by |
 |---|---|---|---|---|---|
@@ -370,7 +341,6 @@ There are **3 independent families of images**. Each tier generates its own imag
 **Key points:**
 
 - **Daily and weekly images are freshly generated** from the daily narrative / weekly summary. They are NOT the per-PR pixel art images. The AI creates images that illustrate the aggregated story, not individual PRs.
-- **The diary is the only thing that reuses Tier 1 images.** It collects the per-PR pixel art image URLs from gist JSONs — zero extra image generation cost.
 
 ---
 
@@ -430,8 +400,7 @@ Weekly adds ~3 AI calls + ~7 image gens on Sundays. Net weekly savings: ~35-45 f
 - Sunday 18:00 UTC cron checks if weekly PR was merged, publishes all 5 platforms simultaneously
 - **Disable** (don't delete) old weekly workflows for 2 weeks
 
-### Phase 5: Diary frontend + cleanup
-- Build website diary page (separate frontend task, see Diary section above)
+### Phase 5: Cleanup
 - Remove disabled old scripts and workflows after 2+ weeks of stable new system
 - Update social/README.md and platform READMEs
 - ~~Archive `social/news/transformed/` (keep for history)~~ Done — data migrated to `daily/` + `weekly/`, `transformed/` deleted
@@ -446,7 +415,7 @@ Weekly adds ~3 AI calls + ~7 image gens on Sundays. Net weekly savings: ~35-45 f
 
 1. **Tier 1 — happy path**: Merge a test PR → verify gist JSON committed to `social/news/gists/` + image generated + Discord post sent (separate step)
 2. **Tier 1 — AI failure**: Mock AI to fail → verify minimal gist (metadata only) committed + GitHub issue opened
-3. **Tier 2 — happy path**: Manually trigger daily workflow → verify single PR with all platform posts + diary + images
+3. **Tier 2 — happy path**: Manually trigger daily workflow → verify single PR with all platform posts + images
 4. **Tier 2 — zero PRs**: Run daily workflow on a day with 0 gists → verify workflow exits cleanly with no PR created
 5. **Tier 3 — happy path**: Manually trigger weekly workflow → verify PR with changelog + all 4 platform posts
 6. **Daily publish**: Merge daily PR → verify Buffer stages X/IG + highlights + README updated (no LinkedIn — weekly only)
@@ -486,7 +455,6 @@ social/prompts/
   instagram.md               # Platform voice: Instagram
   reddit.md                  # Platform voice: Reddit
   discord.md                 # Platform voice: Discord
-  diary.md                   # Platform voice: Website dev diary
   highlights.md              # Platform voice: GitHub highlights
 ```
 

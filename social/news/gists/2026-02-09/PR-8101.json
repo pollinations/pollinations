@@ -12,21 +12,23 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "summary": "Introduces support for hidden models in the registry and streamlines Claude integration configurations.",
-    "impact": "Developers can now access legacy models via API without cluttering the main dashboard, while Claude models receive optimized direct routing.",
+    "headline": "Secret Menu Unlocked",
+    "blurb": "We've added support for hidden models—special versions available via API for the connoisseurs, while keeping the main menu clean and cozy.",
+    "summary": "Introduced a 'hidden' property to the model registry for API-only access and added legacy Claude and Gemini versions, while streamlining Claude routing configurations.",
+    "impact": "Developers can now access legacy models via specific API keys without cluttering the public dashboard, and Claude interactions are now more direct.",
     "keywords": [
       "models",
       "api",
       "claude",
-      "legacy",
-      "registry"
+      "registry",
+      "legacy"
     ],
-    "visual_concept": "The pollinations.ai bee discovering a secret, glowing book in a cozy pixel art library. This represents the 'hidden' models that are accessible if you know where to look (the API), without cluttering the main shelves (the UI).",
-    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee pulling a glowing lime green book from a library shelf, revealing a secret passage. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Represents hidden model access. Nostalgic but beautiful."
+    "visual_concept": "The bee discovering a secret hidden item. Represents the 'hidden' models that are there if you know where to look. A bee pulling back a leaf to find a glowing scroll.",
+    "image_prompt": "Cozy pixel art scene of the chubby 8-bit bee mascot pulling back a large green leaf to reveal a glowing, secret golden scroll. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic. Like finding a secret in Stardew Valley. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-09/PR-8101.jpg",
     "prompt": "Cozy pixel art scene of the pollinations.ai bee pulling a glowing lime green book from a library shelf, revealing a secret passage. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Represents hidden model access. Nostalgic but beautiful."
   },
-  "generated_at": "2026-02-11T23:54:25.244849+00:00"
+  "generated_at": "2026-02-12T14:06:30.219986+00:00"
 }

@@ -12,21 +12,23 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "minor",
-    "summary": "Implemented SSE streaming support for api.airforce video models to resolve generation errors and improve stability.",
-    "impact": "Video generation is now more robust, with the unstable grok-video model temporarily paused to ensure consistent performance.",
+    "headline": "Tuning the video signal",
+    "blurb": "We've upgraded our video infrastructure with SSE streaming for better reliability. `grok-video` is taking a short nap while we wait for upstream stability to improve.",
+    "summary": "Added Server-Sent Events (SSE) support for api.airforce video models to fix empty responses, while temporarily disabling the unstable `grok-video` model.",
+    "impact": "Video generation infrastructure is now more robust, though `grok-video` is temporarily unavailable to prevent error rates.",
     "keywords": [
-      "video generation",
-      "api.airforce",
-      "SSE",
-      "reliability",
-      "bug fix"
+      "video",
+      "streaming",
+      "bugfix",
+      "infrastructure",
+      "stability"
     ],
-    "visual_concept": "The pollinations.ai bee as a projectionist in a cozy booth, fixing a vintage film projector that is streaming light smoothly. A film reel labeled 'Grok' is set aside on a shelf.",
-    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee inside a retro projection booth fixing a vintage film projector. The projector beams a steady stream of soft lime green light (#ecf874). A film reel labeled 'Grok' sits on a nearby shelf. Warm lighting, pastel gradients, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful."
+    "visual_concept": "Bee mascot as a broadcast engineer fixing a retro video feed. Connecting cables to ensure the stream flows.",
+    "image_prompt": "Cozy pixel art scene of the 8-bit bee mascot acting as a broadcast engineer, plugging a cable into a retro CRT monitor tower. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Cute bee character with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-06/PR-8023.jpg",
     "prompt": "Cozy pixel art scene of the pollinations.ai bee inside a retro projection booth fixing a vintage film projector. The projector beams a steady stream of soft lime green light (#ecf874). A film reel labeled 'Grok' sits on a nearby shelf. Warm lighting, pastel gradients, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful."
   },
-  "generated_at": "2026-02-11T23:47:07.961843+00:00"
+  "generated_at": "2026-02-12T13:58:37.486863+00:00"
 }

@@ -12,21 +12,23 @@
     "user_facing": false,
     "publish_tier": "discord_only",
     "importance": "minor",
-    "summary": "Enabled auto-merge for routine social media workflows (Instagram, GitHub) to streamline content publishing.",
-    "impact": "Reduces manual steps for the team, ensuring faster updates for community content while keeping sensitive channels manual.",
+    "headline": "The bots are taking over (the paperwork)",
+    "blurb": "Routine social updates now merge themselves. Less clicking, more coding.",
+    "summary": "Enabled auto-merge for Instagram, GitHub Highlights, and README update workflows to streamline content publishing.",
+    "impact": "Eliminates manual review steps for routine social posts while maintaining a PR audit trail.",
     "keywords": [
       "automation",
+      "ci-cd",
       "github-actions",
       "social-media",
-      "workflow",
       "infrastructure"
     ],
-    "visual_concept": "A cute automated robot arm or conveyor belt sorting mail/papers, representing the new auto-merge workflow. The pollinations.ai bee watches the efficient process.",
-    "image_prompt": "Cozy pixel art scene of a cute automated conveyor belt sorting colorful pixel letters. Soft lime green (#ecf874) and pastel peach gradient background. The pollinations.ai bee watches the smooth process. Chunky retro sprites, warm lighting, lo-fi aesthetic. Organized and efficient."
+    "visual_concept": "A conveyor belt of news being stamped automatically. The bee is supervising the automation.",
+    "image_prompt": "Cozy pixel art scene of a conveyor belt moving pixelated newspapers. A mechanical stamper marks them 'MERGED'. Soft lime green (#ecf874) and pastel gradient background. The pollinations.ai bee mascot watches happily with a clipboard. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8085.jpg",
     "prompt": "Cozy pixel art scene of a cute automated conveyor belt sorting colorful pixel letters. Soft lime green (#ecf874) and pastel peach gradient background. The pollinations.ai bee watches the smooth process. Chunky retro sprites, warm lighting, lo-fi aesthetic. Organized and efficient."
   },
-  "generated_at": "2026-02-11T23:52:43.603620+00:00"
+  "generated_at": "2026-02-12T14:03:35.231404+00:00"
 }

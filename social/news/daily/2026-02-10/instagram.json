@@ -1,39 +1,39 @@
 {
-  "content_type": "cozy_scene",
+  "content_type": "pixel_art",
   "linked_images": true,
-  "strategy_reasoning": "Using the cozy pixel art aesthetic creates a welcoming vibe for technical updates. Merging 'Docs' and 'Play' is visualized as a tidy workspace, new models as RPG characters, and security as a cute shield, making abstract code changes feel tangible and friendly.",
-  "visual_style": "Cozy 8-bit pixel art with soft lighting, chunky sprites, and the signature lime green (#ecf874) glow. Reminiscent of Stardew Valley or Unpacking.",
+  "strategy_reasoning": "Using the cozy retro gaming aesthetic to translate technical updates (docs integration, new models, security hardening) into relatable 'level up' moments. The pixel art style softens the tech talk, making the platform feel accessible and community-focused rather than intimidating.",
+  "visual_style": "Cozy 8-bit pixel art with chunky sprites, soft pastel gradients, and mandatory lime green (#ecf874) accents. Reminiscent of Stardew Valley or Unpacking.",
   "image_count": 3,
   "images": [
     {
-      "prompt": "Cozy pixel art scene of a retro workspace setup. A chunky CRT monitor glows with soft lime green (#ecf874) light, showing a split screen merging into one. A tiny 8-bit bee mascot is napping on the keyboard. Pastel lavender and peach gradient background. Warm, ambient lighting like a lo-fi hip hop stream. Cozy, organized, and inviting. Text in pixel font: 'Everything in one place'.",
-      "description": "Visualizing the merge of Docs and Play pages as a cozy, unified workspace.",
-      "text_in_image": "Everything in one place"
+      "prompt": "Pixel art scene of a cute bee mascot hovering over a magical open book that is transforming into a digital playground slide. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender gradient background. The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. Strictly pixel art style, never realistic. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'Playable Docs'. Nostalgic but beautiful, emotionally warm.",
+      "description": "Visualizes the merging of Documentation into the Play page as a magical transition from reading to playing.",
+      "text_in_image": "Playable Docs"
     },
     {
-      "prompt": "A pixel art character selection screen in a lush digital garden. New 8-bit sprites (representing Qwen and Gemini) joining the party. The pollinations.ai bee is guiding them. Soft lime green (#ecf874) grass and pastel flowers blooming. Retro RPG vibes, warm sunlight filtering through pixelated trees. Nostalgic and exciting. Text in pixel font: 'New Characters Unlocked'.",
-      "description": "Announcing new models (Qwen, Gemini updates) as unlockable game characters.",
-      "text_in_image": "New Characters Unlocked"
+      "prompt": "Retro game inventory screen showing new character cards and a price drop notification. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and peach gradient background. The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. Strictly pixel art style, never realistic. The bee is holding a glowing card. Chunky retro sprites. Warm lighting, lo-fi vibes like A Short Hike. Text in pixel font: 'New Loot'. Nostalgic but beautiful, emotionally warm.",
+      "description": "Highlights the addition of the Qwen-character model and pricing updates as 'new loot' in a game inventory.",
+      "text_in_image": "New Loot"
     },
     {
-      "prompt": "Close-up portrait of the pixel art Bee mascot holding a tiny, glowing lime green (#ecf874) shield. The bee looks determined and smart. Soft sparkles and a mint-to-cream gradient background. Represents security and independent thinking. High quality pixel art shading, emotionally resonant and safe. Text in pixel font: 'Smarter & Safer'.",
-      "description": "Depicting the hardened security and independent thinking updates for Polly.",
-      "text_in_image": "Smarter & Safer"
+      "prompt": "Pixel art scene of the bee mascot wearing tiny pixelated smart glasses and holding a glowing shield, standing in a cozy digital garden. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and mint gradient background. The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. Strictly pixel art style, never realistic. Chunky retro sprites. Warm lighting, lo-fi vibes like Unpacking game. Text in pixel font: 'Brain Boost'. Nostalgic but beautiful, emotionally warm.",
+      "description": "Represents 'Polly' getting sharper and more secure (shield/glasses) against prompt leakage.",
+      "text_in_image": "Brain Boost"
     }
   ],
-  "caption": "POV: Your workflow just got a cozy upgrade. 🌸✨\n\nWe’ve been busy gardening in the code, and the bloom is real. First off, no more tab switching—we merged the Docs right into the Play page so you can build and learn in one cozy spot. 🤝\n\nPlus, the squad is growing! We added Qwen-character (for the plot) and gave Gemini a brain boost. And Polly? She’s in her independent era—hardened against leaks and thinking for herself. We love a smart queen. 💅🐝\n\nCome hang out in the garden. It’s warm here.\n\nLink in bio to play! 🌱\n\n#pollinations #opensource #pixelart #cozyvibes #indiedev #generativeai #8bit #buildinpublic #aiart #retrogaming #creativecoding",
+  "caption": "POV: You just leveled up your creative stack 🍄✨ We’ve been busy bees in the backend!\n\nHere’s the tea on today’s drop:\n🌸 **Docs x Play:** We merged our documentation directly into the Play page. No more tab switching—just read, click, and create. It’s giving seamless.\n👾 **New Character:** Added `qwen-character` to the roster for all your roleplay needs.\n🛡️ **Big Brain Polly:** We hardened our systems against prompt leakage and gave the AI better reasoning skills. Safer, smarter, better.\n\nBuilding with heart (and code) for you always. 💛\n\nLink in bio to try the new toys!\n\n#pollinations #opensource #pixelart #indiedev #cozyvibes #generativeai #buildinpublic #8bit #retrogaming #aiart #creativecoding",
   "hashtags": [
     "#pollinations",
     "#opensource",
     "#pixelart",
-    "#cozyvibes",
     "#indiedev",
+    "#cozyvibes",
     "#generativeai",
-    "#8bit",
     "#buildinpublic",
-    "#aiart",
+    "#8bit",
     "#retrogaming",
+    "#aiart",
     "#creativecoding"
   ],
-  "alt_text": "A carousel of cozy 8-bit pixel art images featuring a retro workspace, a character selection garden, and a bee mascot with a shield, all in lime green and pastel tones."
+  "alt_text": "A series of 3 cozy pixel art images featuring a round cute bee mascot. 1: The bee flying near a book turning into a playground slide with lime green accents. 2: The bee looking at a retro game inventory screen with new character cards. 3: The bee wearing smart glasses and holding a shield in a digital garden. All images use a soft pastel and lime green palette."
 }

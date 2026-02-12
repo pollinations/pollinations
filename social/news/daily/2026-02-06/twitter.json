@@ -1,12 +1,12 @@
 {
   "tweet_type": "shipped",
-  "tweet": "video gen just got a massive upgrade on pollinations.\n\nshipped support for:\n- LTX-2\n- Grok Video\n- Imagen 3\n- Claude Opus 4.6\n\nalso migrated mistral to OVH for stability. all open source, all live. go build something weird. 🌸",
-  "alt_tweet": "8 PRs merged today. added LTX-2, Grok Video, and Imagen 3. upgraded claude to opus 4.6. video models now support SSE streaming. no gatekeeping, just shipping tools for builders. 🐝",
+  "tweet": "fresh engines on the api:\n\n- LTX-2 (video generation)\n- Imagen 3 (via api.airforce)\n- Claude Opus 4.6\n\nshipped, merged, and live. no waitlists. just open source tools for people who build.\n\ngo make something weird. 🌸",
+  "alt_tweet": "creative stack upgrade just merged.\n\nadded LTX-2 for video, Imagen 3 for pixels, and bumped Claude to Opus 4.6.\n\nopen source, api ready, zero friction. what are you building this weekend?",
   "hashtags": [
     "#OpenSource",
-    "#AI"
+    "#GenerativeAI"
   ],
-  "image_prompt": "Dynamic pixel art scene. A retro treasure chest overgrown with pixel vines bursting open with glowing lime green (#ecf874) light. Floating 8-bit icons of video reels and paintbrushes rising up. pollinations.ai bee mascot hovering excitedly. Soft pastel gradient background. Text 'NEW LOOT' in pixel font. Cozy 8-bit aesthetic, warm lighting, energetic.",
-  "reasoning": "Lists specific new models (high substance) which drives excitement. Uses 'shipped' framing to show momentum. Call to action ('go build something weird') reinforces the maker-focused brand identity.",
-  "char_count": 223
+  "image_prompt": "Dynamic pixel art scene. The cute round bee mascot excitedly plugging glowing futuristic cartridges into a retro server rack. One cartridge glows lime green (#ecf874), the other soft lavender. Electric sparks of creativity. Warm lighting, cozy workshop background. Action pose, high energy. 8-bit aesthetic like Stardew Valley but tech-focused. Text in pixel font on screen: 'UPGRADE COMPLETE'.",
+  "reasoning": "Directly addresses builders with the new capabilities (models) available immediately. The list format is scannable and highlights the technical value (Video, Image, Text upgrades). 'Go make something weird' reinforces the playful, anti-corporate brand voice.",
+  "char_count": 204
 }

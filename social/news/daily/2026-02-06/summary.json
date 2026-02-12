@@ -1,10 +1,11 @@
 {
   "date": "2026-02-06",
-  "pr_count": 8,
+  "pr_count": 9,
+  "mood": "shipping day",
   "arcs": [
     {
-      "headline": "Next-gen video and image models have arrived",
-      "summary": "We've integrated LTX-2 for high-quality video with audio, alongside Google's Imagen 3 and Grok Imagine Video. These additions significantly expand the creative toolkit available to all users.",
+      "headline": "New creative engines: LTX-2 and Imagen 3",
+      "summary": "We've significantly expanded the generative toolkit by integrating the LTX-2 video model (supporting 1024x1024 clips with audio) and Google's Imagen 3 for high-fidelity image generation.",
       "prs": [
         7903,
         8001,
@@ -14,10 +15,11 @@
       "category": "feature"
     },
     {
-      "headline": "Smarter Claude and reliable Mistral",
-      "summary": "The 'claude-large' alias now points to the newly released Opus 4.6, delivering better reasoning at no extra cost. We also migrated Mistral to OVHcloud and fixed configuration issues to ensure rock-solid stability.",
+      "headline": "Smarter text, stable streams",
+      "summary": "Text generation gets a brain boost with an upgrade to Claude Opus 4.6, alongside a migration of Mistral models to OVHcloud infrastructure to ensure robust availability for all tiers.",
       "prs": [
         8004,
+        7922,
         8015,
         8016
       ],
@@ -25,16 +27,15 @@
       "category": "improvement"
     },
     {
-      "headline": "Zero queues and sustainable infrastructure",
-      "summary": "Optimizations to the Z-Image pipeline have dropped generation queues to near zero. We also transitioned select high-cost models to supporter tiers to ensure long-term platform sustainability.",
+      "headline": "Zero queues, faster pixels",
+      "summary": "We optimized the z-image pipeline and expanded our GPU fleet on Vast.ai, eliminating generation queues and speeding up delivery times.",
       "prs": [
-        8000,
-        7922
+        8000
       ],
       "importance": "major",
       "category": "improvement"
     }
   ],
-  "one_liner": "A massive creative update featuring LTX-2 and Imagen 3, zero-queue speeds, and a Claude Opus upgrade.",
-  "pr_summary": "TODAY'S UPDATES (8 merged PRs):\n- #7903: feat: Add LTX-2 video generation model\n- #8001: feat: Add api.airforce models: Imagen 3 & Grok Imagine Video\n- #8004: feat: Upgrade claude-large from Opus 4.5 to Opus 4.6\n- #8000: fix: update z-image SPAN model path and vastai docs\n- #7922: feat: make 5 models paid-only and migrate Mistral to OVHcloud\n- #8015: Fix: Mistral model broken due to config key case mismatch\n- #8016: fix: use shared OVHCLOUD_API_KEY for Mistral endpoint\n- #8023: fix: add SSE support for api.airforce video models"
+  "one_liner": "A massive drop of new models including LTX-2 and Imagen 3, plus a major upgrade to Claude Opus 4.6.",
+  "pr_summary": "TODAY'S UPDATES (9 merged PRs):\n- #7903: feat: Add LTX-2 video generation model\n- #8001: feat: Add api.airforce models (Imagen 3)\n- #8004: feat: Upgrade claude-large to Opus 4.6\n- #8000: fix: update z-image SPAN model & vastai docs\n- #7922: feat: migrate Mistral to OVHcloud & update tiers\n- #8015: fix: Mistral config key mismatch\n- #8016: fix: shared OVHCLOUD_API_KEY for Mistral\n- #8023: fix: SSE support for video models\n- #7994: feat(dashboard): add model usage by tier panels"
 }

@@ -1,12 +1,12 @@
 {
-  "tweet_type": "shipped",
-  "tweet": "prepping for google summer of code 🌸 just pushed updated contribution docs. we don't just want users, we want builders. if you're looking to ship real features to thousands of users this summer, the repo is open. come say hi.",
-  "alt_tweet": "docs updated for GSOC 2024. open source is the heart of what we do. if you want to learn how a real AI platform runs at scale (and ship code that matters), start here. prs welcome.",
+  "tweet_type": "engagement",
+  "tweet": "prepping the soil for google summer of code 🌱\n\njust polished our contributing docs to make onboarding smoother for new builders. open source isn't just about code, it's about growing people.\n\ncome plant some seeds with us.",
+  "alt_tweet": "planting season is here. just merged updates to our GSoC docs to welcome the next wave of contributors. if you're looking to cut your teeth on open source AI, the garden is open. 🌸",
   "hashtags": [
-    "#GSOC",
+    "#GSoC",
     "#OpenSource"
   ],
-  "image_prompt": "Cozy pixel art scene of the pollinations.ai bee mascot handing a glowing pixel seed to a tiny new developer character. Lush 8-bit garden setting with prominent lime green (#ecf874) foliage and pastel flowers. Soft lighting, warm atmosphere. Text in chunky pixel font floating above: 'BUILD WITH US'. Nostalgic, welcoming, Stardew Valley vibes.",
-  "reasoning": "Signals active open-source governance and invites talent. Shifts focus from just consuming AI to building it, reinforcing the community-driven brand identity.",
-  "char_count": 226
+  "image_prompt": "Cozy pixel art scene of the cute chubby bee mascot wearing a tiny gardener hat, planting pixelated seeds in a rich soil garden bed. A wooden sign post nearby reads 'GSoC'. Soft lime green (#ecf874) and pastel mint gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Wholesome, growth-focused, emotionally warm.",
+  "reasoning": "Focuses on the 'Preparing the soil' metaphor which aligns perfectly with the brand's nature identity. It invites participation rather than just announcing a doc update, making it more engaging for the community.",
+  "char_count": 222
 }

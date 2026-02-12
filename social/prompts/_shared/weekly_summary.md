@@ -23,6 +23,7 @@ Given PR gists for the past 7 days (grouped by date), weave them into a weekly d
   "week_start": "2026-02-03",
   "week_end": "2026-02-09",
   "pr_count": 23,
+  "mood": "shipping week",
   "theme": "One-sentence weekly theme: what was this week about?",
   "arcs": [
     {
@@ -40,6 +41,7 @@ Given PR gists for the past 7 days (grouped by date), weave them into a weekly d
 ### Field Definitions
 
 - `arcs`: 3-7 thematic groups spanning the whole week. Each has a headline, summary, which days contributed, and importance.
+- `mood`: Week's vibe. Options: "shipping week", "debugging marathon", "spring cleaning", "productive", "laser focus", "new beginnings", "quiet week", "tending the garden", "building walls", "tuning the engine", "community harvest", "buzzing". Vary it — match the actual work.
 - `theme`: One sentence capturing the week's overall direction.
 - `changelog_md`: Markdown-formatted weekly changelog (same format as existing `social/news/YYYY-MM-DD.md` files).
 - `pr_summary`: Formatted PR list for platform prompts (injected as `{updates}`).

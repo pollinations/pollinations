@@ -7,10 +7,9 @@ At 00:00 UTC daily:
   2. Filter to publish_tier >= "daily"
   3. AI clusters gists into 3-5 narrative arcs → summary.json
   4. Generate platform posts using existing prompts: twitter.json, instagram.json, reddit.json
-  5. Generate diary.json (reuses Tier 1 pixel art images)
-  6. Generate platform images (1 twitter + 3 instagram + 1 reddit)
+  5. Generate platform images (1 twitter + 3 instagram + 1 reddit)
   Note: LinkedIn is weekly-only — no daily LinkedIn posts.
-  7. Create single PR with all files
+  6. Create single PR with all files
 
 See social/PIPELINE.md for full architecture.
 """
@@ -168,54 +167,7 @@ def generate_reddit_post(summary: Dict, token: str) -> Optional[Dict]:
     return parse_json_response(response)
 
 
-# ── Step 3: Generate diary ──────────────────────────────────────────
-
-def generate_diary(gists: List[Dict], date_str: str, token: str) -> Optional[Dict]:
-    """Generate diary.json — reuses Tier 1 pixel art image URLs."""
-    system_prompt = load_prompt("diary")
-
-    # Build gist context including image URLs
-    gist_summaries = []
-    for g in gists:
-        ai = g.get("gist", {})
-        gist_summaries.append({
-            "pr_number": g["pr_number"],
-            "title": g["title"],
-            "category": ai.get("category"),
-            "importance": ai.get("importance"),
-            "summary": ai.get("summary"),
-            "image_url": g.get("image", {}).get("url"),
-        })
-
-    user_prompt = f"""Date: {date_str}
-PRs merged: {len(gists)}
-
-Gists:
-{json.dumps(gist_summaries, indent=2)}"""
-
-    response = call_pollinations_api(
-        system_prompt, user_prompt, token,
-        temperature=0.7, exit_on_failure=False
-    )
-
-    if not response:
-        return None
-
-    diary = parse_json_response(response)
-    if not diary:
-        return None
-
-    # Inject image URLs from gists into diary entries (AI doesn't have to guess them)
-    image_map = {g["pr_number"]: g.get("image", {}).get("url") for g in gists}
-    for entry in diary.get("entries", []):
-        pr_num = entry.get("pr_number")
-        if pr_num and pr_num in image_map:
-            entry["image_url"] = image_map[pr_num]
-
-    return diary
-
-
-# ── Step 4: Generate platform images ────────────────────────────────
+# ── Step 3: Generate platform images ────────────────────────────────
 
 def generate_platform_images(
     twitter_post: Optional[Dict],
@@ -280,14 +232,13 @@ def generate_platform_images(
     return urls
 
 
-# ── Step 5: Create PR ───────────────────────────────────────────────
+# ── Step 4: Create PR ───────────────────────────────────────────────
 
 def create_daily_pr(
     date_str: str,
     summary: Dict,
     twitter_post: Optional[Dict],
     instagram_post: Optional[Dict],
-    diary: Optional[Dict],
     github_token: str,
     owner: str,
     repo: str,
@@ -329,7 +280,6 @@ def create_daily_pr(
     # Commit JSON files
     files_to_commit = [
         (f"{base_path}/summary.json", summary),
-        (f"{base_path}/diary.json", diary),
     ]
     if twitter_post:
         # Add platform metadata
@@ -501,7 +451,7 @@ def main():
     print(f"  Target date: {date_str}")
 
     # ── Read gists ───────────────────────────────────────────────────
-    print(f"\n[1/5] Reading gists for {date_str}...")
+    print(f"\n[1/4] Reading gists for {date_str}...")
 
     # Try local repo first, fall back to GitHub API
     gists = read_gists_for_date(date_str)
@@ -544,7 +494,7 @@ def main():
         return
 
     # ── Generate summary ─────────────────────────────────────────────
-    print(f"\n[2/5] Generating daily summary...")
+    print(f"\n[2/4] Generating daily summary...")
     summary = generate_summary(daily_gists, date_str, pollinations_token)
     if not summary:
         print("  Summary generation failed!")
@@ -552,7 +502,7 @@ def main():
     print(f"  {len(summary.get('arcs', []))} arcs: {summary.get('one_liner', '')}")
 
     # ── Generate platform posts ──────────────────────────────────────
-    print(f"\n[3/5] Generating platform posts...")
+    print(f"\n[3/4] Generating platform posts...")
 
     print("  Twitter...")
     twitter_post = generate_twitter_post(summary, pollinations_token)
@@ -571,17 +521,11 @@ def main():
     if reddit_post:
         print(f"  Reddit: {reddit_post.get('title', '')[:80]}")
 
-    # ── Generate diary ───────────────────────────────────────────────
-    print(f"\n[4/5] Generating diary...")
-    diary = generate_diary(daily_gists, date_str, pollinations_token)
-    if diary:
-        print(f"  Diary mood: {diary.get('mood', 'unknown')}")
-
     # ── Create PR ────────────────────────────────────────────────────
-    print(f"\n[5/5] Creating PR...")
+    print(f"\n[4/4] Creating PR...")
     pr_number = create_daily_pr(
         date_str, summary,
-        twitter_post, instagram_post, diary,
+        twitter_post, instagram_post,
         github_token, owner, repo,
         reddit_post=reddit_post,
     )

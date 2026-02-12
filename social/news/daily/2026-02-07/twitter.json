@@ -1,12 +1,12 @@
 {
   "tweet_type": "shipped",
-  "tweet": "huge model drop just hit the api: imagen 4, flux 2 dev, grok video + elevenlabs tts. 🌸\n\naccess to sota tools shouldn't be gatekept. if you're building on pollinations, your app just got a major upgrade. no config needed. ship it.",
-  "alt_tweet": "imagen 4, flux 2 dev, grok video, and elevenlabs tts are now live on pollinations.\n\nwe handle the infra so you can focus on the product. 500+ open source apps just got smarter today. 🐝",
+  "tweet": "massive model drop. just shipped support for elevenlabs tts, grok-video, imagen-4, and flux-2-dev.\n\none unified api for the best open & closed models. go build something wild.",
+  "alt_tweet": "shipping beats hype. today's merge: elevenlabs tts, grok-video, imagen-4, flux-2-dev.\n\nall live on the platform now. what are you building with this?",
   "hashtags": [
     "#OpenSource",
     "#AI"
   ],
-  "image_prompt": "Dynamic pixel art scene. Cute round bee mascot with pink cheeks floating in center, surrounded by glowing floating icons of a camera, a paintbrush, and a waveform. Lime green #ecf874 and soft pastel purple background. High energy, magical sparkles, 'LEVEL UP' text in pixel font. Cozy 8-bit aesthetic, warm lighting, chunky retro sprites.",
-  "reasoning": "Directly addresses the major value add (SOTA models) with a builder-first 'ship it' attitude. Shows technical momentum without corporate fluff.",
-  "char_count": 217
+  "image_prompt": "Dynamic pixel art scene. The pollinations.ai bee mascot (round chubby yellow body, brown stripes, pink blush, blue wings) center stage, joyfully juggling glowing pixel icons: a musical note, a paintbrush, and a video film strip. Lime green (#ecf874) bursts of energy around the items. Soft pastel gradient background (mint to peach). High contrast, celebratory vibes like a level-up screen in a retro game. Warm lighting, cozy but energetic.",
+  "reasoning": "Directly lists high-demand models (ElevenLabs, Grok) to grab builder attention. Reinforces the core value prop: one API for everything. Short, punchy, and action-oriented.",
+  "char_count": 174
 }

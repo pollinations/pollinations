@@ -41,10 +41,6 @@ linkedin:
 
 # ── Non-social outputs (repo artifacts, not scheduled via Buffer) ────
 #
-# diary:
-#   Generated during daily summary (generate_daily.py, 06:00 UTC cron).
-#   Whimsical pixel art narrative of the day's gists → social/news/daily/{date}/diary.json
-#
 # highlights:
 #   Updated on daily PR merge (publish_daily.py).
 #   AI distills summary arcs into curated highlights → social/news/highlights.md

@@ -12,21 +12,22 @@
     "user_facing": false,
     "publish_tier": "none",
     "importance": "minor",
-    "summary": "Updates social media automation to commit generated images directly to the repository for stable access.",
-    "impact": "Fixes image fetching errors in Buffer and ensures reliable post scheduling.",
+    "headline": "Stabilizing the signal",
+    "blurb": "Our social bot now commits images directly to GitHub, ensuring Buffer always gets the picture.",
+    "summary": "Updated social media generation scripts to commit image files to the repository instead of using dynamic generation URLs, fixing Buffer fetch errors.",
+    "impact": "Internal social media automation is now more reliable.",
     "keywords": [
       "social-media",
       "automation",
       "buffer",
-      "github-api",
-      "images"
+      "github-api"
     ],
-    "visual_concept": "The social media bot (robot bee) securing an image file into a permanent folder (GitHub) rather than holding it dynamically. Stability and persistence.",
-    "image_prompt": "Cozy pixel art scene of a robot bee carefully placing a polaroid photo into a secure file folder. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'SAVED'. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "A robotic bee (the social bot) carefully placing a polaroid photo into a filing cabinet (GitHub) instead of just holding it up.",
+    "image_prompt": "Cozy pixel art scene of a robotic bee carefully filing a polaroid photo into a green filing cabinet. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting. Represents stabilizing data storage. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-05/PR-7976.jpg",
     "prompt": "Cozy pixel art scene of a robot bee carefully placing a polaroid photo into a secure file folder. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text 'SAVED'. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-02-11T23:43:33.844401+00:00"
+  "generated_at": "2026-02-12T13:53:19.940113+00:00"
 }

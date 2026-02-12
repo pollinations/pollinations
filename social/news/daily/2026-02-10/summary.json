@@ -1,29 +1,30 @@
 {
   "date": "2026-02-10",
   "pr_count": 4,
+  "mood": "shipping day",
   "arcs": [
     {
-      "headline": "A unified playground for creators and coders",
-      "summary": "We've merged the documentation directly into the Play page. Now, as you tweak settings, you get live, color-coded API URLs instantly—bridging the gap between experimenting and building.",
+      "headline": "Interactive Docs & API Upgrades",
+      "summary": "We've merged documentation directly into the Play page's new 'Integrate' section, allowing developers to generate live, copy-pasteable API URLs. Additionally, Gemini API support was improved to correctly map code execution blocks.",
       "prs": [
-        8130
-      ],
-      "importance": "major",
-      "category": "feature"
-    },
-    {
-      "headline": "New character models and smarter Gemini integration",
-      "summary": "We introduced 'qwen-character' for immersive roleplay and optimized Airforce pricing for better value. Additionally, Gemini now handles code execution blocks and reasoning processes with greater reliability.",
-      "prs": [
-        8124,
+        8130,
         8131
       ],
       "importance": "major",
       "category": "feature"
     },
     {
-      "headline": "A sharper, more secure Polly",
-      "summary": "Polly has been updated to think more independently and resist prompt leakage, ensuring interactions feel safer, more authentic, and harder to manipulate.",
+      "headline": "New Models & Lower Prices",
+      "summary": "We introduced `qwen-character` for optimized roleplay, cut Airforce model pricing by 50%, and retired unstable models to boost platform reliability.",
+      "prs": [
+        8124
+      ],
+      "importance": "major",
+      "category": "feature"
+    },
+    {
+      "headline": "Polly Gets Sharper",
+      "summary": "Polly's system prompts were hardened to prevent leakage and encourage independent critical thinking, resulting in a more robust and personality-rich assistant.",
       "prs": [
         8141
       ],
@@ -31,6 +32,6 @@
       "category": "improvement"
     }
   ],
-  "one_liner": "Docs meet the Playground, Polly gets smarter, and new character models arrive.",
-  "pr_summary": "TODAY'S UPDATES (4 merged PRs):\n- #8130: feat: merge Docs page into Play page Integrate section\n- #8124: fix: add qwen-character, update airforce pricing\n- #8141: Harden Polly against prompt leakage and enforce independent thinking\n- #8131: fix: update gateway commit for Gemini executable_code blocks"
+  "one_liner": "A big day for builders: interactive docs, new roleplay models, cheaper generation, and a smarter Polly.",
+  "pr_summary": "TODAY'S UPDATES (4 merged PRs):\n- #8124: fix: remove unstable flux-2-dev, add qwen-character, update airforce pricing\n- #8130: feat: merge Docs page into Play page Integrate section\n- #8131: fix: update gateway commit for Gemini executable_code blocks + reasoning_effort fix\n- #8141: Harden Polly against prompt leakage and enforce independent thinking"
 }

@@ -12,21 +12,23 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "summary": "Optimized Z-Image upscaling configuration and expanded GPU infrastructure documentation.",
-    "impact": "Image generation queues have dropped to near zero, delivering significantly faster results for users.",
+    "headline": "Scaling up the hive",
+    "blurb": "We've optimized our upscaling models and added fresh GPUs to the cluster. Image generation queues have dropped from over 20 down to zero!",
+    "summary": "Switched z-image to efficient safetensors models and expanded Vast.ai GPU capacity to eliminate generation queues.",
+    "impact": "Users will see immediate reductions in wait times for image generation.",
     "keywords": [
-      "z-image",
-      "infrastructure",
       "performance",
-      "upscaling",
-      "gpu"
+      "gpu",
+      "scaling",
+      "infrastructure",
+      "fast"
     ],
-    "visual_concept": "The pollinations.ai bee optimizing a retro server rack to represent the infrastructure upgrades and speed boost. The scene should feel busy but organized, implying efficiency.",
-    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee adding a glowing lime green component to a retro server stack. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Digital vines connecting the machines. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "The pollinations.ai bee mascot in a cozy server room, connecting a new glowing server rack. Represents adding capacity and speed. Warm lighting, tech vibes.",
+    "image_prompt": "Cozy pixel art scene of the chubby 8-bit bee mascot plugging a glowing lime green cable into a retro server rack. Soft lime green (#ecf874) and pastel mint gradient background. Chunky sprites, warm lighting, lo-fi server room vibes. Text in pixel font: 'POWER UP'. Nostalgic, efficient, and cute."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-06/PR-8000.jpg",
     "prompt": "Cozy pixel art scene of the pollinations.ai bee adding a glowing lime green component to a retro server stack. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Digital vines connecting the machines. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-02-11T23:45:37.825322+00:00"
+  "generated_at": "2026-02-12T13:57:04.298663+00:00"
 }

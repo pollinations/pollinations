@@ -162,7 +162,7 @@ def load_prompt(name: str) -> str:
     - {visual_style} -> content from _shared/brand_visual.md
 
     Args:
-        name: 'twitter', 'linkedin', 'discord', 'highlights', 'diary', etc.
+        name: 'twitter', 'linkedin', 'discord', 'highlights', etc.
               For shared prompts, use '_shared/daily_summary', '_shared/pr_gist', etc.
 
     Returns:

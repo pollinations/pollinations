@@ -12,23 +12,23 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "summary": "A fresh frontend redesign introduces a unified header with user controls, an always-visible AI theme bar, and native support for audio generation models.",
-    "impact": "Users will enjoy a more polished interface with easier account management and new creative possibilities for audio generation.",
+    "headline": "Fresh paint & audio waves",
+    "blurb": "We've polished the Play page with a shiny new user menu and tuned our antennae to receive audio models.",
+    "summary": "Frontend redesign introduces a persistent header auth menu, AI theme customization bar, and full support for audio generation models.",
+    "impact": "Users get a cleaner interface, easier account management, and the ability to generate audio directly from the Play page.",
     "keywords": [
       "frontend",
-      "redesign",
       "audio",
-      "ui",
-      "ux",
-      "themes",
+      "ui/ux",
+      "design",
       "auth"
     ],
-    "visual_concept": "The pollinations.ai bee acting as a UI designer, placing new header blocks and wearing headphones to represent the audio support. The scene represents the 'polishing' and 'redesign' aspect.",
-    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee wearing headphones and polishing a giant pixelated interface block. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic. Like Stardew Valley meets a design studio. Emotionally warm, nostalgic but beautiful."
+    "visual_concept": "The bee mascot renovating the interface while listening to music. Represents the UI polish (painting) and the new audio features (headphones).",
+    "image_prompt": "Cozy pixel art scene of the chubby 8-bit bee mascot wearing headphones and painting a pixelated browser window with a lime green roller. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting. UI elements like buttons and sliders floating nearby. Lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8087.jpg",
     "prompt": "Cozy pixel art scene of the pollinations.ai bee wearing headphones and polishing a giant pixelated interface block. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic. Like Stardew Valley meets a design studio. Emotionally warm, nostalgic but beautiful."
   },
-  "generated_at": "2026-02-11T23:52:57.939274+00:00"
+  "generated_at": "2026-02-12T14:03:54.122561+00:00"
 }

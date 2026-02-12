@@ -23,6 +23,7 @@ Given a set of PR gists (JSON objects with category, summary, impact, importance
 {
   "date": "2026-02-09",
   "pr_count": 7,
+  "mood": "shipping day",
   "arcs": [
     {
       "headline": "Faster image generation across all models",
@@ -40,6 +41,7 @@ Given a set of PR gists (JSON objects with category, summary, impact, importance
 ### Field Definitions
 
 - `arcs`: 3-5 thematic groups. Each has a headline, summary, list of PR numbers, and the dominant importance/category.
+- `mood`: Day's vibe. Options: "shipping day", "debugging marathon", "spring cleaning", "productive", "laser focus", "new beginnings", "quiet day", "tending the garden", "building walls", "tuning the engine", "community harvest", "buzzing". Vary it — match the actual work.
 - `one_liner`: A single sentence capturing the day's theme. Used as context for platform generators.
 - `pr_summary`: Formatted PR list for platform prompts (injected as `{updates}`).
 

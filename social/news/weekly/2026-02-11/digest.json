@@ -1,50 +1,42 @@
 {
   "week_start": "2026-02-05",
   "week_end": "2026-02-11",
-  "pr_count": 39,
-  "theme": "We unlocked a new dimension with full audio support, a massive video model expansion, and a sleek frontend redesign.",
+  "pr_count": 40,
+  "mood": "symphonic shipping",
+  "theme": "A massive expansion of sensory capabilities: video generation, music creation, and speech synthesis are now first-class citizens.",
   "arcs": [
     {
-      "headline": "The platform found its voice",
-      "summary": "We launched a comprehensive audio suite, including ElevenLabs Text-to-Speech, ElevenMusic for generation, and OVH Whisper for transcription, all integrated into the API and UI.",
+      "headline": "The Full A/V Studio Experience",
+      "summary": "We unlocked a massive suite of multimedia tools. Video generation took a leap with LTX-2 and Grok Video. Audio got a complete overhaul with ElevenLabs Music (duration-based), ElevenLabs v3 TTS (emotional speech), and OVH Whisper for transcription.",
       "days": [
+        "2026-02-06",
         "2026-02-07",
         "2026-02-08"
       ],
       "importance": "major"
     },
     {
-      "headline": "Video and Image generation leveled up",
-      "summary": "A massive influx of creative models arrived, including LTX-2, Grok Video, Imagen 3 & 4, and Flux 2 Dev, giving creators unprecedented visual tools.",
-      "days": [
-        "2026-02-06",
-        "2026-02-07",
-        "2026-02-10"
-      ],
-      "importance": "major"
-    },
-    {
-      "headline": "A unified, polished interface",
-      "summary": "We overhauled the frontend with a fresh redesign, merged the standalone Docs directly into the Play page for easier integration, and improved the account dashboard.",
+      "headline": "Agents, Bots, and Open Source",
+      "summary": "We open-sourced Polly (our Discord bot) so the community can build their own autonomous coding agents. We also rolled out a seamless integration for OpenClaw, letting developers spin up AI agents with a single setup command.",
       "days": [
         "2026-02-08",
-        "2026-02-10"
-      ],
-      "importance": "major"
-    },
-    {
-      "headline": "Agents helping agents",
-      "summary": "We launched Polly (our Discord bot) to bridge chat with GitHub, and rolled out seamless integration for OpenClaw to help users build their own autonomous agents.",
-      "days": [
-        "2026-02-08",
-        "2026-02-09",
+        "2026-02-10",
         "2026-02-11"
       ],
       "importance": "major"
     },
     {
-      "headline": "Hardening the infrastructure",
-      "summary": "From migrating Mistral to OVHcloud to simplifying the balance API and adding economic dashboards, the backend got faster and more transparent.",
+      "headline": "Play Page is the New Documentation",
+      "summary": "We redesigned the frontend to merge the 'Docs' directly into the 'Play' page. Now, as you tweak parameters in the UI, you get live, copy-pasteable API code for that exact configuration—bridging the gap between experimenting and building.",
+      "days": [
+        "2026-02-08",
+        "2026-02-10"
+      ],
+      "importance": "major"
+    },
+    {
+      "headline": "Infrastructure & Billing Tuning",
+      "summary": "We migrated Mistral to OVHcloud for better stability, optimized z-image for speed, and simplified the billing API into a single-bucket system that handles negative balances gracefully.",
       "days": [
         "2026-02-06",
         "2026-02-09"
@@ -52,6 +44,6 @@
       "importance": "minor"
     }
   ],
-  "changelog_md": "## Week of Feb 5-11, 2026\n\n### 🔊 Audio Revolution\n- **ElevenLabs Integration**: Added high-quality Text-to-Speech (v3) and `elevenmusic` for generating tracks up to 5 minutes long.\n- **Whisper Transcription**: Introduced Speech-to-Text capabilities via the OVH Whisper Large V3 model.\n- **Audio API**: New endpoints and permission controls specifically for audio models.\n\n### 🎨 Creative Suite Expansion\n- **Video Generation**: Added **LTX-2**, **Grok Video**, and **Imagen 3** video capabilities.\n- **New Image Models**: Integrated **Imagen 4**, **Flux 2 Dev**, and optimized **Klein/Sana** models for better stability.\n- **Text Models**: Upgraded to **Claude Opus 4.6** and added **Qwen-character** for roleplay scenarios.\n\n### 💅 UX & Frontend Polish\n- **Unified Play & Docs**: Merged the documentation directly into the Play page—copy live API code without switching tabs.\n- **Redesign**: A fresh look for the header, authorization pages, and theme bar.\n- **OpenClaw**: Launched a dedicated landing page and auto-setup script for the OpenClaw agent framework.\n\n### 🤖 Polly & Community\n- **Polly Discord Bot**: A new intelligent assistant bridging our Discord community with GitHub development.\n- **Smart Search**: Upgraded Polly to use OpenAI embeddings for faster, more accurate answers.\n\n### ⚙️ Infrastructure & Fixes\n- **Performance**: Migrated Mistral to OVHcloud and moved the AI gateway to a custom domain to eliminate timeouts.\n- **Billing**: Simplified the balance API and introduced internal dashboards for platform economics.\n- **GSoC**: Updated documentation and project pages for Google Summer of Code participants.",
-  "pr_summary": "WEEKLY UPDATES (39 merged PRs):\n- #7903: feat: Add LTX-2 video generation model\n- #8072: feat: add elevenmusic model with duration-based billing\n- #8068: feat: add OVH Whisper speech-to-text transcription\n- #8087: feat: pollinations.ai frontend redesign\n- #8130: feat: merge Docs page into Play page Integrate section\n- #8078: Add Polly Discord Bot\n- #8167: feat: auto-install OpenClaw and auto-onboard in setup script\n- #8001: Add api.airforce models: Imagen 3 & Grok Imagine Video\n- #8004: Upgrade claude-large from Opus 4.5 to Opus 4.6\n- #8124: fix: remove unstable flux-2-dev, add qwen-character\n- #8118: feat: economics dashboards\n- #8053: fix: move Portkey gateway to custom domain\n- #8026: [PATCH]: GSOC HMR Page route change top scrollheight location"
+  "changelog_md": "## Week of Feb 5-11, 2026\n\n### 🎥 Audio & Video Revolution\n- **Video Generation:** Added LTX-2 (1024x1024 with audio), Grok Video, and Imagen 4 support.\n- **Music & Speech:** Integrated ElevenLabs Music (`elevenmusic`) with duration billing and upgraded TTS to ElevenLabs v3 for emotional range.\n- **Transcription:** Added OVH Whisper Large V3 for high-accuracy speech-to-text.\n- **Discovery:** Added a programmatic `/audio/models` endpoint for developers.\n\n### 🤖 Agents & Community\n- **Polly Open Source:** Released the full source code for our Discord bot, featuring semantic search and autonomous coding capabilities.\n- **OpenClaw Integration:** Launched a dedicated landing page and auto-setup script to onboard OpenClaw agents in one command.\n- **Roleplay Models:** Added `qwen-character` specifically optimized for roleplay scenarios.\n\n### 💅 UX & Developer Experience\n- **Unified Play/Docs:** Merged documentation into the Play page—configure a model visually, then copy the generated API code instantly.\n- **Frontend Redesign:** Fresh header authentication, theme customization, and improved mobile responsiveness.\n- **Billing Simplification:** The balance API now returns a single unified field, and the system now gracefully handles temporary negative balances.\n\n### ⚡ Performance & Fixes\n- **Speed:** Optimized `z-image` and `flux-klein` for faster generation and lower memory usage.\n- **Stability:** Migrated Mistral to OVHcloud and moved Portkey gateway to a custom domain to eliminate timeouts on long requests.\n- **GSoC:** Cleaned up documentation and improved dashboard navigation for Summer of Code participants.",
+  "pr_summary": "WEEKLY UPDATES (40 merged PRs):\n- #7903: feat: Add LTX-2 video generation model\n- #8072: feat: add elevenmusic model with duration-based billing\n- #8068: feat: add OVH Whisper speech-to-text transcription\n- #8078: Add Polly Discord Bot source code\n- #8130: feat: merge Docs page into Play page Integrate section\n- #8165: feat: OpenClaw integration landing page & setup\n- #8004: Upgrade claude-large to Opus 4.6 on Bedrock\n- #8117: fix: single-bucket balance deduction"
 }

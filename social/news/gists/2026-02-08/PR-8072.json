@@ -12,22 +12,23 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "summary": "Added the 'elevenmusic' model to audio endpoints, enabling music generation with custom duration and instrumental options.",
-    "impact": "Users can now generate music tracks from 3 to 300 seconds with transparent duration-based pricing.",
+    "headline": "Music to our ears",
+    "blurb": "Added ElevenLabs Music to the audio API. Generate full tracks up to 5 minutes long with simple text prompts.",
+    "summary": "Integrated the ElevenLabs Music model (`elevenmusic`) into the audio API, enabling music generation with duration control and instrumental options.",
+    "impact": "Users can now generate custom music tracks up to 300 seconds long, billed by the second rather than by character count.",
     "keywords": [
       "audio",
       "music",
       "elevenlabs",
-      "elevenmusic",
-      "billing",
-      "api"
+      "api",
+      "billing"
     ],
-    "visual_concept": "The pollinations.ai bee as a DJ/producer in a cozy studio, adjusting a duration slider on a mixing desk to control a glowing lime green waveform.",
-    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee wearing headphones, adjusting a slider on a retro mixing console to extend a glowing lime green (#ecf874) audio waveform. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi studio vibes. Pixel text 'elevenmusic'. Nostalgic but beautiful."
+    "visual_concept": "The Pollinations bee as a DJ or music producer. Represents the new music generation capability. Key symbols: headphones, synthesizer, musical notes.",
+    "image_prompt": "Cozy pixel art scene of the chubby 8-bit bee mascot wearing headphones and mixing music on a retro synthesizer. Soft lime green (#ecf874) and lavender gradient background. Floating musical notes and sound waves in chunky pixels. Warm lighting, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8072.jpg",
     "prompt": "Cozy pixel art scene of the pollinations.ai bee wearing headphones, adjusting a slider on a retro mixing console to extend a glowing lime green (#ecf874) audio waveform. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi studio vibes. Pixel text 'elevenmusic'. Nostalgic but beautiful."
   },
-  "generated_at": "2026-02-11T23:49:25.489079+00:00"
+  "generated_at": "2026-02-12T14:01:10.881938+00:00"
 }

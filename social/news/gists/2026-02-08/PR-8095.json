@@ -12,21 +12,23 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "summary": "The authorization page receives a sleek visual overhaul matching the dashboard's green theme, while the Account API now provides profile avatars and granular balance breakdowns.",
-    "impact": "Users enjoy a smoother, more consistent login experience, and developers can now display user avatars and distinguish between free tier and paid credit balances.",
+    "headline": "Fresh Look for Auth",
+    "blurb": "The authorization page just got a cozy makeover with our signature green theme, plus smarter balance tracking in the API.",
+    "summary": "Restyled the authorization page to match the dashboard aesthetic and updated the account API to provide detailed balance breakdowns.",
+    "impact": "Users get a cleaner, consistent login experience, while developers can now track free tier credits versus paid packs separately.",
     "keywords": [
       "auth",
-      "ui-design",
+      "ui",
       "api",
       "balance",
-      "profile"
+      "design"
     ],
-    "visual_concept": "Identity and Balance. The bee checking a new ID card and inventory stats. Represents the profile image and balance breakdown.",
-    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee holding a shiny new pixelated ID card with a profile picture. Soft lime green (#ecf874) and pastel gradient background. Behind the bee, a retro game UI displays 'Tier' and 'Pack' balance bars like health and mana. Chunky pixels, warm lighting, lo-fi aesthetic. Like Stardew Valley inventory screen. Emotionally warm, nostalgic but beautiful."
+    "visual_concept": "The Pollinations bee as a friendly doorman at a stylish pixel-art gate. The gate represents the new authorize page with its lime green borders. The bee is checking a guest list (permissions) with a smile.",
+    "image_prompt": "Cozy pixel art scene of the cute round bee mascot standing next to a stylish pixelated login gate with thick lime green (#ecf874) borders. Soft pastel gradient background. The bee holds a small pixel clipboard, welcoming a visitor. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8095.jpg",
     "prompt": "Cozy pixel art scene of the pollinations.ai bee holding a shiny new pixelated ID card with a profile picture. Soft lime green (#ecf874) and pastel gradient background. Behind the bee, a retro game UI displays 'Tier' and 'Pack' balance bars like health and mana. Chunky pixels, warm lighting, lo-fi aesthetic. Like Stardew Valley inventory screen. Emotionally warm, nostalgic but beautiful."
   },
-  "generated_at": "2026-02-11T23:53:46.370950+00:00"
+  "generated_at": "2026-02-12T14:04:49.193626+00:00"
 }

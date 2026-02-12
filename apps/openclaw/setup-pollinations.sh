@@ -41,9 +41,8 @@ NEW_CONFIG=$(cat <<EOF
         "pollinations/glm": { "alias": "GLM-4.7 (Pollinations)" },
         "pollinations/gemini-fast": { "alias": "Gemini Flash Lite (Pollinations)" },
         "pollinations/claude-fast": { "alias": "Claude Haiku 4.5 (Pollinations)" },
-        "pollinations/claude": { "alias": "Claude Sonnet (Pollinations, paid)" },
-        "pollinations/gemini": { "alias": "Gemini 3 (Pollinations, paid)" },
-        "pollinations/grok": { "alias": "Grok 4 (Pollinations, paid)" }
+        "pollinations/claude-large": { "alias": "Claude Opus 4.6 (Pollinations, paid)" },
+        "pollinations/gemini-large": { "alias": "Gemini 3 Pro (Pollinations, paid)" }
       }
     }
   },
@@ -98,6 +97,24 @@ NEW_CONFIG=$(cat <<EOF
             "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
             "contextWindow": 200000,
+            "maxTokens": 8192
+          },
+          {
+            "id": "claude-large",
+            "name": "Claude Opus 4.6 — Most Intelligent (Paid)",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          },
+          {
+            "id": "gemini-large",
+            "name": "Gemini 3 Pro — Most Intelligent with 1M Context (Paid)",
+            "reasoning": true,
+            "input": ["text", "image", "audio", "video"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 1000000,
             "maxTokens": 8192
           }
         ]

@@ -637,7 +637,9 @@
         "pollinations/deepseek": { "alias": "DeepSeek V3.2" },
         "pollinations/glm": { "alias": "GLM-4.7" },
         "pollinations/gemini-fast": { "alias": "Gemini Flash Lite" },
-        "pollinations/claude-fast": { "alias": "Claude Haiku 4.5" }
+        "pollinations/claude-fast": { "alias": "Claude Haiku 4.5" },
+        "pollinations/claude-large": { "alias": "Claude Opus 4.6 (paid)" },
+        "pollinations/gemini-large": { "alias": "Gemini 3 Pro (paid)" }
       }
     }
   },
@@ -654,7 +656,15 @@
           { "id": "deepseek", "name": "DeepSeek V3.2",
             "input": ["text"], "contextWindow": 128000, "maxTokens": 8192 },
           { "id": "glm", "name": "GLM-4.7",
-            "input": ["text"], "contextWindow": 128000, "maxTokens": 8192 }
+            "input": ["text"], "contextWindow": 128000, "maxTokens": 8192 },
+          { "id": "gemini-fast", "name": "Gemini Flash Lite",
+            "input": ["text","image"], "contextWindow": 128000, "maxTokens": 8192 },
+          { "id": "claude-fast", "name": "Claude Haiku 4.5",
+            "input": ["text","image"], "contextWindow": 200000, "maxTokens": 8192 },
+          { "id": "claude-large", "name": "Claude Opus 4.6 (Paid)",
+            "input": ["text","image"], "contextWindow": 200000, "maxTokens": 8192 },
+          { "id": "gemini-large", "name": "Gemini 3 Pro (Paid)", "reasoning": true,
+            "input": ["text","image","audio","video"], "contextWindow": 1000000, "maxTokens": 8192 }
         ]
       }
     }
@@ -757,7 +767,7 @@ function toggleManual() {
 
 function startAuthorize() {
     var redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
-    var models = encodeURIComponent('kimi,deepseek,glm,gemini-fast,claude-fast');
+    var models = encodeURIComponent('kimi,deepseek,glm,gemini-fast,claude-fast,gemini-large,claude-large');
     window.location.href = 'https://enter.pollinations.ai/authorize?redirect_url=' + redirectUrl + '&models=' + models;
 }
 

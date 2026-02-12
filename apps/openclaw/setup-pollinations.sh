@@ -42,8 +42,8 @@ NEW_CONFIG=$(cat <<EOF
         "pollinations/gemini-search": { "alias": "Gemini + Search (Pollinations)" },
         "pollinations/perplexity-fast": { "alias": "Perplexity Fast (Pollinations)" },
         "pollinations/claude-fast": { "alias": "Claude Haiku 4.5 (Pollinations)" },
-        "pollinations/claude": { "alias": "Claude Sonnet (Pollinations, paid)" },
-        "pollinations/grok": { "alias": "Grok 4 (Pollinations, paid)" }
+        "pollinations/claude-large": { "alias": "Claude Opus 4.6 (Pollinations, paid)" },
+        "pollinations/gemini-large": { "alias": "Gemini 3 Pro (Pollinations, paid)" }
       }
     }
   },

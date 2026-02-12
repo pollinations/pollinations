@@ -112,6 +112,18 @@ NEW_CONFIG=$(cat <<EOF
         ]
       }
     }
+  },
+  "tools": {
+    "web": {
+      "search": {
+        "provider": "perplexity",
+        "perplexity": {
+          "baseUrl": "https://gen.pollinations.ai/v1",
+          "apiKey": "\${POLLINATIONS_API_KEY}",
+          "model": "perplexity-fast"
+        }
+      }
+    }
   }
 }
 EOF

@@ -1,9 +1,9 @@
 ## Update [12-02-2026]
 
-- Updated deploy.sh to accept image link and title as command-line parameters
+- Updated deploy.sh to accrpt setting the LINK and TITLE to the link.ts via a subroutine call
 - Removed pipeline.ts execution for direct deployment mode
-- Modified main.ts to read IMAGE_LINK and POST_TITLE from environment variables
-- Eliminated dependency on link.ts, loadPrompts, and system_prompt for direct posting
+- Modified main.ts to read IMAGE_LINK and POST_TITLE from link.ts 
+- Eliminated dependency on loadPrompts, and system_prompt for direct posting
 
 ## Update [03-02-2026]
 

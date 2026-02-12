@@ -627,13 +627,13 @@
                     <div class="step-text">Install OpenClaw, then run the setup script:</div>
                     <div class="code-block" id="install-cmd">curl -fsSL https://openclaw.ai/install.sh | bash<button class="copy-btn" onclick="copyCode('install-cmd')">Copy</button></div>
                     <div class="step-text" style="margin-top:16px">Run the <a href="https://github.com/pollinations/pollinations/blob/main/apps/openclaw/setup-pollinations.sh" target="_blank" style="font-weight:600; color:var(--text)">setup script</a>:</div>
-                    <ul style="margin:8px 0 8px 20px; font-size:14px; line-height:1.5; color:var(--muted)">
+                    <div class="code-block" id="setup-cmd">curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh \
+  | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
+                    <ul style="margin:8px 0 12px 20px; font-size:14px; line-height:1.5; color:var(--muted)">
                         <li>🔑 Saves API key to <code style="color:var(--accent); font-size:13px">~/.openclaw/openclaw.json</code></li>
                         <li>🤖 Adds 5 models: Kimi K2.5, DeepSeek, GLM, Gemini + Search, Claude Haiku</li>
                         <li>🔍 Configures <code style="color:var(--accent); font-size:13px">web_search</code> tool with Perplexity <em>via pollinations.ai</em> (preserves existing if already set)</li>
                     </ul>
-                    <div class="code-block" id="setup-cmd">curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh \
-  | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
 
                     <button class="toggle-btn" onclick="toggleManual()">Manual JSON config ▾</button>
                     <div class="manual-config" id="manual-config">

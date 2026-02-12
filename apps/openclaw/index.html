@@ -791,7 +791,7 @@ function toggleManual() {
 
 function startAuthorize() {
     var redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
-    var models = encodeURIComponent('kimi,deepseek,glm,gemini-search,claude-fast');
+    var models = encodeURIComponent('kimi,deepseek,glm,gemini-search,perplexity-fast,claude-fast');
     window.location.href = 'https://enter.pollinations.ai/authorize?redirect_url=' + redirectUrl + '&models=' + models;
 }
 

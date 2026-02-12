@@ -1,6 +1,14 @@
 #!/bin/bash
 
-# Use the same npx and node from the user's environment
+if [ $# -ne 2 ]; then
+  echo "Usage: $0 <image_link> <title>"
+  echo "Example: $0 'https://example.com/image.jpg' 'My Post Title'"
+  exit 1
+fi
+
+IMAGE_LINK="$1"
+TITLE="$2"
+
 NPX="/usr/bin/npx"
 NODE="/usr/bin/node"
 TSX="$NODE $($NPX which tsx)"
@@ -10,9 +18,11 @@ cleanup() {
   echo ""
   echo "🧹 Cleaning up processes..."
   
+  rm -f src/postConfig.json
+  
   echo "📤 Committing and pushing changes to GitHub..."
   git add .
-  git commit -m "Deploy updated link.ts and main.ts" 2>/dev/null || true
+  git commit -m "Deploy post to Reddit with image and title" 2>/dev/null || true
   git push origin main 2>/dev/null || true
   
   if [ ! -z "$PLAYTEST_PID" ] && kill -0 $PLAYTEST_PID 2>/dev/null; then
@@ -42,41 +52,31 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 SUBREDDIT="pollinations_ai"
-timeout=120
-elapsed=0
-interval=2
 
-echo "🚀 Starting Pollinations deployment pipeline..."
-echo "📝 Step 1: Generating image prompt and updating link.ts..."
-$NPX tsx src/pipeline.ts 2>&1
-PIPELINE_EXIT_CODE=$?
-if [ $PIPELINE_EXIT_CODE -eq 0 ]; then
-  echo "✓ Pipeline completed successfully"
-  if ! [ -f src/link.ts ] || [ -z "$(grep -o 'const LINK' src/link.ts)" ]; then
-    echo "ℹ️  No merged PRs found. Exiting with success."
-    exit 0
-  fi
-else
-  echo "❌ Pipeline failed"
-  exit 1
-fi
+echo "🚀 Starting direct deployment to Reddit..."
+echo "📤 Image Link: $IMAGE_LINK"
+echo "📝 Title: $TITLE"
 
-echo "✓ Pipeline completed, waiting 5 seconds for link.ts to update..."
-sleep 5
+cat > src/postConfig.json << EOF
+{
+  "imageLink": "$IMAGE_LINK",
+  "title": "$TITLE"
+}
+EOF
 
 pkill -f "devvit playtest" 2>/dev/null || true
 pkill -f "node.*devvit" 2>/dev/null || true
 sleep 2
 
-echo "📤 Step 2: Starting playtest mode..."
+echo "📤 Step 1: Starting playtest mode..."
 $NPX devvit playtest "$SUBREDDIT" &
 PLAYTEST_PID=$!
 sleep 3
 
-echo "📝 Step 3: Triggering update (modify main.ts)..."
+echo "📝 Step 2: Triggering update (modify main.ts)..."
 echo "" >> src/main.ts
 
-echo "📊 Step 4: Watching for successful image post..."
+echo "📊 Step 3: Posting image to Reddit..."
 echo ""
 
 echo "⏱️  Keeping process alive for 2 minutes..."

@@ -30,6 +30,7 @@ from common import (
     commit_image_to_branch,
     get_file_sha,
     read_gists_for_date,
+    parse_json_response,
     github_api_request,
     GITHUB_API_BASE,
     IMAGE_SIZE,
@@ -58,30 +59,14 @@ def get_week_range(override_start: Optional[str] = None):
     Default: Mon→Sun of the current week (when run Sunday 06:00 UTC).
     This covers 7 days of work. The weekly publishes Sunday 18:00 UTC."""
     if override_start:
-        start = datetime.strptime(override_start, "%Y-%m-%d")
+        start = datetime.strptime(override_start, "%Y-%m-%d").date()
     else:
         # Sunday 06:00 UTC — the week is Mon-Sun
         today = datetime.now(timezone.utc).date()
         start = today - timedelta(days=6)  # Monday
 
     end = start + timedelta(days=6)
-    return start.strftime("%Y-%m-%d") if hasattr(start, 'strftime') else str(start)[:10], \
-           end.strftime("%Y-%m-%d") if hasattr(end, 'strftime') else str(end)[:10]
-
-
-def parse_json_response(response: str) -> Optional[Dict]:
-    """Parse JSON from AI response, stripping markdown fences."""
-    text = response.strip()
-    if text.startswith("```"):
-        lines = text.split("\n")
-        lines = [l for l in lines if not l.strip().startswith("```")]
-        text = "\n".join(lines)
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError as e:
-        print(f"  JSON parse error: {e}")
-        print(f"  Response: {text[:500]}")
-        return None
+    return start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
 
 
 def read_gists_for_week(week_start: str, week_end: str) -> List[Dict]:

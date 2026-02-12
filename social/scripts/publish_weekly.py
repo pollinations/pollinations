@@ -37,14 +37,15 @@ DISCORD_CHUNK_SIZE = 1900
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
-def get_last_wednesday() -> str:
-    """Get the date of the most recent Wednesday (the week_end for the weekly summary).
-    The weekly covers Thu→Wed. This runs on Friday, so last Wednesday is 2 days ago."""
+def get_last_sunday() -> str:
+    """Get the date of the most recent Sunday (the week_end for the weekly summary).
+    The weekly covers Mon→Sun. This runs on Sunday 18:00 UTC,
+    so 'last Sunday' is today."""
     today = datetime.now(timezone.utc).date()
-    # Wednesday = weekday 2. Find most recent Wednesday.
-    days_since_wednesday = (today.weekday() - 2) % 7
-    wednesday = today - timedelta(days=days_since_wednesday)
-    return wednesday.strftime("%Y-%m-%d")
+    # Sunday = weekday 6. Find most recent Sunday (including today).
+    days_since_sunday = (today.weekday() - 6) % 7
+    sunday = today - timedelta(days=days_since_sunday)
+    return sunday.strftime("%Y-%m-%d")
 
 
 def find_merged_weekly_pr(github_token: str, owner: str, repo: str,
@@ -178,7 +179,7 @@ def main():
     week_end_override = get_env("WEEK_END_DATE", required=False)
 
     owner, repo = repo_full.split("/")
-    week_end = week_end_override or get_last_wednesday()
+    week_end = week_end_override or get_last_sunday()
     print(f"  Week ending: {week_end}")
 
     # ── Check if weekly PR was merged ────────────────────────────────

@@ -83,6 +83,21 @@ def github_api_request(
     return resp
 
 
+def parse_json_response(response: str) -> Optional[Dict]:
+    """Parse JSON from AI response, stripping markdown fences."""
+    text = response.strip()
+    if text.startswith("```"):
+        lines = text.split("\n")
+        lines = [l for l in lines if not l.strip().startswith("```")]
+        text = "\n".join(lines)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as e:
+        print(f"  JSON parse error: {e}")
+        print(f"  Response: {text[:500]}")
+        return None
+
+
 def get_repo_root() -> str:
     """Get the repository root directory by looking for .git folder"""
     current = os.path.dirname(os.path.abspath(__file__))
@@ -415,6 +430,9 @@ def call_pollinations_api(
     return None
 
 
+STYLE_SUFFIX = "16-bit SNES pixel art style like Stardew Valley. Chunky sprites, visible pixel grid, clean outlines, soft pastel gradients, warm lighting."
+
+
 def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0) -> tuple[Optional[bytes], Optional[str]]:
     """Generate a single image via the pollinations.ai image API."""
 
@@ -423,6 +441,9 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
         bee_desc = load_shared("bee_character")
         if bee_desc:
             prompt = f"{prompt} {bee_desc}"
+
+    # Append style lock — ensures consistent SNES pixel art regardless of AI prompt drift
+    prompt = f"{prompt} {STYLE_SUFFIX}"
 
     # Strip single quotes — they cause 400 errors from the image API even when URL-encoded
     sanitized = prompt.replace("'", "")

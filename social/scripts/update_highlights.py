@@ -12,7 +12,6 @@ import os
 import sys
 import json
 import base64
-import requests
 from datetime import datetime, timezone, timedelta
 from common import (
     load_prompt,
@@ -21,6 +20,7 @@ from common import (
     get_repo_root,
     call_pollinations_api,
     read_gists_for_date,
+    github_api_request,
     GITHUB_API_BASE,
 )
 from update_readme import get_top_highlights, update_readme_news_section
@@ -114,7 +114,8 @@ def create_highlights_pr(
     }
 
     # Get latest commit SHA from main
-    ref_response = requests.get(
+    ref_response = github_api_request(
+        "GET",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/ref/heads/main",
         headers=headers,
     )
@@ -125,7 +126,8 @@ def create_highlights_pr(
 
     # Create branch
     branch_name = f"highlights-update-{date_str}"
-    create_branch_response = requests.post(
+    create_branch_response = github_api_request(
+        "POST",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/refs",
         headers=headers,
         json={"ref": f"refs/heads/{branch_name}", "sha": base_sha},
@@ -153,7 +155,8 @@ def create_highlights_pr(
     if highlights_sha:
         highlights_payload["sha"] = highlights_sha
 
-    resp = requests.put(
+    resp = github_api_request(
+        "PUT",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{HIGHLIGHTS_PATH}",
         headers=headers,
         json=highlights_payload,
@@ -177,7 +180,8 @@ def create_highlights_pr(
         if readme_sha:
             readme_payload["sha"] = readme_sha
 
-        resp = requests.put(
+        resp = github_api_request(
+            "PUT",
             f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{README_PATH}",
             headers=headers,
             json=readme_payload,
@@ -203,7 +207,8 @@ def create_highlights_pr(
 Generated automatically by NEWS_highlights_update workflow.
 """
 
-    pr_response = requests.post(
+    pr_response = github_api_request(
+        "POST",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls",
         headers=headers,
         json={
@@ -233,7 +238,8 @@ Generated automatically by NEWS_highlights_update workflow.
     pr_labels = get_env("PR_LABELS", required=False)
     if pr_labels:
         labels_list = [label.strip() for label in pr_labels.split(",")]
-        label_response = requests.post(
+        label_response = github_api_request(
+            "POST",
             f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_number}/labels",
             headers=headers,
             json={"labels": labels_list},

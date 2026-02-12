@@ -19,7 +19,6 @@ import sys
 import json
 import time
 import base64
-import requests
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
 from pathlib import Path
@@ -35,6 +34,7 @@ from common import (
     read_gists_for_date,
     get_merged_prs,
     format_pr_summary,
+    parse_json_response,
     github_api_request,
     GITHUB_API_BASE,
     OWNER,
@@ -61,21 +61,6 @@ def get_target_date(override: Optional[str] = None) -> str:
 def filter_daily_gists(gists: List[Dict]) -> List[Dict]:
     """Filter gists to only those with publish_tier == 'daily'."""
     return [g for g in gists if g.get("gist", {}).get("publish_tier") == "daily"]
-
-
-def parse_json_response(response: str) -> Optional[Dict]:
-    """Parse JSON from AI response, stripping markdown fences."""
-    text = response.strip()
-    if text.startswith("```"):
-        lines = text.split("\n")
-        lines = [l for l in lines if not l.strip().startswith("```")]
-        text = "\n".join(lines)
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError as e:
-        print(f"  JSON parse error: {e}")
-        print(f"  Response: {text[:500]}")
-        return None
 
 
 # ── Step 1: Generate daily summary ──────────────────────────────────
@@ -462,14 +447,15 @@ def main():
             "Authorization": f"Bearer {github_token}",
         }
         gists_dir = f"social/news/gists/{date_str}"
-        resp = requests.get(
+        resp = github_api_request(
+            "GET",
             f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{gists_dir}",
             headers=headers,
         )
         if resp.status_code == 200:
             for file_info in resp.json():
                 if file_info["name"].startswith("PR-") and file_info["name"].endswith(".json"):
-                    content_resp = requests.get(file_info["url"], headers=headers)
+                    content_resp = github_api_request("GET", file_info["url"], headers=headers)
                     if content_resp.status_code == 200:
                         content = base64.b64decode(content_resp.json()["content"]).decode()
                         try:

@@ -9,14 +9,17 @@ import { createX402Middleware } from "../middleware/x402.ts";
 // Helper to credit pollen
 async function creditPollen(env: Env["Bindings"], userId: string, amount: number) {
     const db = drizzle(env.DB);
+    // Apply 2x beta bonus
+    const pollenAmount = amount * 2;
+    
     await db
         .update(userTable)
         .set({
-            packBalance: sql`COALESCE(${userTable.packBalance}, 0) + ${amount}`,
+            cryptoBalance: sql`COALESCE(${userTable.cryptoBalance}, 0) + ${pollenAmount}`,
         })
         .where(eq(userTable.id, userId));
     
-    // Log to TinyBird if configured (optional, skipping for now to keep it simple)
+    return pollenAmount;
 }
 
 export const cryptoRoutes = new Hono<Env>()
@@ -48,11 +51,11 @@ export const cryptoRoutes = new Hono<Env>()
 
         // Credit pollen
         try {
-            await creditPollen(c.env, session.user.id, amount);
+            const credited = await creditPollen(c.env, session.user.id, amount);
             return c.json({ 
                 success: true, 
-                message: `Credited ${amount} pollen`,
-                pollenCredited: amount 
+                message: `Credited ${credited} pollen`,
+                pollenCredited: credited 
             });
         } catch (error) {
             console.error("Failed to credit pollen:", error);

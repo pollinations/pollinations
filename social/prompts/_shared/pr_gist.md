@@ -62,7 +62,7 @@ Use the changed files list to determine PR type, user impact, and what to highli
 - `community` — community submissions, apps, examples
 
 ### `user_facing`
-- `true` — end users of Pollinations would notice this change
+- `true` — end users of pollinations.ai would notice this change
 - `false` — internal, developer-only, or infrastructure change
 
 ### `publish_tier`
@@ -95,7 +95,7 @@ Think step-by-step about what to depict BEFORE writing the image prompt. This is
 
 - **Identify the project/tool**: What is this PR about? What does the project look like, what's its logo or mascot?
 - **Key visual symbols**: What objects, characters, or metaphors represent this change? (e.g., OpenClaw = crab mascot, not a claw machine)
-- **Scene concept**: How does the Pollinations bee interact with these elements?
+- **Scene concept**: How does the pollinations.ai bee interact with these elements?
 - Research from context: use PR title, description, file names, and any branding clues (logo files, SVGs, mascot references) to understand the project's identity
 
 ### `image_prompt`
@@ -103,7 +103,7 @@ A short (1-2 sentence) pixel art scene description for generating the PR's annou
 
 Rules:
 - Describe a cozy pixel art scene that captures the main theme of the update
-- Include the Pollinations bee mascot as an active character doing something related to the update
+- Include the pollinations.ai bee mascot as an active character doing something related to the update
 - Include any project-specific characters/mascots identified in `visual_concept`
 - Keep it fun with dev-meme energy
 - Follow the visual style guide above exactly — use the prompt template structure

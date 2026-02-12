@@ -21,12 +21,12 @@
       "reasoning models",
       "portkey"
     ],
-    "visual_concept": "The Pollinations bee using a magical 'Portkey' (glowing key) to open a stable, glowing portal, representing the new reliable connection for long requests. Time/clocks in the background being paused or extended.",
-    "image_prompt": "Cozy pixel art scene of the Pollinations bee holding a glowing magical key to open a stable portal. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting. Lo-fi vibes like Stardew Valley. Magical and reliable atmosphere. Nostalgic but beautiful."
+    "visual_concept": "The pollinations.ai bee using a magical 'Portkey' (glowing key) to open a stable, glowing portal, representing the new reliable connection for long requests. Time/clocks in the background being paused or extended.",
+    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee holding a glowing magical key to open a stable portal. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting. Lo-fi vibes like Stardew Valley. Magical and reliable atmosphere. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-07/PR-8053.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations bee holding a glowing magical key to open a stable portal. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting. Lo-fi vibes like Stardew Valley. Magical and reliable atmosphere. Nostalgic but beautiful."
+    "prompt": "Cozy pixel art scene of the pollinations.ai bee holding a glowing magical key to open a stable portal. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting. Lo-fi vibes like Stardew Valley. Magical and reliable atmosphere. Nostalgic but beautiful."
   },
   "generated_at": "2026-02-11T23:48:37.959444+00:00"
 }

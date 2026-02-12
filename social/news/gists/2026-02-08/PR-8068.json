@@ -13,7 +13,7 @@
     "publish_tier": "daily",
     "importance": "major",
     "summary": "Adds Whisper Large V3 speech-to-text transcription capabilities to the API with transparent per-second billing.",
-    "impact": "Developers can now transcribe audio files directly through the Pollinations API using the high-quality Whisper model.",
+    "impact": "Developers can now transcribe audio files directly through the pollinations.ai API using the high-quality Whisper model.",
     "keywords": [
       "whisper",
       "speech-to-text",
@@ -21,12 +21,12 @@
       "audio",
       "ovhcloud"
     ],
-    "visual_concept": "The Pollinations bee wearing headphones, acting as a stenographer. It is listening to a glowing lime green audio waveform and watching it magically transform into pixelated text bubbles. Represents the conversion of sound to language.",
-    "image_prompt": "Cozy pixel art scene of the Pollinations bee wearing headphones, watching a glowing audio waveform transform into floating pixel text. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Bee mascot with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Pixel text bubbles. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "The pollinations.ai bee wearing headphones, acting as a stenographer. It is listening to a glowing lime green audio waveform and watching it magically transform into pixelated text bubbles. Represents the conversion of sound to language.",
+    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee wearing headphones, watching a glowing audio waveform transform into floating pixel text. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Bee mascot with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Pixel text bubbles. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8068.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations bee wearing headphones, watching a glowing audio waveform transform into floating pixel text. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Bee mascot with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Pixel text bubbles. Nostalgic but beautiful, emotionally warm."
+    "prompt": "Cozy pixel art scene of the pollinations.ai bee wearing headphones, watching a glowing audio waveform transform into floating pixel text. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Bee mascot with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Pixel text bubbles. Nostalgic but beautiful, emotionally warm."
   },
   "generated_at": "2026-02-11T23:49:10.559340+00:00"
 }

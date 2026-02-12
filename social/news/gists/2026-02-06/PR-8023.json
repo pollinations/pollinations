@@ -21,12 +21,12 @@
       "reliability",
       "bug fix"
     ],
-    "visual_concept": "The Pollinations bee as a projectionist in a cozy booth, fixing a vintage film projector that is streaming light smoothly. A film reel labeled 'Grok' is set aside on a shelf.",
-    "image_prompt": "Cozy pixel art scene of the Pollinations bee inside a retro projection booth fixing a vintage film projector. The projector beams a steady stream of soft lime green light (#ecf874). A film reel labeled 'Grok' sits on a nearby shelf. Warm lighting, pastel gradients, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful."
+    "visual_concept": "The pollinations.ai bee as a projectionist in a cozy booth, fixing a vintage film projector that is streaming light smoothly. A film reel labeled 'Grok' is set aside on a shelf.",
+    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee inside a retro projection booth fixing a vintage film projector. The projector beams a steady stream of soft lime green light (#ecf874). A film reel labeled 'Grok' sits on a nearby shelf. Warm lighting, pastel gradients, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-06/PR-8023.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations bee inside a retro projection booth fixing a vintage film projector. The projector beams a steady stream of soft lime green light (#ecf874). A film reel labeled 'Grok' sits on a nearby shelf. Warm lighting, pastel gradients, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful."
+    "prompt": "Cozy pixel art scene of the pollinations.ai bee inside a retro projection booth fixing a vintage film projector. The projector beams a steady stream of soft lime green light (#ecf874). A film reel labeled 'Grok' sits on a nearby shelf. Warm lighting, pastel gradients, lo-fi aesthetic like Stardew Valley. Nostalgic but beautiful."
   },
   "generated_at": "2026-02-11T23:47:07.961843+00:00"
 }

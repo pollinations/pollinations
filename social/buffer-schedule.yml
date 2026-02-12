@@ -6,43 +6,43 @@
 # Generation frequency = delivery frequency. Lookback window matches the gap between generations.
 
 # ── Daily platforms (via Buffer) ─────────────────────────────────────
-# Generated every day at 00:00 UTC (generate_daily.py).
+# Generated Mon-Sat at 06:00 UTC (generate_daily.py).
 # Published on daily PR merge (publish_daily.py) → Buffer delivers at preferred time.
-# No daily posts on Fridays — weekly replaces them.
+# No daily posts on Sundays — weekly replaces them.
 
 twitter:
-  # Daily (except Friday — weekly covers it)
-  days: [1, 2, 3, 4, 6, 7]  # Mon-Thu + Sat-Sun (1=Monday, 7=Sunday)
+  # Daily (except Sunday — weekly covers it)
+  days: [1, 2, 3, 4, 5, 6]  # Mon-Sat (1=Monday, 7=Sunday)
   preferred: "15:00"  # 15:00 UTC
 
 instagram:
-  # Daily (except Friday — weekly covers it)
-  days: [1, 2, 3, 4, 6, 7]  # Mon-Thu + Sat-Sun
+  # Daily (except Sunday — weekly covers it)
+  days: [1, 2, 3, 4, 5, 6]  # Mon-Sat
   preferred: "15:00"  # 15:00 UTC
 
 # ── Daily platforms (not via Buffer) ─────────────────────────────────
 # Reddit daily: handled by TypeScript app at 15:00 UTC (not this Python pipeline)
 # Discord daily: realtime per-PR webhook only (publish_realtime.py)
 
-# ── Weekly (Friday 15:00 UTC) ────────────────────────────────────────
-# All 5 platforms publish the weekly digest on Friday afternoon.
-# Generated Thursday 00:00 UTC (generate_weekly.py) → PR for review.
-# Published Friday 15:00 UTC (publish_weekly.py cron) if PR was merged.
+# ── Weekly (Sunday 18:00 UTC) ──────────────────────────────────────
+# All 5 platforms publish the weekly digest on Sunday evening.
+# Generated Sunday 06:00 UTC (generate_weekly.py) → PR for review.
+# Published Sunday 18:00 UTC (publish_weekly.py cron) if PR was merged.
 
 weekly:
-  days: [5]  # Friday only
-  preferred: "15:00"  # 15:00 UTC — EU afternoon + US morning
+  days: [7]  # Sunday only
+  preferred: "18:00"  # 18:00 UTC — EU evening + US afternoon
 
 linkedin:
-  # Weekly only — published via Buffer on Friday with the weekly digest.
+  # Weekly only — published via Buffer on Sunday with the weekly digest.
   # No daily LinkedIn posts. LinkedIn algorithm rewards quality over frequency.
-  days: [5]  # Friday only
-  preferred: "15:00"  # 15:00 UTC
+  days: [7]  # Sunday only
+  preferred: "18:00"  # 18:00 UTC
 
 # ── Non-social outputs (repo artifacts, not scheduled via Buffer) ────
 #
 # diary:
-#   Generated during daily summary (generate_daily.py, 00:00 UTC cron).
+#   Generated during daily summary (generate_daily.py, 06:00 UTC cron).
 #   Whimsical pixel art narrative of the day's gists → social/news/daily/{date}/diary.json
 #
 # highlights:
@@ -55,13 +55,13 @@ linkedin:
 
 # How it works:
 # Daily:
-# 1. 00:00 UTC cron generates daily posts (X, IG, Reddit) → creates PR
+# 1. 06:00 UTC cron (Mon-Sat) generates daily posts (X, IG, Reddit) → creates PR
 # 2. PR merged → publish_daily.py stages X + IG to Buffer for 15:00 UTC delivery
 # 3. Reddit daily is handled separately by TypeScript app at 15:00 UTC
 # 4. Discord posts realtime per-PR (not daily summary)
 #
 # Weekly:
-# 1. Thursday 00:00 UTC cron generates weekly summary → creates PR
-# 2. PR reviewed and merged before Friday 15:00 UTC
-# 3. Friday 15:00 UTC cron publishes all 5 platforms:
+# 1. Sunday 06:00 UTC cron generates weekly summary → creates PR
+# 2. PR reviewed and merged before Sunday 18:00 UTC
+# 3. Sunday 18:00 UTC cron publishes all 5 platforms:
 #    Buffer (X, LI, IG) + Reddit API + Discord webhook

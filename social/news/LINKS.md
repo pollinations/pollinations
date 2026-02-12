@@ -1,4 +1,4 @@
-# Pollinations Link Collection (Official Only)
+# pollinations.ai Link Collection (Official Only)
 
 ## Core Websites
 - **Main Website:** https://hello.pollinations.ai  
@@ -32,4 +32,4 @@
 
 ---
 
-> _This trimmed version includes **only official Pollinations-controlled or Pollinations-maintained links**._
+> _This trimmed version includes **only official pollinations.ai-controlled or pollinations.ai-maintained links**._

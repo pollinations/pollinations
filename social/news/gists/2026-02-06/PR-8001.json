@@ -21,12 +21,12 @@
       "video-generation",
       "new-models"
     ],
-    "visual_concept": "The Pollinations Bee taking to the skies (representing 'api.airforce') to deliver new capabilities. The Bee is a pilot, emphasizing the new provider's name, delivering 'Imagen' and 'Grok' packages.",
-    "image_prompt": "Cozy pixel art scene of the Pollinations Bee wearing aviator goggles, flying a tiny retro biplane through fluffy pastel clouds. The plane is delivering two glowing crates labeled 'Imagen' and 'Grok'. Soft lime green (#ecf874) and lavender sky gradient. Chunky retro sprites, warm lighting, lo-fi aesthetic. Like a friendly delivery mission in a retro game. Emotionally warm, nostalgic but beautiful."
+    "visual_concept": "The pollinations.ai Bee taking to the skies (representing 'api.airforce') to deliver new capabilities. The Bee is a pilot, emphasizing the new provider's name, delivering 'Imagen' and 'Grok' packages.",
+    "image_prompt": "Cozy pixel art scene of the pollinations.ai Bee wearing aviator goggles, flying a tiny retro biplane through fluffy pastel clouds. The plane is delivering two glowing crates labeled 'Imagen' and 'Grok'. Soft lime green (#ecf874) and lavender sky gradient. Chunky retro sprites, warm lighting, lo-fi aesthetic. Like a friendly delivery mission in a retro game. Emotionally warm, nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-06/PR-8001.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations Bee wearing aviator goggles, flying a tiny retro biplane through fluffy pastel clouds. The plane is delivering two glowing crates labeled 'Imagen' and 'Grok'. Soft lime green (#ecf874) and lavender sky gradient. Chunky retro sprites, warm lighting, lo-fi aesthetic. Like a friendly delivery mission in a retro game. Emotionally warm, nostalgic but beautiful."
+    "prompt": "Cozy pixel art scene of the pollinations.ai Bee wearing aviator goggles, flying a tiny retro biplane through fluffy pastel clouds. The plane is delivering two glowing crates labeled 'Imagen' and 'Grok'. Soft lime green (#ecf874) and lavender sky gradient. Chunky retro sprites, warm lighting, lo-fi aesthetic. Like a friendly delivery mission in a retro game. Emotionally warm, nostalgic but beautiful."
   },
   "generated_at": "2026-02-11T23:45:55.102088+00:00"
 }

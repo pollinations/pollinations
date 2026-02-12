@@ -1,12 +1,12 @@
 {
   "tweet_type": "shipped",
-  "tweet": "The audio stack is fully operational. 🔊\n\nJust shipped:\n- Whisper for Speech-to-Text\n- ElevenMusic generation\n- Emotional TTS v3 upgrade\n\nPlus a fresh UI to manage it all.\n\nMulti-modal just got real. 🌸",
-  "alt_tweet": "14 PRs merged. The big one: Audio is solved.\n\nFrom Whisper STT to ElevenMusic generation and v3 TTS—the API now handles the full sonic spectrum. \n\nBuild something that speaks (or sings). 🐝",
+  "tweet": "audio stack just got real 🔊\n\n- music generation (elevenmusic)\n- speech-to-text (whisper)\n- emotional tts (eleven v3)\n\nshipped alongside a total ui refresh.\n\nopen source isn't just text and images anymore. go build something loud. 🐝",
+  "alt_tweet": "shipped a massive audio upgrade today. 🔊\n\nnow supporting elevenmusic, whisper transcription, and upgraded tts v3. plus a fresh frontend redesign to keep things clean.\n\nthe toolkit just got bigger. what are you building?",
   "hashtags": [
     "#OpenSource",
-    "#GenerativeAI"
+    "#AI"
   ],
-  "image_prompt": "Dynamic pixel art close-up of the Pollinations bee wearing chunky headphones, tweaking knobs on a retro synthesizer. Sound waves visualizing as flowing lime green (#ecf874) and lavender pixel particles. Background is a glowing audio spectrogram. 'AUDIO MODE' text in bold pixel font. High energy, warm lighting, crisp 8-bit aesthetic like Stardew Valley meets a rave. Cozy but energetic.",
-  "reasoning": "Focuses on the most technical and enabling update (Audio Suite). Bullet points make the 'shipped' list scannable and impressive. 'Multi-modal just got real' signals a major platform evolution to builders.",
-  "char_count": 184
+  "image_prompt": "Dynamic pixel art scene of the cute chubby bee mascot wearing large retro headphones, DJing on a glowing 8-bit mixing deck. Sound waves visible as chunky lime green (#ecf874) and pastel mint bars pulsating in the background. High energy, warm lighting, cozy 'Stardew Valley' aesthetic but with a party vibe. Text 'AUDIO MODE' in pixel font at top. Vibrant, fun, and tech-focused.",
+  "reasoning": "Focuses on the most technically impressive update (the audio suite) which appeals to builders looking for capability. The list format is scannable and high-signal. The tone is confident ('got real', 'go build something loud') without being salesy.",
+  "char_count": 218
 }

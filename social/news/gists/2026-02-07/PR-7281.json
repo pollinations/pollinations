@@ -13,7 +13,7 @@
     "publish_tier": "daily",
     "importance": "major",
     "summary": "Introduces a new OpenAI-compatible Text-to-Speech endpoint powered by ElevenLabs, complete with voice mapping and transparent pricing.",
-    "impact": "Developers can now generate high-quality speech audio using standard OpenAI libraries, accessing premium ElevenLabs voices directly through Pollinations.",
+    "impact": "Developers can now generate high-quality speech audio using standard OpenAI libraries, accessing premium ElevenLabs voices directly through pollinations.ai.",
     "keywords": [
       "tts",
       "elevenlabs",
@@ -21,12 +21,12 @@
       "speech",
       "openai-compatible"
     ],
-    "visual_concept": "The Pollinations bee as a radio host or podcaster. Key symbols: Retro microphone, headphones, sound waves. The bee is broadcasting, representing the new speech capability.",
-    "image_prompt": "Cozy pixel art scene of the Pollinations bee wearing chunky headphones and speaking into a vintage silver microphone. Soft lime green (#ecf874) and lavender gradient background. Colorful pixel sound waves floating in the air. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+    "visual_concept": "The pollinations.ai bee as a radio host or podcaster. Key symbols: Retro microphone, headphones, sound waves. The bee is broadcasting, representing the new speech capability.",
+    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee wearing chunky headphones and speaking into a vintage silver microphone. Soft lime green (#ecf874) and lavender gradient background. Colorful pixel sound waves floating in the air. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-07/PR-7281.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations bee wearing chunky headphones and speaking into a vintage silver microphone. Soft lime green (#ecf874) and lavender gradient background. Colorful pixel sound waves floating in the air. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+    "prompt": "Cozy pixel art scene of the pollinations.ai bee wearing chunky headphones and speaking into a vintage silver microphone. Soft lime green (#ecf874) and lavender gradient background. Colorful pixel sound waves floating in the air. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
   },
   "generated_at": "2026-02-11T23:41:09.387126+00:00"
 }

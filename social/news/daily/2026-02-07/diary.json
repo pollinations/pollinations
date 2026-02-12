@@ -1,39 +1,39 @@
 {
   "date": "2026-02-07",
-  "title": "Day 769 of Building Pollinations",
+  "title": "Day 769 of Building pollinations.ai",
   "entries": [
     {
       "pr_number": 7281,
-      "headline": "The hive speaks!",
-      "blurb": "Added ElevenLabs support, letting your creations hum, chat, and narrate with crystal-clear voices.",
+      "headline": "The hive has a voice",
+      "blurb": "Added ElevenLabs support! Now your AI creations can speak with crystal-clear high-fidelity audio.",
       "category": "feature",
       "importance": "major",
       "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-07/PR-7281.jpg"
     },
     {
-      "pr_number": 8026,
-      "headline": "Polishing the garden path",
-      "blurb": "A quality-of-life tweak for our GSoC pages—views now zip to the top on navigation, keeping things fresh.",
-      "category": "community",
-      "importance": "minor",
-      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-07/PR-8026.jpg"
+      "pr_number": 8063,
+      "headline": "Fresh blooms: Imagen 4 & Grok Video",
+      "blurb": "Planted a colorful array of new models including Google's Imagen 4, Flux 2 Dev, and an alpha preview of Grok Video.",
+      "category": "feature",
+      "importance": "major",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-07/PR-8063.jpg"
     },
     {
       "pr_number": 8053,
-      "headline": "Longer flights allowed",
-      "blurb": "Moved the AI gateway to a custom domain, giving deep-thinking models the runway they need without timing out.",
+      "headline": "More time to think",
+      "blurb": "Moved the AI gateway to a custom domain to prevent timeouts. Now the deep-reasoning models have plenty of space to ponder.",
       "category": "bug_fix",
       "importance": "major",
       "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-07/PR-8053.jpg"
     },
     {
-      "pr_number": 8063,
-      "headline": "New seeds planted",
-      "blurb": "Expanded the greenhouse with Imagen 4, Flux 2, and Grok Video (Alpha). Go forth and create!",
-      "category": "feature",
-      "importance": "major",
-      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-07/PR-8063.jpg"
+      "pr_number": 8026,
+      "headline": "Polishing the GSoC trellis",
+      "blurb": "Fixed scroll behavior on the Google Summer of Code page so navigation feels smooth for our incoming student sprouts.",
+      "category": "community",
+      "importance": "minor",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-07/PR-8026.jpg"
     }
   ],
-  "mood": "productive"
+  "mood": "shipping day"
 }

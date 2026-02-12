@@ -23,12 +23,12 @@
       "airforce",
       "stability"
     ],
-    "visual_concept": "The Pollinations bee engaging in a roleplay dialogue with a pixel art fantasy character (representing the new Qwen model). The setting is a cozy, warm tavern or library, symbolizing the storytelling aspect. The removal of the unstable model is represented by a clean, organized space.",
-    "image_prompt": "Cozy pixel art scene of the Pollinations bee chatting with a pixelated fantasy adventurer character in a warm tavern. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, dialogue bubbles with pixel text. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "The pollinations.ai bee engaging in a roleplay dialogue with a pixel art fantasy character (representing the new Qwen model). The setting is a cozy, warm tavern or library, symbolizing the storytelling aspect. The removal of the unstable model is represented by a clean, organized space.",
+    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee chatting with a pixelated fantasy adventurer character in a warm tavern. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, dialogue bubbles with pixel text. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-10/PR-8124.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations bee chatting with a pixelated fantasy adventurer character in a warm tavern. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, dialogue bubbles with pixel text. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+    "prompt": "Cozy pixel art scene of the pollinations.ai bee chatting with a pixelated fantasy adventurer character in a warm tavern. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, dialogue bubbles with pixel text. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
   "generated_at": "2026-02-11T23:57:06.167499+00:00"
 }

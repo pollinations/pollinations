@@ -1,4 +1,4 @@
-# Pollinations Visual Style Guide
+# pollinations.ai Visual Style Guide
 
 <!-- Include this in system prompts with: {visual_style} -->
 
@@ -34,18 +34,31 @@ Think: **Studio Ghibli meets retro gaming.** Nostalgic but emotionally resonant.
 - Warm lighting always — soft ambient glow, not flat
 - Dark purple `#110518` for high-contrast text when needed
 
-## Pixel Art Characters
+## Bee Mascot — Character Lock (MANDATORY in every image)
 
-- **Bee mascot** — the Pollinations bee, always present, interacting with the scene
+The pollinations.ai bee MUST appear in every image as the main character, front and center.
+
+**Visual description (paste into every image prompt):**
+{bee_character}
+
+**Rules:**
+- The bee is ALWAYS the main character, not a background element
+- She should be doing something relevant to the scene (coding, flying, celebrating, etc.)
+- Keep her proportions consistent — round and chubby, never elongated or insect-like
+- She can wear accessories (headphones, hats) but her core design stays the same
+
+## Other Pixel Art Elements
+
 - Pixel flowers, gardens, seeds, blooming plants (nature/growth motifs)
-- Cute robots, tiny devs, pixel characters
+- Cute robots, tiny devs, pixel characters as supporting cast
 - Characters should have personality — expressions, poses, actions
+- NEVER include specific AI model names (GPT, Gemini, DALL-E, Qwen, etc.) as visible text in images
 
 ## What to ALWAYS Include
 
 - Cozy pixel art style with soft lighting
 - Lime green `#ecf874` prominently
-- The Pollinations bee mascot
+- The pollinations.ai bee mascot
 - Nature/growth elements (flowers, gardens, vines)
 - Warm, inviting atmosphere
 - Style keywords in every prompt: "cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes"

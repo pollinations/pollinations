@@ -20,12 +20,12 @@
       "infrastructure",
       "dashboards"
     ],
-    "visual_concept": "The Pollinations bee in a cozy 'mission control' room. The focus is on data visualization—pixelated charts, graphs, and trend lines glowing on screens. Represents the 'Economics' and 'Load' visibility.",
-    "image_prompt": "Cozy pixel art scene of the Pollinations bee in a retro mission control room, studying glowing monitors with lime green (#ecf874) line graphs and bar charts. Soft pastel gradient background. Chunky 8-bit consoles and data visualizations. Warm lighting, lo-fi vibes like a sci-fi strategy game. Nostalgic but beautiful."
+    "visual_concept": "The pollinations.ai bee in a cozy 'mission control' room. The focus is on data visualization—pixelated charts, graphs, and trend lines glowing on screens. Represents the 'Economics' and 'Load' visibility.",
+    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee in a retro mission control room, studying glowing monitors with lime green (#ecf874) line graphs and bar charts. Soft pastel gradient background. Chunky 8-bit consoles and data visualizations. Warm lighting, lo-fi vibes like a sci-fi strategy game. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-09/PR-8118.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations bee in a retro mission control room, studying glowing monitors with lime green (#ecf874) line graphs and bar charts. Soft pastel gradient background. Chunky 8-bit consoles and data visualizations. Warm lighting, lo-fi vibes like a sci-fi strategy game. Nostalgic but beautiful."
+    "prompt": "Cozy pixel art scene of the pollinations.ai bee in a retro mission control room, studying glowing monitors with lime green (#ecf874) line graphs and bar charts. Soft pastel gradient background. Chunky 8-bit consoles and data visualizations. Warm lighting, lo-fi vibes like a sci-fi strategy game. Nostalgic but beautiful."
   },
   "generated_at": "2026-02-11T23:56:35.126168+00:00"
 }

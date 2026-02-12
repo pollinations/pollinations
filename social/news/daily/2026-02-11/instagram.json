@@ -1,12 +1,12 @@
 {
   "content_type": "pixel_art",
   "linked_images": true,
-  "strategy_reasoning": "Translating the technical 'OpenClaw integration' and 'auto-install' updates into a narrative about a helpful new robot friend in the Pollinations garden. This makes complex AI agent setup feel approachable and cozy, fitting the 'warm hug' brand identity.",
+  "strategy_reasoning": "Translating the technical 'OpenClaw integration' and 'auto-install' updates into a narrative about a helpful new robot friend in the pollinations.ai garden. This makes complex AI agent setup feel approachable and cozy, fitting the 'warm hug' brand identity.",
   "visual_style": "Cozy 8-bit pixel art with chunky sprites, soft ambient lighting, and CRT glow effects. Dominant lime green (#ecf874) accents with pastel mint and lavender gradients.",
   "image_count": 3,
   "images": [
     {
-      "prompt": "Cozy 8-bit pixel art scene in a digital garden. The Pollinations bee mascot is hovering happily next to a cute, chunky pixel-art robot with a claw hand (OpenClaw). The robot is gently holding a pixel flower. Soft lime green (#ecf874) and lavender gradient sky. Warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'New Bestie'. Nostalgic, wholesome, and inviting.",
+      "prompt": "Cozy 8-bit pixel art scene in a digital garden. The pollinations.ai bee mascot is hovering happily next to a cute, chunky pixel-art robot with a claw hand (OpenClaw). The robot is gently holding a pixel flower. Soft lime green (#ecf874) and lavender gradient sky. Warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'New Bestie'. Nostalgic, wholesome, and inviting.",
       "description": "Introduces OpenClaw as a friendly helper in the ecosystem.",
       "text_in_image": "New Bestie"
     },

@@ -6,7 +6,7 @@
     "#OpenSource",
     "#BuildInPublic"
   ],
-  "image_prompt": "Dynamic pixel art close-up. The Pollinations bee mascot connecting a glowing lime green (#ecf874) data chip to a floating digital brain. 8-bit aesthetic. Background: soft pastel gradient data streams (lavender to mint). Warm lighting, cozy tech vibes like Stardew Valley. Retro UI text: 'BRAIN UPGRADE'. High contrast, nostalgic but modern.",
+  "image_prompt": "Dynamic pixel art close-up. The pollinations.ai bee mascot connecting a glowing lime green (#ecf874) data chip to a floating digital brain. 8-bit aesthetic. Background: soft pastel gradient data streams (lavender to mint). Warm lighting, cozy tech vibes like Stardew Valley. Retro UI text: 'BRAIN UPGRADE'. High contrast, nostalgic but modern.",
   "reasoning": "Highlights the technical improvement (embeddings) which signals quality to devs, and the economics dashboard which signals transparency/trust to the community. The tone is confident and concise.",
   "char_count": 216
 }

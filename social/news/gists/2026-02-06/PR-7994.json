@@ -21,12 +21,12 @@
       "tiers",
       "usage-tracking"
     ],
-    "visual_concept": "The Pollinations bee analyzing data charts on a retro computer monitor, with icons representing the different tiers (flower, seed, spore).",
-    "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot analyzing colorful bar charts on a retro computer monitor. Soft lime green (#ecf874) and pastel gradient background. Pixel icons of flowers and seeds on the screen. Chunky retro sprites, warm lighting, lo-fi office vibes. Nostalgic but beautiful."
+    "visual_concept": "The pollinations.ai bee analyzing data charts on a retro computer monitor, with icons representing the different tiers (flower, seed, spore).",
+    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee mascot analyzing colorful bar charts on a retro computer monitor. Soft lime green (#ecf874) and pastel gradient background. Pixel icons of flowers and seeds on the screen. Chunky retro sprites, warm lighting, lo-fi office vibes. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-06/PR-7994.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations bee mascot analyzing colorful bar charts on a retro computer monitor. Soft lime green (#ecf874) and pastel gradient background. Pixel icons of flowers and seeds on the screen. Chunky retro sprites, warm lighting, lo-fi office vibes. Nostalgic but beautiful."
+    "prompt": "Cozy pixel art scene of the pollinations.ai bee mascot analyzing colorful bar charts on a retro computer monitor. Soft lime green (#ecf874) and pastel gradient background. Pixel icons of flowers and seeds on the screen. Chunky retro sprites, warm lighting, lo-fi office vibes. Nostalgic but beautiful."
   },
   "generated_at": "2026-02-11T23:45:19.797751+00:00"
 }

@@ -21,12 +21,12 @@
       "integration",
       "play"
     ],
-    "visual_concept": "The Pollinations bee bridging the gap between creativity and code. A retro game console (representing 'Play') physically connected to a glowing data terminal (representing 'Docs/Integration'). The bee is happily managing the connection.",
-    "image_prompt": "Cozy pixel art scene of the Pollinations bee connecting a retro game controller to a glowing holographic code terminal. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Represents merging play and documentation. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "The pollinations.ai bee bridging the gap between creativity and code. A retro game console (representing 'Play') physically connected to a glowing data terminal (representing 'Docs/Integration'). The bee is happily managing the connection.",
+    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee connecting a retro game controller to a glowing holographic code terminal. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Represents merging play and documentation. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-10/PR-8130.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations bee connecting a retro game controller to a glowing holographic code terminal. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Represents merging play and documentation. Nostalgic but beautiful, emotionally warm."
+    "prompt": "Cozy pixel art scene of the pollinations.ai bee connecting a retro game controller to a glowing holographic code terminal. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Represents merging play and documentation. Nostalgic but beautiful, emotionally warm."
   },
   "generated_at": "2026-02-11T23:57:23.111535+00:00"
 }

@@ -3,18 +3,18 @@
   "pr_count": 4,
   "arcs": [
     {
-      "headline": "Next-gen creative suite: Imagen 4, Flux 2, Grok Video, and ElevenLabs",
-      "summary": "We've unlocked a massive set of creative tools today. Users can now generate images with Google's Imagen 4 and Flux 2 Dev, experiment with alpha video generation via Grok, and produce high-quality speech with our new OpenAI-compatible ElevenLabs endpoint.",
+      "headline": "A full spectrum of new creative models",
+      "summary": "We've unlocked a treasure chest of new generators: ElevenLabs for premium speech, Google's Imagen 4 and Flux 2 Dev for stunning visuals, and an alpha peek at Grok Video.",
       "prs": [
-        8063,
-        7281
+        7281,
+        8063
       ],
       "importance": "major",
       "category": "feature"
     },
     {
-      "headline": "Uninterrupted reasoning for complex tasks",
-      "summary": "To support deep-thinking tasks, we've moved our AI gateway to a custom domain. This infrastructure update eliminates timeouts for long-running reasoning models, ensuring reliable generation even for the most complex prompts.",
+      "headline": "Uninterrupted thinking for reasoning models",
+      "summary": "We moved our AI gateway to a custom domain to banish 524 timeouts, giving long-running reasoning models the time they need to finish complex tasks.",
       "prs": [
         8053
       ],
@@ -22,8 +22,8 @@
       "category": "improvement"
     },
     {
-      "headline": "Smoother navigation for GSoC contributors",
-      "summary": "We've polished the experience for our Google Summer of Code applicants with better navigation behaviors, ensuring pages scroll to the top automatically when moving through the project timeline.",
+      "headline": "Smoother sailing for GSoC applicants",
+      "summary": "Navigation improvements for our Google Summer of Code pages ensure a better reading experience for aspiring contributors.",
       "prs": [
         8026
       ],
@@ -31,6 +31,6 @@
       "category": "community"
     }
   ],
-  "one_liner": "A massive creative update brings Imagen 4, Flux 2, Grok Video, and ElevenLabs support, alongside stability fixes for reasoning models.",
-  "pr_summary": "TODAY'S UPDATES (4 merged PRs):\n- #8063: feat: add imagen-4, flux-2-dev, grok-video (alpha)\n- #7281: feat: add ElevenLabs TTS endpoint\n- #8053: fix: move Portkey gateway to custom domain\n- #8026: [PATCH]: GSOC HMR Page route change top scrollheight location"
+  "one_liner": "A creative explosion with ElevenLabs TTS, Imagen 4, and Grok Video, plus stability fixes for deep reasoning models.",
+  "pr_summary": "TODAY'S UPDATES (4 merged PRs):\n- #7281: feat: add ElevenLabs TTS endpoint\n- #8063: feat: add imagen-4, flux-2-dev, grok-video\n- #8053: fix: move Portkey gateway to custom domain\n- #8026: [PATCH]: GSOC HMR Page route change fix"
 }

@@ -1,38 +1,39 @@
 {
   "content_type": "pixel_art",
   "linked_images": true,
-  "strategy_reasoning": "Using the cozy lo-fi aesthetic makes complex technical updates (API endpoints, billing logic, frontend refactors) feel like unlocking fun new items in a game. The pixel art style softens the 'tech' aspect, appealing to our creative, maker-focused audience.",
-  "visual_style": "Cozy 8-bit pixel art with chunky sprites, soft ambient lighting, and a mandatory lime green (#ecf874) accent. Nostalgic retro-gaming UI elements.",
+  "strategy_reasoning": "We're using a cozy 'level up' narrative. Image 1 focuses on the major audio features (music/speech) as a sensory experience. Image 2 introduces 'Polly' as a new character (robot friend) to humanize the Discord bot. Image 3 visualizes the UI/Image stability updates as a 'tidying up' or art studio moment, reinforcing the 'fresh' feeling. The consistent pixel art style creates a nostalgic, safe space for users to explore new tech.",
+  "visual_style": "Cozy 8-bit pixel art, Studio Ghibli meets Stardew Valley. Chunky sprites, soft lighting, lime green (#ecf874) accents, pastel gradients.",
   "image_count": 3,
   "images": [
     {
-      "prompt": "Cozy pixel art close-up of the Pollinations Bee mascot wearing chunky retro headphones, bobbing its head. Floating 8-bit musical notes and speech bubbles transforming into text. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi chill vibes like Stardew Valley. Text in pixel font: 'AUDIO SUITE UNLOCKED'. Nostalgic, cute, emotionally warm.",
-      "description": "Visualizes the new Audio Suite capabilities (Music, TTS v3, Transcription) as a fun listening session.",
-      "text_in_image": "AUDIO SUITE UNLOCKED"
+      "prompt": "Cozy pixel art scene of a cute pixel art bee mascot (round chubby yellow body, dark brown stripes, pink blush, small wings) wearing chunky pastel headphones and mixing on a tiny lo-fi turntable. Floating pixel music notes and sound waves in the air. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'AUDIO SUITE'. Nostalgic, playful, emotionally warm.",
+      "description": "Visualizing the new Audio Suite (Music + Transcription) as a cozy lo-fi hip hop study session vibe.",
+      "text_in_image": "AUDIO SUITE"
     },
     {
-      "prompt": "Pixel art scene in a digital garden. The Pollinations Bee is high-fiving a cute, tiny 8-bit robot (Polly). Surrounded by pixelated flowers blooming. Background is a soft gradient of lime green (#ecf874) and peach. Retro game dialogue box at the bottom. Wholesome community vibes, like A Short Hike. Text in pixel font: 'MEET POLLY'.",
-      "description": "Introduces Polly the Discord Bot as a new friend in the ecosystem.",
+      "prompt": "Pixel art scene of the cute pixel bee mascot high-fiving a tiny, friendly 8-bit robot (Polly). They are standing on a floating grassy island. Soft lime green (#ecf874) and mint gradient background. The robot has a small antenna and a glowing screen face. Chunky retro sprites, warm lighting, vibes like A Short Hike. Symbolizing community connection. Text in pixel font: 'MEET POLLY'. Wholesome and cute.",
+      "description": "Introducing the Polly Discord Bot as a new friend in the ecosystem.",
       "text_in_image": "MEET POLLY"
     },
     {
-      "prompt": "Isometric pixel art workspace view. A tidy desk with a glowing CRT monitor showing a sleek, organized interface. A 'Level Up!' arrow floating above the screen. Soft lime green (#ecf874) glow effects. Clean lines, pastel colors (mint and cream). Represents the frontend redesign and image stability fixes. Cozy, inviting, productive atmosphere.",
-      "description": "Showcases the frontend polish and stability fixes as a workspace upgrade.",
+      "prompt": "Pixel art scene of the cute pixel bee mascot holding a paintbrush, admiring a perfectly framed digital canvas on an easel. The surrounding workspace is clean and organized. Sparkles indicating 'newness'. Soft lime green (#ecf874) and peach gradient background. Chunky pixels, cozy atmosphere like Unpacking game. Represents the UI redesign and image stability fixes. Text in pixel font: 'FRESH LOOK'. Satisfying and clean.",
+      "description": "Showcasing the UI redesign and image stability as a 'fresh coat of paint' and organized workspace.",
       "text_in_image": "FRESH LOOK"
     }
   ],
-  "caption": "Big updates, cozy vibes 🎧✨ We just dropped a massive care package for your creative toolkit! \n\n🔊 **Audio Glow Up:** We've added OVH Whisper for speech-to-text, upgraded to ElevenLabs v3 for emotional voices, and unlocked music generation! \n\n🤖 **Meet Polly:** Our new Discord bot is live and ready to hang out. \n\n✨ **Fresh Fit:** The frontend got a total redesign (check that theme bar!) + image models are more stable than ever. \n\nEverything is smoother, faster, and ready for you to build. Link in bio to play! 🌸🐝",
+  "caption": "Besties, the glow up is real! ✨💅 We just dropped a massive update and the vibes are immaculate.\n\n🎧 **Audio Suite Unlocked:** We're talking music generation, transcription, and emotional speech. Your projects just got a voice (and a beat).\n\n🤖 **Meet Polly:** Our new Discord bot is here to bridge the gap between your chats and our code. Say hi!\n\n🎨 **Fresh Fit:** The UI got a total makeover—cleaner headers, sleeker look, and our image models are more stable than ever. \n\nGo create something loud and beautiful today. 🌸\n\nLink in bio to try the new toys! 🔗\n\n#pollinations #opensource #pixelart #indiedev #generativeai #cozyvibes #aiart #buildinpublic #retrogaming #8bitart #techupdate",
   "hashtags": [
     "#pollinations",
     "#opensource",
     "#pixelart",
-    "#generativeai",
     "#indiedev",
+    "#generativeai",
     "#cozyvibes",
+    "#aiart",
     "#buildinpublic",
     "#retrogaming",
-    "#aiart",
-    "#lofi"
+    "#8bitart",
+    "#techupdate"
   ],
-  "alt_text": "A carousel of 3 cozy 8-bit pixel art images. 1: A pixel bee wearing headphones with music notes in lime green and lavender. 2: The bee high-fiving a small robot named Polly in a garden. 3: An isometric pixel art desk with a glowing computer screen representing a software update."
+  "alt_text": "A carousel of 3 cozy pixel art images. 1: A cute pixel bee wearing headphones with music notes floating in a lime green and lavender void. 2: The pixel bee high-fiving a small cute robot named Polly against a mint background. 3: The pixel bee painting on a canvas in a tidy, organized digital workspace with peach and lime accents."
 }

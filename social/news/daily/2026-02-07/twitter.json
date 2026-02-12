@@ -1,12 +1,12 @@
 {
   "tweet_type": "shipped",
-  "tweet": "massive model drop today:\n\n- grok-video (alpha)\n- imagen-4\n- flux-2-dev\n- elevenlabs tts\n\nall live via api & url. open source, no gatekeeping. just shipped it.\n\n#OpenSource #AI",
-  "alt_tweet": "just merged the creative suite update. grok-video, imagen-4, flux-2, and elevenlabs are now live endpoints. 500+ apps just got a major upgrade. go build.",
+  "tweet": "huge model drop just hit the api: imagen 4, flux 2 dev, grok video + elevenlabs tts. 🌸\n\naccess to sota tools shouldn't be gatekept. if you're building on pollinations, your app just got a major upgrade. no config needed. ship it.",
+  "alt_tweet": "imagen 4, flux 2 dev, grok video, and elevenlabs tts are now live on pollinations.\n\nwe handle the infra so you can focus on the product. 500+ open source apps just got smarter today. 🐝",
   "hashtags": [
     "#OpenSource",
     "#AI"
   ],
-  "image_prompt": "[Cozy 8-bit pixel art RPG inventory screen]. A pixelated bee character discovering glowing legendary loot items: a retro video tape (Grok), a golden paintbrush (Flux), and a speech bubble (ElevenLabs). Soft lime green (#ecf874) glow effects against a dark purple background. High contrast, 'achievement unlocked' energy. Retro gaming UI with chunky text. Warm, exciting atmosphere.",
-  "reasoning": "High-signal tweet listing the specific, high-demand models developers actually care about. The list format works well on X to stop the scroll. Reinforces 'shipping' culture.",
-  "char_count": 178
+  "image_prompt": "Dynamic pixel art scene. Cute round bee mascot with pink cheeks floating in center, surrounded by glowing floating icons of a camera, a paintbrush, and a waveform. Lime green #ecf874 and soft pastel purple background. High energy, magical sparkles, 'LEVEL UP' text in pixel font. Cozy 8-bit aesthetic, warm lighting, chunky retro sprites.",
+  "reasoning": "Directly addresses the major value add (SOTA models) with a builder-first 'ship it' attitude. Shows technical momentum without corporate fluff.",
+  "char_count": 217
 }

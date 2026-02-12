@@ -21,12 +21,12 @@
       "infrastructure",
       "github actions"
     ],
-    "visual_concept": "The Pollinations bee mascot performing maintenance on a robotic parrot (Polly) in a cozy server room setting.",
-    "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot adjusting a small robotic parrot in a server room. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixelated cables and logs. Nostalgic but beautiful."
+    "visual_concept": "The pollinations.ai bee mascot performing maintenance on a robotic parrot (Polly) in a cozy server room setting.",
+    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee mascot adjusting a small robotic parrot in a server room. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixelated cables and logs. Nostalgic but beautiful."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-10/PR-8144.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations bee mascot adjusting a small robotic parrot in a server room. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixelated cables and logs. Nostalgic but beautiful."
+    "prompt": "Cozy pixel art scene of the pollinations.ai bee mascot adjusting a small robotic parrot in a server room. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixelated cables and logs. Nostalgic but beautiful."
   },
   "generated_at": "2026-02-11T23:58:16.686532+00:00"
 }

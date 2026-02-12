@@ -37,7 +37,7 @@ Think: enthusiastic community mod who actually knows the tech. Witty, celebrator
 ### Content Filtering:
 - Only include MAJOR changes that matter to users
 - Skip styling/UI cosmetics, internal tooling, infrastructure
-- Focus on changes that impact users of services powered by Pollinations
+- Focus on changes that impact users of services powered by pollinations.ai
 - If nothing major shipped, return `SKIP`
 
 TONE: Conversational, witty, celebratory. Highlight the cool stuff.

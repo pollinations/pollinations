@@ -140,6 +140,8 @@ def _inject_shared_prompts(content: str) -> str:
         content = content.replace("{about}", load_shared("brand_about"))
     if "{visual_style}" in content:
         content = content.replace("{visual_style}", load_shared("brand_visual"))
+    if "{bee_character}" in content:
+        content = content.replace("{bee_character}", load_shared("bee_character"))
     return content
 
 
@@ -311,12 +313,12 @@ def call_pollinations_api(
     verbose: bool = False,
     exit_on_failure: bool = False
 ) -> Optional[str]:
-    """Call Pollinations AI API with retry logic and exponential backoff
-    
+    """Call pollinations.ai API with retry logic and exponential backoff
+
     Args:
         system_prompt: System prompt for the AI
         user_prompt: User prompt for the AI
-        token: Pollinations API token
+        token: pollinations.ai API token
         temperature: Temperature for generation (default 0.7)
         max_retries: Number of retries (default MAX_RETRIES from constants)
         model: Model to use (default MODEL from constants)
@@ -411,7 +413,13 @@ def call_pollinations_api(
 
 
 def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0) -> tuple[Optional[bytes], Optional[str]]:
-    """Generate a single image using Pollinations nanobanana"""
+    """Generate a single image via the pollinations.ai image API."""
+
+    # Append bee character description if not already present (loaded from prompt file)
+    if "bee mascot" not in prompt.lower():
+        bee_desc = load_shared("bee_character")
+        if bee_desc:
+            prompt = f"{prompt} {bee_desc}"
 
     # Strip single quotes — they cause 400 errors from the image API even when URL-encoded
     sanitized = prompt.replace("'", "")

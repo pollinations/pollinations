@@ -21,12 +21,12 @@
       "workflow",
       "infrastructure"
     ],
-    "visual_concept": "A cute automated robot arm or conveyor belt sorting mail/papers, representing the new auto-merge workflow. The Pollinations bee watches the efficient process.",
-    "image_prompt": "Cozy pixel art scene of a cute automated conveyor belt sorting colorful pixel letters. Soft lime green (#ecf874) and pastel peach gradient background. The Pollinations bee watches the smooth process. Chunky retro sprites, warm lighting, lo-fi aesthetic. Organized and efficient."
+    "visual_concept": "A cute automated robot arm or conveyor belt sorting mail/papers, representing the new auto-merge workflow. The pollinations.ai bee watches the efficient process.",
+    "image_prompt": "Cozy pixel art scene of a cute automated conveyor belt sorting colorful pixel letters. Soft lime green (#ecf874) and pastel peach gradient background. The pollinations.ai bee watches the smooth process. Chunky retro sprites, warm lighting, lo-fi aesthetic. Organized and efficient."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8085.jpg",
-    "prompt": "Cozy pixel art scene of a cute automated conveyor belt sorting colorful pixel letters. Soft lime green (#ecf874) and pastel peach gradient background. The Pollinations bee watches the smooth process. Chunky retro sprites, warm lighting, lo-fi aesthetic. Organized and efficient."
+    "prompt": "Cozy pixel art scene of a cute automated conveyor belt sorting colorful pixel letters. Soft lime green (#ecf874) and pastel peach gradient background. The pollinations.ai bee watches the smooth process. Chunky retro sprites, warm lighting, lo-fi aesthetic. Organized and efficient."
   },
   "generated_at": "2026-02-11T23:52:43.603620+00:00"
 }

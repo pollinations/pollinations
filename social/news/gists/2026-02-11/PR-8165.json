@@ -12,7 +12,7 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "summary": "Launched a dedicated landing page and setup script to seamlessly integrate Pollinations models with OpenClaw.",
+    "summary": "Launched a dedicated landing page and setup script to seamlessly integrate pollinations.ai models with OpenClaw.",
     "impact": "OpenClaw users can now instantly configure Kimi, GPT, and Gemini as their model providers with a single command.",
     "keywords": [
       "OpenClaw",
@@ -23,12 +23,12 @@
       "setup",
       "AI"
     ],
-    "visual_concept": "The Pollinations Bee collaborating with the OpenClaw mascot (a cute pixel art crab). They are working together at a computer terminal in a cozy digital garden, representing the seamless connection between the two tools.",
-    "image_prompt": "Cozy pixel art scene of the Pollinations bee and a cute 8-bit crab character (OpenClaw) high-fiving near a glowing computer terminal. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Cute crab and bee characters with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Pixel text 'OpenClaw'. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "The pollinations.ai Bee collaborating with the OpenClaw mascot (a cute pixel art crab). They are working together at a computer terminal in a cozy digital garden, representing the seamless connection between the two tools.",
+    "image_prompt": "Cozy pixel art scene of the pollinations.ai bee and a cute 8-bit crab character (OpenClaw) high-fiving near a glowing computer terminal. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Cute crab and bee characters with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Pixel text 'OpenClaw'. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-11/PR-8165.jpg",
-    "prompt": "Cozy pixel art scene of the Pollinations bee and a cute 8-bit crab character (OpenClaw) high-fiving near a glowing computer terminal. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Cute crab and bee characters with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Pixel text 'OpenClaw'. Nostalgic but beautiful, emotionally warm."
+    "prompt": "Cozy pixel art scene of the pollinations.ai bee and a cute 8-bit crab character (OpenClaw) high-fiving near a glowing computer terminal. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Cute crab and bee characters with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Pixel text 'OpenClaw'. Nostalgic but beautiful, emotionally warm."
   },
   "generated_at": "2026-02-11T23:58:43.345811+00:00"
 }

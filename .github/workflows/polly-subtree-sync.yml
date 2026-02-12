@@ -25,7 +25,7 @@ jobs:
 
       - name: Add Polly remote
         run: |
-          git remote add polly https://x-access-token:${{ secrets.POLLI_ORIGINAL_ACCESS_TOKEN }}@github.com/Itachi-1824/Polly.git
+          git remote add polly https://github.com/Itachi-1824/Polly.git
 
       - name: Fetch Polly repo
         run: |

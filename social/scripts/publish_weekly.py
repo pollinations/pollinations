@@ -225,9 +225,7 @@ def main():
     vps_host = get_env("REDDIT_VPS_HOST", required=False)
     vps_user = get_env("REDDIT_VPS_USER", required=False)
     vps_ssh_key = get_env("REDDIT_VPS_SSH_KEY", required=False).strip()
-
     private_key_str = base64.b64decode(vps_ssh_key).decode("utf-8")
-
     key_file = io.StringIO(private_key_str)
     pkey = paramiko.Ed25519Key.from_private_key(key_file)
 

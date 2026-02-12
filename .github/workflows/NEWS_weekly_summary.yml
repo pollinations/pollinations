@@ -2,11 +2,11 @@ name: Weekly Summary Generator
 
 on:
   schedule:
-    - cron: '0 0 * * 4'  # Thursday 00:00 UTC
+    - cron: '0 6 * * 0'  # Sunday 06:00 UTC
   workflow_dispatch:
     inputs:
       target_date:
-        description: 'Week start date (Thursday, YYYY-MM-DD). Defaults to current week.'
+        description: 'Week start date (Monday, YYYY-MM-DD). Defaults to current week.'
         required: false
         type: string
 

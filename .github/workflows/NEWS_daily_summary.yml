@@ -2,7 +2,7 @@ name: Daily Summary Generator
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # 00:00 UTC daily
+    - cron: '0 6 * * 1-6'  # Mon-Sat 06:00 UTC
   workflow_dispatch:
     inputs:
       target_date:

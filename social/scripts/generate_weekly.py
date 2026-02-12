@@ -2,27 +2,24 @@
 """
 Tier 3: Weekly Digest Generator
 
-Thursday 00:00 UTC:
-  1. Read daily summaries for the past 7 days (Thu→Wed)
+Sunday 06:00 UTC:
+  1. Read gists for the past 7 days (Mon→Sun)
   2. AI synthesizes weekly themes → summary.md
   3. Generate platform posts (Twitter, LinkedIn, Instagram, Reddit, Discord)
   4. Generate 7 platform images (1 twitter + 1 linkedin + 3 instagram + 1 reddit + 1 discord)
   5. Create PR for review
 
-Friday 15:00 UTC cron (publish_weekly.py) checks if PR was merged and publishes.
+Sunday 18:00 UTC cron (publish_weekly.py) checks if PR was merged and publishes.
 
 See social/PIPELINE.md for full architecture.
 """
 
-import os
 import sys
 import json
 import time
 import base64
-import requests
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
-from pathlib import Path
 
 from common import (
     load_prompt,
@@ -32,7 +29,7 @@ from common import (
     generate_image,
     commit_image_to_branch,
     get_file_sha,
-    get_merged_prs,
+    read_gists_for_date,
     github_api_request,
     GITHUB_API_BASE,
     IMAGE_SIZE,
@@ -41,7 +38,6 @@ from common import (
 
 # ── Constants ────────────────────────────────────────────────────────
 
-DAILY_REL_DIR = "social/news/daily"
 WEEKLY_REL_DIR = "social/news/weekly"
 
 
@@ -49,18 +45,14 @@ WEEKLY_REL_DIR = "social/news/weekly"
 
 def get_week_range(override_start: Optional[str] = None):
     """Return (week_start, week_end) as YYYY-MM-DD strings.
-    Default: Thursday-Wednesday of the week that just ended (when run Thursday 00:00 UTC).
-    This covers 7 days of work. The weekly publishes on Friday 15:00 UTC."""
+    Default: Mon→Sun of the current week (when run Sunday 06:00 UTC).
+    This covers 7 days of work. The weekly publishes Sunday 18:00 UTC."""
     if override_start:
         start = datetime.strptime(override_start, "%Y-%m-%d")
     else:
-        # Thursday 00:00 UTC — the week is Thu-Wed that just ended
+        # Sunday 06:00 UTC — the week is Mon-Sun
         today = datetime.now(timezone.utc).date()
-        # Go back to the most recent Thursday (today if Thursday)
-        # Thursday = weekday 3
-        days_since_thursday = (today.weekday() - 3) % 7
-        # We want LAST Thursday (7 days ago), not today
-        start = today - timedelta(days=days_since_thursday + 7)
+        start = today - timedelta(days=6)  # Monday
 
     end = start + timedelta(days=6)
     return start.strftime("%Y-%m-%d") if hasattr(start, 'strftime') else str(start)[:10], \
@@ -82,12 +74,10 @@ def parse_json_response(response: str) -> Optional[Dict]:
         return None
 
 
-def read_daily_summaries(week_start: str, week_end: str, github_token: str,
-                         owner: str, repo: str) -> List[Dict]:
-    """Read daily summary.json files for each day in the week range.
-    Tries local repo first, falls back to GitHub API."""
-    repo_root = get_repo_root()
-    summaries = []
+def read_gists_for_week(week_start: str, week_end: str) -> List[Dict]:
+    """Read all gist JSON files for each day in the week range.
+    Reads directly from local repo gists (no daily summary dependency)."""
+    all_gists = []
 
     start = datetime.strptime(week_start, "%Y-%m-%d")
     end = datetime.strptime(week_end, "%Y-%m-%d")
@@ -95,65 +85,58 @@ def read_daily_summaries(week_start: str, week_end: str, github_token: str,
 
     while current <= end:
         date_str = current.strftime("%Y-%m-%d")
-        local_path = Path(repo_root) / DAILY_REL_DIR / date_str / "summary.json"
-
-        if local_path.exists():
-            try:
-                with open(local_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    data["_date"] = date_str
-                    summaries.append(data)
-            except (json.JSONDecodeError, OSError) as e:
-                print(f"  Warning: skipping {local_path}: {e}")
-        else:
-            # Try GitHub API
-            api_path = f"{DAILY_REL_DIR}/{date_str}/summary.json"
-            headers = {
-                "Accept": "application/vnd.github+json",
-                "Authorization": f"Bearer {github_token}",
-            }
-            resp = github_api_request(
-                "GET",
-                f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{api_path}",
-                headers=headers,
-            )
-            if resp.status_code == 200:
-                content = base64.b64decode(resp.json()["content"]).decode()
-                try:
-                    data = json.loads(content)
-                    data["_date"] = date_str
-                    summaries.append(data)
-                except json.JSONDecodeError:
-                    pass
-
+        day_gists = read_gists_for_date(date_str)
+        if day_gists:
+            print(f"    {date_str}: {len(day_gists)} gists")
+        all_gists.extend(day_gists)
         current += timedelta(days=1)
 
-    return summaries
+    return all_gists
+
+
+def filter_daily_gists(gists: List[Dict]) -> List[Dict]:
+    """Filter gists to only those with publish_tier == 'daily'."""
+    return [g for g in gists if g.get("gist", {}).get("publish_tier") == "daily"]
 
 
 # ── Step 1: Generate weekly summary ─────────────────────────────────
 
-def generate_digest(summaries: List[Dict], week_start: str, week_end: str,
+def generate_digest(gists: List[Dict], week_start: str, week_end: str,
                     token: str) -> Optional[Dict]:
-    """Synthesize daily summaries into weekly summary."""
+    """Synthesize PR gists into weekly summary."""
     system_prompt = load_prompt("_shared/weekly_summary")
 
-    # Build context from daily summaries
-    daily_context = []
-    for s in summaries:
-        daily_context.append(json.dumps({
-            "date": s.get("_date", s.get("date")),
-            "pr_count": s.get("pr_count", 0),
-            "one_liner": s.get("one_liner", ""),
-            "arcs": s.get("arcs", []),
+    # Build context from gists, grouped by date
+    from collections import defaultdict
+    by_date = defaultdict(list)
+    for g in gists:
+        date = g.get("merged_at", "")[:10] or "unknown"
+        ai = g.get("gist", {})
+        by_date[date].append({
+            "pr_number": g.get("pr_number"),
+            "title": g.get("title"),
+            "author": g.get("author"),
+            "category": ai.get("category"),
+            "importance": ai.get("importance"),
+            "summary": ai.get("summary"),
+            "impact": ai.get("impact"),
+            "keywords": ai.get("keywords"),
+        })
+
+    gist_context = []
+    for date in sorted(by_date.keys()):
+        gist_context.append(json.dumps({
+            "date": date,
+            "pr_count": len(by_date[date]),
+            "prs": by_date[date],
         }, indent=2))
 
     user_prompt = f"""Week: {week_start} to {week_end}
-Days with summaries: {len(summaries)}
-Total PRs: {sum(s.get('pr_count', 0) for s in summaries)}
+Total PRs: {len(gists)}
+Days with PRs: {len(by_date)}
 
-Daily summaries:
-{chr(10).join(daily_context)}"""
+PR gists by date:
+{chr(10).join(gist_context)}"""
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,
@@ -481,7 +464,7 @@ def create_weekly_pr(
 {arc_preview}
 
 ---
-When this PR is merged, the Friday 15:00 UTC cron will publish to all 5 platforms (Twitter, LinkedIn, Instagram via Buffer + Reddit API + Discord webhook).
+When this PR is merged, the Sunday 18:00 UTC cron will publish to all 5 platforms (Twitter, LinkedIn, Instagram via Buffer + Reddit API + Discord webhook).
 
 Generated automatically by GitHub Actions.
 """
@@ -551,19 +534,20 @@ def main():
     week_start, week_end = get_week_range(week_start_override)
     print(f"  Week: {week_start} to {week_end}")
 
-    # ── Read daily summaries ─────────────────────────────────────────
-    print(f"\n[1/4] Reading daily summaries...")
-    summaries = read_daily_summaries(week_start, week_end, github_token, owner, repo)
-    print(f"  Found {len(summaries)} daily summaries")
+    # ── Read gists ─────────────────────────────────────────────────────
+    print(f"\n[1/4] Reading gists for {week_start} to {week_end}...")
+    all_gists = read_gists_for_week(week_start, week_end)
+    daily_gists = filter_daily_gists(all_gists)
+    print(f"  Found {len(all_gists)} total gists, {len(daily_gists)} with publish_tier=daily")
 
-    if not summaries:
-        print("  No daily summaries found. Skipping.")
+    if not daily_gists:
+        print("  No daily-tier gists found. Skipping.")
         print("=== Done (no content) ===")
         return
 
     # ── Generate summary ─────────────────────────────────────────────
     print(f"\n[2/4] Generating weekly summary...")
-    digest = generate_digest(summaries, week_start, week_end, pollinations_token)
+    digest = generate_digest(daily_gists, week_start, week_end, pollinations_token)
     if not digest:
         print("  Digest generation failed!")
         sys.exit(1)

@@ -2,7 +2,7 @@ name: Weekly Publish
 
 on:
   schedule:
-    - cron: '0 15 * * 5'  # Friday 15:00 UTC
+    - cron: '0 18 * * 0'  # Sunday 18:00 UTC
   workflow_dispatch:
     inputs:
       target_date:

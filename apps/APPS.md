@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| 📚 | Tiny Tales | https://tiny-tales.nathanconnor.dev | Generates child-friendly 4-page stories with adjustable max word length. | en | Learn | @natyconnor | 831626 | https://github.com/natyconnor/tiny-tales |  | nathan.d.connor | | 2026-02-12 | https://github.com/pollinations/pollinations/issues/8193 | 2026-02-12 |
 | 🧩 | n8n-nodes-pollinations | https://www.npmjs.com/package/n8n-nodes-pollinations-v2 | n8n community node adding Pollinations.ai image, video, text, and audio nodes | en | Dev_Tools | @isaacgounton | 44446037 | https://github.com/isaacgounton/n8n-nodes-pollinations |  |  | | 2026-02-04 | https://github.com/pollinations/pollinations/issues/7932 | 2026-02-04 |
 | 🌐 | NebulaAPI | https://nebulaapi.app | Free Brazilian API gateway for AI and gaming with Pollinations backend. | pt-BR | Dev_Tools | @MatheusHMafra | 127265280 |  |  | st4rx3 | | 2026-02-02 | https://github.com/pollinations/pollinations/issues/7873 | 2026-02-10 |
 | 📖 | Korpi.AI | https://korpi.ai | Generates AI stories with the Pollinations Flux model. | en | Creative | @Reksely | 69013710 |  |  |  |  | 2026-01-14 | https://github.com/pollinations/pollinations/issues/7290 |  |

@@ -19,7 +19,9 @@ import json
 import requests
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Optional
-
+import paramiko
+import base64 
+import io
 from common import get_env, github_api_request, GITHUB_API_BASE, deploy_reddit_post, DISCORD_CHAR_LIMIT
 from buffer_publish import (
     publish_twitter_post,
@@ -222,13 +224,18 @@ def main():
     # Reddit (VPS/Devvit deployment)
     vps_host = get_env("REDDIT_VPS_HOST", required=False)
     vps_user = get_env("REDDIT_VPS_USER", required=False)
-    vps_ssh_key = get_env("REDDIT_VPS_SSH_KEY", required=False)
+    vps_ssh_key = get_env("REDDIT_VPS_SSH_KEY", required=False).strip()
+
+    private_key_str = base64.b64decode(vps_ssh_key).decode("utf-8")
+
+    key_file = io.StringIO(private_key_str)
+    pkey = paramiko.Ed25519Key.from_private_key(key_file)
 
     if vps_host and vps_user and vps_ssh_key:
         reddit_data = read_weekly_file(f"{weekly_dir}/reddit.json", github_token, owner, repo)
         if reddit_data:
             print("  Reddit...")
-            results["reddit"] = deploy_reddit_post(reddit_data, vps_host, vps_user, vps_ssh_key)
+            results["reddit"] = deploy_reddit_post(reddit_data, vps_host, vps_user, pkey)
         else:
             print("  No reddit.json — skipping")
     else:

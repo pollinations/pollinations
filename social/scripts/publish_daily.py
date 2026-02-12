@@ -17,7 +17,9 @@ import sys
 import json
 from datetime import datetime, timezone
 from typing import Dict, Optional
-
+import paramiko
+import base64
+import io
 from common import (
     get_env,
     github_api_request,
@@ -273,6 +275,10 @@ def main():
     vps_host = get_env("REDDIT_VPS_HOST", required=False)
     vps_user = get_env("REDDIT_VPS_USER", required=False)
     vps_ssh_key = get_env("REDDIT_VPS_SSH_KEY", required=False)
+    vps_ssh_key = get_env("REDDIT_VPS_SSH_KEY", required=False).strip()
+    private_key_str = base64.b64decode(vps_ssh_key).decode("utf-8")
+    key_file = io.StringIO(private_key_str)
+    pkey = paramiko.Ed25519Key.from_private_key(key_file)
 
     if vps_host and vps_user and vps_ssh_key:
         reddit_data = {}
@@ -282,7 +288,7 @@ def main():
                 reddit_data = json.load(f)
 
         if reddit_data:
-            deploy_reddit_post(reddit_data, vps_host, vps_user, vps_ssh_key)
+            deploy_reddit_post(reddit_data, vps_host, vps_user, pkey)
         else:
             print("  No reddit.json — skipping VPS deployment")
     else:

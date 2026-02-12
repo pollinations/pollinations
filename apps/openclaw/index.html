@@ -580,7 +580,7 @@
 
         <section class="hero">
             <h1><span class="brand">pollinations.ai</span> × <span class="accent">OpenClaw</span> Builders Night</h1>
-            <p>Get your OpenClaw agent running on <span class="brand">pollinations.ai</span> models in 30 seconds. Hackathon attendees get free API credits — connect your account and start building.</p>
+            <p>Get your OpenClaw agent running on <span class="brand">pollinations.ai</span> models in 30 seconds. Free models with web search, vision & reasoning — connect your account and start building.</p>
         </section>
 
         <a href="https://luma.com/8k58g33a" class="event-banner" target="_blank" rel="noopener noreferrer">
@@ -636,7 +636,8 @@
         "pollinations/kimi": { "alias": "Kimi K2.5" },
         "pollinations/deepseek": { "alias": "DeepSeek V3.2" },
         "pollinations/glm": { "alias": "GLM-4.7" },
-        "pollinations/gemini-fast": { "alias": "Gemini Flash Lite" },
+        "pollinations/gemini-search": { "alias": "Gemini + Search" },
+        "pollinations/perplexity-fast": { "alias": "Perplexity Fast" },
         "pollinations/claude-fast": { "alias": "Claude Haiku 4.5" }
       }
     }
@@ -669,7 +670,7 @@
 
 curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- <span class="key-in-json">YOUR_API_KEY</span>
 
-Then start a new session so the config is picked up. After that, switch to the new provider with: /model pollinations/kimi<button class="copy-btn" onclick="copyCode('agent-msg')">Copy</button></div>
+Then start a new session so the config is picked up. After that, switch to the new provider with: /model pollinations/gemini-search<button class="copy-btn" onclick="copyCode('agent-msg')">Copy</button></div>
                 </div>
             </div>
         </div>
@@ -684,6 +685,16 @@ Then start a new session so the config is picked up. After that, switch to the n
                     <div class="model-note">Best open model for agentic coding. 256K context, vision, tools, reasoning. 77% SWE-Bench.</div>
                 </div>
                 <div class="model-row">
+                    <div class="model-label">Gemini + Search <span class="model-tag">web search</span></div>
+                    <div class="model-id">pollinations/gemini-search</div>
+                    <div class="model-note">Google Gemini with always-on web search. Vision support. Look up docs, APIs, recent changes.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Perplexity Fast <span class="model-tag">web search</span></div>
+                    <div class="model-id">pollinations/perplexity-fast</div>
+                    <div class="model-note">Perplexity Sonar with web search. Fast research, fact-checking, real-time info.</div>
+                </div>
+                <div class="model-row">
                     <div class="model-label">DeepSeek V3.2</div>
                     <div class="model-id">pollinations/deepseek</div>
                     <div class="model-note">Strong reasoning & tool calling. Good alternative to Kimi for hard problems.</div>
@@ -694,23 +705,18 @@ Then start a new session so the config is picked up. After that, switch to the n
                     <div class="model-note">Z.ai — coding, reasoning, agentic workflows. Competitive with Kimi.</div>
                 </div>
                 <div class="model-row">
-                    <div class="model-label">Gemini Flash Lite</div>
-                    <div class="model-id">pollinations/gemini-fast</div>
-                    <div class="model-note">Google — very fast, vision support. Great as a fallback.</div>
-                </div>
-                <div class="model-row">
                     <div class="model-label">Claude Haiku 4.5</div>
                     <div class="model-id">pollinations/claude-fast</div>
                     <div class="model-note">Anthropic — fast with good reasoning. Claude quality, lower cost.</div>
                 </div>
                 <div class="model-row dimmed">
-                    <div class="model-label">Claude / Gemini / Grok <span class="model-tag paid">paid</span></div>
-                    <div class="model-id">pollinations/claude · gemini · grok</div>
+                    <div class="model-label">Claude / Grok <span class="model-tag paid">paid</span></div>
+                    <div class="model-id">pollinations/claude · grok</div>
                     <div class="model-note">Premium models. Require paid tier.</div>
                 </div>
             </div>
 
-            <p style="margin-top:24px; font-size:14px; color:var(--muted)">Switch models anytime: <code style="color:var(--text)">/model pollinations/deepseek</code></p>
+            <p style="margin-top:24px; font-size:14px; color:var(--muted)">Switch models anytime: <code style="color:var(--text)">/model pollinations/gemini-search</code></p>
         </section>
 
         <section class="section">

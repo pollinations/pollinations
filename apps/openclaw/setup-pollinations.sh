@@ -39,10 +39,10 @@ NEW_CONFIG=$(cat <<EOF
         "pollinations/kimi": { "alias": "Kimi K2.5 (Pollinations)" },
         "pollinations/deepseek": { "alias": "DeepSeek V3.2 (Pollinations)" },
         "pollinations/glm": { "alias": "GLM-4.7 (Pollinations)" },
-        "pollinations/gemini-fast": { "alias": "Gemini Flash Lite (Pollinations)" },
+        "pollinations/gemini-search": { "alias": "Gemini + Search (Pollinations)" },
+        "pollinations/perplexity-fast": { "alias": "Perplexity Fast (Pollinations)" },
         "pollinations/claude-fast": { "alias": "Claude Haiku 4.5 (Pollinations)" },
         "pollinations/claude": { "alias": "Claude Sonnet (Pollinations, paid)" },
-        "pollinations/gemini": { "alias": "Gemini 3 (Pollinations, paid)" },
         "pollinations/grok": { "alias": "Grok 4 (Pollinations, paid)" }
       }
     }
@@ -83,10 +83,19 @@ NEW_CONFIG=$(cat <<EOF
             "maxTokens": 8192
           },
           {
-            "id": "gemini-fast",
-            "name": "Gemini 2.5 Flash Lite — Fast, vision support",
+            "id": "gemini-search",
+            "name": "Gemini + Search — Web search grounded answers",
             "reasoning": false,
             "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000,
+            "maxTokens": 8192
+          },
+          {
+            "id": "perplexity-fast",
+            "name": "Perplexity Fast — Web search & real-time info",
+            "reasoning": false,
+            "input": ["text"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
             "contextWindow": 128000,
             "maxTokens": 8192
@@ -163,9 +172,10 @@ echo "  API Key: $MASKED_KEY"
 echo ""
 echo "  Primary model: Kimi K2.5 (256K context, vision, tools, reasoning)"
 echo "  Fallbacks:     DeepSeek V3.2, GLM-4.7"
-echo "  Also available: Gemini Flash Lite, Claude Haiku 4.5, + premium models"
+echo "  Web search:    Gemini + Search, Perplexity Fast"
+echo "  Also available: Claude Haiku 4.5, + premium models"
 echo ""
-echo "  Switch models in chat: /model pollinations/gemini"
+echo "  Switch models in chat: /model pollinations/gemini-search"
 echo "  Manage your account:   https://enter.pollinations.ai"
 echo ""
 if ! command -v openclaw >/dev/null 2>&1; then

@@ -412,7 +412,9 @@ def call_pollinations_api(
 def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0) -> tuple[Optional[bytes], Optional[str]]:
     """Generate a single image using Pollinations nanobanana"""
 
-    encoded_prompt = quote(prompt)
+    # Strip single quotes — they cause 400 errors from the image API even when URL-encoded
+    sanitized = prompt.replace("'", "")
+    encoded_prompt = quote(sanitized)
     base_url = f"{POLLINATIONS_IMAGE_BASE}/{encoded_prompt}"
 
     print(f"\n  Generating image {index + 1}: {prompt[:80]}...")

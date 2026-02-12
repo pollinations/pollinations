@@ -1,0 +1,12 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "seamless ai agents are here. 🤖✨\n\njust merged OpenClaw integration. auto-install, auto-onboard, zero friction.\n\nspin up an agent in seconds, not hours. all open source. go build something wild.",
+  "alt_tweet": "building agents shouldn't be a config nightmare.\n\njust shipped OpenClaw integration: full auto-install & onboarding in one script. from zero to running agent in <1 min.\n\nless setup, more shipping.",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image_prompt": "Dynamic pixel art scene: Pollinations bee mascot activating a sleek, glowing robot companion (OpenClaw). Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, sparks of digital energy. Retro game UI text box reading 'AGENTS ONLINE'. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but energetic.",
+  "reasoning": "Directly addresses the value prop (seamless/speed) while maintaining the builder-to-builder voice. The 'seconds, not hours' framing highlights the technical improvement of the auto-install script.",
+  "char_count": 178
+}

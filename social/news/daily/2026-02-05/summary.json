@@ -1,0 +1,17 @@
+{
+  "date": "2026-02-05",
+  "pr_count": 1,
+  "arcs": [
+    {
+      "headline": "Welcoming the next wave of open-source contributors",
+      "summary": "We've refreshed our documentation and contributing guidelines to make onboarding smoother for prospective Google Summer of Code (GSoC) participants.",
+      "prs": [
+        7877
+      ],
+      "importance": "minor",
+      "category": "docs"
+    }
+  ],
+  "one_liner": "Laying the groundwork for Google Summer of Code with updated contributor docs.",
+  "pr_summary": "TODAY'S UPDATES (1 merged PR):\n- #7877: [PATCH]: GSOC Readme and GSOC Contributing"
+}

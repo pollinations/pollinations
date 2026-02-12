@@ -1,0 +1,36 @@
+{
+  "date": "2026-02-10",
+  "pr_count": 4,
+  "arcs": [
+    {
+      "headline": "A unified playground for creators and coders",
+      "summary": "We've merged the documentation directly into the Play page. Now, as you tweak settings, you get live, color-coded API URLs instantly—bridging the gap between experimenting and building.",
+      "prs": [
+        8130
+      ],
+      "importance": "major",
+      "category": "feature"
+    },
+    {
+      "headline": "New character models and smarter Gemini integration",
+      "summary": "We introduced 'qwen-character' for immersive roleplay and optimized Airforce pricing for better value. Additionally, Gemini now handles code execution blocks and reasoning processes with greater reliability.",
+      "prs": [
+        8124,
+        8131
+      ],
+      "importance": "major",
+      "category": "feature"
+    },
+    {
+      "headline": "A sharper, more secure Polly",
+      "summary": "Polly has been updated to think more independently and resist prompt leakage, ensuring interactions feel safer, more authentic, and harder to manipulate.",
+      "prs": [
+        8141
+      ],
+      "importance": "major",
+      "category": "improvement"
+    }
+  ],
+  "one_liner": "Docs meet the Playground, Polly gets smarter, and new character models arrive.",
+  "pr_summary": "TODAY'S UPDATES (4 merged PRs):\n- #8130: feat: merge Docs page into Play page Integrate section\n- #8124: fix: add qwen-character, update airforce pricing\n- #8141: Harden Polly against prompt leakage and enforce independent thinking\n- #8131: fix: update gateway commit for Gemini executable_code blocks"
+}

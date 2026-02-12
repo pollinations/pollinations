@@ -1,0 +1,19 @@
+{
+  "date": "2026-02-11",
+  "pr_count": 3,
+  "arcs": [
+    {
+      "headline": "Seamless AI Agents with OpenClaw",
+      "summary": "We've launched a dedicated integration for OpenClaw, enabling users to configure models like Kimi, GPT, and Gemini with a single command. The update includes a streamlined 2-step auto-installation script and a visual polish with improved mobile responsiveness.",
+      "prs": [
+        8165,
+        8167,
+        8168
+      ],
+      "importance": "major",
+      "category": "feature"
+    }
+  ],
+  "one_liner": "AI agents just got easier with a seamless, one-command OpenClaw integration and a fresh UI polish.",
+  "pr_summary": "TODAY'S UPDATES (3 merged PRs):\n- #8165: feat: OpenClaw integration — landing page, setup script, docs\n- #8167: feat: auto-install OpenClaw and auto-onboard in setup script\n- #8168: fix: OpenClaw branding — favicon, logos, fonts"
+}

@@ -1,0 +1,38 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "Using the cozy retro gaming aesthetic makes technical backend updates (embeddings, balance logic) feel rewarding and tangible, like unlocking features in a favorite RPG.",
+  "visual_style": "Nostalgic 8-bit pixel art with modern soft lighting, chunky sprites, and the signature lime green (#ecf874) palette. Wholesome, Stardew Valley-esque atmosphere.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art close-up of the Pollinations bee mascot floating happily with a glowing pixelated lightbulb idea above its head. Soft lime green (#ecf874) and pastel peach gradient background. Chunky 8-bit sprites, warm ambient lighting, sparkles of magic dust around the bee. Lo-fi aesthetic like Stardew Valley. Simple pixel text bubble says 'Brain Boost'. Nostalgic, cute, and emotionally warm.",
+      "description": "Visualizes the 'brain boost' (OpenAI embeddings) as a character leveling up.",
+      "text_in_image": "Brain Boost"
+    },
+    {
+      "prompt": "Retro 8-bit pixel art inventory UI screen displayed on a soft background. A neat grid of distinct pixelated flower seeds and potions, representing different AI models. Clean, organized, and cozy. Soft mint and lime green (#ecf874) color palette. A pixel cursor hand selecting a specific glowing item. Warm lighting, comfortable vibes like the game Unpacking. Minimal pixel text: 'Streamlined'.",
+      "description": "Represents the removal of fallbacks and hidden model support as a tidy inventory management screen.",
+      "text_in_image": "Streamlined"
+    },
+    {
+      "prompt": "Cozy pixel art visualization of a growth chart that looks like a lush climbing vine on a trellis. Next to it, a simple transparent crystal jar collecting golden pixel pollen (credits). Soft lime green (#ecf874) glow effects. Background is a warm cream color. Isometric view, chunky pixels, wholesome atmosphere like A Short Hike. Pixel text: 'Open Metrics'. Beautiful and simple.",
+      "description": "Illustrates the economics dashboard and single-bucket balance fix as a transparent, organic resource system.",
+      "text_in_image": "Open Metrics"
+    }
+  ],
+  "caption": "Besties, Polly just got a major glow up! ✨🧠 We gave our fav bot a massive brain boost with new embeddings (she literally gets you fr now). \n\nWe also Marie Kondo'd the model closet—no more random fallbacks, just the specific tools you want, exactly when you want them. 🛠️🌸 Plus, the pollen credits system is smoother than ever with new open dashboards to track the vibes. 📊\n\nSwipe to see the upgrades! What are you building this weekend? Drop a comment! 👇\n\nLink in bio to start creating. 🐝💚",
+  "hashtags": [
+    "#pollinations",
+    "#aiart",
+    "#opensource",
+    "#pixelart",
+    "#indiedev",
+    "#cozyvibes",
+    "#generativeai",
+    "#8bit",
+    "#buildinpublic",
+    "#creativecoding"
+  ],
+  "alt_text": "A carousel of cozy 8-bit pixel art images featuring a cute bee mascot, a retro game inventory screen, and a vine-based growth chart, all in lime green and pastel colors."
+}

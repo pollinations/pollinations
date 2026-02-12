@@ -1,0 +1,38 @@
+{
+  "content_type": "pixel_art",
+  "linked_images": true,
+  "strategy_reasoning": "Using the cozy lo-fi aesthetic makes complex technical updates (API endpoints, billing logic, frontend refactors) feel like unlocking fun new items in a game. The pixel art style softens the 'tech' aspect, appealing to our creative, maker-focused audience.",
+  "visual_style": "Cozy 8-bit pixel art with chunky sprites, soft ambient lighting, and a mandatory lime green (#ecf874) accent. Nostalgic retro-gaming UI elements.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art close-up of the Pollinations Bee mascot wearing chunky retro headphones, bobbing its head. Floating 8-bit musical notes and speech bubbles transforming into text. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi chill vibes like Stardew Valley. Text in pixel font: 'AUDIO SUITE UNLOCKED'. Nostalgic, cute, emotionally warm.",
+      "description": "Visualizes the new Audio Suite capabilities (Music, TTS v3, Transcription) as a fun listening session.",
+      "text_in_image": "AUDIO SUITE UNLOCKED"
+    },
+    {
+      "prompt": "Pixel art scene in a digital garden. The Pollinations Bee is high-fiving a cute, tiny 8-bit robot (Polly). Surrounded by pixelated flowers blooming. Background is a soft gradient of lime green (#ecf874) and peach. Retro game dialogue box at the bottom. Wholesome community vibes, like A Short Hike. Text in pixel font: 'MEET POLLY'.",
+      "description": "Introduces Polly the Discord Bot as a new friend in the ecosystem.",
+      "text_in_image": "MEET POLLY"
+    },
+    {
+      "prompt": "Isometric pixel art workspace view. A tidy desk with a glowing CRT monitor showing a sleek, organized interface. A 'Level Up!' arrow floating above the screen. Soft lime green (#ecf874) glow effects. Clean lines, pastel colors (mint and cream). Represents the frontend redesign and image stability fixes. Cozy, inviting, productive atmosphere.",
+      "description": "Showcases the frontend polish and stability fixes as a workspace upgrade.",
+      "text_in_image": "FRESH LOOK"
+    }
+  ],
+  "caption": "Big updates, cozy vibes 🎧✨ We just dropped a massive care package for your creative toolkit! \n\n🔊 **Audio Glow Up:** We've added OVH Whisper for speech-to-text, upgraded to ElevenLabs v3 for emotional voices, and unlocked music generation! \n\n🤖 **Meet Polly:** Our new Discord bot is live and ready to hang out. \n\n✨ **Fresh Fit:** The frontend got a total redesign (check that theme bar!) + image models are more stable than ever. \n\nEverything is smoother, faster, and ready for you to build. Link in bio to play! 🌸🐝",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#generativeai",
+    "#indiedev",
+    "#cozyvibes",
+    "#buildinpublic",
+    "#retrogaming",
+    "#aiart",
+    "#lofi"
+  ],
+  "alt_text": "A carousel of 3 cozy 8-bit pixel art images. 1: A pixel bee wearing headphones with music notes in lime green and lavender. 2: The bee high-fiving a small robot named Polly in a garden. 3: An isometric pixel art desk with a glowing computer screen representing a software update."
+}

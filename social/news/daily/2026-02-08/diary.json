@@ -1,0 +1,63 @@
+{
+  "date": "2026-02-08",
+  "title": "Day 769 of Building Pollinations",
+  "entries": [
+    {
+      "pr_number": 8087,
+      "headline": "Fresh Paint & New Header",
+      "blurb": "The frontend got a massive glow-up with a unified header, user controls, and a shiny new AI theme bar. It's looking fresh!",
+      "category": "feature",
+      "importance": "major",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8087.jpg"
+    },
+    {
+      "pr_number": 8072,
+      "headline": "Drop the Beat",
+      "blurb": "Added 'elevenmusic' to the audio lineup. Now you can generate full instrumental tracks and bangers directly from the API.",
+      "category": "feature",
+      "importance": "major",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8072.jpg"
+    },
+    {
+      "pr_number": 8073,
+      "headline": "Voices with Feeling",
+      "blurb": "Upgraded our text-to-speech to ElevenLabs v3. The robots now have 70+ languages and a lot more emotional range.",
+      "category": "feature",
+      "importance": "major",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8073.jpg"
+    },
+    {
+      "pr_number": 8068,
+      "headline": "The AI Has Ears",
+      "blurb": "Integrated Whisper Large V3 for speech-to-text. The hive can now transcribe your audio with impressive accuracy.",
+      "category": "feature",
+      "importance": "major",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8068.jpg"
+    },
+    {
+      "pr_number": 8078,
+      "headline": "Meet Polly the Bot",
+      "blurb": "Deployed Polly to our Discord server—a clever little bot bridging community chat with our GitHub development.",
+      "category": "community",
+      "importance": "major",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8078.jpg"
+    },
+    {
+      "pr_number": 8097,
+      "headline": "Tuning the Image Engines",
+      "blurb": "Gave Flux Klein and Sana a tune-up under the hood. Expect better stability and higher quality pixels in your generations.",
+      "category": "improvement",
+      "importance": "major",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8097.jpg"
+    },
+    {
+      "pr_number": 8104,
+      "headline": "Unsquashing the Art",
+      "blurb": "Fixed a quirk in Klein-9B that was forcing non-square images into a box. Your aspect ratios are safe again.",
+      "category": "bug_fix",
+      "importance": "major",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-08/PR-8104.jpg"
+    }
+  ],
+  "mood": "shipping day"
+}

@@ -1,0 +1,6 @@
+{
+  "title": "Shipped: OpenAI embeddings for Polly & open economics dashboards",
+  "image_prompt": "Pixel art dev meme infographic — retro RPG status screen. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Large chunky pixel headline reads 'POLLY LEVEL UP'. Retro UI panels display stats: 'New Embeddings', 'Open Metrics', '5 Merged PRs'. Bee mascot stands next to a floating pixelated brain, holding a wizard staff. Warm lighting, lo-fi vibes like Stardew Valley. Readable at mobile size. Mood: nerdy, celebratory, clean.",
+  "body": "Just merged 5 PRs this week. The big one is giving Polly (our platform bot) a brain boost with OpenAI embeddings for better context retrieval. We also cleaned up how we handle model visibility—removing some old Claude fallbacks and adding support for hidden models.\n\nOn the admin side, we shipped a new economics dashboard to track platform usage and credit flow more transparently. Also fixed a bug with single-bucket balance deductions.\n\nCode is live and open as always.",
+  "reasoning": "Focuses on the technical implementation (embeddings) and transparency (economics dashboard), which appeals to the Reddit dev community's preference for 'building in the open' over marketing fluff."
+}

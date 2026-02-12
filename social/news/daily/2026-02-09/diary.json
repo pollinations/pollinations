@@ -1,0 +1,47 @@
+{
+  "date": "2026-02-09",
+  "title": "Day 771 of Building Pollinations",
+  "entries": [
+    {
+      "pr_number": 8101,
+      "headline": "Secret gardens & model pruning",
+      "blurb": "Added support for hidden models in the registry and tidied up the Claude integrations. Sometimes the rarest blooms are the ones tucked away.",
+      "category": "feature",
+      "importance": "major",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-09/PR-8101.jpg"
+    },
+    {
+      "pr_number": 8111,
+      "headline": "Polly gets a brain upgrade",
+      "blurb": "Our resident AI, Polly, now uses OpenAI embeddings and smarter indexing. She's buzzing faster and finding the right nectar with way less effort.",
+      "category": "feature",
+      "importance": "major",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-09/PR-8111.jpg"
+    },
+    {
+      "pr_number": 8117,
+      "headline": "Simplified the honey pot",
+      "blurb": "Streamlined how we deduct pollen credits into a single, reliable flow. The bees' accountant is much happier with this cleaner math.",
+      "category": "improvement",
+      "importance": "major",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-09/PR-8117.jpg"
+    },
+    {
+      "pr_number": 8118,
+      "headline": "Visualizing the hive",
+      "blurb": "Shipped shiny new dashboards to track daily spending and platform load. It's mesmerizing to watch the colony at work in real-time.",
+      "category": "infrastructure",
+      "importance": "minor",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-09/PR-8118.jpg"
+    },
+    {
+      "pr_number": 8123,
+      "headline": "Polly speaks clearer",
+      "blurb": "Tuned up Polly's system prompt for snappier answers and gave her the power of auto-deployment. They grow up so fast!",
+      "category": "improvement",
+      "importance": "minor",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-09/PR-8123.jpg"
+    }
+  ],
+  "mood": "productive"
+}

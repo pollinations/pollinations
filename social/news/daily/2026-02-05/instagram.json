@@ -1,0 +1,40 @@
+{
+  "content_type": "pixel_art",
+  "linked_images": true,
+  "strategy_reasoning": "Using the metaphor of a 'community garden' to represent open-source contribution fits our nature-themed brand perfectly. The pixel art style makes the technical aspect of 'updating documentation' feel cozy and inviting rather than dry and administrative.",
+  "visual_style": "Cozy 8-bit pixel art with Stardew Valley vibes, chunky sprites, and mandatory lime green (#ecf874) accents.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of an open wooden garden gate inviting new travelers into a lush digital forest. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, flourishing pixel plants and vines. A small wooden sign reads 'WELCOME'. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic, inviting, emotionally warm.",
+      "description": "An inviting entrance to the community, symbolizing the updated onboarding/readme.",
+      "text_in_image": "WELCOME"
+    },
+    {
+      "prompt": "Pixel art scene of diverse tiny 8-bit characters gathering around a large unrolled scroll labeled 'DOCS' in a sunny clearing. Soft lime green (#ecf874) and lavender sky. Cozy garden setting with pixel flowers. Chunky pixels, warm lighting. Like Unpacking meets coding. Wholesome community collaboration vibes.",
+      "description": "Visualizing the 'Contributing' and 'Readme' updates as a map or guide for the community.",
+      "text_in_image": "DOCS"
+    },
+    {
+      "prompt": "Close up pixel art of the happy 8-bit Pollinations bee mascot watering a sprouting pixel seedling. Soft lime green (#ecf874) and mint gradient background. Sparkles and bloom effects around the plant. Text in pixel font: 'GROW WITH US'. Warm lighting, cozy retro gaming aesthetic. Emotionally resonant and cute.",
+      "description": "The result of contribution: growth and blooming.",
+      "text_in_image": "GROW WITH US"
+    }
+  ],
+  "caption": "POV: You just found the coziest open-source community on the internet 🌸✨\n\nWe’ve been tidying up our digital garden to welcome the next wave of builders (GSOC prep season is here! 🚀). We just merged some fresh updates to our Readme and Contributing guides to make joining the hive easier than ever.\n\nWhether you’re a Spore just starting out or a Nectar-tier wizard, there’s a patch of grass here for you. No gatekeeping, just good vibes and cool code. 🐝💻\n\nReady to plant your first seed? Check the repo link in bio!\n\n#pollinations #opensource #gsoc #pixelart #cozyvibes #girlswhocode #indiedev #buildinpublic #retrogaming #8bitart #communityfirst #generativeai",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#gsoc",
+    "#pixelart",
+    "#cozyvibes",
+    "#indiedev",
+    "#buildinpublic",
+    "#retrogaming",
+    "#8bitart",
+    "#communityfirst",
+    "#generativeai",
+    "#codinglife"
+  ],
+  "alt_text": "Carousel of cozy pixel art images. 1. A garden gate opening to a lime green digital forest. 2. Tiny pixel characters reading a scroll labeled DOCS in a garden. 3. An 8-bit bee watering a seedling with text GROW WITH US."
+}

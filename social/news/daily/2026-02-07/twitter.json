@@ -1,0 +1,12 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "massive model drop today:\n\n- grok-video (alpha)\n- imagen-4\n- flux-2-dev\n- elevenlabs tts\n\nall live via api & url. open source, no gatekeeping. just shipped it.\n\n#OpenSource #AI",
+  "alt_tweet": "just merged the creative suite update. grok-video, imagen-4, flux-2, and elevenlabs are now live endpoints. 500+ apps just got a major upgrade. go build.",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image_prompt": "[Cozy 8-bit pixel art RPG inventory screen]. A pixelated bee character discovering glowing legendary loot items: a retro video tape (Grok), a golden paintbrush (Flux), and a speech bubble (ElevenLabs). Soft lime green (#ecf874) glow effects against a dark purple background. High contrast, 'achievement unlocked' energy. Retro gaming UI with chunky text. Warm, exciting atmosphere.",
+  "reasoning": "High-signal tweet listing the specific, high-demand models developers actually care about. The list format works well on X to stop the scroll. Reinforces 'shipping' culture.",
+  "char_count": 178
+}

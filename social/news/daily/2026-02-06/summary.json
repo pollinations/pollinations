@@ -1,0 +1,40 @@
+{
+  "date": "2026-02-06",
+  "pr_count": 8,
+  "arcs": [
+    {
+      "headline": "Next-gen video and image models have arrived",
+      "summary": "We've integrated LTX-2 for high-quality video with audio, alongside Google's Imagen 3 and Grok Imagine Video. These additions significantly expand the creative toolkit available to all users.",
+      "prs": [
+        7903,
+        8001,
+        8023
+      ],
+      "importance": "major",
+      "category": "feature"
+    },
+    {
+      "headline": "Smarter Claude and reliable Mistral",
+      "summary": "The 'claude-large' alias now points to the newly released Opus 4.6, delivering better reasoning at no extra cost. We also migrated Mistral to OVHcloud and fixed configuration issues to ensure rock-solid stability.",
+      "prs": [
+        8004,
+        8015,
+        8016
+      ],
+      "importance": "major",
+      "category": "improvement"
+    },
+    {
+      "headline": "Zero queues and sustainable infrastructure",
+      "summary": "Optimizations to the Z-Image pipeline have dropped generation queues to near zero. We also transitioned select high-cost models to supporter tiers to ensure long-term platform sustainability.",
+      "prs": [
+        8000,
+        7922
+      ],
+      "importance": "major",
+      "category": "improvement"
+    }
+  ],
+  "one_liner": "A massive creative update featuring LTX-2 and Imagen 3, zero-queue speeds, and a Claude Opus upgrade.",
+  "pr_summary": "TODAY'S UPDATES (8 merged PRs):\n- #7903: feat: Add LTX-2 video generation model\n- #8001: feat: Add api.airforce models: Imagen 3 & Grok Imagine Video\n- #8004: feat: Upgrade claude-large from Opus 4.5 to Opus 4.6\n- #8000: fix: update z-image SPAN model path and vastai docs\n- #7922: feat: make 5 models paid-only and migrate Mistral to OVHcloud\n- #8015: Fix: Mistral model broken due to config key case mismatch\n- #8016: fix: use shared OVHCLOUD_API_KEY for Mistral endpoint\n- #8023: fix: add SSE support for api.airforce video models"
+}

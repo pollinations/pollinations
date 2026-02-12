@@ -1,0 +1,39 @@
+{
+  "date": "2026-02-07",
+  "title": "Day 769 of Building Pollinations",
+  "entries": [
+    {
+      "pr_number": 7281,
+      "headline": "The hive speaks!",
+      "blurb": "Added ElevenLabs support, letting your creations hum, chat, and narrate with crystal-clear voices.",
+      "category": "feature",
+      "importance": "major",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-07/PR-7281.jpg"
+    },
+    {
+      "pr_number": 8026,
+      "headline": "Polishing the garden path",
+      "blurb": "A quality-of-life tweak for our GSoC pages—views now zip to the top on navigation, keeping things fresh.",
+      "category": "community",
+      "importance": "minor",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-07/PR-8026.jpg"
+    },
+    {
+      "pr_number": 8053,
+      "headline": "Longer flights allowed",
+      "blurb": "Moved the AI gateway to a custom domain, giving deep-thinking models the runway they need without timing out.",
+      "category": "bug_fix",
+      "importance": "major",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-07/PR-8053.jpg"
+    },
+    {
+      "pr_number": 8063,
+      "headline": "New seeds planted",
+      "blurb": "Expanded the greenhouse with Imagen 4, Flux 2, and Grok Video (Alpha). Go forth and create!",
+      "category": "feature",
+      "importance": "major",
+      "image_url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/gists/2026-02-07/PR-8063.jpg"
+    }
+  ],
+  "mood": "productive"
+}

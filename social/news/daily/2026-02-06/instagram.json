@@ -1,0 +1,38 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "Using the retro gaming 'level up' and 'shop' metaphors makes technical infrastructure changes (like paid tiers and model upgrades) feel rewarding and gamified rather than transactional. The cozy pixel art style keeps the vibe friendly and approachable, reinforcing the community-first identity.",
+  "visual_style": "Cozy 8-bit pixel art with chunky sprites, warm lighting, and soft pastel gradients. Influenced by Stardew Valley and Unpacking. Prominent use of lime green #ecf874.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of a retro CRT television set sitting in a lush, blooming digital garden. The TV screen glows with a vibrant, magical animation of a swirling galaxy. A tiny 8-bit bee character is filming the scene with an old-school camcorder. Soft lime green (#ecf874) and pastel peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Pixel text on the TV frame: 'VIDEO MODE'. Nostalgic, magical atmosphere.",
+      "description": "Announcing the new video generation models (LTX-2, Grok) and Imagen 3.",
+      "text_in_image": "VIDEO MODE"
+    },
+    {
+      "prompt": "Pixel art interior scene of a cozy wizard's study room. A tiny 8-bit bee character wearing oversized glasses is reading a massive glowing spellbook labeled 'Opus'. Soft lime green (#ecf874) and lavender light filtering through a pixelated window. Chunky retro sprites, Unpacking game vibes. Warm, intellectual but cute. Floating pixel icons of lightbulbs and scrolls. Emotionally warm.",
+      "description": "Highlighting the intelligence upgrade for Claude and reliability fixes for Mistral.",
+      "text_in_image": "LEVEL UP"
+    },
+    {
+      "prompt": "Retro RPG shop interface in pixel art. A friendly merchant bee standing behind a wooden counter with jars of glowing nectar. A menu board shows 'Free' and 'Premium' items with pixel heart icons. Soft lime green (#ecf874) and mint gradient background. UI elements like health bars and coin slots. Cozy, inviting atmosphere like a village shop in a retro RPG. Text in pixel font: 'Support the Hive'. Warm lighting.",
+      "description": "Explaining the move to paid tiers for specific models to ensure sustainability.",
+      "text_in_image": "Support the Hive"
+    }
+  ],
+  "caption": "Besties, the garden just got a MAJOR upgrade! 🌱✨ We’ve been cooking up some fresh updates to help your creativity bloom.\n\n🎥 **Motion Picture Magic**: We added LTX-2 and Grok Imagine Video so you can finally direct your pixel masterpieces. Plus, Imagen 3 is serving absolute visuals.\n\n🧠 **Big Brain Energy**: Claude Opus just leveled up to v4.6, and Mistral is back and more reliable than ever. Smarter tools = better builds.\n\n🍯 **Sustainable Vibes**: To keep our servers happy and the queue at zero, we’ve moved a few heavy-hitter models to our paid tiers. This helps us keep the free tier iconic for everyone! \n\nCheck the link in bio to test the new toys. What are you generating first? 👇\n\n#pollinations #aiart #pixelart #retrogaming #opensource #indiedev #cozyvibes #generativeai #8bit #buildinpublic",
+  "hashtags": [
+    "#pollinations",
+    "#aiart",
+    "#pixelart",
+    "#retrogaming",
+    "#opensource",
+    "#indiedev",
+    "#cozyvibes",
+    "#generativeai",
+    "#8bit",
+    "#buildinpublic"
+  ],
+  "alt_text": "Three cozy pixel art images. 1: A retro TV in a garden showing video generation capabilities with a bee cameraman. 2: A wizard bee reading a glowing book representing smarter AI models. 3: A retro RPG shop interface showing free and premium tiers. All images feature lime green accents and warm pastel colors."
+}

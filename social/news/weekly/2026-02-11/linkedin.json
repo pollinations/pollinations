@@ -1,0 +1,16 @@
+{
+  "post_type": "milestone",
+  "hook": "SHIP EVERYTHING. That was the mood this week.\n\n39 PRs merged. Video, audio, and a complete platform redesign just went live.",
+  "body": "Open-source moves fast. We move faster. This week was not just about patching bugs — it was about expanding the definition of what developers can build with Pollinations.\n\nWe are seeing a shift from simple text-generation to full media synthesis, and our infrastructure is evolving to match that demand.\n\nHere is what just shipped:\n\n1. FULL MULTI-MODALITY\nWe integrated LTX-2 for next-gen video generation and ElevenMusic for high-fidelity audio. Combined with the new OVH Whisper integration for speech-to-text, the platform now handles the full creative lifecycle. Input text, output a movie.\n\n2. UX OVERHAUL\nPowerful models are useless if they are painful to use. We completely redesigned the frontend and merged our Docs directly into the Play page. Less tab switching, more building. The interface now gets out of your way.\n\n3. AGENT INFRASTRUCTURE\nWe added the Polly Discord Bot and auto-onboarding for OpenClaw. We are building the rails for AI agents to not just generate content, but to navigate the web and manage their own resources.\n\n4. MODEL EXPANSION\nAdded api.airforce models (Imagen 3 & Grok) and upgraded Claude to the latest Opus versions. We remain model-agnostic — if it is good, we support it.\n\nThe result? A platform that feels less like a sandbox and more like a production engine.\n\nGo break the new UI.",
+  "cta": "Build something weird at pollinations.ai",
+  "hashtags": [
+    "#OpenSource",
+    "#GenerativeAI",
+    "#DevTools",
+    "#ShipIt",
+    "#Pollinations"
+  ],
+  "image_prompt": "Pixel art infographic showing a weekly shipping update. Large, chunky pixel text at the top reads 'WEEKLY SHIP: 39 PRs'. Below the headline, three distinct panels or inventory slots: 1. A film strip icon labeled 'VIDEO (LTX-2)', 2. A music note icon labeled 'AUDIO', 3. A paintbrush icon labeled 'NEW UI'. The Pollinations bee mascot is in the foreground giving a thumbs up, wearing a tiny construction hard hat. Background is a soft lime green (#ecf874) to pastel gradient. Cozy 8-bit aesthetic, clean layout, legible text, warm lighting like Stardew Valley. Image must be self-explanatory.",
+  "image_text": "WEEKLY SHIP: 39 PRs\n[Icons: Video, Audio, New UI]",
+  "reasoning": "This post uses the 'Milestone' angle to demonstrate high velocity. By grouping 39 PRs into three distinct value buckets (Multi-modality, UX, Infrastructure), it translates code merges into business capability. The hook uses caps for emphasis without markdown. The image acts as a quick scorecard for the scroller who doesn't read the full text."
+}

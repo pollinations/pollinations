@@ -1,0 +1,54 @@
+{
+  "date": "2026-02-08",
+  "pr_count": 14,
+  "arcs": [
+    {
+      "headline": "Complete Audio Suite: Music, Transcription, and Emotional Speech",
+      "summary": "A massive expansion of audio capabilities brings `elevenmusic` for track generation, `whisper` for speech-to-text, and an upgrade to ElevenLabs v3 for emotive TTS (laughing, crying). New API endpoints and permission controls make these immediately accessible.",
+      "prs": [
+        8068,
+        8072,
+        8073,
+        8090,
+        8091
+      ],
+      "importance": "major",
+      "category": "feature"
+    },
+    {
+      "headline": "A Polished Frontend Experience",
+      "summary": "The platform received a visual overhaul featuring a unified header, a redesigned authorization page matching our green theme, and native UI support for the new audio models.",
+      "prs": [
+        8087,
+        8095,
+        8040
+      ],
+      "importance": "major",
+      "category": "improvement"
+    },
+    {
+      "headline": "Meet Polly: The AI Discord Bot",
+      "summary": "We launched Polly to bridge our community chat with GitHub development. On the API side, we streamlined the balance endpoint and updated the Gemini Search registry for better accuracy.",
+      "prs": [
+        8078,
+        8102,
+        8029,
+        8076
+      ],
+      "importance": "major",
+      "category": "community"
+    },
+    {
+      "headline": "Image Model Stability & Aspect Ratio Fixes",
+      "summary": "Optimizations for Flux Klein, Sana, and Twinflow improve generation stability. We also fixed a bug in Klein-9B to ensure non-square aspect ratios are respected correctly.",
+      "prs": [
+        8097,
+        8104
+      ],
+      "importance": "major",
+      "category": "fix"
+    }
+  ],
+  "one_liner": "A massive audio update brings music generation and emotional speech, alongside a sleek frontend redesign and the launch of our Discord bot, Polly.",
+  "pr_summary": "TODAY'S UPDATES (14 merged PRs):\n- #8068: feat: add OVH Whisper speech-to-text transcription\n- #8072: feat: add elevenmusic model with duration-based billing\n- #8073: feat: upgrade TTS from eleven_multilingual_v2 to eleven_v3\n- #8087: feat: pollinations.ai frontend redesign — header auth, theme bar\n- #8078: Add Polly Discord Bot\n- #8097: fix: image model optimizations for stability and quality\n- #8095: feat: account API improvements + authorize page restyle\n- #8104: fix: preserve aspect ratio in klein-9b dimension clamping\n- #8091: feat: add /audio/models endpoint to proxy\n- #8102: fix: simplify balance API to return single balance field\n- #8029: fix: align gemini-search registry with actual model\n- #8090: fix: add audio models to API key permissions UI\n- #8076: [PATCH]: GSOC Project Page Refactor\n- #8040: fix(ui): add cursor-pointer to select all buttons"
+}

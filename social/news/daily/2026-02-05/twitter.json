@@ -1,0 +1,12 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "prepping for google summer of code 🌸 just pushed updated contribution docs. we don't just want users, we want builders. if you're looking to ship real features to thousands of users this summer, the repo is open. come say hi.",
+  "alt_tweet": "docs updated for GSOC 2024. open source is the heart of what we do. if you want to learn how a real AI platform runs at scale (and ship code that matters), start here. prs welcome.",
+  "hashtags": [
+    "#GSOC",
+    "#OpenSource"
+  ],
+  "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot handing a glowing pixel seed to a tiny new developer character. Lush 8-bit garden setting with prominent lime green (#ecf874) foliage and pastel flowers. Soft lighting, warm atmosphere. Text in chunky pixel font floating above: 'BUILD WITH US'. Nostalgic, welcoming, Stardew Valley vibes.",
+  "reasoning": "Signals active open-source governance and invites talent. Shifts focus from just consuming AI to building it, reinforcing the community-driven brand identity.",
+  "char_count": 226
+}

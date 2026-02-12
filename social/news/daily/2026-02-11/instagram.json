@@ -1,0 +1,40 @@
+{
+  "content_type": "pixel_art",
+  "linked_images": true,
+  "strategy_reasoning": "Translating the technical 'OpenClaw integration' and 'auto-install' updates into a narrative about a helpful new robot friend in the Pollinations garden. This makes complex AI agent setup feel approachable and cozy, fitting the 'warm hug' brand identity.",
+  "visual_style": "Cozy 8-bit pixel art with chunky sprites, soft ambient lighting, and CRT glow effects. Dominant lime green (#ecf874) accents with pastel mint and lavender gradients.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy 8-bit pixel art scene in a digital garden. The Pollinations bee mascot is hovering happily next to a cute, chunky pixel-art robot with a claw hand (OpenClaw). The robot is gently holding a pixel flower. Soft lime green (#ecf874) and lavender gradient sky. Warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'New Bestie'. Nostalgic, wholesome, and inviting.",
+      "description": "Introduces OpenClaw as a friendly helper in the ecosystem.",
+      "text_in_image": "New Bestie"
+    },
+    {
+      "prompt": "Retro RPG game UI screen showing an 'Auto-Equip' animation. A pixel icon representing 'OpenClaw' is slotting into place automatically with sparkles. Lime green (#ecf874) progress bar at 100%. Pastel peach and mint background. Cozy, clean interface like Unpacking. Text in pixel font: 'Auto-Setup Complete'. Visualizes the ease of the new auto-install scripts.",
+      "description": "Visualizes the 'auto-install' feature as an effortless game mechanic.",
+      "text_in_image": "Auto-Setup"
+    },
+    {
+      "prompt": "Wide shot pixel art landscape. The bee mascot and the OpenClaw robot are sitting on a grassy hill watching a soft lime green (#ecf874) and pink sunset. Fireflies dancing around. Peaceful, harmonious atmosphere. Represents the polished branding and seamless integration. Text in pixel font: 'Ready to Build'. Emotionally warm and serene.",
+      "description": "Concludes the narrative with a feeling of readiness and polish.",
+      "text_in_image": "Ready to Build"
+    }
+  ],
+  "caption": "POV: Your AI workflow just got a cozy upgrade 🤖✨\n\nWe've officially integrated OpenClaw, and it's looking fresh. The best part? The new setup script auto-installs and onboards everything for you. No stress, just vibes. It’s like having a tiny pixel helper ready to build right out of the box. 📦🌱\n\nPlus, we polished up the branding so your agents look as good as they code. \n\nReady to meet your new digital friend? Check the docs.\n\n🔗 Link in bio to start building.\n\n#pollinations #opensource #aiagents #openclaw #pixelart #cozydev #indiedev #generativeai #8bit #buildinpublic #retrogaming #codinglife",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#aiagents",
+    "#openclaw",
+    "#pixelart",
+    "#cozydev",
+    "#indiedev",
+    "#generativeai",
+    "#8bit",
+    "#buildinpublic",
+    "#retrogaming",
+    "#codinglife"
+  ],
+  "alt_text": "A carousel of cozy 8-bit pixel art images. 1: A pixel bee mascot greeting a cute robot with a claw hand against a lime green sky. 2: A retro game inventory screen showing an 'Auto-Setup' success message. 3: The bee and robot watching a sunset together."
+}

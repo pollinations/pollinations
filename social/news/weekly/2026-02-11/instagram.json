@@ -1,39 +1,38 @@
 {
-  "content_type": "pixel_art",
+  "content_type": "retro_infographic",
   "linked_images": true,
-  "strategy_reasoning": "Using a cozy 'This Week's Buzz' recurring theme builds habit. The visuals transition from a welcoming cover to specific creative tools (audio/video) and finally to the developer experience/community aspect, mirroring the user journey from interest to creation to building.",
-  "visual_style": "Cozy 8-bit pixel art, Studio Ghibli meets retro gaming. Chunky sprites, soft pastel gradients, and mandatory lime green (#ecf874) accents. Warm, nostalgic lighting.",
+  "strategy_reasoning": "Using a retro RPG 'Inventory Update' theme gamifies the feature release, making technical updates (billing, models, docs) feel like exciting loot drops. The cozy pixel art style maintains our approachable, non-corporate vibe while the carousel format encourages swiping through the heavy volume of updates.",
+  "visual_style": "16-bit SNES pixel art, Stardew Valley aesthetic, chunky sprites, visible pixel grid, lime green #ecf874 accents, soft pastel gradients.",
   "image_count": 3,
   "images": [
     {
-      "prompt": "The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is sitting on a comfortable lime green (#ecf874) beanbag chair holding a retro game controller. Above her, pixelated sparkles and a speech bubble. Background is a soft lavender-to-cream gradient with floating pixel clouds. Text 'This Week's Buzz' in a chunky white 8-bit font with a dark purple shadow. Cozy, warm lighting, lo-fi aesthetic like Unpacking.",
-      "description": "Weekly intro card establishing the cozy, welcoming vibe.",
-      "text_in_image": "This Week's Buzz"
+      "prompt": "Cozy pixel art scene of the cute chubby bee mascot opening a glowing wooden treasure chest. Soft lime green (#ecf874) and lavender gradient background. Pixel sparkles and loot icons flying out of the chest. The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. Text in chunky pixel font at the top reads 'FRESH DROPS'. 16-bit SNES pixel art, Stardew Valley style, chunky sprites, visible pixels, soft pastel gradients, warm lighting.",
+      "description": "The hook image showing the bee discovering new items, setting the stage for the weekly update.",
+      "text_in_image": "FRESH DROPS"
     },
     {
-      "prompt": "The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing oversized pixel headphones and DJing on a lime green (#ecf874) mixing deck. Floating around her are colorful pixel musical notes and retro film strips. Background is a warm peach and mint pastel gradient. Soft glow effects from the equipment. Cozy pixel art style, nostalgic and creative.",
-      "description": "Visualizing the Audio Suite and Video/Image updates as a creative jam session.",
-      "text_in_image": "Audio + Video"
+      "prompt": "Cozy pixel art scene of the cute chubby bee mascot wearing large pixel headphones and holding a vintage movie clapperboard. Soft lime green (#ecf874) and peach pastel gradient background. Floating pixel icons of musical notes, waveforms, and film reels surrounding the bee. The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. Text in chunky pixel font reads 'AV CLUB'. 16-bit SNES pixel art, Stardew Valley style, chunky sprites, visible pixels, soft pastel gradients, warm lighting.",
+      "description": "Highlighting the new Audio (ElevenMusic, Whisper) and Video (LTX-2, Grok) capabilities.",
+      "text_in_image": "AV CLUB"
     },
     {
-      "prompt": "The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is watering a digital garden where a tiny friendly pixel robot (representing agents) is sprouting from a lime green (#ecf874) flower pot. A retro computer monitor in the background shows clean code blocks. Soft warm lighting, wholesome vibes like Stardew Valley. Community and growth focus.",
-      "description": "Representing Agents Taking Root and the Frictionless Developer Experience.",
-      "text_in_image": "Agents & UI"
+      "prompt": "Cozy pixel art scene of the cute chubby bee mascot high-fiving a friendly floating pixel robot claw (OpenClaw). A pixelated scroll map (Docs) lies open on a table between them. Soft lime green (#ecf874) and mint pastel gradient background. The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. Text in chunky pixel font reads 'LEVEL UP'. 16-bit SNES pixel art, Stardew Valley style, chunky sprites, visible pixels, soft pastel gradients, warm lighting.",
+      "description": "Showcasing the new Agent integrations (OpenClaw, Polly Bot) and UX improvements (Docs merge).",
+      "text_in_image": "LEVEL UP"
     }
   ],
-  "caption": "Besties, the shipping news is HUGE this week! 🐝✨ We just dropped the ultimate creative suite and the vibes are immaculate.\n\n🎧 **Audio Glow-up:** ElevenMusic & TTS v3 are here, plus OVH Whisper for speech-to-text. Your bots can literally sing now?\n🎬 **Movie Magic:** LTX-2, Imagen-4, and Flux-2 just landed. The pixels are pixel-ing hard.\n🤖 **Agent Era:** OpenClaw integration + the open-source Polly Discord bot. The garden is growing!\n✨ **Smooth Sailing:** We merged Docs into the Play page and redesigned the frontend. It’s giving *frictionless*.\n\nGrab your pollen and start building. Which model are you trying first? 👇\n\nLink in bio to play! 🌸",
+  "caption": "Another week, another massive loot drop! 🐝✨ The dev team has been busy bees adding some serious creative firepower to your inventory.\n\n🔊 **Audio Mode:** Make some noise with ElevenMusic & Whisper transcription.\n🎬 **Movie Magic:** LTX-2 & Grok-Video are here to bring your scenes to life.\n🤖 **Agent Era:** OpenClaw integration + Polly Bot source code = pure power.\n✨ **Quality of Life:** Docs are now merged into the Play page (finally!) + smoother billing logic.\n\nWhether you're coding the next big thing or just vibing, we got you. Link in bio to start building! 🌸",
   "hashtags": [
     "#pollinations",
     "#opensource",
-    "#genztech",
     "#pixelart",
     "#indiedev",
+    "#generativeai",
     "#buildinpublic",
-    "#aiart",
     "#cozyvibes",
     "#weeklyupdate",
     "#retrogaming",
-    "#generativeai"
+    "#aiart"
   ],
-  "alt_text": "A carousel of 3 cozy pixel art images featuring a cute chubby bee mascot. 1: Bee on a beanbag with 'This Week's Buzz' text. 2: Bee DJing with musical notes and film strips. 3: Bee gardening with a tiny robot and computer screen. Dominant colors are lime green and soft pastels."
+  "alt_text": "A series of 16-bit pixel art images featuring a cute chubby bee mascot in a Stardew Valley style. 1. The bee opens a treasure chest with 'FRESH DROPS' text. 2. The bee wears headphones and holds a clapperboard with 'AV CLUB' text. 3. The bee high-fives a robot claw with 'LEVEL UP' text. Dominant colors are lime green and soft pastels."
 }

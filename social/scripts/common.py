@@ -430,9 +430,6 @@ def call_pollinations_api(
     return None
 
 
-STYLE_SUFFIX = "16-bit SNES pixel art style like Stardew Valley. Chunky sprites, visible pixel grid, clean outlines, soft pastel gradients, warm lighting."
-
-
 def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0) -> tuple[Optional[bytes], Optional[str]]:
     """Generate a single image via the pollinations.ai image API."""
 
@@ -441,9 +438,6 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
         bee_desc = load_shared("bee_character")
         if bee_desc:
             prompt = f"{prompt} {bee_desc}"
-
-    # Append style lock — ensures consistent SNES pixel art regardless of AI prompt drift
-    prompt = f"{prompt} {STYLE_SUFFIX}"
 
     # Strip single quotes — they cause 400 errors from the image API even when URL-encoded
     sanitized = prompt.replace("'", "")

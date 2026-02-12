@@ -1,12 +1,12 @@
 {
   "tweet_type": "shipped",
-  "tweet": "huge week for the hive. 40 PRs merged. 🐝\n\nshipped:\n- OVH Whisper & ElevenLabs v3 (audio stack complete)\n- LTX-2, Imagen-4, Grok (SOTA media)\n- OpenClaw integration\n\nbuilding the open source creative engine. one PR at a time. 🌱 #OpenSource #AI",
-  "alt_tweet": "the audio suite is complete. the video stack is SOTA. 40 PRs merged this week. 🌸\n\n- OVH Whisper STT\n- ElevenMusic + V3 TTS\n- LTX-2 & Imagen-4\n- Open sourced Polly bot\n\njust heads down building the best open platform for creatives. 🐝 #BuildInPublic",
+  "tweet": "40 PRs merged. 🚢\n\nThe stack just got a massive upgrade:\n- Audio: ElevenMusic + OVH Whisper 🎵\n- Video: LTX-2 & Grok-video 🎥\n- Agents: OpenClaw integration 🤖\n\nOpen source, permissionless, and shipping daily. Come build. 🌸",
+  "alt_tweet": "Audio generation? Check. Next-gen video? Check. Agents? Check. ✅\n\n40 PRs merged this week including ElevenMusic, LTX-2, and OpenClaw.\n\nWe're building the open AI infrastructure so you don't have to. 🐝✨",
   "hashtags": [
     "#OpenSource",
-    "#AI"
+    "#BuildInPublic"
   ],
-  "image_prompt": "Cozy pixel art scene of the cute chubby bee mascot standing proudly atop a stack of glowing futuristic server crates labeled 'AUDIO', 'VIDEO', and 'CODE'. Soft lime green (#ecf874) and pastel lavender gradient background. Floating text in chunky pixel font: 'WEEKLY SHIP'. Warm lighting, lo-fi vibes like Stardew Valley. The bee is giving a thumbs up. Nostalgic, productive, and emotionally warm.",
-  "reasoning": "Summarizes a massive volume of work (40 PRs) by categorizing the major wins (Audio, Media, Integration). The list format is scannable and high-signal for devs. The tone is humble but confident ('one PR at a time').",
-  "char_count": 236
+  "image_prompt": "Energetic pixel art scene of the cute chubby bee mascot (round yellow body, brown stripes, pink blush, translucent wings) pulling a large lever in a retro server room to deploy updates. Screens in background display pixelated audio waves, film reels, and robot icons. Large pixel text 'SHIP MODE' at the top. Soft lime green (#ecf874) and lavender pastel gradient background. High contrast, dynamic composition. 16-bit SNES pixel art, Stardew Valley style, chunky sprites, visible pixels, soft pastel gradients, warm lighting.",
+  "reasoning": "High-volume shipping (40 PRs) combined with specific, high-demand features (Audio/Video/Agents) establishes technical dominance and momentum. The list format is scannable and substantive.",
+  "char_count": 204
 }

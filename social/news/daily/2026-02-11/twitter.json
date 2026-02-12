@@ -1,12 +1,12 @@
 {
   "tweet_type": "shipped",
-  "tweet": "instant agents are here. just merged OpenClaw integration. run one script -> auto-install & onboard your own AI agent. ⚡️\n\nno config hell, just code. check the new docs. 🐝🌱 #OpenSourceAI",
-  "alt_tweet": "shipping beats waiting. OpenClaw is live on pollinations. auto-install, auto-onboard, zero friction. building agents shouldn't be a headache. 🌸🐝 #BuildInPublic",
+  "tweet": "one-command AI agents are here. just merged the OpenClaw integration. ⚡️\n\nauto-install script handles the environment setup, you handle the logic. docs are live. go build something weird. 🌸🐝",
+  "alt_tweet": "spent the day streamlining setup scripts. OpenClaw integration is live — one command to spin up autonomous agents. less config, more shipping. 🚢🌸",
   "hashtags": [
-    "#OpenSourceAI",
+    "#OpenSource",
     "#AI"
   ],
-  "image_prompt": "Cozy 8-bit pixel art scene. The main character is a cute pixel art bee mascot with a round chubby yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is standing next to a glowing retro computer terminal showing scrolling green code and a 'SYSTEM READY' status. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Emotionally warm, nostalgic but technical.",
-  "reasoning": "Focuses on the 'instant' value proposition and the removal of friction ('no config hell'), which appeals to developers. Uses emojis for pacing but keeps the core message technical.",
-  "char_count": 178
+  "image_prompt": "Cozy pixel art arcade scene. The cute pixel art bee mascot (yellow/brown stripes, pink blush, small wings) controlling a retro claw machine labeled 'OPENCLAW'. The claw is picking up a glowing lime green (#ecf874) orb. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'DEPLOY'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+  "reasoning": "Focuses immediately on the value prop ('one-command agents') which appeals to devs who hate configuration. 'Go build something weird' reinforces the playful, tinkerer-friendly brand voice.",
+  "char_count": 184
 }

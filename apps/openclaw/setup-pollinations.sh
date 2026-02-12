@@ -98,6 +98,24 @@ NEW_CONFIG=$(cat <<EOF
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
             "contextWindow": 200000,
             "maxTokens": 8192
+          },
+          {
+            "id": "claude-large",
+            "name": "Claude Opus 4.6 — Most Intelligent (Paid)",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          },
+          {
+            "id": "gemini-large",
+            "name": "Gemini 3 Pro — Most Intelligent with 1M Context (Paid)",
+            "reasoning": true,
+            "input": ["text", "image", "audio", "video"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 1000000,
+            "maxTokens": 8192
           }
         ]
       }

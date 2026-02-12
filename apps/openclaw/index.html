@@ -671,7 +671,11 @@
           { "id": "gemini-search", "name": "Gemini + Search",
             "input": ["text","image"], "contextWindow": 128000, "maxTokens": 8192 },
           { "id": "claude-fast", "name": "Claude Haiku 4.5",
-            "input": ["text","image"], "contextWindow": 200000, "maxTokens": 8192 }
+            "input": ["text","image"], "contextWindow": 200000, "maxTokens": 8192 },
+          { "id": "claude-large", "name": "Claude Opus 4.6 (Paid)",
+            "input": ["text","image"], "contextWindow": 200000, "maxTokens": 8192 },
+          { "id": "gemini-large", "name": "Gemini 3 Pro (Paid)", "reasoning": true,
+            "input": ["text","image","audio","video"], "contextWindow": 1000000, "maxTokens": 8192 }
         ]
       }
     }
@@ -790,7 +794,7 @@ function toggleManual() {
 
 function startAuthorize() {
     var redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
-    var models = encodeURIComponent('kimi,deepseek,glm,gemini-search,perplexity-fast,claude-fast');
+    var models = encodeURIComponent('kimi,deepseek,glm,gemini-search,perplexity-fast,claude-fast,claude-large,gemini-large');
     window.location.href = `https://enter.pollinations.ai/authorize?redirect_url=${redirectUrl}&models=${models}`;
 }
 

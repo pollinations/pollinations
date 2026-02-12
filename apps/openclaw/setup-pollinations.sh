@@ -60,8 +60,7 @@ NEW_CONFIG=$(cat <<EOF
             "reasoning": true,
             "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-            "contextWindow": 256000,
-            "maxTokens": 8192
+            "contextWindow": 256000
           },
           {
             "id": "deepseek",
@@ -69,8 +68,7 @@ NEW_CONFIG=$(cat <<EOF
             "reasoning": false,
             "input": ["text"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-            "contextWindow": 128000,
-            "maxTokens": 8192
+            "contextWindow": 128000
           },
           {
             "id": "glm",
@@ -78,8 +76,7 @@ NEW_CONFIG=$(cat <<EOF
             "reasoning": false,
             "input": ["text"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-            "contextWindow": 128000,
-            "maxTokens": 8192
+            "contextWindow": 128000
           },
           {
             "id": "gemini-search",
@@ -87,8 +84,7 @@ NEW_CONFIG=$(cat <<EOF
             "reasoning": false,
             "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-            "contextWindow": 128000,
-            "maxTokens": 8192
+            "contextWindow": 128000
           },
           {
             "id": "claude-fast",
@@ -96,8 +92,7 @@ NEW_CONFIG=$(cat <<EOF
             "reasoning": false,
             "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-            "contextWindow": 200000,
-            "maxTokens": 8192
+            "contextWindow": 200000
           },
           {
             "id": "claude-large",
@@ -105,8 +100,7 @@ NEW_CONFIG=$(cat <<EOF
             "reasoning": false,
             "input": ["text", "image"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-            "contextWindow": 200000,
-            "maxTokens": 8192
+            "contextWindow": 200000
           },
           {
             "id": "gemini-large",
@@ -114,8 +108,7 @@ NEW_CONFIG=$(cat <<EOF
             "reasoning": true,
             "input": ["text", "image", "audio", "video"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-            "contextWindow": 1000000,
-            "maxTokens": 8192
+            "contextWindow": 1000000
           }
         ]
       }

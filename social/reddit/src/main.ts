@@ -1,5 +1,5 @@
+import {LINK, TITLE} from './link.js';
 import { Devvit} from '@devvit/public-api';
-import { LINK, TITLE } from './link.js';
 
 Devvit.configure({
   redditAPI: true,
@@ -9,11 +9,6 @@ Devvit.configure({
 Devvit.addTrigger({
   event: 'AppUpgrade',
   onEvent: async (event, context) => {
-    if (!LINK || !TITLE) {
-      console.error('❌ Image link and title are required in link.ts');
-      process.exit(1);
-    }
-
     try {
       console.log('🚀 Starting to post image to Reddit...');
       const imageAsset = await context.media.upload({
@@ -46,6 +41,40 @@ Devvit.addTrigger({
 });
 
 export default Devvit;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -32,9 +32,9 @@ const DEFAULT_OPTIONS = {
  * Configuration object for the Portkey client
  */
 const clientConfig = {
-    // Use Portkey API Gateway URL from .env with fallback to localhost
+    // Use Portkey API Gateway URL from .env with fallback to production
     endpoint: () =>
-        `${process.env.PORTKEY_GATEWAY_URL || "http://localhost:8787"}/v1/chat/completions`,
+        `${process.env.PORTKEY_GATEWAY_URL || "https://portkey.pollinations.ai"}/v1/chat/completions`,
 
     // Auth header configuration
     authHeaderName: "Authorization",

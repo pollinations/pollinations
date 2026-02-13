@@ -1,4 +1,5 @@
 TOKEN generation_event_append APPEND
+TOKEN generation_event_read READ
 
 DESCRIPTION >
 Generative AI events with usage, pricing, metadata, moderation, and cache info

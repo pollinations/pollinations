@@ -6,10 +6,11 @@ import dotenv from "dotenv";
 import express from "express";
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
+import { logIp } from "../shared/ipLogger.js";
 import { getServiceDefinition } from "../shared/registry/registry.js";
 import {
     buildUsageHeaders,
-    openaiUsageToTokenUsage,
+    openaiUsageToUsage,
 } from "../shared/registry/usage-headers.js";
 import { availableModels } from "./availableModels.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
@@ -31,6 +32,14 @@ const authLog = debug("pollinations:auth");
 // Remove the custom JSON parsing middleware and use the standard bodyParser
 app.use(bodyParser.json({ limit: "20mb" }));
 app.use(cors());
+
+// IP logging middleware - log all incoming request IPs for security investigation
+app.use((req, _res, next) => {
+    const ip = getIp(req);
+    const model = req.body?.model || req.query?.model || "unknown";
+    logIp(ip, "text", `path=${req.path} model=${model}`);
+    next();
+});
 
 // Middleware to verify PLN_ENTER_TOKEN (after CORS for consistency)
 app.use((req, res, next) => {
@@ -250,6 +259,11 @@ export async function sendErrorResponse(
     const errorDetails = error.details || error.response?.data;
     if (errorDetails) errorResponse.details = errorDetails;
 
+    // For ImageFetchError, include the problematic URL for debugging
+    if (error.url) {
+        errorResponse.imageUrl = error.url;
+    }
+
     // Extract client information (for logs only)
     const clientInfo = {
         ip: getIp(req) || "unknown",
@@ -358,8 +372,8 @@ export function sendOpenAIResponse(res, completion) {
 
     // Add usage headers if available (GitHub issue #4638)
     if (completion.usage && completion.model) {
-        const tokenUsage = openaiUsageToTokenUsage(completion.usage);
-        const usageHeaders = buildUsageHeaders(completion.model, tokenUsage);
+        const usage = openaiUsageToUsage(completion.usage);
+        const usageHeaders = buildUsageHeaders(completion.model, usage);
 
         for (const [key, value] of Object.entries(usageHeaders)) {
             res.setHeader(key, value);
@@ -386,8 +400,8 @@ export function sendContentResponse(res, completion) {
         completion.usage &&
         completion.model
     ) {
-        const tokenUsage = openaiUsageToTokenUsage(completion.usage);
-        const usageHeaders = buildUsageHeaders(completion.model, tokenUsage);
+        const usage = openaiUsageToUsage(completion.usage);
+        const usageHeaders = buildUsageHeaders(completion.model, usage);
 
         for (const [key, value] of Object.entries(usageHeaders)) {
             res.setHeader(key, value);

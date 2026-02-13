@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Reddit Bot Deploy Daily
+
+[Timer]
+OnCalendar=*-*-* 10:30:00
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

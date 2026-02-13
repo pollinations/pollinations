@@ -1,0 +1,14 @@
+[Unit]
+Description=Reddit Bot Deploy
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/reddit_bot.pollinations
+ExecStart=/usr/bin/bash ./bash/deploy.sh
+Environment=NODE_ENV=production
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

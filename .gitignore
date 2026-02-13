@@ -349,5 +349,6 @@ debugsession_*/
 *.swo
 *~
 
-# CodeMap visualization tool
-.codemap/
+# Agent communication file (temporary)
+agent-communication.md
+.claude/settings.local.json

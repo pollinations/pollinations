@@ -1,0 +1,50 @@
+{
+  "date": "2026-01-22",
+  "generated_at": "2026-01-22T16:13:46.501851+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art_carousel",
+  "linked_images": false,
+  "strategy_reasoning": "Using a 'Dev Garden Journal' theme in a cozy pixel art style makes technical updates (dashboards, workflows, SDKs) feel warm, approachable, and gamified. The retro game aesthetic aligns perfectly with the brand's Gen-Z 'cozy web' vibe.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20title%20screen%20scene.%20A%20tiny%208-bit%20bee%20character%20hovering%20over%20a%20glowing%20digital%20flower%20garden.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20gradient%20background.%20Chunky%20pixels%2C%20warm%20lighting%2C%20lo-fi%20aesthetic.%20Like%20Stardew%20Valley%20meets%20coding.%20Text%20in%20pixel%20font%3A%20%27Dev%20Garden%20Update%27.%20Emotionally%20warm%2C%20nostalgic%20but%20beautiful.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1767525936",
+      "prompt": "Cozy pixel art title screen scene. A tiny 8-bit bee character hovering over a glowing digital flower garden. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Like Stardew Valley meets coding. Text in pixel font: 'Dev Garden Update'. Emotionally warm, nostalgic but beautiful.",
+      "description": "Title slide setting the cozy garden theme."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%20game%20UI%20screen%20showing%20an%20%27Economics%20Dashboard%27.%20Pixel%20art%20style.%20Graphs%20made%20of%20growing%20vines%20and%20leaves.%20Gold%20coin%20icons%20and%20seed%20bags%20arranged%20neatly.%20Soft%20pastel%20colors%2C%20lime%20green%20accents.%20Clean%208-bit%20font.%20Cozy%20inventory%20management%20vibe%20like%20Unpacking.%20Warm%20and%20inviting.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=111056054",
+      "prompt": "Retro game UI screen showing an 'Economics Dashboard'. Pixel art style. Graphs made of growing vines and leaves. Gold coin icons and seed bags arranged neatly. Soft pastel colors, lime green accents. Clean 8-bit font. Cozy inventory management vibe like Unpacking. Warm and inviting.",
+      "description": "Visualizing the Economics Dashboard deployment as a game inventory/stats screen."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20night%20scene%20with%20a%20cute%20robot%20catching%20falling%208-bit%20stars%20in%20a%20basket.%20Soft%20dark%20blue%20and%20purple%20gradient%20sky%20with%20glowing%20yellow%20stars.%20Peaceful%2C%20cozy%20lo-fi%20aesthetic.%20Text%20in%20pixel%20font%3A%20%27Star%20Catcher%27.%20Warm%20lighting%20effects%20on%20the%20chunky%20sprites.%20Represents%20the%20weekly%20star%20update%20workflow.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1157642722",
+      "prompt": "Pixel art night scene with a cute robot catching falling 8-bit stars in a basket. Soft dark blue and purple gradient sky with glowing yellow stars. Peaceful, cozy lo-fi aesthetic. Text in pixel font: 'Star Catcher'. Warm lighting effects on the chunky sprites. Represents the weekly star update workflow.",
+      "description": "Metaphor for the GitHub star update workflow."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20illustration%20of%20a%20new%20item%20being%20unlocked.%20A%20glowing%20magical%20watering%20can%20labeled%20%27SDK%27.%20Floating%20on%20a%20pedestal%20with%20sparkles.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20mint%20background.%20Retro%20game%20%27Item%20Acquired%27%20vibe.%20Chunky%20pixels%2C%20beautiful%20lighting.%20Represents%20the%20Vercel%20AI%20SDK%20provider.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=390596932",
+      "prompt": "Pixel art illustration of a new item being unlocked. A glowing magical watering can labeled 'SDK'. Floating on a pedestal with sparkles. Soft lime green (#ecf874) and mint background. Retro game 'Item Acquired' vibe. Chunky pixels, beautiful lighting. Represents the Vercel AI SDK provider.",
+      "description": "Gamifying the Vercel AI SDK addition as a new tool unlock."
+    }
+  ],
+  "caption": "Dev Garden Log 🌸✨\n\nTending to the digital ecosystem this week! We've got fresh tools in the shed and stars in the sky.\n\n📊 Economics Dashboard is LIVE – keeping our resource flow healthy\n🌟 Auto-counting those GitHub stars – watching the garden glow\n🪄 Vercel AI SDK Provider added – new magic for your builds\n📅 Planning ahead with fresh content schedules\n\nBuilding with heart, one pixel at a time. 🐝💻\n\nLink in bio to try the new SDK!\n\n#pollinations #opensource #pixelart #indiedev #buildinpublic #cozycode #retrogaming #8bit",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#indiedev",
+    "#buildinpublic",
+    "#cozycode",
+    "#retrogaming",
+    "#8bit"
+  ],
+  "alt_text": "A carousel of cozy pixel art images. 1. A bee in a digital garden. 2. A retro game dashboard with vine graphs. 3. A robot catching falling stars. 4. A glowing pixel art watering can representing a new software tool. All in soft pastels and lime green.",
+  "pr_references": [
+    "#7562",
+    "#7539",
+    "#7552",
+    "#7541",
+    "#7504"
+  ]
+}

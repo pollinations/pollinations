@@ -296,8 +296,21 @@ Respond with ONLY a JSON object (no markdown, no explanation):
     else:
         web_url = app_url
 
-    # Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted |
-    new_row = f"| {emoji} | {parsed['name']} | {web_url} | {description} | {language} | {category} | @{ISSUE_AUTHOR} | {github_user_id} | {repo_url} | {stars_str} | {discord} | | {today} |"
+    # Get issue creation date for Submitted_Date
+    issue_created_at = ""
+    try:
+        issue_details = gh_api(f"/repos/pollinations/pollinations/issues/{ISSUE_NUMBER}")
+        created_at = issue_details.get("created_at", "")
+        if created_at:
+            issue_created_at = created_at[:10]  # YYYY-MM-DD
+    except Exception as e:
+        print(f"   Warning: Could not fetch issue creation date: {e}")
+        issue_created_at = today  # Fallback to today
+
+    issue_url = f"https://github.com/pollinations/pollinations/issues/{ISSUE_NUMBER}"
+
+    # Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date |
+    new_row = f"| {emoji} | {parsed['name']} | {web_url} | {description} | {language} | {category} | @{ISSUE_AUTHOR} | {github_user_id} | {repo_url} | {stars_str} | {discord} | | {issue_created_at} | {issue_url} | {today} |"
 
     # Add row using the prepend script
     os.environ["NEW_ROW"] = new_row

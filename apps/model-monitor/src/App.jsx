@@ -6,7 +6,7 @@ function formatPercent(count, total, showZero = false) {
     if (!total || total === 0) return "—";
     const pct = (count / total) * 100;
     if (pct === 0) return showZero ? "0%" : "—";
-    return pct < 1 ? `${pct.toFixed(1)}%` : `${Math.round(pct)}%`;
+    return `${pct.toFixed(1)}%`;
 }
 
 // Helper to get 2xx color (excludes all 4xx from total since those are user errors)
@@ -30,37 +30,19 @@ function getLatencyColor(latencySec) {
 }
 
 // Compute health status from stats
-// Simple: based only on 5xx error rate (excludes 4xx user errors)
+// Based on 5xx error rate against total requests (4xx are user errors, not model failures)
 function computeHealthStatus(stats) {
     if (!stats || !stats.total_requests) return "on";
 
     const total = stats.total_requests;
-    // Exclude all 4xx - these are user errors, not model failures
-    const userErrors =
-        (stats.errors_400 || 0) +
-        (stats.errors_401 || 0) +
-        (stats.errors_402 || 0) +
-        (stats.errors_403 || 0) +
-        (stats.errors_429 || 0);
-    const adjustedTotal = total - userErrors;
+    const total5xx = stats.total_5xx || 0;
+    const pct5xx = (total5xx / total) * 100;
 
-    // If all requests were user errors, model is healthy
-    if (adjustedTotal <= 0) return "on";
+    // OFF: 5xx >= 50% of total requests (model is mostly broken)
+    if (pct5xx >= 50) return "off";
 
-    const err5xx =
-        (stats.errors_500 || 0) +
-        (stats.errors_502 || 0) +
-        (stats.errors_503 || 0) +
-        (stats.errors_504 || 0);
-    const pct5xx = (err5xx / adjustedTotal) * 100;
-    const count2xx = stats.status_2xx || 0;
-
-    // OFF: 5xx >= 20% or no successful requests
-    if (pct5xx >= 20) return "off";
-    if (count2xx === 0 && adjustedTotal > 0) return "off";
-
-    // DEGRADED: 5xx 5-20%
-    if (pct5xx >= 5) return "turbulent";
+    // DEGRADED: 5xx 10-50%
+    if (pct5xx >= 10) return "degraded";
 
     return "on";
 }
@@ -73,37 +55,30 @@ function GlobalHealthSummary({ models }) {
 
     // Calculate aggregate stats for a group of models
     const calcGroupStats = (group) => {
-        let total2xx = 0;
-        let totalAdjusted = 0;
+        let totalRequests = 0;
+        let total5xx = 0;
         let countOn = 0;
-        let countTurbulent = 0;
+        let countDegraded = 0;
         let countOff = 0;
 
         group.forEach((m) => {
             const stats = m.stats;
             if (!stats) return;
 
-            const total = stats.total_requests || 0;
-            // Exclude all 4xx user errors
-            const userErrors =
-                (stats.errors_400 || 0) +
-                (stats.errors_401 || 0) +
-                (stats.errors_402 || 0) +
-                (stats.errors_403 || 0) +
-                (stats.errors_429 || 0);
-            const adjusted = total - userErrors;
-
-            total2xx += stats.status_2xx || 0;
-            totalAdjusted += adjusted > 0 ? adjusted : 0;
+            totalRequests += stats.total_requests || 0;
+            total5xx += stats.total_5xx || 0;
 
             const status = computeHealthStatus(stats);
             if (status === "on") countOn++;
-            else if (status === "turbulent") countTurbulent++;
+            else if (status === "degraded") countDegraded++;
             else countOff++;
         });
 
+        // Success rate = % of requests that didn't fail with 5xx
         const successRate =
-            totalAdjusted > 0 ? (total2xx / totalAdjusted) * 100 : 100;
+            totalRequests > 0
+                ? ((totalRequests - total5xx) / totalRequests) * 100
+                : 100;
 
         // Determine aggregate status based on success rate (traffic-weighted)
         let status = "healthy";
@@ -114,7 +89,7 @@ function GlobalHealthSummary({ models }) {
             successRate,
             status,
             countOn,
-            countTurbulent,
+            countDegraded,
             countOff,
             totalModels: group.length,
         };
@@ -170,7 +145,7 @@ function GlobalHealthSummary({ models }) {
                 </div>
                 <div className="text-[10px] text-gray-500 mt-1">
                     {stats.totalModels} models
-                    {(stats.countTurbulent > 0 || stats.countOff > 0) && (
+                    {(stats.countDegraded > 0 || stats.countOff > 0) && (
                         <span className="ml-1">
                             (
                             {stats.countOff > 0 && (
@@ -179,11 +154,11 @@ function GlobalHealthSummary({ models }) {
                                 </span>
                             )}
                             {stats.countOff > 0 &&
-                                stats.countTurbulent > 0 &&
+                                stats.countDegraded > 0 &&
                                 ", "}
-                            {stats.countTurbulent > 0 && (
+                            {stats.countDegraded > 0 && (
                                 <span className="text-yellow-600">
-                                    {stats.countTurbulent} degraded
+                                    {stats.countDegraded} degraded
                                 </span>
                             )}
                             )
@@ -204,19 +179,19 @@ function GlobalHealthSummary({ models }) {
     );
 }
 
-// Status badge for model health (off/turbulent/on)
+// Status badge for model health (off/degraded/on)
 function StatusBadge({ stats }) {
     const status = computeHealthStatus(stats);
     if (status === "on") return null;
 
     const styles = {
         off: "bg-red-100 text-red-700 border-red-300",
-        turbulent: "bg-yellow-100 text-yellow-700 border-yellow-300",
+        degraded: "bg-yellow-100 text-yellow-700 border-yellow-300",
     };
 
     const labels = {
         off: "OFF",
-        turbulent: "DEGRADED",
+        degraded: "DEGRADED",
     };
 
     return (
@@ -437,6 +412,13 @@ function App() {
                     ((a.stats?.latency_p95_ms || 0) -
                         (b.stats?.latency_p95_ms || 0))
                 );
+            case "user4xx": {
+                const aTotal = a.stats?.total_requests || 1;
+                const bTotal = b.stats?.total_requests || 1;
+                const aPct = (a.stats?.total_4xx || 0) / aTotal;
+                const bPct = (b.stats?.total_4xx || 0) / bTotal;
+                return dir * (aPct - bPct);
+            }
             default:
                 return 0;
         }
@@ -597,8 +579,15 @@ function App() {
                                     align="right"
                                 />
                                 <SortableTh
-                                    label="Errors"
+                                    label="5xx"
                                     sortKey="errors"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                    align="right"
+                                />
+                                <SortableTh
+                                    label="4xx%"
+                                    sortKey="user4xx"
                                     currentSort={sort}
                                     onSort={handleSort}
                                     align="right"
@@ -623,7 +612,7 @@ function App() {
                             {sortedModels.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={6}
+                                        colSpan={7}
                                         className="p-8 text-center text-gray-400"
                                     >
                                         {lastUpdated
@@ -635,19 +624,12 @@ function App() {
                                 sortedModels.map((model) => {
                                     const stats = model.stats;
                                     const total = stats?.total_requests || 0;
-                                    const userErrors =
-                                        (stats?.errors_400 || 0) +
-                                        (stats?.errors_401 || 0) +
-                                        (stats?.errors_402 || 0) +
-                                        (stats?.errors_403 || 0) +
-                                        (stats?.errors_429 || 0);
-                                    const adjustedTotal = total - userErrors;
-                                    const ok2xx = stats?.status_2xx || 0;
-                                    const err5xx =
-                                        (stats?.errors_500 || 0) +
-                                        (stats?.errors_502 || 0) +
-                                        (stats?.errors_503 || 0) +
-                                        (stats?.errors_504 || 0);
+                                    const total5xx = stats?.total_5xx || 0;
+                                    const total4xx = stats?.total_4xx || 0;
+                                    const pct4xx =
+                                        total > 0
+                                            ? (total4xx / total) * 100
+                                            : 0;
                                     const avgSec = stats?.avg_latency_ms
                                         ? stats.avg_latency_ms / 1000
                                         : null;
@@ -681,37 +663,59 @@ function App() {
                                                     />
                                                 </div>
                                             </td>
-                                            {/* Requests */}
+                                            {/* Requests - total with adjusted count in smaller text */}
                                             <td className="px-3 py-2 text-right tabular-nums text-gray-600">
-                                                {total > 0
-                                                    ? total.toLocaleString()
-                                                    : "—"}
+                                                {total > 0 ? (
+                                                    <>
+                                                        {total.toLocaleString()}
+                                                        {total4xx > 0 && (
+                                                            <span className="text-gray-400 text-xs ml-1">
+                                                                (
+                                                                {(
+                                                                    total -
+                                                                    total4xx
+                                                                ).toLocaleString()}
+                                                                )
+                                                            </span>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    "—"
+                                                )}
                                             </td>
-                                            {/* Success */}
+                                            {/* Success = non-5xx rate of total (4xx excluded from errors) */}
                                             <td
                                                 className={`px-3 py-2 text-right tabular-nums ${get2xxColor(
-                                                    ok2xx,
+                                                    total - total5xx,
                                                     total,
-                                                    userErrors,
+                                                    0,
                                                 )}`}
                                             >
                                                 {formatPercent(
-                                                    ok2xx,
-                                                    adjustedTotal,
+                                                    total - total5xx,
+                                                    total,
                                                     true,
                                                 )}
                                             </td>
                                             {/* 5xx Errors - simple count */}
                                             <td className="px-3 py-2 text-right tabular-nums">
-                                                {err5xx > 0 ? (
+                                                {total5xx > 0 ? (
                                                     <span className="text-red-600">
-                                                        {err5xx}
+                                                        {total5xx}
                                                     </span>
                                                 ) : (
                                                     <span className="text-gray-300">
                                                         —
                                                     </span>
                                                 )}
+                                            </td>
+                                            {/* 4xx % - user errors, informational */}
+                                            <td className="px-3 py-2 text-right tabular-nums text-gray-400">
+                                                {pct4xx > 0
+                                                    ? pct4xx < 1
+                                                        ? `${pct4xx.toFixed(1)}%`
+                                                        : `${Math.round(pct4xx)}%`
+                                                    : "—"}
                                             </td>
                                             {/* Avg */}
                                             <td

@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { TIER_EMOJIS, TIER_POLLEN } from "@/tier-config.ts";
+import { TIER_EMOJIS, TIER_POLLEN, type TierStatus } from "@/tier-config.ts";
 import { Tooltip } from "../pricing/Tooltip.tsx";
 
 const tierBoxBase = "rounded-lg p-3";
@@ -9,6 +9,14 @@ const tierColors = {
     seed: `${tierBoxBase} bg-amber-100/60`,
     flower: `${tierBoxBase} bg-pink-100/60`,
     nectar: `${tierBoxBase} bg-purple-100/60`,
+} as const;
+
+const tierActiveRing = {
+    microbe: "ring-2 ring-gray-400",
+    spore: "ring-2 ring-teal-400",
+    seed: "ring-2 ring-amber-400",
+    flower: "ring-2 ring-pink-400",
+    nectar: "ring-2 ring-purple-400",
 } as const;
 
 const SeedTooltipContent = () => (
@@ -48,7 +56,9 @@ const SeedTooltipContent = () => (
     </div>
 );
 
-export const TierExplanation: FC = () => {
+export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
+    currentTier,
+}) => {
     const requirementLabelStyle =
         "text-[9px] font-semibold text-gray-400 uppercase tracking-wide";
 
@@ -60,7 +70,7 @@ export const TierExplanation: FC = () => {
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 {/* Microbe */}
-                <div className={tierColors.microbe}>
+                <div className={`${tierColors.microbe} ${currentTier === "microbe" ? tierActiveRing.microbe : ""}`}>
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.microbe}</span>
                         <strong className="text-gray-800 text-sm">
@@ -77,7 +87,7 @@ export const TierExplanation: FC = () => {
                 </div>
 
                 {/* Spore */}
-                <div className={tierColors.spore}>
+                <div className={`${tierColors.spore} ${currentTier === "spore" ? tierActiveRing.spore : ""}`}>
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.spore}</span>
                         <strong className="text-gray-800 text-sm">Spore</strong>
@@ -95,7 +105,7 @@ export const TierExplanation: FC = () => {
                 </div>
 
                 {/* Seed */}
-                <div className={tierColors.seed}>
+                <div className={`${tierColors.seed} ${currentTier === "seed" ? tierActiveRing.seed : ""}`}>
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.seed}</span>
                         <strong className="text-gray-800 text-sm">Seed</strong>
@@ -119,7 +129,7 @@ export const TierExplanation: FC = () => {
                 </div>
 
                 {/* Flower */}
-                <div className={tierColors.flower}>
+                <div className={`${tierColors.flower} ${currentTier === "flower" ? tierActiveRing.flower : ""}`}>
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.flower}</span>
                         <strong className="text-gray-800 text-sm">
@@ -146,7 +156,7 @@ export const TierExplanation: FC = () => {
                 </div>
 
                 {/* Nectar */}
-                <div className={tierColors.nectar}>
+                <div className={`${tierColors.nectar} ${currentTier === "nectar" ? tierActiveRing.nectar : ""}`}>
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.nectar}</span>
                         <strong className="text-gray-800 text-sm">

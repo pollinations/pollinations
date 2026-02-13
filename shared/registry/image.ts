@@ -220,14 +220,12 @@ export const IMAGE_SERVICES = {
         alpha: true,
         cost: [
             // Wan 2.6 (T2V & I2V) - via Airforce API
-            // Supports both text-to-video and image-to-video
-            // Video base: 720P $0.025/sec (without audio)
-            // Audio add-on: $0.025/sec (when audio=true)
-            // Total with audio: $0.05/sec
+            // Supports both text-to-video and image-to-video with audio
+            // Flat rate: $0.01/sec (video + audio included)
             {
-                date: new Date("2026-01-20").getTime(), // Launch date
-                completionVideoSeconds: 0.025, // $0.025 per second (video only)
-                completionAudioSeconds: 0.025, // $0.025 per second of audio
+                date: new Date("2026-02-13").getTime(), // Price reduction
+                completionVideoSeconds: 0.01, // $0.01 per second (includes audio)
+                completionAudioSeconds: 0, // Included in video price
             },
         ],
         description:

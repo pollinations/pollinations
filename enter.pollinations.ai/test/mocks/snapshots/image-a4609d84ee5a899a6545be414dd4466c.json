@@ -1,0 +1,36 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/prompt/make%20it%20move?model=wan&duration=5&audio=false&image=https%3A%2F%2Fimage.pollinations.ai%2Fprompt%2Fabstract%2520pattern%3Fwidth%3D512%26height%3D512%26nologo%3Dtrue%26seed%3D42",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 400,
+    "statusText": "Bad Request",
+    "headers": {
+      "access-control-allow-headers": "Content-Type",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "Content-Length",
+      "connection": "keep-alive",
+      "content-type": "application/json",
+      "date": "Fri, 13 Feb 2026 12:19:10 GMT",
+      "keep-alive": "timeout=5",
+      "transfer-encoding": "chunked",
+      "x-error-type": "Bad Request"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "{\"error\":\"Bad Request\",\"message\":\"Wan API request failed: {\\\"request_id\\\":\\\"4cb2b840-41b9-93dd-8aa8-808a5933e550\\\",\\\"code\\\":\\\"InvalidParameter.DataInspection\\\",\\\"message\\\":\\\"Unable to download the media resource during the data inspection process.\\\"}\",\"timingInfo\":[{\"step\":\"Request received.\",\"timestamp\":0}],\"requestId\":\"bpgg19\",\"requestParameters\":{\"prompt\":\"make it move\",\"seed\":42,\"model\":\"wan\",\"enhance\":false,\"negative_prompt\":\"undefined\",\"nofeed\":false,\"safe\":false,\"quality\":\"medium\",\"image\":[\"https://image.pollinations.ai/prompt/abstract%20pattern?width=512&height=512&nologo=true&seed=42\"],\"transparent\":false,\"duration\":5,\"audio\":false,\"width\":1024,\"height\":1024},\"queueInfo\":null}",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

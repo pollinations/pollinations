@@ -3,7 +3,6 @@ import debug from "debug";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import { calculateVideoResolution } from "../utils/videoResolution.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 // Logger
@@ -88,32 +87,14 @@ function calculateDimensions(
         width = inputWidth;
         height = inputHeight;
     } else {
-        // Otherwise use calculateVideoResolution to determine from aspectRatio
-        const { aspectRatio: finalAspectRatio, resolution } =
-            calculateVideoResolution({
-                width: inputWidth,
-                height: inputHeight,
-                aspectRatio: aspectRatio as "16:9" | "9:16" | undefined,
-                defaultResolution: "720P",
-            });
-
-        // Map aspect ratio and resolution to dimensions
-        if (finalAspectRatio === "16:9") {
-            if (resolution === "1080P") {
-                width = 1024;
-                height = 576; // Keep under max pixels
-            } else {
-                width = 1024;
-                height = 576;
-            }
-        } else if (finalAspectRatio === "9:16") {
-            if (resolution === "1080P") {
-                width = 576;
-                height = 1024;
-            } else {
-                width = 576;
-                height = 1024;
-            }
+        // Otherwise map aspectRatio to preset dimensions
+        // Note: LTX-2 has MAX_PIXELS constraint (1024x1024), so resolution tiers don't apply
+        if (aspectRatio === "16:9") {
+            width = 1024;
+            height = 576;
+        } else if (aspectRatio === "9:16") {
+            width = 576;
+            height = 1024;
         } else {
             width = DEFAULT_SIZE;
             height = DEFAULT_SIZE;

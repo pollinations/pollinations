@@ -4,6 +4,7 @@ import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { ProviderError } from "../providerError.ts";
 import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 
 // Logger
@@ -184,8 +185,11 @@ export async function callWanAPI(
     if (!generateResponse.ok) {
         const errorText = await generateResponse.text();
         logError("Wan API failed:", generateResponse.status, errorText);
-        throw new HttpError(
-            `Wan API request failed: ${errorText}`,
+        // Sanitised upstream error — raw body already logged above
+        throw new ProviderError(
+            "Alibaba Wan",
+            `Video generation failed \u2014 the upstream provider (Alibaba Wan) returned an error (${generateResponse.status}). Please try again later.`,
+            generateResponse.status,
             generateResponse.status,
         );
     }
@@ -194,15 +198,26 @@ export async function callWanAPI(
     logOps("Generate response:", JSON.stringify(generateData, null, 2));
 
     if (generateData.code) {
-        throw new HttpError(
-            `Wan API error: ${generateData.message || generateData.code}`,
+        logError(
+            "Wan API application error:",
+            generateData.code,
+            generateData.message,
+        );
+        throw new ProviderError(
+            "Alibaba Wan",
+            `Video generation failed \u2014 the upstream provider (Alibaba Wan) returned an error. Please try again later.`,
             400,
         );
     }
 
     const taskId = generateData.output?.task_id;
     if (!taskId) {
-        throw new HttpError("Wan API did not return task ID", 500);
+        logError("Wan API did not return task ID");
+        throw new ProviderError(
+            "Alibaba Wan",
+            `Video generation failed \u2014 the upstream provider (Alibaba Wan) returned an invalid response.`,
+            500,
+        );
     }
 
     // Step 2: Poll for completion
@@ -290,7 +305,11 @@ async function pollWanTask(
             const videoUrl = pollData.output?.video_url;
 
             if (!videoUrl) {
-                throw new HttpError("No video URL in completed response", 500);
+                throw new ProviderError(
+                    "Alibaba Wan",
+                    `Video generation failed \u2014 the upstream provider (Alibaba Wan) returned no video URL.`,
+                    500,
+                );
             }
 
             logOps("Video URL:", videoUrl);
@@ -306,9 +325,12 @@ async function pollWanTask(
             const videoResponse = await fetch(videoUrl);
 
             if (!videoResponse.ok) {
-                throw new HttpError(
-                    `Failed to download video: ${videoResponse.status}`,
+                logError(`Wan video download failed: ${videoResponse.status}`);
+                throw new ProviderError(
+                    "Alibaba Wan",
+                    `Video generation failed \u2014 could not download the result from the upstream provider (Alibaba Wan). Status: ${videoResponse.status}.`,
                     500,
+                    videoResponse.status,
                 );
             }
 
@@ -329,21 +351,29 @@ async function pollWanTask(
         }
 
         if (status === "FAILED") {
-            const errorMsg =
-                pollData.output?.message ||
-                pollData.message ||
-                "Video generation failed";
             logError("Wan generation error:", pollData);
-            throw new HttpError(errorMsg, 500);
+            throw new ProviderError(
+                "Alibaba Wan",
+                `Video generation failed \u2014 the upstream provider (Alibaba Wan) reported an error. Please try again later.`,
+                500,
+            );
         }
 
         if (status === "CANCELED") {
-            throw new HttpError("Video generation was canceled", 500);
+            throw new ProviderError(
+                "Alibaba Wan",
+                `Video generation was cancelled by the upstream provider (Alibaba Wan).`,
+                500,
+            );
         }
 
         // Status is PENDING or RUNNING - wait and try again
         await sleep(delayMs);
     }
 
-    throw new HttpError("Video generation timed out after 5 minutes", 504);
+    throw new ProviderError(
+        "Alibaba Wan",
+        `Video generation timed out \u2014 the upstream provider (Alibaba Wan) did not complete within 5 minutes.`,
+        504,
+    );
 }

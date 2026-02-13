@@ -4,6 +4,7 @@ import { HttpError } from "../httpError.ts";
 import { getScaledDimensions } from "../models.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { ProviderError } from "../providerError.ts";
 import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 
 // Logger
@@ -81,7 +82,11 @@ export const callSeedreamAPI = async (
         if (error instanceof HttpError) {
             throw error;
         }
-        throw new Error(`Seedream 4.0 API generation failed: ${error.message}`);
+        throw new ProviderError(
+            "ByteDance Seedream",
+            `Image generation failed \u2014 the upstream provider (ByteDance Seedream) encountered an error. Please try again later.`,
+            500,
+        );
     }
 };
 
@@ -152,8 +157,10 @@ export const callSeedreamProAPI = async (
         if (error instanceof HttpError) {
             throw error;
         }
-        throw new Error(
-            `Seedream 4.5 Pro API generation failed: ${error.message}`,
+        throw new ProviderError(
+            "ByteDance Seedream",
+            `Image generation failed \u2014 the upstream provider (ByteDance Seedream) encountered an error. Please try again later.`,
+            500,
         );
     }
 };
@@ -278,10 +285,11 @@ async function generateWithSeedream(
             "response:",
             errorText,
         );
-        // Pass through the original status code from Seedream API
-        // 400 errors are client errors (invalid parameters, content policy, etc.)
-        throw new HttpError(
-            `Seedream API request failed: ${errorText}`,
+        // Sanitised upstream error — raw body already logged above
+        throw new ProviderError(
+            "ByteDance Seedream",
+            `Image generation failed \u2014 the upstream provider (ByteDance Seedream) returned an error (${response.status}). Please try again later.`,
+            response.status,
             response.status,
         );
     }
@@ -290,8 +298,11 @@ async function generateWithSeedream(
     logOps("Seedream API response:", JSON.stringify(data, null, 2));
 
     if (!data.data || !data.data[0] || !data.data[0].url) {
-        throw new Error(
-            "Invalid response from Seedream API - no image URL received",
+        logError("Seedream API returned invalid response structure");
+        throw new ProviderError(
+            "ByteDance Seedream",
+            `Image generation failed \u2014 the upstream provider (ByteDance Seedream) returned an invalid response.`,
+            500,
         );
     }
 
@@ -309,8 +320,12 @@ async function generateWithSeedream(
     const imageResponse = await fetch(imageUrl);
 
     if (!imageResponse.ok) {
-        throw new Error(
-            `Failed to download image: ${imageResponse.status} ${imageResponse.statusText}`,
+        logError(`Seedream result download failed: ${imageResponse.status}`);
+        throw new ProviderError(
+            "ByteDance Seedream",
+            `Image generation failed \u2014 could not download the result from the upstream provider (ByteDance Seedream). Status: ${imageResponse.status}.`,
+            500,
+            imageResponse.status,
         );
     }
 

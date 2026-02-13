@@ -3,6 +3,7 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { ProviderError } from "../providerError.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:airforce:ops");
@@ -178,14 +179,17 @@ async function handleApiError(
     airforceModel: string,
 ): Promise<never> {
     const errorText = await response.text();
+    // Raw upstream body logged for debugging only
     logError(
         `api.airforce ${airforceModel} request failed, status:`,
         response.status,
         "response:",
         errorText,
     );
-    throw new HttpError(
-        `api.airforce ${airforceModel} request failed: ${errorText}`,
+    throw new ProviderError(
+        "api.airforce",
+        `Image generation failed \u2014 the upstream provider (api.airforce) returned an error (${response.status}). Please try again later.`,
+        response.status,
         response.status,
     );
 }
@@ -203,8 +207,12 @@ async function processApiResponse(
 
     const result = data.data?.[0];
     if (!result) {
-        throw new HttpError(
-            `Invalid response from api.airforce ${airforceModel}`,
+        logError(
+            `api.airforce ${airforceModel} returned invalid response structure`,
+        );
+        throw new ProviderError(
+            "api.airforce",
+            `Image generation failed \u2014 the upstream provider (api.airforce) returned an invalid response for model ${airforceModel}.`,
             500,
         );
     }
@@ -217,7 +225,11 @@ async function processApiResponse(
         return downloadResultFromUrl(result.url, progress, requestId);
     }
 
-    throw new HttpError(`api.airforce ${airforceModel} returned no data`, 500);
+    throw new ProviderError(
+        "api.airforce",
+        `Image generation failed \u2014 the upstream provider (api.airforce) returned no data for model ${airforceModel}.`,
+        500,
+    );
 }
 
 async function processSseResponse(
@@ -246,8 +258,13 @@ async function processSseResponse(
                 error?: string;
             };
             if (parsed.error) {
-                throw new HttpError(
-                    `api.airforce ${airforceModel} error: ${parsed.error}`,
+                logError(
+                    `api.airforce ${airforceModel} SSE error:`,
+                    parsed.error,
+                );
+                throw new ProviderError(
+                    "api.airforce",
+                    `Image generation failed \u2014 the upstream provider (api.airforce) reported an error for model ${airforceModel}. Please try again later.`,
                     500,
                 );
             }
@@ -262,8 +279,9 @@ async function processSseResponse(
     }
 
     if (!resultUrl) {
-        throw new HttpError(
-            `api.airforce ${airforceModel} SSE returned no result URL`,
+        throw new ProviderError(
+            "api.airforce",
+            `Image generation failed \u2014 the upstream provider (api.airforce) did not return a result for model ${airforceModel}.`,
             500,
         );
     }
@@ -283,9 +301,14 @@ async function downloadResultFromUrl(
     const response = await fetch(url);
 
     if (!response.ok) {
-        throw new HttpError(
-            `Failed to download from ${url}: ${response.status}`,
+        logError(
+            `api.airforce result download failed from ${url}: ${response.status}`,
+        );
+        throw new ProviderError(
+            "api.airforce",
+            `Image generation failed \u2014 could not download the result from the upstream provider (api.airforce). Status: ${response.status}.`,
             500,
+            response.status,
         );
     }
 

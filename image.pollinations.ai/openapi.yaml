@@ -305,7 +305,10 @@ components:
         requestParameters:
           type: object
           description: Parameters that were sent with the request
-
+        provider:
+          type: string
+          description: Upstream provider name when the error originates from an external service (omitted for Pollinations-side errors)
+          example: "api.airforce"
     RateLimitErrorResponse:
       allOf:
         - $ref: '#/components/schemas/ErrorResponse'

@@ -2,7 +2,7 @@ name: LinkedIn Generate Post
 
 on:
   schedule:
-    - cron: '0 14 * * 1'  # Weekly on Monday at 14:00 UTC (15:00 Berlin)
+    - cron: '0 0 * * 3,5'  # Wednesday + Friday at midnight UTC
   workflow_dispatch:
     inputs:
       source_repo:
@@ -11,9 +11,8 @@ on:
         default: 'pollinations/pollinations'
         type: string
       days_back:
-        description: 'Days to look back for PRs (default: 7 for weekly)'
+        description: 'Days to look back for PRs (auto-calculated if empty: 5 on Wed, 2 on Fri)'
         required: false
-        default: '7'
         type: string
       force_thought_leadership:
         description: 'Force thought leadership content (ignore PRs)'
@@ -46,16 +45,36 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
+        run: pip install requests
+
+      - name: Calculate days back
+        id: calc
         run: |
-          pip install requests
+          # If manually provided, use that value
+          MANUAL="${{ inputs.days_back }}"
+          if [ -n "$MANUAL" ]; then
+            echo "days_back=$MANUAL" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          # Auto-calculate based on day of week
+          # Wed (3) → look back 5 days (covers Fri night through Tue)
+          # Fri (5) → look back 2 days (covers Wed night through Thu)
+          DOW=$(date -u +%u)
+          if [ "$DOW" = "3" ]; then
+            echo "days_back=5" >> $GITHUB_OUTPUT
+          elif [ "$DOW" = "5" ]; then
+            echo "days_back=2" >> $GITHUB_OUTPUT
+          else
+            echo "days_back=3" >> $GITHUB_OUTPUT
+          fi
 
       - name: Generate LinkedIn Post and Create PR
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
-          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           SOURCE_REPO: ${{ inputs.source_repo || 'pollinations/pollinations' }}
-          DAYS_BACK: ${{ inputs.days_back || '7' }}
+          DAYS_BACK: ${{ steps.calc.outputs.days_back }}
           FORCE_THOUGHT_LEADERSHIP: ${{ inputs.force_thought_leadership || 'false' }}
           PR_LABELS: NEWS
         run: python social/scripts/linkedin_generate_post.py

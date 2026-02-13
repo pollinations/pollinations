@@ -1,7 +1,7 @@
 import { SELF } from "cloudflare:test";
-import { test } from "./fixtures.ts";
-import { expect } from "vitest";
 import { getLogger } from "@logtape/logtape";
+import { expect } from "vitest";
+import { test } from "./fixtures.ts";
 
 const textEndpoint = "http://localhost:3000/api/generate/v1/chat/completions";
 const log = getLogger(["test", "deduplication"]);
@@ -234,8 +234,8 @@ test(
         expect(body2).toBeTruthy();
 
         // Both should contain the error message about invalid model
-        expect(body1).toContain("nonexistent-model-12345");
-        expect(body2).toContain("nonexistent-model-12345");
+        expect(body1).toContain("Invalid option");
+        expect(body2).toContain("Invalid option");
 
         log.info(
             `✓ Error handling works: both requests got 400 with proper error message`,

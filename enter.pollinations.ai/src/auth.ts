@@ -59,7 +59,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             maxExpiresIn: 365, // Max 1 year
         },
         rateLimit: {
-            enabled: false, // Disabled - Roblox games hit rate limits with many concurrent players
+            enabled: true, // Enable rate limiting - publishable keys need protection
         },
     });
 
@@ -181,7 +181,7 @@ function onAfterUserCreate(
     env: Cloudflare.Env,
     executionCtx?: ExecutionContext,
 ) {
-    return async (user: GenericUser, _ctx?: GenericEndpointContext) => {
+    return async (user: GenericUser, _ctx: GenericEndpointContext | null) => {
         try {
             const db = drizzle(env.DB);
             const tierBalance = getTierPollen(DEFAULT_TIER);

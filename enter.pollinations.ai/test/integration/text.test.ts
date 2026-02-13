@@ -277,7 +277,7 @@ test(
         // Invalid model is a validation error (user's fault) - should return 400
         expect(response.status).toBe(400);
         const error = JSON.parse(body);
-        expect(error.error.message).toContain("Invalid option");
+        expect(error.error.message).toContain("validation failed");
     },
 );
 

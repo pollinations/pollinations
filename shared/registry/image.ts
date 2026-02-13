@@ -277,8 +277,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.0025, // $0.0025 per image
             },
         ],
-        description:
-            "Imagen 4 (api.airforce) - Google's latest image gen",
+        description: "Imagen 4 (api.airforce) - Google's latest image gen",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -293,8 +292,7 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.0025, // $0.0025 per second
             },
         ],
-        description:
-            "Grok Video (api.airforce) - xAI video gen",
+        description: "Grok Video (api.airforce) - xAI video gen",
         inputModalities: ["text"],
         outputModalities: ["video"],
     },

@@ -20,6 +20,9 @@ const MIME_TYPES = {
  * Preserves the original HTTP status and provides clear error context
  */
 class ImageFetchError extends Error {
+    status: number;
+    url: string;
+
     constructor(message, statusCode, url) {
         super(message);
         this.name = "ImageFetchError";

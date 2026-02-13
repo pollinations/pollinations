@@ -18,9 +18,9 @@ export function validateAndNormalizeMessages(messages) {
         throw new Error("Messages must be a non-empty array");
     }
 
-    return messages.map((msg) => {
+    return messages.map((msg: any) => {
         // Create a base message with required properties
-        const normalizedMsg = {
+        const normalizedMsg: any = {
             role: msg.role || "user",
             content: msg.content || "",
         };
@@ -112,8 +112,8 @@ export function ensureSystemMessage(
  * @param {Object} defaults - Default option values
  * @returns {Object} - Normalized options with defaults applied
  */
-export function normalizeOptions(options = {}, defaults = {}) {
-    const normalized = { ...defaults, ...options };
+export function normalizeOptions(options: any = {}, defaults: any = {}) {
+    const normalized: any = { ...defaults, ...options };
 
     // Handle streaming option - ensure it's properly normalized to a boolean
     if (normalized.stream !== undefined) {
@@ -251,7 +251,7 @@ export function formatToOpenAIResponse(response, modelName) {
     }
 
     // Create a message object based on the response
-    const message = {
+    const message: any = {
         role: "assistant",
     };
 

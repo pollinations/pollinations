@@ -65,7 +65,7 @@ async function loadLocalModels() {
             `✅ Loaded ${availableModels.length} models from local file`,
         );
 
-        return availableModels.map((model) => ({
+        return availableModels.map((model: any) => ({
             name: model.name,
             aliases: model.aliases,
             description: model.description,
@@ -465,8 +465,8 @@ async function discoverAllOriginalNames() {
         console.log("=".repeat(80));
 
         // Group failures by error type
-        const errorsByType = {};
-        failed.forEach((result) => {
+        const errorsByType: Record<string, any[]> = {};
+        failed.forEach((result: any) => {
             const errorType = result.errorType || "unknown";
             if (!errorsByType[errorType]) {
                 errorsByType[errorType] = [];
@@ -481,7 +481,7 @@ async function discoverAllOriginalNames() {
             );
             console.log("-".repeat(60));
 
-            failures.forEach((result) => {
+            failures.forEach((result: any) => {
                 const duration = result.duration
                     ? `(${result.duration}ms)`
                     : "";
@@ -602,7 +602,7 @@ async function testSingleModel(modelName) {
     console.log("=".repeat(80));
 
     // Test the model
-    const result = await testModelForOriginalName(modelName, targetModel);
+    const result: any = await testModelForOriginalName(modelName, targetModel);
 
     // Display results
     console.log("\n" + "=".repeat(80));

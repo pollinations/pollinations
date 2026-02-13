@@ -43,21 +43,11 @@ export const VOICE_MAPPING: Record<string, string> = {
     bill: "pqHfZKP75CvOlQylNhV4", // Trustworthy, American
 };
 
-export const ELEVENLABS_VOICES = Object.keys(
-    VOICE_MAPPING,
-) as (keyof typeof VOICE_MAPPING)[];
-export type ElevenLabsVoice = keyof typeof VOICE_MAPPING;
+export const ELEVENLABS_VOICES = Object.keys(VOICE_MAPPING);
 
 export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
 export type AudioServiceId = keyof typeof AUDIO_SERVICES;
 export type AudioModelId = (typeof AUDIO_SERVICES)[AudioServiceId]["modelId"];
-
-/**
- * Helper to convert dollars per 1000 characters to dollars per character
- */
-function perThousandChars(dollarsPerThousand: number): number {
-    return dollarsPerThousand / 1000;
-}
 
 export const AUDIO_SERVICES = {
     elevenlabs: {
@@ -68,7 +58,7 @@ export const AUDIO_SERVICES = {
             {
                 date: new Date("2026-02-07").getTime(),
                 // ElevenLabs pricing: 1 credit = 1 character, ~$0.18 per 1000 chars
-                completionAudioTokens: perThousandChars(0.18),
+                completionAudioTokens: 0.18 / 1000,
             },
         ],
         description:
@@ -110,5 +100,21 @@ export const AUDIO_SERVICES = {
         inputModalities: ["audio"],
         outputModalities: ["text"],
         alpha: true,
+    },
+    scribe: {
+        aliases: ["scribe_v2", "scribe-v2"],
+        modelId: "scribe_v2",
+        provider: "elevenlabs",
+        cost: [
+            {
+                date: new Date("2026-02-13").getTime(),
+                // ElevenLabs Scribe: $0.40/hour = $0.0001111/sec
+                promptAudioSeconds: 0.0001111,
+            },
+        ],
+        description:
+            "ElevenLabs Scribe v2 - Speech to Text (90+ languages, diarization)",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
     },
 } satisfies Record<string, ServiceDefinition<string>>;

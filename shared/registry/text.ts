@@ -476,18 +476,19 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "glm": {
-        aliases: ["glm-4.7", "glm-4p7"],
-        modelId: "accounts/fireworks/models/glm-4p7",
+        aliases: ["glm-5", "glm-4.7", "glm-4p7"],
+        modelId: "accounts/fireworks/models/glm-5",
         provider: "fireworks",
         cost: [
             {
-                date: new Date("2026-01-05").getTime(),
+                date: new Date("2026-02-13").getTime(),
                 promptTextTokens: perMillion(0.6),
                 promptCachedTokens: perMillion(0.3),
                 completionTextTokens: perMillion(2.2),
             },
         ],
-        description: "Z.ai GLM-4.7 - Coding, Reasoning & Agentic Workflows",
+        description:
+            "Z.ai GLM-5 - 744B MoE, Long Context Reasoning & Agentic Workflows",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -547,7 +548,7 @@ export const TEXT_SERVICES = {
             },
         ],
         description:
-            "Qwen Character (alpha) - roleplay & character chat, powered by api.airforce",
+            "Qwen Character (api.airforce) - roleplay & character chat",
         inputModalities: ["text"],
         outputModalities: ["text"],
         isSpecialized: true,

@@ -6,6 +6,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
+import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
 const logOps = debug("pollinations:wan:ops");
 const logError = debug("pollinations:wan:error");
@@ -157,10 +158,12 @@ export async function callWanAPI(
 
 /**
  * Helper function to prepare video generation parameters
+ * Uses unified resolution calculation from width/height or aspectRatio
  */
 function prepareVideoParameters(safeParams: ImageParams): {
     durationSeconds: number;
     resolution: string;
+    aspectRatio: string;
     generateAudio: boolean;
 } {
     const rawDuration = safeParams.duration || DEFAULT_DURATION_SECONDS;
@@ -169,12 +172,19 @@ function prepareVideoParameters(safeParams: ImageParams): {
         Math.min(MAX_DURATION_SECONDS, rawDuration),
     );
     const generateAudio = safeParams.audio !== false;
-    // Use provided resolution or default to 720P (supports 480P, 720P, 1080P)
-    const resolution = safeParams.resolution || DEFAULT_RESOLUTION;
+
+    // Calculate resolution and aspect ratio from width/height or aspectRatio
+    const { aspectRatio, resolution } = calculateVideoResolution({
+        width: safeParams.width,
+        height: safeParams.height,
+        aspectRatio: safeParams.aspectRatio,
+        defaultResolution: DEFAULT_RESOLUTION,
+    });
 
     return {
         durationSeconds,
         resolution,
+        aspectRatio,
         generateAudio,
     };
 }
@@ -214,7 +224,7 @@ function buildAirforceRequest(
         size: "1024x1024",
         response_format: "url",
         sse: true,
-        aspectRatio: "16:9",
+        aspectRatio: videoParams.aspectRatio,
         duration: videoParams.durationSeconds,
         resolution: videoParams.resolution,
         sound: videoParams.generateAudio,
@@ -238,63 +248,42 @@ async function streamAirforceResponse(
 ): Promise<string> {
     const endpoint = `${AIRFORCE_API_BASE}/images/generations`;
 
-    // 5-minute timeout for video generation
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
+    const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+    });
 
-    try {
-        const response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${apiKey}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(requestBody),
-            signal: controller.signal,
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            logError("Airforce API failed:", response.status, errorText);
-            throw new HttpError(
-                `Airforce API request failed: ${errorText}`,
-                response.status,
-            );
-        }
-
-        progress.updateBar(
-            requestId,
-            50,
-            "Processing",
-            "Generating video (streaming updates)...",
+    if (!response.ok) {
+        const errorText = await response.text();
+        logError("Airforce API failed:", response.status, errorText);
+        throw new HttpError(
+            `Airforce API request failed: ${errorText}`,
+            response.status,
         );
-
-        if (!response.body) {
-            throw new HttpError("No response body from Airforce API", 500);
-        }
-
-        const videoUrl = await parseSSEStream(
-            response.body,
-            progress,
-            requestId,
-        );
-
-        if (!videoUrl) {
-            throw new HttpError("No video URL received from Airforce API", 500);
-        }
-
-        clearTimeout(timeoutId);
-        return videoUrl;
-    } catch (error) {
-        clearTimeout(timeoutId);
-        if (error instanceof Error && error.name === "AbortError") {
-            throw new HttpError(
-                "Video generation timed out after 5 minutes",
-                504,
-            );
-        }
-        throw error;
     }
+
+    progress.updateBar(
+        requestId,
+        50,
+        "Processing",
+        "Generating video (streaming updates)...",
+    );
+
+    if (!response.body) {
+        throw new HttpError("No response body from Airforce API", 500);
+    }
+
+    const videoUrl = await parseSSEStream(response.body, progress, requestId);
+
+    if (!videoUrl) {
+        throw new HttpError("No video URL received from Airforce API", 500);
+    }
+
+    return videoUrl;
 }
 
 /**

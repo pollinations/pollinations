@@ -80,7 +80,6 @@ export const ImageParamsSchema = z
         duration: z.coerce.number().optional(),
         aspectRatio: z.enum(["16:9", "9:16"]).optional(),
         audio: sanitizedBoolean.catch(false), // generateAudio defaults to false (can enable later)
-        resolution: z.enum(["480P", "720P", "1080P"]).optional(),
     })
     .transform((data) => {
         // adjust width and height to fit the selected model

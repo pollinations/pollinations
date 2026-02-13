@@ -3,6 +3,7 @@ import debug from "debug";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { calculateVideoResolution } from "../utils/videoResolution.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 // Logger
@@ -70,7 +71,7 @@ function roundTo32(n: number): number {
 
 /**
  * Calculate width and height with resolution limits
- * - Default: 768x768
+ * - Uses unified resolution calculation, then applies LTX-2 specific constraints
  * - Max total pixels: 1024x1024 (1,048,576)
  * - Dimensions must be divisible by 32 for LTX-2
  */
@@ -79,17 +80,40 @@ function calculateDimensions(
     inputHeight?: number,
     aspectRatio?: string,
 ): { width: number; height: number } {
-    let width = inputWidth || DEFAULT_SIZE;
-    let height = inputHeight || DEFAULT_SIZE;
+    let width: number;
+    let height: number;
 
-    // Handle aspect ratio presets if no explicit dimensions
-    if (!inputWidth && !inputHeight && aspectRatio) {
-        if (aspectRatio === "16:9") {
-            width = 1024;
-            height = 576;
-        } else if (aspectRatio === "9:16") {
-            width = 576;
-            height = 1024;
+    // If explicit dimensions provided, use them
+    if (inputWidth && inputHeight) {
+        width = inputWidth;
+        height = inputHeight;
+    } else {
+        // Otherwise use calculateVideoResolution to determine from aspectRatio
+        const { aspectRatio: finalAspectRatio, resolution } =
+            calculateVideoResolution({
+                width: inputWidth,
+                height: inputHeight,
+                aspectRatio: aspectRatio as "16:9" | "9:16" | undefined,
+                defaultResolution: "720P",
+            });
+
+        // Map aspect ratio and resolution to dimensions
+        if (finalAspectRatio === "16:9") {
+            if (resolution === "1080P") {
+                width = 1024;
+                height = 576; // Keep under max pixels
+            } else {
+                width = 1024;
+                height = 576;
+            }
+        } else if (finalAspectRatio === "9:16") {
+            if (resolution === "1080P") {
+                width = 576;
+                height = 1024;
+            } else {
+                width = 576;
+                height = 1024;
+            }
         } else {
             width = DEFAULT_SIZE;
             height = DEFAULT_SIZE;

@@ -1,8 +1,10 @@
+import sleep from "await-sleep";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
 const logOps = debug("pollinations:wan:ops");
@@ -11,6 +13,9 @@ const logError = debug("pollinations:wan:error");
 // API Configuration
 const AIRFORCE_API_BASE = "https://api.airforce/v1";
 const AIRFORCE_WAN_MODEL = "wan-2.6";
+const DASHSCOPE_API_BASE = "https://dashscope-intl.aliyuncs.com/api/v1";
+const WAN_T2V_MODEL = "wan2.6-text-to-video";
+const WAN_I2V_MODEL = "wan2.6-i2v-flash";
 
 // Video generation constraints
 const MIN_DURATION_SECONDS = 2;
@@ -18,12 +23,54 @@ const MAX_DURATION_SECONDS = 15;
 const DEFAULT_DURATION_SECONDS = 5;
 const DEFAULT_RESOLUTION = "720P"; // Supports 480P, 720P, 1080P
 
+// Polling configuration for Alibaba DashScope
+const POLL_MAX_ATTEMPTS = 60; // 5 minutes max
+const POLL_DELAY_MS = 5000; // 5 second intervals
+
 interface AirforceVideoResponse {
     created: number;
     data: Array<{
         url: string | null;
         b64_json: string | null;
     }>;
+}
+
+interface WanTaskResponse {
+    output?: {
+        task_id: string;
+        task_status: string;
+    };
+    request_id?: string;
+    code?: string;
+    message?: string;
+}
+
+interface WanTaskResult {
+    output?: {
+        task_id: string;
+        task_status: string;
+        video_url?: string;
+        code?: string;
+        message?: string;
+    };
+    request_id?: string;
+    usage?: {
+        video_count?: number;
+        video_duration?: number;
+    };
+    code?: string;
+    message?: string;
+}
+
+interface DashScopeRequest {
+    model: string;
+    input: { prompt: string; img_url?: string };
+    parameters: {
+        resolution: string;
+        duration: number;
+        prompt_extend: boolean;
+        audio: boolean;
+    };
 }
 
 /**
@@ -42,10 +89,49 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
 }
 
 /**
- * Generates a video using Airforce API (wan-2.6)
+ * Generates a video using Airforce API (wan-2.6) with Alibaba DashScope fallback
  * Supports both text-to-video and image-to-video with optional audio
  */
 export async function callWanAPI(
+    prompt: string,
+    safeParams: ImageParams,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<VideoGenerationResult> {
+    // Try Airforce first (primary)
+    try {
+        return await callWanAirforceAPI(
+            prompt,
+            safeParams,
+            progress,
+            requestId,
+        );
+    } catch (error) {
+        const errorMessage =
+            error instanceof Error ? error.message : String(error);
+        logError("Airforce API failed:", errorMessage);
+
+        // Check if we have Alibaba credentials for fallback
+        if (process.env.DASHSCOPE_API_KEY) {
+            logOps("Falling back to Alibaba DashScope API");
+            return await callWanAlibabaAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
+        }
+
+        // No fallback available, rethrow original error
+        throw error;
+    }
+}
+
+/**
+ * Generates a video using Airforce API (wan-2.6)
+ * Supports both text-to-video and image-to-video with optional audio
+ */
+async function callWanAirforceAPI(
     prompt: string,
     safeParams: ImageParams,
     progress: ProgressManager,
@@ -339,4 +425,355 @@ async function downloadVideo(
     progress.updateBar(requestId, 95, "Success", "Video generation completed");
 
     return buffer;
+}
+
+// ============================================================================
+// Alibaba DashScope Fallback Implementation
+// ============================================================================
+
+/**
+ * Generates a video using Alibaba DashScope API (wan-2.6)
+ * Supports both text-to-video and image-to-video with optional audio
+ */
+async function callWanAlibabaAPI(
+    prompt: string,
+    safeParams: ImageParams,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<VideoGenerationResult> {
+    const apiKey = process.env.DASHSCOPE_API_KEY;
+    if (!apiKey) {
+        throw new HttpError(
+            "DASHSCOPE_API_KEY environment variable is required for Wan model",
+            500,
+        );
+    }
+
+    const videoParams = prepareVideoParameters(safeParams);
+    const imageUrl = extractFirstImage(safeParams.image);
+
+    // Choose model based on whether we have an image
+    const model = imageUrl ? WAN_I2V_MODEL : WAN_T2V_MODEL;
+    const mode = imageUrl ? "I2V" : "T2V";
+
+    logOps(`Calling Wan 2.6 API (DashScope ${mode}) with params:`, {
+        prompt,
+        ...videoParams,
+        model,
+    });
+
+    progress.updateBar(
+        requestId,
+        35,
+        "Processing",
+        `Starting video generation with Wan 2.6 (${mode})...`,
+    );
+
+    const requestBody = await buildDashScopeRequest(
+        prompt,
+        imageUrl,
+        videoParams,
+        progress,
+        requestId,
+    );
+
+    logRequestSafely(requestBody);
+
+    const taskId = await createDashScopeTask(
+        apiKey,
+        requestBody,
+        progress,
+        requestId,
+    );
+
+    const result = await pollWanTask(taskId, apiKey, progress, requestId);
+
+    const videoDuration =
+        result.usage.video_duration || videoParams.durationSeconds;
+
+    return {
+        buffer: result.buffer,
+        mimeType: "video/mp4",
+        durationSeconds: videoParams.durationSeconds,
+        trackingData: {
+            actualModel: "wan",
+            usage: {
+                completionVideoSeconds: videoDuration,
+                completionAudioSeconds: videoParams.generateAudio
+                    ? videoDuration
+                    : 0,
+            },
+        },
+    };
+}
+
+/**
+ * Build request body for DashScope API
+ * Supports both T2V (text-only) and I2V (text+image) modes
+ */
+async function buildDashScopeRequest(
+    prompt: string,
+    imageUrl: string | undefined,
+    videoParams: ReturnType<typeof prepareVideoParameters>,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<DashScopeRequest> {
+    const model = imageUrl ? WAN_I2V_MODEL : WAN_T2V_MODEL;
+
+    // For I2V mode, process the image
+    if (imageUrl) {
+        progress.updateBar(
+            requestId,
+            40,
+            "Processing",
+            "Processing reference image...",
+        );
+
+        const imgUrl = await prepareImageUrl(imageUrl);
+
+        return {
+            model,
+            input: { prompt, img_url: imgUrl },
+            parameters: {
+                resolution: videoParams.resolution,
+                duration: videoParams.durationSeconds,
+                prompt_extend: true,
+                audio: videoParams.generateAudio,
+            },
+        };
+    }
+
+    // For T2V mode, no image needed
+    return {
+        model,
+        input: { prompt },
+        parameters: {
+            resolution: videoParams.resolution,
+            duration: videoParams.durationSeconds,
+            prompt_extend: true,
+            audio: videoParams.generateAudio,
+        },
+    };
+}
+
+/**
+ * Prepare image URL for DashScope (convert to base64 if needed)
+ */
+async function prepareImageUrl(imageUrl: string): Promise<string> {
+    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+        return imageUrl;
+    }
+
+    try {
+        const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
+        return `data:${mimeType};base64,${base64}`;
+    } catch (error) {
+        const errorMessage =
+            error instanceof Error ? error.message : String(error);
+        logError("Error processing reference image:", errorMessage);
+        throw new HttpError(
+            `Failed to process reference image: ${errorMessage}`,
+            400,
+        );
+    }
+}
+
+/**
+ * Log request safely (hide base64 data)
+ */
+function logRequestSafely(requestBody: DashScopeRequest): void {
+    const safeRequest = {
+        ...requestBody,
+        input: {
+            ...requestBody.input,
+            img_url: requestBody.input.img_url?.startsWith("data:")
+                ? "[base64]"
+                : requestBody.input.img_url,
+        },
+    };
+    logOps("DashScope API request:", JSON.stringify(safeRequest, null, 2));
+}
+
+/**
+ * Create a video generation task with DashScope API
+ */
+async function createDashScopeTask(
+    apiKey: string,
+    requestBody: DashScopeRequest,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<string> {
+    progress.updateBar(
+        requestId,
+        45,
+        "Processing",
+        "Initiating video generation...",
+    );
+
+    const endpoint = `${DASHSCOPE_API_BASE}/services/aigc/video-generation/video-synthesis`;
+
+    const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            "X-DashScope-Async": "enable",
+        },
+        body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        logError("DashScope API failed:", response.status, errorText);
+        throw new HttpError(
+            `DashScope API request failed: ${errorText}`,
+            response.status,
+        );
+    }
+
+    const data: WanTaskResponse = await response.json();
+    logOps("Task creation response:", JSON.stringify(data, null, 2));
+
+    if (data.code) {
+        throw new HttpError(
+            `DashScope API error: ${data.message || data.code}`,
+            400,
+        );
+    }
+
+    const taskId = data.output?.task_id;
+    if (!taskId) {
+        throw new HttpError("DashScope API did not return task ID", 500);
+    }
+
+    progress.updateBar(
+        requestId,
+        50,
+        "Processing",
+        "Generating video (this takes 1-5 minutes)...",
+    );
+
+    return taskId;
+}
+
+/**
+ * Poll DashScope task until completion
+ */
+async function pollWanTask(
+    taskId: string,
+    apiKey: string,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<{
+    buffer: Buffer;
+    usage: { video_duration: number };
+}> {
+    const pollUrl = `${DASHSCOPE_API_BASE}/tasks/${taskId}`;
+    logOps("Polling task:", taskId);
+
+    for (let attempt = 1; attempt <= POLL_MAX_ATTEMPTS; attempt++) {
+        const pollResult = await pollTaskOnce(
+            pollUrl,
+            apiKey,
+            attempt,
+            progress,
+            requestId,
+        );
+
+        if (pollResult.status === "completed") {
+            const buffer = await downloadVideo(
+                pollResult.videoUrl,
+                progress,
+                requestId,
+            );
+
+            return {
+                buffer,
+                usage: { video_duration: pollResult.videoDuration },
+            };
+        }
+
+        if (pollResult.status === "failed") {
+            throw new HttpError(pollResult.error, 500);
+        }
+
+        await sleep(POLL_DELAY_MS);
+    }
+
+    throw new HttpError("Video generation timed out after 5 minutes", 504);
+}
+
+/**
+ * Poll task once and return status
+ */
+async function pollTaskOnce(
+    pollUrl: string,
+    apiKey: string,
+    attempt: number,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<{
+    status: "pending" | "completed" | "failed";
+    videoUrl?: string;
+    videoDuration?: number;
+    error?: string;
+}> {
+    logOps(`Poll attempt ${attempt}/${POLL_MAX_ATTEMPTS}...`);
+
+    const progressPercent = 50 + Math.min(40, Math.floor(attempt * 0.7));
+    progress.updateBar(
+        requestId,
+        progressPercent,
+        "Processing",
+        `Generating video... (${attempt}/${POLL_MAX_ATTEMPTS})`,
+    );
+
+    const response = await fetch(pollUrl, {
+        method: "GET",
+        headers: {
+            "Authorization": `Bearer ${apiKey}`,
+        },
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        logError("Poll error:", response.status, errorText);
+        return { status: "pending" }; // Continue polling on non-fatal errors
+    }
+
+    const data: WanTaskResult = await response.json();
+    logOps("Poll response:", JSON.stringify(data, null, 2));
+
+    const taskStatus = data.output?.task_status?.toUpperCase();
+    logOps("Task status:", taskStatus);
+
+    switch (taskStatus) {
+        case "SUCCEEDED":
+            if (!data.output?.video_url) {
+                throw new HttpError("No video URL in completed response", 500);
+            }
+            return {
+                status: "completed",
+                videoUrl: data.output.video_url,
+                videoDuration: data.usage?.video_duration || 0,
+            };
+
+        case "FAILED":
+            return {
+                status: "failed",
+                error:
+                    data.output?.message ||
+                    data.message ||
+                    "Video generation failed",
+            };
+
+        case "CANCELED":
+            return {
+                status: "failed",
+                error: "Video generation was canceled",
+            };
+
+        default:
+            return { status: "pending" };
+    }
 }

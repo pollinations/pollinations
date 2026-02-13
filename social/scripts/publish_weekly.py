@@ -22,7 +22,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Optional
 import base64
 import io
-from common import get_env, github_api_request, GITHUB_API_BASE, deploy_reddit_post, DISCORD_CHAR_LIMIT
+from common import get_env, github_api_request, GITHUB_API_BASE, deploy_reddit_post, DISCORD_CHAR_LIMIT, DISCORD_CHUNK_SIZE
 from buffer_publish import (
     publish_twitter_post,
     publish_linkedin_post,
@@ -32,7 +32,6 @@ from buffer_publish import (
 # ── Constants ────────────────────────────────────────────────────────
 
 WEEKLY_REL_DIR = "social/news/weekly"
-DISCORD_CHUNK_SIZE = 1900
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
@@ -258,7 +257,8 @@ def main():
 
     failed = [p for p, s in results.items() if not s]
     if failed:
-        print(f"\n  WARNING: Failed platforms: {', '.join(failed)}")
+        print(f"\n  Failed platforms: {', '.join(failed)}")
+        sys.exit(1)
 
     print("\n=== Done ===")
 

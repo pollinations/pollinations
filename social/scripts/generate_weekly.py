@@ -31,6 +31,7 @@ from common import (
     generate_platform_post,
     commit_image_to_branch,
     read_gists_for_date,
+    filter_daily_gists,
     parse_json_response,
     create_branch_from_main,
     commit_files_to_branch,
@@ -54,14 +55,14 @@ def _weekly_image_context() -> str:
 
 def get_week_range(override_start: Optional[str] = None):
     """Return (week_start, week_end) as YYYY-MM-DD strings.
-    Covers Sunday-to-Saturday: everything since last Sunday 6am UTC.
-    Cron runs Sunday 06:00 UTC, so 'today' is the new Sunday and
-    we look back 7 days to last Sunday through yesterday (Saturday)."""
+    Covers a 7-day window: start through start+6.
+    When run by cron on Sunday 06:00 UTC, start = today-7 (last Sunday)
+    and end = today-1 (Saturday). NOTE: only correct when run on Sunday."""
     if override_start:
         start = datetime.strptime(override_start, "%Y-%m-%d").date()
     else:
         today = datetime.now(timezone.utc).date()
-        start = today - timedelta(days=7)  # last Sunday
+        start = today - timedelta(days=7)
 
     end = start + timedelta(days=6)  # Saturday
     return start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
@@ -85,11 +86,6 @@ def read_gists_for_week(week_start: str, week_end: str) -> List[Dict]:
         current += timedelta(days=1)
 
     return all_gists
-
-
-def filter_daily_gists(gists: List[Dict]) -> List[Dict]:
-    """Filter gists to only those with publish_tier == 'daily'."""
-    return [g for g in gists if g.get("gist", {}).get("publish_tier") == "daily"]
 
 
 # ── Step 1: Generate weekly summary ─────────────────────────────────

@@ -445,6 +445,14 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
     return None, None
 
 
+def _github_headers(token: str) -> Dict:
+    """Standard GitHub API headers."""
+    return {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {token}",
+    }
+
+
 def commit_image_to_branch(
     image_bytes: bytes,
     file_path: str,
@@ -459,10 +467,7 @@ def commit_image_to_branch(
     """
     import base64 as _b64
 
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}",
-    }
+    headers = _github_headers(github_token)
 
     encoded = _b64.b64encode(image_bytes).decode()
 
@@ -495,10 +500,7 @@ def commit_image_to_branch(
 
 def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branch: str = "main") -> str:
     """Get the SHA of an existing file"""
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}"
-    }
+    headers = _github_headers(github_token)
 
     response = github_api_request(
         "GET",
@@ -620,10 +622,7 @@ def commit_gist_to_main(gist: Dict, github_token: str, owner: str, repo: str) ->
     import base64 as _b64
     encoded = _b64.b64encode(content.encode()).decode()
 
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}",
-    }
+    headers = _github_headers(github_token)
 
     # Check if file already exists (re-run / retry scenario)
     sha = get_file_sha(github_token, owner, repo, file_path, "main")
@@ -680,6 +679,11 @@ def read_gists_for_date(date_str: str, repo_root: str = None) -> List[Dict]:
     return sorted(gists, key=lambda g: g.get("pr_number", 0))
 
 
+def filter_daily_gists(gists: List[Dict]) -> List[Dict]:
+    """Filter gists to only those with publish_tier == 'daily'."""
+    return [g for g in gists if g.get("gist", {}).get("publish_tier") == "daily"]
+
+
 def format_pr_summary(prs: List[Dict], time_label: str = "TODAY") -> str:
     """Format PRs into a summary string for prompts
     
@@ -693,10 +697,12 @@ def format_pr_summary(prs: List[Dict], time_label: str = "TODAY") -> str:
     if prs:
         pr_summary = f"{time_label}'S UPDATES ({len(prs)} merged PRs):\n"
         for pr in prs[:20]:
-            labels_str = f" [{', '.join(pr['labels'])}]" if pr['labels'] else ""
-            pr_summary += f"- #{pr['number']}: {pr['title']}{labels_str}\n"
-            if pr['body']:
-                pr_summary += f"  {pr['body'][:150]}...\n"
+            labels = pr.get("labels", [])
+            labels_str = f" [{', '.join(labels)}]" if labels else ""
+            pr_summary += f"- #{pr.get('number', '?')}: {pr.get('title', 'Untitled')}{labels_str}\n"
+            body = pr.get("body", "")
+            if body:
+                pr_summary += f"  {body[:150]}...\n"
     else:
         pr_summary = f"NO UPDATES {time_label}"
     
@@ -744,14 +750,6 @@ def generate_platform_post(
 
 # ── PR creation helpers ──────────────────────────────────────────────
 
-def _github_headers(token: str) -> Dict:
-    """Standard GitHub API headers."""
-    return {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {token}",
-    }
-
-
 def create_branch_from_main(
     branch: str,
     github_token: str,
@@ -782,7 +780,17 @@ def create_branch_from_main(
         if "Reference already exists" not in create_resp.text:
             print(f"Error creating branch: {create_resp.text[:200]}")
             return None
-        print(f"  Branch {branch} already exists, updating...")
+        # Update existing branch to latest main
+        update_resp = github_api_request(
+            "PATCH",
+            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/refs/heads/{branch}",
+            headers=headers,
+            json={"sha": base_sha, "force": True},
+        )
+        if update_resp.status_code != 200:
+            print(f"  Warning: could not update branch {branch}: {update_resp.text[:200]}")
+        else:
+            print(f"  Branch {branch} updated to main HEAD")
 
     return base_sha
 
@@ -935,23 +943,37 @@ def deploy_reddit_post(
 
         base_cmd = "cd /root/reddit_post_automation"
 
-        sanitized_url = image_url.replace('LINKEOF', '').replace('\\', '\\\\').replace("'", "\\'").replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
-        sanitized_title = title.replace('LINKEOF', '').replace('\\', '\\\\').replace("'", "\\'").replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+        # Sanitize for unquoted heredoc (shell expansion active)
+        # Also strip newlines to prevent breaking TypeScript syntax
+        def _sanitize(s: str) -> str:
+            return (s
+                .replace('\n', ' ').replace('\r', '')
+                .replace('LINKEOF', '')
+                .replace('\\', '\\\\')
+                .replace('"', '\\"')
+                .replace('$', '\\$')
+                .replace('`', '\\`'))
 
-        update_link_cmd = f"""{base_cmd} && cat > src/link.ts << 'LINKEOF'
+        sanitized_url = _sanitize(image_url)
+        sanitized_title = _sanitize(title)
+
+        update_link_cmd = f"""{base_cmd} && cat > src/link.ts << LINKEOF
 const LINK = "{sanitized_url}";
 const TITLE = "{sanitized_title}";
 export {{LINK, TITLE}};
 LINKEOF
 """
 
-        print("  VPS: Changing to /root/reddit_post_automation and updating link.ts...")
-        ssh.exec_command(update_link_cmd)
+        print("  VPS: Updating link.ts...")
+        _stdin, _stdout, stderr = ssh.exec_command(update_link_cmd)
+        err = stderr.read().decode().strip()
+        if err:
+            print(f"  VPS: link.ts write warning: {err[:200]}")
 
         deploy_cmd = f"{base_cmd} && nohup bash ./bash/deploy.sh > deploy.log 2>&1 &"
 
-        print("  VPS: Running deploy.sh from project directory...")
-        ssh.exec_command(deploy_cmd)
+        print("  VPS: Running deploy.sh...")
+        ssh.exec_command(deploy_cmd)  # fire-and-forget by design (nohup)
         ssh.close()
 
         print("  VPS: Deployment script triggered successfully")

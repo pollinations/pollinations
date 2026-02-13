@@ -14,14 +14,12 @@ At 06:00 UTC daily:
 See social/PIPELINE.md for full architecture.
 """
 
-import os
 import sys
 import json
 import time
 import base64
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
-from pathlib import Path
 
 from common import (
     load_prompt,
@@ -31,6 +29,7 @@ from common import (
     generate_platform_post,
     commit_image_to_branch,
     read_gists_for_date,
+    filter_daily_gists,
     parse_json_response,
     github_api_request,
     create_branch_from_main,
@@ -53,11 +52,6 @@ def get_target_date(override: Optional[str] = None) -> str:
         return override
     yesterday = datetime.now(timezone.utc) - timedelta(days=1)
     return yesterday.strftime("%Y-%m-%d")
-
-
-def filter_daily_gists(gists: List[Dict]) -> List[Dict]:
-    """Filter gists to only those with publish_tier == 'daily'."""
-    return [g for g in gists if g.get("gist", {}).get("publish_tier") == "daily"]
 
 
 # ── Step 1: Generate daily summary ──────────────────────────────────

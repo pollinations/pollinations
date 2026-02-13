@@ -34,6 +34,7 @@ from common import (
     OWNER,
     REPO,
     call_pollinations_api,
+    filter_daily_gists,
     generate_image,
     generate_platform_post,
     get_repo_root,
@@ -44,7 +45,7 @@ from common import (
     apply_publish_tier_rules,
 )
 from generate_realtime import analyze_pr, build_full_gist, fetch_pr_data, fetch_pr_files
-from generate_daily import filter_daily_gists, generate_summary
+from generate_daily import generate_summary
 
 REPO_ROOT = Path(get_repo_root())
 
@@ -121,6 +122,7 @@ def generate_gist_for_pr(
 
     if ai_analysis:
         gist = build_full_gist(pr_data, ai_analysis)
+        gist["gist"]["publish_tier"] = apply_publish_tier_rules(gist)
         errors = validate_gist(gist)
         if errors:
             print(f"  Schema warnings: {errors}")

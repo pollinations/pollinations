@@ -178,9 +178,9 @@ def main():
                 "payload_json": (None, json.dumps({"content": message}), "application/json"),
                 "files[0]": ("image.jpg", image_bytes, "image/jpeg"),
             }
-            resp = requests.post(discord_webhook, files=files)
+            resp = requests.post(discord_webhook, files=files, timeout=30)
         else:
-            resp = requests.post(discord_webhook, json={"content": message})
+            resp = requests.post(discord_webhook, json={"content": message}, timeout=30)
 
         if resp.status_code in [200, 204]:
             print("  Discord post sent")

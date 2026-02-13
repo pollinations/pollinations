@@ -10,7 +10,6 @@ Triggered daily at 06:00 UTC by NEWS_highlights_update.yml.
 
 import os
 import sys
-import json
 import base64
 from datetime import datetime, timezone, timedelta
 from common import (

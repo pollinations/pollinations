@@ -154,6 +154,11 @@ def main():
         msg += "- Highlights + README updated by separate workflow"
         add_pr_comment(github_token, repo_full, pr_number, msg)
 
+    failed = [p for p, s in results.items() if not s]
+    if failed:
+        print(f"\n=== Done with failures: {', '.join(failed)} ===")
+        sys.exit(1)
+
     print("\n=== Done ===")
 
 

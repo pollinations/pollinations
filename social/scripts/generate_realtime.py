@@ -33,7 +33,6 @@ from common import (
     MODEL,
     OWNER,
     REPO,
-    DEFAULT_TIMEOUT,
 )
 
 

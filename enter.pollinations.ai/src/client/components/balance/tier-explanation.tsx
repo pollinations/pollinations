@@ -70,7 +70,9 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 {/* Microbe */}
-                <div className={`${tierColors.microbe} ${currentTier === "microbe" ? tierActiveRing.microbe : ""}`}>
+                <div
+                    className={`${tierColors.microbe} ${currentTier === "microbe" ? tierActiveRing.microbe : ""}`}
+                >
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.microbe}</span>
                         <strong className="text-gray-800 text-sm">
@@ -87,7 +89,9 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 </div>
 
                 {/* Spore */}
-                <div className={`${tierColors.spore} ${currentTier === "spore" ? tierActiveRing.spore : ""}`}>
+                <div
+                    className={`${tierColors.spore} ${currentTier === "spore" ? tierActiveRing.spore : ""}`}
+                >
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.spore}</span>
                         <strong className="text-gray-800 text-sm">Spore</strong>
@@ -105,7 +109,9 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 </div>
 
                 {/* Seed */}
-                <div className={`${tierColors.seed} ${currentTier === "seed" ? tierActiveRing.seed : ""}`}>
+                <div
+                    className={`${tierColors.seed} ${currentTier === "seed" ? tierActiveRing.seed : ""}`}
+                >
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.seed}</span>
                         <strong className="text-gray-800 text-sm">Seed</strong>
@@ -129,7 +135,9 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 </div>
 
                 {/* Flower */}
-                <div className={`${tierColors.flower} ${currentTier === "flower" ? tierActiveRing.flower : ""}`}>
+                <div
+                    className={`${tierColors.flower} ${currentTier === "flower" ? tierActiveRing.flower : ""}`}
+                >
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.flower}</span>
                         <strong className="text-gray-800 text-sm">
@@ -156,7 +164,9 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 </div>
 
                 {/* Nectar */}
-                <div className={`${tierColors.nectar} ${currentTier === "nectar" ? tierActiveRing.nectar : ""}`}>
+                <div
+                    className={`${tierColors.nectar} ${currentTier === "nectar" ? tierActiveRing.nectar : ""}`}
+                >
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.nectar}</span>
                         <strong className="text-gray-800 text-sm">

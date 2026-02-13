@@ -191,7 +191,10 @@ export async function transcribeWithElevenLabs(opts: {
     }
 
     // Validate response format
-    if (responseFormat && !["json", "text", "verbose_json"].includes(responseFormat)) {
+    if (
+        responseFormat &&
+        !["json", "text", "verbose_json"].includes(responseFormat)
+    ) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: `Unsupported response_format for scribe model: ${responseFormat}. Supported: json, text, verbose_json`,
         });
@@ -237,7 +240,8 @@ export async function transcribeWithElevenLabs(opts: {
     // Get duration from word timestamps (Scribe v2 always returns words)
     if (!elevenLabsData.words?.length) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
-            message: "ElevenLabs response missing word timestamps (required for billing)",
+            message:
+                "ElevenLabs response missing word timestamps (required for billing)",
         });
     }
     const duration = elevenLabsData.words[elevenLabsData.words.length - 1].end;

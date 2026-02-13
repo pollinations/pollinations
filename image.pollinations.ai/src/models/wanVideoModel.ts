@@ -73,6 +73,21 @@ interface DashScopeRequest {
 }
 
 /**
+ * Simple retry wrapper for flaky async operations
+ */
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (error) {
+            if (attempt === maxRetries) throw error;
+            logOps(`Attempt ${attempt}/${maxRetries} failed, retrying...`);
+        }
+    }
+    throw new Error("Unreachable");
+}
+
+/**
  * Generates a video using Airforce API (wan-2.6)
  * Supports both text-to-video and image-to-video with optional audio
  */
@@ -118,11 +133,8 @@ export async function callWanAPI(
         "Initiating video generation...",
     );
 
-    const videoUrl = await streamAirforceResponse(
-        apiKey,
-        requestBody,
-        progress,
-        requestId,
+    const videoUrl = await withRetry(() =>
+        streamAirforceResponse(apiKey, requestBody, progress, requestId),
     );
 
     const videoBuffer = await downloadVideo(videoUrl, progress, requestId);

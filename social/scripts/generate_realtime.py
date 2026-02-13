@@ -91,7 +91,7 @@ def analyze_pr(pr_data: Dict, files_summary: str, token: str) -> Optional[Dict]:
 
     Returns parsed dict on success, None on failure (after retries).
     """
-    system_prompt = load_prompt("_shared/pr_gist")
+    system_prompt = load_prompt("gist")
 
     # Build user prompt with PR context
     # Trust boundary: PR body comes from merged PRs (requires repo write access),

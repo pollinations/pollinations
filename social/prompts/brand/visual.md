@@ -7,6 +7,7 @@
 - COZY PIXEL ART — chunky, clean, emotionally warm
 - Lo-fi 8-bit aesthetic with soft lighting and gradients
 - "Warm hug" energy, not "arcade flashy"
+- CRT monitor glow effects, scanlines (subtle)
 
 ### Reference Games (for style, not content)
 - **Stardew Valley** — friendly, nature-focused, cozy, chunky sprites
@@ -44,7 +45,6 @@ The pollinations.ai bee MUST appear in every image, interacting with the scene.
 - Pixel flowers, gardens, seeds, blooming plants (nature/growth motifs)
 - Cute robots, tiny devs, pixel characters
 - Characters should have personality — expressions, poses, actions
-- NEVER include specific AI model names (GPT, Gemini, DALL-E, Qwen) as visible text in images
 
 ## What to ALWAYS Include
 
@@ -84,3 +84,9 @@ The pollinations.ai bee MUST appear in every image, interacting with the scene.
 2. "Cozy pixel art scene of the cute bee mascot holding a tiny pixel movie clapperboard and a vintage microphone. Soft lime green (#ecf874) and peach pastel gradient background. Floating pixel icons of musical notes and film reels surrounding the bee. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'NEW GEAR'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
 
 3. "Cozy pixel art scene of the cute bee mascot watering a digital garden where a tiny friendly pixel robot is sprouting from a lime green (#ecf874) flower pot. A retro computer monitor in the background shows clean code blocks. Soft warm lighting, wholesome vibes like Stardew Valley. Text in pixel font: 'OPEN SOURCE'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+
+4. "Cozy pixel art scene of a tiny 8-bit bee character watering a small pixelated code plant. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Like Stardew Valley meets coding. Emotionally warm, nostalgic but beautiful."
+
+5. "Retro 8-bit pixel art infographic showing a growth journey: tiny seed to sprouting plant to blooming flower. Soft pastel gradient background (mint to peach). Clean pixel icons, cozy vibes like Unpacking game. Warm, inviting, not harsh."
+
+6. "Pixel art community garden scene with diverse tiny 8-bit characters tending colorful digital flowers. Soft lime green and lavender sky. Chunky retro sprites with modern soft lighting. Wholesome, like A Short Hike. Text in pixel font: 'open source'. Nostalgic but beautiful."

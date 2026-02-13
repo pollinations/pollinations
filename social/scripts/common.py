@@ -47,7 +47,7 @@ DISCORD_CHUNK_SIZE = 1900  # Leave room for safety
 # Get the directory where this script lives
 SCRIPTS_DIR = Path(__file__).parent
 PROMPTS_DIR = SCRIPTS_DIR.parent / "prompts"
-SHARED_PROMPTS_DIR = PROMPTS_DIR / "_shared"
+BRAND_DIR = PROMPTS_DIR / "brand"
 
 # Cache for shared prompts (loaded once)
 _shared_prompts_cache: Dict[str, str] = {}
@@ -109,26 +109,26 @@ def get_repo_root() -> str:
 
 
 def load_shared(name: str) -> str:
-    """Load a shared prompt component from prompts/_shared/{name}.md
-    
+    """Load a brand prompt component from prompts/brand/{name}.md
+
     Args:
-        name: 'about'
-    
+        name: 'about', 'visual', 'bee', 'links'
+
     Returns:
-        The shared prompt content
+        The brand prompt content
     """
     if name in _shared_prompts_cache:
         return _shared_prompts_cache[name]
-    
-    shared_path = SHARED_PROMPTS_DIR / f"{name}.md"
-    
+
+    shared_path = BRAND_DIR / f"{name}.md"
+
     if not shared_path.exists():
-        print(f"Warning: Shared prompt not found: {shared_path}")
+        print(f"Warning: Brand prompt not found: {shared_path}")
         return ""
-    
+
     with open(shared_path, "r", encoding="utf-8") as f:
         content = f.read()
-    
+
     # Remove markdown title and HTML comments
     lines = content.split("\n")
     filtered_lines = []
@@ -138,26 +138,27 @@ def load_shared(name: str) -> str:
         if line.strip().startswith("<!--") and line.strip().endswith("-->"):
             continue  # Skip single-line HTML comments
         filtered_lines.append(line)
-    
+
     content = "\n".join(filtered_lines).strip()
     _shared_prompts_cache[name] = content
     return content
 
 
 def _inject_shared_prompts(content: str) -> str:
-    """Inject shared prompt components into content
+    """Inject brand prompt components into content
 
-    Replaces placeholders with shared content:
-    - {about} -> _shared/brand_about.md
-    - {visual_style} -> _shared/brand_visual.md
-    - {links} -> _shared/links.md
+    Replaces placeholders with brand content:
+    - {about} -> brand/about.md
+    - {visual_style} -> brand/visual.md
+    - {bee_character} -> brand/bee.md
+    - {links} -> brand/links.md
     """
     if "{about}" in content:
-        content = content.replace("{about}", load_shared("brand_about"))
+        content = content.replace("{about}", load_shared("about"))
     if "{visual_style}" in content:
-        content = content.replace("{visual_style}", load_shared("brand_visual"))
+        content = content.replace("{visual_style}", load_shared("visual"))
     if "{bee_character}" in content:
-        content = content.replace("{bee_character}", load_shared("bee_character"))
+        content = content.replace("{bee_character}", load_shared("bee"))
     if "{links}" in content:
         content = content.replace("{links}", load_shared("links"))
     return content
@@ -175,16 +176,17 @@ def get_env(key: str, required: bool = True) -> Optional[str]:
 def load_prompt(name: str) -> str:
     """Load a prompt file from social/prompts/{name}.md
 
-    Automatically injects shared components:
-    - {about} -> content from _shared/brand_about.md
-    - {visual_style} -> content from _shared/brand_visual.md
+    Automatically injects brand components:
+    - {about} -> content from brand/about.md
+    - {visual_style} -> content from brand/visual.md
+    - {bee_character} -> content from brand/bee.md
+    - {links} -> content from brand/links.md
 
     Args:
-        name: 'twitter', 'linkedin', 'discord', 'highlights', etc.
-              For shared prompts, use '_shared/daily_summary', '_shared/pr_gist', etc.
+        name: 'tone/twitter', 'gist', 'highlights', etc.
 
     Returns:
-        The prompt content as a string with shared components injected
+        The prompt content as a string with brand components injected
     """
     prompt_path = PROMPTS_DIR / f"{name}.md"
     
@@ -200,10 +202,43 @@ def load_prompt(name: str) -> str:
     if lines and lines[0].startswith("#"):
         content = "\n".join(lines[1:]).strip()
     
-    # Inject shared prompt components
+    # Inject brand prompt components
     content = _inject_shared_prompts(content)
-    
+
     return content
+
+
+def load_format(platform: str) -> str:
+    """Load the ## {platform} section from prompts/format.md.
+
+    Args:
+        platform: 'Twitter', 'LinkedIn', 'Instagram', 'Reddit', 'Discord', 'Realtime'
+
+    Returns:
+        The section content (without the ## heading)
+    """
+    content = load_prompt("format")
+    if not content:
+        return ""
+
+    lines = content.split("\n")
+    section_lines = []
+    in_section = False
+
+    for line in lines:
+        if line.startswith("## "):
+            if in_section:
+                break
+            if line[3:].strip().lower() == platform.lower():
+                in_section = True
+                continue
+        elif in_section:
+            section_lines.append(line)
+
+    if not section_lines:
+        print(f"Warning: No ## {platform} section found in format.md")
+
+    return "\n".join(section_lines).strip()
 
 
 def get_date_range(days_back: int = 1) -> tuple[datetime, datetime]:
@@ -435,7 +470,7 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
 
     # Append bee character description if not already present (loaded from prompt file)
     if "bee mascot" not in prompt.lower():
-        bee_desc = load_shared("bee_character")
+        bee_desc = load_shared("bee")
         if bee_desc:
             prompt = f"{prompt} {bee_desc}"
 

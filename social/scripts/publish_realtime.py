@@ -19,6 +19,7 @@ from pathlib import Path
 
 from common import (
     load_prompt,
+    load_format,
     get_env,
     get_repo_root,
     call_pollinations_api,
@@ -119,21 +120,14 @@ def main():
     impact = ai.get("impact", "")
     keywords = ", ".join(ai.get("keywords", []))
 
-    # Load shared format with placeholders injected
-    shared_format = load_prompt("_shared/realtime_summary")
-    shared_format = (shared_format
-                     .replace("{summary}", summary)
-                     .replace("{impact}", impact)
-                     .replace("{keywords}", keywords))
-
-    # Load platform voice
-    platform_voice = load_prompt("discord")
-
-    # Combine: shared format (with data) + platform voice
-    system_prompt = shared_format + "\n\n" + platform_voice
+    # Voice = platform tone (system prompt), Task = format with data (user prompt)
+    voice = load_prompt("tone/discord")
+    task = load_format("realtime").replace(
+        "{summary}", summary
+    ).replace("{impact}", impact).replace("{keywords}", keywords)
 
     snippet = call_pollinations_api(
-        system_prompt, "Generate the announcement now.", pollinations_token,
+        voice, task, pollinations_token,
         temperature=0.7, exit_on_failure=False
     )
 

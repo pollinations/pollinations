@@ -1,14 +1,14 @@
-# Social Media News Pipeline Redesign
+# Social Media News Pipeline
 
-> **Status:** Implemented — old scripts/workflows removed, data migrated to 3-tier structure.
+> **Status:** Implemented — 3-tier architecture is the sole active system.
 >
 > **Assumption:** GitHub is the single source of truth. "Merge to main" is the authoritative event for shipping news.
 
 ## Context
 
-The current system has 9 workflows and 11 scripts where each platform (Twitter, Instagram, LinkedIn, Discord, Reddit) **independently fetches PRs from GitHub and independently analyzes them with AI**. The same PRs get fetched 4-5 times per day, each platform re-interprets them from scratch, and 3 separate PRs are created daily for review.
+The previous system had 9 workflows and 11 scripts where each platform (Twitter, Instagram, LinkedIn, Discord, Reddit) **independently fetched PRs from GitHub and independently analyzed them with AI**. The same PRs got fetched 4-5 times per day, each platform re-interpreted them from scratch, and 3 separate PRs were created daily for review.
 
-The redesign moves from **platform-centric AI interpretation** to **event-centric interpretation**: each PR is analyzed once, and all downstream content aggregates from that single analysis.
+The pipeline uses **event-centric interpretation**: each PR is analyzed once at merge time, and all downstream content aggregates from that single analysis.
 
 ---
 
@@ -20,11 +20,11 @@ TIER 1: PER-PR (real-time)
 
 TIER 2: DAILY (Mon-Sat 06:00 UTC → merge PR → Buffer 15:00 UTC)
   Read day's gists → AI generates daily summary → platform posts (X, IG, Reddit)
-  → single PR for review → on merge: Buffer stages X + IG for next 15:00 UTC slot + highlights + README
+  → single PR for review → on merge: Buffer stages X + IG for next 15:00 UTC slot
   LinkedIn is weekly-only. Reddit daily handled by TypeScript app.
 
 TIER 3: WEEKLY (Sunday 06:00 UTC → Sunday 18:00 UTC)
-  Read week's gists directly (Mon→Sun) → synthesize weekly themes → platform posts (X, IG, LI, Reddit, Discord)
+  Read week's gists directly (Sun→Sat) → synthesize weekly themes → platform posts (X, IG, LI, Reddit, Discord)
   Generated Sun 06:00 UTC → PR for review → Sun 18:00 UTC cron publishes all 5 platforms
 ```
 
@@ -85,7 +85,7 @@ PR merge ──→ generate_realtime.py
 ═══════════════════════════════════════════════════════════════════════
 
              Sunday 06:00 UTC ──→ generate_weekly.py
-                                      │  (reads gists directly Mon→Sun,
+                                      │  (reads gists directly Sun→Sat,
                                       │   synthesizes weekly themes)
                                       │
                                       ├──→ twitter.json   + 🎨 GENERATE 1 image (brand pixel art)
@@ -133,15 +133,18 @@ PR merge ──→ generate_realtime.py
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
+    "headline": "One bucket to rule them all",
+    "blurb": "The bees fixed a leaky honey jar — balance deductions now flow through a single bucket instead of spilling across many.",
     "summary": "Fixed balance deduction to use a single bucket instead of splitting across multiple.",
     "impact": "Users no longer see incorrect balance after API calls.",
     "keywords": ["billing", "balance", "api"],
-    "image_prompt": "Cozy pixel art scene of a tiny bee fixing a cracked piggy bank with a wrench. Soft lime green (#ecf874) glow. Chunky 8-bit sprites, warm lighting, lo-fi vibes."
+    "visual_concept": "A bee repairing a cracked piggy bank. The piggy bank represents the single-bucket billing system. Wrench = fix.",
+    "image_prompt": "Cozy pixel art scene of a tiny bee fixing a cracked piggy bank with a wrench. Soft lime green glow, chunky 8-bit sprites, warm lighting."
   },
 
   "image": {
     "url": "https://raw.githubusercontent.com/.../PR-8117.jpg",
-    "prompt": "pixel art of a piggy bank being repaired..."
+    "prompt": "Cozy pixel art scene of a tiny bee fixing a cracked piggy bank..."
   },
 
   "generated_at": "2026-02-09T15:31:00Z"
@@ -155,6 +158,9 @@ PR merge ──→ generate_realtime.py
 | `publish_tier` | `"none"` / `"discord_only"` / `"daily"` — controls which tiers pick up this PR. See `publish_tier` decision logic below. |
 | `importance` | `"major"` / `"minor"` — AI picks. Binary: headline-worthy or not. |
 | `user_facing` | Boolean — AI determines if end users would notice this change |
+| `headline` | Short creative name for the change (3-8 words). Used in daily/weekly narrative arcs. |
+| `blurb` | Whimsical 1-2 sentence description for the website diary. Bee/nature metaphors welcome. |
+| `visual_concept` | AI reasoning space — identifies project mascots, symbols, and scene concept before writing `image_prompt`. |
 
 **Importance is binary:**
 
@@ -205,32 +211,32 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 
 ---
 
-## Workflows: 9 → 6
+## Workflows
 
-| New Workflow | Trigger | Replaces |
-|---|---|---|
-| `NEWS_pr_gist.yml` | `pull_request_target: closed+merged` | `NEWS_Discord_post_merged_pr.yml` |
-| `NEWS_daily_summary.yml` | `cron: 0 6 * * 1-6` (Mon-Sat) | `NEWS_Twitter_generate_posts.yml` + `NEWS_Instagram_generate_posts.yml` + `NEWS_LinkedIn_generate_posts.yml` |
-| `NEWS_daily_publish.yml` | PR closed on `social/news/daily/*/` paths | `NEWS_Buffer_stage_posts.yml` (Buffer staging + Reddit VPS only) |
-| `NEWS_highlights_update.yml` | `cron: 0 6 * * *` (daily, including Sunday) | `NEWS_GitHub_update_highlights.yml` + `NEWS_GitHub_update_readme.yml` |
-| `NEWS_weekly_summary.yml` | `cron: 0 6 * * 0` (Sunday 06:00 UTC) | `NEWS_GitHub_generate_weekly_news.yml` |
-| `NEWS_weekly_publish.yml` | `cron: 0 18 * * 0` (Sunday 18:00 UTC) — checks if weekly PR merged, publishes all 5 platforms | `NEWS_Discord_post_weekly_news.yml` + `NEWS_Buffer_stage_posts.yml` (weekly) |
+| Workflow | Trigger |
+|---|---|
+| `NEWS_pr_gist.yml` | `pull_request_target: closed+merged` |
+| `NEWS_daily_summary.yml` | `cron: 0 6 * * 1-6` (Mon-Sat) |
+| `NEWS_daily_publish.yml` | PR closed on `social/news/daily/*/` paths |
+| `NEWS_highlights_update.yml` | `cron: 0 6 * * *` (daily, including Sunday) |
+| `NEWS_weekly_summary.yml` | `cron: 0 6 * * 0` (Sunday 06:00 UTC) |
+| `NEWS_weekly_publish.yml` | `cron: 0 18 * * 0` (Sunday 18:00 UTC) — checks if weekly PR merged, publishes all 5 platforms |
 
-## Scripts: 11 → 11
+## Scripts
 
-| Script | Purpose | Replaces |
-|---|---|---|
-| `generate_realtime.py` | Per-PR: AI analysis → gist JSON → image gen (source of truth) | `discord_post_merged_pr.py` |
-| `publish_realtime.py` | Per-PR: reads gist → AI announcement → Discord webhook post | (new — decoupled from gist generator) |
-| `generate_daily.py` | Daily: read gists → summary + all platform posts + images | `twitter_generate_post.py`, `instagram_generate_post.py`, `linkedin_generate_post.py` |
-| `generate_weekly.py` | Weekly: read gists directly (Mon→Sun) → synthesize themes → changelog + all platform posts + images | `github_generate_weekly_news.py` |
-| `publish_daily.py` | On daily PR merge: Buffer stage (X, IG) + Reddit VPS deployment. LinkedIn = weekly only. | (new — consolidates publish steps) |
-| `publish_weekly.py` | Sunday 18:00 UTC cron: check if weekly PR merged, then Buffer (X, LI, IG) + Reddit API + Discord webhook | `discord_post_weekly_news.py` |
-| `update_highlights.py` | Daily: reads yesterday's gists, AI curates highlights, updates highlights.md + README in single PR | `github_update_highlights.py` + `github_update_readme.py` |
-| `update_readme.py` | Utility functions: `get_top_highlights()`, `update_readme_news_section()` (used by update_highlights.py) | `github_update_readme.py` |
-| `common.py` | Shared utils: prompt loading, API calls, gist I/O, retry logic | Same (extended) |
-| `buffer_publish.py` | Buffer API staging with scheduled delivery | `buffer_stage_post.py` |
-| `buffer_utils.py` | Buffer GraphQL API helpers | Same (unchanged) |
+| Script | Purpose |
+|---|---|
+| `generate_realtime.py` | Per-PR: AI analysis → gist JSON → image gen (source of truth) |
+| `publish_realtime.py` | Per-PR: reads gist → AI announcement → Discord webhook post |
+| `generate_daily.py` | Daily: read gists → summary + platform posts (X, IG, Reddit) + images |
+| `generate_weekly.py` | Weekly: read gists directly (Sun→Sat) → synthesize themes → all 5 platform posts + images |
+| `publish_daily.py` | On daily PR merge: Buffer stage (X, IG) + Reddit VPS deployment. LinkedIn = weekly only. |
+| `publish_weekly.py` | Sunday 18:00 UTC cron: check if weekly PR merged, then Buffer (X, LI, IG) + Reddit API + Discord webhook |
+| `update_highlights.py` | Daily: reads yesterday's gists, AI curates highlights, updates highlights.md + README in single PR |
+| `update_readme.py` | Utility functions: `get_top_highlights()`, `update_readme_news_section()` (used by update_highlights.py) |
+| `common.py` | Shared utils: prompt loading, brand injection, API calls, gist I/O, retry logic, constants |
+| `buffer_publish.py` | Buffer API staging with scheduled delivery |
+| `buffer_utils.py` | Buffer GraphQL API helpers |
 
 ---
 
@@ -263,9 +269,10 @@ Discord posting (`publish_realtime.py`) runs as a **separate workflow step** aft
 
 - If gist directory is **empty** (no PRs merged that day): skip. No PR created, no posts generated. Quiet days are quiet days.
 - If gist directory is **missing** (workflow bug): fall back to `get_merged_prs()` from GitHub GraphQL directly. Log a warning.
+
 ### Tier 3: `generate_weekly.py`
 
-- Reads gists directly for the week (Mon→Sun). No dependency on daily summaries.
+- Reads gists directly for the week (Sun→Sat). No dependency on daily summaries.
 - If gist directory is **empty** for all days (no PRs merged that week): skip. No PR created.
 
 ### Re-triggering
@@ -321,7 +328,7 @@ The daily summary runs at 06:00 UTC. A PR merged at 05:59 UTC might have its gis
 
 13. **Website diary reads from gists + summary** — no separate diary generation step. Gists include `headline` and `blurb` fields; daily/weekly summaries include `mood`. The website can render a diary view directly from these sources.
 
-14. **Weekly reads gists directly, independent of dailies** — the weekly summary reads the week's gists (Mon→Sun) and synthesizes themes into a bigger narrative ("this week we shipped X, fixed Y, started Z"). This eliminates the dependency on daily summaries being generated first, ensuring no PRs are missed.
+14. **Weekly reads gists directly, independent of dailies** — the weekly summary reads the week's gists (Sun→Sat) and synthesizes themes into a bigger narrative ("this week we shipped X, fixed Y, started Z"). This eliminates the dependency on daily summaries being generated first, ensuring no PRs are missed.
 
 ---
 
@@ -332,8 +339,8 @@ There are **3 independent families of images**. Each tier generates its own imag
 | Family | Generated by | When | Style | Count | Used by |
 |---|---|---|---|---|---|
 | **Per-PR pixel art** | `generate_realtime.py` | Tier 1 (on PR merge) | 8-bit pixel art | 1 per PR | Discord post, website diary |
-| **Daily platform images** | `generate_daily.py` | Tier 2 (06:00 UTC) | Brand pixel art (from `brand_visual.md`) | 1 Twitter + 3 Instagram + 1 Reddit = **5 per day** | Twitter, Instagram, Reddit daily posts (LinkedIn = weekly only) |
-| **Weekly platform images** | `generate_weekly.py` | Tier 3 (Sunday 06:00 UTC) | Brand pixel art (from `brand_visual.md`) | 1 Twitter + 1 LinkedIn + 3 Instagram + 1 Reddit + 1 Discord = **7 per week** | Twitter, LinkedIn, Instagram, Reddit, Discord weekly posts |
+| **Daily platform images** | `generate_daily.py` | Tier 2 (06:00 UTC) | Brand pixel art (from `brand/visual.md`) | 1 Twitter + 3 Instagram + 1 Reddit = **5 per day** | Twitter, Instagram, Reddit daily posts (LinkedIn = weekly only) |
+| **Weekly platform images** | `generate_weekly.py` | Tier 3 (Sunday 06:00 UTC) | Brand pixel art (from `brand/visual.md`) | 1 Twitter + 1 LinkedIn + 3 Instagram + 1 Reddit + 1 Discord = **7 per week** | Twitter, LinkedIn, Instagram, Reddit, Discord weekly posts |
 
 **Key points:**
 
@@ -341,70 +348,17 @@ There are **3 independent families of images**. Each tier generates its own imag
 
 ---
 
-## Cost Estimate
-
-### Current system (per day, assuming 5 PRs merged)
-
-| Step | AI calls | Image gens |
-|---|---|---|
-| Discord per-PR (5x) | 10 | 5 |
-| Twitter daily | 2 | 1 |
-| Instagram daily | 2 | 3-5 |
-| LinkedIn (on posting days) | 2 | 1 |
-| **Total** | **14-16** | **10-12** |
-
-### New system (same day, 5 PRs merged)
+## Cost Estimate (per day, assuming 5 PRs merged)
 
 | Step | AI calls | Image gens |
 |---|---|---|
 | PR gists (5x) | 5 | 5 |
 | Daily summary (1x) | 2 | 5 (1 twitter + 3 instagram + 1 reddit) |
-| **Total** | **7** | **11** |
+| **Total** | **7** | **10** |
 
-**AI calls reduced ~50%.** Image generation stays similar (same number of images needed). The real savings grow with PR volume — current system scales as N×platforms, new system scales as N+1.
+Weekly adds ~6 AI calls + ~7 image gens on Sundays.
 
-Weekly adds ~3 AI calls + ~7 image gens on Sundays. Net weekly savings: ~35-45 fewer AI calls.
-
----
-
-## Migration (Phased, Non-Breaking)
-
-### Phase 1: Add gist generation
-- Create `generate_realtime.py` + `NEWS_pr_gist.yml`
-- Run alongside existing Discord workflow (both fire on PR merge)
-- Verify gists accumulate for a few days
-- Validate schema, `publish_tier` defaults, `importance` classification
-
-### Phase 2: Add daily summary
-- Create `generate_daily.py` + `NEWS_daily_summary.yml`
-- Create `publish_daily.py` + `NEWS_daily_publish.yml`
-- Run alongside existing platform generators (both create PRs)
-- Compare output quality side-by-side
-- Verify highlights + README update daily
-- Verify zero-PR days exit cleanly (no PR created)
-
-### Phase 3: Cutover
-- **Disable** (don't delete) old platform-specific generate workflows (Twitter, IG, LinkedIn)
-- **Disable** (don't delete) old Discord merged PR workflow
-- Update Buffer staging paths
-- **Keep old workflows disabled for 2 weeks minimum** — if new system degrades, re-enable old workflows as instant rollback
-
-### Phase 4: Weekly migration
-- Create `generate_weekly.py` + `NEWS_weekly_summary.yml` (Sunday 06:00 UTC)
-- Create `publish_weekly.py` + `NEWS_weekly_publish.yml` (Sunday 18:00 UTC cron)
-- Weekly reads gists directly (Mon→Sun) and synthesizes themes
-- Weekly generates posts for all 5 platforms (X, IG, LI, Reddit, Discord) + changelog
-- Sunday 18:00 UTC cron checks if weekly PR was merged, publishes all 5 platforms simultaneously
-- **Disable** (don't delete) old weekly workflows for 2 weeks
-
-### Phase 5: Cleanup
-- Remove disabled old scripts and workflows after 2+ weeks of stable new system
-- Update social/README.md and platform READMEs
-- ~~Archive `social/news/transformed/` (keep for history)~~ Done — data migrated to `daily/` + `weekly/`, `transformed/` deleted
-
-### Rollback plan
-
-~~At any phase, rollback = re-enable the old disabled workflows.~~ Old scripts and workflows have been removed. The 3-tier pipeline is the sole active system.
+AI calls scale as N+1 (N per-PR gists + 1 daily summary), not N×platforms. Image count stays similar across any architecture (same images needed).
 
 ---
 
@@ -414,15 +368,14 @@ Weekly adds ~3 AI calls + ~7 image gens on Sundays. Net weekly savings: ~35-45 f
 2. **Tier 1 — AI failure**: Mock AI to fail → verify minimal gist (metadata only) committed + GitHub issue opened
 3. **Tier 2 — happy path**: Manually trigger daily workflow → verify single PR with all platform posts + images
 4. **Tier 2 — zero PRs**: Run daily workflow on a day with 0 gists → verify workflow exits cleanly with no PR created
-5. **Tier 3 — happy path**: Manually trigger weekly workflow → verify PR with changelog + all 4 platform posts
-6. **Daily publish**: Merge daily PR → verify Buffer stages X/IG + highlights + README updated (no LinkedIn — weekly only)
+5. **Tier 3 — happy path**: Manually trigger weekly workflow → verify PR with all 5 platform posts + images
+6. **Daily publish**: Merge daily PR → verify Buffer stages X/IG (no LinkedIn — weekly only)
 7. **Weekly publish**: Merge weekly PR before Sunday 18:00 UTC → verify Sunday 18:00 cron publishes all 5 platforms (Buffer X/LI/IG + Reddit API + Discord webhook)
 7b. **Weekly publish — PR not merged**: Don't merge weekly PR → verify Sunday 18:00 cron skips cleanly
 8. **Publish tier gating**: Merge a non-user-facing PR → verify `publish_tier: discord_only` → verify absent from daily summary
 9. **Clustering**: Day with 5+ related PRs → verify daily summary groups them into narrative arcs (not a flat list)
 10. **Concurrent merges**: Merge 3 PRs within 30 seconds → verify all 3 gists committed without conflicts
 11. **Late gist commit**: Merge a PR on day N, delay gist commit to day N+1 → verify the day N daily summary (if already run) misses it, and the day N+1 summary picks it up via `merged_at` timestamp
-12. **Rollback**: Disable new workflows, re-enable old → verify old system picks up immediately
 
 ---
 
@@ -430,36 +383,55 @@ Weekly adds ~3 AI calls + ~7 image gens on Sundays. Net weekly savings: ~35-45 f
 
 | File | Role |
 |---|---|
-| `social/scripts/common.py` | Shared utilities: prompt loading, API calls, gist I/O, retry logic, constants |
+| `social/scripts/common.py` | Shared utilities: prompt loading, brand injection, API calls, gist I/O, retry logic, constants |
 | `social/scripts/buffer_publish.py` | Buffer API staging with scheduled delivery |
 | `social/buffer-schedule.yml` | Delivery schedule for all platforms |
 
 ## Prompts
 
-All prompts live in `social/prompts/` (flat structure, one file per platform):
+All prompts live in `social/prompts/`:
 
 ```
 social/prompts/
-  _shared/
-    brand_about.md           # Company description, injected as {about}
-    brand_visual.md          # Pixel art style guide, injected as {visual_style}
-    pr_gist.md               # Tier 1: Analyze PR → gist JSON + image prompt
-    realtime_summary.md      # Tier 1: Format real-time announcement from gist
-    daily_summary.md         # Tier 2: Cluster gists into 3-5 narrative arcs
-    weekly_summary.md        # Tier 3: Synthesize weekly recap from gists
-  twitter.md                 # Platform voice: Twitter/X
-  linkedin.md                # Platform voice: LinkedIn
-  instagram.md               # Platform voice: Instagram
-  reddit.md                  # Platform voice: Reddit
-  discord.md                 # Platform voice: Discord
-  highlights.md              # Platform voice: GitHub highlights
+  brand/                       # Brand components (auto-injected via placeholders)
+    about.md                   # Company description       → {about}
+    visual.md                  # Pixel art style guide     → {visual_style}
+    bee.md                     # Bee mascot description    → {bee_character}
+    links.md                   # Official links            → {links}
+
+  tone/                        # Platform voices (system prompts)
+    twitter.md                 # Twitter/X voice + image adaptation
+    linkedin.md                # LinkedIn voice + image adaptation
+    instagram.md               # Instagram voice + image adaptation
+    reddit.md                  # Reddit voice + image adaptation
+    discord.md                 # Discord voice + image adaptation
+
+  gist.md                      # Tier 1: Analyze PR → gist JSON + image prompt
+  daily.md                     # Tier 2: Cluster gists into 3-5 narrative arcs
+  weekly.md                    # Tier 3: Synthesize weekly recap from gists
+  highlights.md                # Highlights curation for GitHub + README
+  format.md                    # Output format specs (JSON schemas per platform)
 ```
+
+### Brand Injection
+
+`common.py` automatically replaces placeholders in any loaded prompt:
+
+| Placeholder | Source |
+|---|---|
+| `{about}` | `brand/about.md` |
+| `{visual_style}` | `brand/visual.md` |
+| `{bee_character}` | `brand/bee.md` |
+| `{links}` | `brand/links.md` |
 
 ### Prompt Composition Pattern
 
-Every post is generated from **two dimensions** combined:
+Every platform post is generated from **three layers** combined:
 
-1. **Shared format** (`_shared/*.md`) — defines what content to extract and how to structure it (platform-neutral)
-2. **Platform voice** (`<platform>.md`) — defines tone, length, formatting rules for a specific destination
+1. **Brand identity** (`brand/*.md`) — injected automatically via placeholders. Defines who we are, visual style, bee mascot.
+2. **Platform voice** (`tone/<platform>.md`) — system prompt. Defines tone, length, formatting rules, image adaptation for a specific destination.
+3. **Output format** (`format.md`) — user prompt. Defines the JSON schema and content constraints for each platform.
 
-The system prompt for each AI call is: `shared_format + platform_voice`. This allows reusing the same format across platforms and the same voice across cadences (realtime, daily, weekly).
+The AI call structure: `system_prompt = load_prompt("tone/{platform}")` (with brand auto-injected) + `user_prompt = summary_data + load_format("{platform}")`.
+
+This allows reusing the same voice across cadences (daily, weekly) and the same format across content types.

@@ -112,13 +112,7 @@ Think step-by-step about what to depict BEFORE writing the image prompt. This is
 ### `image_prompt`
 A short (1-2 sentence) pixel art scene description for generating the PR's announcement image. **Must be informed by `visual_concept` above.**
 
-Rules:
-- Describe a cozy pixel art scene that captures the main theme of the update
-- Include the pollinations.ai bee mascot as an active character doing something related to the update
 - Include any project-specific characters/mascots identified in `visual_concept`
-- Keep it fun with dev-meme energy
-- Follow the visual style guide above exactly — use the prompt template structure
-- Output a flowing narrative scene description, NOT a keyword list
 
 ## Content Tone — Positive Framing
 

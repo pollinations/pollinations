@@ -3509,13 +3509,13 @@ This endpoint is OpenAI TTS API compatible. Set `model` to `elevenmusic` (or ali
 - **Path:** `/v1/audio/transcriptions`
 - **Tags:** gen.pollinations.ai
 
-Transcribe audio to text using Whisper.
+Transcribe audio to text using Whisper or ElevenLabs Scribe.
 
 This endpoint is OpenAI Whisper API compatible.
 
 **Supported formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm
 
-**Models:** `whisper-large-v3` (default), `whisper-1`
+**Models:** `whisper-large-v3` (default), `whisper-1`, `scribe`
 
 #### Request Body
 
@@ -3531,7 +3531,7 @@ This endpoint is OpenAI Whisper API compatible.
 
 - **`model`**
 
-  `string`, default: `"whisper-large-v3"` — The model to use. Options: \`whisper-large-v3\`, \`whisper-1\`.
+  `string`, default: `"whisper-large-v3"` — The model to use. Options: \`whisper-large-v3\`, \`whisper-1\`, \`scribe\`.
 
 - **`prompt`**
 

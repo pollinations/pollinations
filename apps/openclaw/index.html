@@ -426,38 +426,44 @@
             font-family: "Fraunces", ui-serif, serif;
             font-size: 15px;
             font-weight: normal;
-            white-space: nowrap;
-            min-width: 140px;
+            width: 200px;
+            flex-shrink: 0;
         }
         .model-id {
             font-family: 'SF Mono', monospace;
             font-size: 12px;
             color: var(--muted);
-            white-space: nowrap;
-            min-width: 160px;
+            width: 200px;
+            flex-shrink: 0;
         }
         .model-note {
             font-size: 13px;
             color: var(--muted);
             line-height: 1.4;
+            flex: 1;
         }
         .model-tag {
             font-size: 11px;
-            padding: 1px 8px 3px;
+            padding: 2px 8px 3px;
             border-radius: 9999px;
             background: var(--accent-strong);
             color: #bbf7d0;
             font-weight: 500;
             white-space: nowrap;
+            display: inline-block;
+            margin-left: 6px;
         }
         .model-tag.paid {
             background: var(--muted);
             color: white;
         }
-        @media (max-width: 640px) {
-            .model-row { flex-wrap: wrap; gap: 4px; }
-            .model-label { min-width: auto; }
-            .model-id { min-width: auto; }
+        @media (max-width: 768px) {
+            .model-row {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .model-label { width: auto; }
+            .model-id { width: auto; }
         }
 
         /* Connect button */
@@ -523,6 +529,36 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Segmented control tabs */
+        .tab-bar {
+            display: flex;
+            background: var(--border);
+            border-radius: 8px;
+            padding: 3px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: rgba(255,255,255,0.85);
+            font-family: "Uncut Sans", sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--surface);
+            color: var(--text);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        .tab-btn:hover:not(.active) { color: #fff; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
         /* Highlight injected key in commands */
         .key-injected {
             background: var(--accent-bg);
@@ -550,7 +586,7 @@
 
         <section class="hero">
             <h1><span class="brand">pollinations.ai</span> × <span class="accent">OpenClaw</span> Builders Night</h1>
-            <p>Get your OpenClaw agent running on <span class="brand">pollinations.ai</span> models in 30 seconds. Hackathon attendees get free API credits — connect your account and start building.</p>
+            <p>Get your OpenClaw agent running on <span class="brand">pollinations.ai</span> models in <strong>30 seconds</strong>. Free models with <em>web search, vision & reasoning</em> — connect your account and start building.</p>
         </section>
 
         <a href="https://luma.com/8k58g33a" class="event-banner" target="_blank" rel="noopener noreferrer">
@@ -558,18 +594,13 @@
             <div class="event-info">
                 <div class="event-date">Feb 12 · 19:00 – 23:00 · Antler Berlin</div>
                 <div class="event-title">OpenClaw Builders Night</div>
-                <div class="event-desc">Hands-on evening: set up OpenClaw, build a skill, demo it. Hackathon attendees get free <span class="brand">pollinations.ai</span> API credits.</div>
+                <div class="event-desc">Hands-on evening: <strong>set up OpenClaw, build a skill, demo it.</strong> Hackathon attendees get free <span class="brand">pollinations.ai</span> API credits.</div>
             </div>
         </a>
 
         <div class="setup-box">
-            <div class="step">
-                <div class="step-label">Step 1 <span style="font-size:11px; color:var(--muted); font-weight:400">— skip if already installed</span></div>
-                <div class="step-text">Install OpenClaw:</div>
-                <div class="code-block" id="install-cmd">curl -fsSL https://openclaw.ai/install.sh | bash<button class="copy-btn" onclick="copyCode('install-cmd')">Copy</button></div>
-            </div>
             <div class="step" id="step-connect">
-                <div class="step-label">Step 2</div>
+                <div class="step-label">Step 1</div>
                 <div class="step-text">Get your free API key for the hackathon:</div>
                 <button class="connect-btn" id="connect-btn" onclick="startAuthorize()">Connect with pollinations.ai</button>
                 <div class="step-text" style="margin-top:8px; font-size:13px;">or paste your key manually: <a href="https://enter.pollinations.ai">enter.pollinations.ai</a></div>
@@ -582,30 +613,47 @@
                         <div class="key-display" id="key-display"></div>
                     </div>
                 </div>
-                <div class="step-text" style="font-size:13px; margin-top:8px; color:var(--muted)">Your key has been inserted into the command below. Just copy and run.</div>
-            </div>
-            <div class="step">
-                <div class="step-label">Step 3</div>
-                <div class="step-text">Run the setup script — writes your API key and model config to <code style="color:var(--accent)">~/.openclaw/openclaw.json</code>. <a href="https://github.com/pollinations/pollinations/blob/main/apps/openclaw/setup-pollinations.sh" target="_blank" style="font-size:12px">(view source)</a></div>
-                <div class="code-block" id="setup-cmd">curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh \
-  | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
-                <div class="step-text" style="font-size:12px; color:var(--muted); margin-top:4px">If OpenClaw is already running, start a new session to pick up the config.</div>
+                <div class="step-text" style="font-size:13px; margin-top:8px; color:var(--muted)">Your key has been inserted into the commands below. Just copy and run.</div>
             </div>
 
-            <button class="toggle-btn" onclick="toggleManual()">Manual JSON config ▾</button>
-            <div class="manual-config" id="manual-config">
-                <div class="step-text">Or paste this into <code style="color:var(--accent)">~/.openclaw/openclaw.json</code>:</div>
-                <div class="code-block" id="json-config" style="white-space:pre; font-size:12px;">{
+            <div class="step">
+                <div class="step-label">Step 2</div>
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab('install', this)">🧑‍💻 Fresh Install</button>
+                    <button class="tab-btn" onclick="switchTab('agent', this)">🦞 For Your Agent</button>
+                </div>
+
+                <div class="tab-panel active" id="tab-install">
+                    <div class="step-text">Install OpenClaw, then run the setup script:</div>
+                    <div class="code-block" id="install-cmd">curl -fsSL https://openclaw.ai/install.sh | bash<button class="copy-btn" onclick="copyCode('install-cmd')">Copy</button></div>
+                    <div class="step-text" style="margin-top:16px">Run the <a href="https://github.com/pollinations/pollinations/blob/main/apps/openclaw/setup-pollinations.sh" target="_blank" style="font-weight:600; color:var(--text)">setup script</a>:</div>
+                    <div class="code-block" id="setup-cmd">curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh \
+  | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
+                    <ul style="margin:8px 0 12px 20px; font-size:14px; line-height:1.5; color:var(--muted)">
+                        <li>🔑 Saves API key to <code style="color:var(--accent); font-size:13px">~/.openclaw/openclaw.json</code></li>
+                        <li>🤖 Adds 7 models: Kimi K2.5, DeepSeek, GLM, Gemini + Search, Claude Haiku + 2 paid</li>
+                        <li>🔍 Configures <code style="color:var(--accent); font-size:13px">web_search</code> tool with Perplexity <em>via pollinations.ai</em> (preserves existing if already set)</li>
+                    </ul>
+
+                    <button class="toggle-btn" onclick="toggleManual()">Manual JSON config ▾</button>
+                    <div class="manual-config" id="manual-config">
+                        <div class="step-text">Or paste this into <code style="color:var(--accent)">~/.openclaw/openclaw.json</code>:</div>
+                        <div class="code-block" id="json-config" style="white-space:pre; font-size:12px;">{
   "env": { "POLLINATIONS_API_KEY": "<span class="key-in-json">YOUR_API_KEY</span>" },
   "agents": {
     "defaults": {
-      "model": { "primary": "pollinations/kimi" },
+      "model": {
+        "primary": "pollinations/kimi",
+        "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
+      },
       "models": {
         "pollinations/kimi": { "alias": "Kimi K2.5" },
         "pollinations/deepseek": { "alias": "DeepSeek V3.2" },
         "pollinations/glm": { "alias": "GLM-4.7" },
-        "pollinations/gemini-fast": { "alias": "Gemini Flash Lite" },
-        "pollinations/claude-fast": { "alias": "Claude Haiku 4.5" }
+        "pollinations/gemini-search": { "alias": "Gemini + Search" },
+        "pollinations/claude-fast": { "alias": "Claude Haiku 4.5" },
+        "pollinations/claude-large": { "alias": "Claude Opus 4.6" },
+        "pollinations/gemini-large": { "alias": "Gemini 3 Pro" }
       }
     }
   },
@@ -618,16 +666,48 @@
         "api": "openai-completions",
         "models": [
           { "id": "kimi", "name": "Kimi K2.5", "reasoning": true,
-            "input": ["text","image"], "contextWindow": 256000, "maxTokens": 8192 },
+            "input": ["text","image"], "contextWindow": 256000 },
           { "id": "deepseek", "name": "DeepSeek V3.2",
-            "input": ["text"], "contextWindow": 128000, "maxTokens": 8192 },
+            "input": ["text"], "contextWindow": 128000 },
           { "id": "glm", "name": "GLM-4.7",
-            "input": ["text"], "contextWindow": 128000, "maxTokens": 8192 }
+            "input": ["text"], "contextWindow": 128000 },
+          { "id": "gemini-search", "name": "Gemini + Search",
+            "input": ["text","image"], "contextWindow": 128000 },
+          { "id": "claude-fast", "name": "Claude Haiku 4.5",
+            "input": ["text","image"], "contextWindow": 200000 },
+          { "id": "claude-large", "name": "Claude Opus 4.6 (Paid)",
+            "input": ["text","image"], "contextWindow": 200000 },
+          { "id": "gemini-large", "name": "Gemini 3 Pro (Paid)", "reasoning": true,
+            "input": ["text","image"], "contextWindow": 1000000 }
         ]
       }
     }
-  }
+  },
+  "tools": {
+    "web": {
+      "search": {
+        "provider": "perplexity",
+        "perplexity": {
+          "baseUrl": "https://gen.pollinations.ai/v1",
+          "apiKey": "${POLLINATIONS_API_KEY}",
+          "model": "perplexity-fast"
+        }
+      }
+    }
+  },
+  "gateway": { "mode": "local" }
 }<button class="copy-btn" onclick="copyCode('json-config')">Copy</button></div>
+                    </div>
+                </div>
+
+                <div class="tab-panel" id="tab-agent">
+                    <div class="step-text">Paste this into your agent chat — it will configure Pollinations as a provider:</div>
+                    <div class="code-block" id="agent-msg" style="white-space:pre-wrap; font-size:12px; line-height:1.6">Add pollinations.ai as a model provider. Run this command:
+
+curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- <span class="key-in-json">YOUR_API_KEY</span>
+
+The script will restart the gateway automatically. After that, switch to the new provider with: /model pollinations/gemini-search<button class="copy-btn" onclick="copyCode('agent-msg')">Copy</button></div>
+                </div>
             </div>
         </div>
 
@@ -638,36 +718,41 @@
                 <div class="model-row recommended">
                     <div class="model-label">Kimi K2.5 <span class="model-tag">default</span></div>
                     <div class="model-id">pollinations/kimi</div>
-                    <div class="model-note">Best open model for agentic coding. 256K context, vision, tools, reasoning. 77% SWE-Bench.</div>
+                    <div class="model-note"><strong>Best open model</strong> for agentic coding. <em>256K context</em>, vision, tools, reasoning. 77% SWE-Bench.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Gemini + Search <span class="model-tag">web search</span></div>
+                    <div class="model-id">pollinations/gemini-search</div>
+                    <div class="model-note">Google Gemini with <strong>always-on web search</strong>. Vision support. Look up docs, APIs, recent changes.</div>
                 </div>
                 <div class="model-row">
                     <div class="model-label">DeepSeek V3.2</div>
                     <div class="model-id">pollinations/deepseek</div>
-                    <div class="model-note">Strong reasoning & tool calling. Good alternative to Kimi for hard problems.</div>
+                    <div class="model-note"><strong>Strong reasoning</strong> & tool calling. Good alternative to Kimi for hard problems.</div>
                 </div>
                 <div class="model-row">
                     <div class="model-label">GLM-4.7</div>
                     <div class="model-id">pollinations/glm</div>
-                    <div class="model-note">Z.ai — coding, reasoning, agentic workflows. Competitive with Kimi.</div>
-                </div>
-                <div class="model-row">
-                    <div class="model-label">Gemini Flash Lite</div>
-                    <div class="model-id">pollinations/gemini-fast</div>
-                    <div class="model-note">Google — very fast, vision support. Great as a fallback.</div>
+                    <div class="model-note">Z.ai — <em>coding, reasoning, agentic workflows</em>. Competitive with Kimi.</div>
                 </div>
                 <div class="model-row">
                     <div class="model-label">Claude Haiku 4.5</div>
                     <div class="model-id">pollinations/claude-fast</div>
-                    <div class="model-note">Anthropic — fast with good reasoning. Claude quality, lower cost.</div>
+                    <div class="model-note">Anthropic — <strong>fast</strong> with good reasoning. Claude quality, lower cost.</div>
                 </div>
                 <div class="model-row dimmed">
-                    <div class="model-label">Claude / Gemini / Grok <span class="model-tag paid">paid</span></div>
-                    <div class="model-id">pollinations/claude · gemini · grok</div>
-                    <div class="model-note">Premium models. Require paid tier.</div>
+                    <div class="model-label">Claude Opus 4.6 <span class="model-tag paid">paid</span></div>
+                    <div class="model-id">pollinations/claude-large</div>
+                    <div class="model-note">Anthropic's most capable model. Vision, tools, deep reasoning.</div>
+                </div>
+                <div class="model-row dimmed">
+                    <div class="model-label">Gemini 3 Pro <span class="model-tag paid">paid</span></div>
+                    <div class="model-id">pollinations/gemini-large</div>
+                    <div class="model-note">Google's flagship with vision, audio & video understanding.</div>
                 </div>
             </div>
 
-            <p style="margin-top:24px; font-size:14px; color:var(--muted)">Switch models anytime: <code style="color:var(--text)">/model pollinations/deepseek</code></p>
+            <p style="margin-top:24px; font-size:14px; color:var(--muted)">Switch models anytime: <code style="color:var(--text)">/model pollinations/gemini-search</code></p>
         </section>
 
         <section class="section">
@@ -697,69 +782,58 @@
 <script>
 function copyCode(id) {
     const el = document.getElementById(id);
-    const text = el.textContent.replace('Copy', '').replace('Copied!', '').trim();
+    const text = el.textContent.replace(/Copy|Copied!/g, '').trim();
     navigator.clipboard.writeText(text).then(() => {
         const btn = el.querySelector('.copy-btn');
         btn.textContent = 'Copied!';
-        setTimeout(() => btn.textContent = 'Copy', 1500);
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
     });
 }
 
 function toggleManual() {
     const el = document.getElementById('manual-config');
-    const btn = el.previousElementSibling;
     el.classList.toggle('open');
-    btn.textContent = el.classList.contains('open') ? 'Manual JSON config ▴' : 'Manual JSON config ▾';
+    el.previousElementSibling.textContent = el.classList.contains('open') ? 'Manual JSON config ▴' : 'Manual JSON config ▾';
 }
 
 function startAuthorize() {
     var redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
-    var models = encodeURIComponent('kimi,deepseek,glm,gemini-fast,claude-fast');
-    window.location.href = 'https://enter.pollinations.ai/authorize?redirect_url=' + redirectUrl + '&models=' + models;
+    var models = encodeURIComponent('kimi,deepseek,glm,gemini-search,perplexity-fast,claude-fast,claude-large,gemini-large');
+    window.location.href = `https://enter.pollinations.ai/authorize?redirect_url=${redirectUrl}&models=${models}`;
 }
 
-function maskKey(key) {
-    if (key.length <= 10) return key;
-    return key.slice(0, 6) + '...' + key.slice(-4);
+function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(p => { p.classList.remove('active'); });
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    btn.classList.add('active');
 }
 
 function injectApiKey(apiKey) {
-    // Update Step 1: show connected state
+    // Show connected state
     document.getElementById('step-connect').style.display = 'none';
-    var connectedEl = document.getElementById('step-connected');
-    connectedEl.style.display = 'block';
+    document.getElementById('step-connected').style.display = 'block';
     document.getElementById('key-display').textContent = apiKey;
 
-    // Update setup command
+    // Update setup command placeholder
     var placeholder = document.getElementById('key-placeholder');
     placeholder.textContent = apiKey;
     placeholder.classList.add('key-injected');
 
-    // Update JSON config
-    var jsonSpans = document.querySelectorAll('.key-in-json');
-    jsonSpans.forEach(function(span) {
+    // Update JSON config and agent message placeholders
+    document.querySelectorAll('.key-in-json').forEach(span => {
         span.textContent = apiKey;
         span.classList.add('key-injected');
     });
-
-    // Flash the setup box to draw attention
-    var setupBox = document.querySelector('.setup-box');
-    setupBox.style.transition = 'box-shadow 0.3s';
-    setupBox.style.boxShadow = '0 0 0 3px var(--accent-strong)';
-    setTimeout(function() { setupBox.style.boxShadow = 'none'; }, 2000);
 }
 
 // Check for API key in URL fragment on page load
-(function() {
-    var hash = window.location.hash;
-    if (hash && hash.indexOf('api_key=') !== -1) {
-        var match = hash.match(/api_key=([^&]+)/);
-        if (match && match[1]) {
-            var apiKey = decodeURIComponent(match[1]);
-            // Remove the key from the URL for security
-            history.replaceState(null, '', window.location.pathname + window.location.search);
-            injectApiKey(apiKey);
-        }
+(() => {
+    const match = window.location.hash.match(/api_key=([^&]+)/);
+    if (match) {
+        const apiKey = decodeURIComponent(match[1]);
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        injectApiKey(apiKey);
     }
 })();
 </script>

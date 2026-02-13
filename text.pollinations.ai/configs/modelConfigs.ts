@@ -6,7 +6,7 @@ import {
     createBedrockNativeConfig,
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
-    createNomNomConfig,
+    // createNomNomConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
@@ -237,15 +237,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // Fireworks AI - glm-4.7, minimax-m2.1, deepseek-v3.2, kimi-k2.5
+    // Fireworks AI - glm-5, minimax-m2.1, deepseek-v3.2, kimi-k2.5
     // ============================================================================
     "accounts/fireworks/models/kimi-k2p5": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p5",
         }),
-    "accounts/fireworks/models/glm-4p7": () =>
+    "accounts/fireworks/models/glm-5": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/glm-4p7",
+            model: "accounts/fireworks/models/glm-5",
         }),
     "accounts/fireworks/models/minimax-m2p1": () =>
         createFireworksModelConfig({
@@ -259,10 +259,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     // ============================================================================
     // Community Models - NomNom (web search/scrape/crawl)
     // ============================================================================
-    "nomnom": () =>
-        createNomNomConfig({
-            model: "nomnom",
-        }),
+    // "nomnom": () =>
+    //     createNomNomConfig({
+    //         model: "nomnom",
+    //     }),
 
     // ============================================================================
     // api.airforce - qwen-character (RP/character model)

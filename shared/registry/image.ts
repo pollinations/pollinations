@@ -216,10 +216,11 @@ export const IMAGE_SERVICES = {
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
         modelId: "wan",
-        provider: "alibaba",
+        provider: "airforce",
         alpha: true,
         cost: [
-            // Wan 2.6 I2V Flash (Singapore/International region)
+            // Wan 2.6 (T2V & I2V) - via Airforce API
+            // Supports both text-to-video and image-to-video
             // Video base: 720P $0.025/sec (without audio)
             // Audio add-on: $0.025/sec (when audio=true)
             // Total with audio: $0.05/sec
@@ -230,7 +231,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "Wan 2.6 - Alibaba image-to-video with audio (2-15s, up to 1080P)",
+            "Wan 2.6 (alpha) - Alibaba text/image-to-video with audio (2-15s, up to 1080P), powered by api.airforce",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },

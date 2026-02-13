@@ -10,7 +10,11 @@ import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 const logOps = debug("pollinations:wan:ops");
 const logError = debug("pollinations:wan:error");
 
-// DashScope API constants (Singapore region)
+// Airforce API constants (primary provider)
+const AIRFORCE_API_BASE = "https://api.airforce/v1";
+const AIRFORCE_WAN_MODEL = "wan-2.6";
+
+// DashScope API constants (Singapore region) - kept for potential fallback
 const DASHSCOPE_API_BASE = "https://dashscope-intl.aliyuncs.com/api/v1";
 const WAN_I2V_MODEL = "wan2.6-i2v-flash";
 
@@ -41,11 +45,243 @@ interface WanTaskResult {
     message?: string;
 }
 
+interface AirforceVideoResponse {
+    created: number;
+    data: Array<{
+        url: string | null;
+        b64_json: string | null;
+    }>;
+}
+
 /**
- * Generates a video using Alibaba Wan 2.6 API (DashScope)
+ * Generates a video using Airforce API (wan-2.6)
+ * Primary implementation - simpler SSE-based approach
  * Supports image-to-video with optional audio
  */
 export async function callWanAPI(
+    prompt: string,
+    safeParams: ImageParams,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<VideoGenerationResult> {
+    const apiKey = process.env.AIRFORCE_API_KEY;
+    if (!apiKey) {
+        throw new HttpError(
+            "AIRFORCE_API_KEY environment variable is required for Wan model",
+            500,
+        );
+    }
+
+    logOps("Calling Wan 2.6 API (Airforce) with prompt:", prompt);
+
+    progress.updateBar(
+        requestId,
+        35,
+        "Processing",
+        "Starting video generation with Wan 2.6...",
+    );
+
+    // Video parameters - clamp duration to valid range (2-15 seconds)
+    const rawDuration = safeParams.duration || 5;
+    const durationSeconds = Math.max(2, Math.min(15, rawDuration));
+    // Resolution: 720P recommended
+    const resolution = "720P";
+    // Audio: true by default (can be disabled with audio=false to reduce cost)
+    const generateAudio = safeParams.audio !== false;
+
+    // Check for input image (not strictly required but recommended for I2V)
+    const imageUrl = Array.isArray(safeParams.image)
+        ? safeParams.image[0]
+        : safeParams.image;
+
+    logOps("Video params:", {
+        durationSeconds,
+        resolution,
+        generateAudio,
+        hasImage: !!imageUrl,
+        model: AIRFORCE_WAN_MODEL,
+    });
+
+    // Build request body for Airforce API
+    const requestBody: {
+        model: string;
+        prompt: string;
+        n: number;
+        size: string;
+        response_format: string;
+        sse: boolean;
+        aspectRatio: string;
+        duration: number;
+        resolution: string;
+        sound: boolean;
+        image?: string;
+    } = {
+        model: AIRFORCE_WAN_MODEL,
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024",
+        response_format: "url",
+        sse: true, // Enable Server-Sent Events for streaming
+        aspectRatio: "16:9",
+        duration: durationSeconds,
+        resolution: resolution,
+        sound: generateAudio,
+    };
+
+    // Add image for I2V generation (optional - supports both T2V and I2V)
+    if (imageUrl) {
+        requestBody.image = imageUrl;
+    }
+
+    logOps("Airforce API request:", JSON.stringify(requestBody, null, 2));
+
+    progress.updateBar(
+        requestId,
+        45,
+        "Processing",
+        "Initiating video generation...",
+    );
+
+    const endpoint = `${AIRFORCE_API_BASE}/images/generations`;
+
+    try {
+        const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            logError("Airforce API failed:", response.status, errorText);
+            throw new HttpError(
+                `Airforce API request failed: ${errorText}`,
+                response.status,
+            );
+        }
+
+        progress.updateBar(
+            requestId,
+            50,
+            "Processing",
+            "Generating video (streaming updates)...",
+        );
+
+        // Parse SSE stream
+        let videoUrl: string | null = null;
+
+        if (!response.body) {
+            throw new HttpError("No response body from Airforce API", 500);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+                if (!line.trim()) continue;
+
+                // Skip keepalive messages
+                if (line === ": keepalive") continue;
+
+                // Check for [DONE] marker
+                if (line === "data: [DONE]") {
+                    logOps("SSE stream completed");
+                    break;
+                }
+
+                // Parse SSE data
+                if (line.startsWith("data: ")) {
+                    try {
+                        const data = JSON.parse(line.slice(6)) as AirforceVideoResponse;
+
+                        if (data.data && data.data.length > 0) {
+                            const firstResult = data.data[0];
+                            if (firstResult.url) {
+                                videoUrl = firstResult.url;
+                                logOps("Video URL received:", videoUrl);
+
+                                progress.updateBar(
+                                    requestId,
+                                    80,
+                                    "Processing",
+                                    "Video generation completed, downloading...",
+                                );
+                            }
+                        }
+                    } catch (e) {
+                        logError("Failed to parse SSE data:", line, e);
+                    }
+                }
+            }
+        }
+
+        if (!videoUrl) {
+            throw new HttpError("No video URL received from Airforce API", 500);
+        }
+
+        // Download the video
+        progress.updateBar(
+            requestId,
+            90,
+            "Processing",
+            "Downloading video...",
+        );
+
+        const videoResponse = await fetch(videoUrl);
+
+        if (!videoResponse.ok) {
+            throw new HttpError(
+                `Failed to download video: ${videoResponse.status}`,
+                500,
+            );
+        }
+
+        const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+        logOps(
+            "Video downloaded, size:",
+            (videoBuffer.length / 1024 / 1024).toFixed(2),
+            "MB",
+        );
+
+        progress.updateBar(requestId, 95, "Success", "Video generation completed");
+
+        return {
+            buffer: videoBuffer,
+            mimeType: "video/mp4",
+            durationSeconds,
+            trackingData: {
+                actualModel: "wan",
+                usage: {
+                    completionVideoSeconds: durationSeconds,
+                    completionAudioSeconds: generateAudio ? durationSeconds : 0,
+                },
+            },
+        };
+    } catch (error) {
+        logError("Airforce API error:", error);
+        throw error;
+    }
+}
+
+/**
+ * LEGACY: Generates a video using Alibaba Wan 2.6 API (DashScope)
+ * Kept for potential future fallback implementation
+ * @deprecated Use callWanAPI (Airforce) instead
+ */
+export async function callWanAlibabaAPI(
     prompt: string,
     safeParams: ImageParams,
     progress: ProgressManager,

@@ -3,6 +3,7 @@ import debug from "debug";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { ProviderError } from "../providerError.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 // Logger
@@ -149,15 +150,22 @@ async function enqueueLtx2Job(
     if (!response.ok) {
         const errorText = await response.text();
         logError("Enqueue failed:", response.status, errorText);
-        throw new HttpError(
-            `Failed to enqueue video generation: ${errorText}`,
+        throw new ProviderError(
+            "Modal LTX-2",
+            `Video generation failed \u2014 the upstream provider (Modal LTX-2) returned an error (${response.status}). Please try again later.`,
+            response.status,
             response.status,
         );
     }
 
     const data = (await response.json()) as { prompt_id?: string };
     if (!data.prompt_id) {
-        throw new HttpError("No prompt_id returned from enqueue", 500);
+        logError("Modal LTX-2 did not return prompt_id");
+        throw new ProviderError(
+            "Modal LTX-2",
+            `Video generation failed \u2014 the upstream provider (Modal LTX-2) returned an invalid response.`,
+            500,
+        );
     }
 
     logOps("Job enqueued with prompt_id:", data.prompt_id);
@@ -221,8 +229,9 @@ async function pollLtx2Status(
             }
 
             if (data.status === "error") {
-                throw new HttpError(
-                    `Video generation failed: ${data.error || "Unknown error"}`,
+                throw new ProviderError(
+                    "Modal LTX-2",
+                    `Video generation failed \u2014 the upstream provider (Modal LTX-2) reported an error. Please try again later.`,
                     500,
                 );
             }
@@ -239,8 +248,9 @@ async function pollLtx2Status(
         await sleep(POLL_INTERVAL_MS);
     }
 
-    throw new HttpError(
-        `Video generation timed out after ${DEFAULT_TIMEOUT_SECS} seconds`,
+    throw new ProviderError(
+        "Modal LTX-2",
+        `Video generation timed out \u2014 the upstream provider (Modal LTX-2) did not complete within ${DEFAULT_TIMEOUT_SECS} seconds.`,
         504,
     );
 }
@@ -259,13 +269,18 @@ async function fetchLtx2Result(promptId: string): Promise<Buffer> {
 
     if (!response.ok) {
         if (response.status === 202) {
-            // Not ready yet - shouldn't happen if polling worked correctly
-            throw new HttpError("Video not ready yet", 202);
+            throw new ProviderError(
+                "Modal LTX-2",
+                `Video generation is still in progress \u2014 the upstream provider (Modal LTX-2) has not completed yet.`,
+                202,
+            );
         }
         const errorText = await response.text();
         logError("Result fetch failed:", response.status, errorText);
-        throw new HttpError(
-            `Failed to fetch video result: ${errorText}`,
+        throw new ProviderError(
+            "Modal LTX-2",
+            `Video generation failed \u2014 could not retrieve the result from the upstream provider (Modal LTX-2). Status: ${response.status}.`,
+            response.status,
             response.status,
         );
     }

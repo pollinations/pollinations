@@ -9,6 +9,7 @@ import {
     calculateVideoResolution,
     resolutionToLowercase,
 } from "../utils/videoResolution.ts";
+import { ProviderError } from "../providerError.ts";
 
 // Logger
 const logOps = debug("pollinations:seedance:ops");
@@ -223,8 +224,11 @@ async function generateSeedanceVideo(
             generateResponse.status,
             errorText,
         );
-        throw new HttpError(
-            `${config.displayName} API request failed: ${errorText}`,
+        // Sanitised upstream error — raw body already logged above
+        throw new ProviderError(
+            "BytePlus Seedance",
+            `Video generation failed \u2014 the upstream provider (BytePlus Seedance) returned an error (${generateResponse.status}). Please try again later.`,
+            generateResponse.status,
             generateResponse.status,
         );
     }
@@ -234,8 +238,10 @@ async function generateSeedanceVideo(
 
     const taskId = generateData.id || generateData.task_id;
     if (!taskId) {
-        throw new HttpError(
-            `${config.displayName} API did not return task ID`,
+        logError(`${config.displayName} API did not return task ID`);
+        throw new ProviderError(
+            "BytePlus Seedance",
+            `Video generation failed \u2014 the upstream provider (BytePlus Seedance) returned an invalid response.`,
             500,
         );
     }
@@ -364,7 +370,11 @@ async function pollSeedanceTask(
             const videoUrl = pollData.content?.video_url;
 
             if (!videoUrl) {
-                throw new HttpError("No video URL in completed response", 500);
+                throw new ProviderError(
+                    "BytePlus Seedance",
+                    `Video generation failed \u2014 the upstream provider (BytePlus Seedance) returned no video URL.`,
+                    500,
+                );
             }
 
             logOps("Video URL:", videoUrl);
@@ -380,9 +390,14 @@ async function pollSeedanceTask(
             const videoResponse = await fetch(videoUrl);
 
             if (!videoResponse.ok) {
-                throw new HttpError(
-                    `Failed to download video: ${videoResponse.status}`,
+                logError(
+                    `Seedance video download failed: ${videoResponse.status}`,
+                );
+                throw new ProviderError(
+                    "BytePlus Seedance",
+                    `Video generation failed \u2014 could not download the result from the upstream provider (BytePlus Seedance). Status: ${videoResponse.status}.`,
                     500,
+                    videoResponse.status,
                 );
             }
 
@@ -404,10 +419,12 @@ async function pollSeedanceTask(
         }
 
         if (status === "failed" || status === "error") {
-            const errorMsg =
-                pollData.error?.message || "Video generation failed";
             logError("Seedance generation error:", pollData.error);
-            throw new HttpError(errorMsg, 500);
+            throw new ProviderError(
+                "BytePlus Seedance",
+                `Video generation failed \u2014 the upstream provider (BytePlus Seedance) reported an error. Please try again later.`,
+                500,
+            );
         }
 
         // Status is still pending/queued/generating - wait and try again
@@ -416,5 +433,9 @@ async function pollSeedanceTask(
         delayMs = Math.min(delayMs * 1.1, 5000);
     }
 
-    throw new HttpError("Video generation timed out after 4 minutes", 504);
+    throw new ProviderError(
+        "BytePlus Seedance",
+        `Video generation timed out \u2014 the upstream provider (BytePlus Seedance) did not complete within 4 minutes.`,
+        504,
+    );
 }

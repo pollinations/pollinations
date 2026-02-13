@@ -25,6 +25,7 @@ import {
 } from "./normalizeAndTranslatePrompt.js";
 import { type ImageParams, ImageParamsSchema } from "./params.js";
 import { createProgressTracker, type ProgressManager } from "./progressBar.js";
+import { ProviderError } from "./providerError.ts";
 import { sleep } from "./util.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 
@@ -509,7 +510,7 @@ const checkCacheAndGenerate = async (
         });
 
         // Create a response object with error information
-        const responseObj = {
+        const responseObj: Record<string, unknown> = {
             error: errorType,
             message: error.message,
             details: error.details,
@@ -522,6 +523,11 @@ const checkCacheAndGenerate = async (
             },
             queueInfo: null,
         };
+
+        // Add provider attribution for upstream provider errors
+        if (error instanceof ProviderError) {
+            responseObj.provider = error.provider;
+        }
 
         // Add queue info for 429 errors
         if (statusCode === 429 && error.queueInfo) {

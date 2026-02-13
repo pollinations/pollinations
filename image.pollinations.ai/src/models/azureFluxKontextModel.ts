@@ -5,6 +5,7 @@ import type {
 } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
+import { ProviderError } from "../providerError.ts";
 import { sanitizeString } from "../translateIfNecessary.ts";
 import {
     analyzeImageSafety,
@@ -132,7 +133,15 @@ export async function callAzureFluxKontext(
 
             const imageResponse = await fetch(imageUrl);
             if (!imageResponse.ok) {
-                throw new Error(`Failed to fetch image from URL: ${imageUrl}`);
+                logError(
+                    `Failed to fetch image from URL: ${imageUrl}, status: ${imageResponse.status}`,
+                );
+                throw new ProviderError(
+                    "Azure Flux Kontext",
+                    `Image editing failed \u2014 could not fetch the reference image. Status: ${imageResponse.status}.`,
+                    500,
+                    imageResponse.status,
+                );
             }
 
             const imageArrayBuffer = await imageResponse.arrayBuffer();
@@ -186,7 +195,11 @@ export async function callAzureFluxKontext(
             formData.append("image", imageBlob, `image${extension}`);
         } catch (error) {
             logError("Error processing image for editing:", error);
-            throw new Error(`Failed to process image: ${error.message}`);
+            throw new ProviderError(
+                "Azure Flux Kontext",
+                `Image editing failed \u2014 the upstream provider (Azure Flux Kontext) could not process the image.`,
+                500,
+            );
         }
 
         // Log the endpoint for debugging
@@ -219,13 +232,28 @@ export async function callAzureFluxKontext(
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new HttpError(errorText, response.status);
+        // Raw upstream body logged for debugging only
+        logError(
+            `Azure Flux Kontext API failed, status: ${response.status}, response:`,
+            errorText,
+        );
+        throw new ProviderError(
+            "Azure Flux Kontext",
+            `Image generation failed \u2014 the upstream provider (Azure Flux Kontext) returned an error (${response.status}). Please try again later.`,
+            response.status,
+            response.status,
+        );
     }
 
     const data = await response.json();
 
     if (!data.data || !data.data[0] || !data.data[0].b64_json) {
-        throw new Error("Invalid response from Azure Flux Kontext API");
+        logError("Azure Flux Kontext API returned invalid response structure");
+        throw new ProviderError(
+            "Azure Flux Kontext",
+            `Image generation failed \u2014 the upstream provider (Azure Flux Kontext) returned an invalid response.`,
+            500,
+        );
     }
 
     // Convert base64 to buffer

@@ -4,6 +4,7 @@ import googleCloudAuth from "../../auth/googleCloudAuth.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { ProviderError } from "../providerError.ts";
 import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import {
     calculateVideoResolution,
@@ -238,8 +239,11 @@ export const callVeoAPI = async (
             generateResponse.status,
             errorText,
         );
-        throw new HttpError(
-            `Veo API request failed: ${errorText}`,
+        // Sanitised upstream error — raw body already logged above
+        throw new ProviderError(
+            "Google Veo",
+            `Video generation failed \u2014 the upstream provider (Google Veo) returned an error (${generateResponse.status}). Please try again later.`,
+            generateResponse.status,
             generateResponse.status,
         );
     }
@@ -248,7 +252,12 @@ export const callVeoAPI = async (
     logOps("Generate response:", JSON.stringify(generateData, null, 2));
 
     if (!generateData.name) {
-        throw new HttpError("Veo API did not return operation name", 500);
+        logError("Veo API did not return operation name");
+        throw new ProviderError(
+            "Google Veo",
+            `Video generation failed \u2014 the upstream provider (Google Veo) returned an invalid response.`,
+            500,
+        );
     }
 
     // Step 2: Poll for completion using fetchPredictOperation
@@ -355,9 +364,11 @@ async function pollVeoOperation(
                 const isClientError =
                     errorCode === 400 || errorCode === 3 || errorCode === 9;
 
-                throw new HttpError(
-                    `Video generation failed: ${pollData.error.message}`,
+                throw new ProviderError(
+                    "Google Veo",
+                    `Video generation failed \u2014 the upstream provider (Google Veo) reported an error (${errorCode}). Please try again later.`,
                     isClientError ? 400 : 500,
+                    errorCode,
                 );
             }
 
@@ -384,14 +395,19 @@ async function pollVeoOperation(
                 if (video.gcsUri) {
                     // If we get a GCS URI instead of base64, throw error
                     // (This shouldn't happen with the current API but just in case)
-                    throw new HttpError(
-                        "Video returned as GCS URI which is not supported",
+                    throw new ProviderError(
+                        "Google Veo",
+                        `Video generation failed \u2014 the upstream provider (Google Veo) returned an unsupported response format.`,
                         500,
                     );
                 }
             }
 
-            throw new HttpError("No video data in response", 500);
+            throw new ProviderError(
+                "Google Veo",
+                `Video generation failed \u2014 the upstream provider (Google Veo) returned no video data.`,
+                500,
+            );
         }
 
         // Not done yet, wait and try again
@@ -399,5 +415,9 @@ async function pollVeoOperation(
         delayMs = Math.min(delayMs * 1.2, 30000); // Exponential backoff, cap at 30s
     }
 
-    throw new HttpError("Video generation timed out after 3 minutes", 504);
+    throw new ProviderError(
+        "Google Veo",
+        `Video generation timed out \u2014 the upstream provider (Google Veo) did not complete within 3 minutes.`,
+        504,
+    );
 }

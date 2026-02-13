@@ -1,3 +1,4 @@
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
@@ -9,6 +10,7 @@ import { logger } from "./middleware/logger.ts";
 import { accountRoutes } from "./routes/account.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
+import { audioRoutes } from "./routes/audio.ts";
 import { customerRoutes } from "./routes/customer.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
@@ -19,7 +21,6 @@ import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
 import { webhooksRoutes } from "./routes/webhooks.ts";
 import { webhooksCryptoRoutes } from "./routes/webhooks-crypto.ts";
-import { handleScheduled } from "./scheduled.ts";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
     return await createAuth(c.env, c.executionCtx).handler(c.req.raw);
@@ -38,7 +39,8 @@ export const api = new Hono<Env>()
     .route("/webhooks", stripeWebhooksRoutes)
     .route("/admin", adminRoutes)
     .route("/model-stats", modelStatsRoutes)
-    .route("/generate", proxyRoutes);
+    .route("/generate", proxyRoutes)
+    .route("/generate/v1/audio", audioRoutes);
 
 export type ApiRoutes = typeof api;
 
@@ -61,7 +63,7 @@ const app = new Hono<Env>()
     .route("/api", api)
     .route("/api/docs", docsRoutes);
 
-app.notFound(async (c) => {
+app.notFound(async (c: Context<Env>) => {
     return await handleError(new HTTPException(404), c);
 });
 
@@ -74,5 +76,4 @@ export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 export default {
     fetch: app.fetch,
-    scheduled: handleScheduled,
 } satisfies ExportedHandler<CloudflareBindings>;

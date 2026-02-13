@@ -6,5 +6,9 @@
 /**
  * Event types for generation tracking
  */
-export const eventTypeValues = ["generate.text", "generate.image"] as const;
+export const eventTypeValues = [
+    "generate.text",
+    "generate.image",
+    "generate.audio",
+] as const;
 export type EventType = (typeof eventTypeValues)[number];

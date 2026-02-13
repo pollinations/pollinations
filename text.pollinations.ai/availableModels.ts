@@ -170,7 +170,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "glm",
-        config: portkeyConfig["accounts/fireworks/models/glm-4p7"],
+        config: portkeyConfig["accounts/fireworks/models/glm-5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {

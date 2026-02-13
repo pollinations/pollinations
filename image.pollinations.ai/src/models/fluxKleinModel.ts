@@ -3,6 +3,7 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { ProviderError } from "../providerError.ts";
 import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:flux-klein:ops");
@@ -88,8 +89,11 @@ export const callFluxKleinAPI = async (
         if (error instanceof HttpError) {
             throw error;
         }
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(`Flux Klein API generation failed: ${message}`);
+        throw new ProviderError(
+            "Modal Flux Klein",
+            `Image generation failed \u2014 the upstream provider (Modal Flux Klein) encountered an error. Please try again later.`,
+            500,
+        );
     }
 };
 
@@ -135,8 +139,11 @@ async function generateTextToImage(
             "response:",
             errorText,
         );
-        throw new HttpError(
-            `Flux Klein API request failed: ${errorText}`,
+        // Sanitised upstream error \u2014 raw body already logged above
+        throw new ProviderError(
+            "Modal Flux Klein",
+            `Image generation failed \u2014 the upstream provider (Modal Flux Klein) returned an error (${response.status}). Please try again later.`,
+            response.status,
             response.status,
         );
     }
@@ -221,7 +228,7 @@ async function generateWithEditing(
     }
 
     if (base64Images.length === 0) {
-        throw new Error("Failed to download any reference images");
+        throw new HttpError("Failed to download any reference images", 400);
     }
 
     logOps("Image editing mode with", base64Images.length, "processed images");
@@ -265,8 +272,11 @@ async function generateWithEditing(
             "response:",
             errorText,
         );
-        throw new HttpError(
-            `Flux Klein edit API request failed: ${errorText}`,
+        // Sanitised upstream error \u2014 raw body already logged above
+        throw new ProviderError(
+            "Modal Flux Klein",
+            `Image editing failed \u2014 the upstream provider (Modal Flux Klein) returned an error (${response.status}). Please try again later.`,
+            response.status,
             response.status,
         );
     }

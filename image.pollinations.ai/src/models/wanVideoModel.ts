@@ -20,7 +20,7 @@ const WAN_I2V_MODEL = "wan2.6-i2v-flash";
 const MIN_DURATION_SECONDS = 2;
 const MAX_DURATION_SECONDS = 15;
 const DEFAULT_DURATION_SECONDS = 5;
-const DEFAULT_RESOLUTION = "720P";
+const DEFAULT_RESOLUTION = "720P"; // Supports 480P, 720P, 1080P
 
 // Polling configuration
 const POLL_MAX_ATTEMPTS = 60; // 5 minutes max
@@ -169,10 +169,12 @@ function prepareVideoParameters(safeParams: ImageParams): {
         Math.min(MAX_DURATION_SECONDS, rawDuration),
     );
     const generateAudio = safeParams.audio !== false;
+    // Use provided resolution or default to 720P (supports 480P, 720P, 1080P)
+    const resolution = safeParams.resolution || DEFAULT_RESOLUTION;
 
     return {
         durationSeconds,
-        resolution: DEFAULT_RESOLUTION,
+        resolution,
         generateAudio,
     };
 }

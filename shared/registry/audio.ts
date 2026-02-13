@@ -111,4 +111,20 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
         alpha: true,
     },
+    scribe: {
+        aliases: ["scribe_v2", "scribe-v2"],
+        modelId: "scribe_v2",
+        provider: "elevenlabs",
+        cost: [
+            {
+                date: new Date("2026-02-13").getTime(),
+                // ElevenLabs Scribe: $0.40/hour = $0.0001111/sec
+                promptAudioSeconds: 0.0001111,
+            },
+        ],
+        description:
+            "ElevenLabs Scribe v2 - Speech to Text (90+ languages, diarization)",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+    },
 } satisfies Record<string, ServiceDefinition<string>>;

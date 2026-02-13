@@ -1,6 +1,5 @@
 import type { Logger } from "@logtape/logtape";
 import { ELEVENLABS_VOICES, VOICE_MAPPING } from "@shared/registry/audio.ts";
-import type { ServiceId } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
@@ -8,14 +7,12 @@ import {
     createCompletionAudioSecondsUsage,
 } from "@shared/registry/usage-headers.ts";
 import { Hono } from "hono";
-import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
-import type { ModelVariables } from "@/middleware/model.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { track } from "@/middleware/track.ts";
@@ -175,6 +172,159 @@ export async function generateSpeech(opts: {
     });
 }
 
+/**
+ * ElevenLabs Transcription Response (word-level timestamps)
+ */
+interface ElevenLabsTranscriptionWord {
+    text: string;
+    start: number;
+    end: number;
+    type?: string;
+    speaker_id?: string;
+}
+
+interface ElevenLabsTranscriptionResponse {
+    text: string;
+    language_code?: string;
+    language_probability?: number;
+    words?: ElevenLabsTranscriptionWord[];
+}
+
+/**
+ * OpenAI-compatible transcription response format
+ */
+interface OpenAITranscriptionResponse {
+    text: string;
+}
+
+interface OpenAIVerboseTranscriptionResponse
+    extends OpenAITranscriptionResponse {
+    task?: "transcribe";
+    language?: string;
+    duration?: number;
+    words?: { word: string; start: number; end: number }[];
+    segments?: {
+        id: number;
+        start: number;
+        end: number;
+        text: string;
+    }[];
+}
+
+export async function transcribeWithElevenLabs(opts: {
+    file: File;
+    language?: string;
+    responseFormat?: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { file, language, responseFormat, apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message:
+                "Transcription service is not configured (missing API key)",
+        });
+    }
+
+    log.info("ElevenLabs transcription: format={format}, size={size}", {
+        format: responseFormat || "json",
+        size: file.size,
+    });
+
+    // Build multipart form for ElevenLabs API
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("model_id", "scribe_v2");
+    if (language) {
+        // Pass through language code - ElevenLabs accepts both ISO-639-1 and ISO-639-3
+        formData.append("language_code", language);
+    }
+
+    const response = await fetch(
+        "https://api.elevenlabs.io/v1/speech-to-text",
+        {
+            method: "POST",
+            headers: {
+                "xi-api-key": apiKey,
+            },
+            body: formData,
+        },
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        log.warn("ElevenLabs transcription error {status}: {body}", {
+            status: response.status,
+            body: errorText,
+        });
+        throw new UpstreamError(response.status as ContentfulStatusCode, {
+            message: errorText || getDefaultErrorMessage(response.status),
+        });
+    }
+
+    const elevenLabsData: ElevenLabsTranscriptionResponse =
+        await response.json();
+
+    // Estimate duration from last word's end timestamp for billing
+    const duration =
+        elevenLabsData.words && elevenLabsData.words.length > 0
+            ? elevenLabsData.words[elevenLabsData.words.length - 1].end
+            : 0;
+
+    const usageHeaders = buildUsageHeaders(
+        "scribe",
+        createAudioSecondsUsage(duration),
+    );
+
+    log.info("ElevenLabs transcription success: {chars} chars, {duration}s", {
+        chars: elevenLabsData.text.length,
+        duration: Math.round(duration * 10) / 10,
+    });
+
+    // Transform to OpenAI format based on response_format
+    const format = responseFormat || "json";
+
+    if (format === "text") {
+        return new Response(elevenLabsData.text, {
+            headers: {
+                "Content-Type": "text/plain",
+                ...usageHeaders,
+            },
+        });
+    }
+
+    if (format === "verbose_json") {
+        // OpenAI verbose format with word-level timestamps and segments
+        const verboseResponse: OpenAIVerboseTranscriptionResponse = {
+            text: elevenLabsData.text,
+            task: "transcribe",
+            language: elevenLabsData.language_code || "unknown",
+            duration,
+            words: elevenLabsData.words?.map((w) => ({
+                word: w.text,
+                start: w.start,
+                end: w.end,
+            })),
+            segments: [
+                {
+                    id: 0,
+                    start: 0,
+                    end: duration,
+                    text: elevenLabsData.text,
+                },
+            ],
+        };
+        return Response.json(verboseResponse, { headers: usageHeaders });
+    }
+
+    // Default: json format (simple)
+    const jsonResponse: OpenAITranscriptionResponse = {
+        text: elevenLabsData.text,
+    };
+    return Response.json(jsonResponse, { headers: usageHeaders });
+}
+
 export async function generateMusic(opts: {
     prompt: string;
     durationSeconds?: number;
@@ -269,13 +419,6 @@ export async function generateMusic(opts: {
     });
 }
 
-/** Set model for tracking — audio routes have fixed providers, no model resolution needed */
-const fixedModel = (serviceId: ServiceId) =>
-    createMiddleware<{ Variables: ModelVariables }>(async (c, next) => {
-        c.set("model", { requested: serviceId, resolved: serviceId });
-        await next();
-    });
-
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
     .use("*", auth({ allowApiKey: true, allowSessionCookie: false }), balance)
@@ -363,13 +506,13 @@ export const audioRoutes = new Hono<Env>()
         describeRoute({
             tags: ["gen.pollinations.ai"],
             description: [
-                "Transcribe audio to text using Whisper.",
+                "Transcribe audio to text using Whisper or ElevenLabs Scribe.",
                 "",
                 "This endpoint is OpenAI Whisper API compatible.",
                 "",
                 "**Supported formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm",
                 "",
-                "**Models:** `whisper-large-v3` (default), `whisper-1`",
+                "**Models:** `whisper-large-v3` (default), `whisper-1`, `scribe`",
             ].join("\n"),
             requestBody: {
                 required: true,
@@ -389,7 +532,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`.",
+                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`.",
                                 },
                                 language: {
                                     type: "string",
@@ -441,7 +584,7 @@ export const audioRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 500),
             },
         }),
-        fixedModel("whisper" as ServiceId),
+        resolveModel("generate.audio"),
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("transcription");
@@ -453,6 +596,62 @@ export const audioRoutes = new Hono<Env>()
                 );
             }
 
+            // Get pre-parsed formData from resolveModel middleware
+            const formData = c.get("formData");
+            if (!formData) {
+                throw new UpstreamError(500 as ContentfulStatusCode, {
+                    message: "FormData not parsed by middleware",
+                });
+            }
+
+            const file = formData.get("file") as File;
+            const language = formData.get("language") as string | null;
+            const responseFormat = formData.get("response_format") as
+                | string
+                | null;
+
+            if (!file) {
+                return Response.json(
+                    {
+                        error: "invalid_request_error",
+                        message: "Missing required field: file",
+                    },
+                    { status: 400 },
+                );
+            }
+
+            // Route to ElevenLabs or Whisper based on resolved model
+            // Default to Whisper if the resolved model is a TTS model (elevenlabs, elevenmusic)
+            let resolvedModel = c.var.model.resolved;
+            if (
+                resolvedModel === "elevenlabs" ||
+                resolvedModel === "elevenmusic"
+            ) {
+                resolvedModel = "whisper";
+                c.set("model", {
+                    requested: c.var.model.requested,
+                    resolved: "whisper",
+                });
+            }
+
+            if (resolvedModel === "scribe") {
+                const elevenLabsApiKey = (
+                    c.env as unknown as { ELEVENLABS_API_KEY: string }
+                ).ELEVENLABS_API_KEY;
+                const response = await transcribeWithElevenLabs({
+                    file,
+                    language: language || undefined,
+                    responseFormat: responseFormat || undefined,
+                    apiKey: elevenLabsApiKey,
+                    log,
+                });
+
+                // Override tracking with final response
+                c.var.track.overrideResponseTracking(response.clone());
+                return response;
+            }
+
+            // Default: Whisper (OVHcloud)
             const ovhApiKey = c.env.OVHCLOUD_API_KEY;
             if (!ovhApiKey) {
                 throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -461,8 +660,13 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            // Parse multipart form and re-send to OVH (Hono consumes the body stream)
-            const formData = await c.req.formData();
+            // Re-build formData for Whisper (Hono consumed the original body stream)
+            const whisperFormData = new FormData();
+            whisperFormData.append("file", file);
+            if (language) whisperFormData.append("language", language);
+            if (responseFormat)
+                whisperFormData.append("response_format", responseFormat);
+            whisperFormData.append("model", "whisper-large-v3");
 
             // Thin proxy to OVHcloud Whisper
             const response = await fetch(
@@ -472,7 +676,7 @@ export const audioRoutes = new Hono<Env>()
                     headers: {
                         Authorization: `Bearer ${ovhApiKey}`,
                     },
-                    body: formData,
+                    body: whisperFormData,
                 },
             );
 

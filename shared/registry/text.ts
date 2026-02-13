@@ -548,7 +548,7 @@ export const TEXT_SERVICES = {
             },
         ],
         description:
-            "Qwen Character (alpha) - roleplay & character chat, powered by api.airforce",
+            "Qwen Character (alpha) (api.airforce) - roleplay & character chat",
         inputModalities: ["text"],
         outputModalities: ["text"],
         isSpecialized: true,

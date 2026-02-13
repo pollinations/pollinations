@@ -229,7 +229,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "Wan 2.6 (alpha) - Alibaba text/image-to-video with audio (2-15s, up to 1080P), powered by api.airforce",
+            "Wan 2.6 (alpha) (api.airforce) - Alibaba text/image-to-video with audio (2-15s, up to 1080P)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
@@ -278,7 +278,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "Imagen 4 (alpha) - Google's latest image gen, powered by api.airforce",
+            "Imagen 4 (alpha) (api.airforce) - Google's latest image gen",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -294,7 +294,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "Grok Video (alpha) - xAI video gen, powered by api.airforce",
+            "Grok Video (alpha) (api.airforce) - xAI video gen",
         inputModalities: ["text"],
         outputModalities: ["video"],
     },

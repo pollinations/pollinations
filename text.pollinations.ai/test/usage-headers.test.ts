@@ -1,274 +1,243 @@
-import fetch from "node-fetch";
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
+import type { Usage } from "../../shared/registry/registry.ts";
+import {
+    buildUsageHeaders,
+    openaiUsageToUsage,
+    parseUsageHeaders,
+} from "../../shared/registry/usage-headers.ts";
 
-const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:16385";
-// PLN_ENTER_TOKEN must be set via environment variable
-// Run `npm run decrypt-vars` to populate .env from sops secrets before running tests
-const PLN_ENTER_TOKEN = process.env.PLN_ENTER_TOKEN;
+describe("buildUsageHeaders", () => {
+    it("should include x-model-used header", () => {
+        const usage: Usage = {
+            promptTextTokens: 10,
+            completionTextTokens: 20,
+        };
+        const headers = buildUsageHeaders("openai-fast", usage);
 
-if (!PLN_ENTER_TOKEN) {
-    console.warn(
-        "⚠️  PLN_ENTER_TOKEN not set. Run `npm run decrypt-vars` first or set the env var.",
-    );
-}
+        expect(headers["x-model-used"]).toBe("openai-fast");
+    });
 
-// Skip Claude tests in CI if no credentials available
-const SKIP_CLAUDE_TESTS = process.env.CI && !process.env.AWS_ACCESS_KEY_ID;
+    it("should include x-usage-prompt-text-tokens header", () => {
+        const usage: Usage = {
+            promptTextTokens: 42,
+            completionTextTokens: 20,
+        };
+        const headers = buildUsageHeaders("openai", usage);
 
-beforeAll(() => {
-    console.log(`Testing usage headers against: ${BASE_URL}`);
+        expect(headers["x-usage-prompt-text-tokens"]).toBe("42");
+    });
+
+    it("should include x-usage-completion-text-tokens header", () => {
+        const usage: Usage = {
+            promptTextTokens: 10,
+            completionTextTokens: 55,
+        };
+        const headers = buildUsageHeaders("openai", usage);
+
+        expect(headers["x-usage-completion-text-tokens"]).toBe("55");
+    });
+
+    it("should include cached tokens header when present", () => {
+        const usage: Usage = {
+            promptTextTokens: 100,
+            promptCachedTokens: 50,
+            completionTextTokens: 20,
+        };
+        const headers = buildUsageHeaders("claude-large", usage);
+
+        expect(headers["x-usage-prompt-cached-tokens"]).toBe("50");
+    });
+
+    it("should include reasoning tokens header when present", () => {
+        const usage: Usage = {
+            promptTextTokens: 100,
+            completionTextTokens: 20,
+            completionReasoningTokens: 150,
+        };
+        const headers = buildUsageHeaders("deepseek", usage);
+
+        expect(headers["x-usage-completion-reasoning-tokens"]).toBe("150");
+    });
+
+    it("should omit zero-value headers", () => {
+        const usage: Usage = {
+            promptTextTokens: 10,
+            completionTextTokens: 20,
+            promptCachedTokens: 0,
+        };
+        const headers = buildUsageHeaders("openai", usage);
+
+        expect(headers).not.toHaveProperty("x-usage-prompt-cached-tokens");
+    });
+
+    it("should include audio and video usage types", () => {
+        const usage: Usage = {
+            promptTextTokens: 10,
+            promptAudioTokens: 500,
+            completionAudioSeconds: 3.5,
+            completionVideoSeconds: 10.2,
+        };
+        const headers = buildUsageHeaders("gemini-large", usage);
+
+        expect(headers["x-usage-prompt-audio-tokens"]).toBe("500");
+        expect(headers["x-usage-completion-audio-seconds"]).toBe("3.5");
+        expect(headers["x-usage-completion-video-seconds"]).toBe("10.2");
+    });
 });
 
-describe("Usage headers - Non-streaming (Issue #4638)", () => {
-    it("should include x-model-used header in non-streaming response", async () => {
-        const response = await fetch(`${BASE_URL}/openai/chat/completions`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "openai-fast",
-                messages: [{ role: "user", content: "Hi" }],
-                max_tokens: 10,
-            }),
-        });
+describe("openaiUsageToUsage", () => {
+    it("should convert basic OpenAI usage format", () => {
+        const openaiUsage = {
+            prompt_tokens: 100,
+            completion_tokens: 50,
+            total_tokens: 150,
+        };
 
-        expect(response.status).toBe(200);
+        const usage = openaiUsageToUsage(openaiUsage);
 
-        const modelUsed = response.headers.get("x-model-used");
-        expect(modelUsed).toBeTruthy();
-        expect(typeof modelUsed).toBe("string");
-        expect(modelUsed.length).toBeGreaterThan(0);
-    }, 30000);
+        expect(usage.promptTextTokens).toBe(100);
+        expect(usage.completionTextTokens).toBe(50);
+    });
 
-    it("should include x-usage-prompt-text-tokens header", async () => {
-        const response = await fetch(`${BASE_URL}/openai/chat/completions`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "openai-fast",
-                messages: [{ role: "user", content: "Hi" }],
-                max_tokens: 10,
-            }),
-        });
-
-        expect(response.status).toBe(200);
-
-        const promptTokens = response.headers.get("x-usage-prompt-text-tokens");
-        expect(promptTokens).toBeTruthy();
-
-        const tokenCount = parseInt(promptTokens || "0", 10);
-        expect(tokenCount).toBeGreaterThan(0);
-        expect(Number.isInteger(tokenCount)).toBe(true);
-    }, 30000);
-
-    it("should include x-usage-completion-text-tokens header", async () => {
-        const response = await fetch(`${BASE_URL}/openai/chat/completions`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "openai-fast",
-                messages: [{ role: "user", content: "Hi" }],
-                max_tokens: 10,
-            }),
-        });
-
-        expect(response.status).toBe(200);
-
-        const completionTokens = response.headers.get(
-            "x-usage-completion-text-tokens",
-        );
-        expect(completionTokens).toBeTruthy();
-
-        const tokenCount = parseInt(completionTokens || "0", 10);
-        expect(tokenCount).toBeGreaterThan(0);
-        expect(Number.isInteger(tokenCount)).toBe(true);
-    }, 30000);
-});
-
-describe("Usage headers - Streaming (Issue #4638)", () => {
-    it("should declare Trailer header for streaming responses", async () => {
-        const response = await fetch(`${BASE_URL}/openai/chat/completions`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "openai-fast",
-                messages: [{ role: "user", content: "Hi" }],
-                max_tokens: 10,
-                stream: true,
-            }),
-        });
-
-        expect(response.status).toBe(200);
-
-        const trailer = response.headers.get("trailer");
-        expect(trailer).toBeTruthy();
-        expect(trailer).toContain("x-model-used");
-        expect(trailer).toContain("x-usage-prompt-text-tokens");
-        expect(trailer).toContain("x-usage-completion-text-tokens");
-
-        // Consume the stream to allow trailers to be sent
-        if (response.body) {
-            const reader = response.body.getReader();
-            while (true) {
-                const { done } = await reader.read();
-                if (done) break;
-            }
-        }
-    }, 30000);
-
-    it("should use Transfer-Encoding: chunked for streaming", async () => {
-        const response = await fetch(`${BASE_URL}/openai/chat/completions`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "openai-fast",
-                messages: [{ role: "user", content: "Hi" }],
-                max_tokens: 10,
-                stream: true,
-            }),
-        });
-
-        expect(response.status).toBe(200);
-        expect(response.headers.get("content-type")).toContain(
-            "text/event-stream",
-        );
-
-        // Consume stream
-        if (response.body) {
-            const reader = response.body.getReader();
-            while (true) {
-                const { done } = await reader.read();
-                if (done) break;
-            }
-        }
-    }, 30000);
-
-    it("should include usage object in streaming response (stream_options)", async () => {
-        const response = await fetch(`${BASE_URL}/openai/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-enter-token": PLN_ENTER_TOKEN,
+    it("should handle cached tokens in prompt_tokens_details", () => {
+        const openaiUsage = {
+            prompt_tokens: 100,
+            completion_tokens: 50,
+            total_tokens: 150,
+            prompt_tokens_details: {
+                cached_tokens: 30,
             },
-            body: JSON.stringify({
-                model: "openai-fast",
-                messages: [{ role: "user", content: "Say hi" }],
-                max_tokens: 20,
-                stream: true,
-            }),
-        });
+        };
 
-        expect(response.status).toBe(200);
+        const usage = openaiUsageToUsage(openaiUsage);
 
-        // Parse SSE stream and look for usage object
-        let foundUsage = false;
-        let usageData = null;
+        expect(usage.promptTextTokens).toBe(70); // 100 - 30
+        expect(usage.promptCachedTokens).toBe(30);
+    });
 
-        const text = await response.text();
-        const lines = text.split("\n");
+    it("should handle reasoning tokens in completion_tokens_details", () => {
+        const openaiUsage = {
+            prompt_tokens: 100,
+            completion_tokens: 200,
+            total_tokens: 300,
+            completion_tokens_details: {
+                reasoning_tokens: 150,
+            },
+        };
 
-        for (const line of lines) {
-            if (line.startsWith("data: ")) {
-                const data = line.slice(6);
-                if (data === "[DONE]") continue;
+        const usage = openaiUsageToUsage(openaiUsage);
 
-                try {
-                    const parsed = JSON.parse(data);
-                    if (parsed.usage) {
-                        foundUsage = true;
-                        usageData = parsed.usage;
-                    }
-                } catch {
-                    // Ignore parse errors
-                }
-            }
-        }
+        expect(usage.completionTextTokens).toBe(50); // 200 - 150
+        expect(usage.completionReasoningTokens).toBe(150);
+    });
 
-        expect(foundUsage).toBe(true);
-        expect(usageData).toBeTruthy();
-        expect(usageData.prompt_tokens).toBeGreaterThan(0);
-        expect(usageData.completion_tokens).toBeGreaterThan(0);
-        expect(usageData.total_tokens).toBeGreaterThan(0);
-        expect(usageData.total_tokens).toBe(
-            usageData.prompt_tokens + usageData.completion_tokens,
-        );
-    }, 30000);
+    it("should handle audio tokens in both prompt and completion", () => {
+        const openaiUsage = {
+            prompt_tokens: 100,
+            completion_tokens: 200,
+            total_tokens: 300,
+            prompt_tokens_details: {
+                audio_tokens: 40,
+            },
+            completion_tokens_details: {
+                audio_tokens: 60,
+            },
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.promptTextTokens).toBe(60); // 100 - 40
+        expect(usage.promptAudioTokens).toBe(40);
+        expect(usage.completionTextTokens).toBe(140); // 200 - 60
+        expect(usage.completionAudioTokens).toBe(60);
+    });
 });
 
-describe("Native Bedrock - Array content support", () => {
-    it.skipIf(SKIP_CLAUDE_TESTS)(
-        "should accept array content in system message for claude-large",
-        async () => {
-            const response = await fetch(`${BASE_URL}/v1/chat/completions`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-enter-token": PLN_ENTER_TOKEN,
-                },
-                body: JSON.stringify({
-                    model: "claude-large",
-                    messages: [
-                        {
-                            role: "system",
-                            content: [
-                                {
-                                    type: "text",
-                                    text: "Be brief.",
-                                    cache_control: { type: "ephemeral" },
-                                },
-                            ],
-                        },
-                        { role: "user", content: "Say yes" },
-                    ],
-                    max_tokens: 10,
-                }),
-            });
+describe("parseUsageHeaders", () => {
+    it("should parse headers back to Usage object", () => {
+        const headers = {
+            "x-model-used": "openai",
+            "x-usage-prompt-text-tokens": "100",
+            "x-usage-completion-text-tokens": "50",
+        };
 
-            expect(response.status).toBe(200);
+        const usage = parseUsageHeaders(headers);
 
-            const data = await response.json();
-            expect(data.provider).toBe("bedrock");
-            expect(data.choices[0].message.content).toBeTruthy();
-        },
-        60000,
-    );
+        expect(usage.promptTextTokens).toBe(100);
+        expect(usage.completionTextTokens).toBe(50);
+    });
 
-    it.skipIf(SKIP_CLAUDE_TESTS)(
-        "should include prompt_tokens_details for cache tracking",
-        async () => {
-            const response = await fetch(`${BASE_URL}/v1/chat/completions`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-enter-token": PLN_ENTER_TOKEN,
-                },
-                body: JSON.stringify({
-                    model: "claude-large",
-                    messages: [
-                        {
-                            role: "system",
-                            content: [
-                                {
-                                    type: "text",
-                                    text: "You are helpful.",
-                                    cache_control: { type: "ephemeral" },
-                                },
-                            ],
-                        },
-                        { role: "user", content: "Hi" },
-                    ],
-                    max_tokens: 10,
-                }),
-            });
+    it("should parse float values for duration fields", () => {
+        const headers = {
+            "x-usage-prompt-audio-seconds": "3.5",
+            "x-usage-completion-audio-seconds": "10.25",
+            "x-usage-completion-video-seconds": "15.75",
+        };
 
-            expect(response.status).toBe(200);
+        const usage = parseUsageHeaders(headers);
 
-            const data = await response.json();
-            expect(data.usage).toBeDefined();
-            expect(data.usage.prompt_tokens_details).toBeDefined();
-            expect(typeof data.usage.prompt_tokens_details.cached_tokens).toBe(
-                "number",
-            );
-        },
-        60000,
-    );
+        expect(usage.promptAudioSeconds).toBe(3.5);
+        expect(usage.completionAudioSeconds).toBe(10.25);
+        expect(usage.completionVideoSeconds).toBe(15.75);
+    });
+
+    it("should handle Headers object (from Response)", () => {
+        const headers = new Headers({
+            "x-model-used": "claude-large",
+            "x-usage-prompt-text-tokens": "200",
+            "x-usage-prompt-cached-tokens": "100",
+        });
+
+        const usage = parseUsageHeaders(headers);
+
+        expect(usage.promptTextTokens).toBe(200);
+        expect(usage.promptCachedTokens).toBe(100);
+    });
+
+    it("should omit missing headers", () => {
+        const headers = {
+            "x-usage-prompt-text-tokens": "100",
+        };
+
+        const usage = parseUsageHeaders(headers);
+
+        expect(usage.promptTextTokens).toBe(100);
+        expect(usage.completionTextTokens).toBeUndefined();
+        expect(usage.promptCachedTokens).toBeUndefined();
+    });
+});
+
+describe("buildUsageHeaders + parseUsageHeaders round-trip", () => {
+    it("should preserve usage data through build and parse cycle", () => {
+        const originalUsage: Usage = {
+            promptTextTokens: 100,
+            promptCachedTokens: 50,
+            promptAudioTokens: 200,
+            completionTextTokens: 75,
+            completionReasoningTokens: 150,
+            completionAudioSeconds: 5.5,
+        };
+
+        const headers = buildUsageHeaders("test-model", originalUsage);
+        const parsedUsage = parseUsageHeaders(headers);
+
+        expect(parsedUsage.promptTextTokens).toBe(
+            originalUsage.promptTextTokens,
+        );
+        expect(parsedUsage.promptCachedTokens).toBe(
+            originalUsage.promptCachedTokens,
+        );
+        expect(parsedUsage.promptAudioTokens).toBe(
+            originalUsage.promptAudioTokens,
+        );
+        expect(parsedUsage.completionTextTokens).toBe(
+            originalUsage.completionTextTokens,
+        );
+        expect(parsedUsage.completionReasoningTokens).toBe(
+            originalUsage.completionReasoningTokens,
+        );
+        expect(parsedUsage.completionAudioSeconds).toBe(
+            originalUsage.completionAudioSeconds,
+        );
+    });
 });

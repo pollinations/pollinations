@@ -8,11 +8,11 @@ import { stream } from "hono/streaming";
 import type { Context } from "hono";
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
-import { getServiceDefinition } from "../shared/registry/registry.js";
+import { getServiceDefinition } from "../shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     openaiUsageToUsage,
-} from "../shared/registry/usage-headers.js";
+} from "../shared/registry/usage-headers.ts";
 import { availableModels, findModelByName } from "./availableModels.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { getRequestData } from "./requestUtils.js";

@@ -25,11 +25,11 @@ from pathlib import Path
 
 from common import (
     load_prompt,
-    load_format,
     get_env,
     get_repo_root,
     call_pollinations_api,
     generate_image,
+    generate_platform_post,
     commit_image_to_branch,
     get_file_sha,
     read_gists_for_date,
@@ -105,45 +105,16 @@ PR Gists:
 # ── Step 2: Generate platform posts ─────────────────────────────────
 
 def generate_twitter_post(summary: Dict, token: str) -> Optional[Dict]:
-    """Generate twitter.json."""
-    voice = load_prompt("tone/twitter")
-    pr_summary = summary.get("pr_summary", "")
-    arc_titles = str([a["headline"] for a in summary.get("arcs", [])])
-
-    task = f"Write a tweet about today's shipped work.\n\n{pr_summary}\n\nMost interesting updates: {arc_titles}\n\n" + load_format("twitter")
-
-    response = call_pollinations_api(voice, task, token, temperature=0.8, exit_on_failure=False)
-    if not response:
-        return None
-    return parse_json_response(response)
-
+    return generate_platform_post("twitter", summary, token,
+        "Write a tweet about today's shipped work.", temperature=0.8)
 
 def generate_instagram_post(summary: Dict, token: str) -> Optional[Dict]:
-    """Generate instagram.json."""
-    voice = load_prompt("tone/instagram")
-    pr_summary = summary.get("pr_summary", "")
-    arc_titles = str([a["headline"] for a in summary.get("arcs", [])])
-
-    task = f"Create a cozy pixel art post about these updates.\n\n{pr_summary}\n\nMost interesting updates: {arc_titles}\n\n" + load_format("instagram")
-
-    response = call_pollinations_api(voice, task, token, temperature=0.7, exit_on_failure=False)
-    if not response:
-        return None
-    return parse_json_response(response)
-
+    return generate_platform_post("instagram", summary, token,
+        "Create a cozy pixel art post about these updates.")
 
 def generate_reddit_post(summary: Dict, token: str) -> Optional[Dict]:
-    """Generate reddit.json."""
-    voice = load_prompt("tone/reddit")
-    pr_summary = summary.get("pr_summary", "")
-    arc_titles = str([a["headline"] for a in summary.get("arcs", [])])
-
-    task = f"Create a Reddit post for today's update.\n\n{pr_summary}\n\nMost interesting updates: {arc_titles}\n\n" + load_format("reddit")
-
-    response = call_pollinations_api(voice, task, token, temperature=0.7, exit_on_failure=False)
-    if not response:
-        return None
-    return parse_json_response(response)
+    return generate_platform_post("reddit", summary, token,
+        "Create a Reddit post for today's update.")
 
 
 # ── Step 3: Generate platform images ────────────────────────────────

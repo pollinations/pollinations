@@ -16,6 +16,7 @@ See social/PIPELINE.md for full architecture.
 import os
 import sys
 import json
+import time
 import requests
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Optional
@@ -160,7 +161,6 @@ def post_to_discord(webhook_url: str, message: str, image_url: str = None) -> bo
             print(f"  Discord error on chunk {i+1}: {resp.status_code} {resp.text[:200]}")
             return False
         if i < len(chunks) - 1:
-            import time
             time.sleep(1)
     print(f"  Discord: posted {len(chunks)} chunk(s)" + (" with image" if image_bytes else ""))
     return True

@@ -12,7 +12,6 @@ See social/PIPELINE.md for full architecture.
 
 import os
 import sys
-import json
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
@@ -28,6 +27,7 @@ from common import (
     build_minimal_gist,
     gist_path_for_pr,
     commit_gist_to_main,
+    parse_json_response,
     github_api_request,
     GITHUB_API_BASE,
     MODEL,
@@ -118,20 +118,7 @@ Changed files:
     if not response:
         return None
 
-    # Parse JSON from response (strip markdown fences if present)
-    text = response.strip()
-    if text.startswith("```"):
-        lines = text.split("\n")
-        # Remove first and last lines (fences)
-        lines = [l for l in lines if not l.strip().startswith("```")]
-        text = "\n".join(lines)
-
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError as e:
-        print(f"  Failed to parse AI response as JSON: {e}")
-        print(f"  Response: {text[:500]}")
-        return None
+    return parse_json_response(response)
 
 
 def build_full_gist(pr_data: Dict, ai_analysis: Dict) -> Dict:

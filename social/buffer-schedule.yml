@@ -42,11 +42,11 @@ linkedin:
 # ── Non-social outputs (repo artifacts, not scheduled via Buffer) ────
 #
 # highlights:
-#   Updated on daily PR merge (publish_daily.py).
+#   Updated by update_highlights.py (triggered by NEWS_highlights_update.yml daily cron).
 #   AI distills summary arcs into curated highlights → social/news/highlights.md
 #
 # readme:
-#   Updated on daily PR merge (publish_daily.py).
+#   Updated by update_readme.py (triggered after highlights.md PR merge).
 #   Injects top 10 highlights into README.md "## 🆕 Latest News" section.
 
 # How it works:

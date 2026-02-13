@@ -21,6 +21,8 @@ import base64
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
 
+from collections import defaultdict
+
 from common import (
     load_prompt,
     load_format,
@@ -28,6 +30,7 @@ from common import (
     get_repo_root,
     call_pollinations_api,
     generate_image,
+    generate_platform_post,
     commit_image_to_branch,
     get_file_sha,
     read_gists_for_date,
@@ -100,7 +103,6 @@ def generate_digest(gists: List[Dict], week_start: str, week_end: str,
     system_prompt = load_prompt("weekly")
 
     # Build context from gists, grouped by date
-    from collections import defaultdict
     by_date = defaultdict(list)
     for g in gists:
         date = g.get("merged_at", "")[:10] or "unknown"
@@ -143,79 +145,38 @@ PR gists by date:
 # ── Step 2: Generate platform posts ─────────────────────────────────
 
 def generate_twitter_post(digest: Dict, token: str) -> Optional[Dict]:
-    """Generate weekly twitter.json."""
-    voice = load_prompt("tone/twitter")
-    pr_summary = digest.get("pr_summary", "")
-    arc_titles = str([a["headline"] for a in digest.get("arcs", [])])
-    pr_count = str(digest.get("pr_count", 0))
-
-    task = f"Write a tweet about this week's shipped work.\n\n{pr_summary}\n\nMost impactful updates: {arc_titles}\nTotal PRs merged: {pr_count}\n\n" + load_format("twitter")
-    task += _weekly_image_context()
-
-    response = call_pollinations_api(voice, task, token, temperature=0.8, exit_on_failure=False)
-    if not response:
-        return None
-    return parse_json_response(response)
-
+    return generate_platform_post("twitter", digest, token,
+        "Write a tweet about this week's shipped work.",
+        temperature=0.8, extra_context=_weekly_image_context())
 
 def generate_linkedin_post(digest: Dict, token: str) -> Optional[Dict]:
-    """Generate weekly linkedin.json."""
-    voice = load_prompt("tone/linkedin")
-    pr_summary = digest.get("pr_summary", "")
-    arc_titles = str([a["headline"] for a in digest.get("arcs", [])])
-    pr_count = str(digest.get("pr_count", 0))
-
-    task = f"Create a LinkedIn post about this week's development work.\n\n{pr_summary}\n\nMost impactful updates: {arc_titles}\nTotal PRs merged: {pr_count}\n\n" + load_format("linkedin")
-    task += _weekly_image_context()
-
-    response = call_pollinations_api(voice, task, token, temperature=0.7, exit_on_failure=False)
-    if not response:
-        return None
-    return parse_json_response(response)
-
+    return generate_platform_post("linkedin", digest, token,
+        "Create a LinkedIn post about this week's development work.",
+        extra_context=_weekly_image_context())
 
 def generate_instagram_post(digest: Dict, token: str) -> Optional[Dict]:
-    """Generate weekly instagram.json."""
-    voice = load_prompt("tone/instagram")
-    pr_summary = digest.get("pr_summary", "")
-    arc_titles = str([a["headline"] for a in digest.get("arcs", [])])
-    pr_count = str(digest.get("pr_count", 0))
-
-    task = f"Create a cozy pixel art post about this week's updates.\n\n{pr_summary}\n\nMost impactful updates: {arc_titles}\nTotal PRs merged: {pr_count}\n\n" + load_format("instagram")
-    task += _weekly_image_context()
-
-    response = call_pollinations_api(voice, task, token, temperature=0.7, exit_on_failure=False)
-    if not response:
-        return None
-    return parse_json_response(response)
-
+    return generate_platform_post("instagram", digest, token,
+        "Create a cozy pixel art post about this week's updates.",
+        extra_context=_weekly_image_context())
 
 def generate_reddit_post(digest: Dict, token: str) -> Optional[Dict]:
-    """Generate weekly reddit.json."""
-    voice = load_prompt("tone/reddit")
-    pr_summary = digest.get("pr_summary", "")
-    arc_titles = str([a["headline"] for a in digest.get("arcs", [])])
-    pr_count = str(digest.get("pr_count", 0))
-
-    task = f"Create a Reddit post for this week's update.\n\n{pr_summary}\n\nMost impactful updates: {arc_titles}\nTotal PRs merged: {pr_count}\n\n" + load_format("reddit")
-    task += _weekly_image_context()
-
-    response = call_pollinations_api(voice, task, token, temperature=0.7, exit_on_failure=False)
-    if not response:
-        return None
-    return parse_json_response(response)
+    return generate_platform_post("reddit", digest, token,
+        "Create a Reddit post for this week's update.",
+        extra_context=_weekly_image_context())
 
 
 def generate_discord_post(digest: Dict, token: str, week_end: str) -> Optional[Dict]:
-    """Generate weekly discord.json."""
+    """Generate weekly discord.json (special: uses date_str substitution in format)."""
     voice = load_prompt("tone/discord")
     pr_summary = digest.get("pr_summary", "")
     arc_titles = str([a["headline"] for a in digest.get("arcs", [])])
-    pr_count = str(digest.get("pr_count", 0))
+    pr_count = digest.get("pr_count", 0)
 
     fmt = load_format("discord").replace("{date_str}", week_end)
-    task = f"Write a Discord message about the latest updates.\n\n{pr_summary}\n\nMost impactful updates: {arc_titles}\nTotal PRs merged: {pr_count}\n\n" + fmt
-    task += _weekly_image_context()
+    task = f"Write a Discord message about the latest updates.\n\n{pr_summary}\n\nMost impactful updates: {arc_titles}"
+    if pr_count:
+        task += f"\nTotal PRs merged: {pr_count}"
+    task += "\n\n" + fmt + _weekly_image_context()
 
     response = call_pollinations_api(voice, task, token, temperature=0.7, exit_on_failure=False)
     if not response:

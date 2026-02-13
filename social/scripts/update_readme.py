@@ -2,9 +2,8 @@ import os
 import sys
 import re
 import base64
-import requests
 from datetime import datetime, timezone
-from common import get_env, GITHUB_API_BASE
+from common import get_env, github_api_request, GITHUB_API_BASE
 HIGHLIGHTS_PATH = "social/news/highlights.md"
 README_PATH = "README.md"
 MAX_README_ENTRIES = 10
@@ -17,9 +16,10 @@ def get_file_content(github_token: str, owner: str, repo: str, file_path: str) -
         "Authorization": f"Bearer {github_token}"
     }
 
-    response = requests.get(
+    response = github_api_request(
+        "GET",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
-        headers=headers
+        headers=headers,
     )
 
     if response.status_code == 200:
@@ -85,9 +85,10 @@ def create_readme_pr(readme_content: str, readme_sha: str, new_entries: list[str
     default_branch = "main"
 
     # Get latest commit SHA
-    ref_response = requests.get(
+    ref_response = github_api_request(
+        "GET",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/ref/heads/{default_branch}",
-        headers=headers
+        headers=headers,
     )
     if ref_response.status_code != 200:
         print(f"Error getting ref: {ref_response.text}")
@@ -96,13 +97,14 @@ def create_readme_pr(readme_content: str, readme_sha: str, new_entries: list[str
 
     # Create new branch
     branch_name = f"readme-news-update-{entry_date}"
-    create_branch_response = requests.post(
+    create_branch_response = github_api_request(
+        "POST",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/refs",
         headers=headers,
         json={
             "ref": f"refs/heads/{branch_name}",
             "sha": base_sha
-        }
+        },
     )
 
     if create_branch_response.status_code not in [200, 201]:
@@ -116,9 +118,10 @@ def create_readme_pr(readme_content: str, readme_sha: str, new_entries: list[str
 
     # Get README SHA on the new branch (might differ from main)
     readme_sha_branch = readme_sha
-    readme_response = requests.get(
+    readme_response = github_api_request(
+        "GET",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{README_PATH}?ref={branch_name}",
-        headers=headers
+        headers=headers,
     )
     if readme_response.status_code == 200:
         readme_sha_branch = readme_response.json().get("sha", readme_sha)
@@ -134,7 +137,7 @@ def create_readme_pr(readme_content: str, readme_sha: str, new_entries: list[str
         "sha": readme_sha_branch
     }
 
-    update_response = requests.put(readme_api_path, headers=headers, json=readme_payload)
+    update_response = github_api_request("PUT", readme_api_path, headers=headers, json=readme_payload)
 
     if update_response.status_code not in [200, 201]:
         print(f"Error updating README.md: {update_response.text}")
@@ -162,7 +165,8 @@ This PR updates the **🆕 Latest News** section in README.md with the top {len(
 Generated automatically by GitHub Actions after highlights.md PR merge.
 """
 
-    pr_response = requests.post(
+    pr_response = github_api_request(
+        "POST",
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls",
         headers=headers,
         json={
@@ -170,7 +174,7 @@ Generated automatically by GitHub Actions after highlights.md PR merge.
             "body": pr_body,
             "head": branch_name,
             "base": default_branch
-        }
+        },
     )
 
     if pr_response.status_code not in [200, 201]:
@@ -192,10 +196,11 @@ Generated automatically by GitHub Actions after highlights.md PR merge.
     pr_labels = get_env('PR_LABELS', required=False)
     if pr_labels:
         labels_list = [label.strip() for label in pr_labels.split(',')]
-        label_response = requests.post(
+        label_response = github_api_request(
+            "POST",
             f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_number}/labels",
             headers=headers,
-            json={"labels": labels_list}
+            json={"labels": labels_list},
         )
         if label_response.status_code in [200, 201]:
             print(f"Added labels {labels_list} to PR #{pr_number}")

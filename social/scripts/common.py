@@ -87,7 +87,9 @@ def parse_json_response(response: str) -> Optional[Dict]:
     text = response.strip()
     if text.startswith("```"):
         lines = text.split("\n")
-        lines = [l for l in lines if not l.strip().startswith("```")]
+        lines = lines[1:]  # remove opening fence (may include language specifier)
+        if lines and lines[-1].strip().startswith("```"):
+            lines = lines[:-1]  # remove closing fence
         text = "\n".join(lines)
     try:
         return json.loads(text)
@@ -590,7 +592,7 @@ def commit_image_to_branch(
     )
 
     if resp.status_code in [200, 201]:
-        raw_url = f"https://raw.githubusercontent.com/{owner}/{repo}/main/{file_path}"
+        raw_url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{file_path}"
         print(f"  Committed image to {file_path}")
         return raw_url
 
@@ -697,6 +699,8 @@ def build_minimal_gist(pr_number: int, title: str, author: str, url: str,
             "user_facing": False,
             "publish_tier": "discord_only",
             "importance": "minor",
+            "headline": title,
+            "blurb": title,
             "summary": title,
             "impact": "",
             "keywords": [],
@@ -804,6 +808,45 @@ def format_pr_summary(prs: List[Dict], time_label: str = "TODAY") -> str:
         pr_summary = f"NO UPDATES {time_label}"
     
     return pr_summary
+
+
+def generate_platform_post(
+    platform: str,
+    summary: Dict,
+    token: str,
+    preamble: str,
+    temperature: float = 0.7,
+    extra_context: str = "",
+) -> Optional[Dict]:
+    """Generate a platform post from a summary/digest.
+
+    Args:
+        platform: 'twitter', 'instagram', 'reddit', 'linkedin', 'discord'
+        summary: The summary or digest dict (must have 'arcs' and optionally 'pr_summary', 'pr_count')
+        token: Pollinations API token
+        preamble: The opening instruction line (e.g. "Write a tweet about today's shipped work.")
+        temperature: Generation temperature
+        extra_context: Additional context appended to the task prompt
+
+    Returns:
+        Parsed JSON dict or None on failure
+    """
+    voice = load_prompt(f"tone/{platform}")
+    pr_summary = summary.get("pr_summary", "")
+    arc_titles = str([a["headline"] for a in summary.get("arcs", [])])
+    pr_count = summary.get("pr_count", 0)
+
+    task = f"{preamble}\n\n{pr_summary}\n\nMost impactful updates: {arc_titles}"
+    if pr_count:
+        task += f"\nTotal PRs merged: {pr_count}"
+    task += "\n\n" + load_format(platform)
+    if extra_context:
+        task += extra_context
+
+    response = call_pollinations_api(voice, task, token, temperature=temperature, exit_on_failure=False)
+    if not response:
+        return None
+    return parse_json_response(response)
 
 
 def deploy_reddit_post(

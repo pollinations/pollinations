@@ -88,7 +88,6 @@ def read_weekly_file(path: str, github_token: str, owner: str, repo: str) -> Opt
             pass
 
     # Fall back to GitHub API
-    import base64
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {github_token}",
@@ -225,7 +224,7 @@ def main():
     # Reddit (VPS/Devvit deployment)
     vps_host = get_env("REDDIT_VPS_HOST", required=False)
     vps_user = get_env("REDDIT_VPS_USER", required=False)
-    vps_ssh_key = get_env("REDDIT_VPS_SSH_KEY", required=False).strip()
+    vps_ssh_key = (get_env("REDDIT_VPS_SSH_KEY", required=False) or "").strip()
     
 
     if vps_host and vps_user and vps_ssh_key:

@@ -69,7 +69,7 @@ Use the changed files list to determine PR type, user impact, and what to highli
 
 ### `publish_tier`
 Controls which downstream tiers pick up this PR:
-- `"daily"` — appears in daily summary posts (Twitter, LinkedIn, Instagram) + Discord
+- `"daily"` — appears in daily summary posts (Twitter, Instagram, Reddit) + weekly digest (all platforms) + Discord
 - `"discord_only"` — Discord notification only, skipped by daily summary
 - `"none"` — no social media at all (rare — test PRs, typo fixes)
 

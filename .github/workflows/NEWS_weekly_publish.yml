@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       target_date:
-        description: 'Week end date (Wednesday, YYYY-MM-DD) to publish'
+        description: 'Week end date (Sunday, YYYY-MM-DD) to publish'
         required: false
         type: string
 

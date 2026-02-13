@@ -14,7 +14,6 @@ from typing import Dict, List, Optional
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 from pathlib import Path
-import paramiko
 
 # API Endpoints
 GITHUB_API_BASE = "https://api.github.com"
@@ -627,7 +626,7 @@ _GIST_REQUIRED_KEYS = {"pr_number", "title", "author", "url", "merged_at"}
 
 # Required keys inside gist.gist (the AI-generated analysis)
 _GIST_AI_KEYS = {"category", "user_facing", "publish_tier", "importance",
-                 "summary", "impact", "keywords", "image_prompt"}
+                 "headline", "blurb", "summary", "impact", "keywords", "image_prompt"}
 
 VALID_CATEGORIES = {"feature", "bug_fix", "improvement", "docs", "infrastructure", "community"}
 VALID_PUBLISH_TIERS = {"none", "discord_only", "daily"}
@@ -811,8 +810,10 @@ def deploy_reddit_post(
     reddit_data: Dict,
     vps_host: str,
     vps_user: str,
-    pkey: paramiko.PKey,
+    pkey,  # paramiko.PKey — paramiko imported lazily by callers
 ) -> bool:
+
+    import paramiko
 
     title = reddit_data.get("title", "")
     image_url = reddit_data.get("image", {}).get("url", "")

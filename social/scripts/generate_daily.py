@@ -2,7 +2,7 @@
 """
 Tier 2: Daily Summary Generator
 
-At 00:00 UTC daily:
+At 06:00 UTC Mon-Sat:
   1. Read gists for yesterday (by merged_at date)
   2. Filter to publish_tier >= "daily"
   3. AI clusters gists into 3-5 narrative arcs

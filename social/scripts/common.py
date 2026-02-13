@@ -17,7 +17,6 @@ from pathlib import Path
 
 # API Endpoints
 GITHUB_API_BASE = "https://api.github.com"
-GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 
@@ -62,6 +61,7 @@ def github_api_request(
 ) -> requests.Response:
     """Make a GitHub API request with retry on transient failures (5xx, 429)."""
     _timeout = timeout or DEFAULT_TIMEOUT
+    resp = None
     last_exc = None
     for attempt in range(max_retries):
         try:
@@ -248,113 +248,6 @@ def get_date_range(days_back: int = 1) -> tuple[datetime, datetime]:
     end_date = now
     start_date = end_date - timedelta(days=days_back)
     return start_date, end_date
-
-
-def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> List[Dict]:
-    """Fetch merged PRs using GraphQL"""
-    query = """
-    query($owner: String!, $repo: String!, $cursor: String) {
-      repository(owner: $owner, name: $repo) {
-        pullRequests(
-          states: MERGED
-          first: 100
-          after: $cursor
-          orderBy: {field: UPDATED_AT, direction: DESC}
-          baseRefName: "main"
-        ) {
-          pageInfo {
-            hasNextPage
-            endCursor
-          }
-          nodes {
-            number
-            title
-            body
-            url
-            mergedAt
-            updatedAt
-            author {
-              login
-            }
-            labels(first: 10) {
-              nodes {
-                name
-              }
-            }
-          }
-        }
-      }
-    }
-    """
-
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    all_prs = []
-    cursor = None
-    page = 1
-
-    print(f"Fetching merged PRs since {start_date.strftime('%Y-%m-%d %H:%M')} UTC...")
-
-    while True:
-        variables = {"owner": owner, "repo": repo, "cursor": cursor}
-
-        response = github_api_request(
-            "POST",
-            GITHUB_GRAPHQL_API,
-            headers=headers,
-            json={"query": query, "variables": variables},
-            timeout=60,
-        )
-
-        if response.status_code != 200:
-            print(f"GraphQL error: {response.status_code} -> {response.text[:500]}")
-            return []
-
-        data = response.json()
-        if "errors" in data:
-            print(f"GraphQL query errors: {data['errors']}")
-            return []
-
-        pr_data = data["data"]["repository"]["pullRequests"]
-        nodes = pr_data["nodes"]
-        page_info = pr_data["pageInfo"]
-
-        print(f"  Page {page}: fetched {len(nodes)} PRs")
-
-        oldest_update_on_page = None
-
-        for pr in nodes:
-            merged_at = datetime.fromisoformat(pr["mergedAt"].replace("Z", "+00:00"))
-            updated_at = datetime.fromisoformat(pr["updatedAt"].replace("Z", "+00:00"))
-
-            if oldest_update_on_page is None or updated_at < oldest_update_on_page:
-                oldest_update_on_page = updated_at
-
-            if merged_at >= start_date:
-                labels = [label["name"] for label in pr["labels"]["nodes"]]
-                all_prs.append({
-                    "number": pr["number"],
-                    "title": pr["title"],
-                    "body": pr["body"] or "",
-                    "author": pr["author"]["login"] if pr.get("author") and pr["author"].get("login") else "ghost",
-                    "merged_at": pr["mergedAt"],
-                    "html_url": pr["url"],
-                    "labels": labels
-                })
-
-        if oldest_update_on_page and oldest_update_on_page < start_date:
-            break
-
-        if not page_info["hasNextPage"]:
-            break
-
-        cursor = page_info["endCursor"]
-        page += 1
-
-    return all_prs
 
 
 def call_pollinations_api(
@@ -848,6 +741,167 @@ def generate_platform_post(
         return None
     return parse_json_response(response)
 
+
+# ── PR creation helpers ──────────────────────────────────────────────
+
+def _github_headers(token: str) -> Dict:
+    """Standard GitHub API headers."""
+    return {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {token}",
+    }
+
+
+def create_branch_from_main(
+    branch: str,
+    github_token: str,
+    owner: str,
+    repo: str,
+) -> Optional[str]:
+    """Create a branch from main HEAD. Returns base SHA, or None on failure.
+    Tolerates 'Reference already exists' for branch reuse."""
+    headers = _github_headers(github_token)
+
+    ref_resp = github_api_request(
+        "GET",
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/ref/heads/main",
+        headers=headers,
+    )
+    if ref_resp.status_code != 200:
+        print(f"Error getting ref: {ref_resp.text[:200]}")
+        return None
+    base_sha = ref_resp.json()["object"]["sha"]
+
+    create_resp = github_api_request(
+        "POST",
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/refs",
+        headers=headers,
+        json={"ref": f"refs/heads/{branch}", "sha": base_sha},
+    )
+    if create_resp.status_code not in [200, 201]:
+        if "Reference already exists" not in create_resp.text:
+            print(f"Error creating branch: {create_resp.text[:200]}")
+            return None
+        print(f"  Branch {branch} already exists, updating...")
+
+    return base_sha
+
+
+def commit_files_to_branch(
+    files: List[tuple],
+    branch: str,
+    github_token: str,
+    owner: str,
+    repo: str,
+    label: str = "",
+) -> None:
+    """Commit JSON files to a branch.
+
+    Args:
+        files: list of (file_path, data_dict) tuples
+        label: suffix for commit messages, e.g. "for 2026-02-12"
+    """
+    import base64 as _b64
+
+    headers = _github_headers(github_token)
+
+    for file_path, data in files:
+        if data is None:
+            continue
+        content = json.dumps(data, indent=2, ensure_ascii=False)
+        encoded = _b64.b64encode(content.encode()).decode()
+
+        sha = get_file_sha(github_token, owner, repo, file_path, branch)
+        if not sha:
+            sha = get_file_sha(github_token, owner, repo, file_path, "main")
+
+        msg = f"news: add {file_path.split('/')[-1]}"
+        if label:
+            msg += f" {label}"
+
+        payload = {
+            "message": msg,
+            "content": encoded,
+            "branch": branch,
+        }
+        if sha:
+            payload["sha"] = sha
+
+        resp = github_api_request(
+            "PUT",
+            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
+            headers=headers,
+            json=payload,
+        )
+        if resp.status_code in [200, 201]:
+            print(f"  Committed {file_path}")
+        else:
+            print(f"  Error committing {file_path}: {resp.status_code} {resp.text[:200]}")
+
+
+def create_or_update_pr(
+    title: str,
+    body: str,
+    branch: str,
+    github_token: str,
+    owner: str,
+    repo: str,
+) -> Optional[int]:
+    """Create a PR (or update existing). Returns PR number or None."""
+    headers = _github_headers(github_token)
+
+    pr_resp = github_api_request(
+        "POST",
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls",
+        headers=headers,
+        json={"title": title, "body": body, "head": branch, "base": "main"},
+    )
+
+    if pr_resp.status_code in [200, 201]:
+        pr_info = pr_resp.json()
+        pr_number = pr_info["number"]
+        print(f"  Created PR #{pr_number}: {pr_info['html_url']}")
+        _apply_pr_labels(pr_number, github_token, owner, repo)
+        return pr_number
+
+    if "A pull request already exists" in pr_resp.text:
+        list_resp = github_api_request(
+            "GET",
+            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=open",
+            headers=headers,
+        )
+        if list_resp.status_code == 200 and list_resp.json():
+            existing = list_resp.json()[0]
+            github_api_request(
+                "PATCH",
+                f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls/{existing['number']}",
+                headers=headers,
+                json={"title": title, "body": body},
+            )
+            print(f"  Updated existing PR #{existing['number']}")
+            return existing["number"]
+        print("  PR already exists but could not update it")
+        return None
+
+    print(f"  Error creating PR: {pr_resp.text[:200]}")
+    return None
+
+
+def _apply_pr_labels(pr_number: int, github_token: str, owner: str, repo: str) -> None:
+    """Apply PR_LABELS env var labels to a PR."""
+    pr_labels = get_env("PR_LABELS", required=False)
+    if pr_labels:
+        headers = _github_headers(github_token)
+        labels_list = [l.strip() for l in pr_labels.split(",")]
+        github_api_request(
+            "POST",
+            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_number}/labels",
+            headers=headers,
+            json={"labels": labels_list},
+        )
+
+
+# ── VPS deployment ───────────────────────────────────────────────────
 
 def deploy_reddit_post(
     reddit_data: Dict,

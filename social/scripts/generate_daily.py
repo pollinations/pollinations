@@ -26,22 +26,18 @@ from pathlib import Path
 from common import (
     load_prompt,
     get_env,
-    get_repo_root,
     call_pollinations_api,
     generate_image,
     generate_platform_post,
     commit_image_to_branch,
-    get_file_sha,
     read_gists_for_date,
-    get_merged_prs,
-    format_pr_summary,
     parse_json_response,
     github_api_request,
+    create_branch_from_main,
+    commit_files_to_branch,
+    create_or_update_pr,
     GITHUB_API_BASE,
-    OWNER,
-    REPO,
     IMAGE_SIZE,
-    DEFAULT_TIMEOUT,
 )
 
 # ── Constants ────────────────────────────────────────────────────────
@@ -195,56 +191,27 @@ def create_daily_pr(
     reddit_post: Optional[Dict] = None,
 ) -> Optional[int]:
     """Create a single PR with all daily post files. Returns PR number."""
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}",
-    }
-
-    # Get base SHA
-    ref_resp = github_api_request(
-        "GET",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/ref/heads/main",
-        headers=headers,
-    )
-    if ref_resp.status_code != 200:
-        print(f"Error getting ref: {ref_resp.text[:200]}")
-        return None
-    base_sha = ref_resp.json()["object"]["sha"]
-
-    # Create branch
     branch = f"daily-summary-{date_str}"
-    create_resp = github_api_request(
-        "POST",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/refs",
-        headers=headers,
-        json={"ref": f"refs/heads/{branch}", "sha": base_sha},
-    )
-    if create_resp.status_code not in [200, 201]:
-        if "Reference already exists" not in create_resp.text:
-            print(f"Error creating branch: {create_resp.text[:200]}")
-            return None
-        print(f"  Branch {branch} already exists, updating...")
+
+    if create_branch_from_main(branch, github_token, owner, repo) is None:
+        return None
 
     base_path = f"{DAILY_REL_DIR}/{date_str}"
+    now_iso = datetime.now(timezone.utc).isoformat()
 
-    # Commit JSON files
+    # Add platform metadata and collect files
     files_to_commit = []
     if twitter_post:
-        # Add platform metadata
-        twitter_post["date"] = date_str
-        twitter_post["generated_at"] = datetime.now(timezone.utc).isoformat()
-        twitter_post["platform"] = "twitter"
+        twitter_post.update({"date": date_str, "generated_at": now_iso, "platform": "twitter"})
         files_to_commit.append((f"{base_path}/twitter.json", twitter_post))
     if instagram_post:
-        instagram_post["date"] = date_str
-        instagram_post["generated_at"] = datetime.now(timezone.utc).isoformat()
-        instagram_post["platform"] = "instagram"  # used by buffer_publish to detect platform
-        instagram_post["post_type"] = "carousel" if len(instagram_post.get("images", [])) > 1 else "single"
+        instagram_post.update({
+            "date": date_str, "generated_at": now_iso, "platform": "instagram",
+            "post_type": "carousel" if len(instagram_post.get("images", [])) > 1 else "single",
+        })
         files_to_commit.append((f"{base_path}/instagram.json", instagram_post))
     if reddit_post:
-        reddit_post["date"] = date_str
-        reddit_post["generated_at"] = datetime.now(timezone.utc).isoformat()
-        reddit_post["platform"] = "reddit"
+        reddit_post.update({"date": date_str, "generated_at": now_iso, "platform": "reddit"})
         files_to_commit.append((f"{base_path}/reddit.json", reddit_post))
 
     # Generate images (commits them to the branch)
@@ -256,34 +223,8 @@ def create_daily_pr(
         reddit_post=reddit_post,
     )
 
-    for file_path, data in files_to_commit:
-        if data is None:
-            continue
-        content = json.dumps(data, indent=2, ensure_ascii=False)
-        encoded = base64.b64encode(content.encode()).decode()
-
-        sha = get_file_sha(github_token, owner, repo, file_path, branch)
-        if not sha:
-            sha = get_file_sha(github_token, owner, repo, file_path, "main")
-
-        payload = {
-            "message": f"news: add {file_path.split('/')[-1]} for {date_str}",
-            "content": encoded,
-            "branch": branch,
-        }
-        if sha:
-            payload["sha"] = sha
-
-        resp = github_api_request(
-            "PUT",
-            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
-            headers=headers,
-            json=payload,
-        )
-        if resp.status_code not in [200, 201]:
-            print(f"  Error committing {file_path}: {resp.status_code} {resp.text[:200]}")
-        else:
-            print(f"  Committed {file_path}")
+    # Commit JSON files
+    commit_files_to_branch(files_to_commit, branch, github_token, owner, repo, label=f"for {date_str}")
 
     # Build PR body
     arc_preview = ""
@@ -295,20 +236,17 @@ def create_daily_pr(
     pr_count = summary.get("pr_count", 0)
     one_liner = summary.get("one_liner", "")
 
-    # Twitter preview
     twitter_preview = ""
     if twitter_post:
         tweet = twitter_post.get("tweet", twitter_post.get("full_tweet", ""))
         twitter_preview = f"\n### Twitter\n```\n{tweet}\n```\n"
 
-    # Instagram preview
     instagram_preview = ""
     if instagram_post:
         caption = instagram_post.get("caption", "")[:200]
         img_count = len(instagram_post.get("images", []))
         instagram_preview = f"\n### Instagram ({img_count} images)\n{caption}...\n"
 
-    # Reddit preview
     reddit_preview = ""
     if reddit_post:
         title = reddit_post.get("title", "")
@@ -329,58 +267,10 @@ When this PR is merged, posts will be staged to Buffer (Twitter, Instagram) and 
 Generated automatically by GitHub Actions.
 """
 
-    # Create PR
-    pr_resp = github_api_request(
-        "POST",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls",
-        headers=headers,
-        json={
-            "title": f"Daily Summary — {date_str}",
-            "body": pr_body,
-            "head": branch,
-            "base": "main",
-        },
+    return create_or_update_pr(
+        f"Daily Summary — {date_str}", pr_body, branch,
+        github_token, owner, repo,
     )
-
-    if pr_resp.status_code not in [200, 201]:
-        if "A pull request already exists" in pr_resp.text:
-            # Update existing PR
-            list_resp = github_api_request(
-                "GET",
-                f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=open",
-                headers=headers,
-            )
-            if list_resp.status_code == 200 and list_resp.json():
-                existing = list_resp.json()[0]
-                github_api_request(
-                    "PATCH",
-                    f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls/{existing['number']}",
-                    headers=headers,
-                    json={"title": f"Daily Summary — {date_str}", "body": pr_body},
-                )
-                print(f"  Updated existing PR #{existing['number']}")
-                return existing["number"]
-            print("  PR already exists but could not update it")
-            return None
-        print(f"  Error creating PR: {pr_resp.text[:200]}")
-        return None
-
-    pr_info = pr_resp.json()
-    pr_number = pr_info["number"]
-    print(f"  Created PR #{pr_number}: {pr_info['html_url']}")
-
-    # Add labels
-    pr_labels = get_env("PR_LABELS", required=False)
-    if pr_labels:
-        labels_list = [l.strip() for l in pr_labels.split(",")]
-        github_api_request(
-            "POST",
-            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_number}/labels",
-            headers=headers,
-            json={"labels": labels_list},
-        )
-
-    return pr_number
 
 
 # ── Main ─────────────────────────────────────────────────────────────

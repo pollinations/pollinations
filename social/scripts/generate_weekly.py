@@ -17,7 +17,6 @@ See social/PIPELINE.md for full architecture.
 import sys
 import json
 import time
-import base64
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
 
@@ -27,18 +26,16 @@ from common import (
     load_prompt,
     load_format,
     get_env,
-    get_repo_root,
     call_pollinations_api,
     generate_image,
     generate_platform_post,
     commit_image_to_branch,
-    get_file_sha,
     read_gists_for_date,
     parse_json_response,
-    github_api_request,
-    GITHUB_API_BASE,
+    create_branch_from_main,
+    commit_files_to_branch,
+    create_or_update_pr,
     IMAGE_SIZE,
-    DEFAULT_TIMEOUT,
 )
 
 # ── Constants ────────────────────────────────────────────────────────
@@ -292,35 +289,10 @@ def create_weekly_pr(
     reddit_post: Optional[Dict] = None,
 ) -> Optional[int]:
     """Create a single PR with all weekly files."""
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}",
-    }
-
-    # Get base SHA
-    ref_resp = github_api_request(
-        "GET",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/ref/heads/main",
-        headers=headers,
-    )
-    if ref_resp.status_code != 200:
-        print(f"Error getting ref: {ref_resp.text[:200]}")
-        return None
-    base_sha = ref_resp.json()["object"]["sha"]
-
-    # Create branch
     branch = f"weekly-digest-{week_end}"
-    create_resp = github_api_request(
-        "POST",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/refs",
-        headers=headers,
-        json={"ref": f"refs/heads/{branch}", "sha": base_sha},
-    )
-    if create_resp.status_code not in [200, 201]:
-        if "Reference already exists" not in create_resp.text:
-            print(f"Error creating branch: {create_resp.text[:200]}")
-            return None
-        print(f"  Branch {branch} already exists, updating...")
+
+    if create_branch_from_main(branch, github_token, owner, repo) is None:
+        return None
 
     base_path = f"{WEEKLY_REL_DIR}/{week_end}"
     pollinations_token = get_env("POLLINATIONS_TOKEN")
@@ -335,10 +307,8 @@ def create_weekly_pr(
         discord_post=discord_post,
     )
 
-    # Prepare files
+    # Add platform metadata and collect files
     files_to_commit = []
-
-    # Platform JSONs
     now_iso = datetime.now(timezone.utc).isoformat()
     for platform, post, filename in [
         ("twitter", twitter_post, "twitter.json"),
@@ -361,34 +331,10 @@ def create_weekly_pr(
             post["full_post"] = full
         if platform == "instagram":
             post["post_type"] = "carousel" if len(post.get("images", [])) > 1 else "single"
-        files_to_commit.append((f"{base_path}/{filename}", json.dumps(post, indent=2, ensure_ascii=False), False))
+        files_to_commit.append((f"{base_path}/{filename}", post))
 
-    # Commit all files
-    for file_path, content, is_raw in files_to_commit:
-        encoded = base64.b64encode(content.encode() if isinstance(content, str) else content).decode()
-
-        sha = get_file_sha(github_token, owner, repo, file_path, branch)
-        if not sha:
-            sha = get_file_sha(github_token, owner, repo, file_path, "main")
-
-        payload = {
-            "message": f"news: add {file_path.split('/')[-1]} for week of {week_end}",
-            "content": encoded,
-            "branch": branch,
-        }
-        if sha:
-            payload["sha"] = sha
-
-        resp = github_api_request(
-            "PUT",
-            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
-            headers=headers,
-            json=payload,
-        )
-        if resp.status_code in [200, 201]:
-            print(f"  Committed {file_path}")
-        else:
-            print(f"  Error committing {file_path}: {resp.status_code} {resp.text[:200]}")
+    # Commit JSON files
+    commit_files_to_branch(files_to_commit, branch, github_token, owner, repo, label=f"for week of {week_end}")
 
     # Build PR body
     theme = digest.get("theme", "")
@@ -413,55 +359,10 @@ When this PR is merged, the Sunday 18:00 UTC cron will publish to all 5 platform
 Generated automatically by GitHub Actions.
 """
 
-    # Create PR
-    pr_resp = github_api_request(
-        "POST",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls",
-        headers=headers,
-        json={
-            "title": f"Weekly Digest — {week_start} to {week_end}",
-            "body": pr_body,
-            "head": branch,
-            "base": "main",
-        },
+    return create_or_update_pr(
+        f"Weekly Digest — {week_start} to {week_end}", pr_body, branch,
+        github_token, owner, repo,
     )
-
-    if pr_resp.status_code not in [200, 201]:
-        if "A pull request already exists" in pr_resp.text:
-            list_resp = github_api_request(
-                "GET",
-                f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=open",
-                headers=headers,
-            )
-            if list_resp.status_code == 200 and list_resp.json():
-                existing = list_resp.json()[0]
-                github_api_request(
-                    "PATCH",
-                    f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls/{existing['number']}",
-                    headers=headers,
-                    json={"title": f"Weekly Digest — {week_start} to {week_end}", "body": pr_body},
-                )
-                print(f"  Updated existing PR #{existing['number']}")
-                return existing["number"]
-            return None
-        print(f"  Error creating PR: {pr_resp.text[:200]}")
-        return None
-
-    pr_info = pr_resp.json()
-    pr_number = pr_info["number"]
-    print(f"  Created PR #{pr_number}: {pr_info['html_url']}")
-
-    pr_labels = get_env("PR_LABELS", required=False)
-    if pr_labels:
-        labels_list = [l.strip() for l in pr_labels.split(",")]
-        github_api_request(
-            "POST",
-            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_number}/labels",
-            headers=headers,
-            json={"labels": labels_list},
-        )
-
-    return pr_number
 
 
 # ── Main ─────────────────────────────────────────────────────────────

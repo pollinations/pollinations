@@ -18,8 +18,48 @@ const TIER_BADGE_COLOR: Record<
     spore: "yellow",
 };
 
-const BetaNoticeText = () => (
-    <p className="text-sm font-medium text-gray-900 mt-3 pt-3 border-t border-amber-200">
+const TIER_PANEL_COLOR: Record<
+    TierStatus,
+    "gray" | "teal" | "amber" | "pink" | "purple" | "blue"
+> = {
+    none: "amber",
+    microbe: "gray",
+    spore: "teal",
+    seed: "amber",
+    flower: "pink",
+    nectar: "purple",
+    router: "blue",
+};
+
+const TIER_CARD_COLOR: Record<
+    TierStatus,
+    "gray" | "teal" | "amber" | "pink" | "purple" | "blue"
+> = {
+    none: "amber",
+    microbe: "gray",
+    spore: "teal",
+    seed: "amber",
+    flower: "pink",
+    nectar: "purple",
+    router: "blue",
+};
+
+const TIER_BORDER_COLOR: Record<TierStatus, string> = {
+    none: "border-amber-200",
+    microbe: "border-gray-200",
+    spore: "border-teal-200",
+    seed: "border-amber-200",
+    flower: "border-pink-200",
+    nectar: "border-purple-200",
+    router: "border-blue-200",
+};
+
+const BetaNoticeText: FC<{ borderColor?: string }> = ({
+    borderColor = "border-amber-200",
+}) => (
+    <p
+        className={`text-sm font-medium text-gray-900 mt-3 pt-3 border-t ${borderColor}`}
+    >
         ✨ <strong>We're in beta!</strong> We're learning what works best for
         our community and may adjust pollen values and tier rules as we go.
         Thanks for being part of the journey!
@@ -64,7 +104,7 @@ const TierScreen: FC<{
     const tierEmoji = getTierEmoji(tier);
 
     return (
-        <Panel color="amber">
+        <Panel color={TIER_PANEL_COLOR[tier]}>
             <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-3xl font-bold text-gray-900">
@@ -83,9 +123,9 @@ const TierScreen: FC<{
                     Refills daily at 00:00 UTC. Unused pollen does not carry
                     over.
                 </p>
-                <Card color="amber">
+                <Card color={TIER_CARD_COLOR[tier]}>
                     <TierExplanation />
-                    <BetaNoticeText />
+                    <BetaNoticeText borderColor={TIER_BORDER_COLOR[tier]} />
                 </Card>
             </div>
         </Panel>

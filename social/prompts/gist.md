@@ -113,6 +113,7 @@ Think step-by-step about what to depict BEFORE writing the image prompt. This is
 A short (1-2 sentence) pixel art scene description for generating the PR's announcement image. **Must be informed by `visual_concept` above.**
 
 - Include any project-specific characters/mascots identified in `visual_concept`
+- Lean into **cuteness, coziness, and friendship**. The bee should feel emotionally connected to the scene, not just placed in it.
 
 ## Content Tone — Positive Framing
 

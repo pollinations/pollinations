@@ -235,9 +235,12 @@ export async function transcribeWithElevenLabs(opts: {
         await response.json();
 
     // Get duration from word timestamps (Scribe v2 always returns words)
-    const duration = elevenLabsData.words?.length
-        ? elevenLabsData.words[elevenLabsData.words.length - 1].end
-        : 0;
+    if (!elevenLabsData.words?.length) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "ElevenLabs response missing word timestamps (required for billing)",
+        });
+    }
+    const duration = elevenLabsData.words[elevenLabsData.words.length - 1].end;
 
     const usageHeaders = buildUsageHeaders(
         "scribe",

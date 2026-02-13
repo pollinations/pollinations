@@ -3,6 +3,7 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { calculateVideoResolution } from "../utils/videoResolution.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:airforce:ops");
@@ -149,6 +150,33 @@ function buildRequestBody(
     if (VIDEO_MODELS.includes(airforceModel)) {
         requestBody.sse = true;
         requestBody.response_format = "url";
+
+        // Calculate resolution and aspect ratio for video models
+        const { aspectRatio, resolution } = calculateVideoResolution({
+            width: safeParams.width,
+            height: safeParams.height,
+            aspectRatio: safeParams.aspectRatio,
+            defaultResolution: "720P",
+        });
+
+        // Map resolution to size parameter (grok-video uses WxH format)
+        const sizeMap: Record<string, Record<string, string>> = {
+            "16:9": {
+                "480P": "854x480",
+                "720P": "1280x720",
+                "1080P": "1920x1080",
+            },
+            "9:16": {
+                "480P": "480x854",
+                "720P": "720x1280",
+                "1080P": "1080x1920",
+            },
+        };
+
+        const size = sizeMap[aspectRatio]?.[resolution];
+        if (size) {
+            requestBody.size = size;
+        }
     } else if (airforceModel === "imagen-4") {
         const size = closestSupportedSize(safeParams.width, safeParams.height);
         if (size) requestBody.size = size;

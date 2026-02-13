@@ -1,49 +1,49 @@
-import sleep from "await-sleep";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
+import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
-// Logger
 const logOps = debug("pollinations:wan:ops");
 const logError = debug("pollinations:wan:error");
 
-// DashScope API constants (Singapore region)
-const DASHSCOPE_API_BASE = "https://dashscope-intl.aliyuncs.com/api/v1";
-const WAN_I2V_MODEL = "wan2.6-i2v-flash";
+// API Configuration
+const AIRFORCE_API_BASE = "https://api.airforce/v1";
+const AIRFORCE_WAN_MODEL = "wan-2.6";
 
-interface WanTaskResponse {
-    output?: {
-        task_id: string;
-        task_status: string;
-    };
-    request_id?: string;
-    code?: string;
-    message?: string;
-}
+// Video generation constraints
+const MIN_DURATION_SECONDS = 2;
+const MAX_DURATION_SECONDS = 15;
+const DEFAULT_DURATION_SECONDS = 5;
+const DEFAULT_RESOLUTION = "720P"; // Supports 480P, 720P, 1080P
 
-interface WanTaskResult {
-    output?: {
-        task_id: string;
-        task_status: string;
-        video_url?: string;
-        code?: string;
-        message?: string;
-    };
-    request_id?: string;
-    usage?: {
-        video_count?: number;
-        video_duration?: number;
-    };
-    code?: string;
-    message?: string;
+interface AirforceVideoResponse {
+    created: number;
+    data: Array<{
+        url: string | null;
+        b64_json: string | null;
+    }>;
 }
 
 /**
- * Generates a video using Alibaba Wan 2.6 API (DashScope)
- * Supports image-to-video with optional audio
+ * Simple retry wrapper for flaky async operations
+ */
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (error) {
+            if (attempt === maxRetries) throw error;
+            logOps(`Attempt ${attempt}/${maxRetries} failed, retrying...`);
+        }
+    }
+    throw new Error("Unreachable");
+}
+
+/**
+ * Generates a video using Airforce API (wan-2.6)
+ * Supports both text-to-video and image-to-video with optional audio
  */
 export async function callWanAPI(
     prompt: string,
@@ -51,15 +51,23 @@ export async function callWanAPI(
     progress: ProgressManager,
     requestId: string,
 ): Promise<VideoGenerationResult> {
-    const apiKey = process.env.DASHSCOPE_API_KEY;
+    const apiKey = process.env.AIRFORCE_API_KEY;
     if (!apiKey) {
         throw new HttpError(
-            "DASHSCOPE_API_KEY environment variable is required for Wan model",
+            "AIRFORCE_API_KEY environment variable is required for Wan model",
             500,
         );
     }
 
-    logOps("Calling Wan 2.6 API with prompt:", prompt);
+    const videoParams = prepareVideoParameters(safeParams);
+    const imageUrl = extractFirstImage(safeParams.image);
+
+    logOps("Calling Wan 2.6 API (Airforce) with params:", {
+        prompt,
+        ...videoParams,
+        hasImage: !!imageUrl,
+        model: AIRFORCE_WAN_MODEL,
+    });
 
     progress.updateBar(
         requestId,
@@ -68,101 +76,10 @@ export async function callWanAPI(
         "Starting video generation with Wan 2.6...",
     );
 
-    // Video parameters - clamp duration to valid range (2-15 seconds per API docs)
-    const rawDuration = safeParams.duration || 5;
-    const durationSeconds = Math.max(2, Math.min(15, rawDuration));
-    // Resolution: 480P, 720P, or 1080P
-    const resolution = "720P";
-    // Audio: true by default for Wan 2.6 (auto-dubbing)
-    // Can be disabled with audio=false to reduce cost
-    const generateAudio = safeParams.audio !== false;
+    const requestBody = buildAirforceRequest(prompt, videoParams, imageUrl);
 
-    // Check for input image (required for I2V model)
-    const hasImage = safeParams.image && safeParams.image.length > 0;
+    logOps("Airforce API request:", JSON.stringify(requestBody, null, 2));
 
-    if (!hasImage) {
-        throw new HttpError(
-            "Wan model requires an image parameter for image-to-video generation",
-            400,
-        );
-    }
-
-    logOps("Video params:", {
-        durationSeconds,
-        resolution,
-        generateAudio,
-        hasImage,
-        model: WAN_I2V_MODEL,
-    });
-
-    // Build request body
-    const input: {
-        prompt: string;
-        img_url?: string;
-    } = {
-        prompt: prompt,
-    };
-
-    // Add image for I2V generation
-    if (hasImage) {
-        const imageUrl = Array.isArray(safeParams.image)
-            ? safeParams.image[0]
-            : safeParams.image;
-
-        logOps("Adding first frame image for I2V:", imageUrl);
-        progress.updateBar(
-            requestId,
-            40,
-            "Processing",
-            "Processing reference image...",
-        );
-
-        // Wan accepts either URL or base64 data URL
-        // If it's already a URL, use it directly; otherwise encode
-        if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
-            input.img_url = imageUrl;
-        } else {
-            // Assume it needs encoding
-            try {
-                const { base64, mimeType } =
-                    await downloadImageAsBase64(imageUrl);
-                input.img_url = `data:${mimeType};base64,${base64}`;
-            } catch (error) {
-                const errorMessage =
-                    error instanceof Error ? error.message : String(error);
-                logError("Error processing reference image:", errorMessage);
-                throw new HttpError(
-                    `Failed to process reference image: ${errorMessage}`,
-                    400,
-                );
-            }
-        }
-    }
-
-    const requestBody = {
-        model: WAN_I2V_MODEL,
-        input,
-        parameters: {
-            resolution,
-            duration: durationSeconds,
-            prompt_extend: true, // Enable prompt enhancement
-            audio: generateAudio, // Audio generation (auto-dub or silent)
-        },
-    };
-
-    // Log request (hide base64 if present)
-    const logSafeRequest = {
-        ...requestBody,
-        input: {
-            ...requestBody.input,
-            img_url: requestBody.input.img_url?.startsWith("data:")
-                ? "[base64]"
-                : requestBody.input.img_url,
-        },
-    };
-    logOps("Wan API request:", JSON.stringify(logSafeRequest, null, 2));
-
-    // Step 1: Create task
     progress.updateBar(
         requestId,
         45,
@@ -170,180 +87,256 @@ export async function callWanAPI(
         "Initiating video generation...",
     );
 
-    const generateEndpoint = `${DASHSCOPE_API_BASE}/services/aigc/video-generation/video-synthesis`;
-    const generateResponse = await fetch(generateEndpoint, {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-            "X-DashScope-Async": "enable",
-        },
-        body: JSON.stringify(requestBody),
-    });
-
-    if (!generateResponse.ok) {
-        const errorText = await generateResponse.text();
-        logError("Wan API failed:", generateResponse.status, errorText);
-        throw new HttpError(
-            `Wan API request failed: ${errorText}`,
-            generateResponse.status,
-        );
-    }
-
-    const generateData: WanTaskResponse = await generateResponse.json();
-    logOps("Generate response:", JSON.stringify(generateData, null, 2));
-
-    if (generateData.code) {
-        throw new HttpError(
-            `Wan API error: ${generateData.message || generateData.code}`,
-            400,
-        );
-    }
-
-    const taskId = generateData.output?.task_id;
-    if (!taskId) {
-        throw new HttpError("Wan API did not return task ID", 500);
-    }
-
-    // Step 2: Poll for completion
-    progress.updateBar(
-        requestId,
-        50,
-        "Processing",
-        "Generating video (this takes 1-5 minutes)...",
+    const videoUrl = await withRetry(() =>
+        streamAirforceResponse(apiKey, requestBody, progress, requestId),
     );
 
-    const result = await pollWanTask(taskId, apiKey, progress, requestId);
-
-    progress.updateBar(requestId, 95, "Success", "Video generation completed");
-
-    const videoDuration = result.usage.video_duration || durationSeconds;
+    const videoBuffer = await downloadVideo(videoUrl, progress, requestId);
 
     return {
-        buffer: result.buffer,
+        buffer: videoBuffer,
         mimeType: "video/mp4",
-        durationSeconds,
+        durationSeconds: videoParams.durationSeconds,
         trackingData: {
             actualModel: "wan",
             usage: {
-                completionVideoSeconds: videoDuration,
-                // Audio seconds = video duration when audio is enabled
-                // This allows separate pricing: video base + audio add-on
-                completionAudioSeconds: generateAudio ? videoDuration : 0,
+                completionVideoSeconds: videoParams.durationSeconds,
+                completionAudioSeconds: videoParams.generateAudio
+                    ? videoParams.durationSeconds
+                    : 0,
             },
         },
     };
 }
 
 /**
- * Poll Wan task until completion
+ * Helper function to prepare video generation parameters
+ * Uses unified resolution calculation from width/height or aspectRatio
  */
-async function pollWanTask(
-    taskId: string,
-    apiKey: string,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<{
-    buffer: Buffer;
-    usage: { video_duration: number };
-}> {
-    const pollUrl = `${DASHSCOPE_API_BASE}/tasks/${taskId}`;
-    logOps("Poll URL:", pollUrl);
+function prepareVideoParameters(safeParams: ImageParams): {
+    durationSeconds: number;
+    resolution: string;
+    aspectRatio: string;
+    generateAudio: boolean;
+} {
+    const rawDuration = safeParams.duration || DEFAULT_DURATION_SECONDS;
+    const durationSeconds = Math.max(
+        MIN_DURATION_SECONDS,
+        Math.min(MAX_DURATION_SECONDS, rawDuration),
+    );
+    const generateAudio = safeParams.audio !== false;
 
-    const maxAttempts = 60; // 5 minutes max (5 second intervals)
-    const delayMs = 5000; // Fixed 5 second intervals as recommended by API docs
+    // Calculate resolution and aspect ratio from width/height or aspectRatio
+    const { aspectRatio, resolution } = calculateVideoResolution({
+        width: safeParams.width,
+        height: safeParams.height,
+        aspectRatio: safeParams.aspectRatio,
+        defaultResolution: DEFAULT_RESOLUTION,
+    });
 
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        logOps(`Poll attempt ${attempt}/${maxAttempts}...`);
+    return {
+        durationSeconds,
+        resolution,
+        aspectRatio,
+        generateAudio,
+    };
+}
 
-        // Update progress based on attempt number
-        const progressPercent = 50 + Math.min(40, Math.floor(attempt * 0.7));
-        progress.updateBar(
-            requestId,
-            progressPercent,
-            "Processing",
-            `Generating video... (${attempt}/${maxAttempts})`,
-        );
+/**
+ * Extract the first image from params if available
+ */
+function extractFirstImage(image: ImageParams["image"]): string | undefined {
+    if (!image) return undefined;
+    return Array.isArray(image) ? image[0] : image;
+}
 
-        const pollResponse = await fetch(pollUrl, {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${apiKey}`,
-            },
-        });
+/**
+ * Build request body for Airforce API
+ */
+function buildAirforceRequest(
+    prompt: string,
+    videoParams: ReturnType<typeof prepareVideoParameters>,
+    imageUrl?: string,
+): {
+    model: string;
+    prompt: string;
+    n: number;
+    size: string;
+    response_format: string;
+    sse: boolean;
+    aspectRatio: string;
+    duration: number;
+    resolution: string;
+    sound: boolean;
+    image?: string;
+} {
+    const requestBody = {
+        model: AIRFORCE_WAN_MODEL,
+        prompt,
+        n: 1,
+        size: "1024x1024",
+        response_format: "url",
+        sse: true,
+        aspectRatio: videoParams.aspectRatio,
+        duration: videoParams.durationSeconds,
+        resolution: videoParams.resolution,
+        sound: videoParams.generateAudio,
+    };
 
-        if (!pollResponse.ok) {
-            const errorText = await pollResponse.text();
-            logError("Poll error:", pollResponse.status, errorText);
-            // Continue polling on non-fatal errors
-            await sleep(delayMs);
-            continue;
-        }
-
-        const pollData: WanTaskResult = await pollResponse.json();
-        logOps("Poll response:", JSON.stringify(pollData, null, 2));
-
-        const status = pollData.output?.task_status?.toUpperCase();
-        logOps("Task status:", status);
-
-        if (status === "SUCCEEDED") {
-            const videoUrl = pollData.output?.video_url;
-
-            if (!videoUrl) {
-                throw new HttpError("No video URL in completed response", 500);
-            }
-
-            logOps("Video URL:", videoUrl);
-
-            // Download the video
-            progress.updateBar(
-                requestId,
-                90,
-                "Processing",
-                "Downloading video...",
-            );
-
-            const videoResponse = await fetch(videoUrl);
-
-            if (!videoResponse.ok) {
-                throw new HttpError(
-                    `Failed to download video: ${videoResponse.status}`,
-                    500,
-                );
-            }
-
-            const buffer = Buffer.from(await videoResponse.arrayBuffer());
-            logOps(
-                "Video downloaded, size:",
-                (buffer.length / 1024 / 1024).toFixed(2),
-                "MB",
-            );
-
-            // Extract usage from API response
-            const usage = {
-                video_duration: pollData.usage?.video_duration || 0,
-            };
-            logOps("API usage:", usage);
-
-            return { buffer, usage };
-        }
-
-        if (status === "FAILED") {
-            const errorMsg =
-                pollData.output?.message ||
-                pollData.message ||
-                "Video generation failed";
-            logError("Wan generation error:", pollData);
-            throw new HttpError(errorMsg, 500);
-        }
-
-        if (status === "CANCELED") {
-            throw new HttpError("Video generation was canceled", 500);
-        }
-
-        // Status is PENDING or RUNNING - wait and try again
-        await sleep(delayMs);
+    if (imageUrl) {
+        return { ...requestBody, image: imageUrl };
     }
 
-    throw new HttpError("Video generation timed out after 5 minutes", 504);
+    return requestBody;
+}
+
+/**
+ * Stream and parse SSE response from Airforce API
+ */
+async function streamAirforceResponse(
+    apiKey: string,
+    requestBody: ReturnType<typeof buildAirforceRequest>,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<string> {
+    const endpoint = `${AIRFORCE_API_BASE}/images/generations`;
+
+    const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        logError("Airforce API failed:", response.status, errorText);
+        throw new HttpError(
+            `Airforce API request failed: ${errorText}`,
+            response.status,
+        );
+    }
+
+    progress.updateBar(
+        requestId,
+        50,
+        "Processing",
+        "Generating video (streaming updates)...",
+    );
+
+    if (!response.body) {
+        throw new HttpError("No response body from Airforce API", 500);
+    }
+
+    const videoUrl = await parseSSEStream(response.body, progress, requestId);
+
+    if (!videoUrl) {
+        throw new HttpError("No video URL received from Airforce API", 500);
+    }
+
+    return videoUrl;
+}
+
+/**
+ * Parse Server-Sent Events stream from Airforce API
+ */
+async function parseSSEStream(
+    body: ReadableStream<Uint8Array>,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<string | null> {
+    const reader = body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let videoUrl: string | null = null;
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (!trimmedLine || trimmedLine === ": keepalive") continue;
+
+            if (trimmedLine === "data: [DONE]") {
+                logOps("SSE stream completed");
+                return videoUrl;
+            }
+
+            if (trimmedLine.startsWith("data: ")) {
+                videoUrl = parseSSEData(
+                    trimmedLine.slice(6),
+                    progress,
+                    requestId,
+                );
+            }
+        }
+    }
+
+    return videoUrl;
+}
+
+/**
+ * Parse individual SSE data message
+ */
+function parseSSEData(
+    dataString: string,
+    progress: ProgressManager,
+    requestId: string,
+): string | null {
+    try {
+        const data = JSON.parse(dataString) as AirforceVideoResponse;
+
+        if (data.data?.[0]?.url) {
+            const videoUrl = data.data[0].url;
+            logOps("Video URL received:", videoUrl);
+
+            progress.updateBar(
+                requestId,
+                80,
+                "Processing",
+                "Video generation completed, downloading...",
+            );
+
+            return videoUrl;
+        }
+    } catch (e) {
+        logError("Failed to parse SSE data:", dataString, e);
+    }
+
+    return null;
+}
+
+/**
+ * Download video from URL
+ */
+async function downloadVideo(
+    videoUrl: string,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<Buffer> {
+    progress.updateBar(requestId, 90, "Processing", "Downloading video...");
+
+    const response = await fetch(videoUrl);
+
+    if (!response.ok) {
+        throw new HttpError(
+            `Failed to download video: ${response.status}`,
+            500,
+        );
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const sizeMB = (buffer.length / 1024 / 1024).toFixed(2);
+    logOps(`Video downloaded, size: ${sizeMB} MB`);
+
+    progress.updateBar(requestId, 95, "Success", "Video generation completed");
+
+    return buffer;
 }

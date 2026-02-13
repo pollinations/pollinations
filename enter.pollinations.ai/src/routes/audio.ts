@@ -31,7 +31,7 @@ const CreateSpeechRequestSchema = z
             example: "Hello, welcome to Pollinations!",
         }),
         voice: z
-            .enum(ELEVENLABS_VOICES as unknown as [string, ...string[]])
+            .enum(ELEVENLABS_VOICES as [string, ...string[]])
             .default("alloy")
             .meta({
                 description: `The voice to use. Available voices: ${ELEVENLABS_VOICES.join(", ")}.`,
@@ -91,25 +91,17 @@ export async function generateSpeech(opts: {
     }
 
     if (text.length > 4096) {
-        return Response.json(
-            {
-                error: "invalid_request_error",
-                message: `Input text too long: ${text.length} characters. Maximum is 4096.`,
-            },
-            { status: 400 },
-        );
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Input text too long: ${text.length} characters. Maximum is 4096.`,
+        });
     }
 
     const voiceId = VOICE_MAPPING[voice];
     if (!voiceId) {
         log.warn("Invalid voice requested: {voice}", { voice });
-        return Response.json(
-            {
-                error: "invalid_request_error",
-                message: `Invalid voice: ${voice}. Available voices: ${Object.keys(VOICE_MAPPING).join(", ")}.`,
-            },
-            { status: 400 },
-        );
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice: ${voice}. Available voices: ${Object.keys(VOICE_MAPPING).join(", ")}.`,
+        });
     }
 
     const outputFormat = mapOutputFormat(responseFormat);
@@ -172,42 +164,13 @@ export async function generateSpeech(opts: {
     });
 }
 
-/**
- * ElevenLabs Transcription Response (word-level timestamps)
- */
-interface ElevenLabsTranscriptionWord {
-    text: string;
-    start: number;
-    end: number;
-    type?: string;
-    speaker_id?: string;
-}
-
 interface ElevenLabsTranscriptionResponse {
     text: string;
     language_code?: string;
-    language_probability?: number;
-    words?: ElevenLabsTranscriptionWord[];
-}
-
-/**
- * OpenAI-compatible transcription response format
- */
-interface OpenAITranscriptionResponse {
-    text: string;
-}
-
-interface OpenAIVerboseTranscriptionResponse
-    extends OpenAITranscriptionResponse {
-    task?: "transcribe";
-    language?: string;
-    duration?: number;
-    words?: { word: string; start: number; end: number }[];
-    segments?: {
-        id: number;
+    words?: {
+        text: string;
         start: number;
         end: number;
-        text: string;
     }[];
 }
 
@@ -218,7 +181,7 @@ export async function transcribeWithElevenLabs(opts: {
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { file, language, responseFormat, apiKey, log } = opts;
+    const { file, language, responseFormat = "json", apiKey, log } = opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -228,16 +191,14 @@ export async function transcribeWithElevenLabs(opts: {
     }
 
     log.info("ElevenLabs transcription: format={format}, size={size}", {
-        format: responseFormat || "json",
+        format: responseFormat,
         size: file.size,
     });
 
-    // Build multipart form for ElevenLabs API
     const formData = new FormData();
     formData.append("file", file);
     formData.append("model_id", "scribe_v2");
     if (language) {
-        // Pass through language code - ElevenLabs accepts both ISO-639-1 and ISO-639-3
         formData.append("language_code", language);
     }
 
@@ -267,10 +228,9 @@ export async function transcribeWithElevenLabs(opts: {
         await response.json();
 
     // Estimate duration from last word's end timestamp for billing
-    const duration =
-        elevenLabsData.words && elevenLabsData.words.length > 0
-            ? elevenLabsData.words[elevenLabsData.words.length - 1].end
-            : 0;
+    const duration = elevenLabsData.words?.length
+        ? elevenLabsData.words[elevenLabsData.words.length - 1].end
+        : 0;
 
     const usageHeaders = buildUsageHeaders(
         "scribe",
@@ -282,10 +242,8 @@ export async function transcribeWithElevenLabs(opts: {
         duration: Math.round(duration * 10) / 10,
     });
 
-    // Transform to OpenAI format based on response_format
-    const format = responseFormat || "json";
-
-    if (format === "text") {
+    // Return response based on format
+    if (responseFormat === "text") {
         return new Response(elevenLabsData.text, {
             headers: {
                 "Content-Type": "text/plain",
@@ -294,9 +252,9 @@ export async function transcribeWithElevenLabs(opts: {
         });
     }
 
-    if (format === "verbose_json") {
+    if (responseFormat === "verbose_json") {
         // OpenAI verbose format with word-level timestamps and segments
-        const verboseResponse: OpenAIVerboseTranscriptionResponse = {
+        const verboseResponse = {
             text: elevenLabsData.text,
             task: "transcribe",
             language: elevenLabsData.language_code || "unknown",
@@ -318,11 +276,11 @@ export async function transcribeWithElevenLabs(opts: {
         return Response.json(verboseResponse, { headers: usageHeaders });
     }
 
-    // Default: json format (simple)
-    const jsonResponse: OpenAITranscriptionResponse = {
-        text: elevenLabsData.text,
-    };
-    return Response.json(jsonResponse, { headers: usageHeaders });
+    // Default: json format
+    return Response.json(
+        { text: elevenLabsData.text },
+        { headers: usageHeaders },
+    );
 }
 
 export async function generateMusic(opts: {
@@ -341,13 +299,9 @@ export async function generateMusic(opts: {
     }
 
     if (prompt.length > 10000) {
-        return Response.json(
-            {
-                error: "invalid_request_error",
-                message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
-            },
-            { status: 400 },
-        );
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
+        });
     }
 
     log.info(
@@ -596,13 +550,8 @@ export const audioRoutes = new Hono<Env>()
                 );
             }
 
-            // Get pre-parsed formData from resolveModel middleware
-            const formData = c.get("formData");
-            if (!formData) {
-                throw new UpstreamError(500 as ContentfulStatusCode, {
-                    message: "FormData not parsed by middleware",
-                });
-            }
+            // Get formData from middleware or parse it
+            const formData = c.get("formData") || (await c.req.formData());
 
             const file = formData.get("file") as File;
             const language = formData.get("language") as string | null;
@@ -611,30 +560,13 @@ export const audioRoutes = new Hono<Env>()
                 | null;
 
             if (!file) {
-                return Response.json(
-                    {
-                        error: "invalid_request_error",
-                        message: "Missing required field: file",
-                    },
-                    { status: 400 },
-                );
-            }
-
-            // Route to ElevenLabs or Whisper based on resolved model
-            // Default to Whisper if the resolved model is a TTS model (elevenlabs, elevenmusic)
-            let resolvedModel = c.var.model.resolved;
-            if (
-                resolvedModel === "elevenlabs" ||
-                resolvedModel === "elevenmusic"
-            ) {
-                resolvedModel = "whisper";
-                c.set("model", {
-                    requested: c.var.model.requested,
-                    resolved: "whisper",
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Missing required field: file",
                 });
             }
 
-            if (resolvedModel === "scribe") {
+            // Route to ElevenLabs Scribe or Whisper based on model
+            if (c.var.model.resolved === "scribe") {
                 const elevenLabsApiKey = (
                     c.env as unknown as { ELEVENLABS_API_KEY: string }
                 ).ELEVENLABS_API_KEY;

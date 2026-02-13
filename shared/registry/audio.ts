@@ -43,21 +43,11 @@ export const VOICE_MAPPING: Record<string, string> = {
     bill: "pqHfZKP75CvOlQylNhV4", // Trustworthy, American
 };
 
-export const ELEVENLABS_VOICES = Object.keys(
-    VOICE_MAPPING,
-) as (keyof typeof VOICE_MAPPING)[];
-export type ElevenLabsVoice = keyof typeof VOICE_MAPPING;
+export const ELEVENLABS_VOICES = Object.keys(VOICE_MAPPING);
 
 export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
 export type AudioServiceId = keyof typeof AUDIO_SERVICES;
 export type AudioModelId = (typeof AUDIO_SERVICES)[AudioServiceId]["modelId"];
-
-/**
- * Helper to convert dollars per 1000 characters to dollars per character
- */
-function perThousandChars(dollarsPerThousand: number): number {
-    return dollarsPerThousand / 1000;
-}
 
 export const AUDIO_SERVICES = {
     elevenlabs: {
@@ -68,7 +58,7 @@ export const AUDIO_SERVICES = {
             {
                 date: new Date("2026-02-07").getTime(),
                 // ElevenLabs pricing: 1 credit = 1 character, ~$0.18 per 1000 chars
-                completionAudioTokens: perThousandChars(0.18),
+                completionAudioTokens: 0.18 / 1000,
             },
         ],
         description:

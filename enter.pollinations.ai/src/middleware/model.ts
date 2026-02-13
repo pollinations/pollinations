@@ -13,7 +13,6 @@ export type ModelVariables = {
         /** The resolved canonical service ID */
         resolved: ServiceId;
     };
-    /** Pre-parsed formData (for multipart/form-data requests) */
     formData?: FormData;
 };
 
@@ -31,17 +30,15 @@ export function resolveModel(eventType: EventType) {
         } else if (c.req.method === "POST") {
             const contentType = c.req.header("content-type") || "";
             if (contentType.includes("multipart/form-data")) {
-                // For multipart/form-data, parse formData to extract model
                 try {
                     const formData = await c.req.formData();
                     rawModel = (formData.get("model") as string) || null;
-                    // Store formData in context so route handlers don't need to re-parse
+                    // Store formData to avoid re-parsing in route handlers
                     c.set("formData", formData);
                 } catch {
                     // Form parsing failed, use default
                 }
             } else {
-                // For JSON bodies
                 try {
                     const body = await c.req.json();
                     rawModel = body.model || null;

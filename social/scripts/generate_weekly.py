@@ -27,7 +27,6 @@ from common import (
     load_prompt,
     load_format,
     get_env,
-    get_repo_root,
     call_pollinations_api,
     generate_image,
     generate_platform_post,
@@ -37,8 +36,6 @@ from common import (
     parse_json_response,
     github_api_request,
     GITHUB_API_BASE,
-    IMAGE_SIZE,
-    DEFAULT_TIMEOUT,
 )
 
 # ── Constants ────────────────────────────────────────────────────────
@@ -135,7 +132,7 @@ PR gists by date:
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,
-        temperature=0.3, exit_on_failure=False
+        temperature=0.3,
     )
     if not response:
         return None
@@ -178,12 +175,12 @@ def generate_discord_post(digest: Dict, token: str, week_end: str) -> Optional[D
         task += f"\nTotal PRs merged: {pr_count}"
     task += "\n\n" + fmt + _weekly_image_context()
 
-    response = call_pollinations_api(voice, task, token, temperature=0.7, exit_on_failure=False)
+    response = call_pollinations_api(voice, task, token, temperature=0.7)
     if not response:
         return None
 
     text = response.strip()
-    if text.upper().strip() == "SKIP":
+    if text.upper() == "SKIP":
         return None
 
     result = parse_json_response(text)
@@ -210,29 +207,27 @@ def generate_platform_images(
     """Generate images for all platforms and commit to branch."""
     image_dir = f"{WEEKLY_REL_DIR}/{week_end}/images"
 
-    # Twitter: 1 image
-    if twitter_post and twitter_post.get("image_prompt"):
-        print("  Generating Twitter image...")
-        img_bytes, _ = generate_image(twitter_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
+    def _commit_single(post, platform):
+        if not post or not post.get("image_prompt"):
+            return
+        print(f"  Generating {platform.title()} image...")
+        img_bytes, _ = generate_image(post["image_prompt"], token)
         if img_bytes:
             url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/twitter.jpg", branch,
+                img_bytes, f"{image_dir}/{platform}.jpg", branch,
                 github_token, owner, repo
             )
             if url:
-                twitter_post["image"] = {"url": url, "prompt": twitter_post["image_prompt"]}
+                post["image"] = {"url": url, "prompt": post["image_prompt"]}
 
-    # LinkedIn: 1 image
-    if linkedin_post and linkedin_post.get("image_prompt"):
-        print("  Generating LinkedIn image...")
-        img_bytes, _ = generate_image(linkedin_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if img_bytes:
-            url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/linkedin.jpg", branch,
-                github_token, owner, repo
-            )
-            if url:
-                linkedin_post["image"] = {"url": url, "prompt": linkedin_post["image_prompt"]}
+    # Single-image platforms
+    for post, platform in [
+        (twitter_post, "twitter"),
+        (linkedin_post, "linkedin"),
+        (reddit_post, "reddit"),
+        (discord_post, "discord"),
+    ]:
+        _commit_single(post, platform)
 
     # Instagram: up to 3 images (carousel)
     if instagram_post and instagram_post.get("images"):
@@ -241,7 +236,7 @@ def generate_platform_images(
             if not prompt:
                 continue
             print(f"  Generating Instagram image {i+1}...")
-            img_bytes, _ = generate_image(prompt, token, IMAGE_SIZE, IMAGE_SIZE, i)
+            img_bytes, _ = generate_image(prompt, token, index=i)
             if img_bytes:
                 url = commit_image_to_branch(
                     img_bytes, f"{image_dir}/instagram-{i+1}.jpg", branch,
@@ -250,30 +245,6 @@ def generate_platform_images(
                 if url:
                     img_info["url"] = url
             time.sleep(3)
-
-    # Reddit: 1 image
-    if reddit_post and reddit_post.get("image_prompt"):
-        print("  Generating Reddit image...")
-        img_bytes, _ = generate_image(reddit_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if img_bytes:
-            url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/reddit.jpg", branch,
-                github_token, owner, repo
-            )
-            if url:
-                reddit_post["image"] = {"url": url, "prompt": reddit_post["image_prompt"]}
-
-    # Discord: 1 image
-    if discord_post and discord_post.get("image_prompt"):
-        print("  Generating Discord image...")
-        img_bytes, _ = generate_image(discord_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if img_bytes:
-            url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/discord.jpg", branch,
-                github_token, owner, repo
-            )
-            if url:
-                discord_post["image"] = {"url": url, "prompt": discord_post["image_prompt"]}
 
 
 # ── Step 4: Create PR ───────────────────────────────────────────────
@@ -335,17 +306,15 @@ def create_weekly_pr(
         discord_post=discord_post,
     )
 
-    # Prepare files
+    # Prepare platform JSON files
     files_to_commit = []
-
-    # Platform JSONs
     now_iso = datetime.now(timezone.utc).isoformat()
-    for platform, post, filename in [
-        ("twitter", twitter_post, "twitter.json"),
-        ("linkedin", linkedin_post, "linkedin.json"),
-        ("instagram", instagram_post, "instagram.json"),
-        ("reddit", reddit_post, "reddit.json"),
-        ("discord", discord_post, "discord.json"),
+    for platform, post in [
+        ("twitter", twitter_post),
+        ("linkedin", linkedin_post),
+        ("instagram", instagram_post),
+        ("reddit", reddit_post),
+        ("discord", discord_post),
     ]:
         if not post:
             continue
@@ -361,11 +330,11 @@ def create_weekly_pr(
             post["full_post"] = full
         if platform == "instagram":
             post["post_type"] = "carousel" if len(post.get("images", [])) > 1 else "single"
-        files_to_commit.append((f"{base_path}/{filename}", json.dumps(post, indent=2, ensure_ascii=False), False))
+        files_to_commit.append((f"{base_path}/{platform}.json", json.dumps(post, indent=2, ensure_ascii=False)))
 
     # Commit all files
-    for file_path, content, is_raw in files_to_commit:
-        encoded = base64.b64encode(content.encode() if isinstance(content, str) else content).decode()
+    for file_path, content in files_to_commit:
+        encoded = base64.b64encode(content.encode()).decode()
 
         sha = get_file_sha(github_token, owner, repo, file_path, branch)
         if not sha:

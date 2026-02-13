@@ -14,34 +14,25 @@ At 06:00 UTC daily:
 See social/PIPELINE.md for full architecture.
 """
 
-import os
 import sys
 import json
 import time
 import base64
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
-from pathlib import Path
 
 from common import (
     load_prompt,
     get_env,
-    get_repo_root,
     call_pollinations_api,
     generate_image,
     generate_platform_post,
     commit_image_to_branch,
     get_file_sha,
     read_gists_for_date,
-    get_merged_prs,
-    format_pr_summary,
     parse_json_response,
     github_api_request,
     GITHUB_API_BASE,
-    OWNER,
-    REPO,
-    IMAGE_SIZE,
-    DEFAULT_TIMEOUT,
 )
 
 # ── Constants ────────────────────────────────────────────────────────
@@ -94,7 +85,7 @@ PR Gists:
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,
-        temperature=0.3, exit_on_failure=False
+        temperature=0.3,
     )
 
     if not response:
@@ -135,18 +126,24 @@ def generate_platform_images(
     image_dir = f"{DAILY_REL_DIR}/{date_str}/images"
     urls = {"twitter": [], "instagram": [], "reddit": []}
 
+    def generate_single_image(post, platform):
+        """Generate and commit a single image for a platform with an image_prompt field."""
+        if not post or not post.get("image_prompt"):
+            return
+        print(f"  Generating {platform.capitalize()} image...")
+        img_bytes, _ = generate_image(post["image_prompt"], token)
+        if not img_bytes:
+            return
+        url = commit_image_to_branch(
+            img_bytes, f"{image_dir}/{platform}.jpg", branch,
+            github_token, owner, repo
+        )
+        if url:
+            urls[platform].append(url)
+            post["image"] = {"url": url, "prompt": post["image_prompt"]}
+
     # Twitter: 1 image
-    if twitter_post and twitter_post.get("image_prompt"):
-        print("  Generating Twitter image...")
-        img_bytes, _ = generate_image(twitter_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if img_bytes:
-            url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/twitter.jpg", branch,
-                github_token, owner, repo
-            )
-            if url:
-                urls["twitter"].append(url)
-                twitter_post["image"] = {"url": url, "prompt": twitter_post["image_prompt"]}
+    generate_single_image(twitter_post, "twitter")
 
     # Instagram: up to 3 images (carousel)
     if instagram_post and instagram_post.get("images"):
@@ -155,7 +152,7 @@ def generate_platform_images(
             if not prompt:
                 continue
             print(f"  Generating Instagram image {i+1}...")
-            img_bytes, _ = generate_image(prompt, token, IMAGE_SIZE, IMAGE_SIZE, i)
+            img_bytes, _ = generate_image(prompt, token, index=i)
             if img_bytes:
                 url = commit_image_to_branch(
                     img_bytes, f"{image_dir}/instagram-{i+1}.jpg", branch,
@@ -167,17 +164,7 @@ def generate_platform_images(
             time.sleep(3)  # Rate limiting
 
     # Reddit: 1 image
-    if reddit_post and reddit_post.get("image_prompt"):
-        print("  Generating Reddit image...")
-        img_bytes, _ = generate_image(reddit_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if img_bytes:
-            url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/reddit.jpg", branch,
-                github_token, owner, repo
-            )
-            if url:
-                urls["reddit"].append(url)
-                reddit_post["image"] = {"url": url, "prompt": reddit_post["image_prompt"]}
+    generate_single_image(reddit_post, "reddit")
 
     return urls
 
@@ -227,25 +214,17 @@ def create_daily_pr(
 
     base_path = f"{DAILY_REL_DIR}/{date_str}"
 
-    # Commit JSON files
+    # Add platform metadata and collect files to commit
     files_to_commit = []
-    if twitter_post:
-        # Add platform metadata
-        twitter_post["date"] = date_str
-        twitter_post["generated_at"] = datetime.now(timezone.utc).isoformat()
-        twitter_post["platform"] = "twitter"
-        files_to_commit.append((f"{base_path}/twitter.json", twitter_post))
-    if instagram_post:
-        instagram_post["date"] = date_str
-        instagram_post["generated_at"] = datetime.now(timezone.utc).isoformat()
-        instagram_post["platform"] = "instagram"  # used by buffer_publish to detect platform
-        instagram_post["post_type"] = "carousel" if len(instagram_post.get("images", [])) > 1 else "single"
-        files_to_commit.append((f"{base_path}/instagram.json", instagram_post))
-    if reddit_post:
-        reddit_post["date"] = date_str
-        reddit_post["generated_at"] = datetime.now(timezone.utc).isoformat()
-        reddit_post["platform"] = "reddit"
-        files_to_commit.append((f"{base_path}/reddit.json", reddit_post))
+    for platform, post in [("twitter", twitter_post), ("instagram", instagram_post), ("reddit", reddit_post)]:
+        if not post:
+            continue
+        post["date"] = date_str
+        post["generated_at"] = datetime.now(timezone.utc).isoformat()
+        post["platform"] = platform
+        if platform == "instagram":
+            post["post_type"] = "carousel" if len(post.get("images", [])) > 1 else "single"
+        files_to_commit.append((f"{base_path}/{platform}.json", post))
 
     # Generate images (commits them to the branch)
     print("\n  Generating platform images...")
@@ -257,8 +236,6 @@ def create_daily_pr(
     )
 
     for file_path, data in files_to_commit:
-        if data is None:
-            continue
         content = json.dumps(data, indent=2, ensure_ascii=False)
         encoded = base64.b64encode(content.encode()).decode()
 

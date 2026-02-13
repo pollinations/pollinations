@@ -128,7 +128,7 @@ def main():
 
     snippet = call_pollinations_api(
         voice, task, pollinations_token,
-        temperature=0.7, exit_on_failure=False
+        temperature=0.7,
     )
 
     if not snippet:

@@ -17,7 +17,6 @@ from pathlib import Path
 
 # API Endpoints
 GITHUB_API_BASE = "https://api.github.com"
-GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 
@@ -63,12 +62,13 @@ def github_api_request(
     """Make a GitHub API request with retry on transient failures (5xx, 429)."""
     _timeout = timeout or DEFAULT_TIMEOUT
     last_exc = None
+    last_resp = None
     for attempt in range(max_retries):
         try:
-            resp = requests.request(method, url, headers=headers, timeout=_timeout, **kwargs)
-            if resp.status_code < 500 and resp.status_code != 429:
-                return resp
-            print(f"  GitHub API {resp.status_code} on attempt {attempt + 1}/{max_retries}")
+            last_resp = requests.request(method, url, headers=headers, timeout=_timeout, **kwargs)
+            if last_resp.status_code < 500 and last_resp.status_code != 429:
+                return last_resp
+            print(f"  GitHub API {last_resp.status_code} on attempt {attempt + 1}/{max_retries}")
         except requests.exceptions.RequestException as e:
             last_exc = e
             print(f"  GitHub API request error on attempt {attempt + 1}/{max_retries}: {e}")
@@ -78,8 +78,8 @@ def github_api_request(
     # Exhausted retries — raise on network error, return 5xx response for callers to handle
     if last_exc:
         raise last_exc
-    print(f"  WARNING: GitHub API returned {resp.status_code} after {max_retries} retries: {url}")
-    return resp
+    print(f"  WARNING: GitHub API returned {last_resp.status_code} after {max_retries} retries: {url}")
+    return last_resp
 
 
 def parse_json_response(response: str) -> Optional[Dict]:
@@ -145,6 +145,14 @@ def load_shared(name: str) -> str:
     return content
 
 
+_BRAND_PLACEHOLDERS = {
+    "{about}": "about",
+    "{visual_style}": "visual",
+    "{bee_character}": "bee",
+    "{links}": "links",
+}
+
+
 def _inject_shared_prompts(content: str) -> str:
     """Inject brand prompt components into content
 
@@ -154,14 +162,9 @@ def _inject_shared_prompts(content: str) -> str:
     - {bee_character} -> brand/bee.md
     - {links} -> brand/links.md
     """
-    if "{about}" in content:
-        content = content.replace("{about}", load_shared("about"))
-    if "{visual_style}" in content:
-        content = content.replace("{visual_style}", load_shared("visual"))
-    if "{bee_character}" in content:
-        content = content.replace("{bee_character}", load_shared("bee"))
-    if "{links}" in content:
-        content = content.replace("{links}", load_shared("links"))
+    for placeholder, name in _BRAND_PLACEHOLDERS.items():
+        if placeholder in content:
+            content = content.replace(placeholder, load_shared(name))
     return content
 
 
@@ -250,113 +253,6 @@ def get_date_range(days_back: int = 1) -> tuple[datetime, datetime]:
     return start_date, end_date
 
 
-def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> List[Dict]:
-    """Fetch merged PRs using GraphQL"""
-    query = """
-    query($owner: String!, $repo: String!, $cursor: String) {
-      repository(owner: $owner, name: $repo) {
-        pullRequests(
-          states: MERGED
-          first: 100
-          after: $cursor
-          orderBy: {field: UPDATED_AT, direction: DESC}
-          baseRefName: "main"
-        ) {
-          pageInfo {
-            hasNextPage
-            endCursor
-          }
-          nodes {
-            number
-            title
-            body
-            url
-            mergedAt
-            updatedAt
-            author {
-              login
-            }
-            labels(first: 10) {
-              nodes {
-                name
-              }
-            }
-          }
-        }
-      }
-    }
-    """
-
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    all_prs = []
-    cursor = None
-    page = 1
-
-    print(f"Fetching merged PRs since {start_date.strftime('%Y-%m-%d %H:%M')} UTC...")
-
-    while True:
-        variables = {"owner": owner, "repo": repo, "cursor": cursor}
-
-        response = github_api_request(
-            "POST",
-            GITHUB_GRAPHQL_API,
-            headers=headers,
-            json={"query": query, "variables": variables},
-            timeout=60,
-        )
-
-        if response.status_code != 200:
-            print(f"GraphQL error: {response.status_code} -> {response.text[:500]}")
-            return []
-
-        data = response.json()
-        if "errors" in data:
-            print(f"GraphQL query errors: {data['errors']}")
-            return []
-
-        pr_data = data["data"]["repository"]["pullRequests"]
-        nodes = pr_data["nodes"]
-        page_info = pr_data["pageInfo"]
-
-        print(f"  Page {page}: fetched {len(nodes)} PRs")
-
-        oldest_update_on_page = None
-
-        for pr in nodes:
-            merged_at = datetime.fromisoformat(pr["mergedAt"].replace("Z", "+00:00"))
-            updated_at = datetime.fromisoformat(pr["updatedAt"].replace("Z", "+00:00"))
-
-            if oldest_update_on_page is None or updated_at < oldest_update_on_page:
-                oldest_update_on_page = updated_at
-
-            if merged_at >= start_date:
-                labels = [label["name"] for label in pr["labels"]["nodes"]]
-                all_prs.append({
-                    "number": pr["number"],
-                    "title": pr["title"],
-                    "body": pr["body"] or "",
-                    "author": pr["author"]["login"] if pr.get("author") and pr["author"].get("login") else "ghost",
-                    "merged_at": pr["mergedAt"],
-                    "html_url": pr["url"],
-                    "labels": labels
-                })
-
-        if oldest_update_on_page and oldest_update_on_page < start_date:
-            break
-
-        if not page_info["hasNextPage"]:
-            break
-
-        cursor = page_info["endCursor"]
-        page += 1
-
-    return all_prs
-
-
 def call_pollinations_api(
     system_prompt: str,
     user_prompt: str,
@@ -365,7 +261,6 @@ def call_pollinations_api(
     max_retries: int = None,
     model: str = None,
     verbose: bool = False,
-    exit_on_failure: bool = False
 ) -> Optional[str]:
     """Call pollinations.ai API with retry logic and exponential backoff
 
@@ -377,10 +272,9 @@ def call_pollinations_api(
         max_retries: Number of retries (default MAX_RETRIES from constants)
         model: Model to use (default MODEL from constants)
         verbose: If True, print full prompts sent to API
-        exit_on_failure: If True, sys.exit(1) on failure instead of returning None
-    
+
     Returns:
-        Response content or None if failed (exits if exit_on_failure=True)
+        Response content or None if all attempts failed
     """
     headers = {
         "Authorization": f"Bearer {token}",
@@ -460,13 +354,10 @@ def call_pollinations_api(
             print(f"  {last_error}")
 
     print(f"All {retries} attempts failed. Last error: {last_error}")
-    
-    if exit_on_failure:
-        sys.exit(1)
     return None
 
 
-def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0) -> tuple[Optional[bytes], Optional[str]]:
+def generate_image(prompt: str, token: str, *, index: int = 0) -> tuple[Optional[bytes], Optional[str]]:
     """Generate a single image via the pollinations.ai image API."""
 
     # Append bee character description if not already present (loaded from prompt file)
@@ -489,8 +380,8 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
 
         params = {
             "model": IMAGE_MODEL,
-            "width": width,
-            "height": height,
+            "width": IMAGE_SIZE,
+            "height": IMAGE_SIZE,
             "quality": "hd",
             "nologo": "true",
             "private": "true",
@@ -843,10 +734,29 @@ def generate_platform_post(
     if extra_context:
         task += extra_context
 
-    response = call_pollinations_api(voice, task, token, temperature=temperature, exit_on_failure=False)
+    response = call_pollinations_api(voice, task, token, temperature=temperature)
     if not response:
         return None
     return parse_json_response(response)
+
+
+def get_vps_connection():
+    """Return (host, user, pkey) for the Reddit VPS, or None if not configured."""
+    vps_host = get_env("REDDIT_VPS_HOST", required=False)
+    vps_user = get_env("REDDIT_VPS_USER", required=False)
+    vps_ssh_key_raw = get_env("REDDIT_VPS_SSH_KEY", required=False)
+    vps_ssh_key = vps_ssh_key_raw.strip() if vps_ssh_key_raw else None
+
+    if not (vps_host and vps_user and vps_ssh_key):
+        return None
+
+    import paramiko
+    import base64 as _b64
+    import io as _io
+    private_key_str = _b64.b64decode(vps_ssh_key).decode("utf-8")
+    key_file = _io.StringIO(private_key_str)
+    pkey = paramiko.Ed25519Key.from_private_key(key_file)
+    return vps_host, vps_user, pkey
 
 
 def deploy_reddit_post(

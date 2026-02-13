@@ -112,7 +112,7 @@ Changed files:
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,
-        temperature=0.2, exit_on_failure=False
+        temperature=0.2,
     )
 
     if not response:

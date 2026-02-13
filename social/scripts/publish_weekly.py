@@ -20,9 +20,7 @@ import time
 import requests
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Optional
-import base64
-import io
-from common import get_env, github_api_request, GITHUB_API_BASE, deploy_reddit_post, DISCORD_CHAR_LIMIT
+from common import get_env, github_api_request, GITHUB_API_BASE, deploy_reddit_post, get_vps_connection, DISCORD_CHAR_LIMIT
 from buffer_publish import (
     publish_twitter_post,
     publish_linkedin_post,
@@ -222,21 +220,12 @@ def main():
         print("  No instagram.json — skipping")
 
     # Reddit (VPS/Devvit deployment)
-    vps_host = get_env("REDDIT_VPS_HOST", required=False)
-    vps_user = get_env("REDDIT_VPS_USER", required=False)
-    vps_ssh_key_raw = get_env("REDDIT_VPS_SSH_KEY", required=False)
-    vps_ssh_key = vps_ssh_key_raw.strip() if vps_ssh_key_raw else None
-    
-
-    if vps_host and vps_user and vps_ssh_key:
-        import paramiko
-        private_key_str = base64.b64decode(vps_ssh_key).decode("utf-8")
-        key_file = io.StringIO(private_key_str)
-        pkey = paramiko.Ed25519Key.from_private_key(key_file)
+    vps = get_vps_connection()
+    if vps:
         reddit_data = read_weekly_file(f"{weekly_dir}/reddit.json", github_token, owner, repo)
         if reddit_data:
             print("  Reddit...")
-            results["reddit"] = deploy_reddit_post(reddit_data, vps_host, vps_user, pkey)
+            results["reddit"] = deploy_reddit_post(reddit_data, *vps)
         else:
             print("  No reddit.json — skipping")
     else:

@@ -276,8 +276,11 @@ def main():
     system_prompt, user_prompt = create_highlights_prompt(changelog, date_str)
     ai_response = call_pollinations_api(
         system_prompt, user_prompt, pollinations_token,
-        temperature=0.3, exit_on_failure=True,
+        temperature=0.3,
     )
+    if not ai_response:
+        print("AI highlights generation failed. Exiting.")
+        sys.exit(1)
     new_highlights = parse_response(ai_response)
 
     if new_highlights.upper().strip() == "SKIP":

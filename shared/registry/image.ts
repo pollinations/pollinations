@@ -216,21 +216,20 @@ export const IMAGE_SERVICES = {
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
         modelId: "wan",
-        provider: "alibaba",
+        provider: "airforce",
         alpha: true,
         cost: [
-            // Wan 2.6 I2V Flash (Singapore/International region)
-            // Video base: 720P $0.025/sec (without audio)
-            // Audio add-on: $0.025/sec (when audio=true)
-            // Total with audio: $0.05/sec
+            // Wan 2.6 (T2V & I2V) - via Airforce API
+            // Supports both text-to-video and image-to-video with audio
+            // Flat rate: $0.01/sec (video + audio included)
             {
-                date: new Date("2026-01-20").getTime(), // Launch date
-                completionVideoSeconds: 0.025, // $0.025 per second (video only)
-                completionAudioSeconds: 0.025, // $0.025 per second of audio
+                date: new Date("2026-02-13").getTime(), // Price reduction
+                completionVideoSeconds: 0.01, // $0.01 per second (includes audio)
+                completionAudioSeconds: 0, // Included in video price
             },
         ],
         description:
-            "Wan 2.6 - Alibaba image-to-video with audio (2-15s, up to 1080P)",
+            "Wan 2.6 (api.airforce) - Alibaba text/image-to-video with audio (2-15s, up to 1080P)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
@@ -278,8 +277,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.0025, // $0.0025 per image
             },
         ],
-        description:
-            "Imagen 4 (alpha) - Google's latest image gen, powered by api.airforce",
+        description: "Imagen 4 (api.airforce) - Google's latest image gen",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -294,8 +292,7 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.0025, // $0.0025 per second
             },
         ],
-        description:
-            "Grok Video (alpha) - xAI video gen, powered by api.airforce",
+        description: "Grok Video (api.airforce) - xAI video gen",
         inputModalities: ["text"],
         outputModalities: ["video"],
     },

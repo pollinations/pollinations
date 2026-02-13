@@ -15,7 +15,6 @@ import sys
 import json
 from datetime import datetime, timezone
 from typing import Dict, Optional
-import paramiko
 import base64
 import io
 from common import (
@@ -122,9 +121,11 @@ def main():
     print(f"\n[2/2] Deploying Reddit to VPS...")
     vps_host = get_env("REDDIT_VPS_HOST", required=False)
     vps_user = get_env("REDDIT_VPS_USER", required=False)
-    vps_ssh_key = get_env("REDDIT_VPS_SSH_KEY", required=False).strip()
+    vps_ssh_key_raw = get_env("REDDIT_VPS_SSH_KEY", required=False)
+    vps_ssh_key = vps_ssh_key_raw.strip() if vps_ssh_key_raw else None
     
     if vps_host and vps_user and vps_ssh_key:
+        import paramiko
         private_key_str = base64.b64decode(vps_ssh_key).decode("utf-8")
         key_file = io.StringIO(private_key_str)
         pkey = paramiko.Ed25519Key.from_private_key(key_file)

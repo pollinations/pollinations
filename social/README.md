@@ -8,9 +8,9 @@ See [PIPELINE.md](PIPELINE.md) for the full design document (architecture, data 
 
 | | Twitter/X | LinkedIn | Instagram | Reddit | Discord |
 |---|---|---|---|---|---|
-| **Daily** | Buffer 17:00 UTC | Buffer 14:00 UTC (Wed+Fri) | Buffer 15:00 UTC | Reddit API (immediate) | Per-PR (immediate) |
-| **Weekly** | Buffer Mon 08:00 | Buffer Mon 08:00 | Buffer Mon 08:00 | Reddit API (immediate) | Webhook Mon 08:00 |
-| **Review** | Yes (daily PR) | Yes (daily PR) | Yes (daily PR) | Yes (daily PR) | No (automatic) |
+| **Daily** | Buffer (scheduled) | — | Buffer (scheduled) | VPS deploy | Per-PR (realtime) |
+| **Weekly** | Buffer (scheduled) | Buffer (scheduled) | Buffer (scheduled) | VPS deploy | Webhook |
+| **Review** | Yes (daily PR) | Yes (weekly PR) | Yes (daily PR) | Yes (daily PR) | No (automatic) |
 | **Images** | 1 per post | 1 per post | up to 3 carousel | 1 per post | 1 per PR |
 | **Model** | `nanobanana-pro` | `nanobanana-pro` | `nanobanana-pro` | `nanobanana-pro` | `nanobanana-pro` |
 
@@ -18,13 +18,13 @@ See [PIPELINE.md](PIPELINE.md) for the full design document (architecture, data 
 
 Defined in [`buffer-schedule.yml`](buffer-schedule.yml).
 
-| Platform | Daily | Weekly | Time (UTC) |
+| Platform | Daily | Weekly | Notes |
 |---|---|---|---|
-| **Twitter/X** | Every day | Monday | 17:00 / 08:00 |
-| **LinkedIn** | Wed + Fri | Monday | 14:00 / 08:00 |
-| **Instagram** | Every day | Monday | 15:00 / 08:00 |
-| **Reddit** | Every day | Monday | Immediate on merge |
-| **Discord** | Per PR merge | Monday | Immediate / 08:00 |
+| **Twitter/X** | Yes | Yes | Buffer scheduled delivery |
+| **LinkedIn** | — | Yes | Weekly only |
+| **Instagram** | Yes | Yes | Buffer scheduled delivery |
+| **Reddit** | Yes | Yes | VPS deploy on merge |
+| **Discord** | Per PR (realtime) | Yes | Webhook on merge / Sun 18:00 UTC |
 
 ## Secrets
 
@@ -36,13 +36,12 @@ Defined in [`buffer-schedule.yml`](buffer-schedule.yml).
 | `GITHUB_TOKEN` | PR creation, file commits |
 | `POLLY_BOT_APP_ID` | PR creation (GitHub App) |
 | `POLLY_BOT_PRIVATE_KEY` | PR creation (GitHub App) |
-| `REDDIT_CLIENT_ID` | Reddit OAuth2 posting |
-| `REDDIT_CLIENT_SECRET` | Reddit OAuth2 posting |
-| `REDDIT_USERNAME` | Reddit bot account |
-| `REDDIT_PASSWORD` | Reddit bot account |
+| `REDDIT_VPS_HOST` | Reddit VPS deployment |
+| `REDDIT_VPS_USER` | Reddit VPS deployment |
+| `REDDIT_VPS_SSH_KEY` | Reddit VPS SSH key (base64) |
 
 ## Legacy
 
 The old per-platform standalone scripts and workflows have been removed. The 3-tier pipeline above replaces all of them.
 
-The old Devvit-based Reddit pipeline (`social/reddit/`) is also superseded — Reddit now posts via direct OAuth2 API in `publish_daily.py`.
+The old Devvit-based Reddit pipeline (`social/reddit/`) is also superseded — Reddit now posts via SSH deployment to a VPS in `publish_daily.py` and `publish_weekly.py`.

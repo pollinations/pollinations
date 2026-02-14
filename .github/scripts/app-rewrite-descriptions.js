@@ -61,7 +61,8 @@ function callPollinationsAPI(systemPrompt, userMessage) {
         };
 
         if (process.env.POLLINATIONS_API_KEY) {
-            headers["Authorization"] = `Bearer ${process.env.POLLINATIONS_API_KEY}`;
+            headers["Authorization"] =
+                `Bearer ${process.env.POLLINATIONS_API_KEY}`;
         }
 
         const options = {
@@ -80,13 +81,18 @@ function callPollinationsAPI(systemPrompt, userMessage) {
                 if (res.statusCode === 200) {
                     try {
                         const json = JSON.parse(data);
-                        const content = json.choices?.[0]?.message?.content || "";
+                        const content =
+                            json.choices?.[0]?.message?.content || "";
                         resolve(content);
                     } catch {
                         reject(new Error("Failed to parse API response"));
                     }
                 } else {
-                    reject(new Error(`API returned status ${res.statusCode}: ${data.substring(0, 200)}`));
+                    reject(
+                        new Error(
+                            `API returned status ${res.statusCode}: ${data.substring(0, 200)}`,
+                        ),
+                    );
                 }
             });
         });
@@ -106,8 +112,9 @@ function callPollinationsAPI(systemPrompt, userMessage) {
  * Build user message for a batch of apps.
  */
 function buildBatchMessage(batch) {
-    const lines = batch.map((app, i) =>
-        `${i + 1}. App: "${app.name}" — Original: "${app.original}"`
+    const lines = batch.map(
+        (app, i) =>
+            `${i + 1}. App: "${app.name}" — Original: "${app.original}"`,
     );
 
     return `Rewrite these app descriptions. Return a JSON array with objects containing "name" and "description" fields.
@@ -140,11 +147,16 @@ function parseAIResponse(content) {
  * Validate a rewritten description.
  */
 function validateDescription(desc) {
-    if (!desc || typeof desc !== "string") return { valid: false, reason: "empty or not a string" };
-    if (desc.length > 200) return { valid: false, reason: `too long (${desc.length} chars)` };
-    if (desc.length < 10) return { valid: false, reason: `too short (${desc.length} chars)` };
-    if (desc.includes("|")) return { valid: false, reason: "contains pipe character" };
-    if (desc.includes("\n")) return { valid: false, reason: "contains newline" };
+    if (!desc || typeof desc !== "string")
+        return { valid: false, reason: "empty or not a string" };
+    if (desc.length > 200)
+        return { valid: false, reason: `too long (${desc.length} chars)` };
+    if (desc.length < 10)
+        return { valid: false, reason: `too short (${desc.length} chars)` };
+    if (desc.includes("|"))
+        return { valid: false, reason: "contains pipe character" };
+    if (desc.includes("\n"))
+        return { valid: false, reason: "contains newline" };
     return { valid: true };
 }
 
@@ -152,17 +164,23 @@ async function main() {
     console.log(`${colors.bold}✍️  App Description Rewriter${colors.reset}\n`);
 
     if (dryRun) {
-        console.log(`${colors.yellow}[DRY RUN] APPS.md will not be modified${colors.reset}\n`);
+        console.log(
+            `${colors.yellow}[DRY RUN] APPS.md will not be modified${colors.reset}\n`,
+        );
     }
 
     // Read inputs
     if (!fs.existsSync(INPUT_FILE)) {
-        console.error(`${colors.red}Error: ${INPUT_FILE} not found. Run app-fetch-descriptions.js first.${colors.reset}`);
+        console.error(
+            `${colors.red}Error: ${INPUT_FILE} not found. Run app-fetch-descriptions.js first.${colors.reset}`,
+        );
         process.exit(1);
     }
 
     if (!fs.existsSync(PROMPT_FILE)) {
-        console.error(`${colors.red}Error: ${PROMPT_FILE} not found.${colors.reset}`);
+        console.error(
+            `${colors.red}Error: ${PROMPT_FILE} not found.${colors.reset}`,
+        );
         process.exit(1);
     }
 
@@ -170,7 +188,9 @@ async function main() {
     const systemPrompt = fs.readFileSync(PROMPT_FILE, "utf8").trim();
 
     console.log(`Loaded ${apps.length} apps to rewrite`);
-    console.log(`Batch size: ${BATCH_SIZE} → ${Math.ceil(apps.length / BATCH_SIZE)} API calls\n`);
+    console.log(
+        `Batch size: ${BATCH_SIZE} → ${Math.ceil(apps.length / BATCH_SIZE)} API calls\n`,
+    );
 
     // Read APPS.md for later writing
     const appsContent = fs.readFileSync(APPS_FILE, "utf8");
@@ -179,7 +199,9 @@ async function main() {
     // Find description column index
     const headerIdx = lines.findIndex((l) => l.startsWith("| Emoji"));
     const headers = lines[headerIdx].split("|").map((h) => h.trim());
-    const DESC_COL = headers.findIndex((h) => h.toLowerCase() === "description");
+    const DESC_COL = headers.findIndex(
+        (h) => h.toLowerCase() === "description",
+    );
 
     const stats = { rewritten: 0, skipped: 0, errors: 0 };
     const changes = [];
@@ -192,11 +214,16 @@ async function main() {
 
     for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
         const batch = batches[batchIdx];
-        console.log(`${colors.cyan}Batch ${batchIdx + 1}/${batches.length} (${batch.length} apps)...${colors.reset}`);
+        console.log(
+            `${colors.cyan}Batch ${batchIdx + 1}/${batches.length} (${batch.length} apps)...${colors.reset}`,
+        );
 
         try {
             const userMessage = buildBatchMessage(batch);
-            const response = await callPollinationsAPI(systemPrompt, userMessage);
+            const response = await callPollinationsAPI(
+                systemPrompt,
+                userMessage,
+            );
 
             if (verbose) {
                 console.log(`  Raw response: ${response.substring(0, 200)}...`);
@@ -207,24 +234,32 @@ async function main() {
             // Match results back to apps by name
             for (const app of batch) {
                 const result = results.find(
-                    (r) => r.name.toLowerCase() === app.name.toLowerCase()
+                    (r) => r.name.toLowerCase() === app.name.toLowerCase(),
                 );
 
                 if (!result) {
-                    console.log(`${colors.yellow}  ⚠ No result for "${app.name}"${colors.reset}`);
+                    console.log(
+                        `${colors.yellow}  ⚠ No result for "${app.name}"${colors.reset}`,
+                    );
                     stats.skipped++;
                     continue;
                 }
 
-                const { valid, reason } = validateDescription(result.description);
+                const { valid, reason } = validateDescription(
+                    result.description,
+                );
                 if (!valid) {
-                    console.log(`${colors.yellow}  ⚠ Invalid for "${app.name}": ${reason}${colors.reset}`);
+                    console.log(
+                        `${colors.yellow}  ⚠ Invalid for "${app.name}": ${reason}${colors.reset}`,
+                    );
                     stats.skipped++;
                     continue;
                 }
 
                 if (verbose) {
-                    console.log(`${colors.green}  ✓ ${app.name}: "${result.description}"${colors.reset}`);
+                    console.log(
+                        `${colors.green}  ✓ ${app.name}: "${result.description}"${colors.reset}`,
+                    );
                 }
 
                 changes.push({
@@ -236,7 +271,9 @@ async function main() {
                 stats.rewritten++;
             }
         } catch (err) {
-            console.log(`${colors.red}  ✗ Batch ${batchIdx + 1} failed: ${err.message}${colors.reset}`);
+            console.log(
+                `${colors.red}  ✗ Batch ${batchIdx + 1} failed: ${err.message}${colors.reset}`,
+            );
             stats.errors += batch.length;
         }
 
@@ -255,17 +292,23 @@ async function main() {
         }
 
         fs.writeFileSync(APPS_FILE, lines.join("\n"));
-        console.log(`\n${colors.green}✅ Updated ${changes.length} descriptions in ${APPS_FILE}${colors.reset}`);
+        console.log(
+            `\n${colors.green}✅ Updated ${changes.length} descriptions in ${APPS_FILE}${colors.reset}`,
+        );
     }
 
     // Summary
     console.log(`\n${colors.bold}📊 Summary${colors.reset}`);
-    console.log(`${colors.green}✓ Rewritten: ${stats.rewritten}${colors.reset}`);
+    console.log(
+        `${colors.green}✓ Rewritten: ${stats.rewritten}${colors.reset}`,
+    );
     console.log(`${colors.yellow}⚠ Skipped: ${stats.skipped}${colors.reset}`);
     console.log(`${colors.red}✗ Errors: ${stats.errors}${colors.reset}`);
 
     if (dryRun && changes.length > 0) {
-        console.log(`\n${colors.cyan}[DRY RUN] Would update these descriptions:${colors.reset}`);
+        console.log(
+            `\n${colors.cyan}[DRY RUN] Would update these descriptions:${colors.reset}`,
+        );
         for (const c of changes) {
             console.log(`  ${c.name}:`);
             console.log(`    ${colors.red}- ${c.oldDesc}${colors.reset}`);
@@ -279,6 +322,8 @@ async function main() {
 main()
     .then((code) => process.exit(code))
     .catch((err) => {
-        console.error(`${colors.red}Fatal error: ${err.message}${colors.reset}`);
+        console.error(
+            `${colors.red}Fatal error: ${err.message}${colors.reset}`,
+        );
         process.exit(1);
     });

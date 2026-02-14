@@ -47,12 +47,16 @@ function parseAppsMarkdown() {
 
     const headers = lines[headerIdx].split("|").map((h) => h.trim());
 
-    const DESC_COL = headers.findIndex((h) => h.toLowerCase() === "description");
+    const DESC_COL = headers.findIndex(
+        (h) => h.toLowerCase() === "description",
+    );
     const NAME_COL = headers.findIndex((h) => h.toLowerCase() === "name");
     const ISSUE_COL = headers.findIndex((h) => h.toLowerCase() === "issue_url");
 
     if (DESC_COL === -1 || NAME_COL === -1 || ISSUE_COL === -1) {
-        console.error("Error: Could not find required columns (Description, Name, Issue_URL)");
+        console.error(
+            "Error: Could not find required columns (Description, Name, Issue_URL)",
+        );
         process.exit(1);
     }
 
@@ -185,11 +189,11 @@ function extractDescription(issueBody) {
  */
 function cleanText(text) {
     return text
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")  // [text](url) → text
-        .replace(/[*_~`]/g, "")                     // Remove markdown formatting
-        .replace(/\|/g, " ")                        // Remove pipes
-        .replace(/\r?\n/g, " ")                     // Newlines → spaces
-        .replace(/\s+/g, " ")                       // Collapse whitespace
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // [text](url) → text
+        .replace(/[*_~`]/g, "") // Remove markdown formatting
+        .replace(/\|/g, " ") // Remove pipes
+        .replace(/\r?\n/g, " ") // Newlines → spaces
+        .replace(/\s+/g, " ") // Collapse whitespace
         .trim();
 }
 
@@ -197,19 +201,25 @@ async function main() {
     console.log(`${colors.bold}📝 App Description Fetcher${colors.reset}\n`);
 
     if (!process.env.GITHUB_TOKEN) {
-        console.error(`${colors.red}Error: GITHUB_TOKEN environment variable is required${colors.reset}`);
+        console.error(
+            `${colors.red}Error: GITHUB_TOKEN environment variable is required${colors.reset}`,
+        );
         process.exit(1);
     }
 
     if (dryRun) {
-        console.log(`${colors.yellow}[DRY RUN] No files will be written${colors.reset}\n`);
+        console.log(
+            `${colors.yellow}[DRY RUN] No files will be written${colors.reset}\n`,
+        );
     }
 
     const truncated = parseAppsMarkdown();
     console.log(`Found ${truncated.length} apps with truncated descriptions\n`);
 
     if (truncated.length === 0) {
-        console.log(`${colors.green}No truncated descriptions found!${colors.reset}`);
+        console.log(
+            `${colors.green}No truncated descriptions found!${colors.reset}`,
+        );
         return 0;
     }
 
@@ -228,7 +238,9 @@ async function main() {
 
         if (error) {
             if (verbose) {
-                console.log(`${colors.yellow}⚠ ${app.name} (#${app.issueNumber}): ${error}${colors.reset}`);
+                console.log(
+                    `${colors.yellow}⚠ ${app.name} (#${app.issueNumber}): ${error}${colors.reset}`,
+                );
             }
             errors++;
             continue;
@@ -238,14 +250,18 @@ async function main() {
 
         if (!original) {
             if (verbose) {
-                console.log(`${colors.yellow}⚠ ${app.name} (#${app.issueNumber}): no description found in issue body${colors.reset}`);
+                console.log(
+                    `${colors.yellow}⚠ ${app.name} (#${app.issueNumber}): no description found in issue body${colors.reset}`,
+                );
             }
             errors++;
             continue;
         }
 
         if (verbose) {
-            console.log(`${colors.green}✓ ${app.name}: "${original.substring(0, 80)}..."${colors.reset}`);
+            console.log(
+                `${colors.green}✓ ${app.name}: "${original.substring(0, 80)}..."${colors.reset}`,
+            );
         }
 
         results.push({
@@ -272,13 +288,19 @@ async function main() {
 
     if (!dryRun && results.length > 0) {
         fs.writeFileSync(OUTPUT_FILE, JSON.stringify(results, null, 2));
-        console.log(`\n${colors.green}✅ Wrote ${results.length} entries to ${OUTPUT_FILE}${colors.reset}`);
+        console.log(
+            `\n${colors.green}✅ Wrote ${results.length} entries to ${OUTPUT_FILE}${colors.reset}`,
+        );
     } else if (dryRun) {
-        console.log(`\n${colors.cyan}[DRY RUN] Would write ${results.length} entries to ${OUTPUT_FILE}${colors.reset}`);
+        console.log(
+            `\n${colors.cyan}[DRY RUN] Would write ${results.length} entries to ${OUTPUT_FILE}${colors.reset}`,
+        );
         if (verbose && results.length > 0) {
             console.log(`\nSample entries:`);
             for (const r of results.slice(0, 3)) {
-                console.log(`  ${r.name}: "${r.original.substring(0, 100)}..."`);
+                console.log(
+                    `  ${r.name}: "${r.original.substring(0, 100)}..."`,
+                );
             }
         }
     }
@@ -289,6 +311,8 @@ async function main() {
 main()
     .then((code) => process.exit(code))
     .catch((err) => {
-        console.error(`${colors.red}Fatal error: ${err.message}${colors.reset}`);
+        console.error(
+            `${colors.red}Fatal error: ${err.message}${colors.reset}`,
+        );
         process.exit(1);
     });

@@ -9,8 +9,6 @@ from ..config import config
 
 logger = logging.getLogger(__name__)
 
-POLLINATIONS_API_BASE = "https://gen.pollinations.ai"
-
 
 async def _get_session() -> aiohttp.ClientSession:
     """Get a shared HTTP session."""
@@ -51,7 +49,7 @@ async def web_search_handler(query: str, model: str = "perplexity-fast", **kwarg
 
     try:
         session = await _get_session()
-        url = f"{POLLINATIONS_API_BASE}/v1/chat/completions"
+        url = f"{config.pollinations_api_base}/v1/chat/completions"
 
         async with session.post(
             url, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=60)
@@ -98,7 +96,7 @@ async def web_handler(query: str, **kwargs) -> dict:
 
     try:
         session = await _get_session()
-        url = f"{POLLINATIONS_API_BASE}/v1/chat/completions"
+        url = f"{config.pollinations_api_base}/v1/chat/completions"
 
         async with session.post(url, json=payload, headers=headers) as response:
             if response.status == 200:

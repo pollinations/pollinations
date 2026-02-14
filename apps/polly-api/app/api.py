@@ -4,7 +4,7 @@ import logging
 import time
 import uuid
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from .models import (
     ChatCompletionRequest,
@@ -30,22 +30,37 @@ def set_client(client):
     _polly_client = client
 
 
+def _extract_bearer_token(request: Request) -> str:
+    """Extract Bearer token from Authorization header."""
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        return auth[7:]
+    return ""
+
+
 @router.post("/v1/chat/completions")
-async def chat_completions(request: ChatCompletionRequest) -> ChatCompletionResponse:
-    """OpenAI-compatible chat completions endpoint."""
+async def chat_completions(request: Request, body: ChatCompletionRequest) -> ChatCompletionResponse:
+    """OpenAI-compatible chat completions endpoint.
+
+    The user's API key (from Authorization header) is passed through
+    to all upstream Pollinations AI calls. GitHub tools use server-side tokens.
+    """
     if _polly_client is None:
         raise HTTPException(status_code=503, detail="Service not ready")
 
-    if request.stream:
+    if body.stream:
         raise HTTPException(
             status_code=400,
             detail="Streaming is not supported. Polly uses server-side tool calling which requires non-streaming mode.",
         )
 
-    # Convert Pydantic messages to dicts
-    messages = [msg.model_dump(exclude_none=True) for msg in request.messages]
+    # Grab user's API key from the request — this is what gen.pollinations.ai forwarded
+    user_api_key = _extract_bearer_token(request)
 
-    # Extract user message for tool filtering
+    # Convert Pydantic messages to dicts
+    messages = [msg.model_dump(exclude_none=True) for msg in body.messages]
+
+    # Extract user message text for tool filtering
     user_message = ""
     for msg in reversed(messages):
         if msg.get("role") == "user":
@@ -64,8 +79,8 @@ async def chat_completions(request: ChatCompletionRequest) -> ChatCompletionResp
     try:
         result = await _polly_client.process_with_tools(
             messages=messages,
-            is_admin=False,
             user_message=user_message,
+            user_api_key=user_api_key,
         )
 
         response_text = result.get("response", "")
@@ -92,7 +107,7 @@ async def chat_completions(request: ChatCompletionRequest) -> ChatCompletionResp
 
     except Exception as e:
         logger.error(f"Chat completions error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal processing error")
 
 
 @router.get("/v1/models")

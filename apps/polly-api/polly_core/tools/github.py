@@ -1,8 +1,8 @@
 """GitHub Issue, Project, Overview, and Custom tool handlers.
 
-Stripped for polly-api: read-only + create (auto-labeled 'polly-external') + comment.
-No admin/write operations (close, edit, label, assign, etc.).
-No Discord-specific features (subscriptions, footers, message URLs).
+Issue: read + create (auto-labeled 'polly-external') + comment.
+PR: handled in github_pr.py.
+Project/Overview/Custom: read-only.
 """
 
 import logging
@@ -76,7 +76,7 @@ class GitHubIssueManager:
         }
 
     async def create_issue(self, title: str, description: str) -> dict:
-        """Create a GitHub issue. Auto-labeled with 'polly-external'. No footer."""
+        """Create a GitHub issue. Auto-labeled with 'polly-external'."""
         if not self._has_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
@@ -125,7 +125,7 @@ class GitHubIssueManager:
             return {"success": False, "error": str(e)}
 
     async def add_comment(self, issue_number: int, comment: str) -> dict:
-        """Add a comment to an existing issue. No footer/attribution."""
+        """Add a comment to an existing issue."""
         if not self._has_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
@@ -210,20 +210,9 @@ async def tool_github_issue(
     _context: dict = None,
     **kwargs,
 ) -> dict:
-    """Issue tool - read + create (auto-labeled 'polly-external') + comment."""
+    """Issue tool — read + create + comment."""
     action = action.lower()
 
-    # Block all admin/write actions
-    ADMIN_ACTIONS = {
-        "close", "reopen", "edit", "label", "unlabel", "assign", "unassign",
-        "milestone", "lock", "link", "create_sub_issue", "add_sub_issue",
-        "remove_sub_issue", "subscribe", "unsubscribe", "unsubscribe_all",
-        "list_subscriptions", "search_user", "edit_comment", "delete_comment",
-    }
-    if action in ADMIN_ACTIONS:
-        return {"error": f"The '{action}' action is not available in the public API."}
-
-    # READ ACTIONS
     if action == "get":
         if not issue_number:
             return {"error": "issue_number required"}
@@ -346,13 +335,8 @@ async def tool_github_project(
     _context: dict = None,
     **kwargs,
 ) -> dict:
-    """Project tool - read-only."""
+    """Project tool — view boards and items."""
     action = action.lower()
-
-    # Block admin actions
-    ADMIN_ACTIONS = {"add", "remove", "set_status", "set_field"}
-    if action in ADMIN_ACTIONS:
-        return {"error": f"The '{action}' action is not available in the public API."}
 
     if action == "list":
         return await github_graphql.list_projects(limit=limit)

@@ -1,6 +1,7 @@
 """Pollinations API client with native tool calling support.
 
-Extracted from polly Discord bot - no Discord dependencies.
+User's API key is passed through for all upstream AI calls.
+GitHub tools use server-side tokens (separate, never exposed).
 """
 
 import asyncio
@@ -13,6 +14,7 @@ from typing import Optional, Any, Callable
 MAX_RETRIES = 3
 RETRY_DELAY = 5
 MAX_SEED = 2**31 - 1
+CACHE_MAX_SIZE = 500
 
 import aiohttp
 
@@ -20,11 +22,12 @@ logger = logging.getLogger(__name__)
 
 
 class ResponseCache:
-    """Simple TTL cache for API responses."""
+    """TTL cache with max size for API responses."""
 
-    def __init__(self, ttl: int = 60):
+    def __init__(self, ttl: int = 60, max_size: int = CACHE_MAX_SIZE):
         self._cache: dict[str, tuple[float, Any]] = {}
         self._ttl = ttl
+        self._max_size = max_size
 
     def get(self, key: str) -> Optional[Any]:
         if key in self._cache:
@@ -35,6 +38,13 @@ class ResponseCache:
         return None
 
     def set(self, key: str, value: Any):
+        # Evict expired entries if at capacity
+        if len(self._cache) >= self._max_size:
+            self.clear_expired()
+        # If still at capacity, evict oldest
+        if len(self._cache) >= self._max_size:
+            oldest_key = min(self._cache, key=lambda k: self._cache[k][0])
+            del self._cache[oldest_key]
         self._cache[key] = (time.time(), value)
 
     def clear_expired(self):
@@ -45,7 +55,12 @@ class ResponseCache:
 
 
 class PollyClient:
-    """Client for Pollinations AI API with native tool calling."""
+    """Client for Pollinations AI API with native tool calling.
+
+    Separates two auth concerns:
+    - user_api_key: passed through for upstream AI calls (reasoning, search)
+    - config tokens: server-side GitHub/Discord tokens (never exposed to users)
+    """
 
     def __init__(self, config):
         self.config = config
@@ -78,6 +93,13 @@ class PollyClient:
             await self._connector.close()
             self._connector = None
 
+    def _get_ai_token(self, user_api_key: str = "") -> str:
+        """Get the token to use for upstream AI calls.
+
+        Priority: user's key > server fallback.
+        """
+        return user_api_key or self.config.pollinations_token
+
     async def generate_text(
         self,
         system_prompt: str,
@@ -86,7 +108,10 @@ class PollyClient:
         temperature: float = 0.7,
         max_tokens: int = 4096,
     ) -> Optional[str]:
-        """Simple text generation without tools."""
+        """Simple text generation without tools.
+
+        Uses server-side token (called by PR review, not user-facing).
+        """
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -131,23 +156,30 @@ class PollyClient:
     async def process_with_tools(
         self,
         messages: list[dict],
-        is_admin: bool = False,
         user_message: str = "",
         tool_context: Optional[dict] = None,
+        user_api_key: str = "",
     ) -> dict:
-        """Process messages using native tool calling."""
+        """Process messages using native tool calling.
+
+        Args:
+            messages: Chat messages
+            user_message: Extracted text for tool filtering
+            tool_context: Extra context passed to tool handlers
+            user_api_key: User's API key for upstream AI calls
+        """
         from .constants import get_tool_system_prompt
 
-        system_content = get_tool_system_prompt(is_admin=False)
+        system_content = get_tool_system_prompt()
 
         if not messages or messages[0].get("role") != "system":
             messages = [{"role": "system", "content": system_content}] + messages
 
         result = await self._call_with_tools(
             messages,
-            is_admin=is_admin,
             user_message=user_message,
             tool_context=tool_context,
+            user_api_key=user_api_key,
         )
         return result
 
@@ -155,9 +187,9 @@ class PollyClient:
         self,
         messages: list[dict],
         max_iterations: int = 20,
-        is_admin: bool = False,
         user_message: str = "",
         tool_context: Optional[dict] = None,
+        user_api_key: str = "",
     ) -> dict:
         from .constants import get_tools_with_embeddings, filter_tools_by_intent
 
@@ -171,7 +203,7 @@ class PollyClient:
         )
 
         tools = (
-            filter_tools_by_intent(user_message, all_tools, is_admin)
+            filter_tools_by_intent(user_message, all_tools)
             if user_message
             else all_tools
         )
@@ -183,7 +215,9 @@ class PollyClient:
 
         for iteration in range(max_iterations):
             start_time = time.time()
-            response = await self._call_api_with_tools(messages, tools=tools)
+            response = await self._call_api_with_tools(
+                messages, tools=tools, user_api_key=user_api_key
+            )
             api_time = time.time() - start_time
             logger.info(f"AI API call took {api_time:.1f}s (iteration {iteration + 1})")
 
@@ -248,7 +282,9 @@ class PollyClient:
                     }
                 )
 
-        final_response = await self._call_api_with_tools(messages, tools=None)
+        final_response = await self._call_api_with_tools(
+            messages, tools=None, user_api_key=user_api_key
+        )
         if final_response:
             final_blocks = final_response.get("content_blocks", [])
             if final_blocks:
@@ -309,7 +345,7 @@ class PollyClient:
                 result = await handler(**args)
 
                 if result.get("error"):
-                    logger.warning(f"Tool {func_name} returned error: {result.get('error')[:200]}")
+                    logger.warning(f"Tool {func_name} returned error: {str(result.get('error'))[:200]}")
                 else:
                     logger.info(f"Tool {func_name} succeeded")
 
@@ -333,10 +369,13 @@ class PollyClient:
         messages: list[dict],
         tools: Optional[list] = None,
         timeout: int = 120,
+        user_api_key: str = "",
     ) -> Optional[dict]:
+        """Call upstream Pollinations AI. Uses user's API key if provided."""
+        token = self._get_ai_token(user_api_key)
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.config.pollinations_token}",
+            "Authorization": f"Bearer {token}",
         }
 
         url = f"{self.config.pollinations_api_base}/v1/chat/completions"

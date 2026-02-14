@@ -1,7 +1,6 @@
 """GitHub Pull Request operations using GraphQL API.
 
-Extracted for polly-api: read-only + comment + AI review.
-All write/admin operations removed.
+Extracted for polly-api: read + comment + AI review.
 """
 
 import logging
@@ -858,7 +857,7 @@ class GitHubPRManager:
     async def add_comment(
         self, pr_number: int, body: str, author: str = "Polly API"
     ) -> dict:
-        """Add a comment to a PR. No footer/attribution."""
+        """Add a comment to a PR."""
         if not self._has_auth():
             return {"error": "GitHub token not configured"}
 
@@ -1636,18 +1635,8 @@ async def tool_github_pr(
     _context: dict = None,
     **kwargs,
 ) -> dict:
-    """PR tool - read-only + comment + AI review."""
+    """PR tool — read + comment + AI review."""
     action = action.lower()
-
-    ADMIN_ACTIONS = {
-        "request_review", "remove_reviewer", "approve", "request_changes",
-        "merge", "update", "create", "convert_to_draft", "ready_for_review",
-        "update_branch", "inline_comment", "suggest", "resolve_thread",
-        "unresolve_thread", "enable_auto_merge", "disable_auto_merge",
-        "close", "reopen",
-    }
-    if action in ADMIN_ACTIONS:
-        return {"error": f"The '{action}' action is not available in the public API."}
 
     if action == "get":
         if not pr_number:

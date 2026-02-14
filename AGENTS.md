@@ -246,9 +246,10 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
    ```
 
    **Snapshot System:** enter.pollinations.ai uses VCR-style snapshots for API responses:
-   - Snapshots stored in test fixtures, replayed during tests
+   - Snapshots stored in `enter.pollinations.ai/test/mocks/snapshots/`
    - Set `TEST_VCR_MODE=record` to record new snapshots
    - Default mode is `replay-or-record`
+   - **Shrinking large snapshots:** Video/image snapshots can be 10-30 MB because stream chunks store raw binary as text (`TextDecoder` output in `vcr.ts:289`). To shrink: replace `response.body.data` array with a single tiny chunk `[{"data": "<minimal-bytes>", "delay": 1}]`. For video/mp4, a valid ftyp box is 20 bytes: `\x00\x00\x00\x14ftypisom\x00\x00\x00\x00isom`. Use Python `bytes.decode('latin-1')` to get the string. Tests only check headers/status, not actual media content.
 
    **Testing Tokens:** `enter.pollinations.ai/.testingtokens` contains:
    - `ENTER_API_TOKEN_LOCAL` / `ENTER_API_TOKEN_REMOTE` - API keys

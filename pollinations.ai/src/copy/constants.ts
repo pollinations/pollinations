@@ -5,7 +5,6 @@ export const COPY_CONSTANTS = {
     // External data sources
     newsFilePath:
         "https://raw.githubusercontent.com/pollinations/pollinations/production/social/news/transformed/highlights.md",
-    // TODO: revert to main branch URL after merge
     appsFilePath: "/APPS.md",
 
     // API

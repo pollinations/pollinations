@@ -1,3 +1,4 @@
+- **2026-02-14** – **🦞 OpenClaw Integration** Use 25+ AI models as your [OpenClaw](https://openclaw.ai) brain — one setup script, free credits included. [openclaw.pollinations.ai](https://openclaw.pollinations.ai)
 - **2026-02-09** – **🚀 Massive Model Drop** Added `imagen-4`, `flux-2-dev`, `grok-video`, and `LTX-2` for next-level image and video generation.
 - **2026-02-09** – **🎵 Audio Studio** Generate music with `elevenmusic`, transcribe with `whisper`, and use emotive TTS with `eleven_v3`.
 - **2026-02-09** – **🧠 Smarter Claude** Upgraded `claude-large` to the latest Claude 3 Opus 4.6 for enhanced reasoning.

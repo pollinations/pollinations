@@ -71,7 +71,9 @@ function AppCard({ app }: AppCardProps) {
           : "border border-border-faint";
 
     return (
-        <div className={`flex flex-col h-full rounded-sub-card overflow-hidden ${cardBorder}`}>
+        <div
+            className={`flex flex-col h-full rounded-sub-card overflow-hidden ${cardBorder}`}
+        >
             {/* Title header — full-width, links to app */}
             <a
                 href={app.url}
@@ -80,7 +82,8 @@ function AppCard({ app }: AppCardProps) {
                 className="flex items-center justify-between px-4 py-3 bg-input-background hover:brightness-110 transition-all"
             >
                 <span className="font-headline text-base font-black uppercase text-text-body-main">
-                    {app.emoji && `${app.emoji} `}{app.name}
+                    {app.emoji && `${app.emoji} `}
+                    {app.name}
                 </span>
                 <ExternalLinkIcon className="w-4 h-4 text-text-body-main opacity-60 flex-shrink-0" />
             </a>
@@ -89,7 +92,10 @@ function AppCard({ app }: AppCardProps) {
             <div className="flex flex-col flex-1 px-4 py-3">
                 <div className="flex-1">
                     {app.description && (
-                        <Body className="text-sm text-text-body-secondary mb-3" spacing="none">
+                        <Body
+                            className="text-sm text-text-body-secondary mb-3"
+                            spacing="none"
+                        >
                             {app.description}
                         </Body>
                     )}
@@ -97,7 +103,9 @@ function AppCard({ app }: AppCardProps) {
                     {/* Status badges */}
                     {hasStatusBadges && (
                         <div className="flex flex-wrap items-center gap-1.5 mb-3">
-                            {app.byop && <Badge variant="highlight">BYOP</Badge>}
+                            {app.byop && (
+                                <Badge variant="highlight">BYOP</Badge>
+                            )}
                             {isNew && <Badge variant="brand">NEW</Badge>}
                             {fires && (
                                 <span className="relative group/fire cursor-help">
@@ -105,7 +113,8 @@ function AppCard({ app }: AppCardProps) {
                                         TRENDING {fires}
                                     </Badge>
                                     <span className="hidden group-hover/fire:block absolute z-10 bottom-full left-0 mb-1 px-2 py-1 text-xs font-mono text-text-body-main bg-surface-card border border-border-main rounded shadow-shadow-dark-md whitespace-nowrap">
-                                        {app.requests24h.toLocaleString()} requests in 24h
+                                        {app.requests24h.toLocaleString()}{" "}
+                                        requests in 24h
                                     </span>
                                 </span>
                             )}
@@ -190,7 +199,8 @@ export default function AppsPage() {
                 // 1. BYOP first
                 if (a.byop !== b.byop) return a.byop ? -1 : 1;
                 // 2. Fire tier descending
-                const fireDiff = fireTier(b.requests24h) - fireTier(a.requests24h);
+                const fireDiff =
+                    fireTier(b.requests24h) - fireTier(a.requests24h);
                 if (fireDiff !== 0) return fireDiff;
                 // 3. GitHub stars descending
                 if ((b.stars || 0) !== (a.stars || 0))

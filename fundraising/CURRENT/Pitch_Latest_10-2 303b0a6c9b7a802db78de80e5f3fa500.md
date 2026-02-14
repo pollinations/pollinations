@@ -22,11 +22,12 @@ They're not startups. They don't have backend teams.
 They build with prompts, ship on GitHub, and find users overnight.
 
 But the moment an app gets traction, they hit a wall:
-API keys they can't afford. Billing systems they can't build. Costs they can't predict.
 
-*"What if my app takes off and I can't afford the bill?"*
-
-And users? They won't pay for 10 separate AI subscriptions. Subscription hell.
+| Developers | Users |
+| --- | --- |
+| API keys they can't afford | 10 separate AI subscriptions |
+| Billing systems they can't build | 10 separate logins and payments |
+| *"What if my app takes off and I can't afford the bill?"* | Subscription hell |
 
 That fear kills more AI apps than bad code.
 
@@ -36,7 +37,7 @@ That fear kills more AI apps than bad code.
 
 **Natural language is the new programming.** "Vibe coding" is Collins Word of the Year 2025.
 
-A new creator space is emerging — indie developers, hackers, students, gamers — shipping real products on Discord, Reddit, and GitHub. Models are commodity. **Distribution wins.**
+A new creator space is emerging — indie developers, hackers, students, gamers — shipping real products on Discord, Reddit, and GitHub.
 
 Cloud aggregators focus on startups and enterprise. These **creators** don't fit that mold. Pollinations is the open platform made for them.
 
@@ -63,13 +64,15 @@ Full-stack engineer. Infrastructure at scale. Shipped and runs the entire backen
 
 **1 Pollen = $1.** One credit, one wallet, every AI app.
 
-Developers add Pollen with one API call. Users buy Pollen once — spend it across 1,000+ apps. No API keys. No backend. No billing code. Just build.
+| Developers | Users |
+| --- | --- |
+| One API, all models. Zero setup. | One account. One balance. |
+| Every app is a storefront | Buy Pollen once, use across 1,000+ apps |
+| Earn on every Pollen spent, cash out to bank | No new signups, no new billing |
 
 **Think of it like electricity.** We power the apps. Users pay for the electricity. Creators share the revenue.
 
-Developer builds free → Users buy Pollen inside the app → We take a cut, developer gets the rest
-
-**Developers are our distribution.** Every app is a storefront we didn't have to build. Creators earn on every Pollen spent inside their app — and can cash out to their bank account.
+**Developers are our distribution.** Every app is a storefront we didn't have to build.
 
 ---
 
@@ -111,8 +114,6 @@ Stripe started with side projects. Firebase started with hobbyists. We're alread
 
 ## Business Model
 
-**Revenue scales with end users, not developer headcount.**
-
 Users buy Pollen once and spend it everywhere.
 More apps = more reasons to buy. More users = more revenue per app.
 
@@ -138,3 +139,7 @@ Power the long tail of AI apps.
 We're already inside 1,000+ products.
 
 **pollinations.ai**
+
+# Aesthetic
+
+Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and  gradient background with chunky retro sprites. A cute pixel bee mascot. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm, funny wholesome. 

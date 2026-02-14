@@ -189,6 +189,9 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
 
 **IMPORTANT - Claude often makes these mistakes:**
 
+- **Check current branch before starting work** - Run `git branch` to verify you're on the right branch
+- **Create dedicated branches for features** - Don't implement features on unrelated fix branches
+- **Commit VCR snapshots with test changes** - Always `git add` snapshot files after running tests
 - **Don't use `cd` in bash commands** - Use the `cwd` parameter instead
 - **Don't run `pytest`** - Use `npm run test` or `npx vitest run`
 - **Don't create .md documentation files** unless explicitly asked

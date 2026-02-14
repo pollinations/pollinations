@@ -738,7 +738,14 @@ async function pollTaskOnce(
     if (!response.ok) {
         const errorText = await response.text();
         logError("Poll error:", response.status, errorText);
-        return { status: "pending" }; // Continue polling on non-fatal errors
+        // Fail fast on client errors (4xx) - auth failures, bad requests won't self-resolve
+        if (response.status >= 400 && response.status < 500) {
+            return {
+                status: "failed",
+                error: `DashScope poll failed (${response.status}): ${errorText}`,
+            };
+        }
+        return { status: "pending" }; // Retry on server errors (5xx) / network issues
     }
 
     const data: WanTaskResult = await response.json();

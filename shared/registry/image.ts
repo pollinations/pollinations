@@ -293,7 +293,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Grok Video (api.airforce) - xAI video gen",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
     "ltx-2": {

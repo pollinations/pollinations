@@ -223,7 +223,7 @@ export const IMAGE_SERVICES = {
             // Video: $0.0125/sec, Audio: $0.0125/sec, Total: $0.025/sec
             // Same price for both Airforce (primary) and DashScope (fallback)
             {
-                date: new Date("2026-02-14").getTime(),
+                date: new Date("2026-02-13").getTime(),
                 completionVideoSeconds: 0.0125, // $0.0125 per second (video only)
                 completionAudioSeconds: 0.0125, // $0.0125 per second (audio)
             },

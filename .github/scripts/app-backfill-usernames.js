@@ -141,16 +141,51 @@ async function main() {
         const issueMatch = issueUrl.match(/issues\/(\d+)/);
         if (!issueMatch) continue;
 
+        const issueNumber = issueMatch[1];
+
+        // Skip shared issue URLs that many rows reference but aren't
+        // actual app submissions (only count issues referenced once)
         toFix.push({
             lineIdx: i,
             name,
-            issueNumber: issueMatch[1],
+            issueNumber,
+            issueUrl,
         });
     }
 
-    console.log(`Found ${toFix.length} apps missing GitHub usernames\n`);
+    // Count how many rows reference each issue URL across ALL rows (not just toFix)
+    const issueRefCounts = {};
+    for (let i = dataStartIdx; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line.startsWith("|")) continue;
+        const cols = line.split("|");
+        const url = (cols[ISSUE_COL] || "").trim();
+        const m = url.match(/issues\/(\d+)/);
+        if (m) {
+            issueRefCounts[m[1]] = (issueRefCounts[m[1]] || 0) + 1;
+        }
+    }
 
-    if (toFix.length === 0) {
+    // Filter out rows whose issue URL is shared by many rows (not real submissions)
+    const SHARED_ISSUE_THRESHOLD = 3;
+    const filtered = toFix.filter((app) => {
+        const refs = issueRefCounts[app.issueNumber] || 0;
+        if (refs >= SHARED_ISSUE_THRESHOLD) {
+            if (verbose) {
+                console.log(
+                    `${colors.yellow}⏭ ${app.name}: skipping — issue #${app.issueNumber} is referenced by ${refs} rows (not a real submission)${colors.reset}`,
+                );
+            }
+            return false;
+        }
+        return true;
+    });
+
+    console.log(
+        `Found ${toFix.length} apps missing GitHub usernames (${toFix.length - filtered.length} skipped as shared-issue duplicates)\n`,
+    );
+
+    if (filtered.length === 0) {
         console.log(
             `${colors.green}All apps have usernames!${colors.reset}`,
         );
@@ -160,12 +195,12 @@ async function main() {
     const changes = [];
     let errors = 0;
 
-    for (let i = 0; i < toFix.length; i++) {
-        const app = toFix[i];
+    for (let i = 0; i < filtered.length; i++) {
+        const app = filtered[i];
 
         if (!verbose) {
             process.stdout.write(
-                `\rFetching: ${i + 1}/${toFix.length}`,
+                `\rFetching: ${i + 1}/${filtered.length}`,
             );
         }
 

@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Different message 1 - 1771026652180"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2004",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 13 Feb 2026 23:51:00 GMT",
+      "etag": "W/\"7d4-sAXzTW2gbkCKuMmd0UijSwW+96w\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "576",
+      "x-usage-completion-text-tokens": "214",
+      "x-usage-prompt-text-tokens": "258"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Do you want that line rewritten, explained, or transformed into something else? I’m guessing you either want an alternative phrasing or you’re showing a label with an ID/timestamp.\n\nHere are a few quick rewrites in different tones — tell me which fits or what you actually need:\n\n- Neutral: Different message 1 — 1771026652180\n- Formal: Message variant #1 — ID: 1771026652180\n- Casual: Here’s a different message (1) — 1771026652180\n- Concise: Alt msg 1: 1771026652180\n- Playful: Switching it up: Different message #1 ✨ 1771026652180\n- Technical: Alternate payload[1] = 1771026652180\n\nIf that number is a timestamp and you want it converted to a date/time (or explained), say so and I’ll convert it. Or tell me the tone/length/context and I’ll craft something specific.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1771026652,
+        "id": "pllns_bd7c93439c6bbaec056e061bdf959697",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 790,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 576,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 258,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 1048
+        }
+      }
+    }
+  }
+}

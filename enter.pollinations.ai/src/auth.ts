@@ -59,7 +59,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             maxExpiresIn: 365, // Max 1 year
         },
         rateLimit: {
-            enabled: true, // Enable rate limiting - publishable keys need protection
+            enabled: false, // Disabled - Roblox games hit rate limits with many concurrent players
         },
     });
 

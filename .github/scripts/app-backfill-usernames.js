@@ -76,9 +76,7 @@ function fetchJSON(path) {
 }
 
 async function main() {
-    console.log(
-        `${colors.bold}👤 App Username Backfill${colors.reset}\n`,
-    );
+    console.log(`${colors.bold}👤 App Username Backfill${colors.reset}\n`);
 
     if (!process.env.GITHUB_TOKEN) {
         console.error(
@@ -105,9 +103,7 @@ async function main() {
     const USERID_COL = headers.findIndex(
         (h) => h.toLowerCase() === "github_userid",
     );
-    const ISSUE_COL = headers.findIndex(
-        (h) => h.toLowerCase() === "issue_url",
-    );
+    const ISSUE_COL = headers.findIndex((h) => h.toLowerCase() === "issue_url");
     const NAME_COL = headers.findIndex((h) => h.toLowerCase() === "name");
 
     if (USERNAME_COL === -1 || ISSUE_COL === -1) {
@@ -186,9 +182,7 @@ async function main() {
     );
 
     if (filtered.length === 0) {
-        console.log(
-            `${colors.green}All apps have usernames!${colors.reset}`,
-        );
+        console.log(`${colors.green}All apps have usernames!${colors.reset}`);
         return 0;
     }
 
@@ -199,9 +193,7 @@ async function main() {
         const app = filtered[i];
 
         if (!verbose) {
-            process.stdout.write(
-                `\rFetching: ${i + 1}/${filtered.length}`,
-            );
+            process.stdout.write(`\rFetching: ${i + 1}/${filtered.length}`);
         }
 
         // Fetch issue to get author
@@ -273,14 +265,10 @@ async function main() {
     console.log(
         `${colors.green}✓ Backfilled: ${changes.length}${colors.reset}`,
     );
-    console.log(
-        `${colors.yellow}⚠ Errors: ${errors}${colors.reset}`,
-    );
+    console.log(`${colors.yellow}⚠ Errors: ${errors}${colors.reset}`);
 
     if (dryRun && changes.length > 0) {
-        console.log(
-            `\n${colors.cyan}[DRY RUN] Would update:${colors.reset}`,
-        );
+        console.log(`\n${colors.cyan}[DRY RUN] Would update:${colors.reset}`);
         for (const c of changes) {
             console.log(`  ${c.name}: @${c.author} (${c.userId})`);
         }

@@ -159,6 +159,14 @@ function buildRequestBody(
             defaultResolution: "720P",
         });
 
+        // For grok video, map standard wide/tall presets to 3:2 / 2:3 sizes.
+        const grokAspectRatio =
+            airforceModel === "grok-imagine-video"
+                ? aspectRatio === "16:9"
+                    ? "3:2"
+                    : "2:3"
+                : aspectRatio;
+
         // Map resolution to size parameter (grok-video uses WxH format)
         const sizeMap: Record<string, Record<string, string>> = {
             "16:9": {
@@ -171,9 +179,19 @@ function buildRequestBody(
                 "720P": "720x1280",
                 "1080P": "1080x1920",
             },
+            "3:2": {
+                "480P": "960x640",
+                "720P": "1440x960",
+                "1080P": "1620x1080",
+            },
+            "2:3": {
+                "480P": "640x960",
+                "720P": "960x1440",
+                "1080P": "1080x1620",
+            },
         };
 
-        const size = sizeMap[aspectRatio]?.[resolution];
+        const size = sizeMap[grokAspectRatio]?.[resolution];
         if (size) {
             requestBody.size = size;
         }

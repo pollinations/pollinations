@@ -77,9 +77,28 @@ const chatCompletionHandlers = factory.createHandlers(
                 status: response.status,
                 body: responseText,
             });
+
+            // Try to extract meaningful error message from upstream JSON
+            // Fall back to raw text if parsing fails
+            let errorMessage =
+                responseText || getDefaultErrorMessage(response.status);
+            try {
+                const parsed = JSON.parse(responseText);
+                // Use the most specific error message available
+                const extracted =
+                    parsed?.details?.error?.message ||
+                    parsed?.error?.message ||
+                    parsed?.message ||
+                    (typeof parsed?.error === "string" ? parsed.error : null);
+                if (extracted) {
+                    errorMessage = extracted;
+                }
+            } catch {
+                // Not JSON or parse failed - use raw text as-is
+            }
+
             throw new UpstreamError(response.status as ContentfulStatusCode, {
-                message:
-                    responseText || getDefaultErrorMessage(response.status),
+                message: errorMessage,
                 requestUrl: targetUrl,
             });
         }

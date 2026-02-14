@@ -167,7 +167,7 @@ function buildRequestBody(
                     : aspectRatio === "9:16"
                       ? "2:3"
                       : aspectRatio;
-            requestBody.aspect_ratio = airforceAspectRatio;
+            requestBody.aspectRatio = airforceAspectRatio;
         }
 
         // Map resolution to size parameter (grok-video uses WxH format)

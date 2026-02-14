@@ -4,7 +4,6 @@ import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
 const logOps = debug("pollinations:wan:ops");
@@ -111,7 +110,16 @@ export async function callWanAPI(
             error instanceof Error ? error.message : String(error);
         logError("Airforce API failed:", errorMessage);
 
-        // Check if we have Alibaba credentials for fallback
+        // Don't fall back on client errors (4xx) — bad prompts/params will fail on DashScope too
+        if (
+            error instanceof HttpError &&
+            error.status >= 400 &&
+            error.status < 500
+        ) {
+            throw error;
+        }
+
+        // Fall back to DashScope on 5xx / network errors
         if (process.env.DASHSCOPE_API_KEY) {
             logOps("Falling back to Alibaba DashScope API");
             return await callWanAlibabaAPI(
@@ -179,16 +187,19 @@ async function callWanAirforceAPI(
 
     const videoBuffer = await downloadVideo(videoUrl, progress, requestId);
 
+    // Airforce doesn't report actual duration, use requested duration for billing
+    const durationForBilling = videoParams.durationSeconds;
+
     return {
         buffer: videoBuffer,
         mimeType: "video/mp4",
-        durationSeconds: videoParams.durationSeconds,
+        durationSeconds: durationForBilling,
         trackingData: {
             actualModel: "wan",
             usage: {
-                completionVideoSeconds: videoParams.durationSeconds,
+                completionVideoSeconds: durationForBilling,
                 completionAudioSeconds: videoParams.generateAudio
-                    ? videoParams.durationSeconds
+                    ? durationForBilling
                     : 0,
             },
         },
@@ -452,30 +463,23 @@ async function callWanAlibabaAPI(
     const videoParams = prepareVideoParameters(safeParams);
     const imageUrl = extractFirstImage(safeParams.image);
 
-    // Choose model based on whether we have an image
-    const model = imageUrl ? WAN_I2V_MODEL : WAN_T2V_MODEL;
-    const mode = imageUrl ? "I2V" : "T2V";
-
-    logOps(`Calling Wan 2.6 API (DashScope ${mode}) with params:`, {
-        prompt,
-        ...videoParams,
-        model,
-    });
+    logOps(
+        `Calling Wan 2.6 API (DashScope ${imageUrl ? "I2V" : "T2V"}) with params:`,
+        {
+            prompt,
+            ...videoParams,
+            hasImage: !!imageUrl,
+        },
+    );
 
     progress.updateBar(
         requestId,
         35,
         "Processing",
-        `Starting video generation with Wan 2.6 (${mode})...`,
+        `Starting video generation with Wan 2.6 (${imageUrl ? "I2V" : "T2V"})...`,
     );
 
-    const requestBody = await buildDashScopeRequest(
-        prompt,
-        imageUrl,
-        videoParams,
-        progress,
-        requestId,
-    );
+    const requestBody = buildDashScopeRequest(prompt, imageUrl, videoParams);
 
     logRequestSafely(requestBody);
 
@@ -511,42 +515,18 @@ async function callWanAlibabaAPI(
  * Build request body for DashScope API
  * Supports both T2V (text-only) and I2V (text+image) modes
  */
-async function buildDashScopeRequest(
+function buildDashScopeRequest(
     prompt: string,
     imageUrl: string | undefined,
     videoParams: ReturnType<typeof prepareVideoParameters>,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<DashScopeRequest> {
+): DashScopeRequest {
     const model = imageUrl ? WAN_I2V_MODEL : WAN_T2V_MODEL;
 
-    // For I2V mode, process the image
-    if (imageUrl) {
-        progress.updateBar(
-            requestId,
-            40,
-            "Processing",
-            "Processing reference image...",
-        );
-
-        const imgUrl = await prepareImageUrl(imageUrl);
-
-        return {
-            model,
-            input: { prompt, img_url: imgUrl },
-            parameters: {
-                resolution: videoParams.resolution,
-                duration: videoParams.durationSeconds,
-                prompt_extend: true,
-                audio: videoParams.generateAudio,
-            },
-        };
-    }
-
-    // For T2V mode, no image needed
     return {
         model,
-        input: { prompt },
+        input: imageUrl
+            ? { prompt, img_url: prepareImageUrl(imageUrl) }
+            : { prompt },
         parameters: {
             resolution: videoParams.resolution,
             duration: videoParams.durationSeconds,
@@ -557,25 +537,21 @@ async function buildDashScopeRequest(
 }
 
 /**
- * Prepare image URL for DashScope (convert to base64 if needed)
+ * Validate and return image URL for DashScope
+ * DashScope accepts HTTP/HTTPS URLs and base64 data URIs directly
  */
-async function prepareImageUrl(imageUrl: string): Promise<string> {
-    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+function prepareImageUrl(imageUrl: string): string {
+    if (
+        imageUrl.startsWith("http://") ||
+        imageUrl.startsWith("https://") ||
+        imageUrl.startsWith("data:")
+    ) {
         return imageUrl;
     }
-
-    try {
-        const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
-        return `data:${mimeType};base64,${base64}`;
-    } catch (error) {
-        const errorMessage =
-            error instanceof Error ? error.message : String(error);
-        logError("Error processing reference image:", errorMessage);
-        throw new HttpError(
-            `Failed to process reference image: ${errorMessage}`,
-            400,
-        );
-    }
+    throw new HttpError(
+        `Invalid image URL: must be http/https or data URI`,
+        400,
+    );
 }
 
 /**

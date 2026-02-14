@@ -219,7 +219,15 @@ export const IMAGE_SERVICES = {
         provider: "airforce",
         alpha: true,
         cost: [
-            // Wan 2.6 (T2V & I2V) - via Airforce API
+            // Wan 2.6 - Alibaba DashScope fallback (when Airforce fails)
+            // Half of Alibaba's official I2V pricing with separate audio/video
+            // Video: $0.0125/sec, Audio: $0.0125/sec, Total: $0.025/sec
+            {
+                date: new Date("2026-02-14").getTime(), // Alibaba fallback pricing
+                completionVideoSeconds: 0.0125, // $0.0125 per second (video only)
+                completionAudioSeconds: 0.0125, // $0.0125 per second (audio)
+            },
+            // Wan 2.6 (T2V & I2V) - via Airforce API (primary)
             // Supports both text-to-video and image-to-video with audio
             // Flat rate: $0.01/sec (video + audio included)
             {
@@ -229,7 +237,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "Wan 2.6 (api.airforce) - Alibaba text/image-to-video with audio (2-15s, up to 1080P)",
+            "Wan 2.6 - Alibaba text/image-to-video with audio (2-15s, up to 1080P). Primary via api.airforce, fallback via DashScope",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },

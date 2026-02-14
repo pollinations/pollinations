@@ -13,6 +13,7 @@ SQL >
     FROM generation_event
     WHERE start_time > now() - INTERVAL 1 DAY
       AND api_key_name LIKE '%.%'
+      AND api_key_type = 'secret'
     GROUP BY api_key_name
     HAVING requests > 0
 

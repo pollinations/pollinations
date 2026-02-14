@@ -42,8 +42,6 @@ def load_description_prompt():
     with open(DESCRIPTION_PROMPT_PATH, "r") as f:
         return f.read().strip()
 
-import shlex
-
 def sanitize_string(s, max_length=100):
     if not s or not isinstance(s, str):
         return ""
@@ -123,8 +121,6 @@ def call_llm(system_prompt, user_message):
 
 def parse_issue(body):
     """Parse issue body to extract app details."""
-    import re
-
     def extract(pattern, default=""):
         match = re.search(pattern, body, re.IGNORECASE | re.MULTILINE)
         return match.group(1).strip() if match else default
@@ -205,16 +201,16 @@ Write a concise, helpful comment (2-3 sentences max) explaining the issue and wh
         gh_api(f"/repos/pollinations/pollinations/issues/{ISSUE_NUMBER}/comments", "POST", {"body": comment})
 
         # Update label
-        run_cmd(f'gh issue edit {ISSUE_NUMBER} --remove-label "TIER-APP" --add-label "{label}"')
+        run_cmd(["gh", "issue", "edit", ISSUE_NUMBER, "--remove-label", "TIER-APP", "--add-label", label])
 
         if label == "TIER-APP-REJECTED":
-            run_cmd(f'gh issue close {ISSUE_NUMBER}')
+            run_cmd(["gh", "issue", "close", ISSUE_NUMBER])
 
         print(f"   ❌ Handled validation failure: {label}")
         return
 
     # Validation passed - fetch and parse issue
-    issue_data, _ = run_cmd(f'gh issue view {ISSUE_NUMBER} --json body,author,title')
+    issue_data, _ = run_cmd(["gh", "issue", "view", ISSUE_NUMBER, "--json", "body,author,title"])
     issue = json.loads(issue_data)
     parsed = parse_issue(issue.get("body", ""))
 
@@ -245,8 +241,6 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 
     # Parse LLM response
     try:
-        # Try to extract JSON from response
-        import re
         json_match = re.search(r'\{[^{}]+\}', llm_response, re.DOTALL)
         if json_match:
             llm_data = json.loads(json_match.group())
@@ -292,8 +286,8 @@ Respond with ONLY a JSON object (no markdown, no explanation):
     slug = parsed['name'].lower().replace(" ", "-").replace("_", "-")[:20]
     branch = f"auto/app-{ISSUE_NUMBER}-{slug}"
 
-    run_cmd("git fetch origin main")
-    run_cmd(f"git checkout -b {branch} origin/main")
+    run_cmd(["git", "fetch", "origin", "main"])
+    run_cmd(["git", "checkout", "-b", branch, "origin/main"])
 
     # Build the row
     today = datetime.now().strftime("%Y-%m-%d")
@@ -334,21 +328,21 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 
     # Add row using the prepend script
     os.environ["NEW_ROW"] = new_row
-    run_cmd("node .github/scripts/app-prepend-row.js")
-    run_cmd("node .github/scripts/app-update-readme.js")
+    run_cmd(["node", ".github/scripts/app-prepend-row.js"])
+    run_cmd(["node", ".github/scripts/app-update-readme.js"])
 
     # Configure git
-    run_cmd(f'git config user.name "{BOT_NAME}"')
-    run_cmd(f'git config user.email "{BOT_EMAIL}"')
+    run_cmd(["git", "config", "user.name", BOT_NAME])
+    run_cmd(["git", "config", "user.email", BOT_EMAIL])
 
     # Commit with issue author as co-author
     commit_msg = f"""Add {parsed['name']} to {category}
 
 Co-authored-by: {ISSUE_AUTHOR} <{ISSUE_AUTHOR}@users.noreply.github.com>"""
 
-    run_cmd("git add -A")
-    run_cmd(f'git commit -m "{commit_msg}"')
-    run_cmd(f"git push origin {branch} --force-with-lease")
+    run_cmd(["git", "add", "-A"])
+    run_cmd(["git", "commit", "-m", commit_msg])
+    run_cmd(["git", "push", "origin", branch, "--force-with-lease"])
 
     # Check for existing PR
     existing_pr = validation.get("existing_pr")
@@ -357,10 +351,10 @@ Co-authored-by: {ISSUE_AUTHOR} <{ISSUE_AUTHOR}@users.noreply.github.com>"""
     else:
         # Create PR
         pr_body = f"- Adds [{parsed['name']}]({parsed['url']}) to {category}\n- {description}\n\nFixes #{ISSUE_NUMBER}"
-        run_cmd(f'gh pr create --title "Add {parsed["name"]} to {category}" --body "{pr_body}" --label "TIER-APP-REVIEW-PR"')
+        run_cmd(["gh", "pr", "create", "--title", f"Add {parsed['name']} to {category}", "--body", pr_body, "--label", "TIER-APP-REVIEW-PR"])
 
     # Update issue label (remove both TIER-APP and TIER-APP-INCOMPLETE if present)
-    run_cmd(f'gh issue edit {ISSUE_NUMBER} --remove-label "TIER-APP" --remove-label "TIER-APP-INCOMPLETE" --add-label "TIER-APP-REVIEW"')
+    run_cmd(["gh", "issue", "edit", ISSUE_NUMBER, "--remove-label", "TIER-APP", "--remove-label", "TIER-APP-INCOMPLETE", "--add-label", "TIER-APP-REVIEW"])
 
     print(f"   ✅ Done!")
 

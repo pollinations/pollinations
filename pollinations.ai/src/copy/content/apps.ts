@@ -7,9 +7,16 @@ export const APPS_PAGE = {
         "Paradise-built apps, tools, and experiments—pollinations.ai-powered. Browse, try, ship.",
 
     // Submit app CTA
-    submitCtaTitle: "🚀 Built something cool?",
+    submitCtaTitle: "Built something cool?",
     submitCtaDescription: "Get featured in the showcase and earn Pollen!",
-    submitCtaButton: "✨ Submit App",
+    submitCtaButton: "Submit App",
+
+    // BYOP CTA
+    byopCtaTitle: "Bring Your Own Pollen",
+    byopCtaDescription:
+        "Users pay for their own AI usage. You pay $0. Ship apps without API costs.",
+    byopCtaButton: "Learn More",
+
     noAppsMessage: "No apps found in this category yet.",
 };
 

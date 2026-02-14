@@ -178,6 +178,7 @@ function AppCard({ app }: AppCardProps) {
 
 export default function AppsPage() {
     const [selectedCategory, setSelectedCategory] = useState("creative");
+    const [byopFilter, setByopFilter] = useState(false);
 
     // Fetch apps from GitHub
     const { apps: allApps } = useApps(COPY_CONSTANTS.appsFilePath);
@@ -191,10 +192,13 @@ export default function AppsPage() {
         "label",
     );
 
-    // Filter and sort apps by category
+    // Filter and sort apps by category (+ optional BYOP filter)
     const filteredApps = useMemo(() => {
         return allApps
-            .filter((app: App) => app.category === selectedCategory)
+            .filter((app: App) => {
+                if (byopFilter) return app.byop;
+                return app.category === selectedCategory;
+            })
             .sort((a, b) => {
                 // 1. BYOP first
                 if (a.byop !== b.byop) return a.byop ? -1 : 1;
@@ -210,7 +214,7 @@ export default function AppsPage() {
                     a.approvedDate || "",
                 );
             });
-    }, [allApps, selectedCategory]);
+    }, [allApps, selectedCategory, byopFilter]);
 
     // Translate app descriptions
     const { translated: displayApps } = useTranslate(
@@ -223,26 +227,49 @@ export default function AppsPage() {
             <PageCard isTranslating={isTranslating}>
                 <Title>{pageCopy.title}</Title>
                 <Body spacing="comfortable">{pageCopy.subtitle}</Body>
-                <div className="flex items-center gap-4 p-4 mb-10 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
-                    <div className="flex-1">
-                        <p className="font-headline text-sm font-black text-text-body-main mb-1">
-                            {pageCopy.submitCtaTitle}
-                        </p>
-                        <p className="font-body text-xs text-text-body-secondary">
-                            {pageCopy.submitCtaDescription}
-                        </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                    <div className="flex items-center gap-4 p-4 bg-surface-card rounded-sub-card border-l-4 border-border-brand">
+                        <div className="flex-1">
+                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                                {pageCopy.submitCtaTitle}
+                            </p>
+                            <p className="font-body text-xs text-text-body-secondary">
+                                {pageCopy.submitCtaDescription}
+                            </p>
+                        </div>
+                        <Button
+                            as="a"
+                            href={LINKS.githubSubmitApp}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="primary"
+                            size="default"
+                        >
+                            {pageCopy.submitCtaButton}
+                            <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
+                        </Button>
                     </div>
-                    <Button
-                        as="a"
-                        href={LINKS.githubSubmitApp}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="primary"
-                        size="default"
-                    >
-                        {pageCopy.submitCtaButton}
-                        <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
-                    </Button>
+                    <div className="flex items-center gap-4 p-4 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
+                        <div className="flex-1">
+                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                                {pageCopy.byopCtaTitle}
+                            </p>
+                            <p className="font-body text-xs text-text-body-secondary">
+                                {pageCopy.byopCtaDescription}
+                            </p>
+                        </div>
+                        <Button
+                            as="a"
+                            href={LINKS.byopDocs}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="primary"
+                            size="default"
+                        >
+                            {pageCopy.byopCtaButton}
+                            <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Category Filters */}
@@ -251,13 +278,26 @@ export default function AppsPage() {
                         <Button
                             key={cat.id}
                             variant="toggle"
-                            data-active={selectedCategory === cat.id}
-                            onClick={() => setSelectedCategory(cat.id)}
+                            data-active={
+                                !byopFilter && selectedCategory === cat.id
+                            }
+                            onClick={() => {
+                                setByopFilter(false);
+                                setSelectedCategory(cat.id);
+                            }}
                             className="px-4 py-2 text-sm"
                         >
                             {cat.label}
                         </Button>
                     ))}
+                    <Button
+                        variant="toggle"
+                        data-active={byopFilter}
+                        onClick={() => setByopFilter(!byopFilter)}
+                        className="px-4 py-2 text-sm"
+                    >
+                        BYOP
+                    </Button>
                 </div>
 
                 {/* App Grid */}

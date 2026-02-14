@@ -1,6 +1,6 @@
 {
   "request": {
-    "url": "http://localhost:16384/prompt/animate%20this%20image?model=veo&duration=4&image=https%3A%2F%2Fimage.pollinations.ai%2Fprompt%2Fpure%2520white%2520background%3Fwidth%3D512%26height%3D512%26nologo%3Dtrue%26seed%3D42",
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/prompt/create%20a%20video?model=wan&duration=5",
     "method": "GET",
     "body": {
       "type": "empty",
@@ -18,14 +18,14 @@
       "access-control-expose-headers": "Content-Length",
       "cache-control": "public, max-age=31536000, immutable",
       "connection": "keep-alive",
-      "content-disposition": "inline; filename=\"animate-this-image.mp4\"",
+      "content-disposition": "inline; filename=\"video.mp4\"",
       "content-type": "video/mp4",
-      "date": "Sat, 20 Dec 2025 15:46:14 GMT",
+      "date": "Fri, 14 Feb 2026 03:30:00 GMT",
       "keep-alive": "timeout=5",
       "transfer-encoding": "chunked",
-      "x-model-used": "veo",
-      "x-usage-completion-video-seconds": "4",
-      "x-usage-total-tokens": "4"
+      "x-model-used": "wan",
+      "x-usage-completion-video-seconds": "5",
+      "x-usage-completion-audio-seconds": "5"
     },
     "body": {
       "type": "stream",

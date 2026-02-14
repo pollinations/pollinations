@@ -266,11 +266,12 @@ describe("Wan Video Generation", () => {
     );
 
     /**
-     * Test wan without image (should fail - I2V requires image)
+     * Test wan text-to-video (T2V) without image
+     * Wan 2.6 supports both T2V and I2V modes
      */
     test(
-        "wan without image should fail with appropriate error",
-        { timeout: 30000 },
+        "wan T2V (no image) should return video/mp4",
+        { timeout: 180000 },
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
@@ -284,13 +285,18 @@ describe("Wan Video Generation", () => {
                 },
             );
 
-            // Should fail since Wan requires an image for I2V
-            expect([400, 500]).toContain(response.status);
-
             if (response.status !== 200) {
-                const body = await response.text();
-                expect(body.toLowerCase()).toMatch(/image|img_url|i2v/);
+                const body = await response.clone().text();
+                console.log("Wan T2V response:", response.status, body);
             }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("video/mp4");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
         },
     );
 });

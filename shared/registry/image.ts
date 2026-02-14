@@ -219,9 +219,9 @@ export const IMAGE_SERVICES = {
         provider: "airforce",
         alpha: true,
         cost: [
-            // Wan 2.6 - Half of Alibaba's official I2V pricing
-            // Video: $0.0125/sec, Audio: $0.0125/sec, Total: $0.025/sec
-            // Same price for both Airforce (primary) and DashScope (fallback)
+            // Wan 2.6 - Pricing derived from Alibaba DashScope rates
+            // Video: $0.0125/sec, Audio: $0.0125/sec, Total: $0.025/sec (with audio)
+            // Applies to both Airforce (primary) and DashScope (fallback)
             {
                 date: new Date("2026-02-13").getTime(),
                 completionVideoSeconds: 0.0125, // $0.0125 per second (video only)

@@ -1,12 +1,12 @@
 """OpenAI-compatible request/response models."""
 
-from typing import Optional
+from typing import Optional, Union
 from pydantic import BaseModel, Field
 
 
 class ChatMessage(BaseModel):
     role: str
-    content: Optional[str] = None
+    content: Optional[Union[str, list]] = None
     name: Optional[str] = None
     tool_calls: Optional[list] = None
     tool_call_id: Optional[str] = None

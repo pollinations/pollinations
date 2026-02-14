@@ -48,9 +48,18 @@ async def chat_completions(request: ChatCompletionRequest) -> ChatCompletionResp
     # Extract user message for tool filtering
     user_message = ""
     for msg in reversed(messages):
-        if msg.get("role") == "user" and msg.get("content"):
-            user_message = msg["content"]
-            break
+        if msg.get("role") == "user":
+            content = msg.get("content")
+            if isinstance(content, str):
+                user_message = content
+            elif isinstance(content, list):
+                # Multimodal: extract text parts
+                user_message = " ".join(
+                    part.get("text", "") for part in content
+                    if isinstance(part, dict) and part.get("type") == "text"
+                )
+            if user_message:
+                break
 
     try:
         result = await _polly_client.process_with_tools(

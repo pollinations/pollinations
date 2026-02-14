@@ -151,4 +151,12 @@ async def cleanup():
         await _github_pr_manager.close()
         _github_pr_manager = None
 
+    # Discord REST client
+    if config.discord_search_enabled:
+        try:
+            from .discord_search import discord_client
+            await discord_client.close()
+        except Exception:
+            pass
+
     logger.info("Registry cleaned up")

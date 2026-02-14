@@ -30,11 +30,17 @@ MODEL = "openai"
 
 # Load skill as system prompt
 SKILL_PATH = ".claude/skills/app-review/SKILL.md"
+DESCRIPTION_PROMPT_PATH = ".github/scripts/app-description-prompt.txt"
 
 def load_skill():
     """Load the skill file as system prompt."""
     with open(SKILL_PATH, "r") as f:
         return f.read()
+
+def load_description_prompt():
+    """Load the shared description rewriting prompt."""
+    with open(DESCRIPTION_PROMPT_PATH, "r") as f:
+        return f.read().strip()
 
 import shlex
 
@@ -231,7 +237,6 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 {{
     "emoji": "single emoji that represents this app",
     "category": "one of: Creative, Chat, Games, Dev_Tools, Vibes, Social_Bots, Learn",
-    "description": "concise 80 char max description",
     "language": "ISO code like en, zh-CN, es, ja"
 }}"""
 
@@ -252,17 +257,32 @@ Respond with ONLY a JSON object (no markdown, no explanation):
         llm_data = {
             "emoji": "🚀",
             "category": parsed['category'] or "Dev_Tools",
-            "description": parsed['description'][:80] if parsed['description'] else parsed['name'],
             "language": "en"
         }
 
     emoji = llm_data.get("emoji", "🚀")
     category = llm_data.get("category", "Dev_Tools")
-    description = llm_data.get("description", parsed['name'])[:80]
     language = llm_data.get("language", "en")
 
     print(f"   Emoji: {emoji}")
     print(f"   Category: {category}")
+
+    # AI-rewrite the description using the shared prompt
+    raw_description = parsed['description'] or parsed['name']
+    print("🤖 Rewriting description with shared prompt...")
+    try:
+        desc_prompt = load_description_prompt()
+        description = call_llm(desc_prompt, f'App: "{parsed["name"]}" — Original: "{raw_description}"')
+        description = description.strip().strip('"')
+        # Validate
+        if not description or len(description) > 200 or len(description) < 10 or "|" in description or "\n" in description:
+            print(f"   ⚠️ AI description invalid (len={len(description)}), falling back to sanitized")
+            description = sanitize_string(raw_description, 200)
+    except Exception as e:
+        print(f"   ⚠️ Description rewrite failed: {e}, using sanitized")
+        description = sanitize_string(raw_description, 200)
+
+    print(f"   Description: {description}")
 
     # Get stars from validation result
     stars = validation.get("stars", 0)
@@ -309,8 +329,8 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 
     issue_url = f"https://github.com/pollinations/pollinations/issues/{ISSUE_NUMBER}"
 
-    # Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date |
-    new_row = f"| {emoji} | {parsed['name']} | {web_url} | {description} | {language} | {category} | @{ISSUE_AUTHOR} | {github_user_id} | {repo_url} | {stars_str} | {discord} | | {issue_created_at} | {issue_url} | {today} |"
+    # Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h |
+    new_row = f"| {emoji} | {parsed['name']} | {web_url} | {description} | {language} | {category} | @{ISSUE_AUTHOR} | {github_user_id} | {repo_url} | {stars_str} | {discord} | | {issue_created_at} | {issue_url} | {today} |  |  |"
 
     # Add row using the prepend script
     os.environ["NEW_ROW"] = new_row

@@ -309,7 +309,7 @@ describe("Veo Video Generation", () => {
     test(
         "veo T2V should return video/mp4",
         { timeout: 180000 }, // Veo takes longer
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             const response = await SELF.fetch(
@@ -317,7 +317,7 @@ describe("Veo Video Generation", () => {
                 {
                     method: "GET",
                     headers: {
-                        authorization: `Bearer ${apiKey}`,
+                        authorization: `Bearer ${paidApiKey}`,
                     },
                 },
             );
@@ -339,7 +339,7 @@ describe("Veo Video Generation", () => {
     test(
         "veo I2V should return video/mp4",
         { timeout: 180000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             // Use a simple white image - results in smaller compressed video
@@ -351,7 +351,7 @@ describe("Veo Video Generation", () => {
                 {
                     method: "GET",
                     headers: {
-                        authorization: `Bearer ${apiKey}`,
+                        authorization: `Bearer ${paidApiKey}`,
                     },
                 },
             );
@@ -379,7 +379,7 @@ describe("Veo Video Generation", () => {
     test(
         "veo interpolation with first and last frame should return video/mp4",
         { timeout: 180000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             // First frame: white background
@@ -397,7 +397,7 @@ describe("Veo Video Generation", () => {
                 {
                     method: "GET",
                     headers: {
-                        authorization: `Bearer ${apiKey}`,
+                        authorization: `Bearer ${paidApiKey}`,
                     },
                 },
             );

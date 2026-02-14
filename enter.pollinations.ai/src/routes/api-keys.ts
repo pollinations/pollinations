@@ -126,7 +126,10 @@ export const apiKeysRoutes = new Hono<Env>()
                     lastRequest: key.lastRequest,
                     expiresAt: key.expiresAt,
                     permissions: key.permissions
-                        ? JSON.parse(key.permissions)
+                        ? (() => {
+                              const p = JSON.parse(key.permissions);
+                              return Object.keys(p).length > 0 ? p : null;
+                          })()
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,

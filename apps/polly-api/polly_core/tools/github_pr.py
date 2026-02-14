@@ -856,14 +856,14 @@ class GitHubPRManager:
             return {"error": str(e)}
 
     async def add_comment(
-        self, pr_number: int, body: str, author: str = "Discord User"
+        self, pr_number: int, body: str, author: str = "Polly API"
     ) -> dict:
-        """Add a comment to a PR."""
+        """Add a comment to a PR. No footer/attribution."""
         if not self._has_auth():
             return {"error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{self.repo}/issues/{pr_number}/comments"
-        comment_body = f"{body}\n\n---\n**From:** `{author}` • *via Discord*"
+        comment_body = body
 
         try:
             session = await self.get_session()
@@ -896,7 +896,7 @@ class GitHubPRManager:
         line: int,
         side: str = "RIGHT",
         commit_id: Optional[str] = None,
-        author: str = "Discord User",
+        author: str = "Polly API",
     ) -> dict:
         """
         Add an inline review comment on a specific line of code.
@@ -908,7 +908,6 @@ class GitHubPRManager:
             line: Line number in the diff
             side: "LEFT" for deletions, "RIGHT" for additions (default)
             commit_id: Optional commit SHA (uses HEAD if not provided)
-            author: Discord username
         """
         if not self._has_auth():
             return {"error": "GitHub token not configured"}
@@ -926,7 +925,7 @@ class GitHubPRManager:
 
         url = f"https://api.github.com/repos/{self.repo}/pulls/{pr_number}/comments"
         payload = {
-            "body": f"{body}\n\n---\n*via Discord (`{author}`)*",
+            "body": body,
             "path": path,
             "line": line,
             "side": side,
@@ -970,7 +969,7 @@ class GitHubPRManager:
         message: str = "",
         side: str = "RIGHT",
         commit_id: Optional[str] = None,
-        author: str = "Discord User",
+        author: str = "Polly API",
     ) -> dict:
         """
         Add a code suggestion that can be applied with one click.
@@ -983,12 +982,10 @@ class GitHubPRManager:
             message: Optional message explaining the suggestion
             side: "LEFT" or "RIGHT"
             commit_id: Optional commit SHA
-            author: Discord username
         """
         # Format as GitHub suggestion block
         body = f"{message}\n\n" if message else ""
         body += f"```suggestion\n{suggestion}\n```"
-        body += f"\n\n---\n*Suggested via Discord (`{author}`)*"
 
         return await self.add_inline_comment(
             pr_number=pr_number,
@@ -1380,7 +1377,7 @@ class GitHubPRManager:
     # ============================================================
 
     async def review_pr(
-        self, pr_number: int, post_to_github: bool = False, author: str = "Discord User"
+        self, pr_number: int, post_to_github: bool = False, author: str = "Polly API"
     ) -> dict:
         """
         Generate an AI-powered code review for a PR.
@@ -1388,8 +1385,7 @@ class GitHubPRManager:
         Args:
             pr_number: The PR number to review
             post_to_github: If True, post the review as a GitHub comment.
-                           If False, return the review text for Discord.
-            author: The Discord username requesting the review
+            author: Caller identifier
 
         Returns:
             dict with 'review' text and optionally 'posted_to_github'
@@ -1448,7 +1444,7 @@ class GitHubPRManager:
             if post_to_github:
                 comment_result = await self.add_comment(
                     pr_number,
-                    f"## AI Code Review\n\n{review_text}\n\n---\n*Requested by `{author}` via Discord*",
+                    f"## AI Code Review\n\n{review_text}",
                     author,
                 )
                 if comment_result.get("success"):

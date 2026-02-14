@@ -65,7 +65,15 @@ def _get_github_pr_manager():
 async def init_registry():
     """Initialize singletons that need async setup."""
     from . import github_auth
-    github_auth.init_github_app_auth()
+    if config.use_github_app:
+        github_auth.init_github_app(
+            app_id=config.github_app_id,
+            private_key=config.github_private_key,
+            installation_id=config.github_installation_id,
+        )
+        logger.info("GitHub App auth initialized")
+    else:
+        logger.info("Using GitHub PAT auth")
     logger.info("Registry initialized")
 
 

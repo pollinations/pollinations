@@ -177,6 +177,14 @@ function buildRequestBody(
         if (size) {
             requestBody.size = size;
         }
+
+        // Support image-to-video: pass reference image URL if provided
+        const imageUrl = Array.isArray(safeParams.image)
+            ? safeParams.image[0]
+            : safeParams.image;
+        if (imageUrl) {
+            requestBody.image = imageUrl;
+        }
     } else if (airforceModel === "imagen-4") {
         const size = closestSupportedSize(safeParams.width, safeParams.height);
         if (size) requestBody.size = size;

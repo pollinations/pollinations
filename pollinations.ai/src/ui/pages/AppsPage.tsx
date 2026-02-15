@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { COPY_CONSTANTS } from "../../copy/constants";
-import { APPS_PAGE, CATEGORIES } from "../../copy/content/apps";
+import { APPS_PAGE, badges, FILTERS } from "../../copy/content/apps";
 import { LINKS } from "../../copy/content/socialLinks";
 import { type App, useApps } from "../../hooks/useApps";
 import { usePageCopy } from "../../hooks/usePageCopy";
@@ -13,53 +14,26 @@ import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
 
-// Helper to extract GitHub username from author field
-function getGitHubUsername(author: string) {
-    if (!author) return null;
-    // Remove @ symbol if present
-    return author.replace(/^@/, "");
+function getGitHubUsername(s: string) {
+    return s ? s.replace(/^@/, "") : null;
 }
 
-// Helper to extract repo name from GitHub URL
-function getRepoName(repoUrl: string) {
-    if (!repoUrl) return null;
-    const match = repoUrl.match(/github\.com\/([^/]+\/[^/]+)/);
-    return match ? match[1] : null;
+function getRepoName(url: string) {
+    const m = url?.match(/github\.com\/([^/]+\/[^/]+)/);
+    return m ? m[1] : null;
 }
 
-interface AppCardProps {
-    app: App;
-    byopTooltip: string;
-    byopBadge: string;
-    trendingBadge: string;
-    trendingTooltipSuffix: string;
-    authorPrefix: string;
-}
+// --- App Card ---
 
-function isTrending(requests: number): boolean {
-    return requests >= 1000;
-}
-
-function AppCard({
-    app,
-    byopTooltip,
-    byopBadge,
-    trendingBadge,
-    trendingTooltipSuffix,
-    authorPrefix,
-}: AppCardProps) {
+function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
     const githubUsername = getGitHubUsername(app.github);
     const repoName = app.repo?.includes("github.com")
         ? getRepoName(app.repo)
         : null;
 
-    const trending = isTrending(app.requests24h);
-    const hasStatusBadges = app.byop || trending;
-
-    // Card border accent: trending = brand (priority), BYOP = highlight, default = subtle
-    const cardBorder = trending
+    const cardBorder = badges.buzz(app)
         ? "border border-border-brand shadow-shadow-brand-sm"
-        : app.byop
+        : badges.pollen(app)
           ? "border border-border-highlight shadow-shadow-highlight-sm"
           : "border border-border-subtle";
 
@@ -67,7 +41,6 @@ function AppCard({
         <div
             className={`flex flex-col h-full rounded-sub-card overflow-visible ${cardBorder}`}
         >
-            {/* Title header — full-width, links to app */}
             <a
                 href={app.url}
                 target="_blank"
@@ -81,7 +54,6 @@ function AppCard({
                 <ExternalLinkIcon className="w-4 h-4 text-text-body-main opacity-60 flex-shrink-0" />
             </a>
 
-            {/* Card body */}
             <div className="flex flex-col flex-1 px-4 py-3">
                 <div className="flex-1">
                     {app.description && (
@@ -93,27 +65,39 @@ function AppCard({
                         </Body>
                     )}
 
-                    {/* Status badges */}
-                    {hasStatusBadges && (
+                    {(badges.pollen(app) ||
+                        badges.buzz(app) ||
+                        badges.new(app)) && (
                         <div className="flex flex-wrap items-center gap-1.5 mb-3">
-                            {app.byop && (
+                            {badges.pollen(app) && (
                                 <span className="relative group/byop">
                                     <Badge variant="highlight">
-                                        {byopBadge}
+                                        {copy.pollenBadge}
                                     </Badge>
                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/byop:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                        {byopTooltip}
+                                        {copy.pollenTooltip}
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
                                     </div>
                                 </span>
                             )}
-                            {trending && (
-                                <span className="relative group/fire">
+                            {badges.buzz(app) && (
+                                <span className="relative group/buzz">
                                     <Badge variant="brand">
-                                        {"\uD83D\uDD25"} {trendingBadge}
+                                        {copy.buzzBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/fire:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                        {app.requests24h.toLocaleString()} {trendingTooltipSuffix}
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/buzz:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                        {copy.buzzTooltip}
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                                    </div>
+                                </span>
+                            )}
+                            {badges.new(app) && (
+                                <span className="relative group/new">
+                                    <Badge variant="muted">
+                                        {copy.newBadge}
+                                    </Badge>
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/new:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                        {copy.newTooltip}
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
                                     </div>
                                 </span>
@@ -123,7 +107,6 @@ function AppCard({
                 </div>
 
                 <div className="flex flex-wrap gap-2 mt-auto">
-                    {/* Author (only shown when no repo) */}
                     {!repoName && githubUsername && (
                         <a
                             href={`https://github.com/${githubUsername}`}
@@ -133,7 +116,7 @@ function AppCard({
                             title={`View ${app.github} on GitHub`}
                         >
                             <span className="text-text-body-secondary">
-                                {authorPrefix}
+                                {copy.authorPrefix}
                             </span>
                             <span className="truncate text-text-body-main">
                                 {app.github}
@@ -144,15 +127,13 @@ function AppCard({
                     {!repoName && !githubUsername && app.github && (
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background border border-border-faint max-w-[200px]">
                             <span className="text-text-body-secondary">
-                                {authorPrefix}
+                                {copy.authorPrefix}
                             </span>
                             <span className="truncate text-text-body-main">
                                 {app.github}
                             </span>
                         </div>
                     )}
-
-                    {/* Repo + Stars */}
                     {repoName && (
                         <a
                             href={app.repo}
@@ -180,55 +161,34 @@ function AppCard({
     );
 }
 
+// --- Sort: trending → pollen → stars → newest ---
+
+const sortApps = (a: App, b: App) => {
+    const t = +badges.buzz(b) - +badges.buzz(a);
+    if (t) return t;
+    if (a.byop !== b.byop) return a.byop ? -1 : 1;
+    const s = (b.stars || 0) - (a.stars || 0);
+    if (s) return s;
+    return (b.approvedDate || "").localeCompare(a.approvedDate || "");
+};
+
+// --- Page ---
+
 export default function AppsPage() {
-    const [selectedCategory, setSelectedCategory] = useState("creative");
-    const [byopFilter, setByopFilter] = useState(false);
-    const [newFilter, setNewFilter] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const filter = searchParams.get("filter") || "new";
+    const setFilter = (f: string) => setSearchParams({ filter: f });
 
-    // Fetch apps from GitHub
     const { apps: allApps } = useApps(COPY_CONSTANTS.appsFilePath);
-
-    // Get translated copy
     const { copy: pageCopy, isTranslating } = usePageCopy(APPS_PAGE);
+    const { translated: translatedFilters } = useTranslate(FILTERS, "label");
 
-    // Translate category labels
-    const { translated: translatedCategories } = useTranslate(
-        CATEGORIES,
-        "label",
-    );
-
-    // Filter and sort apps by category (+ optional BYOP/New filters)
     const filteredApps = useMemo(() => {
-        const fifteenDaysAgo = new Date();
-        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+        const f = FILTERS.find((x) => x.id === filter);
+        if (!f) return [];
+        return allApps.filter(f.match).sort(sortApps);
+    }, [allApps, filter]);
 
-        return allApps
-            .filter((app: App) => {
-                if (newFilter) {
-                    if (!app.approvedDate) return false;
-                    return new Date(app.approvedDate) >= fifteenDaysAgo;
-                }
-                if (byopFilter) return app.byop;
-                return app.category === selectedCategory;
-            })
-            .sort((a, b) => {
-                // 1. Trending first (by request volume)
-                const aTrending = isTrending(a.requests24h);
-                const bTrending = isTrending(b.requests24h);
-                if (aTrending !== bTrending) return bTrending ? 1 : -1;
-                // 2. BYOP second
-                if (a.byop !== b.byop) return a.byop ? -1 : 1;
-                // 3. GitHub stars descending
-                if ((b.stars || 0) !== (a.stars || 0))
-                    return (b.stars || 0) - (a.stars || 0);
-                // 4. Approved date descending (newest first)
-                return (b.approvedDate || "").localeCompare(
-                    a.approvedDate || "",
-                );
-            });
-    }, [allApps, selectedCategory, byopFilter, newFilter]);
-
-    // Translate app descriptions
     const { translated: displayApps } = useTranslate(
         filteredApps,
         "description",
@@ -239,6 +199,8 @@ export default function AppsPage() {
             <PageCard isTranslating={isTranslating}>
                 <Title>{pageCopy.title}</Title>
                 <Body spacing="comfortable">{pageCopy.subtitle}</Body>
+
+                {/* CTAs */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
                     <div className="flex items-center gap-4 p-4 bg-surface-card rounded-sub-card border-l-4 border-border-brand">
                         <div className="flex-1">
@@ -264,10 +226,10 @@ export default function AppsPage() {
                     <div className="flex items-center gap-4 p-4 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
                         <div className="flex-1">
                             <p className="font-headline text-sm font-black text-text-body-main mb-1">
-                                {pageCopy.byopCtaTitle}
+                                {pageCopy.pollenCtaTitle}
                             </p>
                             <p className="font-body text-xs text-text-body-secondary">
-                                {pageCopy.byopCtaDescription}
+                                {pageCopy.pollenCtaDescription}
                             </p>
                         </div>
                         <Button
@@ -278,91 +240,69 @@ export default function AppsPage() {
                             variant="primary"
                             size="default"
                         >
-                            {pageCopy.byopCtaButton}
+                            {pageCopy.pollenCtaButton}
                             <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
                         </Button>
                     </div>
                 </div>
 
-                {/* Category Filters */}
+                {/* Filters */}
                 <div className="flex flex-wrap gap-2 mb-8">
-                    {translatedCategories.map((cat) => (
+                    {translatedFilters.map((f) => (
                         <Button
-                            key={cat.id}
+                            key={f.id}
                             variant="toggle"
-                            data-active={
-                                !byopFilter &&
-                                !newFilter &&
-                                selectedCategory === cat.id
-                            }
-                            onClick={() => {
-                                setByopFilter(false);
-                                setNewFilter(false);
-                                setSelectedCategory(cat.id);
-                            }}
+                            data-active={filter === f.id}
+                            onClick={() => setFilter(f.id)}
                             className="px-4 py-2 text-sm"
                         >
-                            {cat.label}
+                            {f.label}
                         </Button>
                     ))}
-                    <Button
-                        variant="toggle"
-                        data-active={byopFilter}
-                        onClick={() => {
-                            setNewFilter(false);
-                            setByopFilter(!byopFilter);
-                        }}
-                        className="px-4 py-2 text-sm"
-                    >
-                        {pageCopy.byopFilterLabel}
-                    </Button>
-                    <Button
-                        variant="toggle"
-                        data-active={newFilter}
-                        onClick={() => {
-                            setByopFilter(false);
-                            setNewFilter(!newFilter);
-                        }}
-                        className="px-4 py-2 text-sm"
-                    >
-                        {pageCopy.newFilterLabel}
-                    </Button>
                 </div>
 
-                {/* Pollen legend */}
-                <div className="flex flex-col items-end gap-0.5 mb-4 text-xs">
-                    <span className="text-text-body-secondary">
-                        <span className="text-text-body-main font-bold">{pageCopy.pollenLegend}</span>
-                        {" "}= {pageCopy.pollenLegendDesc}
+                {/* Legend */}
+                <div className="flex flex-col items-end gap-0.5 mb-4 text-xs text-text-body-secondary">
+                    <span>
+                        <span className="text-text-body-main font-bold">
+                            {pageCopy.pollenBadge}
+                        </span>{" "}
+                        = {pageCopy.pollenLegendDesc}
+                        {" · "}
+                        <a
+                            href={LINKS.byopDocs}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-text-highlight hover:underline"
+                        >
+                            {pageCopy.pollenDocsLink}
+                        </a>
                     </span>
-                    <a
-                        href={LINKS.byopDocs}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-text-highlight hover:underline opacity-70 hover:opacity-100"
-                    >
-                        {pageCopy.pollenDevLink}
-                    </a>
+                    <span>
+                        <span className="text-text-body-main font-bold">
+                            {pageCopy.buzzBadge}
+                        </span>{" "}
+                        = {pageCopy.buzzLegendDesc}
+                    </span>
+                    <span>
+                        <span className="text-text-body-main font-bold">
+                            {pageCopy.newBadge}
+                        </span>{" "}
+                        = {pageCopy.newLegendDesc}
+                    </span>
                 </div>
 
                 {/* App Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                    {displayApps.map((app, index) => (
+                    {displayApps.map((app, i) => (
                         <AppCard
-                            key={`${app.name}-${index}`}
+                            key={`${app.name}-${i}`}
                             app={app}
-                            byopTooltip={pageCopy.byopTooltip}
-                            byopBadge={pageCopy.byopBadge}
-                            trendingBadge={pageCopy.trendingBadge}
-                            trendingTooltipSuffix={
-                                pageCopy.trendingTooltipSuffix
-                            }
-                            authorPrefix={pageCopy.authorPrefix}
+                            copy={pageCopy}
                         />
                     ))}
                 </div>
 
-                {/* No Results */}
                 {displayApps.length === 0 && (
                     <div className="text-center py-12">
                         <Body className="text-text-body-main">

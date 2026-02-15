@@ -19,8 +19,11 @@ from common import (
     get_repo_root,
     call_pollinations_api,
     read_gists_for_date,
+    read_news_text_file,
     github_api_request,
     GITHUB_API_BASE,
+    OWNER,
+    REPO,
 )
 from update_readme import get_top_highlights, update_readme_news_section
 
@@ -129,13 +132,21 @@ def generate_highlights_and_readme(pollinations_token: str, date_str: str) -> tu
 
     print(f"  Highlights: generated new entries")
 
-    # Merge with existing highlights (read locally)
+    # Merge with existing highlights (local overlay first, API fallback)
     repo_root = get_repo_root()
     highlights_path = os.path.join(repo_root, HIGHLIGHTS_PATH)
     existing_highlights = ""
     if os.path.exists(highlights_path):
         with open(highlights_path, "r") as f:
             existing_highlights = f.read()
+    else:
+        # Fallback: fetch from news branch via GitHub API
+        github_token = get_env("GITHUB_TOKEN", required=False)
+        if github_token:
+            fetched = read_news_text_file(HIGHLIGHTS_PATH, github_token, OWNER, REPO)
+            if fetched:
+                existing_highlights = fetched
+                print("  Highlights: fetched existing from news branch via API")
     merged_highlights = merge_highlights(new_highlights, existing_highlights)
 
     # Update README (read locally)

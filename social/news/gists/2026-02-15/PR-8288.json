@@ -1,0 +1,34 @@
+{
+  "pr_number": 8288,
+  "title": "Add Convince the CRAZY Idol to let you free to Games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8288",
+  "merged_at": "2026-02-15T21:58:28Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Can you escape the idol?",
+    "blurb": "A viral Roblox game powered by Pollinations joins the showcase! Use your words to convince an obsessed AI idol to set you free.",
+    "summary": "Added 'Convince the CRAZY Idol to let you free', a popular AI-powered Roblox game, to the community apps list.",
+    "impact": "Demonstrates how Pollinations' text generation drives dynamic NPC conversations in high-traffic gaming environments.",
+    "keywords": [
+      "roblox",
+      "community",
+      "game",
+      "ai-npc",
+      "showcase"
+    ],
+    "visual_concept": "A cute pixel art anime-style pop star idol on a stage. The Pollinations bee is trying to negotiate or sneak away. Represents the game's concept of talking your way out of an obsessed idol's room.",
+    "image_prompt": "Cozy pixel art scene of a cute anime-style pop star idol on a stage with spotlights. Soft lime green (#ecf874) and pink pastel gradient background. The Pollinations bee mascot is holding a tiny microphone, trying to negotiate with the idol. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'IDOL ESCAPE'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-15T21:59:08.523997+00:00"
+}

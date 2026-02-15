@@ -15,19 +15,19 @@
       "access-control-allow-origin": "*",
       "cache-control": "public, max-age=31536000, immutable",
       "connection": "keep-alive",
-      "content-length": "4",
+      "content-length": "43",
       "content-type": "text/plain; charset=utf-8",
-      "date": "Fri, 13 Feb 2026 17:46:43 GMT",
-      "etag": "W/\"4-xTxWLatLM7PkLzvE2OVxlDmpwVU\"",
+      "date": "Sat, 14 Feb 2026 18:11:14 GMT",
+      "etag": "W/\"2b-f1ekp0+l9r5MIRflVNwCKiXbwTo\"",
       "keep-alive": "timeout=5",
       "x-model-used": "qwen-character",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "2",
+      "x-usage-completion-text-tokens": "10",
       "x-usage-prompt-text-tokens": "67"
     },
     "body": {
       "type": "text",
-      "data": "Yes."
+      "data": "Yes, Berlin is the capital city of Germany."
     }
   }
 }

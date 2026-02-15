@@ -23,37 +23,37 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "318",
+      "content-length": "284",
       "content-type": "application/json; charset=utf-8",
-      "date": "Fri, 13 Feb 2026 17:45:57 GMT",
-      "etag": "W/\"13e-JXw6vwgmOuAaHJ5vyVjwN/Qq7og\"",
+      "date": "Sat, 14 Feb 2026 17:37:50 GMT",
+      "etag": "W/\"11c-aQvp9B6oru1KZdq5eofdi/+79CI\"",
       "keep-alive": "timeout=5",
       "x-model-used": "qwen-character",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "9",
+      "x-usage-completion-text-tokens": "2",
       "x-usage-prompt-text-tokens": "67"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_217ccb38b390c16c382ce4a556da3659",
+        "id": "pllns_ab9e1b5914c2840aa05dfc7c655c033d",
         "object": "chat.completion",
-        "created": 1771004757,
+        "created": 1771090670,
         "model": "qwen-character",
         "choices": [
           {
             "index": 0,
             "message": {
               "role": "assistant",
-              "content": "Yes, Berlin is the capital of Germany."
+              "content": "Yes."
             },
             "finish_reason": "stop"
           }
         ],
         "usage": {
           "prompt_tokens": 67,
-          "completion_tokens": 9,
-          "total_tokens": 76
+          "completion_tokens": 2,
+          "total_tokens": 69
         }
       }
     }

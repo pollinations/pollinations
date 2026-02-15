@@ -677,7 +677,6 @@ export const accountRoutes = new Hono<Env>()
             const keyDetails = await db
                 .select({
                     expiresAt: apikeyTable.expiresAt,
-                    rateLimitEnabled: apikeyTable.rateLimitEnabled,
                 })
                 .from(apikeyTable)
                 .where(eq(apikeyTable.id, apiKey.id))
@@ -718,7 +717,6 @@ export const accountRoutes = new Hono<Env>()
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
                 // Rate limiting applies to publishable keys only (see rate-limit-durable.ts)
-                // DB default may not be applied by better-auth, so derive from key type
                 rateLimitEnabled: keyType === "publishable",
             });
         },

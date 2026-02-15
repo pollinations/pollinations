@@ -2,8 +2,8 @@
 
 import { z } from "zod";
 import {
-    DEFAULT_TEXT_MODEL,
     AUDIO_VOICES,
+    DEFAULT_TEXT_MODEL,
 } from "../../../shared/registry/text.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
@@ -272,14 +272,10 @@ const ThinkingSchema = z
 
 export const CreateChatCompletionRequestSchema = z.object({
     messages: z.array(ChatCompletionRequestMessageSchema),
-    model: z
-        .string()
-        .optional()
-        .default(DEFAULT_TEXT_MODEL)
-        .meta({
-            description:
-                "AI model for text generation. See /v1/models for full list.",
-        }),
+    model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
+        description:
+            "AI model for text generation. See /v1/models for full list.",
+    }),
     modalities: z.array(z.enum(["text", "audio"])).optional(),
     audio: z
         .object({

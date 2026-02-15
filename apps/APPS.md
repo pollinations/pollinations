@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| 🤖 | AIVAX | https://aivax.net/ | AI chatbot service with multilingual docs (en, pt-BR) and community Discord. | en | Chat | @CypherPotato | 17441745 |  |  | cypherpotato | | 2026-02-15 | https://github.com/pollinations/pollinations/issues/8270 | 2026-02-15 |
 | 🦞 | Pollinations × OpenClaw | https://openclaw.pollinations.ai | Use 25+ AI models as your OpenClaw agent brain via one setup script | en | Dev_Tools | @pollinations | 86964862 | https://github.com/pollinations/pollinations | ⭐3976 |  | [openclaw.ai](https://openclaw.ai) | 2026-02-14 |  | 2026-02-14 |
 | 🧩 | n8n-nodes-pollinations | https://www.npmjs.com/package/n8n-nodes-pollinations-v2 | n8n community node adding Pollinations.ai image, video, text, and audio nodes | en | Dev_Tools | @isaacgounton | 44446037 | https://github.com/isaacgounton/n8n-nodes-pollinations |  |  | | 2026-02-04 | https://github.com/pollinations/pollinations/issues/7932 | 2026-02-04 |
 | 🌐 | NebulaAPI | https://nebulaapi.app | Free Brazilian API gateway for AI and gaming with Pollinations backend. | pt-BR | Dev_Tools | @MatheusHMafra | 127265280 |  |  | st4rx3 | | 2026-02-02 | https://github.com/pollinations/pollinations/issues/7873 | 2026-02-10 |

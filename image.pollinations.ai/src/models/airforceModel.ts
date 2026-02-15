@@ -159,6 +159,17 @@ function buildRequestBody(
             defaultResolution: "720P",
         });
 
+        // grok-imagine-video at airforce does not support 16:9 or 9:16, so we need to convert to 3:2 or 2:3 which is closest to these values
+        if (airforceModel === "grok-imagine-video") {
+            const airforceAspectRatio =
+                aspectRatio === "16:9"
+                    ? "3:2"
+                    : aspectRatio === "9:16"
+                      ? "2:3"
+                      : aspectRatio;
+            requestBody.aspectRatio = airforceAspectRatio;
+        }
+
         // Map resolution to size parameter (grok-video uses WxH format)
         const sizeMap: Record<string, Record<string, string>> = {
             "16:9": {
@@ -176,6 +187,14 @@ function buildRequestBody(
         const size = sizeMap[aspectRatio]?.[resolution];
         if (size) {
             requestBody.size = size;
+        }
+
+        // Support image-to-video: pass reference image URL if provided
+        const imageUrl = Array.isArray(safeParams.image)
+            ? safeParams.image[0]
+            : safeParams.image;
+        if (imageUrl) {
+            requestBody.image = imageUrl;
         }
     } else if (airforceModel === "imagen-4") {
         const size = closestSupportedSize(safeParams.width, safeParams.height);

@@ -309,7 +309,7 @@ describe("Veo Video Generation", () => {
     test(
         "veo T2V should return video/mp4",
         { timeout: 180000 }, // Veo takes longer
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             const response = await SELF.fetch(
@@ -317,7 +317,7 @@ describe("Veo Video Generation", () => {
                 {
                     method: "GET",
                     headers: {
-                        authorization: `Bearer ${apiKey}`,
+                        authorization: `Bearer ${paidApiKey}`,
                     },
                 },
             );
@@ -339,7 +339,7 @@ describe("Veo Video Generation", () => {
     test(
         "veo I2V should return video/mp4",
         { timeout: 180000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             // Use a simple white image - results in smaller compressed video
@@ -351,7 +351,7 @@ describe("Veo Video Generation", () => {
                 {
                     method: "GET",
                     headers: {
-                        authorization: `Bearer ${apiKey}`,
+                        authorization: `Bearer ${paidApiKey}`,
                     },
                 },
             );
@@ -379,7 +379,7 @@ describe("Veo Video Generation", () => {
     test(
         "veo interpolation with first and last frame should return video/mp4",
         { timeout: 180000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
             // First frame: white background
@@ -397,7 +397,7 @@ describe("Veo Video Generation", () => {
                 {
                     method: "GET",
                     headers: {
-                        authorization: `Bearer ${apiKey}`,
+                        authorization: `Bearer ${paidApiKey}`,
                     },
                 },
             );
@@ -410,6 +410,86 @@ describe("Veo Video Generation", () => {
                     response.status,
                     body,
                 );
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("video/mp4");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+});
+
+/**
+ * Grok Video Generation Tests (api.airforce)
+ *
+ * Cost considerations:
+ * - grok-video: ~$0.0025 per second
+ */
+describe("Grok Video Generation", () => {
+    /**
+     * Test grok-video text-to-video (T2V)
+     */
+    test(
+        "grok-video T2V should return video/mp4",
+        { timeout: 180000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/a%20cat%20playing%20piano?model=grok-video`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("Grok T2V response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("video/mp4");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    /**
+     * Test grok-video image-to-video (I2V) - Issue #8161, #8217
+     * Verifies the image parameter is passed through to the airforce API
+     */
+    test(
+        "grok-video I2V should return video/mp4",
+        { timeout: 180000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const imageUrl =
+                "https://image.pollinations.ai/prompt/simple%20landscape?width=512&height=512&nologo=true&seed=42";
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/animate%20this%20landscape?model=grok-video&image=${encodeURIComponent(imageUrl)}`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("Grok I2V response:", response.status, body);
             }
 
             expect(response.status).toBe(200);

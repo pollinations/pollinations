@@ -161,7 +161,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
     );
 }
 
-// --- Sort: trending → pollen → stars → newest ---
+// --- Sort: buzz → pollen → stars → newest ---
 
 const sortApps = (a: App, b: App) => {
     const t = +badges.buzz(b) - +badges.buzz(a);

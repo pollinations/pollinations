@@ -308,7 +308,7 @@ flowchart TD
 | `app-validate-submission.ts` | `.github/scripts/` | Pre-validation (registration, tier, duplicates) |
 | `app-check-duplicate.ts` | `.github/scripts/` | Duplicate detection logic |
 | `app-prepend-row.js` | `.github/scripts/` | Add app row to APPS.md |
-| `app-update-readme.js` | `.github/scripts/` | Update README showcase |
+| `app-update-garden.js` | `.github/scripts/` | Generate garden/ directory (README + category pages) |
 | `tier-update-user.ts` | `enter.pollinations.ai/scripts/` | Update user tier in D1 |
 
 ---

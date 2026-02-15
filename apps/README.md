@@ -88,9 +88,15 @@ Each app gets:
 - `manifest.json`
 - `og-image.png` (1200×630 social preview)
 
+## Community Showcase
+
+- 🌱 [**Garden**](GARDEN.md) — Curated highlights from every category
+- 📋 [**All Apps**](APPS.md) — Full table (480+ apps)
+- 🌐 [Browse on pollinations.ai](https://pollinations.ai/apps)
+- ✏️ [Submit your app](https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml)
+
 ## Resources
 
 - [API Docs](../APIDOCS.md)
 - [App Ideas](IDEAS.md)
-- [App Showcase](./APPS.md)
 - [Discord](https://discord.gg/pollinations-ai-885844321461485618)

@@ -29,46 +29,39 @@ function getRepoName(repoUrl: string) {
 
 interface AppCardProps {
     app: App;
+    byopTooltip: string;
+    byopBadge: string;
+    trendingBadge: string;
+    trendingTooltipSuffix: string;
+    authorPrefix: string;
 }
 
-function fireTier(requests: number): number {
-    if (requests >= 10000) return 3;
-    if (requests >= 1000) return 2;
-    if (requests >= 100) return 1;
-    return 0;
+function isTrending(requests: number): boolean {
+    return requests >= 1000;
 }
 
-function fireEmojis(tier: number): string {
-    if (tier >= 3) return "\uD83D\uDD25\uD83D\uDD25\uD83D\uDD25";
-    if (tier >= 2) return "\uD83D\uDD25\uD83D\uDD25";
-    if (tier >= 1) return "\uD83D\uDD25";
-    return "";
-}
-
-function AppCard({ app }: AppCardProps) {
+function AppCard({
+    app,
+    byopTooltip,
+    byopBadge,
+    trendingBadge,
+    trendingTooltipSuffix,
+    authorPrefix,
+}: AppCardProps) {
     const githubUsername = getGitHubUsername(app.github);
     const repoName = app.repo?.includes("github.com")
         ? getRepoName(app.repo)
         : null;
 
-    const isNew = (() => {
-        if (!app.approvedDate) return false;
-        const approved = new Date(app.approvedDate);
-        const fourteenDaysAgo = new Date();
-        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-        return approved >= fourteenDaysAgo;
-    })();
+    const trending = isTrending(app.requests24h);
+    const hasStatusBadges = app.byop || trending;
 
-    const tier = fireTier(app.requests24h);
-    const fires = fireEmojis(tier);
-    const hasStatusBadges = app.byop || isNew || fires;
-
-    // Card border accent: BYOP = highlight, hot = brand, default = subtle
-    const cardBorder = app.byop
-        ? "border border-border-highlight/40 shadow-shadow-highlight-sm"
-        : tier >= 2
-          ? "border border-border-brand/40 shadow-shadow-brand-sm"
-          : "border border-border-faint";
+    // Card border accent: trending = brand (priority), BYOP = highlight, default = subtle
+    const cardBorder = trending
+        ? "border border-border-brand shadow-shadow-brand-sm"
+        : app.byop
+          ? "border border-border-highlight shadow-shadow-highlight-sm"
+          : "border border-border-subtle";
 
     return (
         <div
@@ -104,17 +97,23 @@ function AppCard({ app }: AppCardProps) {
                     {hasStatusBadges && (
                         <div className="flex flex-wrap items-center gap-1.5 mb-3">
                             {app.byop && (
-                                <Badge variant="highlight">BYOP</Badge>
+                                <span className="relative group/byop cursor-help">
+                                    <Badge variant="highlight">
+                                        {byopBadge}
+                                    </Badge>
+                                    <span className="hidden group-hover/byop:block absolute z-10 bottom-full left-0 mb-1 px-2 py-1 text-xs font-mono text-text-body-main bg-surface-card border border-border-main rounded shadow-shadow-dark-md whitespace-nowrap">
+                                        {byopTooltip}
+                                    </span>
+                                </span>
                             )}
-                            {isNew && <Badge variant="brand">NEW</Badge>}
-                            {fires && (
+                            {trending && (
                                 <span className="relative group/fire cursor-help">
-                                    <Badge variant="muted">
-                                        TRENDING {fires}
+                                    <Badge variant="brand">
+                                        {"\uD83D\uDD25"} {trendingBadge}
                                     </Badge>
                                     <span className="hidden group-hover/fire:block absolute z-10 bottom-full left-0 mb-1 px-2 py-1 text-xs font-mono text-text-body-main bg-surface-card border border-border-main rounded shadow-shadow-dark-md whitespace-nowrap">
                                         {app.requests24h.toLocaleString()}{" "}
-                                        requests in 24h
+                                        {trendingTooltipSuffix}
                                     </span>
                                 </span>
                             )}
@@ -123,8 +122,8 @@ function AppCard({ app }: AppCardProps) {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mt-auto">
-                    {/* Author */}
-                    {githubUsername && (
+                    {/* Author (only shown when no repo) */}
+                    {!repoName && githubUsername && (
                         <a
                             href={`https://github.com/${githubUsername}`}
                             target="_blank"
@@ -132,16 +131,20 @@ function AppCard({ app }: AppCardProps) {
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main transition-all max-w-[200px]"
                             title={`View ${app.github} on GitHub`}
                         >
-                            <span className="text-text-body-secondary">by</span>
+                            <span className="text-text-body-secondary">
+                                {authorPrefix}
+                            </span>
                             <span className="truncate text-text-body-main">
                                 {app.github}
                             </span>
                             <GithubIcon className="w-3 h-3 text-text-body-main opacity-60 flex-shrink-0" />
                         </a>
                     )}
-                    {!githubUsername && app.github && (
+                    {!repoName && !githubUsername && app.github && (
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background border border-border-faint max-w-[200px]">
-                            <span className="text-text-body-secondary">by</span>
+                            <span className="text-text-body-secondary">
+                                {authorPrefix}
+                            </span>
                             <span className="truncate text-text-body-main">
                                 {app.github}
                             </span>
@@ -179,6 +182,7 @@ function AppCard({ app }: AppCardProps) {
 export default function AppsPage() {
     const [selectedCategory, setSelectedCategory] = useState("creative");
     const [byopFilter, setByopFilter] = useState(false);
+    const [newFilter, setNewFilter] = useState(false);
 
     // Fetch apps from GitHub
     const { apps: allApps } = useApps(COPY_CONSTANTS.appsFilePath);
@@ -192,20 +196,27 @@ export default function AppsPage() {
         "label",
     );
 
-    // Filter and sort apps by category (+ optional BYOP filter)
+    // Filter and sort apps by category (+ optional BYOP/New filters)
     const filteredApps = useMemo(() => {
+        const fifteenDaysAgo = new Date();
+        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+
         return allApps
             .filter((app: App) => {
+                if (newFilter) {
+                    if (!app.approvedDate) return false;
+                    return new Date(app.approvedDate) >= fifteenDaysAgo;
+                }
                 if (byopFilter) return app.byop;
                 return app.category === selectedCategory;
             })
             .sort((a, b) => {
-                // 1. BYOP first
+                // 1. Trending first (by request volume)
+                const aTrending = isTrending(a.requests24h);
+                const bTrending = isTrending(b.requests24h);
+                if (aTrending !== bTrending) return bTrending ? 1 : -1;
+                // 2. BYOP second
                 if (a.byop !== b.byop) return a.byop ? -1 : 1;
-                // 2. Fire tier descending
-                const fireDiff =
-                    fireTier(b.requests24h) - fireTier(a.requests24h);
-                if (fireDiff !== 0) return fireDiff;
                 // 3. GitHub stars descending
                 if ((b.stars || 0) !== (a.stars || 0))
                     return (b.stars || 0) - (a.stars || 0);
@@ -214,7 +225,7 @@ export default function AppsPage() {
                     a.approvedDate || "",
                 );
             });
-    }, [allApps, selectedCategory, byopFilter]);
+    }, [allApps, selectedCategory, byopFilter, newFilter]);
 
     // Translate app descriptions
     const { translated: displayApps } = useTranslate(
@@ -279,10 +290,13 @@ export default function AppsPage() {
                             key={cat.id}
                             variant="toggle"
                             data-active={
-                                !byopFilter && selectedCategory === cat.id
+                                !byopFilter &&
+                                !newFilter &&
+                                selectedCategory === cat.id
                             }
                             onClick={() => {
                                 setByopFilter(false);
+                                setNewFilter(false);
                                 setSelectedCategory(cat.id);
                             }}
                             className="px-4 py-2 text-sm"
@@ -293,17 +307,41 @@ export default function AppsPage() {
                     <Button
                         variant="toggle"
                         data-active={byopFilter}
-                        onClick={() => setByopFilter(!byopFilter)}
+                        onClick={() => {
+                            setNewFilter(false);
+                            setByopFilter(!byopFilter);
+                        }}
                         className="px-4 py-2 text-sm"
                     >
-                        BYOP
+                        {pageCopy.byopFilterLabel}
+                    </Button>
+                    <Button
+                        variant="toggle"
+                        data-active={newFilter}
+                        onClick={() => {
+                            setByopFilter(false);
+                            setNewFilter(!newFilter);
+                        }}
+                        className="px-4 py-2 text-sm"
+                    >
+                        {pageCopy.newFilterLabel}
                     </Button>
                 </div>
 
                 {/* App Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                     {displayApps.map((app, index) => (
-                        <AppCard key={`${app.name}-${index}`} app={app} />
+                        <AppCard
+                            key={`${app.name}-${index}`}
+                            app={app}
+                            byopTooltip={pageCopy.byopTooltip}
+                            byopBadge={pageCopy.byopBadge}
+                            trendingBadge={pageCopy.trendingBadge}
+                            trendingTooltipSuffix={
+                                pageCopy.trendingTooltipSuffix
+                            }
+                            authorPrefix={pageCopy.authorPrefix}
+                        />
                     ))}
                 </div>
 

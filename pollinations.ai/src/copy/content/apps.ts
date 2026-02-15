@@ -18,6 +18,21 @@ export const APPS_PAGE = {
     byopCtaButton: "Learn More",
 
     noAppsMessage: "No apps found in this category yet.",
+
+    // Badges
+    byopBadge: "BYOP",
+    trendingBadge: "TRENDING",
+
+    // Tooltips
+    byopTooltip: "Bring Your Own Pollen — users pay for their own usage",
+    trendingTooltipSuffix: "requests in 24h",
+
+    // Card labels
+    authorPrefix: "by",
+
+    // Filter labels
+    byopFilterLabel: "BYOP",
+    newFilterLabel: "New",
 };
 
 // Category mapping for display

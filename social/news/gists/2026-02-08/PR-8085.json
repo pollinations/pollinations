@@ -1,0 +1,34 @@
+{
+  "pr_number": 8085,
+  "title": "Auto-merge social media PRs (Discord, Instagram, highlights, README)",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/8085",
+  "merged_at": "2026-02-08T13:40:13Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The bots are taking over (the paperwork)",
+    "blurb": "Routine social updates now merge themselves. Less clicking, more coding.",
+    "summary": "Enabled auto-merge for Instagram, GitHub Highlights, and README update workflows to streamline content publishing.",
+    "impact": "Eliminates manual review steps for routine social posts while maintaining a PR audit trail.",
+    "keywords": [
+      "automation",
+      "ci-cd",
+      "github-actions",
+      "social-media",
+      "infrastructure"
+    ],
+    "visual_concept": "A conveyor belt of news being stamped automatically. The bee is supervising the automation.",
+    "image_prompt": "Cozy pixel art scene of a conveyor belt moving pixelated newspapers. A mechanical stamper marks them 'MERGED'. Soft lime green (#ecf874) and pastel gradient background. The pollinations.ai bee mascot watches happily with a clipboard. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-08/PR-8085.jpg",
+    "prompt": "Cozy pixel art scene of a conveyor belt moving pixelated newspapers. A mechanical stamper marks them 'MERGED'. Soft lime green (#ecf874) and pastel gradient background. The pollinations.ai bee mascot watches happily with a clipboard. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-12T14:03:35.231404+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 8001,
+  "title": "Add api.airforce models: Imagen 3 & Grok Imagine Video",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8001",
+  "merged_at": "2026-02-06T01:34:01Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Air Support Incoming",
+    "blurb": "We've integrated api.airforce to bring you Google's Imagen 3 and xAI's Grok Imagine Video. High-quality pixels and motion are just a prompt away.",
+    "summary": "Integrated api.airforce as a new provider, adding support for Google Imagen 3 image generation and xAI Grok Imagine Video generation.",
+    "impact": "Users can now generate high-quality images using `model='imagen'` and videos using `model='grok-video'`.",
+    "keywords": [
+      "models",
+      "video",
+      "imagen",
+      "grok",
+      "api.airforce",
+      "image generation"
+    ],
+    "visual_concept": "The Pollinations bee as a pilot. Since the provider is 'api.airforce', an aviation theme is perfect. The bee wears aviator goggles and flies a cute pixel plane, delivering 'payloads' of art (images) and movies (video reels).",
+    "image_prompt": "Cozy pixel art scene of the Pollinations bee mascot wearing a tiny aviator helmet and goggles, flying a cute round pixelated airplane through fluffy clouds. The plane is trailing colorful pixel sparkles and dropping parachutes carrying canvases and film reels. Soft lime green (#ecf874) and sky blue gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-06/PR-8001.jpg",
+    "prompt": "Cozy pixel art scene of the Pollinations bee mascot wearing a tiny aviator helmet and goggles, flying a cute round pixelated airplane through fluffy clouds. The plane is trailing colorful pixel sparkles and dropping parachutes carrying canvases and film reels. Soft lime green (#ecf874) and sky blue gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic. Nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-12T13:57:25.108554+00:00"
+}

@@ -36,6 +36,8 @@ import {
     CreateChatCompletionRequestSchema,
     type CreateChatCompletionResponse,
     CreateChatCompletionResponseSchema,
+    type CreateImageEditRequest,
+    CreateImageEditRequestSchema,
     type CreateImageRequest,
     CreateImageRequestSchema,
     CreateImageResponseSchema,
@@ -194,6 +196,7 @@ export const proxyRoutes = new Hono<Env>()
                     ...imageModels.map((m) =>
                         toModelEntry(m, [
                             "/v1/images/generations",
+                            "/v1/images/edits",
                             "/image/{prompt}",
                         ]),
                     ),
@@ -822,6 +825,224 @@ export const proxyRoutes = new Hono<Env>()
                     {
                         b64_json: base64,
                         revised_prompt: body.prompt,
+                    },
+                ],
+            });
+        },
+    )
+    .post(
+        "/v1/images/edits",
+        describeRoute({
+            tags: ["gen.pollinations.ai"],
+            description: [
+                "OpenAI-compatible image editing endpoint.",
+                "",
+                "Edit images using a text prompt and one or more source images.",
+                "Accepts JSON with image URLs or multipart/form-data with file uploads.",
+                "",
+                "**Authentication:**",
+                "",
+                "Include your API key in the `Authorization` header as a Bearer token:",
+                "",
+                "`Authorization: Bearer YOUR_API_KEY`",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateImageResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        resolveModel("generate.image"),
+        track("generate.image"),
+        async (c) => {
+            const log = c.get("log").getChild("generate");
+            await c.var.auth.requireAuthorization();
+            c.var.auth.requireModelAccess();
+            c.var.auth.requireKeyBudget();
+            await checkBalance(c.var);
+
+            let prompt: string;
+            let imageUrls: string[];
+            let size: string | undefined;
+            let quality: string | undefined;
+            let seed: number | undefined;
+            const extra: Record<string, unknown> = {};
+
+            const contentType = c.req.header("content-type") || "";
+
+            if (contentType.includes("multipart/form-data")) {
+                // Multipart form data (OpenAI SDK default)
+                // resolveModel middleware already parsed formData and stored it
+                const formData = c.get("formData") || (await c.req.formData());
+                prompt = formData.get("prompt") as string;
+                if (!prompt) {
+                    throw new UpstreamError(400 as ContentfulStatusCode, {
+                        message: "Missing required field: prompt",
+                    });
+                }
+
+                size = (formData.get("size") as string) || undefined;
+                quality = (formData.get("quality") as string) || undefined;
+
+                // Extract image(s) from form data — convert file uploads to data URIs
+                imageUrls = [];
+                const imageEntries = formData.getAll("image") as (
+                    | File
+                    | string
+                )[];
+                // Also check image[] (array syntax used by OpenAI SDKs)
+                const imageArrayEntries = formData.getAll("image[]") as (
+                    | File
+                    | string
+                )[];
+                const allImages = [...imageEntries, ...imageArrayEntries];
+
+                for (const entry of allImages) {
+                    if (typeof entry === "string") {
+                        imageUrls.push(entry);
+                    } else if (entry instanceof File) {
+                        const buffer = await entry.arrayBuffer();
+                        const bytes = new Uint8Array(buffer);
+                        let binaryStr = "";
+                        for (let i = 0; i < bytes.length; i++) {
+                            binaryStr += String.fromCharCode(bytes[i]);
+                        }
+                        const base64 = btoa(binaryStr);
+                        const mime = entry.type || "image/png";
+                        imageUrls.push(`data:${mime};base64,${base64}`);
+                    }
+                }
+            } else {
+                // JSON body
+                const body = (await c.req.json()) as CreateImageEditRequest &
+                    Record<string, unknown>;
+                const parsed = CreateImageEditRequestSchema.safeParse(body);
+                if (!parsed.success) {
+                    throw new UpstreamError(400 as ContentfulStatusCode, {
+                        message: parsed.error.issues
+                            .map((i) => i.message)
+                            .join(", "),
+                    });
+                }
+
+                prompt = parsed.data.prompt;
+                size = parsed.data.size;
+                quality = parsed.data.quality;
+
+                // Normalize image field to URL array
+                if (typeof parsed.data.image === "string") {
+                    imageUrls = [parsed.data.image];
+                } else {
+                    imageUrls = parsed.data.image.map((i) => i.image_url);
+                }
+
+                // Collect passthrough params
+                for (const key of [
+                    "seed",
+                    "nologo",
+                    "enhance",
+                    "safe",
+                    "private",
+                    "transparent",
+                    "negative_prompt",
+                    "guidance_scale",
+                ] as const) {
+                    if (body[key] !== undefined) extra[key] = body[key];
+                }
+                seed = extra.seed as number | undefined;
+            }
+
+            if (imageUrls.length === 0) {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Missing required field: image",
+                });
+            }
+
+            const resolvedModel = c.var.model.resolved;
+
+            // Parse size
+            const [width, height] = (size || "1024x1024")
+                .split("x")
+                .map((s) => parseInt(s, 10));
+
+            // Map quality
+            const qualityMap: Record<string, string> = {
+                standard: "medium",
+                hd: "high",
+            };
+            const resolvedQuality =
+                qualityMap[quality || ""] || quality || "medium";
+
+            const resolvedSeed =
+                seed ?? Math.floor(Math.random() * 2147483647);
+
+            // Build target URL — same backend, with image param
+            const targetUrl = new URL(
+                `${c.env.IMAGE_SERVICE_URL}/prompt/${encodeURIComponent(prompt)}`,
+            );
+            targetUrl.searchParams.set("model", resolvedModel);
+            targetUrl.searchParams.set("width", String(width || 1024));
+            targetUrl.searchParams.set("height", String(height || 1024));
+            targetUrl.searchParams.set("quality", resolvedQuality);
+            targetUrl.searchParams.set("seed", String(resolvedSeed));
+            targetUrl.searchParams.set("nofeed", "true");
+            // Pass image URLs pipe-separated (backend format)
+            targetUrl.searchParams.set("image", imageUrls.join("|"));
+
+            // Forward extra passthrough params
+            for (const [key, value] of Object.entries(extra)) {
+                if (key !== "seed" && value !== undefined) {
+                    targetUrl.searchParams.set(key, String(value));
+                }
+            }
+
+            log.debug("Proxying image edit to: {url}", {
+                url: targetUrl.toString(),
+            });
+
+            const response = await fetch(targetUrl.toString(), {
+                method: "GET",
+                headers: proxyHeaders(c),
+            });
+
+            if (!response.ok) {
+                const responseText = await response.text();
+                log.warn("Image service error {status}: {body}", {
+                    status: response.status,
+                    body: responseText,
+                });
+                throw new UpstreamError(
+                    response.status as ContentfulStatusCode,
+                    {
+                        message:
+                            responseText ||
+                            getDefaultErrorMessage(response.status),
+                        requestUrl: targetUrl,
+                    },
+                );
+            }
+
+            c.var.track.overrideResponseTracking(response.clone());
+
+            const imageBuffer = await response.arrayBuffer();
+            const bytes = new Uint8Array(imageBuffer);
+            let binaryStr = "";
+            for (let i = 0; i < bytes.length; i++) {
+                binaryStr += String.fromCharCode(bytes[i]);
+            }
+            const base64 = btoa(binaryStr);
+            return c.json({
+                created: Math.floor(Date.now() / 1000),
+                data: [
+                    {
+                        b64_json: base64,
+                        revised_prompt: prompt,
                     },
                 ],
             });

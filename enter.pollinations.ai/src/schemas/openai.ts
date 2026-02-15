@@ -637,3 +637,52 @@ export const CreateImageResponseSchema = z
     .meta({ $id: "CreateImageResponse" });
 
 export type CreateImageResponse = z.infer<typeof CreateImageResponseSchema>;
+
+// Schema for JSON-based image edit requests
+// For multipart/form-data requests, parsing is done manually in the route handler
+export const CreateImageEditRequestSchema = z
+    .object({
+        prompt: z.string().min(1).max(32000).meta({
+            description: "A text description of the desired edit",
+        }),
+        image: z
+            .union([
+                z.string().meta({ description: "Image URL" }),
+                z.array(
+                    z.object({
+                        image_url: z.string().meta({
+                            description:
+                                "URL or base64 data URI of the source image",
+                        }),
+                    }),
+                ),
+            ])
+            .meta({
+                description:
+                    "Source image(s). A URL string, or an array of {image_url} objects (OpenAI format)",
+            }),
+        model: z.string().optional().default("flux").meta({
+            description: "The model to use for image editing",
+        }),
+        n: z.number().int().min(1).max(1).optional().default(1).meta({
+            description: "Number of images to generate (currently max 1)",
+        }),
+        size: z.string().optional().default("1024x1024").meta({
+            description:
+                "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
+        }),
+        quality: z
+            .enum(["standard", "hd", "low", "medium", "high"])
+            .optional()
+            .default("medium")
+            .meta({
+                description:
+                    "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
+            }),
+    })
+    .passthrough()
+    .meta({ $id: "CreateImageEditRequest" });
+
+export type CreateImageEditRequest = z.infer<
+    typeof CreateImageEditRequestSchema
+>;

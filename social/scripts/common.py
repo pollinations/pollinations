@@ -816,7 +816,7 @@ def commit_files_to_branch(
     for file_path, data in files:
         if data is None:
             continue
-        content = json.dumps(data, indent=2, ensure_ascii=False)
+        content = data if isinstance(data, str) else json.dumps(data, indent=2, ensure_ascii=False)
         encoded = _b64.b64encode(content.encode()).decode()
 
         sha = get_file_sha(github_token, owner, repo, file_path, branch)

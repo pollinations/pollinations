@@ -329,7 +329,7 @@ def create_weekly_pr(
             post["post_type"] = "carousel" if len(post.get("images", [])) > 1 else "single"
         files_to_commit.append((f"{base_path}/{filename}", post))
 
-    # Commit JSON files
+    # Commit all files
     commit_files_to_branch(files_to_commit, branch, github_token, owner, repo, label=f"for week of {week_end}")
 
     # Build PR body
@@ -348,7 +348,6 @@ def create_weekly_pr(
 
 ### Themes
 {arc_preview}
-
 ---
 When this PR is merged, the Sunday 18:00 UTC cron will publish to all 5 platforms (Twitter, LinkedIn, Instagram via Buffer + Reddit API + Discord webhook).
 
@@ -414,6 +413,8 @@ def main():
     discord_post = generate_discord_post(digest, pollinations_token, week_end)
 
     # ── Create PR ────────────────────────────────────────────────────
+    # Note: highlights + README are NOT included in the weekly PR.
+    # They are accumulated by daily PRs (Mon-Sat) throughout the week.
     print(f"\n[4/4] Creating PR...")
     pr_number = create_weekly_pr(
         week_start, week_end, digest,

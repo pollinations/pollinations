@@ -21,7 +21,7 @@ TIER 1: PER-PR (real-time)
 TIER 2: DAILY (Mon-Sat 06:00 UTC → merge PR → Buffer 15:00 UTC)
   Read day's gists → AI generates daily summary → platform posts (X, IG, Reddit)
   → single PR for review → on merge: Buffer stages X + IG for next 15:00 UTC slot
-  LinkedIn is weekly-only. Reddit daily handled by TypeScript app.
+  LinkedIn is weekly-only. Reddit deployed to VPS via SSH.
 
 TIER 3: WEEKLY (Sunday 06:00 UTC → Sunday 18:00 UTC)
   Read week's gists directly (Sun→Sat) → synthesize weekly themes → platform posts (X, IG, LI, Reddit, Discord)
@@ -59,6 +59,8 @@ PR merge ──→ generate_realtime.py
                             ├──→ twitter.json   + 🎨 GENERATE 1 image (brand pixel art)
                             ├──→ instagram.json + 🎨 GENERATE 3 images (carousel)
                             ├──→ reddit.json    + 🎨 GENERATE 1 image (brand pixel art)
+                            ├──→ highlights.md  (AI curates yesterday's gists)
+                            ├──→ README.md      ("Latest News" section update)
                             │
                             └──→ Single PR for review
                                   social/news/daily/YYYY-MM-DD/
@@ -66,17 +68,6 @@ PR merge ──→ generate_realtime.py
                                          ├──→ Buffer staging (X, IG) at 15:00 UTC
                                          └──→ Reddit VPS deployment
                                   (LinkedIn = weekly only, no daily posts)
-
-═══════════════════════════════════════════════════════════════════════
- HIGHLIGHTS + README (daily 06:00 UTC, including Sunday)
-═══════════════════════════════════════════════════════════════════════
-
-             06:00 UTC ──→ update_highlights.py
-                            │  (reads yesterday's gists, AI curates)
-                            │
-                            ├──→ highlights.md update (prepend new entries)
-                            ├──→ README.md "Latest News" section update
-                            └──→ Single PR (auto-merge enabled)
 
              Images generated: 5 (1 twitter + 3 instagram + 1 reddit)
 
@@ -95,7 +86,7 @@ PR merge ──→ generate_realtime.py
                                       ├──→ discord.json   + 🎨 GENERATE 1 image (brand pixel art)
                                       └──→ Creates PR for review
 
-             Sunday 18:00 UTC ──→ NEWS_weekly_publish.yml (cron)
+             Sunday 18:00 UTC ──→ NEWS_publish.yml (cron)
                                     │ (checks if weekly PR was merged)
                                     ├── Not merged → skip
                                     └── Merged → publish all 5 platforms:
@@ -215,12 +206,9 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 
 | Workflow | Trigger |
 |---|---|
-| `NEWS_pr_gist.yml` | `pull_request_target: closed+merged` |
-| `NEWS_daily_summary.yml` | `cron: 0 6 * * 1-6` (Mon-Sat) |
-| `NEWS_daily_publish.yml` | PR closed on `social/news/daily/*/` paths |
-| `NEWS_highlights_update.yml` | `cron: 0 6 * * *` (daily, including Sunday) |
-| `NEWS_weekly_summary.yml` | `cron: 0 6 * * 0` (Sunday 06:00 UTC) |
-| `NEWS_weekly_publish.yml` | `cron: 0 18 * * 0` (Sunday 18:00 UTC) — checks if weekly PR merged, publishes all 5 platforms |
+| `NEWS_pr_gist.yml` | `pull_request_target: closed+merged` — per-PR gist + Discord |
+| `NEWS_summary.yml` | `cron: 0 6 * * *` — Mon-Sat: `generate_daily.py`, Sunday: `generate_weekly.py` |
+| `NEWS_publish.yml` | Daily PR merge → `publish_daily.py`; Sunday 18:00 UTC cron → `publish_weekly.py` |
 
 ## Scripts
 
@@ -279,8 +267,7 @@ Discord posting (`publish_realtime.py`) runs as a **separate workflow step** aft
 
 All workflows support `workflow_dispatch` for manual re-triggering:
 - `NEWS_pr_gist.yml`: accepts `pr_number` input to regenerate a specific gist
-- `NEWS_daily_summary.yml`: accepts `date` input to regenerate a specific day
-- `NEWS_weekly_summary.yml`: accepts `target_date` input
+- `NEWS_summary.yml`: accepts `date` input (Mon-Sat runs daily, Sunday runs weekly)
 
 ---
 
@@ -320,7 +307,7 @@ The daily summary runs at 06:00 UTC. A PR merged at 05:59 UTC might have its gis
 
 9. **Three independent image families** — see Image Generation Strategy section below.
 
-10. **Highlights + README updated daily** — independent `NEWS_highlights_update.yml` workflow runs daily at 06:00 UTC (including Sunday), reads yesterday's gists, AI curates, creates a single PR with both `highlights.md` and `README.md` updates.
+10. **Highlights + README in the daily PR** — `generate_daily.py` curates yesterday's gists into `highlights.md` and updates the README "Latest News" section, all within the same daily PR. No separate workflow.
 
 11. **Weekly delivery at Sunday 18:00 UTC** — Sunday evening "week wrap-up" energy. All 5 platforms at once.
 

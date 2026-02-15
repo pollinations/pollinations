@@ -38,6 +38,7 @@ from common import (
     GITHUB_API_BASE,
     IMAGE_SIZE,
 )
+from update_highlights import generate_highlights_and_readme
 
 # ── Constants ────────────────────────────────────────────────────────
 
@@ -183,8 +184,10 @@ def create_daily_pr(
     owner: str,
     repo: str,
     reddit_post: Optional[Dict] = None,
+    highlights_content: Optional[str] = None,
+    readme_content: Optional[str] = None,
 ) -> Optional[int]:
-    """Create a single PR with all daily post files. Returns PR number."""
+    """Create a single PR with all daily post files + highlights + README. Returns PR number."""
     branch = f"daily-summary-{date_str}"
 
     if create_branch_from_main(branch, github_token, owner, repo) is None:
@@ -208,6 +211,12 @@ def create_daily_pr(
         reddit_post.update({"date": date_str, "generated_at": now_iso, "platform": "reddit"})
         files_to_commit.append((f"{base_path}/reddit.json", reddit_post))
 
+    # Include highlights and README (str data — commit_files_to_branch handles both str and dict)
+    if highlights_content:
+        files_to_commit.append(("social/news/highlights.md", highlights_content))
+    if readme_content:
+        files_to_commit.append(("README.md", readme_content))
+
     # Generate images (commits them to the branch)
     print("\n  Generating platform images...")
     generate_platform_images(
@@ -217,7 +226,7 @@ def create_daily_pr(
         reddit_post=reddit_post,
     )
 
-    # Commit JSON files
+    # Commit all files (JSON posts + text highlights/README)
     commit_files_to_branch(files_to_commit, branch, github_token, owner, repo, label=f"for {date_str}")
 
     # Build PR body
@@ -246,6 +255,10 @@ def create_daily_pr(
         title = reddit_post.get("title", "")
         reddit_preview = f"\n### Reddit\n**Title:** {title}\n"
 
+    highlights_note = ""
+    if highlights_content:
+        highlights_note = "\n### Highlights + README\nUpdated in this PR.\n"
+
     pr_body = f"""## Daily Summary — {date_str}
 
 **{one_liner}**
@@ -254,9 +267,9 @@ def create_daily_pr(
 
 ### Story Arcs
 {arc_preview}
-{twitter_preview}{instagram_preview}{reddit_preview}
+{twitter_preview}{instagram_preview}{reddit_preview}{highlights_note}
 ---
-When this PR is merged, posts will be staged to Buffer (Twitter, Instagram) and highlights + README updated. Reddit daily is handled by the TypeScript app. LinkedIn is weekly-only.
+When this PR is merged, posts will be staged to Buffer (Twitter, Instagram) and Reddit deployed to VPS. LinkedIn is weekly-only.
 
 Generated automatically by GitHub Actions.
 """
@@ -283,7 +296,7 @@ def main():
     print(f"  Target date: {date_str}")
 
     # ── Read gists ───────────────────────────────────────────────────
-    print(f"\n[1/4] Reading gists for {date_str}...")
+    print(f"\n[1/5] Reading gists for {date_str}...")
 
     # Try local repo first, fall back to GitHub API
     gists = read_gists_for_date(date_str)
@@ -327,7 +340,7 @@ def main():
         return
 
     # ── Generate summary ─────────────────────────────────────────────
-    print(f"\n[2/4] Generating daily summary...")
+    print(f"\n[2/5] Generating daily summary...")
     summary = generate_summary(daily_gists, date_str, pollinations_token)
     if not summary:
         print("  Summary generation failed!")
@@ -335,7 +348,7 @@ def main():
     print(f"  {len(summary.get('arcs', []))} arcs: {summary.get('one_liner', '')}")
 
     # ── Generate platform posts ──────────────────────────────────────
-    print(f"\n[3/4] Generating platform posts...")
+    print(f"\n[3/5] Generating platform posts...")
 
     print("  Twitter...")
     twitter_post = generate_twitter_post(summary, pollinations_token)
@@ -354,13 +367,19 @@ def main():
     if reddit_post:
         print(f"  Reddit: {reddit_post.get('title', '')[:80]}")
 
+    # ── Generate highlights + README ─────────────────────────────────
+    print(f"\n[4/5] Generating highlights + README...")
+    highlights_content, readme_content = generate_highlights_and_readme(pollinations_token, date_str)
+
     # ── Create PR ────────────────────────────────────────────────────
-    print(f"\n[4/4] Creating PR...")
+    print(f"\n[5/5] Creating PR...")
     pr_number = create_daily_pr(
         date_str, summary,
         twitter_post, instagram_post,
         github_token, owner, repo,
         reddit_post=reddit_post,
+        highlights_content=highlights_content,
+        readme_content=readme_content,
     )
 
     if pr_number:

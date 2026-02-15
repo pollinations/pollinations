@@ -97,6 +97,63 @@ def merge_highlights(new_highlights: str, existing_highlights: str) -> str:
     return new_clean + "\n" + existing_clean + "\n"
 
 
+def generate_highlights_and_readme(pollinations_token: str, date_str: str) -> tuple[str | None, str | None]:
+    """Generate updated highlights.md and README.md content without creating a PR.
+
+    Reads gists for the given date, AI-curates highlights, merges with existing
+    highlights.md, and updates the README "Latest News" section.
+
+    Returns (highlights_content, readme_content). Either may be None if no updates.
+    """
+    # Load gists and format as changelog
+    changelog, gist_count = load_gists_as_changelog(date_str)
+    if not changelog:
+        print(f"  Highlights: no qualifying gists for {date_str}")
+        return None, None
+    print(f"  Highlights: {gist_count} qualifying gists for {date_str}")
+
+    # Generate highlights via AI
+    system_prompt, user_prompt = create_highlights_prompt(changelog, date_str)
+    ai_response = call_pollinations_api(
+        system_prompt, user_prompt, pollinations_token,
+        temperature=0.3, exit_on_failure=False,
+    )
+    if not ai_response:
+        print("  Highlights: AI generation failed")
+        return None, None
+
+    new_highlights = parse_response(ai_response)
+    if new_highlights.upper().strip() == "SKIP" or not new_highlights.strip():
+        print("  Highlights: skipped (AI returned SKIP or empty)")
+        return None, None
+
+    print(f"  Highlights: generated new entries")
+
+    # Merge with existing highlights (read locally)
+    repo_root = get_repo_root()
+    highlights_path = os.path.join(repo_root, HIGHLIGHTS_PATH)
+    existing_highlights = ""
+    if os.path.exists(highlights_path):
+        with open(highlights_path, "r") as f:
+            existing_highlights = f.read()
+    merged_highlights = merge_highlights(new_highlights, existing_highlights)
+
+    # Update README (read locally)
+    readme_path = os.path.join(repo_root, README_PATH)
+    updated_readme = None
+    if os.path.exists(readme_path):
+        with open(readme_path, "r") as f:
+            readme_content = f.read()
+        top_entries = get_top_highlights(merged_highlights)
+        if top_entries:
+            result = update_readme_news_section(readme_content, top_entries)
+            if result and result != readme_content:
+                updated_readme = result
+                print("  Highlights: README will be updated")
+
+    return merged_highlights, updated_readme
+
+
 def create_highlights_pr(
     highlights_content: str,
     readme_content: str | None,
@@ -250,72 +307,35 @@ Generated automatically by NEWS_highlights_update workflow.
 
 
 def main():
+    """Standalone mode: generate highlights + README and create a dedicated PR."""
     github_token = get_env("GITHUB_TOKEN")
     pollinations_token = get_env("POLLINATIONS_TOKEN")
     repo_full_name = get_env("GITHUB_REPOSITORY")
     owner, repo = repo_full_name.split("/")
 
-    # Determine target date (yesterday by default)
     date_str = get_env("TARGET_DATE", required=False)
     if not date_str:
         date_str = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
 
     print(f"=== Highlights Update for {date_str} ===")
 
-    # Step 1: Load gists and format as changelog
-    print("Loading gists...")
-    changelog, gist_count = load_gists_as_changelog(date_str)
-    if not changelog:
-        print(f"No qualifying gists for {date_str}. Exiting cleanly.")
-        return
-    print(f"Found {gist_count} qualifying gists")
+    highlights_content, readme_content = generate_highlights_and_readme(pollinations_token, date_str)
 
-    # Step 2: Generate highlights via AI
-    print("Generating highlights...")
-    system_prompt, user_prompt = create_highlights_prompt(changelog, date_str)
-    ai_response = call_pollinations_api(
-        system_prompt, user_prompt, pollinations_token,
-        temperature=0.3, exit_on_failure=True,
-    )
-    new_highlights = parse_response(ai_response)
-
-    if new_highlights.upper().strip() == "SKIP":
-        print("AI returned SKIP — no highlights this day. No PR created.")
+    if highlights_content is None:
+        print("No highlights to update. Exiting cleanly.")
         return
 
-    if not new_highlights.strip():
-        print("Empty highlights response from AI. Exiting.")
-        return
-
-    print(f"Generated highlights:\n{new_highlights}")
-
-    # Step 3: Merge with existing highlights (read locally)
+    # Extract new_highlights text for PR body (everything before existing content)
     repo_root = get_repo_root()
     highlights_path = os.path.join(repo_root, HIGHLIGHTS_PATH)
-    existing_highlights = ""
+    existing = ""
     if os.path.exists(highlights_path):
         with open(highlights_path, "r") as f:
-            existing_highlights = f.read()
-    merged_highlights = merge_highlights(new_highlights, existing_highlights)
+            existing = f.read().strip()
+    new_highlights = highlights_content.replace(existing, "").strip() if existing else highlights_content.strip()
 
-    # Step 4: Update README (read locally)
-    readme_path = os.path.join(repo_root, README_PATH)
-    updated_readme = None
-    if os.path.exists(readme_path):
-        with open(readme_path, "r") as f:
-            readme_content = f.read()
-        top_entries = get_top_highlights(merged_highlights)
-        if top_entries:
-            result = update_readme_news_section(readme_content, top_entries)
-            if result and result != readme_content:
-                updated_readme = result
-                print("README will be updated with new highlights")
-            else:
-                print("No changes to README")
-
-    # Step 5: Create single PR with both files
     create_highlights_pr(
-        merged_highlights, updated_readme, new_highlights,
+        highlights_content, readme_content, new_highlights,
         github_token, owner, repo, date_str,
     )
     print("Highlights update completed!")

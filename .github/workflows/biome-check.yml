@@ -77,7 +77,7 @@ jobs:
       - name: Install enter.pollinations.ai dependencies
         if: steps.enter-ts-files.outputs.any_changed == 'true'
         working-directory: enter.pollinations.ai
-        run: npm install
+        run: npm ci
 
       - name: Typecheck changed files only
         if: steps.enter-ts-files.outputs.any_changed == 'true'

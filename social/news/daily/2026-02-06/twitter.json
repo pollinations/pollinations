@@ -1,0 +1,12 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "fresh engines on the api:\n\n- LTX-2 (video generation)\n- Imagen 3 (via api.airforce)\n- Claude Opus 4.6\n\nshipped, merged, and live. no waitlists. just open source tools for people who build.\n\ngo make something weird. 🌸",
+  "alt_tweet": "creative stack upgrade just merged.\n\nadded LTX-2 for video, Imagen 3 for pixels, and bumped Claude to Opus 4.6.\n\nopen source, api ready, zero friction. what are you building this weekend?",
+  "hashtags": [
+    "#OpenSource",
+    "#GenerativeAI"
+  ],
+  "image_prompt": "Dynamic pixel art scene. The cute round bee mascot excitedly plugging glowing futuristic cartridges into a retro server rack. One cartridge glows lime green (#ecf874), the other soft lavender. Electric sparks of creativity. Warm lighting, cozy workshop background. Action pose, high energy. 8-bit aesthetic like Stardew Valley but tech-focused. Text in pixel font on screen: 'UPGRADE COMPLETE'.",
+  "reasoning": "Directly addresses builders with the new capabilities (models) available immediately. The list format is scannable and highlights the technical value (Video, Image, Text upgrades). 'Go make something weird' reinforces the playful, anti-corporate brand voice.",
+  "char_count": 204
+}

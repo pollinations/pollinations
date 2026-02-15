@@ -114,6 +114,8 @@ export const PlantsAndTreesTheme: LLMThemeResponse = {
     "borderRadius": {
         "radius.button": "8px",
         "radius.card": "16px",
+        "radius.input": "6px",
+        "radius.subcard": "8px",
     },
     "fonts": {
         "font.title": "Bitter",

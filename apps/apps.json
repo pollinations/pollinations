@@ -79,5 +79,12 @@
         "outputDir": "dist",
         "title": "GSoC 2026 × POLLINATIONS.AI",
         "description": "Join Google Summer of Code 2026 and build the future of open-source AI"
+    },
+    "openclaw": {
+        "subdomain": "openclaw",
+        "buildCommand": null,
+        "outputDir": ".",
+        "title": "Pollinations × OpenClaw",
+        "description": "Use 25+ AI models as your OpenClaw brain through Pollinations' unified API"
     }
 }

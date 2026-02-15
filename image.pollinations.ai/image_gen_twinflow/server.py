@@ -47,8 +47,8 @@ async def send_heartbeat():
         try:
             port = int(os.getenv("PUBLIC_PORT", os.getenv("PORT", "10002")))
             url = f"http://{public_ip}:{port}"
-            service_type = os.getenv("SERVICE_TYPE", "zimage")
-            register_url = os.getenv("REGISTER_URL", "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register")
+            service_type = os.getenv("SERVICE_TYPE", "sana")
+            register_url = os.getenv("REGISTER_URL", "https://image.pollinations.ai/register")
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     register_url,
@@ -80,11 +80,11 @@ MODEL_ID = "inclusionAI/TwinFlow-Z-Image-Turbo"
 MODEL_SUBFOLDER = "TwinFlow-Z-Image-Turbo-exp"
 MODEL_CACHE = "model_cache"
 
-# Scale down to max 1280x1280 total pixels, maintaining aspect ratio
-MAX_PIXELS = 1280 * 1280  # Max ~1.6 megapixels
+# Scale down to max 768x768 total pixels, maintaining aspect ratio
+MAX_PIXELS = 768 * 768  # Max ~0.6 megapixels
 
-# Default inference steps (4-NFE is good balance of speed/quality)
-DEFAULT_NUM_STEPS = 5  # 5 steps = 4 NFE (actual forward passes)
+# Default inference steps (2 steps for maximum speed while maintaining quality)
+DEFAULT_NUM_STEPS = 2  # 2 steps for fast generation
 
 generate_lock = threading.Lock()
 

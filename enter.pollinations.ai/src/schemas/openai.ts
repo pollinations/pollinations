@@ -569,7 +569,9 @@ const OpenAIModelSchema = z
         reasoning: z.boolean().optional(),
         context_window: z.number().optional(),
     })
-    .meta({ description: "OpenAI-compatible model object with capability metadata" });
+    .meta({
+        description: "OpenAI-compatible model object with capability metadata",
+    });
 
 export const GetModelsResponseSchema = z
     .object({
@@ -606,12 +608,12 @@ export const CreateImageRequestSchema = z
                     "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
             }),
         response_format: z
-            .enum(["url", "b64_json"])
+            .enum(["b64_json"])
             .optional()
-            .default("url")
+            .default("b64_json")
             .meta({
                 description:
-                    "Return format: url (cached public URL) or b64_json (base64-encoded image data)",
+                    "Return format. Currently only b64_json (base64-encoded image data) is supported",
             }),
         user: z.string().optional().meta({
             description: "End-user identifier for abuse tracking",
@@ -623,8 +625,7 @@ export const CreateImageRequestSchema = z
 export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;
 
 const ImageDataSchema = z.object({
-    url: z.string().optional(),
-    b64_json: z.string().optional(),
+    b64_json: z.string(),
     revised_prompt: z.string().optional(),
 });
 

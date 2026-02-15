@@ -36,9 +36,9 @@ import {
     CreateChatCompletionRequestSchema,
     type CreateChatCompletionResponse,
     CreateChatCompletionResponseSchema,
+    type CreateImageRequest,
     CreateImageRequestSchema,
     CreateImageResponseSchema,
-    type CreateImageRequest,
     GetModelsResponseSchema,
 } from "@/schemas/openai.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
@@ -746,6 +746,10 @@ export const proxyRoutes = new Hono<Env>()
             const quality =
                 qualityMap[body.quality || ""] || body.quality || "medium";
 
+            // Add seed (use provided or generate random)
+            const seed =
+                (body.seed as number) ?? Math.floor(Math.random() * 2147483647);
+
             // Build target URL to image service directly
             const targetUrl = new URL(
                 `${c.env.IMAGE_SERVICE_URL}/prompt/${encodeURIComponent(body.prompt)}`,
@@ -754,13 +758,8 @@ export const proxyRoutes = new Hono<Env>()
             targetUrl.searchParams.set("width", String(width || 1024));
             targetUrl.searchParams.set("height", String(height || 1024));
             targetUrl.searchParams.set("quality", quality);
-            targetUrl.searchParams.set("nofeed", "true");
-
-            // Add seed (use provided or generate random)
-            const seed =
-                (body.seed as number) ??
-                Math.floor(Math.random() * 2147483647);
             targetUrl.searchParams.set("seed", String(seed));
+            targetUrl.searchParams.set("nofeed", "true");
 
             // Forward Pollinations-specific passthrough params
             const passthroughParams = [
@@ -809,43 +808,19 @@ export const proxyRoutes = new Hono<Env>()
             // Pass raw image response to track middleware for billing
             c.var.track.overrideResponseTracking(response.clone());
 
-            const responseFormat = body.response_format || "url";
-
-            if (responseFormat === "b64_json") {
-                const imageBuffer = await response.arrayBuffer();
-                const base64 = btoa(
-                    String.fromCharCode(...new Uint8Array(imageBuffer)),
-                );
-                return c.json({
-                    created: Math.floor(Date.now() / 1000),
-                    data: [
-                        {
-                            b64_json: base64,
-                            revised_prompt: body.prompt,
-                        },
-                    ],
-                });
+            // Always return b64_json (url format not supported)
+            const imageBuffer = await response.arrayBuffer();
+            const bytes = new Uint8Array(imageBuffer);
+            let binaryStr = "";
+            for (let i = 0; i < bytes.length; i++) {
+                binaryStr += String.fromCharCode(bytes[i]);
             }
-
-            // Default: return public cached URL
-            const publicUrl = new URL(
-                `https://image.pollinations.ai/prompt/${encodeURIComponent(body.prompt)}`,
-            );
-            publicUrl.searchParams.set("model", model);
-            publicUrl.searchParams.set("width", String(width || 1024));
-            publicUrl.searchParams.set("height", String(height || 1024));
-            publicUrl.searchParams.set("quality", quality);
-            publicUrl.searchParams.set("seed", String(seed));
-            publicUrl.searchParams.set("nofeed", "true");
-
-            // Consume the response body (image already generated and cached)
-            await response.arrayBuffer();
-
+            const base64 = btoa(binaryStr);
             return c.json({
                 created: Math.floor(Date.now() / 1000),
                 data: [
                     {
-                        url: publicUrl.toString(),
+                        b64_json: base64,
                         revised_prompt: body.prompt,
                     },
                 ],

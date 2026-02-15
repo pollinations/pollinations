@@ -385,7 +385,7 @@ describe("Image Integration Tests", () => {
 
 describe("POST /v1/images/generations", () => {
     test(
-        "returns URL format response",
+        "returns b64_json response by default",
         { timeout: 30000 },
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird");
@@ -410,52 +410,15 @@ describe("POST /v1/images/generations", () => {
 
             const data = (await response.json()) as {
                 created: number;
-                data: { url?: string; revised_prompt?: string }[];
-            };
-            expect(data.created).toBeTypeOf("number");
-            expect(data.data).toHaveLength(1);
-            expect(data.data[0].url).toBeDefined();
-            expect(data.data[0].url).toContain("image.pollinations.ai");
-            expect(data.data[0].revised_prompt).toBe(
-                "a red circle on white background",
-            );
-        },
-    );
-
-    test(
-        "returns b64_json format response",
-        { timeout: 30000 },
-        async ({ apiKey, mocks }) => {
-            await mocks.enable("polar", "tinybird");
-
-            const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/images/generations`,
-                {
-                    method: "POST",
-                    headers: {
-                        "content-type": "application/json",
-                        "authorization": `Bearer ${apiKey}`,
-                    },
-                    body: JSON.stringify({
-                        prompt: "a blue square",
-                        model: "flux",
-                        size: "256x256",
-                        response_format: "b64_json",
-                        seed: 42,
-                    }),
-                },
-            );
-            expect(response.status).toBe(200);
-
-            const data = (await response.json()) as {
-                created: number;
                 data: { b64_json?: string; revised_prompt?: string }[];
             };
             expect(data.created).toBeTypeOf("number");
             expect(data.data).toHaveLength(1);
             expect(data.data[0].b64_json).toBeDefined();
             expect(data.data[0].b64_json?.length).toBeGreaterThan(100);
-            expect(data.data[0].revised_prompt).toBe("a blue square");
+            expect(data.data[0].revised_prompt).toBe(
+                "a red circle on white background",
+            );
         },
     );
 
@@ -510,10 +473,10 @@ describe("POST /v1/images/generations", () => {
             expect(response.status).toBe(200);
 
             const data = (await response.json()) as {
-                data: { url?: string }[];
+                data: { b64_json?: string }[];
             };
             expect(data.data).toHaveLength(1);
-            expect(data.data[0].url).toBeDefined();
+            expect(data.data[0].b64_json).toBeDefined();
         },
     );
 });

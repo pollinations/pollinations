@@ -1,0 +1,34 @@
+{
+  "pr_number": 8189,
+  "title": "feat: disable nomnom model temporarily",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8189",
+  "merged_at": "2026-02-12T14:13:03Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Nomnom takes a nap",
+    "blurb": "The Nomnom model is taking a short break for maintenance. It will be back in the hive soon!",
+    "summary": "Temporarily disabled the 'nomnom' text model in the registry and configuration files while preserving settings for future reactivation.",
+    "impact": "The 'nomnom' model is currently unavailable for text generation requests.",
+    "keywords": [
+      "models",
+      "text-generation",
+      "maintenance",
+      "registry",
+      "availability"
+    ],
+    "visual_concept": "The pollinations.ai bee mascot placing a 'Back Soon' sign on a specific honeycomb cell or a pixelated food bowl (representing 'nomnom').",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot hanging a tiny pixelated 'Back Soon' sign on a honeycomb cell. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-12/PR-8189.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot hanging a tiny pixelated 'Back Soon' sign on a honeycomb cell. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-13T10:53:38.317949+00:00"
+}

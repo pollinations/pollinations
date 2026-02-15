@@ -1,0 +1,34 @@
+{
+  "pr_number": 8082,
+  "title": "Improve Discord PR announcement workflow",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/8082",
+  "merged_at": "2026-02-08T11:47:46Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "News about the news",
+    "blurb": "We've optimized our Discord announcement bot. It's now faster, smarter, and comes with a manual override button for when the hive gets too busy.",
+    "summary": "Refactored the Discord announcement workflow to allow manual triggers and generate content from PR descriptions instead of raw file diffs.",
+    "impact": "Reduces API usage and improves the relevance of automated announcements by focusing on intent rather than implementation details.",
+    "keywords": [
+      "discord",
+      "workflow",
+      "automation",
+      "github-actions",
+      "internal-tools"
+    ],
+    "visual_concept": "A pixel art bee adjusting a retro radio broadcasting tower or microphone. Represents the improved announcement system (the 'voice' of the project).",
+    "image_prompt": "Cozy pixel art scene of a cute 8-bit bee adjusting a retro radio broadcasting tower. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes. Pixel text 'ON AIR'. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-08/PR-8082.jpg",
+    "prompt": "Cozy pixel art scene of a cute 8-bit bee adjusting a retro radio broadcasting tower. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes. Pixel text 'ON AIR'. Nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-12T14:02:20.468574+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 8016,
+  "title": "fix: use shared OVHCLOUD_API_KEY for Mistral endpoint",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8016",
+  "merged_at": "2026-02-06T13:52:42Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Mistral finds the right key",
+    "blurb": "We've polished up the authentication for our Mistral models. The hive is buzzing smoothly again!",
+    "summary": "Updated the Mistral endpoint configuration to use the correct shared OVHcloud authentication key.",
+    "impact": "Restores and stabilizes access to Mistral text generation models for all users.",
+    "keywords": [
+      "mistral",
+      "ovhcloud",
+      "bugfix",
+      "infrastructure",
+      "reliability"
+    ],
+    "visual_concept": "A pixel art bee holding a golden key, standing next to a stylized server or cloud labeled 'Mistral'. The key represents the correct API key being applied.",
+    "image_prompt": "Cozy pixel art scene of a cute 8-bit bee mascot holding a large golden pixel key next to a soft blue cloud server. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-06/PR-8016.jpg",
+    "prompt": "Cozy pixel art scene of a cute 8-bit bee mascot holding a large golden pixel key next to a soft blue cloud server. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-12T13:58:17.007267+00:00"
+}

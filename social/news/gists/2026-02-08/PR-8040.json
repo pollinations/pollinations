@@ -1,0 +1,35 @@
+{
+  "pr_number": 8040,
+  "title": "fix(ui): add cursor-pointer to select all buttons",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/8040",
+  "merged_at": "2026-02-08T14:36:16Z",
+  "labels": [
+    "WEB",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pointing the way",
+    "blurb": "We've polished the UI interactions in the permissions settings so buttons feel more like buttons.",
+    "summary": "Added cursor-pointer indicators to 'Select All' and category toggle buttons in the account permissions UI.",
+    "impact": "Users will see the standard hand cursor when hovering over these controls, improving UI clarity.",
+    "keywords": [
+      "ui",
+      "ux",
+      "css",
+      "frontend",
+      "permissions"
+    ],
+    "visual_concept": "A tiny bee polishing a UI button with a mouse cursor nearby. Represents the UI polish and the specific cursor change.",
+    "image_prompt": "Cozy pixel art scene of a tiny 8-bit bee polishing a pixelated UI button with a large mouse cursor pointer nearby. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-08/PR-8040.jpg",
+    "prompt": "Cozy pixel art scene of a tiny 8-bit bee polishing a pixelated UI button with a large mouse cursor pointer nearby. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-02-12T14:00:40.266289+00:00"
+}

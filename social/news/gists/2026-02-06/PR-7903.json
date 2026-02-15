@@ -1,0 +1,34 @@
+{
+  "pr_number": 7903,
+  "title": "feat: Add LTX-2 video generation model",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/7903",
+  "merged_at": "2026-02-06T03:10:20Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "LTX-2 Video Arrives",
+    "blurb": "The hive is moving pictures! We've integrated LTX-2 for stunning video generation with audio support.",
+    "summary": "Integrated the LTX-2 video generation model via Modal, enabling 1024x1024 resolution clips with audio at $0.005/sec.",
+    "impact": "Creators can now generate high-quality videos with sound using the new LTX-2 model.",
+    "keywords": [
+      "video",
+      "ltx-2",
+      "modal",
+      "generative-ai",
+      "audio"
+    ],
+    "visual_concept": "The Pollinations bee mascot acting as a film director, holding a clapperboard in a cozy pixel art movie studio setting. Represents the new video generation capabilities.",
+    "image_prompt": "Cozy pixel art scene of the chubby bee mascot holding a clapperboard in a retro cinema studio. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel film reels and cameras around. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-06/PR-7903.jpg",
+    "prompt": "Cozy pixel art scene of the chubby bee mascot holding a clapperboard in a retro cinema studio. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel film reels and cameras around. Nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-12T13:55:24.492534+00:00"
+}

@@ -1,0 +1,101 @@
+name: Social Publish
+
+on:
+  # Daily: triggered when a daily summary PR is merged
+  pull_request_target:
+    types: [closed]
+    branches:
+      - main
+    paths:
+      - 'social/news/daily/**'
+  # Weekly: Sunday 18:00 UTC cron publishes if weekly PR was merged
+  schedule:
+    - cron: '0 18 * * 0'  # Sunday 18:00 UTC
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Publish mode'
+        required: true
+        type: choice
+        options:
+          - daily
+          - weekly
+      pr_number:
+        description: 'PR number (for daily manual retry)'
+        required: false
+        type: number
+      target_date:
+        description: 'Date (YYYY-MM-DD) for manual publish'
+        required: false
+        type: string
+
+jobs:
+  publish:
+    # For pull_request_target: only run if a daily-summary PR was merged
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       contains(github.event.pull_request.labels.*.name, 'daily-summary'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests PyYAML Jinja2 paramiko
+
+      - name: Determine mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+            echo "mode=daily" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "mode=weekly" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=${{ github.event.inputs.mode }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish daily content
+        if: steps.mode.outputs.mode == 'daily'
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.number || github.event.inputs.pr_number }}
+          TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
+          REDDIT_VPS_HOST: ${{ secrets.REDDIT_VPS_HOST }}
+          REDDIT_VPS_USER: ${{ secrets.REDDIT_VPS_USER }}
+          REDDIT_VPS_SSH_KEY: ${{ secrets.REDDIT_VPS_SSH_KEY }}
+        run: python social/scripts/publish_daily.py
+
+      - name: Publish weekly content
+        if: steps.mode.outputs.mode == 'weekly'
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          WEEK_END_DATE: ${{ github.event.inputs.target_date || '' }}
+          REDDIT_VPS_HOST: ${{ secrets.REDDIT_VPS_HOST }}
+          REDDIT_VPS_USER: ${{ secrets.REDDIT_VPS_USER }}
+          REDDIT_VPS_SSH_KEY: ${{ secrets.REDDIT_VPS_SSH_KEY }}
+        run: python social/scripts/publish_weekly.py

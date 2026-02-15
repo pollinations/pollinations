@@ -1,0 +1,33 @@
+{
+  "pr_number": 8118,
+  "title": "feat: economics dashboards — Daily Spending, Platform Load, tier-costs fixes",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8118",
+  "merged_at": "2026-02-09T23:59:15Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Counting the pollen",
+    "blurb": "New dashboards for tracking daily spending and platform load. Keeping an eye on the hive's health to ensure we stay sustainable.",
+    "summary": "Added comprehensive Grafana dashboards for monitoring daily infrastructure spending, revenue, and platform load metrics using Tinybird datasources.",
+    "impact": "Provides the team with granular visibility into costs and system performance to better manage platform growth.",
+    "keywords": [
+      "monitoring",
+      "dashboards",
+      "economics",
+      "tinybird",
+      "infrastructure",
+      "grafana"
+    ],
+    "visual_concept": "The pollinations.ai bee acting as a data analyst or accountant. The setting is a cozy control room with monitors showing graphs (up and to the right, or load metrics).",
+    "image_prompt": "Cozy pixel art scene of a smart bee character wearing cute glasses, pointing at a retro monitor displaying colorful rising line graphs and charts. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes. Pixel text on screen: 'DATA'. Studious, professional but cute atmosphere."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-09/PR-8118.jpg",
+    "prompt": "Cozy pixel art scene of a smart bee character wearing cute glasses, pointing at a retro monitor displaying colorful rising line graphs and charts. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes. Pixel text on screen: 'DATA'. Studious, professional but cute atmosphere."
+  },
+  "generated_at": "2026-02-12T14:07:41.828394+00:00"
+}

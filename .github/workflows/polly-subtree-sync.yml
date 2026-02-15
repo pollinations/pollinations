@@ -45,7 +45,7 @@ jobs:
         continue-on-error: true
         run: |
           # Check if subtree exists by looking for git-subtree-dir commit
-          if git log --oneline --all --grep="git-subtree-dir: apps/polly" | head -1 > /dev/null; then
+          if git log --oneline --all --grep="git-subtree-dir: apps/polly" | grep -q .; then
             echo "Subtree exists, pulling updates..."
             git subtree pull --prefix apps/polly polly main
           else
@@ -103,8 +103,9 @@ jobs:
           gh pr create \
             --title "chore: sync polly subtree" \
             --body "Automated sync of Polly repo changes via subtree pull
-            - Branch: \`polly-sync/${{ github.run_number }}\`
-            - Triggered by: scheduled workflow
-            - Sync method: squashed subtree pull (preserves only final state)" \
+
+- Branch: \`polly-sync/${{ github.run_number }}\`
+- Triggered by: scheduled workflow
+- Sync method: subtree pull (will be squash-merged)" \
             --base main \
             --head polly-sync/${{ github.run_number }}

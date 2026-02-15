@@ -31,11 +31,12 @@ on:
 
 jobs:
   publish:
-    # For pull_request_target: only run if PR was merged
+    # For pull_request_target: only run if a daily-summary PR was merged
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
-      github.event.pull_request.merged == true
+      (github.event.pull_request.merged == true &&
+       contains(github.event.pull_request.labels.*.name, 'daily-summary'))
     runs-on: ubuntu-latest
     permissions:
       contents: write

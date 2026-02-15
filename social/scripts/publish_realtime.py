@@ -26,6 +26,7 @@ from common import (
     github_api_request,
     gist_path_for_pr,
     GITHUB_API_BASE,
+    GISTS_BRANCH,
     DISCORD_CHAR_LIMIT,
 )
 
@@ -47,14 +48,14 @@ def fetch_gist(pr_number: int, merged_at: str, github_token: str,
         except (json.JSONDecodeError, OSError) as e:
             print(f"  Warning: could not read local gist: {e}")
 
-    # Fall back to GitHub API
+    # Fall back to GitHub API (read from news branch)
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {github_token}",
     }
     resp = github_api_request(
         "GET",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={GISTS_BRANCH}",
         headers=headers,
     )
     if resp.status_code == 200:

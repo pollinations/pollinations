@@ -63,6 +63,9 @@ jobs:
       - name: Install dependencies
         run: pip install requests PyYAML Jinja2 paramiko
 
+      - name: Fetch gist data from news branch
+        run: git fetch origin news && git checkout origin/news -- social/news/gists/
+
       - name: Determine mode
         id: mode
         run: |

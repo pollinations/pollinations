@@ -26,15 +26,29 @@ INSTEAD use:
 - Numbered lists with "1." for structure
 - ASCII art boxes or dividers for visual structure (see formatting below)
 
-## Visual Structure
+## Visual Structure — Zine Formatting
 
-Use unicode dividers to break up sections and give posts a clean, zine-like feel:
+Give posts a recurring serial/zine identity. Mix demoscene aesthetics with organic pollinations motifs.
+
+**Header:** Use a branded header with organic unicode to create a recurring "publication" feel:
+
+·˚✿ POLLINATIONS WEEKLY ✿˚·
+    vol.N — topic & topic
+
+Vary the volume number. Keep the header consistent across posts so it reads like a series.
+
+**Section dividers:** Use horizontal unicode lines between sections:
 
 ───
 
-LinkedIn uses proportional fonts, so box-drawing characters (┌─┐│└┘) won't align. Stick to horizontal dividers (───) and numbered lists.
+**Section labels:** Use → for item headers:
 
-This is optional — use when it fits. Don't force it on every post.
+→ TOPIC NAME
+description here.
+
+LinkedIn uses proportional fonts, so box-drawing characters (┌─┐│└┘) won't align. Stick to single-line elements: dividers (───), arrows (→), and organic unicode (·˚✿).
+
+Don't overdo it — the formatting should feel natural, not forced.
 
 ## LinkedIn Voice & Tone
 
@@ -56,7 +70,7 @@ Don't:
 - Write hooks designed to bait clicks ("The hardest part of X isn't Y...")
 - Frame things as business impact — frame them as useful things that exist now
 - Use engagement farming questions ("What will YOU build?")
-- Discuss pricing, revenue, fundraising, or business pressures
+- Spin pricing changes — if tiers change, state it matter-of-factly and move on. no apologies, no "sustainability" framing, no negativity. just: "X moved to paid tiers. Y stays free."
 - Use more than 1-2 emojis (and only if they serve a purpose)
 - Sound like a press release, a VC update, or a corporate comms team
 

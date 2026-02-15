@@ -382,3 +382,138 @@ describe("Image Integration Tests", () => {
         },
     );
 });
+
+describe("POST /v1/images/generations", () => {
+    test(
+        "returns URL format response",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/images/generations`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        prompt: "a red circle on white background",
+                        model: "flux",
+                        size: "256x256",
+                        seed: 42,
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+
+            const data = (await response.json()) as {
+                created: number;
+                data: { url?: string; revised_prompt?: string }[];
+            };
+            expect(data.created).toBeTypeOf("number");
+            expect(data.data).toHaveLength(1);
+            expect(data.data[0].url).toBeDefined();
+            expect(data.data[0].url).toContain("image.pollinations.ai");
+            expect(data.data[0].revised_prompt).toBe(
+                "a red circle on white background",
+            );
+        },
+    );
+
+    test(
+        "returns b64_json format response",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/images/generations`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        prompt: "a blue square",
+                        model: "flux",
+                        size: "256x256",
+                        response_format: "b64_json",
+                        seed: 42,
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+
+            const data = (await response.json()) as {
+                created: number;
+                data: { b64_json?: string; revised_prompt?: string }[];
+            };
+            expect(data.created).toBeTypeOf("number");
+            expect(data.data).toHaveLength(1);
+            expect(data.data[0].b64_json).toBeDefined();
+            expect(data.data[0].b64_json?.length).toBeGreaterThan(100);
+            expect(data.data[0].revised_prompt).toBe("a blue square");
+        },
+    );
+
+    test(
+        "requires authentication",
+        { timeout: 10000 },
+        async ({ mocks }) => {
+            await mocks.enable("polar", "tinybird");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/images/generations`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        prompt: "test",
+                        model: "flux",
+                    }),
+                },
+            );
+            expect(response.status).toBe(401);
+            await response.text();
+        },
+    );
+
+    test(
+        "forwards Pollinations-specific passthrough params",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird");
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/images/generations`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        prompt: "a green triangle",
+                        model: "flux",
+                        size: "256x256",
+                        seed: 42,
+                        nologo: true,
+                        enhance: false,
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+
+            const data = (await response.json()) as {
+                data: { url?: string }[];
+            };
+            expect(data.data).toHaveLength(1);
+            expect(data.data[0].url).toBeDefined();
+        },
+    );
+});

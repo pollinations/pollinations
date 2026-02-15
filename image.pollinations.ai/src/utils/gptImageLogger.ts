@@ -128,8 +128,8 @@ export async function logGptImageError(
         await fsPromises.appendFile(logFile, `${logEntry}\n`);
 
         logOps("Logged gptimage error to", logFile);
-    } catch (logError) {
+    } catch (error) {
         // Non-blocking error handling for logging
-        logError("Error logging gptimage error:", logError.message);
+        logError("Error logging gptimage error:", error.message);
     }
 }

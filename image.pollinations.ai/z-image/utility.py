@@ -1,0 +1,96 @@
+
+from PIL import Image, ImageFilter
+import numpy as np
+from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker as BaseSafetyChecker, cosine_distance
+from abc import ABC
+import torch
+from diffusers.utils import logging
+from transformers import CLIPConfig, AutoFeatureExtractor
+
+
+def numpy_to_pil(images):
+    if images.ndim == 3:
+        images = images[None, ...]
+    images = (images * 255).round().astype("uint8")
+    return [Image.fromarray(image) for image in images]
+
+
+# Per-concept threshold adjustments (negative = more lenient, positive = stricter)
+# Based on observed false positives from logs
+CONCEPT_ADJUSTMENTS = {
+    1: -0.01,   # Concept 1 triggered on "thorn branch" with score 0.005
+    2: -0.01,   # Concept 2 triggered on "bikini" prompts with score 0.003
+    4: -0.01,   # Concept 4 triggered on "woman from behind" with score 0.009
+    8: -0.01,   # Concept 8 triggered on "bikini" prompts with score 0.007
+    10: -0.02,  # Concept 10 triggered on "voluptuous silhouette" clipart with score 0.014
+    11: -0.02,  # Concept 11 triggered on same clipart with score 0.010
+    16: -0.01,  # Concept 16 triggered on "busty/bikini" prompts with score 0.008
+}
+
+
+class StableDiffusionSafetyChecker(BaseSafetyChecker, ABC):
+    def __init__(self, config: CLIPConfig):
+        super().__init__(config)
+
+    @torch.no_grad()
+    def forward(self, clip_input, images, safety_checker_adj: float = 0):
+        pooled_output = self.vision_model(clip_input)[1]
+        image_embeds = self.visual_projection(pooled_output)
+
+        special_cos_dist = cosine_distance(image_embeds, self.special_care_embeds).cpu().float().numpy()
+        cos_dist = cosine_distance(image_embeds, self.concept_embeds).cpu().float().numpy()
+
+        result = []
+        batch_size = image_embeds.shape[0]
+        for i in range(batch_size):
+            result_img = {"special_scores": {}, "special_care": [], "concept_scores": {}, "bad_concepts": []}
+            adjustment = safety_checker_adj
+
+            for concept_idx in range(len(special_cos_dist[0])):
+                concept_cos = special_cos_dist[i][concept_idx]
+                concept_threshold = self.special_care_embeds_weights[concept_idx].item()
+                result_img["special_scores"][concept_idx] = round(concept_cos - concept_threshold + adjustment, 3)
+                if result_img["special_scores"][concept_idx] > 0:
+                    result_img["special_care"].append({concept_idx, result_img["special_scores"][concept_idx]})
+                    adjustment = 0.01
+
+            for concept_idx in range(len(cos_dist[0])):
+                concept_cos = cos_dist[i][concept_idx]
+                concept_threshold = self.concept_embeds_weights[concept_idx].item()
+                # Apply per-concept adjustment if defined
+                per_concept_adj = CONCEPT_ADJUSTMENTS.get(concept_idx, 0)
+                result_img["concept_scores"][concept_idx] = round(concept_cos - concept_threshold + adjustment + per_concept_adj, 3)
+                if result_img["concept_scores"][concept_idx] > 0:
+                    result_img["bad_concepts"].append(concept_idx)
+
+            result.append(result_img)
+
+        has_nsfw_concepts = [len(res["bad_concepts"]) > 0 for res in result]
+        return has_nsfw_concepts, result
+
+
+
+
+
+def replace_sets_with_lists(obj):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            obj[k] = replace_sets_with_lists(v)
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            obj[i] = replace_sets_with_lists(v)
+    elif isinstance(obj, set):
+        obj = list(obj)
+    return obj
+
+
+def replace_numpy_with_python(obj):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            obj[k] = replace_numpy_with_python(v)
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            obj[i] = replace_numpy_with_python(v)
+    elif isinstance(obj, np.generic):
+        obj = obj.item()
+    return obj

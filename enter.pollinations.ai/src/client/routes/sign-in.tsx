@@ -1,26 +1,49 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
-import { FAQ } from "../components/faq.tsx";
+import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
-import { Header } from "../components/header.tsx";
-import { NewsBanner } from "../components/news-banner.tsx";
-import { Pricing } from "../components/pricing/index.ts";
+import { FAQ } from "../components/faq.tsx";
+import { Footer } from "../components/layout/footer.tsx";
+import { Header } from "../components/layout/header.tsx";
+import { NewsBanner } from "../components/layout/news-banner.tsx";
+import { Pricing } from "../components/pricing";
 
 export const Route = createFileRoute("/sign-in")({
     component: RouteComponent,
-    beforeLoad: ({ context }) => {
-        // redirect if already signed in
-        if (context.user) throw redirect({ to: "/" });
+    beforeLoad: async () => {
+        const result = await authClient.getSession();
+        if (result.data?.user) {
+            // Check for pending redirect URL from authorize flow
+            const pendingRedirectUrl =
+                typeof window !== "undefined"
+                    ? localStorage.getItem("pending_redirect_url")
+                    : null;
+
+            if (pendingRedirectUrl) {
+                // Clear the stored URL and redirect to authorize
+                localStorage.removeItem("pending_redirect_url");
+                throw redirect({
+                    to: "/authorize",
+                    search: {
+                        redirect_url: pendingRedirectUrl,
+                        models: null,
+                        budget: null,
+                        expiry: null,
+                        permissions: null,
+                    },
+                });
+            }
+            throw redirect({ to: "/" });
+        }
     },
 });
 
 function RouteComponent() {
-    const { auth } = Route.useRouteContext();
     const [loading, setLoading] = useState(false);
 
     const handleSignIn = async () => {
         setLoading(true);
-        const { error } = await auth.signIn.social({
+        const { error } = await authClient.signIn.social({
             provider: "github",
         });
         if (error) {
@@ -31,7 +54,6 @@ function RouteComponent() {
 
     return (
         <div className="flex flex-col gap-6">
-            <NewsBanner />
             <div className="flex flex-col gap-20">
                 <Header>
                     <div className="relative">
@@ -39,7 +61,9 @@ function RouteComponent() {
                             as="button"
                             onClick={handleSignIn}
                             disabled={loading}
-                            className="bg-amber-200 text-amber-900 hover:brightness-105"
+                            color="amber"
+                            weight="light"
+                            className="whitespace-nowrap"
                         >
                             {loading ? "Signing in..." : "Sign in with Github"}
                         </Button>
@@ -47,7 +71,7 @@ function RouteComponent() {
                             href="https://github.com/pollinations/pollinations/issues/5543"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="absolute -bottom-4 right-0 text-xs text-gray-500 hover:text-gray-700 underline"
+                            className="absolute left-1/2 -translate-x-1/2 -bottom-5 text-xs text-gray-500 hover:text-gray-700 underline whitespace-nowrap"
                         >
                             more options?
                         </a>
@@ -55,13 +79,15 @@ function RouteComponent() {
                     <Button
                         as="a"
                         href="/api/docs"
-                        className="bg-gray-900 text-white hover:!brightness-90"
+                        className="bg-gray-900 text-white hover:brightness-90! whitespace-nowrap"
                     >
-                        API Reference
+                        API Ref.
                     </Button>
                 </Header>
+                <NewsBanner />
                 <FAQ />
                 <Pricing />
+                <Footer />
             </div>
         </div>
     );

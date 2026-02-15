@@ -27,6 +27,21 @@ export const validateInt = (value) => {
     return parsed;
 };
 
+// Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
+const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
+
+/**
+ * Processes seed value, converting -1 to a random seed (parity with image generation)
+ * @param {*} value - Value to validate
+ * @returns {number|undefined} Processed seed or undefined
+ */
+export const processSeed = (value) => {
+    const seed = validateInt(value);
+    if (seed === undefined) return undefined;
+    // seed=-1 means "random" - generate a random seed
+    return seed === -1 ? Math.floor(Math.random() * MAX_SEED_VALUE) : seed;
+};
+
 /**
  * Validates boolean values including string representations
  * @param {*} value - Value to validate
@@ -86,18 +101,39 @@ export const validateJsonMode = (data) => {
  * @returns {Object} Validated parameters
  */
 export const validateTextGenerationParams = (data) => {
+    // Handle thinking_budget from multiple sources:
+    // 1. Direct thinking_budget parameter
+    // 2. Anthropic/OpenAI-style thinking object: { type: "enabled"|"disabled", budget_tokens: N }
+    let thinking_budget = validateInt(data.thinking_budget);
+
+    if (
+        thinking_budget === undefined &&
+        data.thinking &&
+        typeof data.thinking === "object"
+    ) {
+        if (
+            data.thinking.type === "enabled" &&
+            data.thinking.budget_tokens !== undefined
+        ) {
+            thinking_budget = validateInt(data.thinking.budget_tokens);
+        } else if (data.thinking.type === "disabled") {
+            thinking_budget = 0;
+        }
+    }
+
     return {
         temperature: validateFloat(data.temperature),
         top_p: validateFloat(data.top_p),
         presence_penalty: validateFloat(data.presence_penalty),
         frequency_penalty: validateFloat(data.frequency_penalty),
-        seed: validateInt(data.seed),
+        repetition_penalty: validateFloat(data.repetition_penalty),
+        seed: processSeed(data.seed),
         stream: validateBoolean(data.stream),
         private: validateBoolean(data.private),
         model: validateString(data.model), // No default - gateway must provide valid model
         voice: validateString(data.voice, "alloy"),
         reasoning_effort: validateString(data.reasoning_effort),
-        thinking_budget: validateInt(data.thinking_budget),
+        thinking_budget: thinking_budget,
         jsonMode: validateJsonMode(data),
     };
 };

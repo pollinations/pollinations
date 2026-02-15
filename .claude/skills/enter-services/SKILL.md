@@ -1,6 +1,6 @@
 ---
 name: enter-services
-description: Deploy and manage enter.pollinations.ai text/image services on EC2 and Cloudflare Workers. Requires: SSH keys, sops, wrangler.
+description: "Deploy and manage enter.pollinations.ai text/image services on EC2 and Cloudflare Workers. Requires: SSH keys, sops, wrangler."
 ---
 
 # Requirements

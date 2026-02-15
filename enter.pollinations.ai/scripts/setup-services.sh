@@ -58,6 +58,7 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=text-pollinations
 Environment="NODE_ENV=production"
+Environment="DEBUG=pollinations:error"
 
 [Install]
 WantedBy=multi-user.target
@@ -80,6 +81,7 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=image-pollinations
 Environment="NODE_ENV=production"
+Environment="DEBUG=pollinations:error"
 
 [Install]
 WantedBy=multi-user.target

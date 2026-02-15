@@ -4,9 +4,10 @@ import { cn } from "../../util.ts";
 
 const colors = {
     green: {
-        light: "bg-green-200 text-green-900",
-        strong: "bg-green-950 text-green-100",
-        outline: "border border-green-950 text-green-950 hover:bg-green-950 hover:text-green-100 transition-colors",
+        light: "bg-green-200 text-green-900 hover:bg-green-300",
+        strong: "bg-green-950 text-green-100 hover:bg-green-800",
+        outline:
+            "border-2 border-green-950 text-green-950 hover:bg-green-950 hover:text-green-100 transition-colors",
     },
     pink: {
         light: "bg-fuchsia-200 text-fuchsia-900",
@@ -24,9 +25,33 @@ const colors = {
         outline: "border-2 border-indigo-900 text-indigo-900",
     },
     red: {
-        light: "bg-red-200 text-red-900",
-        strong: "bg-red-900 text-red-50",
-        outline: "border-2 border-red-900 text-red-900",
+        light: "bg-red-200 text-red-900 hover:bg-red-300",
+        strong: "bg-red-900 text-red-50 hover:bg-red-700",
+        outline:
+            "border-2 border-red-700 text-red-700 hover:bg-red-700 hover:text-white transition-colors",
+    },
+    amber: {
+        light: "bg-amber-200 text-amber-900 hover:bg-amber-300",
+        strong: "bg-amber-500 text-white hover:bg-amber-400",
+        outline:
+            "border-2 border-amber-500 text-amber-900 hover:bg-amber-500 hover:text-white transition-colors",
+    },
+    violet: {
+        light: "bg-violet-200 text-violet-900",
+        strong: "bg-violet-600 text-white",
+        outline: "border-2 border-violet-600 text-violet-900",
+    },
+    teal: {
+        light: "bg-teal-200 text-teal-900 hover:bg-teal-300",
+        strong: "bg-teal-600 text-white hover:bg-teal-500",
+        outline:
+            "border-2 border-teal-600 text-teal-900 hover:bg-teal-600 hover:text-white transition-colors",
+    },
+    dark: {
+        light: "bg-gray-200 text-gray-900 hover:bg-gray-300",
+        strong: "bg-gray-900 text-white hover:bg-gray-700",
+        outline:
+            "border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white transition-colors",
     },
 } as const;
 
@@ -48,14 +73,23 @@ const shapes = {
     rect: "rounded-none",
 };
 
-const buttonClasses = ({ color, weight, size, shape, className, disabled }: BaseButtonProps & { disabled?: boolean }) =>
+const buttonClasses = ({
+    color,
+    weight,
+    size,
+    shape,
+    className,
+    disabled,
+}: BaseButtonProps & { disabled?: boolean }) =>
     cn(
         "rounded-full self-center placeholder-green-950 font-medium box-border",
         disabled
             ? "opacity-50 cursor-not-allowed"
             : "hover:filter hover:brightness-105 cursor-pointer",
         colors[color || "green"][weight || "strong"],
-        weight === "outline" ? outlineSizes[size || "medium"] : sizes[size || "medium"],
+        weight === "outline"
+            ? outlineSizes[size || "medium"]
+            : sizes[size || "medium"],
         shapes[shape || "pill"],
         className,
     );
@@ -102,7 +136,14 @@ export function Button<T extends React.ElementType>({
 
     return (
         <Component
-            className={buttonClasses({ color, weight, size, shape, className, disabled })}
+            className={buttonClasses({
+                color,
+                weight,
+                size,
+                shape,
+                className,
+                disabled,
+            })}
             disabled={disabled}
             {...buttonProps}
         >

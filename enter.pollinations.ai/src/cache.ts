@@ -1,5 +1,4 @@
 import { Logger } from "@logtape/logtape";
-import { joinOptionalStrings } from "./util";
 
 interface CacheOptions<TArgs extends any[]> {
     log: Logger;

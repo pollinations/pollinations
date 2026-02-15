@@ -68,6 +68,18 @@ export function createMockPolar(): MockAPI<MockPolarState> {
         })
         .post("/v1/customer-sessions", async (c) => {
             return c.json(mockCustomerSession, 201);
+        })
+        .get("/v1/products", async (c) => {
+            return c.json(
+                {
+                    items: mockPackProducts,
+                    pagination: {
+                        total_count: mockPackProducts.length,
+                        max_page: 1,
+                    },
+                },
+                200,
+            );
         });
 
     const handlerMap = {
@@ -359,7 +371,7 @@ function createMockCustomerMeters(externalCustomerId: string) {
             meter_id: "test-meter-id-pack",
             consumed_units: 431.1552567399807,
             credited_units: 705,
-            balance: 273.8447432600193,
+            balance: 10,
             customer: {
                 id: "test-customer-id-1234",
                 created_at: "2025-11-04T12:42:09.692Z",
@@ -427,7 +439,7 @@ function createMockCustomerMeters(externalCustomerId: string) {
             meter_id: "test-meter-id-tier",
             consumed_units: 5.0,
             credited_units: 100,
-            balance: 95.0,
+            balance: 10.0,
             customer: {
                 id: "test-customer-id-1234",
                 created_at: "2025-11-04T12:42:09.692Z",
@@ -489,3 +501,218 @@ function createMockCustomerMeters(externalCustomerId: string) {
         },
     ];
 }
+
+const mockPackProducts = [
+    {
+        "id": "a34a0c8d-fc8f-4dd2-b53a-ddd91428d3cb",
+        "created_at": "2025-11-15T00:15:45.806Z",
+        "modified_at": "2025-11-15T00:15:46.176Z",
+        "trial_interval": null,
+        "trial_interval_count": null,
+        "name": "🐝 5 pollen + 5 FREE",
+        "description":
+            "We're still in beta, and we want to thank you for trying our services!\nThe product isn't perfect yet, so for now you get twice the Pollen with every pollen you buy.\nWe hope it helps you create more, explore more, and tell us what feels off.\n\nIf you want to share feedback, ideas, or bugs, come hang out with us on Discord — we're listening. 💬 https://discord.gg/pollinations-ai-885844321461485618",
+        "recurring_interval": null,
+        "recurring_interval_count": null,
+        "is_recurring": false,
+        "is_archived": false,
+        "organization_id": "1b7f21f3-286c-4801-b1b9-7e69583d09fd",
+        "metadata": {
+            "slug": "v1:product:pack:5x2",
+        },
+        "prices": [
+            {
+                "created_at": "2025-11-15T00:15:45.811Z",
+                "modified_at": "2025-11-15T00:15:46.181Z",
+                "id": "a6151520-171f-4f73-8343-647ebce9f2e4",
+                "source": "catalog",
+                "amount_type": "fixed",
+                "is_archived": false,
+                "product_id": "a34a0c8d-fc8f-4dd2-b53a-ddd91428d3cb",
+                "type": "one_time",
+                "recurring_interval": null,
+                "price_currency": "usd",
+                "price_amount": 500,
+            },
+        ],
+        "benefits": [
+            {
+                "id": "9d816b11-0323-4b0c-b44b-10e52b6817b8",
+                "created_at": "2025-11-15T00:05:33.522Z",
+                "modified_at": null,
+                "type": "meter_credit",
+                "description": "5x2 pollen",
+                "selectable": true,
+                "deletable": true,
+                "organization_id": "1b7f21f3-286c-4801-b1b9-7e69583d09fd",
+                "metadata": {},
+                "properties": {
+                    "units": 10,
+                    "rollover": true,
+                    "meter_id": "9bd156bb-2f2e-4e25-b1c0-1308c076c365",
+                },
+            },
+        ],
+        "medias": [],
+        "attached_custom_fields": [],
+    },
+    {
+        "id": "c7f8d94c-d55d-4744-85bf-8d3a7ffca92f",
+        "created_at": "2025-11-15T00:13:49.448Z",
+        "modified_at": "2025-11-15T00:13:49.811Z",
+        "trial_interval": null,
+        "trial_interval_count": null,
+        "name": "🐝 50 pollen + 50 FREE",
+        "description":
+            "We're still in beta, and we want to thank you for trying our services!\nThe product isn't perfect yet, so for now you get twice the Pollen with every pollen you buy.\nWe hope it helps you create more, explore more, and tell us what feels off.\n\nIf you want to share feedback, ideas, or bugs, come hang out with us on Discord — we're listening. 💬 https://discord.gg/pollinations-ai-885844321461485618",
+        "recurring_interval": null,
+        "recurring_interval_count": null,
+        "is_recurring": false,
+        "is_archived": false,
+        "organization_id": "1b7f21f3-286c-4801-b1b9-7e69583d09fd",
+        "metadata": {
+            "slug": "v1:product:pack:50x2",
+        },
+        "prices": [
+            {
+                "created_at": "2025-11-15T00:13:49.456Z",
+                "modified_at": "2025-11-15T00:13:49.819Z",
+                "id": "cec04e58-29cc-4900-97f4-cc91c134d381",
+                "source": "catalog",
+                "amount_type": "fixed",
+                "is_archived": false,
+                "product_id": "c7f8d94c-d55d-4744-85bf-8d3a7ffca92f",
+                "type": "one_time",
+                "recurring_interval": null,
+                "price_currency": "usd",
+                "price_amount": 5000,
+            },
+        ],
+        "benefits": [
+            {
+                "id": "694c0ddd-027a-4384-b6fe-adba1460cf64",
+                "created_at": "2025-11-15T00:08:11.045Z",
+                "modified_at": null,
+                "type": "meter_credit",
+                "description": "50x2 pollen",
+                "selectable": true,
+                "deletable": true,
+                "organization_id": "1b7f21f3-286c-4801-b1b9-7e69583d09fd",
+                "metadata": {},
+                "properties": {
+                    "units": 100,
+                    "rollover": true,
+                    "meter_id": "9bd156bb-2f2e-4e25-b1c0-1308c076c365",
+                },
+            },
+        ],
+        "medias": [],
+        "attached_custom_fields": [],
+    },
+    {
+        "id": "97cddb45-634f-4384-9e41-2fabca3c4fbf",
+        "created_at": "2025-11-15T00:12:55.703Z",
+        "modified_at": "2025-11-15T00:12:56.087Z",
+        "trial_interval": null,
+        "trial_interval_count": null,
+        "name": "🐝 20 pollen + 20 FREE",
+        "description":
+            "We're still in beta, and we want to thank you for trying our services!\nThe product isn't perfect yet, so for now you get twice the Pollen with every pollen you buy.\nWe hope it helps you create more, explore more, and tell us what feels off.\n\nIf you want to share feedback, ideas, or bugs, come hang out with us on Discord — we're listening. 💬 https://discord.gg/pollinations-ai-885844321461485618",
+        "recurring_interval": null,
+        "recurring_interval_count": null,
+        "is_recurring": false,
+        "is_archived": false,
+        "organization_id": "1b7f21f3-286c-4801-b1b9-7e69583d09fd",
+        "metadata": {
+            "slug": "v1:product:pack:20x2",
+        },
+        "prices": [
+            {
+                "created_at": "2025-11-15T00:12:55.708Z",
+                "modified_at": "2025-11-15T00:12:56.091Z",
+                "id": "472f813f-7c8c-488f-a79e-2ee55d778b6d",
+                "source": "catalog",
+                "amount_type": "fixed",
+                "is_archived": false,
+                "product_id": "97cddb45-634f-4384-9e41-2fabca3c4fbf",
+                "type": "one_time",
+                "recurring_interval": null,
+                "price_currency": "usd",
+                "price_amount": 2000,
+            },
+        ],
+        "benefits": [
+            {
+                "id": "0724b49e-09d7-4d3d-9dfe-54394e93e8a1",
+                "created_at": "2025-11-15T00:07:24.646Z",
+                "modified_at": null,
+                "type": "meter_credit",
+                "description": "20x2 pollen",
+                "selectable": true,
+                "deletable": true,
+                "organization_id": "1b7f21f3-286c-4801-b1b9-7e69583d09fd",
+                "metadata": {},
+                "properties": {
+                    "units": 40,
+                    "rollover": true,
+                    "meter_id": "9bd156bb-2f2e-4e25-b1c0-1308c076c365",
+                },
+            },
+        ],
+        "medias": [],
+        "attached_custom_fields": [],
+    },
+    {
+        "id": "164ad1b8-6c4a-414e-9096-c9ca8608dfe3",
+        "created_at": "2025-11-15T00:11:44.088Z",
+        "modified_at": "2025-11-15T00:11:44.447Z",
+        "trial_interval": null,
+        "trial_interval_count": null,
+        "name": "🐝 10 pollen + 10 FREE",
+        "description":
+            "We're still in beta, and we want to thank you for trying our services!\nThe product isn't perfect yet, so for now you get twice the Pollen with every pollen you buy.\nWe hope it helps you create more, explore more, and tell us what feels off.\n\nIf you want to share feedback, ideas, or bugs, come hang out with us on Discord — we're listening. 💬 https://discord.gg/pollinations-ai-885844321461485618",
+        "recurring_interval": null,
+        "recurring_interval_count": null,
+        "is_recurring": false,
+        "is_archived": false,
+        "organization_id": "1b7f21f3-286c-4801-b1b9-7e69583d09fd",
+        "metadata": {
+            "slug": "v1:product:pack:10x2",
+        },
+        "prices": [
+            {
+                "created_at": "2025-11-15T00:11:44.093Z",
+                "modified_at": "2025-11-15T00:11:44.453Z",
+                "id": "e06f9bf9-8743-4d8b-bf0f-5ae5b7a1a0e6",
+                "source": "catalog",
+                "amount_type": "fixed",
+                "is_archived": false,
+                "product_id": "164ad1b8-6c4a-414e-9096-c9ca8608dfe3",
+                "type": "one_time",
+                "recurring_interval": null,
+                "price_currency": "usd",
+                "price_amount": 1000,
+            },
+        ],
+        "benefits": [
+            {
+                "id": "57792a58-bf5d-4609-bd27-3f05d3ae7592",
+                "created_at": "2025-11-15T00:07:04.972Z",
+                "modified_at": "2025-11-15T00:07:38.177Z",
+                "type": "meter_credit",
+                "description": "10x2 pollen",
+                "selectable": true,
+                "deletable": true,
+                "organization_id": "1b7f21f3-286c-4801-b1b9-7e69583d09fd",
+                "metadata": {},
+                "properties": {
+                    "units": 20,
+                    "rollover": true,
+                    "meter_id": "9bd156bb-2f2e-4e25-b1c0-1308c076c365",
+                },
+            },
+        ],
+        "medias": [],
+        "attached_custom_fields": [],
+    },
+];

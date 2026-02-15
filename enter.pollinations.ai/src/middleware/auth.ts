@@ -1,12 +1,13 @@
-import { createMiddleware } from "hono/factory";
-import { createAuth } from "../auth.ts";
-import { LoggerVariables } from "./logger.ts";
-import { HTTPException } from "hono/http-exception";
-import type { Session, User, Auth } from "@/auth.ts";
-import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
-import * as schema from "@/db/schema/better-auth.ts";
+import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
+import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
+import type { Session, User } from "@/auth.ts";
+import * as schema from "@/db/schema/better-auth.ts";
+import { createAuth } from "../auth.ts";
+import type { LoggerVariables } from "./logger.ts";
+import type { ModelVariables } from "./model.ts";
 
 export type AuthVariables = {
     auth: {
@@ -16,12 +17,16 @@ export type AuthVariables = {
         apiKey?: ApiKey;
         requireAuthorization: (options?: { message?: string }) => Promise<void>;
         requireUser: () => User;
+        /** Throws 403 if the API key doesn't have access to the resolved model from c.var.model. */
+        requireModelAccess: () => void;
+        /** Throws 402 if the API key has a budget set and remaining <= 0. */
+        requireKeyBudget: () => void;
     };
 };
 
 export type AuthEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & AuthVariables;
+    Variables: LoggerVariables & AuthVariables & Partial<ModelVariables>;
 };
 
 export type AuthOptions = {
@@ -29,33 +34,34 @@ export type AuthOptions = {
     allowApiKey: boolean;
 };
 
-type ApiKey = {
+interface ApiKey {
     id: string;
     name?: string;
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
-};
+    pollenBalance?: number | null;
+    rawKey?: string;
+}
 
-type AuthResult = {
+interface AuthResult {
     user?: User;
     session?: Session;
     apiKey?: ApiKey;
-};
+    rawApiKey?: string;
+}
 
 /** Extracts Bearer token from Authorization header (RFC 6750) or query parameter */
 function extractApiKey(c: Context<AuthEnv>): string | null {
-    // Try Authorization header first (RFC 6750)
     const auth = c.req.header("authorization");
     const match = auth?.match(/^Bearer (.+)$/);
     if (match?.[1]) return match[1];
 
-    // Fallback to query parameter for GET requests (browser-friendly)
     return c.req.query("key") || null;
 }
 
 export const auth = (options: AuthOptions) =>
     createMiddleware<AuthEnv>(async (c, next) => {
-        const log = c.get("log");
+        const _log = c.get("log").getChild("auth");
         const client = createAuth(c.env);
 
         const authenticateSession = async (): Promise<AuthResult | null> => {
@@ -72,58 +78,76 @@ export const auth = (options: AuthOptions) =>
 
         const authenticateApiKey = async (): Promise<AuthResult | null> => {
             if (!options.allowApiKey) return null;
-            const apiKey = extractApiKey(c);
-            log.debug("[AUTH] Extracted API key: {hasKey}", {
-                hasKey: !!apiKey,
-                keyPrefix: apiKey?.substring(0, 8),
-            });
-            if (!apiKey) return null;
+            const rawApiKey = extractApiKey(c);
+            if (!rawApiKey) return null;
+
             const keyResult = await client.api.verifyApiKey({
-                body: {
-                    key: apiKey,
-                },
+                body: { key: rawApiKey },
             });
-            log.debug("[AUTH] API key verification result: {valid}", {
-                valid: keyResult.valid,
-            });
+
             if (!keyResult.valid || !keyResult.key) return null;
+
             const db = drizzle(c.env.DB, { schema });
-            const user = await db.query.user.findFirst({
-                where: eq(schema.user.id, keyResult.key.userId),
-            });
-            log.debug("[AUTH] User lookup result: {found}", {
-                found: !!user,
-                userId: user?.id,
-            });
+            const permissions = keyResult.key.permissions as
+                | { models?: string[]; account?: string[] }
+                | undefined;
+
+            const apiKeyData = await db
+                .select()
+                .from(schema.apikey)
+                .where(eq(schema.apikey.id, keyResult.key.id))
+                .get();
+
+            const userData = apiKeyData
+                ? await db
+                      .select()
+                      .from(schema.user)
+                      .where(eq(schema.user.id, apiKeyData.userId))
+                      .get()
+                : null;
+
+            const fullApiKey = apiKeyData
+                ? { ...apiKeyData, user: userData }
+                : null;
+
+            // Check if key has expired
+            if (fullApiKey?.expiresAt) {
+                const expiryDate = new Date(fullApiKey.expiresAt);
+                if (expiryDate < new Date()) {
+                    return null;
+                }
+            }
+
+            // Check if the key is disabled
+            if (fullApiKey?.enabled === false) {
+                return null;
+            }
+
             return {
-                user: user as User,
+                user: fullApiKey?.user as User,
                 apiKey: {
                     id: keyResult.key.id,
                     name: keyResult.key.name || undefined,
-                    permissions: keyResult.key.permissions || undefined,
+                    permissions,
                     metadata: keyResult.key.metadata || undefined,
+                    pollenBalance: fullApiKey?.pollenBalance ?? null,
+                    rawKey: rawApiKey,
                 },
+                rawApiKey,
             };
         };
 
-        const { user, session, apiKey } =
-            (await authenticateSession()) || (await authenticateApiKey()) || {};
-
-        log.debug("[AUTH] Authentication result: {authenticated}", {
-            authenticated: !!user,
-            hasSession: !!session,
-            hasApiKey: !!apiKey,
-            userId: user?.id,
-        });
+        // Try session authentication first, then API key
+        let authResult = await authenticateSession();
+        if (!authResult) {
+            authResult = await authenticateApiKey();
+        }
+        const { user, session, apiKey } = authResult || {};
 
         const requireAuthorization = async (options?: {
             message?: string;
         }): Promise<void> => {
-            log.debug("[AUTH] Checking authorization: {hasUser}", {
-                hasUser: !!user,
-            });
             if (!user) {
-                log.debug("[AUTH] Authorization failed: No user");
                 throw new HTTPException(401, {
                     message: options?.message,
                 });
@@ -135,6 +159,33 @@ export const auth = (options: AuthOptions) =>
             return user;
         };
 
+        function requireModelAccess(): void {
+            if (!apiKey || !apiKey.permissions?.models) return;
+
+            const model = c.var.model;
+            if (!model) return;
+
+            if (!apiKey.permissions.models.includes(model.resolved)) {
+                throw new HTTPException(403, {
+                    message: `Model '${model.requested}' is not allowed for this API key`,
+                });
+            }
+        }
+
+        function requireKeyBudget(): void {
+            if (!apiKey) return;
+
+            const { pollenBalance } = apiKey;
+            if (pollenBalance === null || pollenBalance === undefined) return;
+
+            if (pollenBalance <= 0) {
+                throw new HTTPException(402, {
+                    message:
+                        "API key budget exhausted. Please top up or create a new key.",
+                });
+            }
+        }
+
         c.set("auth", {
             client,
             user,
@@ -142,6 +193,8 @@ export const auth = (options: AuthOptions) =>
             apiKey,
             requireAuthorization,
             requireUser,
+            requireModelAccess,
+            requireKeyBudget,
         });
 
         await next();

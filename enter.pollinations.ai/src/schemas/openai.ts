@@ -1,8 +1,10 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import { DEFAULT_TEXT_MODEL } from "../../../shared/registry/text.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import {
+    AUDIO_VOICES,
+    DEFAULT_TEXT_MODEL,
+} from "../../../shared/registry/text.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
 
@@ -25,10 +27,29 @@ const ChatCompletionFunctionCallOptionSchema = z.object({
     name: z.string(),
 });
 
-const ChatCompletionToolSchema = z.object({
+// Standard OpenAI function tool
+const FunctionToolSchema = z.object({
     type: z.literal("function"),
     function: FunctionObjectSchema,
 });
+
+// Gemini-specific built-in tools (no additional config needed)
+// See: https://ai.google.dev/gemini-api/docs/tools
+const GeminiBuiltInToolSchema = z.object({
+    type: z.enum([
+        "code_execution", // Run Python code in sandbox
+        "google_search", // Real-time web search grounding
+        "google_maps", // Location/maps grounding
+        "url_context", // Read/ground on specific URLs
+        "computer_use", // Browser automation (Preview)
+        "file_search", // Search uploaded files
+    ]),
+});
+
+const ChatCompletionToolSchema = z.union([
+    FunctionToolSchema,
+    GeminiBuiltInToolSchema,
+]);
 
 const ChatCompletionNamedToolChoiceSchema = z.object({
     type: z.literal("function"),
@@ -45,6 +66,17 @@ const ChatCompletionRequestMessageContentPartImageSchema = z.object({
     image_url: z.object({
         url: z.string(),
         detail: z.enum(["auto", "low", "high"]).optional(),
+        mime_type: z.string().optional(), // For explicit MIME type (e.g., "image/jpeg")
+    }),
+});
+
+// Video URL content type - currently supported by Gemini models only
+// Enables native YouTube video analysis (visual frames + audio) without manual extraction
+const ChatCompletionRequestMessageContentPartVideoSchema = z.object({
+    type: z.literal("video_url"),
+    video_url: z.object({
+        url: z.string(), // Supports YouTube URLs, gs://, https://, or data: URLs
+        mime_type: z.string().optional(), // Auto-detected for YouTube URLs as "video/mp4"
     }),
 });
 
@@ -53,7 +85,8 @@ const CacheControlSchema = z
     .object({
         type: z.enum(["ephemeral"]),
     })
-    .optional();
+    .optional()
+    .meta({ $id: "CacheControl" });
 
 const ChatCompletionRequestMessageContentPartTextSchema = z.object({
     type: z.literal("text"),
@@ -83,16 +116,19 @@ const ChatCompletionRequestMessageContentPartFileSchema = z.object({
     cache_control: CacheControlSchema,
 });
 
-const ChatCompletionRequestMessageContentPartSchema = z.union([
-    ChatCompletionRequestMessageContentPartTextSchema,
-    ChatCompletionRequestMessageContentPartImageSchema,
-    ChatCompletionRequestMessageContentPartAudioSchema,
-    ChatCompletionRequestMessageContentPartFileSchema,
-    // Allow any other content types for provider-specific extensions
-    z
-        .object({ type: z.string() })
-        .passthrough(),
-]);
+const ChatCompletionRequestMessageContentPartSchema = z
+    .union([
+        ChatCompletionRequestMessageContentPartTextSchema,
+        ChatCompletionRequestMessageContentPartImageSchema,
+        ChatCompletionRequestMessageContentPartVideoSchema,
+        ChatCompletionRequestMessageContentPartAudioSchema,
+        ChatCompletionRequestMessageContentPartFileSchema,
+        // Allow any other content types for provider-specific extensions
+        z
+            .object({ type: z.string() })
+            .passthrough(),
+    ])
+    .meta({ $id: "MessageContentPart" });
 
 // Thinking (provider-specific; requires strict_openai_compliance=false)
 const ChatCompletionMessageContentPartThinkingSchema = z.object({
@@ -236,18 +272,14 @@ const ThinkingSchema = z
 
 export const CreateChatCompletionRequestSchema = z.object({
     messages: z.array(ChatCompletionRequestMessageSchema),
-    model: z.string().optional().default(DEFAULT_TEXT_MODEL),
+    model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
+        description:
+            "AI model for text generation. See /v1/models for full list.",
+    }),
     modalities: z.array(z.enum(["text", "audio"])).optional(),
     audio: z
         .object({
-            voice: z.enum([
-                "alloy",
-                "echo",
-                "fable",
-                "onyx",
-                "nova",
-                "shimmer",
-            ]),
+            voice: z.enum(AUDIO_VOICES),
             format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
         })
         .optional(),
@@ -258,6 +290,7 @@ export const CreateChatCompletionRequestSchema = z.object({
         .nullable()
         .optional()
         .default(0),
+    repetition_penalty: z.number().min(0).max(2).nullable().optional(),
     logit_bias: z
         .record(z.string(), z.number().int())
         .nullable()
@@ -266,7 +299,6 @@ export const CreateChatCompletionRequestSchema = z.object({
     logprobs: z.boolean().nullable().optional().default(false),
     top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
     max_tokens: z.number().int().min(0).nullable().optional(),
-    n: z.number().int().min(1).max(128).nullable().optional().default(1),
     presence_penalty: z
         .number()
         .min(-2)
@@ -278,7 +310,7 @@ export const CreateChatCompletionRequestSchema = z.object({
     seed: z
         .number()
         .int()
-        .min(0)
+        .min(-1)
         .max(Number.MAX_SAFE_INTEGER)
         .nullable()
         .optional(),
@@ -288,7 +320,9 @@ export const CreateChatCompletionRequestSchema = z.object({
     stream: z.boolean().nullable().optional().default(false),
     stream_options: ChatCompletionStreamOptionsSchema,
     thinking: ThinkingSchema,
-    reasoning_effort: z.enum(["low", "medium", "high"]).optional(),
+    reasoning_effort: z
+        .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+        .optional(),
     thinking_budget: z.number().int().min(0).optional(),
     temperature: z.number().min(0).max(2).nullable().optional().default(1),
     top_p: z.number().min(0).max(1).nullable().optional().default(1),
@@ -311,8 +345,13 @@ export const CreateChatCompletionRequestSchema = z.object({
 
 const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionRequestMessageContentPartTextSchema,
+    ChatCompletionRequestMessageContentPartImageSchema,
     ChatCompletionMessageContentPartThinkingSchema,
     ChatCompletionMessageContentPartRedactedThinkingSchema,
+    // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
+    z
+        .object({ type: z.string() })
+        .passthrough(),
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({
@@ -357,42 +396,41 @@ const ChatCompletionChoiceLogprobsSchema = z
     })
     .nullable();
 
-export const CompletionUsageSchema = z.object({
-    completion_tokens: z.number().int().nonnegative(),
-    completion_tokens_details: z
-        .object({
-            accepted_prediction_tokens: z
-                .number()
-                .int()
-                .nonnegative()
-                .optional(),
-            audio_tokens: z.number().int().nonnegative().optional(),
-            reasoning_tokens: z.number().int().nonnegative().optional(),
-            rejected_prediction_tokens: z
-                .number()
-                .int()
-                .nonnegative()
-                .optional(),
-        })
-        .nullish(),
-    prompt_tokens: z.number().int().nonnegative(),
-    prompt_tokens_details: z
-        .object({
-            audio_tokens: z.number().int().nonnegative().optional(),
-            cached_tokens: z.number().int().nonnegative().optional(),
-        })
-        .nullish(),
-    total_tokens: z.number().int().nonnegative(),
-});
+export const CompletionUsageSchema = z
+    .object({
+        completion_tokens: z.number().int().nonnegative(),
+        completion_tokens_details: z
+            .object({
+                accepted_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .optional(),
+                audio_tokens: z.number().int().nonnegative().optional(),
+                reasoning_tokens: z.number().int().nonnegative().optional(),
+                rejected_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .optional(),
+            })
+            .nullish(),
+        prompt_tokens: z.number().int().nonnegative(),
+        prompt_tokens_details: z
+            .object({
+                audio_tokens: z.number().int().nonnegative().optional(),
+                cached_tokens: z.number().int().nonnegative().optional(),
+            })
+            .nullish(),
+        total_tokens: z.number().int().nonnegative(),
+    })
+    .meta({ $id: "CompletionUsage" });
 
 export type CompletionUsage = z.infer<typeof CompletionUsageSchema>;
 
-export const ContentFilterSeveritySchema = z.enum([
-    "safe",
-    "low",
-    "medium",
-    "high",
-]);
+export const ContentFilterSeveritySchema = z
+    .enum(["safe", "low", "medium", "high"])
+    .meta({ $id: "ContentFilterSeverity" });
 
 export type ContentFilterSeverity = z.infer<typeof ContentFilterSeveritySchema>;
 
@@ -427,7 +465,8 @@ export const ContentFilterResultSchema = z
             detected: z.boolean(),
         }),
     })
-    .partial();
+    .partial()
+    .meta({ $id: "ContentFilterResult" });
 
 export type ContentFilterResult = z.infer<typeof ContentFilterResultSchema>;
 
@@ -518,68 +557,62 @@ export const CreateChatCompletionStreamResponseSchema = z.object({
         .optional(),
 });
 
-const ModelDescriptionSchema = z
+const OpenAIModelSchema = z
     .object({
-        name: z.string(),
-        description: z.string(),
-        tier: z.enum(["anonymous", "seed", "flower", "nectar"]),
-        community: z.boolean(),
-        aliases: z.array(z.string()).optional(),
-        input_modalities: z.array(z.enum(["text", "image", "audio"])),
-        output_modalities: z.array(z.enum(["text", "image", "audio"])),
-        tools: z.boolean(),
-        vision: z.boolean(),
-        audio: z.boolean(),
-        maxInputChars: z.number().optional(),
-        reasoning: z.boolean().optional(),
-        voices: z.array(z.string()).optional(),
-        uncensored: z.boolean().optional(),
-        supportsSystemMessages: z.boolean().optional(),
+        id: z.string(),
+        object: z.literal("model"),
+        created: z.number(),
     })
-    .meta({ description: "Model description and capabilities" });
+    .meta({ description: "OpenAI-compatible model object" });
 
-export const GetModelsResponseSchema = z.array(ModelDescriptionSchema).meta({
-    description: "Array of model descriptions for each available model.",
-});
+export const GetModelsResponseSchema = z
+    .object({
+        object: z.literal("list"),
+        data: z.array(OpenAIModelSchema),
+    })
+    .meta({
+        description: "OpenAI-compatible list of available models.",
+    });
 
 // OpenAI Images API Schemas
-const IMAGE_MODEL_IDS = Object.keys(IMAGE_SERVICES) as [string, ...string[]];
-const OPENAI_QUALITIES = ["standard", "hd", "low", "medium", "high"] as const;
 
 export const CreateImageRequestSchema = z
     .object({
-        // OpenAI standard params
         prompt: z.string().min(1).max(32000).meta({
             description: "A text description of the desired image(s)",
         }),
-        model: z
-            .enum(IMAGE_MODEL_IDS)
-            .optional()
-            .default("flux")
-            .meta({
-                description: `The model to use for image generation. Available: ${IMAGE_MODEL_IDS.join(", ")}`,
-            }),
+        model: z.string().optional().default("flux").meta({
+            description: "The model to use for image generation",
+        }),
+        n: z.number().int().min(1).max(1).optional().default(1).meta({
+            description: "Number of images to generate (currently max 1)",
+        }),
         size: z.string().optional().default("1024x1024").meta({
             description:
-                "The size of the generated image. Format: WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
+                "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
         }),
-        quality: z.enum(OPENAI_QUALITIES).optional().default("medium").meta({
-            description:
-                "The quality of the image. OpenAI uses 'standard'/'hd', Pollinations also supports 'low'/'medium'/'high'",
-        }),
+        quality: z
+            .enum(["standard", "hd", "low", "medium", "high"])
+            .optional()
+            .default("medium")
+            .meta({
+                description:
+                    "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
+            }),
         response_format: z
             .enum(["url", "b64_json"])
             .optional()
             .default("url")
             .meta({
                 description:
-                    "The format in which the generated image is returned. url returns a URL to fetch the cached image.",
+                    "Return format: url (cached public URL) or b64_json (base64-encoded image data)",
             }),
         user: z.string().optional().meta({
-            description: "A unique identifier representing your end-user",
+            description: "End-user identifier for abuse tracking",
         }),
     })
-    .passthrough(); // Allow Pollinations-specific extensions (seed, nologo, enhance, safe, etc.)
+    .passthrough() // Allow Pollinations extensions: seed, nologo, enhance, safe, etc.
+    .meta({ $id: "CreateImageRequest" });
 
 export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;
 
@@ -589,9 +622,11 @@ const ImageDataSchema = z.object({
     revised_prompt: z.string().optional(),
 });
 
-export const CreateImageResponseSchema = z.object({
-    created: z.number().int(),
-    data: z.array(ImageDataSchema),
-});
+export const CreateImageResponseSchema = z
+    .object({
+        created: z.number().int(),
+        data: z.array(ImageDataSchema),
+    })
+    .meta({ $id: "CreateImageResponse" });
 
 export type CreateImageResponse = z.infer<typeof CreateImageResponseSchema>;

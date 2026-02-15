@@ -1,0 +1,26 @@
+DESCRIPTION >
+    Weekly Active Users (WAU) - Count of unique users with at least one request per week.
+    Returns data for the last N weeks.
+
+TOKEN model_usage READ
+
+NODE weekly_active_users_node
+SQL >
+    %
+    SELECT
+        toStartOfWeek(start_time, 1) AS week_start,
+        formatDateTime(toStartOfWeek(start_time, 1), '%Y-%m-%d') AS week,
+        uniqExact(user_id) AS active_users,
+        uniqExactIf(user_id, total_price > 0) AS paying_users,
+        count() AS total_requests,
+        sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
+        sum(total_price) AS total_revenue
+    FROM generation_event
+    WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
+    AND environment = 'production'
+    AND user_id != 'undefined'
+    AND user_id != ''
+    GROUP BY week_start
+    ORDER BY week_start ASC
+
+TYPE endpoint

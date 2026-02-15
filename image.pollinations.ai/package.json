@@ -5,11 +5,13 @@
     "main": "index.js",
     "type": "module",
     "scripts": {
+        "decrypt-vars": "sops decrypt secrets/env.json --output-type dotenv > .env",
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
-        "start": "tsx src/index.ts",
-        "dev": "DEBUG=pollinations:* tsx --watch src/index.ts"
+        "start": "npx tsx src/index.ts",
+        "start:dev": "npm run decrypt-vars && npx tsx src/index.ts",
+        "dev": "npm run decrypt-vars && DEBUG=pollinations:* npx tsx --watch src/index.ts"
     },
     "keywords": [],
     "author": "",

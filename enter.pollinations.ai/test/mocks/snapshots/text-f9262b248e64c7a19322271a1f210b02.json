@@ -1,0 +1,120 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "required",
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "908",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:41:30 GMT",
+      "etag": "W/\"38c-NKDdKYchQJhr+6PSIC42wTfPs+k\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-3-flash-preview",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "56",
+      "x-usage-completion-text-tokens": "11",
+      "x-usage-prompt-text-tokens": "299",
+      "x-usage-total-tokens": "366"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_7829e47535d8f8d76601c5a0d02c8244",
+        "object": "chat.completion",
+        "created": 1766245290,
+        "model": "gemini-3-flash-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "tool_calls": [
+                {
+                  "id": "portkey-0dcff737-cbe1-4f05-92bc-6e549a4acba8",
+                  "type": "function",
+                  "function": {
+                    "name": "calculator",
+                    "arguments": "{\"b\":3,\"a\":5,\"operation\":\"add\"}",
+                    "thought_signature": "Cs4BAY89a1+9uBaH74mqJC8MTdGi9bs/mWDNGjsj25muSIWpGVBRtbtDzrvXBIStm8En0IsydF6tGOBWgfOcqAII9MFE1sj+E8hqEb6spDUEsuv4H45LPL+y1+NdIaQMtEjM9iP3WMx6/ciJlWkFNLYbNKubh+ZXpsb3GzhEiiyMoqb+UYc49GpzyZabYqHOGabILl3LuA4xbyerF2krTurvqZmdZWW6zkvfD+4BKl52TlXGOGXvcD95PMtaST/eaFExpE1IqdCiFf4/S06RkQc="
+                  }
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 299,
+          "completion_tokens": 67,
+          "total_tokens": 366,
+          "completion_tokens_details": {
+            "reasoning_tokens": 56,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

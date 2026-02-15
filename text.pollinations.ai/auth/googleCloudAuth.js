@@ -15,26 +15,26 @@ let tokenExpiration = null;
 async function refreshGcloudAccessToken() {
     try {
         // Get credentials from environment variables
-        const privateKey = process.env.GOOGLE_VERTEX_PRIVATE_KEY;
-        const privateKeyId = process.env.GOOGLE_VERTEX_PRIVATE_KEY_ID;
-        const clientEmail = process.env.GOOGLE_VERTEX_CLIENT_EMAIL;
-        const projectId = process.env.GCLOUD_PROJECT_ID;
+        const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+        const privateKeyId = process.env.GOOGLE_PRIVATE_KEY_ID;
+        const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+        const projectId = process.env.GOOGLE_PROJECT_ID;
 
         log("Checking Google Cloud credentials from environment...");
-        log("- GOOGLE_VERTEX_PRIVATE_KEY:", privateKey ? "[SET]" : "[NOT SET]");
+        log("- GOOGLE_PRIVATE_KEY:", privateKey ? "[SET]" : "[NOT SET]");
         log(
-            "- GOOGLE_VERTEX_PRIVATE_KEY_ID:",
+            "- GOOGLE_PRIVATE_KEY_ID:",
             privateKeyId ? "[SET]" : "[NOT SET]",
         );
         log(
-            "- GOOGLE_VERTEX_CLIENT_EMAIL:",
+            "- GOOGLE_CLIENT_EMAIL:",
             clientEmail ? "[SET]" : "[NOT SET]",
         );
-        log("- GCLOUD_PROJECT_ID:", projectId);
+        log("- GOOGLE_PROJECT_ID:", projectId);
 
         if (!privateKey || !privateKeyId || !clientEmail) {
             errorLog(
-                "Missing required Google Cloud credentials. Need: GOOGLE_VERTEX_PRIVATE_KEY, GOOGLE_VERTEX_PRIVATE_KEY_ID, GOOGLE_VERTEX_CLIENT_EMAIL",
+                "Missing required Google Cloud credentials. Need: GOOGLE_PRIVATE_KEY, GOOGLE_PRIVATE_KEY_ID, GOOGLE_CLIENT_EMAIL",
             );
             return null;
         }
@@ -256,22 +256,22 @@ function initGoogleCloudAuth() {
         log("Initializing Google Cloud authentication...");
         log("Environment variables:");
         log(
-            "- GOOGLE_VERTEX_PRIVATE_KEY:",
-            process.env.GOOGLE_VERTEX_PRIVATE_KEY ? "[SET]" : "[NOT SET]",
+            "- GOOGLE_PRIVATE_KEY:",
+            process.env.GOOGLE_PRIVATE_KEY ? "[SET]" : "[NOT SET]",
         );
         log(
-            "- GOOGLE_VERTEX_PRIVATE_KEY_ID:",
-            process.env.GOOGLE_VERTEX_PRIVATE_KEY_ID ? "[SET]" : "[NOT SET]",
+            "- GOOGLE_PRIVATE_KEY_ID:",
+            process.env.GOOGLE_PRIVATE_KEY_ID ? "[SET]" : "[NOT SET]",
         );
         log(
-            "- GOOGLE_VERTEX_CLIENT_EMAIL:",
-            process.env.GOOGLE_VERTEX_CLIENT_EMAIL ? "[SET]" : "[NOT SET]",
+            "- GOOGLE_CLIENT_EMAIL:",
+            process.env.GOOGLE_CLIENT_EMAIL ? "[SET]" : "[NOT SET]",
         );
-        log("- GCLOUD_PROJECT_ID:", process.env.GCLOUD_PROJECT_ID);
+        log("- GOOGLE_PROJECT_ID:", process.env.GOOGLE_PROJECT_ID);
 
         // Check if credentials are available
-        if (!process.env.GOOGLE_VERTEX_PRIVATE_KEY) {
-            log("GOOGLE_VERTEX_PRIVATE_KEY not set, returning null");
+        if (!process.env.GOOGLE_PRIVATE_KEY) {
+            log("GOOGLE_PRIVATE_KEY not set, returning null");
             return {
                 getAccessToken: async () => null,
             };

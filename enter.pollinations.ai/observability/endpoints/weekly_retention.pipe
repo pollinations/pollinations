@@ -1,0 +1,52 @@
+DESCRIPTION >
+    Weekly cohort retention - tracks user retention week over week.
+    Shows what percentage of users from each cohort returned in subsequent weeks.
+
+TOKEN model_usage READ
+
+NODE cohort_base
+SQL >
+    %
+    SELECT
+        user_id,
+        toStartOfWeek(min(start_time), 1) AS cohort_week
+    FROM generation_event
+    WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 8)}} WEEK
+    AND environment = 'production'
+    AND user_id != 'undefined'
+    AND user_id != ''
+    GROUP BY user_id
+
+NODE weekly_activity
+SQL >
+    %
+    SELECT DISTINCT
+        user_id,
+        toStartOfWeek(start_time, 1) AS activity_week
+    FROM generation_event
+    WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 8)}} WEEK
+    AND environment = 'production'
+    AND user_id != 'undefined'
+    AND user_id != ''
+
+NODE weekly_retention_node
+SQL >
+    SELECT
+        formatDateTime(c.cohort_week, '%Y-%m-%d') AS cohort,
+        count(DISTINCT c.user_id) AS cohort_size,
+        countIf(DISTINCT c.user_id, a.activity_week = c.cohort_week + INTERVAL 1 WEEK) AS w1_retained,
+        countIf(DISTINCT c.user_id, a.activity_week = c.cohort_week + INTERVAL 2 WEEK) AS w2_retained,
+        countIf(DISTINCT c.user_id, a.activity_week = c.cohort_week + INTERVAL 3 WEEK) AS w3_retained,
+        countIf(DISTINCT c.user_id, a.activity_week = c.cohort_week + INTERVAL 4 WEEK) AS w4_retained,
+        if(cohort_size > 0, round(w1_retained * 100.0 / cohort_size, 1), null) AS w1_retention,
+        if(cohort_size > 0, round(w2_retained * 100.0 / cohort_size, 1), null) AS w2_retention,
+        if(cohort_size > 0, round(w3_retained * 100.0 / cohort_size, 1), null) AS w3_retention,
+        if(cohort_size > 0, round(w4_retained * 100.0 / cohort_size, 1), null) AS w4_retention
+    FROM cohort_base c
+    LEFT JOIN weekly_activity a ON c.user_id = a.user_id
+    GROUP BY c.cohort_week
+    HAVING c.cohort_week <= now() - INTERVAL 1 WEEK
+    ORDER BY c.cohort_week DESC
+    LIMIT 8
+
+TYPE endpoint

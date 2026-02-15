@@ -1,24 +1,23 @@
 import { z } from "zod";
 import {
     getActivePriceDefinition,
-    getImageServices,
     getServiceDefinition,
-    getTextServices,
-    ServiceId,
+    getVisibleAudioServices,
+    getVisibleImageServices,
+    getVisibleTextServices,
+    type ServiceId,
 } from "./registry";
 
+// Pricing uses registry field names directly, filtering out zero/undefined values
+// Fields: promptTextTokens, promptCachedTokens, promptAudioTokens, promptAudioSeconds,
+//         promptImageTokens, completionTextTokens, completionReasoningTokens,
+//         completionAudioTokens, completionImageTokens, completionVideoSeconds, completionVideoTokens
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
-    pricing: z.object({
-        input_token_price: z.number().optional(),
-        output_token_price: z.number().optional(),
-        cached_token_price: z.number().optional(),
-        image_price: z.number().optional(),
-        audio_input_price: z.number().optional(),
-        audio_output_price: z.number().optional(),
-        currency: z.literal("pollen"),
-    }),
+    pricing: z
+        .record(z.string(), z.union([z.number(), z.literal("pollen")]))
+        .and(z.object({ currency: z.literal("pollen") })),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
     output_modalities: z.array(z.string()).optional(),
@@ -27,6 +26,7 @@ export const ModelInfoSchema = z.object({
     context_window: z.number().optional(),
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
+    paid_only: z.boolean().optional(),
 });
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;
@@ -41,18 +41,19 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
     if (!priceDefinition) {
         throw new Error(`No price definition found for service: ${serviceId}`);
     }
+    // Filter out date, zero, and undefined values from price definition
+    const { date: _date, ...priceFields } = priceDefinition;
+    const pricing: Record<string, number | "pollen"> = { currency: "pollen" };
+    for (const [key, value] of Object.entries(priceFields)) {
+        if (typeof value === "number" && value > 0) {
+            pricing[key] = value;
+        }
+    }
+
     return {
         name: serviceId as string,
         aliases: service.aliases,
-        pricing: {
-            input_token_price: priceDefinition.promptTextTokens,
-            output_token_price: priceDefinition.completionTextTokens,
-            cached_token_price: priceDefinition.promptCachedTokens,
-            image_price: priceDefinition.completionImageTokens,
-            audio_input_price: priceDefinition.promptAudioTokens,
-            audio_output_price: priceDefinition.completionAudioTokens,
-            currency: "pollen",
-        },
+        pricing,
         // User-facing metadata from service definition
         description: service.description,
         input_modalities: service.inputModalities,
@@ -62,6 +63,7 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
         context_window: service.contextWindow,
         voices: service.voices,
         is_specialized: service.isSpecialized,
+        paid_only: service.paidOnly,
     };
 }
 
@@ -69,12 +71,19 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
  * Get all text models with enriched information
  */
 export function getTextModelsInfo(): ModelInfo[] {
-    return getTextServices().map(getModelInfo);
+    return getVisibleTextServices().map(getModelInfo);
 }
 
 /**
  * Get all image models with enriched information
  */
 export function getImageModelsInfo(): ModelInfo[] {
-    return getImageServices().map(getModelInfo);
+    return getVisibleImageServices().map(getModelInfo);
+}
+
+/**
+ * Get all audio models with enriched information
+ */
+export function getAudioModelsInfo(): ModelInfo[] {
+    return getVisibleAudioServices().map(getModelInfo);
 }

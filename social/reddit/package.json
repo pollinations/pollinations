@@ -1,0 +1,28 @@
+{
+  "private": true,
+  "name": "polli-ai",
+  "version": "0.0.0",
+  "license": "BSD-3-Clause",
+  "type": "module",
+  "scripts": {
+    "deploy": "devvit upload",
+    "dev": "dotenv -e .env -- devvit playtest",
+    "login": "devvit login",
+    "launch": "devvit publish",
+    "type-check": "tsc --build"
+  },
+  "dependencies": {
+    "@devvit/public-api": "0.12.6",
+    "axios": "^1.13.2",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "devvit": "0.12.6",
+    "dotenv-cli": "8.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  }
+}

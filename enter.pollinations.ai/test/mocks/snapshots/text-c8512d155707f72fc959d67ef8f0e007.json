@@ -1,0 +1,133 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "kimi-k2-thinking",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          },
+          {
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "function": {
+                  "arguments": "{\"a\": 5, \"b\": 3, \"operation\": \"add\"}",
+                  "name": "calculator"
+                },
+                "id": "functions.calculator:0",
+                "index": 0,
+                "type": "function"
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "functions.calculator:0",
+            "content": "{\"result\":8}"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "seed": 42,
+        "max_tokens": 4096
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "556",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:41:57 GMT",
+      "etag": "W/\"22c-2IAS8S3RT28zq58puefU7asBlUk\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "moonshotai/kimi-k2-thinking-maas",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "9",
+      "x-usage-prompt-text-tokens": "406",
+      "x-usage-total-tokens": "415"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "matched_stop": 163586,
+            "message": {
+              "content": null,
+              "reasoning_content": "The calculator gives us 8!",
+              "role": "assistant",
+              "tool_calls": null
+            }
+          }
+        ],
+        "created": 1766245317,
+        "id": "pllns_0cd6fcfa3f27f56f9804d67d4237918f",
+        "metadata": {
+          "weight_version": "default"
+        },
+        "model": "moonshotai/kimi-k2-thinking-maas",
+        "object": "chat.completion",
+        "usage": {
+          "completion_tokens": 9,
+          "extra_properties": {
+            "google": {
+              "traffic_type": "ON_DEMAND"
+            }
+          },
+          "prompt_tokens": 406,
+          "prompt_tokens_details": null,
+          "reasoning_tokens": 0,
+          "total_tokens": 415
+        }
+      }
+    }
+  }
+}

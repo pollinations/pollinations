@@ -1,0 +1,37 @@
+DESCRIPTION >
+    Get billed usage history for a specific user (last 30 days). Only returns billed requests.
+    Use 'before' param with ISO timestamp for cursor pagination (e.g. before=2024-12-10T00:00:00).
+
+TOKEN model_usage READ
+
+NODE user_usage_node
+SQL >
+    %
+    SELECT
+        start_time as timestamp,
+        event_type as type,
+        model_used as model,
+        api_key_name as api_key,
+        api_key_type as api_key_type,
+        splitByChar(':', selected_meter_slug)[-1] as meter_source,
+        token_count_prompt_text as input_text_tokens,
+        token_count_prompt_cached as input_cached_tokens,
+        token_count_prompt_audio as input_audio_tokens,
+        token_count_prompt_image as input_image_tokens,
+        token_count_completion_text as output_text_tokens,
+        token_count_completion_reasoning as output_reasoning_tokens,
+        token_count_completion_audio as output_audio_tokens,
+        token_count_completion_image as output_image_tokens,
+        total_price as cost_usd,
+        response_time as response_time_ms
+    FROM generation_event
+    WHERE user_id = {{String(user_id, '')}}
+    AND total_price > 0
+    AND start_time >= now() - INTERVAL 30 DAY
+    {% if defined(before) %}
+    AND start_time < {{DateTime(before)}}
+    {% end %}
+    ORDER BY start_time DESC
+    LIMIT {{Int32(limit, 100)}}
+
+TYPE endpoint

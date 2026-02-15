@@ -26,6 +26,12 @@ jobs:
         run: npm install
         working-directory: ./enter.pollinations.ai
 
+      - name: Run database migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run migrate:production
+        working-directory: ./enter.pollinations.ai
+
       - name: Build and deploy to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

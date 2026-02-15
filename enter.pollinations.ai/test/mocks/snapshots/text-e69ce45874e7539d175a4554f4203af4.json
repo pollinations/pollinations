@@ -1,0 +1,127 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "perplexity-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Tue, 23 Dec 2025 13:55:30 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"c3f87901-b093-",
+          "delay": 21
+        },
+        {
+          "data": "49e8-ac6e-41ea58fc9fd7\",\"object\":\"chat.completion.chunk\",\"created\":1766498130,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Berlin\",\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Yes\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"c3f87901-b093-",
+          "delay": 16
+        },
+        {
+          "data": "49e8-ac6e-41ea58fc9fd7\",\"object\":\"chat.completion.chunk\",\"created\":1766498130,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Berlin\",\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\".\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"c3f87901-b093-",
+          "delay": 25
+        },
+        {
+          "data": "49e8-ac6e-41ea58fc9fd7\",\"object\":\"chat.completion.chunk\",\"created\":1766498130,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Berlin\",\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" **\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"c3f87901-b093-",
+          "delay": 238
+        },
+        {
+          "data": "49e8-ac6e-41ea58fc9fd7\",\"object\":\"chat.completion.chunk\",\"created\":1766498130,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Berlin\",\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Berlin is the capital of Germany**\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"c3f87901-b09",
+          "delay": 0
+        },
+        {
+          "data": "3-49e8-ac6e-41ea58fc9fd7\",\"object\":\"chat.completion.chunk\",\"created\":1766498130,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Berlin\",\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"[1]\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"c3f87901-b093-",
+          "delay": 2
+        },
+        {
+          "data": "49e8-ac6e-41ea58fc9fd7\",\"object\":\"chat.completion.chunk\",\"created\":1766498130,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Berlin\",\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"[2]\"},\"index\":0}]}\n\ndata: {\"id\":\"c3f87901-b093-49e8-ac6e-41ea58fc9fd7\",\"object\":\"chat.completion.chunk\",\"created\":1766498130,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Berlin\",\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"[5],\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"c3f87901-b093-",
+          "delay": 6
+        },
+        {
+          "data": "49e8-ac6e-41ea58fc9fd7\",\"object\":\"chat.completion.chunk\",\"created\":1766498130,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Berlin\",\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" and has\"},\"index\":0}]}\n\ndata: {\"id\":\"c3f87901-b093-49e8-ac6e-41ea58fc9fd7\",\"object\":\"chat.completion.chunk\",\"created\":1766498130,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Berlin\",\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" been since the\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"c3f87901-b09",
+          "delay": 0
+        },
+        {
+          "data": "3-49e8-ac6e-41ea58fc9fd7\",\"object\":\"chat.completion.chunk\",\"created\":1766498130,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Berlin\",\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" reun\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"c3f87901-b093-",
+          "delay": 91
+        },
+        {
+          "data": "49e8-ac6e-41ea58fc9fd7\",\"object\":\"chat.completion.chunk\",\"created\":1766498130,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Berlin\",\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"ification of Germany in 1990\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"c3f87901-b093-",
+          "delay": 4
+        },
+        {
+          "data": "49e8-ac6e-41ea58fc9fd7\",\"object\":\"chat.completion.chunk\",\"created\":1766498130,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Berlin\",\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"[1].\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"c3f87901-b093-",
+          "delay": 70
+        },
+        {
+          "data": "49e8-ac6e-41ea58fc9fd7\",\"object\":\"chat.completion.done\",\"created\":1766498130,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://en.wikipedia.org/wiki/Berlin\",\"https://en.wikipedia.org/wiki/Capital_of_Germany\",\"https://www.britannica.com/place/Berlin\",\"https://www.germany.travel/en/inspiring-germany/berlin.html\",\"https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html\",\"https://www.berlin.de/en/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"index\":0,\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":259,\"completion_tokens\":35,\"total_tokens\":294,\"search_context_size\":\"low\",\"cost\":{\"input_tokens_cost\":0,\"output_tokens_cost\":0,\"request_cost\":0.005,\"total_cost\":0.005}}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

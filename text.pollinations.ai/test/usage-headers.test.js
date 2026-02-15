@@ -1,10 +1,16 @@
-import { describe, it, expect, beforeAll } from "vitest";
 import fetch from "node-fetch";
+import { beforeAll, describe, expect, it } from "vitest";
 
 const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:16385";
-const ENTER_TOKEN =
-    process.env.ENTER_TOKEN ||
-    "cZOpvvV4xpbOe1IOYrN0R2a3zxHEAcLntneihfU3f2Y3Pfy5";
+// PLN_ENTER_TOKEN must be set via environment variable
+// Run `npm run decrypt-vars` to populate .env from sops secrets before running tests
+const PLN_ENTER_TOKEN = process.env.PLN_ENTER_TOKEN;
+
+if (!PLN_ENTER_TOKEN) {
+    console.warn(
+        "⚠️  PLN_ENTER_TOKEN not set. Run `npm run decrypt-vars` first or set the env var.",
+    );
+}
 
 // Skip Claude tests in CI if no credentials available
 const SKIP_CLAUDE_TESTS = process.env.CI && !process.env.AWS_ACCESS_KEY_ID;
@@ -76,57 +82,6 @@ describe("Usage headers - Non-streaming (Issue #4638)", () => {
         expect(tokenCount).toBeGreaterThan(0);
         expect(Number.isInteger(tokenCount)).toBe(true);
     }, 30000);
-
-    it("should include x-usage-total-tokens header", async () => {
-        const response = await fetch(`${BASE_URL}/openai/chat/completions`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "openai-fast",
-                messages: [{ role: "user", content: "Hi" }],
-                max_tokens: 10,
-            }),
-        });
-
-        expect(response.status).toBe(200);
-
-        const totalTokens = response.headers.get("x-usage-total-tokens");
-        expect(totalTokens).toBeTruthy();
-
-        const tokenCount = parseInt(totalTokens || "0", 10);
-        expect(tokenCount).toBeGreaterThan(0);
-        expect(Number.isInteger(tokenCount)).toBe(true);
-    }, 30000);
-
-    it("should have consistent token counts", async () => {
-        const response = await fetch(`${BASE_URL}/openai/chat/completions`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "openai-fast",
-                messages: [{ role: "user", content: "Hi" }],
-                max_tokens: 10,
-            }),
-        });
-
-        expect(response.status).toBe(200);
-
-        const promptTokens = parseInt(
-            response.headers.get("x-usage-prompt-text-tokens") || "0",
-            10,
-        );
-        const completionTokens = parseInt(
-            response.headers.get("x-usage-completion-text-tokens") || "0",
-            10,
-        );
-        const totalTokens = parseInt(
-            response.headers.get("x-usage-total-tokens") || "0",
-            10,
-        );
-
-        // Total should equal sum of prompt and completion
-        expect(totalTokens).toBe(promptTokens + completionTokens);
-    }, 30000);
 });
 
 describe("Usage headers - Streaming (Issue #4638)", () => {
@@ -149,7 +104,6 @@ describe("Usage headers - Streaming (Issue #4638)", () => {
         expect(trailer).toContain("x-model-used");
         expect(trailer).toContain("x-usage-prompt-text-tokens");
         expect(trailer).toContain("x-usage-completion-text-tokens");
-        expect(trailer).toContain("x-usage-total-tokens");
 
         // Consume the stream to allow trailers to be sent
         if (response.body) {
@@ -193,7 +147,7 @@ describe("Usage headers - Streaming (Issue #4638)", () => {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "x-enter-token": ENTER_TOKEN,
+                "x-enter-token": PLN_ENTER_TOKEN,
             },
             body: JSON.stringify({
                 model: "openai-fast",
@@ -248,7 +202,7 @@ describe("Native Bedrock - Array content support", () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-enter-token": ENTER_TOKEN,
+                    "x-enter-token": PLN_ENTER_TOKEN,
                 },
                 body: JSON.stringify({
                     model: "claude-large",
@@ -285,7 +239,7 @@ describe("Native Bedrock - Array content support", () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-enter-token": ENTER_TOKEN,
+                    "x-enter-token": PLN_ENTER_TOKEN,
                 },
                 body: JSON.stringify({
                     model: "claude-large",

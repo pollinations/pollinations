@@ -1,0 +1,35 @@
+TOKEN model_health_read READ
+
+DESCRIPTION >
+Recent errors grouped by model, error source, and error code.
+Useful for debugging which models are failing and why.
+
+NODE model_error_summary
+SQL >
+    %
+    SELECT
+        model_used as model,
+        event_type,
+        error_source,
+        error_response_code,
+        count() as error_count,
+        any(error_message) as sample_error_message,
+        max(start_time) as last_error_at
+    FROM generation_event
+    WHERE 1=1
+        AND response_status >= 400
+        {% if defined(minutes_ago) %}
+        AND start_time >= now() - interval {{Int(minutes_ago, 10)}} minute
+        {% else %}
+        AND start_time >= now() - interval 10 minute
+        {% end %}
+        {% if defined(model_filter) %}
+        AND model_used = {{String(model_filter, '')}}
+        {% end %}
+        {% if defined(environment) %}
+        AND environment = {{String(environment, 'production')}}
+        {% end %}
+    GROUP BY model_used, event_type, error_source, error_response_code
+    ORDER BY error_count DESC
+
+TYPE endpoint

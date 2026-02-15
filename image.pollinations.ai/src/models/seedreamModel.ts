@@ -1,11 +1,10 @@
 import debug from "debug";
-import { withTimeoutSignal } from "../util.ts";
+import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import { getScaledDimensions } from "../models.ts";
 import type { ImageParams } from "../params.ts";
-import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 
 // Logger
 const logOps = debug("pollinations:seedream:ops");
@@ -47,10 +46,10 @@ export const callSeedreamAPI = async (
     try {
         logOps("Calling Seedream 4.0 API with prompt:", prompt);
 
-        const apiKey = process.env.SEEDREAM_API_KEY;
+        const apiKey = process.env.BYTEDANCE_API_KEY;
         if (!apiKey) {
             throw new Error(
-                "SEEDREAM_API_KEY environment variable is required",
+                "BYTEDANCE_API_KEY environment variable is required",
             );
         }
 
@@ -104,10 +103,10 @@ export const callSeedreamProAPI = async (
     try {
         logOps("Calling Seedream 4.5 Pro API with prompt:", prompt);
 
-        const apiKey = process.env.SEEDREAM_API_KEY;
+        const apiKey = process.env.BYTEDANCE_API_KEY;
         if (!apiKey) {
             throw new Error(
-                "SEEDREAM_API_KEY environment variable is required",
+                "BYTEDANCE_API_KEY environment variable is required",
             );
         }
 
@@ -153,7 +152,9 @@ export const callSeedreamProAPI = async (
         if (error instanceof HttpError) {
             throw error;
         }
-        throw new Error(`Seedream 4.5 Pro API generation failed: ${error.message}`);
+        throw new Error(
+            `Seedream 4.5 Pro API generation failed: ${error.message}`,
+        );
     }
 };
 
@@ -180,14 +181,20 @@ async function generateWithSeedream(
         size: sizeParam,
         stream: false,
         watermark: false,
+        seed: safeParams.seed,
     };
 
     // Add image-to-image support if reference images are provided
+    // Note: In image-to-image mode, Seedream API may ignore width/height parameters
+    // and use the input image dimensions instead (API limitation)
     if (safeParams.image && safeParams.image.length > 0) {
         logOps(
             "Adding reference images for image-to-image generation:",
             safeParams.image.length,
             "images",
+        );
+        logOps(
+            "Note: In image-to-image mode, output dimensions may be determined by input image, not requested size",
         );
 
         // Update progress for image processing
@@ -214,10 +221,8 @@ async function generateWithSeedream(
                 );
 
                 // Download and detect MIME type from magic bytes
-                const { base64, mimeType } = await withTimeoutSignal(
-                    (signal) => downloadImageAsBase64(imageUrl),
-                    30000, // 30 second timeout
-                );
+                const { base64, mimeType } =
+                    await downloadImageAsBase64(imageUrl);
 
                 // Create data URL format: data:image/jpeg;base64,<base64data>
                 const dataUrl = `data:${mimeType};base64,${base64}`;
@@ -252,22 +257,17 @@ async function generateWithSeedream(
 
     logOps("Seedream API request body:", JSON.stringify(requestBody, null, 2));
 
-    // Make API call with timeout
-    const response = await withTimeoutSignal(
-        (signal) =>
-            fetch(
-                "https://ark.ap-southeast.bytepluses.com/api/v3/images/generations",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${apiKey}`,
-                    },
-                    body: JSON.stringify(requestBody),
-                    signal,
-                },
-            ),
-        60000, // 60 second timeout
+    // Make API call
+    const response = await fetch(
+        "https://ark.ap-southeast.bytepluses.com/api/v3/images/generations",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify(requestBody),
+        },
     );
 
     if (!response.ok) {
@@ -286,7 +286,7 @@ async function generateWithSeedream(
         );
     }
 
-    const data: SeedreamResponse = await response.json();
+    const data = (await response.json()) as SeedreamResponse;
     logOps("Seedream API response:", JSON.stringify(data, null, 2));
 
     if (!data.data || !data.data[0] || !data.data[0].url) {
@@ -306,10 +306,7 @@ async function generateWithSeedream(
     const imageUrl = data.data[0].url;
     logOps("Downloading image from URL:", imageUrl);
 
-    const imageResponse = await withTimeoutSignal(
-        (signal) => fetch(imageUrl, { signal }),
-        30000, // 30 second timeout for image download
-    );
+    const imageResponse = await fetch(imageUrl);
 
     if (!imageResponse.ok) {
         throw new Error(

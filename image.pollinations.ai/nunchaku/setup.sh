@@ -37,7 +37,8 @@ log_step() { echo -e "\n${BLUE}━━━━━━━━━━━━━━━━�
 # Validate required environment variables
 validate_env() {
     local missing=0
-    for var in HF_TOKEN WORKER_NUM PUBLIC_IP GPU0_PUBLIC_PORT GPU1_PUBLIC_PORT; do
+    # PLN_IMAGE_BACKEND_TOKEN is required for authentication
+    for var in HF_TOKEN WORKER_NUM PUBLIC_IP GPU0_PUBLIC_PORT GPU1_PUBLIC_PORT PLN_IMAGE_BACKEND_TOKEN; do
         if [ -z "${!var}" ]; then
             log_error "Missing required environment variable: $var"
             missing=1
@@ -51,9 +52,11 @@ validate_env() {
         echo "  PUBLIC_IP=52.205.25.210 \\"
         echo "  GPU0_PUBLIC_PORT=27235 \\"
         echo "  GPU1_PUBLIC_PORT=30830 \\"
+        echo "  PLN_IMAGE_BACKEND_TOKEN=xxx \\"
         echo "  bash setup.sh"
         exit 1
     fi
+    
 }
 
 # Install system dependencies
@@ -168,7 +171,10 @@ build_nunchaku() {
 # Create .env file
 create_env_file() {
     log_step "🔑 Step 5: Creating .env file"
-    echo "HF_TOKEN=$HF_TOKEN" > $HOME/.env
+    cat > $HOME/.env <<EOF
+HF_TOKEN=$HF_TOKEN
+PLN_IMAGE_BACKEND_TOKEN=$PLN_IMAGE_BACKEND_TOKEN
+EOF
     log_info "Environment file created at $HOME/.env"
 }
 
@@ -277,7 +283,7 @@ main() {
     echo -e "${GREEN}"
     echo "╔═══════════════════════════════════════════════════════════╗"
     echo "║           Flux Schnell Server Setup Script                ║"
-    echo "║                   Pollinations.AI                         ║"
+    echo "║                   pollinations.ai                         ║"
     echo "╚═══════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
     

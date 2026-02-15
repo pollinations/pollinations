@@ -66,32 +66,33 @@ if [[ ! "$USERNAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
     error "Invalid username format from database"
 fi
 
-log "Found: $USERNAME ($EMAIL) - current tier: $CURRENT_TIER"
+log "Found: $USERNAME ($EMAIL) - current DB tier: $CURRENT_TIER"
 
+# Update DB (if needed)
 if [ "$CURRENT_TIER" = "$TARGET_TIER" ]; then
-    warn "User is already on $TARGET_TIER tier"
-    exit 0
+    log "DB tier already at $TARGET_TIER"
+else
+    log "Updating database tier..."
+    npx wrangler d1 execute DB --remote --env production \
+        --command "UPDATE user SET tier='$TARGET_TIER' WHERE github_username='$USERNAME';" 2>/dev/null
+    log "✅ DB updated: $CURRENT_TIER → $TARGET_TIER"
 fi
 
-# Update DB
-log "Updating database tier..."
-npx wrangler d1 execute DB --remote --env production \
-    --command "UPDATE user SET tier='$TARGET_TIER' WHERE github_username='$USERNAME';" 2>/dev/null
-
-# Update Polar (if email exists)
+# Always check/update Polar (even if DB matches)
 if [ -n "$EMAIL" ]; then
-    log "Updating Polar subscription..."
+    log "Checking Polar subscription..."
     
     if [ -z "$POLAR_ACCESS_TOKEN" ]; then
-        warn "POLAR_ACCESS_TOKEN not set. Getting from sops..."
         export POLAR_ACCESS_TOKEN=$(sops -d secrets/prod.vars.json 2>/dev/null | grep POLAR_ACCESS_TOKEN | cut -d'"' -f4)
     fi
     
     if [ -n "$POLAR_ACCESS_TOKEN" ]; then
-        npx tsx scripts/manage-polar.ts user update-tier --email "$EMAIL" --tier "$TARGET_TIER" 2>/dev/null || warn "Polar update failed (user may not have subscription)"
+        npx tsx scripts/manage-polar.ts user update-tier --email "$EMAIL" --tier "$TARGET_TIER" --apply 2>/dev/null || warn "Polar update skipped (user may not have subscription)"
     else
         warn "Could not get POLAR_ACCESS_TOKEN - skipping Polar update"
     fi
+else
+    warn "No email found - skipping Polar update"
 fi
 
 # Verify

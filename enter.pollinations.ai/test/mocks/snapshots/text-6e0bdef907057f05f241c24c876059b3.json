@@ -1,0 +1,76 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "kimi-k2-thinking",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1570",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Mon, 05 Jan 2026 14:41:40 GMT",
+      "etag": "W/\"622-cY/MOxcPAsqs32LpvXxZALJtGwI\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "moonshotai/kimi-k2-thinking-maas",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "207",
+      "x-usage-prompt-text-tokens": "262",
+      "x-usage-total-tokens": "469"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "matched_stop": 163586,
+            "message": {
+              "content": "Yes.",
+              "reasoning_content": "The user asks a simple yes/no question: \"Is Berlin the capital of Germany?\" They want a direct answer. The system prompt says I'm an expert conversationalist who can switch tones, understands user intent, and should avoid templated language or moralizing phrases. \n\nFor this question, the intent is straightforward factual information. The most helpful response is simply \"yes\" as requested. There's no need for additional commentary, caveats, or explanations that would violate the \"no templated language\" and \"no moral superiority\" guidelines. The user explicitly says \"Reply yes or no.\" \n\nI should give exactly what was asked for: a simple, direct answer. Adding anything more would be ignoring the user's clear instruction. The system prompt's guidance about being companionable and switching tones doesn't apply here because the user has constrained the format. \n\nThe correct answer is yes. Berlin has been the capital of Germany since reunification in 1990, and is the seat of government. \n\nI will just say: yes ",
+              "role": "assistant",
+              "tool_calls": null
+            }
+          }
+        ],
+        "created": 1767624100,
+        "id": "pllns_55430e5932719c27c186acfc641e431e",
+        "metadata": {
+          "weight_version": "default"
+        },
+        "model": "moonshotai/kimi-k2-thinking-maas",
+        "object": "chat.completion",
+        "usage": {
+          "completion_tokens": 207,
+          "extra_properties": {
+            "google": {
+              "traffic_type": "ON_DEMAND"
+            }
+          },
+          "prompt_tokens": 262,
+          "prompt_tokens_details": null,
+          "reasoning_tokens": 0,
+          "total_tokens": 469
+        }
+      }
+    }
+  }
+}

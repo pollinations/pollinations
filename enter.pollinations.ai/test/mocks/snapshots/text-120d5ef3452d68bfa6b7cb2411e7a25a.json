@@ -1,0 +1,129 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Test secret key."
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "3914",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Tue, 23 Dec 2025 13:53:59 GMT",
+      "etag": "W/\"f4a-AuDMMjklJFxhvh/pU6SN8uU7ngc\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "640",
+      "x-usage-completion-text-tokens": "688",
+      "x-usage-prompt-text-tokens": "251",
+      "x-usage-total-tokens": "1579"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "What kind of secret key do you want to test? (API key, JWT secret, SSH key, GPG/PGP key, symmetric encryption key, cloud creds like AWS, Kubernetes secret, etc.) Tell me the type and the environment and I’ll give exact commands.\n\nWhile you answer, here’s a quick checklist and useful commands for common key types you can use safely:\n\nGeneral precautions\n- Don’t paste real secrets into public chat or shared logs. Use a test copy or obfuscate the key when asking for help.\n- Test in a non-production environment when possible.\n- If a key may be compromised, rotate it immediately.\n\nAPI key (HTTP)\n- Quick functional test: curl -I -H \"Authorization: Bearer $KEY\" https://api.example.com/health\n- If the API expects a custom header: curl -I -H \"X-Api-Key: $KEY\" https://...\n- Look for a 200/401/403 status to confirm whether the key is accepted or rejected.\n\nJWT (signed token)\n- Inspect claims visually at jwt.io (don’t paste sensitive secrets there).\n- Verify server-side with a library:\n  - Node (jsonwebtoken): jwt.verify(token, secretOrPublicKey, (err, payload) => ...)\n  - Python (PyJWT): jwt.decode(token, key, algorithms=[\"HS256\"])\n- To verify a JWS signature with openssl for RS keys: openssl dgst -sha256 -verify pubkey.pem -signature sig.bin payload.bin\n\nSSH key\n- Check fingerprint: ssh-keygen -lf ~/.ssh/id_rsa.pub\n- Test auth (GitHub/GitLab/git server): ssh -T git@github.com (or your host) — will tell you if auth succeeded.\n- Verify agent: ssh-add -l\n\nGPG / PGP secret key\n- List secret keys: gpg --list-secret-keys\n- Try a sign/decrypt operation with a test file to confirm usability.\n\nSymmetric encryption key (AES)\n- Quick encrypt/decrypt round trip with OpenSSL:\n  - Encrypt: echo \"secret test\" | openssl enc -aes-256-cbc -a -pass pass:\"$KEY\" -pbkdf2 > out.b64\n  - Decrypt: cat out.b64 | openssl enc -aes-256-cbc -a -d -pass pass:\"$KEY\" -pbkdf2\n- Use a known plaintext to confirm round-trip matches.\n\nAWS / cloud credentials\n- With AWS CLI configured: aws sts get-caller-identity (will fail if creds invalid)\n- Or export credentials and run the same command:\n  - AWS_ACCESS_KEY_ID=… AWS_SECRET_ACCESS_KEY=… aws sts get-caller-identity\n\nKubernetes secrets\n- See stored values (they’re base64): kubectl get secret my-secret -o yaml\n- Decode a value: kubectl get secret my-secret -o jsonpath='{.data.mykey}' | base64 --decode\n\nTesting automation / CI tokens\n- Use an isolated job in CI to attempt the minimal authenticated request and fail fast if rejected.\n\nIf you tell me the exact key type and whether you can run commands where the key lives, I’ll give a precise, copy-pastable command set and a safe test plan.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1766498025,
+        "id": "pllns_0ee1759b84957b0567811ceefa5479c5",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 1328,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 640,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 251,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 1579
+        }
+      }
+    }
+  }
+}

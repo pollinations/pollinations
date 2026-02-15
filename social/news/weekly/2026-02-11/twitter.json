@@ -1,0 +1,12 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "40 PRs merged this week. Massive drop. 📦\n\nShipped LTX-2 video & ElevenMusic for the creatives. 🎨\nOpen sourced the Polly Discord bot & added OpenClaw for the builders. 🛠️\n\nPlus a fresh frontend redesign. We don't stop. 🌸🐝",
+  "alt_tweet": "Week in review: 40 PRs merged. 🐝\n\n- LTX-2 Video & ElevenMusic added\n- Polly Discord Bot source released\n- OpenClaw integration live\n- Frontend refresh\n\nBuilding the open source AI platform for everyone. 🌸",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image_prompt": "Cozy pixel art weekly recap infographic — retro RPG quest board. Soft lime green (#ecf874) and pastel gradient background. Large chunky pixel headline 'WEEKLY DROPS'. The cute pixel art bee mascot (yellow/brown stripes, pink blush, blue wings) wears a tiny merchant's cap and points to four wooden quest notices pinned to the board. Notices read in pixel font: 'LTX-2 VIDEO', 'ELEVEN MUSIC', 'OPEN AGENTS', 'NEW UI'. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+  "reasoning": "Highlights the sheer velocity of development (40 PRs) while categorizing the updates for different user personas (creatives vs builders). The image uses the requested 'richer' weekly format with specific text labels in a retro RPG style.",
+  "char_count": 224
+}

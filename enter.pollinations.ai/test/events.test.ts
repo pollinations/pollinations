@@ -1,342 +1,177 @@
-import {
-    createExecutionContext,
-    createScheduledController,
-    env,
-    waitOnExecutionContext,
-} from "cloudflare:test";
+import { env } from "cloudflare:test";
 import { test } from "./fixtures.ts";
-import worker from "../src/index.ts";
-import { storeEvents } from "../src/events.ts";
-import {
-    event,
-    priceToEventParams,
-    usageToEventParams,
-    type InsertGenerationEvent,
-} from "@/db/schema/event.ts";
-import { generateRandomId } from "@/util.ts";
-import {
-    ModelId,
-    ServiceId,
-    TokenUsage,
-    resolveServiceId,
-    getServiceDefinition,
-    getActivePriceDefinition,
-    calculateCost,
-    calculatePrice,
-} from "@shared/registry/registry.ts";
-import { drizzle } from "drizzle-orm/d1";
-import { eq } from "drizzle-orm";
+import { sendToTinybird, flattenBalances } from "@/events.ts";
+import { exponentialBackoffDelay } from "@/util.ts";
 import { expect } from "vitest";
 
-function createTextGenerationEvent({
-    modelRequested,
-    simulateTinybirdError = false,
-    simulatePolarError = false,
-}: {
-    modelRequested: ServiceId;
-    simulateTinybirdError?: boolean;
-    simulatePolarError?: boolean;
-}): InsertGenerationEvent {
-    const userId = generateRandomId();
-    const resolvedModelRequested = resolveServiceId(
-        modelRequested,
-        "generate.text",
-    );
+test("sendToTinybird sends event to Tinybird API", async ({ log, mocks }) => {
+    await mocks.enable("tinybird");
 
-    const modelUsed = getServiceDefinition(resolvedModelRequested).modelId;
-    const priceDefinition = getActivePriceDefinition(resolvedModelRequested);
-    if (!priceDefinition) {
-        throw new Error(
-            `Failed to get price definition for model: ${modelRequested}`,
-        );
-    }
-    const usage: TokenUsage = {
-        unit: "TOKENS",
-        promptTextTokens: 1_000_000,
-        completionTextTokens: 1_000_000,
-    };
-    const cost = calculateCost(modelUsed as ModelId, usage);
-    const price = calculatePrice(resolvedModelRequested, usage);
-
-    let eventId = [
-        simulateTinybirdError ? `simulate_tinybird_error` : "",
-        simulatePolarError ? `simulate_polar_error` : "",
-        generateRandomId(),
-    ].join(":");
-
-    return {
-        id: eventId,
-        requestId: generateRandomId(),
+    const event = {
+        id: "test-event-id",
+        requestId: "test-request-id",
         requestPath: "/api/generate/openai",
         startTime: new Date(),
         endTime: new Date(Date.now() + 100),
-        responseTime: 0,
+        responseTime: 100,
         responseStatus: 200,
-        environment: env.ENVIRONMENT,
-        eventType: "generate.text",
-        eventProcessingId: undefined,
-        eventStatus: undefined,
-        polarDeliveryAttempts: undefined,
-        polarDeliveredAt: undefined,
-        tinybirdDeliveryAttempts: undefined,
-        tinybirdDeliveredAt: undefined,
-        createdAt: undefined,
-        updatedAt: undefined,
-        userId,
+        environment: "test",
+        eventType: "generate.text" as const,
+        userId: "test-user-id",
         userTier: "seed",
-        userGithubId: "12345",
-        userGithubUsername: "test_user",
-        apiKeyId: "test_api_key_id",
-        apiKeyName: "test_api_key_name",
-        apiKeyType: "secret",
-        selectedMeterId: "test_selected_meter_id",
-        selectedMeterSlug: "test_selected_meter_slug",
-        balances: undefined,
-        referrerDomain: "localhost:3000",
-        referrerUrl: "http://localhost:3000",
-        modelRequested,
-        resolvedModelRequested,
-        modelUsed,
-        modelProviderUsed: undefined,
         isBilledUsage: true,
-
-        ...priceToEventParams(priceDefinition),
-        ...usageToEventParams(usage),
-
-        totalPrice: price.totalPrice,
-        totalCost: cost.totalCost,
-
-        moderationPromptHateSeverity: "safe",
-        moderationPromptSelfHarmSeverity: "safe",
-        moderationPromptSexualSeverity: "safe",
-        moderationPromptViolenceSeverity: "safe",
-        moderationPromptJailbreakDetected: false,
-        moderationCompletionHateSeverity: "safe",
-        moderationCompletionSelfHarmSeverity: "safe",
-        moderationCompletionSexualSeverity: "safe",
-        moderationCompletionViolenceSeverity: "safe",
-        moderationCompletionProtectedMaterialCodeDetected: false,
-        moderationCompletionProtectedMaterialTextDetected: false,
-
-        cacheHit: false,
-        cacheType: "exact",
-        cacheSemanticSimilarity: undefined,
-        cacheSemanticThreshold: undefined,
-        cacheKey: undefined,
-
-        errorResponseCode: undefined,
-        errorSource: undefined,
-        errorMessage: undefined,
+        modelRequested: "openai",
+        resolvedModelRequested: "openai",
+        modelUsed: "gpt-4o-mini",
+        modelProviderUsed: "azure-openai",
+        tokenPricePromptText: 0,
+        tokenPricePromptCached: 0,
+        tokenPricePromptAudio: 0,
+        tokenPricePromptImage: 0,
+        tokenPriceCompletionText: 0,
+        tokenPriceCompletionReasoning: 0,
+        tokenPriceCompletionAudio: 0,
+        tokenPriceCompletionImage: 0,
+        tokenPriceCompletionVideoSeconds: 0,
+        tokenPriceCompletionVideoTokens: 0,
+        tokenCountPromptText: 100,
+        tokenCountPromptCached: 0,
+        tokenCountPromptAudio: 0,
+        tokenCountPromptImage: 0,
+        tokenCountCompletionText: 50,
+        tokenCountCompletionReasoning: 0,
+        tokenCountCompletionAudio: 0,
+        tokenCountCompletionImage: 0,
+        tokenCountCompletionVideoSeconds: 0,
+        tokenCountCompletionVideoTokens: 0,
+        totalCost: 0.001,
+        totalPrice: 0.002,
     };
-}
 
-test("Scheduled handler sends events to Polar.sh and Tinybird", async ({
-    log,
-    mocks,
-}) => {
-    await mocks.enable("polar", "tinybird");
-    const db = drizzle(env.DB);
-    const events = Array.from({ length: 2000 }).map(() => {
-        return createTextGenerationEvent({
-            modelRequested: "openai-large",
-        });
-    });
-    log.info("Adding {numEvents} events", { numEvents: events.length });
-    await storeEvents(db, log, events);
-    const controller = createScheduledController();
-    const ctx = createExecutionContext();
-    await worker.scheduled(controller, env, ctx);
-    expect(mocks.polar.state.events).toHaveLength(events.length);
-    expect(mocks.tinybird.state.events).toHaveLength(events.length);
-});
-
-test("Events get set to error status after MAX_DELIVERY_ATTEMPTS", async ({
-    log,
-    mocks,
-}) => {
-    await mocks.enable("polar", "tinybird");
-    const db = drizzle(env.DB);
-    const events = [
-        ...Array.from({ length: 500 }).map(() => {
-            return createTextGenerationEvent({
-                modelRequested: "openai-large",
-                simulateTinybirdError: false,
-                simulatePolarError: false,
-            });
-        }),
-        ...Array.from({ length: 500 }).map(() => {
-            return createTextGenerationEvent({
-                modelRequested: "openai-large",
-                simulateTinybirdError: true,
-                simulatePolarError: false,
-            });
-        }),
-        ...Array.from({ length: 500 }).map(() => {
-            return createTextGenerationEvent({
-                modelRequested: "openai-large",
-                simulateTinybirdError: false,
-                simulatePolarError: true,
-            });
-        }),
-    ];
-    log.info("Adding {numEvents} events", { numEvents: events.length });
-    await storeEvents(db, log, events);
-    const controller = createScheduledController();
-    const ctx = createExecutionContext();
-    for (const _ of [Array.from({ length: 10 })]) {
-        await worker.scheduled(controller, env, ctx);
-    }
-    expect(mocks.tinybird.state.events).toHaveLength(1000);
-    expect(mocks.polar.state.events).toHaveLength(1000);
-    const errorEvents = await db
-        .select()
-        .from(event)
-        .where(eq(event.eventStatus, "error"));
-    expect(errorEvents).toHaveLength(1000);
-    errorEvents.forEach((event) => {
-        if (event.id.includes("simulate_tinybird_error")) {
-            expect(event.tinybirdDeliveryAttempts).toEqual(5);
-            expect(event.polarDeliveryAttempts).toEqual(1);
-            expect(event.polarDeliveredAt).toBeDefined();
-        }
-        if (event.id.includes("simulate_polar_error")) {
-            expect(event.polarDeliveryAttempts).toEqual(5);
-            expect(event.tinybirdDeliveryAttempts).toEqual(1);
-            expect(event.tinybirdDeliveredAt).toBeDefined();
-        }
-    });
-});
-
-test("Events are not processed if count is below minBatchSize and events are recent", async ({
-    log,
-    mocks,
-}) => {
-    await mocks.enable("polar", "tinybird");
-    const db = drizzle(env.DB);
-    const events = Array.from({ length: 50 }).map(() => {
-        return createTextGenerationEvent({
-            modelRequested: "openai-large",
-        });
-    });
-    log.info("Adding {numEvents} events (below min batch size)", {
-        numEvents: events.length,
-    });
-    await storeEvents(db, log, events);
-
-    const controller = createScheduledController();
-    const ctx = createExecutionContext();
-    await worker.scheduled(controller, env, ctx);
-    await waitOnExecutionContext(ctx);
-
-    expect(mocks.polar.state.events).toHaveLength(0);
-    expect(mocks.tinybird.state.events).toHaveLength(0);
-
-    const pendingEvents = await db
-        .select()
-        .from(event)
-        .where(eq(event.eventStatus, "pending"));
-    expect(pendingEvents).toHaveLength(50);
-});
-
-test("Events are processed if count meets minBatchSize threshold", async ({
-    log,
-    mocks,
-}) => {
-    await mocks.enable("polar", "tinybird");
-    const db = drizzle(env.DB);
-    const events = Array.from({ length: 150 }).map(() => {
-        return createTextGenerationEvent({
-            modelRequested: "openai-large",
-        });
-    });
-    log.info("Adding {numEvents} events (above min batch size)", {
-        numEvents: events.length,
-    });
-    await storeEvents(db, log, events);
-
-    const controller = createScheduledController();
-    const ctx = createExecutionContext();
-    await worker.scheduled(controller, env, ctx);
-    await waitOnExecutionContext(ctx);
-
-    expect(mocks.polar.state.events).toHaveLength(150);
-    expect(mocks.tinybird.state.events).toHaveLength(150);
-});
-
-test("Events are processed if older than 30 seconds even if below minBatchSize", async ({
-    log,
-    mocks,
-}) => {
-    await mocks.enable("polar", "tinybird");
-    const db = drizzle(env.DB);
-    const events = Array.from({ length: 50 }).map(() => {
-        return createTextGenerationEvent({
-            modelRequested: "openai-large",
-        });
-    });
-    log.info("Adding {numEvents} old events (below min batch size)", {
-        numEvents: events.length,
-    });
-    await storeEvents(db, log, events);
-
-    const oldTimestamp = new Date(Date.now() - 60 * 1000);
-    await db
-        .update(event)
-        .set({ createdAt: oldTimestamp })
-        .where(eq(event.eventStatus, "pending"));
-
-    const controller = createScheduledController();
-    const ctx = createExecutionContext();
-    await worker.scheduled(controller, env, ctx);
-    await waitOnExecutionContext(ctx);
-
-    expect(mocks.polar.state.events).toHaveLength(50);
-    expect(mocks.tinybird.state.events).toHaveLength(50);
-});
-
-test("Expired sent events are cleared after processing", async ({
-    log,
-    mocks,
-}) => {
-    await mocks.enable("polar", "tinybird");
-    const db = drizzle(env.DB);
-    const events = Array.from({ length: 150 }).map(() => {
-        return createTextGenerationEvent({
-            modelRequested: "openai-large",
-        });
-    });
-    log.info("Adding {numEvents} events", { numEvents: events.length });
-    await storeEvents(db, log, events);
-
-    const controller = createScheduledController();
-    const ctx = createExecutionContext();
-    await worker.scheduled(controller, env, ctx);
-    await waitOnExecutionContext(ctx);
-
-    const sentEvents = await db
-        .select()
-        .from(event)
-        .where(eq(event.eventStatus, "sent"));
-    expect(sentEvents).toHaveLength(150);
-
-    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
-    await db
-        .update(event)
-        .set({ createdAt: twoDaysAgo })
-        .where(eq(event.eventStatus, "sent"));
-
-    const newEvents = Array.from({ length: 100 }).map(() => {
-        return createTextGenerationEvent({
-            modelRequested: "openai-large",
-        });
-    });
-    await storeEvents(db, log, newEvents);
-    await worker.scheduled(controller, env, ctx);
-    await waitOnExecutionContext(ctx);
-
-    const remainingEvents = await db.select().from(event);
-    const remainingSentEvents = remainingEvents.filter(
-        (e) => e.eventStatus === "sent",
+    await sendToTinybird(
+        event,
+        env.TINYBIRD_INGEST_URL,
+        env.TINYBIRD_INGEST_TOKEN,
+        log,
     );
-    expect(remainingSentEvents).toHaveLength(100);
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0].id).toBe("test-event-id");
+});
+
+test("sendToTinybird handles API errors gracefully", async ({ log, mocks }) => {
+    await mocks.enable("tinybird");
+
+    const event = {
+        id: "simulate_tinybird_error:test-event-id",
+        requestId: "test-request-id",
+        requestPath: "/api/generate/openai",
+        startTime: new Date(),
+        endTime: new Date(Date.now() + 100),
+        responseTime: 100,
+        responseStatus: 200,
+        environment: "test",
+        eventType: "generate.text" as const,
+        userId: "test-user-id",
+        userTier: "seed",
+        isBilledUsage: true,
+        modelRequested: "openai",
+        resolvedModelRequested: "openai",
+        modelUsed: "gpt-4o-mini",
+        modelProviderUsed: "azure-openai",
+        tokenPricePromptText: 0,
+        tokenPricePromptCached: 0,
+        tokenPricePromptAudio: 0,
+        tokenPricePromptImage: 0,
+        tokenPriceCompletionText: 0,
+        tokenPriceCompletionReasoning: 0,
+        tokenPriceCompletionAudio: 0,
+        tokenPriceCompletionImage: 0,
+        tokenPriceCompletionVideoSeconds: 0,
+        tokenPriceCompletionVideoTokens: 0,
+        tokenCountPromptText: 100,
+        tokenCountPromptCached: 0,
+        tokenCountPromptAudio: 0,
+        tokenCountPromptImage: 0,
+        tokenCountCompletionText: 50,
+        tokenCountCompletionReasoning: 0,
+        tokenCountCompletionAudio: 0,
+        tokenCountCompletionImage: 0,
+        tokenCountCompletionVideoSeconds: 0,
+        tokenCountCompletionVideoTokens: 0,
+        totalCost: 0.001,
+        totalPrice: 0.002,
+    };
+
+    // Should not throw - fire-and-forget with error logging
+    await sendToTinybird(
+        event,
+        env.TINYBIRD_INGEST_URL,
+        env.TINYBIRD_INGEST_TOKEN,
+        log,
+    );
+
+    // Event should not be in the mock state due to simulated error
+    expect(mocks.tinybird.state.events).toHaveLength(0);
+});
+
+test("flattenBalances converts meter slugs to balance keys", () => {
+    const balances = {
+        "v1:meter:tier": 100,
+        "v1:meter:pack": 50,
+    };
+
+    const flattened = flattenBalances(balances);
+
+    expect(flattened).toEqual({
+        pollenTierBalance: 100,
+        pollenPackBalance: 50,
+    });
+});
+
+test("flattenBalances handles null balances", () => {
+    const flattened = flattenBalances(null);
+    expect(flattened).toEqual({});
+});
+
+test("flattenBalances handles empty balances", () => {
+    const flattened = flattenBalances({});
+    expect(flattened).toEqual({});
+});
+
+test("Exponential backoff delay", async () => {
+    const backoffConfig = {
+        minDelay: 100,
+        maxDelay: 10000,
+        maxAttempts: 5,
+        jitter: 0,
+    };
+    expect(exponentialBackoffDelay(1, backoffConfig)).toBe(100);
+    expect(exponentialBackoffDelay(3, backoffConfig)).toBeGreaterThan(100);
+    expect(exponentialBackoffDelay(3, backoffConfig)).toBeLessThan(10000);
+    expect(exponentialBackoffDelay(5, backoffConfig)).toBe(10000);
+    const backoffConfigWithJitter = {
+        minDelay: 100,
+        maxDelay: 10000,
+        maxAttempts: 5,
+        jitter: 0.1,
+    };
+    expect(
+        exponentialBackoffDelay(1, backoffConfigWithJitter),
+    ).toBeGreaterThanOrEqual(100 - 100 * 0.1);
+    expect(
+        exponentialBackoffDelay(1, backoffConfigWithJitter),
+    ).toBeLessThanOrEqual(100 + 100 * 0.1);
+    expect(
+        exponentialBackoffDelay(3, backoffConfigWithJitter),
+    ).toBeGreaterThanOrEqual(100 - 100 * 0.1);
+    expect(
+        exponentialBackoffDelay(3, backoffConfigWithJitter),
+    ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
+    expect(
+        exponentialBackoffDelay(5, backoffConfigWithJitter),
+    ).toBeGreaterThanOrEqual(10000 - 10000 * 0.1);
+    expect(
+        exponentialBackoffDelay(5, backoffConfigWithJitter),
+    ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
 });

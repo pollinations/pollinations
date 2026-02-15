@@ -1,0 +1,129 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Different message 1 - 1766497966440"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1704",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Tue, 23 Dec 2025 13:52:56 GMT",
+      "etag": "W/\"6a8-3vj8Dc+yp47lJstR0fCuK8WxEOE\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "704",
+      "x-usage-completion-text-tokens": "146",
+      "x-usage-prompt-text-tokens": "258",
+      "x-usage-total-tokens": "1108"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "I’m not sure what you want me to do with that—but I can help. A few possibilities:\n\n- Do you want me to edit or rewrite the text \"Different message 1 - 1766497966440\"?  \n- Is that a filename or ID you want explained or reformatted?  \n- If it’s a Unix-style timestamp (milliseconds), I can convert it to a human date/time.\n\nIf it is a timestamp: 1766497966440 ms = 2025-12-23T15:07:12.440Z (UTC).\n\nTell me which of the above (or something else) you meant and I’ll take it from there.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1766497966,
+        "id": "pllns_a06b36e79c6895a9062f5d34e9d5bcd6",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 850,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 704,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 258,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 1108
+        }
+      }
+    }
+  }
+}

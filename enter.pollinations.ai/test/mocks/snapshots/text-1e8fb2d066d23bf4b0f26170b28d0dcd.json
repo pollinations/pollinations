@@ -1,0 +1,59 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "qwen-coder",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:40:12 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"chatcmpl-6757d",
+          "delay": 25
+        },
+        {
+          "data": "30b-5bdf-48de-93cb-eb79044d50ee\",\"object\":\"chat.completion.chunk\",\"created\":1766245212,\"model\":\"qwen3-coder-30b-a3b-instruct\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"logprobs\":null,\"finish_reason\":null}],\"usage\":null,\"prompt_token_ids\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-675",
+          "delay": 0
+        },
+        {
+          "data": "7d30b-5bdf-48de-93cb-eb79044d50ee\",\"object\":\"chat.completion.chunk\",\"created\":1766245212,\"model\":\"qwen3-coder-30b-a3b-instruct\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Yes\"},\"logprobs\":null,\"finish_reason\":null,\"token_ids\":null}],\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-6757d30b-5bdf-48de-93cb-eb79044d50ee\",\"object\":\"chat.completion.chunk\",\"created\":1766245212,\"model\":\"qwen3-coder-30b-a3b-instruct\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"stop_reason\":null,\"token_ids\":null}],\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-6757d30b-5bdf-48de-93cb-eb79044d50ee\",\"object\":\"chat.completion.chunk\",\"created\":1766245212,\"model\":\"qwen3-coder-30b-a3b-instruct\",\"choices\":[],\"usage\":{\"prompt_tokens\":80,\"total_tokens\":82,\"completion_tokens\":2}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

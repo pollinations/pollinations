@@ -1,10 +1,10 @@
+import { APIError } from "better-auth";
 import type { ErrorHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
-import { Env } from "./env.ts";
-import { APIError } from "better-auth";
-import { ContentfulStatusCode } from "hono/utils/http-status";
 import { ValidationError } from "@/middleware/validator";
+import type { Env } from "./env.ts";
 
 type UpstreamErrorOptions = {
     res?: Response;
@@ -26,22 +26,26 @@ export class UpstreamError extends HTTPException {
     }
 }
 
-const GenericErrorDetailsSchema = z.object({
-    name: z.string(),
-    stack: z.string().optional(),
-});
+const GenericErrorDetailsSchema = z
+    .object({
+        name: z.string(),
+        stack: z.string().optional(),
+    })
+    .meta({ $id: "ErrorDetails" });
 
-const ValidationErrorDetailsSchema = z.object({
-    name: z.string(),
-    stack: z.string().optional(),
-    formErrors: z.array(z.string()),
-    fieldErrors: z.record(z.string(), z.array(z.string())),
-});
+const ValidationErrorDetailsSchema = z
+    .object({
+        name: z.string(),
+        stack: z.string().optional(),
+        formErrors: z.array(z.string()),
+        fieldErrors: z.record(z.string(), z.array(z.string())),
+    })
+    .meta({ $id: "ValidationErrorDetails" });
 
 export function createErrorResponseSchema(
     status: ContentfulStatusCode,
 ): z.ZodObject {
-    let errorDetailsSchema =
+    const errorDetailsSchema =
         status === 400
             ? ValidationErrorDetailsSchema
             : GenericErrorDetailsSchema;
@@ -130,10 +134,14 @@ export const handleError: ErrorHandler<Env> = async (err, c) => {
     return c.json(response, status);
 };
 
-function createBaseErrorResponse(
+/**
+ * Creates a standardized error response
+ */
+function createErrorResponse(
     error: Error,
     status: ContentfulStatusCode,
     timestamp: string,
+    details?: any,
 ): ErrorResponse {
     return {
         success: false,
@@ -141,10 +149,19 @@ function createBaseErrorResponse(
             message: error.message || getDefaultErrorMessage(status),
             code: getErrorCode(status),
             timestamp,
+            ...(details && { details }),
             ...(!!error.cause && { cause: error.cause }),
         },
         status,
     };
+}
+
+function createBaseErrorResponse(
+    error: Error,
+    status: ContentfulStatusCode,
+    timestamp: string,
+): ErrorResponse {
+    return createErrorResponse(error, status, timestamp);
 }
 
 function createValidationErrorResponse(
@@ -153,20 +170,10 @@ function createValidationErrorResponse(
     timestamp: string,
 ): ErrorResponse {
     const flatErrors = z.flattenError(error.zodError);
-    return {
-        success: false,
-        error: {
-            message: error.message || getDefaultErrorMessage(status),
-            code: getErrorCode(status),
-            details: {
-                name: error.name,
-                ...flatErrors,
-            },
-            timestamp,
-            ...(!!error.cause && { cause: error.cause }),
-        },
-        status,
-    };
+    return createErrorResponse(error, status, timestamp, {
+        name: error.name,
+        ...flatErrors,
+    });
 }
 
 function createInternalErrorResponse(
@@ -174,20 +181,10 @@ function createInternalErrorResponse(
     status: ContentfulStatusCode,
     timestamp: string,
 ): ErrorResponse {
-    return {
-        success: false,
-        error: {
-            message: error.message || getDefaultErrorMessage(status),
-            code: getErrorCode(status),
-            details: {
-                name: error.name,
-                stack: error.stack,
-            },
-            timestamp,
-            ...(!!error.cause && { cause: error.cause }),
-        },
-        status,
-    };
+    return createErrorResponse(error, status, timestamp, {
+        name: error.name,
+        stack: error.stack,
+    });
 }
 
 export function getErrorCode(status: number): string {
@@ -209,7 +206,7 @@ export function getErrorCode(status: number): string {
 }
 
 export const KNOWN_ERROR_STATUS_CODES = [
-    400, 401, 403, 405, 409, 422, 429, 500, 502, 503,
+    400, 401, 402, 403, 405, 409, 422, 429, 500, 502, 503,
 ] as const;
 
 export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
@@ -217,9 +214,9 @@ export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
 export function getDefaultErrorMessage(status: number): string {
     const messages: Record<number, string> = {
         400: "Something was wrong with the input data, check the details for more info.",
-        401: "You need to authenticate by providing a session cookie or Authorization header (Bearer token).",
-        402: "Your pollen balance is too low.",
-        403: "Access denied! You don't have the required permissions.",
+        401: "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
+        402: "Insufficient pollen balance or API key budget exhausted.",
+        403: "Access denied! You don't have the required permissions for this resource or model.",
         404: "Oh no, there's nothing here.",
         405: "That HTTP method isn't supported here. Please check the API docs.",
         409: "Something with these details already exists. Maybe update it instead?",

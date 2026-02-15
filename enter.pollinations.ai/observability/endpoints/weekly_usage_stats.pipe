@@ -1,0 +1,30 @@
+DESCRIPTION >
+    Weekly usage statistics - tokens, requests, revenue breakdown by week.
+    Includes per-user averages for depth metrics.
+    Optimized: single-pass query with uniq() instead of uniqExact() for ~10x speed.
+
+TOKEN model_usage READ
+
+NODE weekly_usage_stats_node
+SQL >
+    %
+    SELECT
+        formatDateTime(toStartOfWeek(start_time, 1), '%Y-%m-%d') AS week,
+        count() AS total_requests,
+        countIf(event_type = 'text') AS text_requests,
+        countIf(event_type = 'image') AS image_requests,
+        sum(token_count_prompt_text) AS prompt_tokens,
+        sum(token_count_completion_text) AS completion_tokens,
+        sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
+        sum(total_price) AS revenue_usd,
+        sum(total_cost) AS cost_usd,
+        uniq(if(user_id != 'undefined' AND user_id != '', user_id, NULL)) AS active_users,
+        if(active_users > 0, total_tokens / active_users, 0) AS tokens_per_user,
+        if(active_users > 0, total_requests / active_users, 0) AS requests_per_user
+    FROM generation_event
+    WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
+    AND environment = 'production'
+    GROUP BY week
+    ORDER BY week ASC
+
+TYPE endpoint

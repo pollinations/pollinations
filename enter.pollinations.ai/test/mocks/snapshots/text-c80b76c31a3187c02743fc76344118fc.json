@@ -1,0 +1,130 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Stream vs non-stream test"
+          }
+        ],
+        "stream": false
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "7972",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 24 Dec 2025 02:21:06 GMT",
+      "etag": "W/\"1f24-rbyN+Vih9o8MNIS0l+UvFYAgTHc\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-nano-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "1216",
+      "x-usage-completion-text-tokens": "1447",
+      "x-usage-prompt-text-tokens": "252",
+      "x-usage-total-tokens": "2915"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Nice short prompt. “Stream vs non-stream test” can mean a few things depending on the domain. Here’s a compact guide you can use to decide how to approach testing in common contexts. If you tell me the exact domain, I’ll tailor it with runnable examples.\n\nShort definitional contrast\n- Streaming tests (unbounded)\n  - Data is continuous and potentially infinite.\n  - Time matters (event time vs processing time).\n  - Outputs are often windowed or time-bounded (e.g., per minute/hour counts).\n  - Common failure modes: late data, out-of-order events, watermark progress, backpressure.\n- Non-stream tests (bounded/batch)\n  - Data is finite and fixed.\n  - Time is not a primary factor; you test exact, deterministic outputs.\n  - Outputs are exact before the end of the test run.\n\nKey differences to plan for\n- Data model\n  - Stream: unbounded streams, need to simulate time, windows, watermarks.\n  - Batch: finite datasets, straightforward input/output fixtures.\n- Time semantics\n  - Stream: must reason about event-time vs processing-time; ordering can matter.\n  - Batch: time is usually not a concern.\n- Assertions\n  - Stream: assert on windowed results, handling of late data, and state consistency over time.\n  - Batch: assert exact equality of outputs to expected results.\n- Test harness\n  - Stream: use simulators for time (virtual clocks), test sources/sinks, and stream-specific operators (windows, triggers).\n  - Batch: use static fixtures, straightforward unit/integration tests.\n- Reliability concerns\n  - Stream: flakiness often comes from timing, ordering, and partial progress.\n  - Batch: flakiness usually comes from nondeterministic IO or flaky fixtures.\n\nWhat to test in streaming pipelines\n- Correctness over time\n  - Do windowed aggregates match expectations given a sequence of events with timestamps?\n  - Are late events handled according to policy (ignore, re-window, or update)?\n- Ordering and uniqueness\n  - Are events processed in the right order when necessary? Exactly-once vs at-least-once semantics.\n- Throughput and latency\n  - Can the pipeline keep up with a target event rate? What is end-to-end latency?\n- Fault tolerance and recovery\n  - Do checkpoints/savepoints resume without duplicating or losing state?\n- Watermarks and late data\n  - Do watermarks progress correctly? Are late events dropped or reprocessed as configured?\n- State size and leakage\n  - Is state bounded as expected? Are there memory leaks or unbounded growth?\n\nWhat to test in non-stream (batch) pipelines\n- Correctness on fixed data\n  - Do outputs match exact expected results for given inputs?\n- Determinism and repeatability\n  - Are tests deterministic across runs?\n- Performance (where needed)\n  - Is the run time acceptable for the dataset size? Are optimizations effective?\n- Failure modes\n  - How does the pipeline behave with corrupted input, partial failures, or retries?\n- Data quality checks\n  - Are all edge cases covered (empty inputs, nulls, duplicates)?\n\n Practical testing approaches\n\n1) Streaming data pipelines (typical tech: Kafka, Flink, Spark Structured Streaming, Beam)\n- Unit tests\n  - Use in-memory or mocked sources/sinks.\n  - Use a test harness to advance virtual time and verify windowed outputs.\n  - Example patterns: TestStream (Beam) or Flink’s MiniCluster with a bounded stream for deterministic checks.\n- Integration tests\n  - Run a small local cluster with real components (Kafka topics, a small Flink/Spark cluster) and end-to-end verify outputs.\n- End-to-end tests\n  - Use realistic synthetic data and verify the entire data path from input to reported metrics or downstream systems.\n- Performance tests\n  - Simulate higher-than-normal event rates to observe backpressure, latency, and throughput.\n- Tools and tricks\n  - Virtual clocks to deterministically drive time.\n  - Mock sources that emit events with explicit timestamps.\n  - Checkpoint/savepoint semantics validation.\n  - Windowing logic tests (tumbling/hopping windows) with late data scenarios.\n\n2) Streaming APIs (server-sent events, WebSocket, HTTP streaming)\n- Connection lifecycle tests\n  - Open, maintain, and close streams cleanly.\n- Flow control and backpressure\n  - Do you respect client/server backpressure and avoid unbounded buffering?\n- Latency under load\n  - How does latency grow with number of concurrent connections?\n- Partial/failure handling\n  - Reconnects, message replay, and idempotent processing on reconnect.\n- Content correctness\n  - Is the streamed payload format consistent and correct across messages?\n\n3) Online (streaming) vs offline (batch) ML inference\n- Online tests (streaming inference)\n  - Validate model outputs for streaming inputs, latency, and stateful features.\n  - Check handling of drifting data distributions and concept drift.\n- Offline tests (batch inference)\n  - Validate batch predictions on fixed datasets for accuracy metrics.\n  - Compare online vs offline outputs, when applicable.\n\nConcrete starter plan (streaming data pipeline example)\n- Objective: Validate a 1-hour tumbling window count by user, handling late events.\n- Inputs: A sequence of events with fields (user_id, event_time, event_type).\n- Expected outputs: Windowed counts per user per 1-hour window, with late events re-assigned if policy allows.\n- Steps:\n  1) Create a deterministic test stream with a mix of on-time and late events.\n  2) Advance virtual time to trigger window completions and watermarks.\n  3) Assert the produced windowed counts match the expected values.\n  4) Inject late events after the watermark and verify whether they’re handled as configured (ignored, re-window, or appended).\n  5) Check state size after several windows to ensure no leaks.\n- Coverage:\n  - On-time events produce correct counts.\n  - Late events handled per policy.\n  - Window boundaries and watermark progression are correct.\n  - Checkpoint resume preserves correct state.\n\nConcrete starter plan (non-stream/batch example)\n- Objective: Validate a batch ETL that aggregates sales by region from a fixed CSV.\n- Steps:\n  1) Use a known input file and a canonical expected output file.\n  2) Run the batch job to produce output.\n  3) Compare outputs exactly (row-by-row) with the expected dataset.\n  4) Include a test for empty input and a test for missing fields if relevant.\n- Coverage:\n  - Correctness on typical data.\n  - Handling of edge cases (empty, missing values).\n  - Performance if needed (scales with data size).\n\nIf you tell me the exact context (data pipeline with which tech, streaming API, or streaming ML), I’ll give you a tight, concrete test plan with code sketches or example test cases you can adapt quickly.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1766542851,
+        "id": "pllns_813c447d64eab9b2045a2a1ad3b6efab",
+        "model": "gpt-5-nano-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 2663,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1216,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 252,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 2915
+        }
+      }
+    }
+  }
+}

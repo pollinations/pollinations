@@ -1,0 +1,22 @@
+name = "pollinations-ai"
+compatibility_date = "2025-11-01"
+main = "src/worker.ts"
+
+[[routes]]
+pattern = "pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
+[[routes]]
+pattern = "hello.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
+[assets]
+directory = "dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+# API Proxy handled by Worker in src/worker.ts
+# Secret: npx wrangler secret put PLN_APPS_KEY

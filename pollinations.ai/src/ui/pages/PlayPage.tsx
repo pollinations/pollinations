@@ -108,15 +108,6 @@ function PlayPage() {
                             >
                                 {pageCopy.loginCtaLogin}
                             </button>{" "}
-                            {pageCopy.loginCtaOr}{" "}
-                            <a
-                                href="https://enter.pollinations.ai"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-text-brand font-medium underline"
-                            >
-                                {pageCopy.loginCtaRegister}
-                            </a>{" "}
                             {pageCopy.loginCtaSuffix}
                         </p>
                     </div>

@@ -1,0 +1,20 @@
+DESCRIPTION >
+    Get request counts per GitHub username in the last 24 hours.
+    Used by the app metrics script to show activity levels per app author.
+
+TOKEN app_metrics READ
+TOKEN model_usage READ
+
+NODE app_request_counts_node
+SQL >
+    SELECT
+        user_github_username as github_username,
+        count() as requests
+    FROM generation_event
+    WHERE start_time > now() - INTERVAL 1 DAY
+      AND user_github_username != 'undefined'
+      AND user_github_username != ''
+    GROUP BY user_github_username
+    HAVING requests > 0
+
+TYPE endpoint

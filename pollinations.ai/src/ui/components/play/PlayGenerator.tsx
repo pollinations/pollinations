@@ -218,6 +218,7 @@ export function PlayGenerator({
     };
 
     const handleGenerate = async () => {
+        if (isLoading) return;
         setIsLoading(true);
         setError(null);
         setResult(null);
@@ -576,10 +577,14 @@ export function PlayGenerator({
                 <Button
                     type="button"
                     onClick={handleGenerate}
-                    disabled={!prompt || isLoading}
+                    disabled={!prompt && !isLoading}
                     variant="generate"
                     size={null}
-                    className={isLoading ? "animate-pulse" : ""}
+                    className={
+                        isLoading
+                            ? "animate-pulse-subtle pointer-events-none cursor-wait"
+                            : ""
+                    }
                     data-type={
                         isVideoModel
                             ? "video"

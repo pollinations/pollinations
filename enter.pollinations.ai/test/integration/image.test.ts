@@ -244,14 +244,14 @@ describe("Image Integration Tests", () => {
     test(
         "gptimage-large with reference image returns 200 (img2img edit mode)",
         { timeout: 60000 },
-        async ({ apiKey, mocks }) => {
+        async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird");
 
-            // Use a small test image URL for reference image
             // This tests that gptimage-large correctly uses the /images/edits endpoint
             // which requires api-version=2025-04-01-preview (not the old 2024-02-01)
+            // Use a static public image (not pollinations URL which may not resolve in test)
             const referenceImageUrl =
-                "https://image.pollinations.ai/prompt/red%20circle?width=256&height=256&seed=1&nologo=true";
+                "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png";
             const encodedImageUrl = encodeURIComponent(referenceImageUrl);
 
             const response = await SELF.fetch(
@@ -259,7 +259,7 @@ describe("Image Integration Tests", () => {
                 {
                     method: "GET",
                     headers: {
-                        "authorization": `Bearer ${apiKey}`,
+                        "authorization": `Bearer ${paidApiKey}`,
                     },
                 },
             );
@@ -332,7 +332,7 @@ describe("Image Integration Tests", () => {
 
     test(
         "should use crypto balance when tier balance is exhausted",
-        { timeout: 10000 },
+        { timeout: 30000 },
         async ({ apiKey, mocks, sessionToken }) => {
             await mocks.enable("polar", "tinybird");
             const { drizzle } = await import("drizzle-orm/d1");

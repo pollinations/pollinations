@@ -229,11 +229,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // OVHcloud AI Endpoints - qwen3-coder
+    // OVHcloud AI Endpoints - qwen3-coder, qwen3guard
     // ============================================================================
     "qwen3-coder-30b-a3b-instruct": () =>
         createOVHcloudModelConfig({
             model: "Qwen3-Coder-30B-A3B-Instruct",
+        }),
+    "Qwen3Guard-Gen-8B": () =>
+        createOVHcloudMistralConfig({
+            model: "Qwen3Guard-Gen-8B",
         }),
 
     // ============================================================================

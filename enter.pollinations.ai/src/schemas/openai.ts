@@ -562,8 +562,14 @@ const OpenAIModelSchema = z
         id: z.string(),
         object: z.literal("model"),
         created: z.number(),
+        input_modalities: z.array(z.string()).optional(),
+        output_modalities: z.array(z.string()).optional(),
+        supported_endpoints: z.array(z.string()).optional(),
+        tools: z.boolean().optional(),
+        reasoning: z.boolean().optional(),
+        context_window: z.number().optional(),
     })
-    .meta({ description: "OpenAI-compatible model object" });
+    .meta({ description: "OpenAI-compatible model object with capability metadata" });
 
 export const GetModelsResponseSchema = z
     .object({

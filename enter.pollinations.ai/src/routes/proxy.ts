@@ -159,20 +159,47 @@ export const proxyRoutes = new Hono<Env>()
                 getImageModelsInfo(),
                 allowedModels,
             );
+            const audioModels = filterModelsByPermissions(
+                getAudioModelsInfo(),
+                allowedModels,
+            );
             const now = Date.now();
+
+            const toModelEntry = (
+                m: (typeof textModels)[number],
+                supportedEndpoints: string[],
+            ) => ({
+                id: m.name,
+                object: "model" as const,
+                created: now,
+                input_modalities: m.input_modalities,
+                output_modalities: m.output_modalities,
+                supported_endpoints: supportedEndpoints,
+                ...(m.tools && { tools: m.tools }),
+                ...(m.reasoning && { reasoning: m.reasoning }),
+                ...(m.context_window && {
+                    context_window: m.context_window,
+                }),
+            });
+
             return c.json({
                 object: "list" as const,
                 data: [
-                    ...textModels.map((m) => ({
-                        id: m.name,
-                        object: "model" as const,
-                        created: now,
-                    })),
-                    ...imageModels.map((m) => ({
-                        id: m.name,
-                        object: "model" as const,
-                        created: now,
-                    })),
+                    ...textModels.map((m) =>
+                        toModelEntry(m, [
+                            "/v1/chat/completions",
+                            "/text/{prompt}",
+                        ]),
+                    ),
+                    ...imageModels.map((m) =>
+                        toModelEntry(m, [
+                            "/v1/images/generations",
+                            "/image/{prompt}",
+                        ]),
+                    ),
+                    ...audioModels.map((m) =>
+                        toModelEntry(m, ["/audio/{text}"]),
+                    ),
                 ],
             });
         },

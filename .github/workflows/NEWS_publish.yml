@@ -64,7 +64,7 @@ jobs:
         run: pip install requests PyYAML Jinja2 paramiko
 
       - name: Fetch gist data from news branch
-        run: git fetch origin news && git checkout origin/news -- social/news/gists/
+        run: git fetch origin news && git checkout origin/news -- social/news/gists/ || echo "No gists on news branch yet"
 
       - name: Determine mode
         id: mode

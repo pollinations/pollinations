@@ -190,11 +190,13 @@ function buildRequestBody(
         }
 
         // Support image-to-video: pass reference image URL if provided
-        const imageUrl = Array.isArray(safeParams.image)
-            ? safeParams.image[0]
-            : safeParams.image;
-        if (imageUrl) {
-            requestBody.image = imageUrl;
+        const hasImage = safeParams.image && safeParams.image.length > 0;
+        if (hasImage) {
+            const imageUrl = Array.isArray(safeParams.image)
+                ? safeParams.image.slice(0, 2) // airforce supports max 2 images as input
+                : [safeParams.image]; // in case single image in non array format.
+
+            requestBody.image_urls = imageUrl;
         }
     } else if (airforceModel === "imagen-4") {
         const size = closestSupportedSize(safeParams.width, safeParams.height);

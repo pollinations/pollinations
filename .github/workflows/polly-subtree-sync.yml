@@ -65,6 +65,19 @@ jobs:
           echo "⚠️ Subtree sync failed — issue created"
           exit 1
 
+      - name: Extract co-authors
+        id: coauthors
+        run: |
+          # Get all commits since pre-sync SHA and extract unique authors
+          co_authors=$(git log ${{ steps.pre-sync.outputs.sha }}..HEAD --format='%an <%ae>' | sort -u | sed 's/^/Co-authored-by: /')
+          
+          # Store as multiline output
+          {
+            echo "list<<EOF"
+            echo "$co_authors"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
       - name: Check if there are changes
         id: check-changes
         run: |
@@ -100,12 +113,18 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr create \
-            --title "chore: sync polly subtree" \
-            --body "Automated sync of Polly repo changes via subtree pull
+          pr_body="Automated sync of Polly repo changes via subtree pull
 
 - Branch: \`polly-sync/${{ github.run_number }}\`
 - Triggered by: scheduled workflow
-- Sync method: subtree pull (will be squash-merged)" \
+- Sync method: subtree pull (will be squash-merged)
+
+## Contributors
+
+${{ steps.coauthors.outputs.list }}"
+
+          gh pr create \
+            --title "chore: sync polly subtree" \
+            --body "$pr_body" \
             --base main \
             --head polly-sync/${{ github.run_number }}

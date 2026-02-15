@@ -23,9 +23,7 @@
 
 ## The Problem
 
-The AI app ecosystem is broken:
-
-**For creators:** Can't afford AI infrastructure. Every app needs its own backend, billing, auth.
+**For creators:** Success punishes you. Your app goes viral and suddenly you owe thousands in compute bills. Every other platform charges the developer — so the more users you get, the more you pay.
 
 **For users:** Every micro-app wants its own subscription. No one pays $10/month for a calorie tracker.
 
@@ -45,9 +43,9 @@ Users buy Pollen once and spend it everywhere. More apps = more reasons to buy. 
 
 **We sell through creators, not to them.** Fal, Replicate, OpenRouter charge developers. We let creators build free, then monetize the end users they bring.
 
-**Self-scaling distribution.** 1,000+ apps live. Each one is an acquisition channel we didn't pay for.
+**Apps are storefronts and templates.** Each app brings its own users — and because most are open source, every app is also a template others fork and adapt. One app becomes ten.
 
-**Community that compounds.** 17K Discord members shipping starter kits, onboarding new creators. Zero support cost at scale.
+**Community runs itself.** Discord members onboard new creators, share starter kits, answer questions. No support team needed.
 
 ## Team
 
@@ -75,9 +73,9 @@ Models are commoditizing — value is shifting to distribution. The winners will
 
 ## Defensibility
 
-1,000+ apps in production — switching means breaking live products.
+Hundreds of apps in production — switching means breaking real products.
 
-Network effects — more apps → more users → more revenue → repeat.
+Network effects — more apps → more users → more creators → repeat.
 
 ## Market Position
 

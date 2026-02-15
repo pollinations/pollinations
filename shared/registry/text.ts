@@ -547,8 +547,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.01),
             },
         ],
-        description:
-            "Qwen3Guard 8B - Content Safety & Moderation (OVH)",
+        description: "Qwen3Guard 8B - Content Safety & Moderation (OVH)",
         inputModalities: ["text"],
         outputModalities: ["text"],
         isSpecialized: true,

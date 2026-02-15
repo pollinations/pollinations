@@ -36,6 +36,7 @@ from common import (
     commit_files_to_branch,
     create_or_update_pr,
     GITHUB_API_BASE,
+    GISTS_BRANCH,
     IMAGE_SIZE,
 )
 from update_highlights import generate_highlights_and_readme
@@ -311,7 +312,7 @@ def main():
         gists_dir = f"social/news/gists/{date_str}"
         resp = github_api_request(
             "GET",
-            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{gists_dir}",
+            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{gists_dir}?ref={GISTS_BRANCH}",
             headers=headers,
         )
         if resp.status_code == 200:

@@ -34,6 +34,7 @@ DEFAULT_TIMEOUT = 30  # seconds for GitHub API / general requests
 # Repository constants
 OWNER = "pollinations"
 REPO = "pollinations"
+GISTS_BRANCH = "news"  # Unprotected branch for gist data (avoids main branch protection)
 
 # Image generation
 IMAGE_SIZE = 2048
@@ -613,8 +614,8 @@ def gist_path_for_pr(pr_number: int, merged_at: str) -> str:
     return f"{GISTS_REL_DIR}/{date_str}/PR-{pr_number}.json"
 
 
-def commit_gist_to_main(gist: Dict, github_token: str, owner: str, repo: str) -> bool:
-    """Commit a gist JSON file to main via the GitHub Contents API.
+def commit_gist(gist: Dict, github_token: str, owner: str, repo: str) -> bool:
+    """Commit a gist JSON file to the news branch via the GitHub Contents API.
     Returns True on success, False on failure."""
     file_path = gist_path_for_pr(gist["pr_number"], gist["merged_at"])
     content = json.dumps(gist, indent=2, ensure_ascii=False)
@@ -625,12 +626,12 @@ def commit_gist_to_main(gist: Dict, github_token: str, owner: str, repo: str) ->
     headers = _github_headers(github_token)
 
     # Check if file already exists (re-run / retry scenario)
-    sha = get_file_sha(github_token, owner, repo, file_path, "main")
+    sha = get_file_sha(github_token, owner, repo, file_path, GISTS_BRANCH)
 
     payload = {
         "message": f"chore(news): add gist for PR #{gist['pr_number']}",
         "content": encoded,
-        "branch": "main",
+        "branch": GISTS_BRANCH,
     }
     if sha:
         payload["sha"] = sha
@@ -643,7 +644,7 @@ def commit_gist_to_main(gist: Dict, github_token: str, owner: str, repo: str) ->
     )
 
     if resp.status_code in [200, 201]:
-        print(f"  Committed gist to {file_path}")
+        print(f"  Committed gist to {file_path} on {GISTS_BRANCH}")
         return True
 
     print(f"  Failed to commit gist: {resp.status_code} {resp.text[:200]}")

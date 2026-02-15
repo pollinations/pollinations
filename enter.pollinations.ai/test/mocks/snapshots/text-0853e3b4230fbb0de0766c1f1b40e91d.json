@@ -1,0 +1,61 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "qwen-character",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "284",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 14 Feb 2026 17:37:50 GMT",
+      "etag": "W/\"11c-aQvp9B6oru1KZdq5eofdi/+79CI\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "qwen-character",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "2",
+      "x-usage-prompt-text-tokens": "67"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_ab9e1b5914c2840aa05dfc7c655c033d",
+        "object": "chat.completion",
+        "created": 1771090670,
+        "model": "qwen-character",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Yes."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 67,
+          "completion_tokens": 2,
+          "total_tokens": 69
+        }
+      }
+    }
+  }
+}

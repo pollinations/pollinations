@@ -1,0 +1,12 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "just merged docs directly into the play page. no more tab switching while testing endpoints. ⚡️\n\nalso dropped qwen-character for better roleplay & hardened polly against prompt injection.\n\nshipping daily. 🌸🐝 #OpenSource #AI",
+  "alt_tweet": "shipped qwen-character for better roleplay and merged docs into the play page today. less context switching, better models. open source means we build what you actually need. 🌱🌸 #BuildInPublic #AI",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image_prompt": "Cozy pixel art scene of the cute bee mascot (yellow/brown stripes, pink blush, blue wings) wearing oversized pixel nerd glasses, connecting two large glowing puzzle pieces labeled 'DOCS' and 'PLAY'. Soft lime green (#ecf874) and pastel lavender gradient background. Floating pixel code blocks and sparkles. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'MERGED'. Nostalgic but beautiful.",
+  "reasoning": "Focuses on a tangible UX improvement (docs merge) that developers appreciate, while mentioning the new model to appeal to the broader user base. Tone is casual but productive.",
+  "char_count": 218
+}

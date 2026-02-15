@@ -556,6 +556,22 @@ export const TEXT_SERVICES = {
     //     isSpecialized: false,
     //     alpha: true,
     // },
+    "qwen-safety": {
+        aliases: ["qwen3guard-gen-8b"],
+        modelId: "Qwen3Guard-Gen-8B",
+        provider: "ovhcloud",
+        cost: [
+            {
+                date: new Date("2026-02-15").getTime(),
+                promptTextTokens: perMillion(0.01),
+                completionTextTokens: perMillion(0.01),
+            },
+        ],
+        description: "Qwen3Guard 8B - Content Safety & Moderation (OVH)",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        isSpecialized: true,
+    },
     "qwen-character": {
         aliases: [],
         modelId: "qwen-character",

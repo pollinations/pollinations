@@ -29,29 +29,40 @@
 - Warm lighting always — soft ambient glow, not flat
 - Dark purple `#110518` for high-contrast text when needed
 
-## Bee Mascot — Character Lock (MANDATORY in every image)
+## Characters — Recurring Cast
 
-The pollinations.ai bee MUST appear in every image, interacting with the scene.
+Rotate between these characters across posts. The bee should appear in most images but doesn't have to be the star of every one.
 
-**Visual description (paste into every image prompt):**
+### The Bee (primary mascot)
 {bee_character}
 
-- She should be doing something relevant to the scene (coding, flying, celebrating, painting, watering plants, etc.)
-- Give her a fun thematic accessory in every image — a tiny scarf, a little hat, headphones, wizard glasses, a tool belt, a painter's beret, etc. Match the accessory to the scene's theme.
+- Give her a thematic accessory per image — reading glasses, tool belt, tiny scarf, headphones, painter's beret. Match the accessory to the scene.
 - Keep her proportions consistent — never elongated or insect-like
+- Personality: observant, slightly above-it-all but warm. the one who notices things.
 
-## Pixel Art Characters & Elements
+### The Pixel Cat (recurring guest)
+- White cat with black patches, sitting upright, half-closed eyes
+- Naps on warm server racks, sits on keyboards, ignores humans
+- Personality: aloof, unbothered. present in scenes but never working.
+- Inspired by CatGPT — sardonic feline energy in pixel form
 
+### Tiny Pixel Devs (community)
+- Small 8-bit developer characters, diverse, chunky sprites
+- Tending code-plants, fixing things, building together
+- They represent the community — always in groups, never solo hero shots
+
+### Supporting Elements
 - Pixel flowers, gardens, seeds, blooming plants (nature/growth motifs)
-- Cute robots, tiny devs, pixel characters
-- Characters should have personality — expressions, poses, actions
+- Retro computers, terminals, glowing screens
+- Code-plants — literal code sprouting from flower pots
+- Cozy interiors: hackerspaces, cafés, garden sheds with servers
 
 ## What to ALWAYS Include
 
 - Cozy pixel art style with soft lighting
 - Lime green `#ecf874` prominently
-- The Pollinations bee mascot
-- Nature/growth elements (flowers, gardens, vines)
+- At least one character from the recurring cast (bee, cat, tiny devs)
+- Nature/growth elements (flowers, gardens, vines, code-plants)
 - Warm, inviting atmosphere
 - Style keywords in every prompt: "cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes"
 
@@ -79,14 +90,17 @@ The pollinations.ai bee MUST appear in every image, interacting with the scene.
 
 ### Example Prompts (these produced good results)
 
-1. "Cozy pixel art dev meme infographic — retro RPG skill tree screen. Soft lime green (#ecf874) and pastel gradient background. Large chunky pixel headline reads 'POLLY LEVEL UP'. Retro UI panels show stats and updates. The cute pixel art bee mascot wears pixelated wizard glasses and casts a spell on the tree. Warm lighting, lo-fi vibes like Stardew Valley. Readable at mobile size. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+**Bee-focused (classic):**
+1. "Cozy pixel art scene of the cute bee mascot watering a digital garden where a tiny friendly pixel robot is sprouting from a lime green (#ecf874) flower pot. A retro computer monitor in the background shows clean code blocks. Soft warm lighting, wholesome vibes like Stardew Valley. Text in pixel font: 'OPEN SOURCE'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
 
-2. "Cozy pixel art scene of the cute bee mascot holding a tiny pixel movie clapperboard and a vintage microphone. Soft lime green (#ecf874) and peach pastel gradient background. Floating pixel icons of musical notes and film reels surrounding the bee. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'NEW GEAR'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+2. "Cozy pixel art scene of a tiny 8-bit bee character watering a small pixelated code plant. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Like Stardew Valley meets coding. Emotionally warm, nostalgic but beautiful."
 
-3. "Cozy pixel art scene of the cute bee mascot watering a digital garden where a tiny friendly pixel robot is sprouting from a lime green (#ecf874) flower pot. A retro computer monitor in the background shows clean code blocks. Soft warm lighting, wholesome vibes like Stardew Valley. Text in pixel font: 'OPEN SOURCE'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+**Cat + bee (ensemble):**
+3. "Cozy pixel art interior of a tiny retro hackerspace café. A pixel white cat with black patches naps on a warm server rack. The pollinations bee mascot sits at a small desk with a glowing lime green (#ecf874) laptop. Fairy lights, potted pixel plants, a chalkboard menu listing model names. Soft cream and mint gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
 
-4. "Cozy pixel art scene of a tiny 8-bit bee character watering a small pixelated code plant. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Like Stardew Valley meets coding. Emotionally warm, nostalgic but beautiful."
+4. "Cozy pixel art scene of a white pixel cat with half-closed eyes sitting at a retro terminal, tiny paw on keyboard. Screen glows lime green (#ecf874) showing '59 PRs MERGED'. The bee mascot hovers nearby holding a tiny clipboard. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
 
-5. "Retro 8-bit pixel art infographic showing a growth journey: tiny seed to sprouting plant to blooming flower. Soft pastel gradient background (mint to peach). Clean pixel icons, cozy vibes like Unpacking game. Warm, inviting, not harsh."
+**Community (tiny devs):**
+5. "Cozy pixel art scene of three tiny 8-bit developer characters tending code-plants in a digital garden. One waters a sprouting API endpoint, another prunes a tangled dependency vine. The cute pollinations bee mascot watches from a flower, wearing tiny reading glasses. Soft lime green (#ecf874) and lavender gradient sky. Warm lighting, lo-fi vibes like A Short Hike. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
 
 6. "Pixel art community garden scene with diverse tiny 8-bit characters tending colorful digital flowers. Soft lime green and lavender sky. Chunky retro sprites with modern soft lighting. Wholesome, like A Short Hike. Text in pixel font: 'open source'. Nostalgic but beautiful."

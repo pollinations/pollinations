@@ -1,0 +1,26 @@
+{
+  "date": "2026-02-15",
+  "generated_at": "2026-02-15T00:12:50.235479+00:00",
+  "platform": "twitter",
+  "tweet_type": "shipped",
+  "tweet": "just enabled image-to-video for grok-video. pass an `image` param, get motion back.\n\nalso wired up alibaba dashscope fallbacks for wan video. if one provider hangs, the other delivers.\n\nmaking the video stack bulletproof. 🐝",
+  "alt_tweet": "shipping updates to the video stack:\n\n- grok-video now supports image-to-video (animate anything)\n- added alibaba fallbacks for wan video (reliability++)\n\nless downtime, more motion. code is live.",
+  "full_tweet": "just enabled image-to-video for grok-video. pass an `image` param, get motion back.\n\nalso wired up alibaba dashscope fallbacks for wan video. if one provider hangs, the other delivers.\n\nmaking the video stack bulletproof. 🐝 #OpenSource #AI",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/twitter/posts/2026-02-15-image.jpg",
+    "prompt": "Cozy pixel art scene showing a retro CRT monitor. On screen: a static pixel flower on the left transforming into a fluid, animated stream of petals on the right. The Pollinations bee is typing furiously at the keyboard. Soft lime green (#ecf874) screen glow, pastel mint and lavender room gradient. Warm lighting, nostalgic tech vibes, 'Stardew Valley' aesthetic."
+  },
+  "reasoning": "Focuses on the most tangible user-facing feature (Grok I2V) while highlighting the engineering work behind reliability (fallbacks). The tone is confident, technical, and brief.",
+  "pr_references": [
+    "#8249",
+    "#8247",
+    "#8243",
+    "#8239",
+    "#8229"
+  ],
+  "char_count": 239
+}

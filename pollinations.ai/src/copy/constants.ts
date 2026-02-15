@@ -5,7 +5,8 @@ export const COPY_CONSTANTS = {
     // External data sources
     newsFilePath:
         "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/highlights.md",
-    appsFilePath: "/APPS.md",
+    appsFilePath:
+        "https://raw.githubusercontent.com/pollinations/pollinations/production/apps/APPS.md",
 
     // API
     apiBaseUrl: "gen.pollinations.ai",

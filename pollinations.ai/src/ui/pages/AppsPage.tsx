@@ -65,7 +65,7 @@ function AppCard({
 
     return (
         <div
-            className={`flex flex-col h-full rounded-sub-card overflow-hidden ${cardBorder}`}
+            className={`flex flex-col h-full rounded-sub-card overflow-visible ${cardBorder}`}
         >
             {/* Title header — full-width, links to app */}
             <a
@@ -97,24 +97,25 @@ function AppCard({
                     {hasStatusBadges && (
                         <div className="flex flex-wrap items-center gap-1.5 mb-3">
                             {app.byop && (
-                                <span className="relative group/byop cursor-help">
+                                <span className="relative group/byop">
                                     <Badge variant="highlight">
                                         {byopBadge}
                                     </Badge>
-                                    <span className="hidden group-hover/byop:block absolute z-10 bottom-full left-0 mb-1 px-2 py-1 text-xs font-mono text-text-body-main bg-surface-card border border-border-main rounded shadow-shadow-dark-md whitespace-nowrap">
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/byop:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                         {byopTooltip}
-                                    </span>
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                                    </div>
                                 </span>
                             )}
                             {trending && (
-                                <span className="relative group/fire cursor-help">
+                                <span className="relative group/fire">
                                     <Badge variant="brand">
                                         {"\uD83D\uDD25"} {trendingBadge}
                                     </Badge>
-                                    <span className="hidden group-hover/fire:block absolute z-10 bottom-full left-0 mb-1 px-2 py-1 text-xs font-mono text-text-body-main bg-surface-card border border-border-main rounded shadow-shadow-dark-md whitespace-nowrap">
-                                        {app.requests24h.toLocaleString()}{" "}
-                                        {trendingTooltipSuffix}
-                                    </span>
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/fire:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                        {app.requests24h.toLocaleString()} {trendingTooltipSuffix}
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                                    </div>
                                 </span>
                             )}
                         </div>
@@ -326,6 +327,22 @@ export default function AppsPage() {
                     >
                         {pageCopy.newFilterLabel}
                     </Button>
+                </div>
+
+                {/* Pollen legend */}
+                <div className="flex flex-col items-end gap-0.5 mb-4 text-xs">
+                    <span className="text-text-body-secondary">
+                        <span className="text-text-body-main font-bold">{pageCopy.pollenLegend}</span>
+                        {" "}= {pageCopy.pollenLegendDesc}
+                    </span>
+                    <a
+                        href={LINKS.byopDocs}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-text-highlight hover:underline opacity-70 hover:opacity-100"
+                    >
+                        {pageCopy.pollenDevLink}
+                    </a>
                 </div>
 
                 {/* App Grid */}

@@ -12,27 +12,32 @@ export const APPS_PAGE = {
     submitCtaButton: "Submit App",
 
     // BYOP CTA
-    byopCtaTitle: "Bring Your Own Pollen",
+    byopCtaTitle: "🌸 Add Pollen to Your App",
     byopCtaDescription:
-        "Users pay for their own AI usage. You pay $0. Ship apps without API costs.",
+        "Let users sign in with Pollinations. They pay for usage, you pay $0.",
     byopCtaButton: "Learn More",
 
     noAppsMessage: "No apps found in this category yet.",
 
     // Badges
-    byopBadge: "BYOP",
+    byopBadge: "🌸 Pollen",
     trendingBadge: "TRENDING",
 
     // Tooltips
-    byopTooltip: "Bring Your Own Pollen — users pay for their own usage",
+    byopTooltip: "Sign in with your Pollinations account — your Pollen balance covers usage",
     trendingTooltipSuffix: "requests in 24h",
 
     // Card labels
     authorPrefix: "by",
 
     // Filter labels
-    byopFilterLabel: "BYOP",
+    byopFilterLabel: "🌸 Pollen",
     newFilterLabel: "New",
+
+    // Legend
+    pollenLegend: "🌸 Pollen",
+    pollenLegendDesc: "Sign in with Pollinations",
+    pollenDevLink: "</> Dev docs",
 };
 
 // Category mapping for display

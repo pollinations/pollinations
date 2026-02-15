@@ -75,7 +75,7 @@ class Config:
         # SERVER
         # =================================================================
         self.host = os.getenv("HOST", "0.0.0.0")
-        self.port = int(os.getenv("PORT", "8000"))
+        self.port = int(os.getenv("PORT", "8006"))
         self.log_level = os.getenv("LOG_LEVEL", "INFO")
 
     def _load_private_key(self) -> str:

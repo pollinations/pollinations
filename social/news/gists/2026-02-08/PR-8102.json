@@ -1,0 +1,34 @@
+{
+  "pr_number": 8102,
+  "title": "fix: simplify balance API to return single balance field",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8102",
+  "merged_at": "2026-02-08T23:35:50Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Simple math",
+    "blurb": "We've simplified the balance API. No more complex breakdowns—just one clear number to track your pollen.",
+    "summary": "The `/api/account/balance` endpoint now returns a single unified `balance` field, merging tier, pack, and crypto credits into one total.",
+    "impact": "Developers will see a cleaner API response that handles API key budgets more intuitively, removing the need to sum separate fields.",
+    "keywords": [
+      "api",
+      "billing",
+      "balance",
+      "developer experience",
+      "simplification"
+    ],
+    "visual_concept": "The concept focuses on unification and simplicity. Instead of juggling multiple piles of resources (tier vs pack), the bee is happily holding one consolidated treasure. The retro game UI element reinforces this with a clean, single score counter.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot holding a single, glowing golden pollen orb. Soft lime green (#ecf874) and pastel gradient background. A retro game UI overlay shows a simple 'BALANCE: 100' counter. Chunky pixels, warm lighting, lo-fi aesthetic. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": "social/news/gists/2026-02-08/PR-8102.jpg",
+    "prompt": "Cozy pixel art scene of the bee mascot holding a single, glowing golden pollen orb. Soft lime green (#ecf874) and pastel gradient background. A retro game UI overlay shows a simple 'BALANCE: 100' counter. Chunky pixels, warm lighting, lo-fi aesthetic. Nostalgic but beautiful."
+  },
+  "generated_at": "2026-02-12T14:05:25.322516+00:00"
+}

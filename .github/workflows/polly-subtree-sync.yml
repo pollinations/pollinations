@@ -31,39 +31,80 @@ jobs:
         run: |
           git fetch polly main
 
-      - name: Pull subtree changes
+      - name: Save pre-sync SHA
+        id: pre-sync
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Create feature branch
+        run: |
+          git checkout -b polly-sync/${{ github.run_number }}
+
+      - name: Sync Polly subtree
         id: subtree
         continue-on-error: true
         run: |
-          git subtree pull --prefix apps/polly polly main
-          echo "exit_code=$?" >> $GITHUB_OUTPUT
+          # Check if subtree exists by looking for git-subtree-dir commit
+          if git log --oneline --all --grep="git-subtree-dir: apps/polly" | head -1 > /dev/null; then
+            echo "Subtree exists, pulling updates..."
+            git subtree pull --prefix apps/polly polly main
+          else
+            echo "First run: adding subtree..."
+            git subtree add --prefix apps/polly polly main
+          fi
+
+      - name: Check subtree sync outcome
+        if: steps.subtree.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "🚨 Polly subtree sync failed" \
+            --body "The automated subtree pull failed. This may indicate a merge conflict or other issue. Manual intervention required." \
+            --label "bug,automation"
+          echo "⚠️ Subtree sync failed — issue created"
+          exit 1
 
       - name: Check if there are changes
         id: check-changes
         run: |
-          if git diff --quiet HEAD; then
+          if [ "$(git rev-parse HEAD)" = "${{ steps.pre-sync.outputs.sha }}" ]; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No changes detected"
           else
             echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "✅ Changes detected"
           fi
 
-      - name: Create feature branch
+      - name: Check for existing open PR
+        id: check-pr
         if: steps.check-changes.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git checkout -b polly-sync/${{ github.run_number }}
+          open_prs=$(gh pr list --search "sync polly subtree" --state open --json number --jq length)
+          if [ "$open_prs" -gt 0 ]; then
+            echo "has_open_pr=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Found $open_prs existing open PR(s) — skipping creation"
+          else
+            echo "has_open_pr=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Push branch
-        if: steps.check-changes.outputs.has_changes == 'true'
+        if: steps.check-changes.outputs.has_changes == 'true' && steps.check-pr.outputs.has_open_pr == 'false'
         run: |
           git push origin polly-sync/${{ github.run_number }}
 
       - name: Create Pull Request
-        if: steps.check-changes.outputs.has_changes == 'true'
+        if: steps.check-changes.outputs.has_changes == 'true' && steps.check-pr.outputs.has_open_pr == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr create \
             --title "chore: sync polly subtree" \
-            --body "Automated sync of Polly repo changes via subtree pull" \
+            --body "Automated sync of Polly repo changes via subtree pull
+            - Branch: \`polly-sync/${{ github.run_number }}\`
+            - Triggered by: scheduled workflow
+            - Sync method: squashed subtree pull (preserves only final state)" \
             --base main \
             --head polly-sync/${{ github.run_number }}

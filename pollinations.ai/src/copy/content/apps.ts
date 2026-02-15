@@ -23,7 +23,7 @@ export const APPS_PAGE = {
         "Sign in with your Pollinations account — your Pollen balance covers usage",
     buzzBadge: "🐝 BUZZ",
     buzzTooltip: "100+ API requests in the last 24 hours",
-    newBadge: "🆕 NEW",
+    newBadge: "🌿 FRESH",
     newTooltip: "Recently added to the ecosystem",
 
     // Legend
@@ -46,7 +46,7 @@ export const badges = {
 // Filters — each has a label and a match function
 // Category filters match on app.category, special filters use badge predicates
 export const FILTERS = [
-    { id: "new", label: "🆕 New", match: badges.new },
+    { id: "new", label: "🌿 Fresh", match: badges.new },
     { id: "pollen", label: "🌸 Pollen", match: badges.pollen },
     {
         id: "creative",

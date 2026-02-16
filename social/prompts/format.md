@@ -90,8 +90,6 @@ Output Format (JSON only):
 
 Return ONLY the JSON object. No markdown fences, no explanation.
 
-If nothing noteworthy shipped, return exactly `SKIP` instead of JSON.
-
 ## Discord
 
 - Greet <@&1424461167883194418> naturally — don't overthink it
@@ -99,7 +97,6 @@ If nothing noteworthy shipped, return exactly `SKIP` instead of JSON.
 - Group changes into logical sections with emojis
 - Total length: 150-300 words — brief but complete
 - Include links to relevant repos, PRs, or docs
-- If nothing major shipped, return SKIP
 
 Output Format (JSON only):
 {
@@ -109,8 +106,6 @@ Output Format (JSON only):
 }
 
 Return ONLY the JSON object. No markdown fences, no explanation.
-
-If nothing noteworthy shipped, return exactly `SKIP` instead of JSON.
 
 ## Realtime
 

@@ -521,12 +521,12 @@ export const proxyRoutes = new Hono<Env>()
 
                 // Validate file size - 7MB limit prevents Cloudflare Workers heap exhaustion
                 const MAX_FILE_SIZE = 7 * 1024 * 1024;
-                const fileBuffer = await imageFile.arrayBuffer();
-                if (fileBuffer.byteLength > MAX_FILE_SIZE) {
+                if (imageFile.size > MAX_FILE_SIZE) {
                     throw new HTTPException(413, {
                         message: `Image file too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB`,
                     });
                 }
+                const fileBuffer = await imageFile.arrayBuffer();
 
                 // Validate content-type
                 const validContentTypes = [

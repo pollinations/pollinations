@@ -92,7 +92,7 @@ def main():
     # Environment
     github_token = get_env("GITHUB_TOKEN")
     pollinations_token = get_env("POLLINATIONS_TOKEN")
-    discord_webhook = get_env("DISCORD_WEBHOOK_URL")
+    discord_webhook = get_env("DISCORD_REALTIME_WEBHOOK_URL")
     pr_number = get_env("PR_NUMBER")
     repo_full_name = get_env("REPO_FULL_NAME")
 

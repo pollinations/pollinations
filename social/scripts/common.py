@@ -152,15 +152,15 @@ def _inject_shared_prompts(content: str) -> str:
     Replaces placeholders with brand content:
     - {about} -> brand/about.md
     - {visual_style} -> brand/visual.md
-    - {bee_character} -> brand/bee.md
+    - {characters} -> brand/characters.md
     - {links} -> brand/links.md
     """
     if "{about}" in content:
         content = content.replace("{about}", load_shared("about"))
     if "{visual_style}" in content:
         content = content.replace("{visual_style}", load_shared("visual"))
-    if "{bee_character}" in content:
-        content = content.replace("{bee_character}", load_shared("bee"))
+    if "{characters}" in content:
+        content = content.replace("{characters}", load_shared("characters"))
     if "{links}" in content:
         content = content.replace("{links}", load_shared("links"))
     return content
@@ -181,7 +181,7 @@ def load_prompt(name: str) -> str:
     Automatically injects brand components:
     - {about} -> content from brand/about.md
     - {visual_style} -> content from brand/visual.md
-    - {bee_character} -> content from brand/bee.md
+    - {characters} -> content from brand/characters.md
     - {links} -> content from brand/links.md
 
     Args:
@@ -685,6 +685,60 @@ def filter_daily_gists(gists: List[Dict]) -> List[Dict]:
     return [g for g in gists if g.get("gist", {}).get("publish_tier") == "daily"]
 
 
+def read_news_file(file_path: str, github_token: str, owner: str, repo: str) -> Optional[Dict]:
+    """Read a JSON file from the news branch (local overlay first, GitHub API fallback).
+
+    The workflow overlays social/news/ from the news branch onto the local checkout,
+    so local reads work during CI. Falls back to the GitHub API with ?ref=news.
+    """
+    # Try local first (workflow overlay)
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    # Fall back to GitHub API
+    import base64 as _b64
+    headers = _github_headers(github_token)
+    resp = github_api_request(
+        "GET",
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={GISTS_BRANCH}",
+        headers=headers,
+    )
+    if resp.status_code == 200:
+        content = _b64.b64decode(resp.json()["content"]).decode()
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            pass
+    return None
+
+
+def read_news_text_file(file_path: str, github_token: str, owner: str, repo: str) -> Optional[str]:
+    """Read a text file from the news branch (local overlay first, GitHub API fallback)."""
+    # Try local first (workflow overlay)
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return f.read()
+        except OSError:
+            pass
+
+    # Fall back to GitHub API
+    import base64 as _b64
+    headers = _github_headers(github_token)
+    resp = github_api_request(
+        "GET",
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={GISTS_BRANCH}",
+        headers=headers,
+    )
+    if resp.status_code == 200:
+        return _b64.b64decode(resp.json()["content"]).decode()
+    return None
+
+
 def format_pr_summary(prs: List[Dict], time_label: str = "TODAY") -> str:
     """Format PRs into a summary string for prompts
     
@@ -821,7 +875,7 @@ def commit_files_to_branch(
         encoded = _b64.b64encode(content.encode()).decode()
 
         sha = get_file_sha(github_token, owner, repo, file_path, branch)
-        if not sha:
+        if not sha and branch != GISTS_BRANCH:
             sha = get_file_sha(github_token, owner, repo, file_path, "main")
 
         msg = f"news: add {file_path.split('/')[-1]}"

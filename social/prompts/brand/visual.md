@@ -31,14 +31,13 @@
 
 ## Characters — Recurring Cast
 
-Rotate between these characters across posts. The bee should appear in most images but doesn't have to be the star of every one.
+{characters}
 
-### The Bee (primary mascot)
-{bee_character}
+Rotate between these characters across posts. Polly (the bee) is the main character and should appear in most images but doesn't have to be the star of every one. The others are side characters — use one, two, or several depending on the scene.
 
-- Give her a thematic accessory per image — reading glasses, tool belt, tiny scarf, headphones, painter's beret. Match the accessory to the scene.
+- Give Polly a thematic accessory per image — reading glasses, tool belt, tiny scarf, headphones, painter's beret. Match the accessory to the scene.
 - Keep her proportions consistent — never elongated or insect-like
-- Personality: observant, slightly above-it-all but warm. the one who notices things.
+- Personality: observant, slightly above-it-all but warm. The one who notices things.
 
 ### Monitor Robot (sidekick)
 - Cute chunky pixel robot with a CRT monitor/screen for a head
@@ -66,7 +65,7 @@ Rotate between these characters across posts. The bee should appear in most imag
 
 - Cozy pixel art style with soft lighting
 - Lime green `#ecf874` prominently
-- At least one character from the recurring cast (bee, cat, tiny devs)
+- At least one character from the cast (Polly, Pixel, Shard, Goo, Loop)
 - Nature/growth elements (flowers, gardens, vines, code-plants)
 - Warm, inviting atmosphere
 - Style keywords in every prompt: "cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes"

@@ -17,16 +17,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [Convince the CRAZY Idol to let you free](https://www.roblox.com/games/95878078212429/Convince-the-CRAZY-Idol-to-let-you-free) | AI-powered Roblox escape room game where players must convince an obsessed AI idol to let them go. Features TTS STT and multiplayer. Uses pollinations.ai for AI conversation. 2.2M visits 97 fail rate | @wBrowsqq |
-| [Nova Defense](https://dashboard.novadefense.es) | Anti-raid Discord bot using Pollinations for attack detection and images. | @lyon3yv |
-| [Pollinations × OpenClaw](https://openclaw.pollinations.ai) | Use 25+ AI models as your OpenClaw agent brain via one setup script | @pollinations |
-| [n8n-nodes-pollinations](https://www.npmjs.com/package/n8n-nodes-pollinations-v2) | n8n community node adding Pollinations.ai image, video, text, and audio nodes | @isaacgounton |
-| [NebulaAPI](https://nebulaapi.app) | Free Brazilian API gateway for AI and gaming with Pollinations backend. | @MatheusHMafra |
-| [Korpi.AI](https://korpi.ai) | Generates AI stories with the Pollinations Flux model. | @Reksely |
-| Moltbot With Pollinations.ai provider | Multi-channel AI assistant for Telegram and WhatsApp using Pollinations AI. | @its3li |
-| [Sage](https://discord.com/oauth2/authorize?client_id=1462117382398017667&scope=bot%20applications.commands&permissions=8) | Discord bot offering assistant-style features and server utilities. | @BokX1 |
-| [Pollinations Provider for Vercel AI SDK](https://ai-sdk-pollinations-example.vercel.app) | Vercel AI SDK provider for Pollinations: text, image, and speech generation. | @artsiombarouski |
-| [Fable Friend](https://huggingface.co/spaces/Shreemahor/Fable-Friend) | Interactive AI story adventure with selectable role, genre, and image style. | @Shreemahor |
+| [SILENOS](https://www.silenos.es) | AI creative production suite with art studios, storytelling, music, and multi-modal generation. | @todoh |
+| [SAIL Solver](https://ail-solver.vercel.app) | Academic test-solving tool that generates answers for multiple-choice and open-ended questions. | @unKnownNG |
+| [FastStoryboard](https://faststoryboard.cloud) | AI video creation platform for generating storyboards and visual narratives. | @thomazandreywalicoski |
+| [Strudel AI REPL](https://strudel-ai-repl.pages.dev) | AI-powered live-coding music environment for generating and performing algorithmic compositions. | @voodoohop |
+| [PollinCoder](https://pollincoder.vercel.app) | AI app builder that generates and previews full web applications from natural language prompts. | @Spit-fires |
+| [7Studio](https://7studio.edgeone.app) | AI image generation studio with prompt input, model selection, and gallery display. | @ims111we-cmd |
+| [AI Studio](https://ai-studio.puter.site) | Chat and audio AI interface with text-to-speech and conversation features. | @Chess-Base |
+| [Pollinations.ai Image Model Comparison](https://dseeker.github.io/pollinations/image-comparison/) | Side-by-side comparison of AI image generation models — test cost, speed, quality. | @dseeker |
+| [My Web Site](https://proyectodescartes.org/IATools/85_Generador_de_c%C3%B3digo_con_IA/ejemplos/game.html) | Sitio web para proyectos de aula de bachillerato con estructura completa. | @theteacherbot |
+| [Flipbook-style digital book designer](https://proyectodescartes.org/IATools/Crea_libros_3D_caps/) | AI-powered flipbook digital book designer creating illustrated 3D page-flip books. | @Juanrivera126 |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
@@ -44,17 +44,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-02-15** – **🚀 Polly API** Access Polly's web research and coding skills via a new OpenAI-compatible endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs).
+- **2026-02-15** – **🛡️ New Safety Model** Qwen3Guard-8B is now available via the API for fast content moderation and safety classification.
+- **2026-02-15** – **✨ Showcase Upgrade** Explore the redesigned [App Showcase](https://hello.pollinations.ai) with AI-enhanced descriptions and real-time usage metrics.
+- **2026-02-15** – **🎮 Community Apps** New additions include the "Nova Defense" Discord bot and the AI-powered Roblox game "Convince the CRAZY Idol".
 - **2026-02-14** – **🦞 pollinations.ai × OpenClaw** Power your [OpenClaw](https://openclaw.ai) agent with 25+ AI models — Kimi K2.5, DeepSeek, Claude, Gemini & more. One script, free credits, 30 seconds. [Get started →](https://openclaw.pollinations.ai)
+- **2026-02-11** – **🤖 OpenClaw Integration** Set up AI coding agents in one command with the new OpenClaw landing page and auto-install script.
+- **2026-02-10** – **📚 Docs Meet Play** Documentation merged directly into the Play page—configure models visually and copy generated API code instantly.
 - **2026-02-09** – **🚀 Massive Model Drop** Added `imagen-4`, `flux-2-dev`, `grok-video`, and `LTX-2` for next-level image and video generation.
 - **2026-02-09** – **🎵 Audio Studio** Generate music with `elevenmusic`, transcribe with `whisper`, and use emotive TTS with `eleven_v3`.
 - **2026-02-09** – **🧠 Smarter Claude** Upgraded `claude-large` to the latest Claude 3 Opus 4.6 for enhanced reasoning.
-- **2026-02-06** – **🧪 New Provider: api.airforce (alpha)** Added `imagen` and `grok-video` via [api.airforce](https://api.airforce) — experimental models, may be unstable.
-- **2026-02-05** – **💎 Paid Models Update** `claude`, `grok`, `kontext`, `seedream`, and `seedance-pro` are moving to paid-only.
-- **2026-02-02** – **🚀 Kimi K2.5** Upgraded model with vision support and improved reasoning capabilities.
-- **2026-02-02** – **🧠 Web Research** Claude can now use `perplexity` and `gemini-search` tools for real-time answers.
-- **2026-02-02** – **💎 Premium Access** High-end models `veo`, `claude-large`, and `seedream-pro` are now available for credit holders.
-- **2026-02-02** – **📱 Moltbot Integration** Use Pollinations on Telegram & WhatsApp via the new Moltbot provider.
-- **2026-01-30** – **💎 Paid-Only Models** `claude-large`, `gemini-large`, `veo`, `seedream-pro`, and `nanobanana-pro` will require purchased pollen. Free credits work for all other models.
 ---
 
 ## 🌟 Google Summer of Code 2026 (GSOC)

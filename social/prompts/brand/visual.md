@@ -40,16 +40,21 @@ Rotate between these characters across posts. The bee should appear in most imag
 - Keep her proportions consistent — never elongated or insect-like
 - Personality: observant, slightly above-it-all but warm. the one who notices things.
 
-### The Pixel Cat (recurring guest)
-- White cat with black patches, sitting upright, half-closed eyes
-- Naps on warm server racks, sits on keyboards, ignores humans
-- Personality: aloof, unbothered. present in scenes but never working.
-- Inspired by CatGPT — sardonic feline energy in pixel form
+### Monitor Robot (sidekick)
+- Cute chunky pixel robot with a CRT monitor/screen for a head
+- Small boxy body, stubby mechanical arms, can hold things
+- Expressive square pixel eyes on the screen — curious, excited, helpful
+- Often holds pictures, tools, or code printouts
+- Personality: eager, discovers things, says "I CAN SEE!" — the one who gets excited about new capabilities
+- Think: a tiny helpful lab assistant who just got vision for the first time
 
-### Tiny Pixel Devs (community)
-- Small 8-bit developer characters, diverse, chunky sprites
-- Tending code-plants, fixing things, building together
-- They represent the community — always in groups, never solo hero shots
+### Nomnom Creature (comic relief)
+- Round, friendly, tan/brown spherical creature — like a pixel mochi ball
+- Tiny dot eyes, rosy cheeks, wide happy mouth
+- Eats things enthusiastically — documents, code, data, API responses
+- Speech bubble: "NOMNOM" in chunky pixel font
+- Personality: hungry for knowledge (literally). processes information by consuming it
+- Think: a living garbage disposal for data, but cute about it
 
 ### Supporting Elements
 - Pixel flowers, gardens, seeds, blooming plants (nature/growth motifs)
@@ -91,16 +96,16 @@ Rotate between these characters across posts. The bee should appear in most imag
 ### Example Prompts (these produced good results)
 
 **Bee-focused (classic):**
-1. "Cozy pixel art scene of the cute bee mascot watering a digital garden where a tiny friendly pixel robot is sprouting from a lime green (#ecf874) flower pot. A retro computer monitor in the background shows clean code blocks. Soft warm lighting, wholesome vibes like Stardew Valley. Text in pixel font: 'OPEN SOURCE'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+1. "Cozy pixel art scene of the cute bee mascot watering a digital garden where code-plants sprout from lime green (#ecf874) flower pots. A retro computer monitor in the background shows clean code blocks. Soft warm lighting, wholesome vibes like Stardew Valley. Text in pixel font: 'OPEN SOURCE'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
 
 2. "Cozy pixel art scene of a tiny 8-bit bee character watering a small pixelated code plant. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Like Stardew Valley meets coding. Emotionally warm, nostalgic but beautiful."
 
-**Cat + bee (ensemble):**
-3. "Cozy pixel art interior of a tiny retro hackerspace café. A pixel white cat with black patches naps on a warm server rack. The pollinations bee mascot sits at a small desk with a glowing lime green (#ecf874) laptop. Fairy lights, potted pixel plants, a chalkboard menu listing model names. Soft cream and mint gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+**Robot + bee (ensemble):**
+3. "Chunky pixel art of a cute robot with a CRT monitor head holding a small picture frame showing a generated landscape. The robot has stubby arms and square pixel eyes. Lime green (#ecf874) and sage gradient background. Speech bubble in pixel font: 'I CAN SEE!'. Large visible pixels, lo-fi 8-bit aesthetic, Stardew Valley vibes, warm lighting."
 
-4. "Cozy pixel art scene of a white pixel cat with half-closed eyes sitting at a retro terminal, tiny paw on keyboard. Screen glows lime green (#ecf874) showing '59 PRs MERGED'. The bee mascot hovers nearby holding a tiny clipboard. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+4. "Cozy pixel art hackerspace. A cute chunky pixel robot with monitor head sits at a retro terminal, screen glowing lime green (#ecf874). The bee mascot hovers nearby with a tiny clipboard. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
 
-**Community (tiny devs):**
-5. "Cozy pixel art scene of three tiny 8-bit developer characters tending code-plants in a digital garden. One waters a sprouting API endpoint, another prunes a tangled dependency vine. The cute pollinations bee mascot watches from a flower, wearing tiny reading glasses. Soft lime green (#ecf874) and lavender gradient sky. Warm lighting, lo-fi vibes like A Short Hike. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+**Nomnom + bee (ensemble):**
+5. "Chunky pixel art of a round tan mochi-ball creature with tiny dot eyes and wide happy mouth eating a stack of documents. Speech bubble: 'NOMNOM' in pixel font. Lime green (#ecf874) and lavender soft gradient background. Large visible pixels, lo-fi 8-bit aesthetic, warm lighting, cozy vibes like Stardew Valley."
 
-6. "Pixel art community garden scene with diverse tiny 8-bit characters tending colorful digital flowers. Soft lime green and lavender sky. Chunky retro sprites with modern soft lighting. Wholesome, like A Short Hike. Text in pixel font: 'open source'. Nostalgic but beautiful."
+6. "Cozy pixel art scene of the round nomnom creature happily eating API responses while the bee mascot watches amused. Retro terminal nearby glows lime green (#ecf874). Soft pastel gradient. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."

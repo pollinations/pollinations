@@ -34,11 +34,13 @@ DAILY_DIR = "social/news/daily"
 
 
 def get_target_date() -> str:
-    """Get the target date from env var or default to today UTC."""
+    """Get the target date from env var or default to yesterday UTC.
+    Matches generate_daily.py which generates content for yesterday."""
     date_str = get_env("TARGET_DATE", required=False)
     if date_str:
         return date_str
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    yesterday = datetime.now(timezone.utc) - timedelta(days=1)
+    return yesterday.strftime("%Y-%m-%d")
 
 
 def stage_buffer_posts(daily_dir: str, buffer_token: str, github_token: str, owner: str, repo: str) -> Dict[str, bool]:

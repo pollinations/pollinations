@@ -40,14 +40,15 @@ WEEKLY_REL_DIR = "social/news/weekly"
 # ── Helpers ──────────────────────────────────────────────────────────
 
 def get_week_end() -> str:
-    """Get the week_end date from env var or default to most recent Sunday UTC."""
+    """Get the week_end date from env var or default to most recent Saturday UTC.
+    Matches generate_weekly.py which uses start + 6 days (Sun→Sat window)."""
     override = get_env("WEEK_END_DATE", required=False)
     if override:
         return override
     today = datetime.now(timezone.utc).date()
-    days_since_sunday = (today.weekday() - 6) % 7
-    sunday = today - timedelta(days=days_since_sunday)
-    return sunday.strftime("%Y-%m-%d")
+    days_since_saturday = (today.weekday() - 5) % 7
+    saturday = today - timedelta(days=days_since_saturday)
+    return saturday.strftime("%Y-%m-%d")
 
 
 def chunk_message(message: str, max_length: int = DISCORD_CHUNK_SIZE):

@@ -26,7 +26,7 @@
 | [SILENOS](https://www.silenos.es) | AI creative production suite with art studios, storytelling, music, and multi-modal generation. | @todoh |
 | [SAIL Solver](https://ail-solver.vercel.app) | Academic test-solving tool that generates answers for multiple-choice and open-ended questions. | @unKnownNG |
 
-[View all apps →](apps/APPS.md)
+[Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.

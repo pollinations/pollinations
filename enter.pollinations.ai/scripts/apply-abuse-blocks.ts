@@ -19,6 +19,7 @@
 
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import { createInterface } from "node:readline";
 import { boolean, command, number, run, string } from "@drizzle-team/brocli";
 
 type Environment = "staging" | "production";
@@ -46,8 +47,12 @@ function parseCSV(content: string): AbuseReportRow[] {
         let current = "";
         let inQuotes = false;
 
-        for (const char of lines[i]) {
-            if (char === '"') {
+        for (let j = 0; j < lines[i].length; j++) {
+            const char = lines[i][j];
+            if (char === '"' && inQuotes && lines[i][j + 1] === '"') {
+                current += '"';
+                j++; // skip escaped quote
+            } else if (char === '"') {
                 inQuotes = !inQuotes;
             } else if (char === "," && !inQuotes) {
                 values.push(current.trim());
@@ -102,6 +107,25 @@ function queryD1(env: Environment, sql: string): string {
 
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function confirm(message: string): Promise<boolean> {
+    const rl = createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+    return new Promise((resolve) => {
+        rl.question(`${message} (y/N) `, (answer) => {
+            rl.close();
+            resolve(answer.toLowerCase() === "y");
+        });
+    });
+}
+
+const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+function validateEmail(email: string): boolean {
+    return EMAIL_RE.test(email) && email.length <= 254;
 }
 
 const applyBlocksCommand = command({
@@ -191,6 +215,16 @@ const applyBlocksCommand = command({
             return;
         }
 
+        if (!opts["dry-run"] && env === "production") {
+            const ok = await confirm(
+                `\n⚠️  About to downgrade ${usersToDowngrade.length} users to microbe in PRODUCTION. Continue?`,
+            );
+            if (!ok) {
+                console.log("❌ Aborted.");
+                return;
+            }
+        }
+
         // Process in batches
         const batches = Math.ceil(usersToDowngrade.length / opts["batch-size"]);
         let processed = 0;
@@ -217,7 +251,14 @@ const applyBlocksCommand = command({
                 // but batch them in a single transaction-like approach
                 for (const user of batch) {
                     try {
-                        // Escape single quotes in email
+                        if (!validateEmail(user.email)) {
+                            console.error(
+                                `   ⚠️  Skipped invalid email: ${user.email}`,
+                            );
+                            failed++;
+                            processed++;
+                            continue;
+                        }
                         const safeEmail = user.email.replace(/'/g, "''");
                         const sql = `UPDATE user SET tier = 'microbe', tier_balance = 0.1 WHERE email = '${safeEmail}'`;
                         queryD1(env, sql);

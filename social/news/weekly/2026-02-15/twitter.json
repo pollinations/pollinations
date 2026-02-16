@@ -1,0 +1,19 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "27 PRs merged. The hive has been busy. 🐝\n\n• Polly now speaks OpenAI-compatible API\n• Video generation unified (Wan + Grok + img2vid)\n• OpenClaw fully integrated with auto-onboard\n\nOpen source tools should play nice together. We made sure ours do. 🌸",
+  "alt_tweet": "Polly just got an OpenAI-compatible API endpoint. 🔌\n\nAlso shipped unified video resolutions and deep OpenClaw integration. 27 PRs total this week.\n\nShipping fast, building open. 🐝",
+  "hashtags": [
+    "#OpenSource",
+    "#AI"
+  ],
+  "image_prompt": "Cozy pixel art Weekly Update scene. A retro RPG quest log screen floating in a digital garden, titled 'WEEKLY BUZZ' in chunky pixel font. The log lists quests: 'POLLY API', 'VIDEO 2.0', 'OPENCLAW'. The cute bee mascot (yellow/brown stripes, pink blush, holding a pixel quill) is checking off the items. Soft lime green (#ecf874) glow on the UI. Lavender to peach pastel gradient background. Warm lighting, lo-fi Stardew Valley vibes. Nostalgic but beautiful.",
+  "reasoning": "Leads with the volume of work (27 PRs) to show momentum. Highlights the API change which is high-value for developers, and the video updates which are high-interest. The tone is confident and builder-focused.",
+  "char_count": 235,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/twitter.jpg",
+    "prompt": "Cozy pixel art Weekly Update scene. A retro RPG quest log screen floating in a digital garden, titled 'WEEKLY BUZZ' in chunky pixel font. The log lists quests: 'POLLY API', 'VIDEO 2.0', 'OPENCLAW'. The cute bee mascot (yellow/brown stripes, pink blush, holding a pixel quill) is checking off the items. Soft lime green (#ecf874) glow on the UI. Lavender to peach pastel gradient background. Warm lighting, lo-fi Stardew Valley vibes. Nostalgic but beautiful."
+  },
+  "date": "2026-02-15",
+  "generated_at": "2026-02-16T00:22:37.104770+00:00",
+  "platform": "twitter"
+}

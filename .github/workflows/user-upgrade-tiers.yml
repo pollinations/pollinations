@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Dry run (score and evaluate only, no upgrades)'
+        description: 'Dry run (validate only, no upgrades)'
         type: boolean
         default: false
 
@@ -22,12 +22,7 @@ jobs:
       - name: Install dependencies
         run: cd enter.pollinations.ai && npm install
 
-      - name: Create .testingtokens
-        run: |
-          cd enter.pollinations.ai
-          echo "ENTER_API_TOKEN_REMOTE=${{ secrets.ENTER_API_TOKEN_REMOTE }}" > .testingtokens
-
-      - name: Run tier upgrade scorer
+      - name: Run tier upgrade
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

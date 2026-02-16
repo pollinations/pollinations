@@ -13,25 +13,31 @@ const tierColors = {
 
 const SeedTooltipContent = () => (
     <div className="w-56">
-        <p className="font-semibold text-gray-900 mb-2">Legitimacy Signals</p>
+        <p className="font-semibold text-gray-900 mb-2">Dev Points (need 8+)</p>
         <table className="w-full text-left text-[11px]">
             <tbody>
                 <tr className="border-b border-gray-100">
                     <td className="py-1 text-gray-600">Account age</td>
                     <td className="py-1 text-right text-gray-800">
-                        &gt;7 days
+                        0.5pt/month (max 6)
                     </td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                    <td className="py-1 text-gray-600">GitHub activity</td>
+                    <td className="py-1 text-gray-600">Commits</td>
                     <td className="py-1 text-right text-gray-800">
-                        Repos, commits, stars
+                        0.1pt each (max 2)
+                    </td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                    <td className="py-1 text-gray-600">Public repos</td>
+                    <td className="py-1 text-right text-gray-800">
+                        0.5pt each (max 1)
                     </td>
                 </tr>
                 <tr>
-                    <td className="py-1 text-gray-600">Organic patterns</td>
+                    <td className="py-1 text-gray-600">GitHub stars</td>
                     <td className="py-1 text-right text-gray-800">
-                        Normal username &amp; email
+                        0.1pt each (max 5)
                     </td>
                 </tr>
             </tbody>

@@ -1,0 +1,32 @@
+{
+  "pr_number": 8325,
+  "title": "Add Tenna AI to Chat",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8325",
+  "merged_at": "2026-02-16T20:26:32Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Mindful moments with Tenna",
+    "blurb": "We've added Tenna AI to our community showcase—a new companion for mood analysis, guided journaling, and relaxation.",
+    "summary": "Added Tenna AI, a mental health companion app, to the community applications directory.",
+    "impact": "Users can now discover Tenna AI in the apps list to help with journaling and mindfulness.",
+    "keywords": [
+      "community",
+      "mental health",
+      "showcase",
+      "wellness",
+      "apps"
+    ],
+    "visual_concept": "A zen garden scene representing mental wellness. The Pollinations bee is taking a break to journal or meditate, accompanied by a symbol of the new app (a gentle heart or lotus).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot sitting cross-legged on a cushion, writing in a tiny journal next to a friendly floating pixel heart. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender pastel gradient background. The bee wears a tiny headband. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'TENNA AI'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T20:27:16.814663+00:00"
+}

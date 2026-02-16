@@ -31,10 +31,8 @@
 
 ## Characters — Recurring Cast
 
-{characters}
-
-Rotate between these characters across posts. Polly (the bee) is the main character and should appear in most images but doesn't have to be the star of every one. The others are side characters — use one, two, or several depending on the scene.
-
+### Polly (The Bee) — Main Character
+The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Expressive, always doing something with her hands.
 - Give Polly a thematic accessory per image — reading glasses, tool belt, tiny scarf, headphones, painter's beret. Match the accessory to the scene.
 - Keep her proportions consistent — never elongated or insect-like
 - Personality: observant, slightly above-it-all but warm. The one who notices things.
@@ -55,6 +53,8 @@ Rotate between these characters across posts. Polly (the bee) is the main charac
 - Personality: hungry for knowledge (literally). processes information by consuming it
 - Think: a living garbage disposal for data, but cute about it
 
+Rotate between these characters across posts. Polly is the main character and should appear in most images but doesn't have to be the star of every one. The others are side characters — use one or both depending on the scene.
+
 ### Supporting Elements
 - Pixel flowers, gardens, seeds, blooming plants (nature/growth motifs)
 - Retro computers, terminals, glowing screens
@@ -65,7 +65,7 @@ Rotate between these characters across posts. Polly (the bee) is the main charac
 
 - Cozy pixel art style with soft lighting
 - Lime green `#ecf874` prominently
-- At least one character from the cast (Polly, Pixel, Shard, Goo, Loop)
+- At least one character from the cast (Polly, Monitor Robot, Nomnom)
 - Nature/growth elements (flowers, gardens, vines, code-plants)
 - Warm, inviting atmosphere
 - Style keywords in every prompt: "cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes"

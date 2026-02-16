@@ -152,15 +152,12 @@ def _inject_shared_prompts(content: str) -> str:
     Replaces placeholders with brand content:
     - {about} -> brand/about.md
     - {visual_style} -> brand/visual.md
-    - {characters} -> brand/characters.md
     - {links} -> brand/links.md
     """
     if "{about}" in content:
         content = content.replace("{about}", load_shared("about"))
     if "{visual_style}" in content:
         content = content.replace("{visual_style}", load_shared("visual"))
-    if "{characters}" in content:
-        content = content.replace("{characters}", load_shared("characters"))
     if "{links}" in content:
         content = content.replace("{links}", load_shared("links"))
     return content
@@ -181,7 +178,6 @@ def load_prompt(name: str) -> str:
     Automatically injects brand components:
     - {about} -> content from brand/about.md
     - {visual_style} -> content from brand/visual.md
-    - {characters} -> content from brand/characters.md
     - {links} -> content from brand/links.md
 
     Args:

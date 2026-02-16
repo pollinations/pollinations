@@ -40,11 +40,17 @@ WEEKLY_REL_DIR = "social/news/weekly"
 # ── Helpers ──────────────────────────────────────────────────────────
 
 def get_week_end() -> str:
-    """Get the week_end date from env var or default to most recent Saturday UTC.
-    Matches generate_weekly.py which uses start + 6 days (Sun→Sat window)."""
+    """Get the week_end date from env var or compute from WEEK_START_DATE.
+    Matches generate_weekly.py which uses start + 6 days (Sun→Sat window).
+    Falls back to most recent Saturday UTC if neither override is set."""
     override = get_env("WEEK_END_DATE", required=False)
     if override:
         return override
+    # Match generate_weekly.py's logic: start + 6 days
+    week_start = get_env("WEEK_START_DATE", required=False)
+    if week_start:
+        start = datetime.strptime(week_start, "%Y-%m-%d").date()
+        return (start + timedelta(days=6)).strftime("%Y-%m-%d")
     today = datetime.now(timezone.utc).date()
     days_since_saturday = (today.weekday() - 5) % 7
     saturday = today - timedelta(days=days_since_saturday)
@@ -192,7 +198,7 @@ def main():
             print("  Reddit VPS credentials not configured — skipping")
 
         # Discord
-        discord_webhook = get_env("DISCORD_WEBHOOK_URL", required=False)
+        discord_webhook = get_env("DISCORD_WEEKLY_WEBHOOK_URL", required=False)
         if discord_webhook:
             discord_path = os.path.join(weekly_dir, "discord.json")
             discord_data = read_news_file(discord_path, github_token, owner, repo)

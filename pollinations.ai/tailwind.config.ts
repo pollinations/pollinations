@@ -7,8 +7,8 @@
  * - CSS variables available: var(--color-primary), var(--color-background), etc.
  */
 import type { Config } from "tailwindcss";
-import { AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarknessWithVolumetricBlueHazeDiverseGlowingOrganismsOfDifferentColorsTurquoiseVioletAmberSoftPinkSizesTinySpecksToLargeFloatingFormsAndShapesJellCssVariables as DefaultCssVariables } from "./src/theme/presets/default";
 import plugin from "tailwindcss/plugin";
+import { AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarknessWithVolumetricBlueHazeDiverseGlowingOrganismsOfDifferentColorsTurquoiseVioletAmberSoftPinkSizesTinySpecksToLargeFloatingFormsAndShapesJellCssVariables as DefaultCssVariables } from "./src/theme/presets/default";
 
 // Font family names
 // Font family names
@@ -49,6 +49,7 @@ export default {
                 "text-on-color": "rgb(var(--text-inverse))",
                 "text-brand": "rgb(var(--text-brand))",
                 "text-highlight": "rgb(var(--text-highlight))",
+                "text-accent": "rgb(var(--text-accent))",
 
                 // Surfaces (with opacity support)
                 "surface-page":
@@ -77,10 +78,16 @@ export default {
                 // Borders
                 "border-brand": "rgb(var(--border-brand))",
                 "border-highlight": "rgb(var(--border-highlight))",
+                "border-accent": "rgb(var(--border-accent))",
                 "border-main": "rgb(var(--border-main))",
                 "border-strong": "rgb(var(--border-strong))",
                 "border-subtle": "rgb(var(--border-subtle))",
                 "border-faint": "rgb(var(--border-faint))",
+
+                // Badge accent colors (theme-responsive via semantic tokens)
+                "badge-fresh": "rgb(var(--text-brand) / <alpha-value>)",
+                "badge-pollen": "rgb(var(--text-highlight) / <alpha-value>)",
+                "badge-buzz": "rgb(var(--text-accent) / <alpha-value>)",
 
                 // Logo
                 "logo-main": "rgb(var(--logo-main))",

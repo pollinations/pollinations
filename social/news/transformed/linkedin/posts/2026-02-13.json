@@ -1,0 +1,39 @@
+{
+  "date": "2026-02-13",
+  "generated_at": "2026-02-13T00:15:40.937505+00:00",
+  "platform": "linkedin",
+  "post_type": "milestone",
+  "hook": "The hardest part of AI agents isn't the model. It's the plumbing.\n\nWe just automated the plumbing.",
+  "body": "Most open-source AI tools fail the \"5-minute test.\" If a developer can't get it running before their coffee cools down, they move on. \n\nThis week, we merged 13 PRs focused entirely on removing the friction between \"I want an agent\" and \"I have an agent working for me.\"\n\nHere is what we shipped to fix the flow:\n\n🚀 1. The \"Brain\" Upgrade (Web Search)\nLLMs hallucinate. Grounded agents don't. We added Gemini + Search models and configured the `web_search` tool directly into OpenClaw. Your local agent can now browse the live web via Pollinations to fact-check itself. No complex API key juggling required—it just works out of the box.\n\n⚡ 2. Zero-Friction Onboarding\nWe shipped a new setup script that handles the full stack:\n- Auto-installs OpenClaw via npm if missing\n- Writes the Pollinations config automatically\n- Unified the \"Connect\" step into a single, clean UI\n\nIf you have to read a 10-page doc to run an open-source tool, it's not a tool—it's a homework assignment. We killed the homework.\n\n🔌 3. Ecosystem Expansion\nWe aren't building a silo. We added `n8n-nodes-pollinations` and `NebulaAPI` to our Dev Tools registry. Whether you're building low-code automation workflows or Minecraft integrations, the infrastructure is ready to plug and play.\n\nMomentum is building. We are seeing more developers skip the \"subscription fatigue\" of closed providers and build on open, credit-based infrastructure where they own the pipes.\n\nWe are building the easiest way to use open-source AI. And we are doing it in public.",
+  "cta": "Check the new setup flow in the repo. What is the first thing you will make your agent search for?",
+  "full_post": "The hardest part of AI agents isn't the model. It's the plumbing.\n\nWe just automated the plumbing.\n\nMost open-source AI tools fail the \"5-minute test.\" If a developer can't get it running before their coffee cools down, they move on. \n\nThis week, we merged 13 PRs focused entirely on removing the friction between \"I want an agent\" and \"I have an agent working for me.\"\n\nHere is what we shipped to fix the flow:\n\n🚀 1. The \"Brain\" Upgrade (Web Search)\nLLMs hallucinate. Grounded agents don't. We added Gemini + Search models and configured the `web_search` tool directly into OpenClaw. Your local agent can now browse the live web via Pollinations to fact-check itself. No complex API key juggling required—it just works out of the box.\n\n⚡ 2. Zero-Friction Onboarding\nWe shipped a new setup script that handles the full stack:\n- Auto-installs OpenClaw via npm if missing\n- Writes the Pollinations config automatically\n- Unified the \"Connect\" step into a single, clean UI\n\nIf you have to read a 10-page doc to run an open-source tool, it's not a tool—it's a homework assignment. We killed the homework.\n\n🔌 3. Ecosystem Expansion\nWe aren't building a silo. We added `n8n-nodes-pollinations` and `NebulaAPI` to our Dev Tools registry. Whether you're building low-code automation workflows or Minecraft integrations, the infrastructure is ready to plug and play.\n\nMomentum is building. We are seeing more developers skip the \"subscription fatigue\" of closed providers and build on open, credit-based infrastructure where they own the pipes.\n\nWe are building the easiest way to use open-source AI. And we are doing it in public.\n\nCheck the new setup flow in the repo. What is the first thing you will make your agent search for?\n\n#OpenSource #AIagents #WebSearch #BuildInPublic #DevTools",
+  "hashtags": [
+    "#OpenSource",
+    "#AIagents",
+    "#WebSearch",
+    "#BuildInPublic",
+    "#DevTools"
+  ],
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/linkedin/posts/2026-02-13-image.jpg",
+    "prompt": "Pixel art infographic with large bold headline 'AGENTS ONLINE'. Visual focus: A retro computer terminal screen displaying a green progress bar that says 'SETUP COMPLETE'. The Pollinations Bee mascot is hovering nearby holding a pixelated magnifying glass over a globe (representing web search). \n\nKey stats displayed in a retro list on the right:\n- Web Search Enabled\n- 1-Step Install\n- 13 PRs Merged\n\nStyle: Cozy 8-bit aesthetic. Dominant Lime Green (#ecf874) accents on the terminal and text. Soft pastel gradient background. Warm lighting, not harsh neon. The image must be self-explanatory.",
+    "text": "AGENTS ONLINE\n\n• Web Search Enabled\n• 1-Step Install\n• 13 PRs Merged"
+  },
+  "reasoning": "This post targets the 'Milestone' angle. It translates the technical work (OpenClaw config, web search tools) into a clear value prop: 'Ease of use' and 'Agentic capabilities'. The hook addresses a common pain point (setup friction), and the body provides concrete evidence of progress (Web Search, n8n integration). The image reinforces the 'shipping' narrative with clear stats.",
+  "pr_references": [
+    "#8178",
+    "#8177",
+    "#8187",
+    "#8189",
+    "#8179",
+    "#7933",
+    "#8167",
+    "#8168",
+    "#8165",
+    "#7893",
+    "#8160",
+    "#8159",
+    "#8158"
+  ],
+  "char_count": 1781
+}

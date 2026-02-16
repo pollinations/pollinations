@@ -1,0 +1,13 @@
+{
+  "title": "Shipping OpenClaw agents, Grok video, and embedding upgrades",
+  "image_prompt": "Cozy pixel art RPG quest board scene. Soft lime green (#ecf874) and pastel gradient background. The cute pixel art bee mascot (yellow/brown stripes, pink blush, blue wings) is checking off items on a large wooden notice board. Bee wears a tiny adventurer's cap. Retro UI panels on the board read 'OpenClaw', 'Grok Video', and 'New API'. Large pixel header text floating above: 'WEEKLY BUILD'. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+  "body": "We merged 27 PRs this week, focusing heavily on agentic capabilities and media generation consistency.\n\n**Core Updates:**\n*   **OpenClaw Integration:** Added web search and agent capabilities, allowing for one-command agent deployment.\n*   **Polly API & Embeddings:** Upgraded the core API service and implemented better embeddings for improved context retrieval.\n*   **Media Generation:** Integrated Grok Image-to-Video and unified video resolutions across the platform.\n*   **Model Support:** Added GLM-5, Qwen-character model, and ElevenLabs Scribe v2.\n\nWe also refactored the docs to live directly within the Play page and overhauled the App Showcase UI. Code is available on GitHub.",
+  "reasoning": "The title uses 'Shipping' to imply action and immediate availability. The body breaks down the 27 PRs into categorized, scannable bullet points that respect the reader's time. It highlights 'OpenClaw' and 'Embeddings' first, as these are high-value for developers building complex apps. The tone remains objective and metric-driven.",
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/reddit.jpg",
+    "prompt": "Cozy pixel art RPG quest board scene. Soft lime green (#ecf874) and pastel gradient background. The cute pixel art bee mascot (yellow/brown stripes, pink blush, blue wings) is checking off items on a large wooden notice board. Bee wears a tiny adventurer's cap. Retro UI panels on the board read 'OpenClaw', 'Grok Video', and 'New API'. Large pixel header text floating above: 'WEEKLY BUILD'. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "date": "2026-02-15",
+  "generated_at": "2026-02-16T10:04:13.429831+00:00",
+  "platform": "reddit"
+}

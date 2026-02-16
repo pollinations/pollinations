@@ -1,0 +1,46 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "Uses the 'Showcase in Full Bloom' metaphor to visually represent UI updates, followed by retro tech imagery for the API/Safety news, and finally a gaming scene for the new bots/games. This translates technical PRs into a cohesive narrative about growth, connection, and play.",
+  "visual_style": "Cozy 8-bit pixel art with soft lighting, CRT scanlines, and a warm pastel palette featuring the mandatory lime green (#ecf874) accent.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of a digital garden gallery. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing a tiny painter's beret and holding a pixel paintbrush, admiring framed pixel art pieces hanging on vines. Soft lime green (#ecf874) and peach pastel gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'FULL BLOOM'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Visualizes the 'App Showcase improvements' as a blooming garden gallery, setting a welcoming tone.",
+      "text_in_image": "FULL BLOOM",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-15/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny pixelated safety goggles, connecting a glowing lime green (#ecf874) cable into a friendly retro server block. A small pixelated shield icon floats nearby representing safety models. Soft lavender and mint pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. Chunky retro sprites, warm lighting, lo-fi aesthetic. Text in pixel font: 'PLUG & PLAY'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Represents the new OpenAI-compatible API and safety models as a simple, safe physical connection.",
+      "text_in_image": "PLUG & PLAY",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-15/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of the cute bee mascot playing a vintage arcade cabinet. The screen shows a crisp, perfectly ratioed image. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing a tiny gamer headset. Soft lime green (#ecf874) glow from the screen, warm cream background. Chunky retro sprites, lo-fi aesthetic. Text in pixel font: 'LEVEL UP'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Highlights the new games (Nova Defense/Crazy Idol) and aspect ratio fixes in a fun, nostalgic way.",
+      "text_in_image": "LEVEL UP",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-15/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "It’s blooming season at Pollinations! 🌸✨ We just pushed some cozy updates to make your creating experience even sweeter.\n\n🎨 The App Showcase got a total glow-up—better descriptions, metrics, and a fresh UI so your work shines.\n🔌 Devs, we see you: The new Polly-API is here and it’s OpenAI-compatible. Plug in your favorite tools seamlessly.\n🛡️ Plus, new safety models and aspect ratio fixes for Grok (no more squished masterpieces!).\n\nAlso... new games dropped in Social_Bots. Go play! 🎮🐝\n\nBuild something beautiful today.\n\n🔗 Link in bio to explore the changes!",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#cozypixelart",
+    "#indiedev",
+    "#generativeai",
+    "#buildinpublic",
+    "#8bitart",
+    "#pixelart",
+    "#retrogaming",
+    "#creativecoding",
+    "#aiartcommunity"
+  ],
+  "alt_text": "Three cozy pixel art images. 1. A cute pixel bee with a beret painting in a garden gallery with lime green accents. 2. The pixel bee connecting a glowing cable to a server, representing API updates. 3. The pixel bee playing a retro arcade game, representing new game bots.",
+  "date": "2026-02-15",
+  "generated_at": "2026-02-16T06:23:03.082727+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 7978,
+  "title": "Add Nova Defense to Social_Bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7978",
+  "merged_at": "2026-02-15T17:43:35Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Shields Up, Nova Defense!",
+    "blurb": "A new guardian enters the chat. Nova Defense uses our AI to detect raids and generate defensive imagery for Discord communities.",
+    "summary": "Added Nova Defense, an AI-powered anti-raid Discord bot, to the community apps showcase.",
+    "impact": "Discord server owners can now discover a new tool for protecting their communities using Pollinations' detection and image generation capabilities.",
+    "keywords": [
+      "community",
+      "discord bot",
+      "security",
+      "anti-raid",
+      "showcase"
+    ],
+    "visual_concept": "Nova Defense implies space/stars and protection. Visualizing the Pollinations bee as a space guardian alongside a friendly robot or shield element.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny futuristic visor, standing next to a friendly robot holding a glowing star shield. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel space gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'NOVA DEFENSE'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-02-15/PR-7978.jpg",
+    "prompt": null
+  },
+  "generated_at": "2026-02-15T17:44:17.979781+00:00"
+}

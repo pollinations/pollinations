@@ -1,0 +1,34 @@
+{
+  "pr_number": 7358,
+  "title": "Add TaleCrafter AI to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7358",
+  "merged_at": "2026-02-16T20:01:31Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Once upon a pixel",
+    "blurb": "TaleCrafter AI has joined the library! Now you can weave interactive stories and craft deep characters with a little AI magic.",
+    "summary": "Added TaleCrafter AI, a tool for crafting interactive stories and narratives, to the Creative apps showcase.",
+    "impact": "Users can now discover and access TaleCrafter AI directly through the Pollinations app list.",
+    "keywords": [
+      "storytelling",
+      "narrative",
+      "creative",
+      "writing",
+      "community"
+    ],
+    "visual_concept": "A cozy storytelling scene. The Pollinations bee is acting as a bard or librarian, interacting with a magical book representing TaleCrafter. The book emits story elements (castles, dragons, heroes) in pixel form.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, holding a large open book that glows with lime green (#ecf874) magic. Tiny pixel characters and story elements float out of the pages. Soft pastel gradient background, warm library atmosphere, lo-fi aesthetic like Stardew Valley. Nostalgic and creative."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T20:02:11.133231+00:00"
+}

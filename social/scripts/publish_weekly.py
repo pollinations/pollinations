@@ -198,7 +198,7 @@ def main():
             print("  Reddit VPS credentials not configured — skipping")
 
         # Discord
-        discord_webhook = get_env("DISCORD_WEBHOOK_URL", required=False)
+        discord_webhook = get_env("DISCORD_WEEKLY_WEBHOOK_URL", required=False)
         if discord_webhook:
             discord_path = os.path.join(weekly_dir, "discord.json")
             discord_data = read_news_file(discord_path, github_token, owner, repo)

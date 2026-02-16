@@ -1,0 +1,34 @@
+{
+  "pr_number": 7727,
+  "title": "Add OpenCode Pollinations Plugin to Dev_Tools",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7727",
+  "merged_at": "2026-02-16T19:42:10Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "OpenCode meets the Hive",
+    "blurb": "We've bridged the gap between OpenCode and Pollinations. Now you can access our free and Pro AI models directly within your OpenCode environment.",
+    "summary": "Added the OpenCode Pollinations Plugin to the Dev_Tools registry, enabling direct access to Pollinations AI models within OpenCode.",
+    "impact": "Developers using OpenCode can now seamlessly utilize Pollinations' AI generation capabilities for their projects.",
+    "keywords": [
+      "plugin",
+      "opencode",
+      "dev-tools",
+      "integration",
+      "ai-coding"
+    ],
+    "visual_concept": "The Pollinations bee acting as a bridge builder. Visualizing a connection between a code editor interface (OpenCode) and the organic Pollinations ecosystem. The bee is plugging in a connector.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot connecting a glowing lime green cable between a retro code editor window and a digital flower. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'PLUGIN'. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T19:42:50.530735+00:00"
+}

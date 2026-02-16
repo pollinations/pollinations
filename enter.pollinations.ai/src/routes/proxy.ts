@@ -340,10 +340,21 @@ export const proxyRoutes = new Hono<Env>()
         validator(
             "param",
             z.object({
-                prompt: z.string().min(1).meta({
-                    description: "Text prompt for generation",
-                    example: "Write a haiku about coding",
-                }),
+                prompt: z
+                    .string()
+                    .min(1)
+                    .max(2000)
+                    .refine((val) => {
+                        for (let i = 0; i < val.length; i++) {
+                            const code = val.charCodeAt(i);
+                            if (code >= 0x00 && code <= 0x1f) return false;
+                        }
+                        return true;
+                    }, "Prompt cannot contain control characters")
+                    .meta({
+                        description: "Text prompt for generation",
+                        example: "Write a haiku about coding",
+                    }),
             }),
         ),
         validator("query", GenerateTextRequestQueryParamsSchema),
@@ -403,7 +414,7 @@ export const proxyRoutes = new Hono<Env>()
         // .+ does not match newlines, but [\s\S]+ matches any character including \n
         // This creates a named param for OpenAPI docs while matching any characters
         "/image/:prompt{[\\s\\S]+}",
-        imageCache,
+        // File uploads aren't cached - cache key doesn't include file content, causing cache poisoning
         describeRoute({
             tags: ["gen.pollinations.ai"],
             description: [
@@ -412,7 +423,7 @@ export const proxyRoutes = new Hono<Env>()
                 "Upload an image file as multipart/form-data for Image-to-Image (img2img) generation.",
                 "",
                 "**Form Parameters:**",
-                "- `image`: The image file (multipart file upload). Supported: JPEG, PNG, WebP, GIF (max 50MB)",
+                "- `image`: The image file (multipart file upload). Supported: JPEG, PNG, WebP, GIF (max 7MB)",
                 "",
                 "**Query Parameters:**",
                 "All standard image generation parameters (model, width, height, seed, etc.) work identically to the GET endpoint.",
@@ -442,11 +453,22 @@ export const proxyRoutes = new Hono<Env>()
         validator(
             "param",
             z.object({
-                prompt: z.string().min(1).meta({
-                    description:
-                        "Text description for image generation with the uploaded reference",
-                    example: "a beautiful sunset over mountains",
-                }),
+                prompt: z
+                    .string()
+                    .min(1)
+                    .max(2000)
+                    .refine((val) => {
+                        for (let i = 0; i < val.length; i++) {
+                            const code = val.charCodeAt(i);
+                            if (code >= 0x00 && code <= 0x1f) return false;
+                        }
+                        return true;
+                    }, "Prompt cannot contain control characters")
+                    .meta({
+                        description:
+                            "Text description for image generation with the uploaded reference",
+                        example: "a beautiful sunset over mountains",
+                    }),
             }),
         ),
         validator("query", GenerateImageRequestQueryParamsSchema),
@@ -477,8 +499,8 @@ export const proxyRoutes = new Hono<Env>()
                     });
                 }
 
-                // Validate file size
-                const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB limit
+                // Validate file size - 7MB limit prevents Cloudflare Workers heap exhaustion
+                const MAX_FILE_SIZE = 7 * 1024 * 1024;
                 const fileBuffer = await imageFile.arrayBuffer();
                 if (fileBuffer.byteLength > MAX_FILE_SIZE) {
                     throw new HTTPException(413, {
@@ -518,9 +540,10 @@ export const proxyRoutes = new Hono<Env>()
                     c,
                     `${c.env.IMAGE_SERVICE_URL}/prompt`,
                 );
+                // Encode prompt to prevent path traversal attacks (e.g., ../../admin/config)
                 targetUrl.pathname = joinPaths(
                     targetUrl.pathname,
-                    c.req.param("prompt"),
+                    encodeURIComponent(c.req.param("prompt")),
                 );
 
                 // Add all query parameters from original request
@@ -633,11 +656,22 @@ export const proxyRoutes = new Hono<Env>()
         validator(
             "param",
             z.object({
-                prompt: z.string().min(1).meta({
-                    description:
-                        "Text description of the image or video to generate",
-                    example: "a beautiful sunset over mountains",
-                }),
+                prompt: z
+                    .string()
+                    .min(1)
+                    .max(2000)
+                    .refine((val) => {
+                        for (let i = 0; i < val.length; i++) {
+                            const code = val.charCodeAt(i);
+                            if (code >= 0x00 && code <= 0x1f) return false;
+                        }
+                        return true;
+                    }, "Prompt cannot contain control characters")
+                    .meta({
+                        description:
+                            "Text description of the image or video to generate",
+                        example: "a beautiful sunset over mountains",
+                    }),
             }),
         ),
         validator("query", GenerateImageRequestQueryParamsSchema),

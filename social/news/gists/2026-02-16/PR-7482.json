@@ -1,0 +1,34 @@
+{
+  "pr_number": 7482,
+  "title": "Add Personic to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7482",
+  "merged_at": "2026-02-16T20:03:48Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Instant Personalities",
+    "blurb": "Meet Personic: the newest app in our creative garden. Turn simple prompts into full character personas with matching portraits instantly.",
+    "summary": "Added Personic to the Creative showcase, enabling users to generate structured AI personas and matching images from brief prompts.",
+    "impact": "Creators can now rapidly prototype detailed characters with consistent visual identities.",
+    "keywords": [
+      "community",
+      "app",
+      "personas",
+      "character-design",
+      "creative"
+    ],
+    "visual_concept": "The concept focuses on 'creation of identity'. A digital character card or profile being assembled. The bee is acting as the creator/summoner.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a glowing holographic character card. Soft lime green (#ecf874) and lavender gradient background. A tiny pixelated avatar is materializing above the card. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'PERSONIC'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T20:04:29.211729+00:00"
+}

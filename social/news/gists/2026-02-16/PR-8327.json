@@ -1,0 +1,34 @@
+{
+  "pr_number": 8327,
+  "title": "Add P2S to Creative",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8327",
+  "merged_at": "2026-02-16T20:42:27Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Lights, Camera, Consistency!",
+    "blurb": "We've added P2S to the Creative suite—your AI films just got a major upgrade in scene memory and consistency.",
+    "summary": "Added P2S, an image consistency engine for AI filmmaking with scene memory, to the Creative apps collection.",
+    "impact": "Creators can now maintain character and scene consistency across frames when generating AI video content.",
+    "keywords": [
+      "filmmaking",
+      "video",
+      "consistency",
+      "creative tools",
+      "P2S"
+    ],
+    "visual_concept": "The Pollinations bee as a movie director. Key symbols: film strips, director's megaphone, clapperboard. The concept highlights 'consistency' by showing the bee looking at a film strip where the frames match perfectly.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret and holding a megaphone. She is examining a glowing film strip where every frame is perfect. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'ACTION'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T20:43:10.357532+00:00"
+}

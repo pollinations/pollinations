@@ -1,10 +1,10 @@
 # Pollinations — The Creator Economy for AI Micro-Apps
 
-**Creators build— a calorie tracker that reads food photos, bedtime stories for kids, a Roblox game with 51M visits. When users love them, they pay with Pollen. 1,000+ apps live today.**
+**Creators build— a calorie tracker that reads food photos, bedtime stories for kids, a Roblox game with 51M visits. When users love them, they pay with Pollen. 500+ apps live today.**
 
 ---
 
-| 3M+ end-users/mo | 1,000+ live apps | 600+ new devs/day | 17K+ Discord | 4K GitHub stars |
+| 3M+ end-users/mo | 500+ live apps | 600+ new devs/day | 17K+ Discord | 4K GitHub stars |
 | :---: | :---: | :---: | :---: | :---: |
 
 ---
@@ -23,7 +23,7 @@
 
 ## The Problem
 
-**For creators:** Success punishes you. Your app goes viral and suddenly you owe thousands in compute bills. Every other platform charges the developer — so the more users you get, the more you pay.
+**For creators:** Success punishes you. The more users you get, the more you pay.
 
 **For users:** Every micro-app wants its own subscription. No one pays $10/month for a calorie tracker.
 
@@ -43,9 +43,9 @@ Users buy Pollen once and spend it everywhere. More apps = more reasons to buy. 
 
 **We sell through creators, not to them.** Fal, Replicate, OpenRouter charge developers. We let creators build free, then monetize the end users they bring.
 
-**Apps are storefronts and templates.** Each app brings its own users — and because most are open source, every app is also a template others fork and adapt. One app becomes ten.
+**Apps are storefronts and templates.** Each app brings users — and since most are open source, each one spawns more.
 
-**Community runs itself.** Discord members onboard new creators, share starter kits, answer questions. No support team needed.
+**Community runs itself.** Members onboard creators, share starter kits, handle support.
 
 ## Team
 
@@ -73,7 +73,7 @@ Models are commoditizing — value is shifting to distribution. The winners will
 
 ## Defensibility
 
-Hundreds of apps in production — switching means breaking real products.
+500+ apps in production — switching means breaking real products.
 
 Network effects — more apps → more users → more creators → repeat.
 

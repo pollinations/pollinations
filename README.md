@@ -15,6 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [AI Router](https://twangymoney.pythonanywhere.com/docs/ai-router) | OpenRouter-style workstation with dark UI, branching chat history, and vision support. | @TwangyMoney |
 | [Tenna AI](https://tennaai.com) | AI mental health companion with mood analysis, guided journal, and relaxation features. | @b1onix |
 | [PolliBench](https://pollibench.netlify.app/) | Benchmark all Pollinations models automatically with frontend HTML questions. | @notlousybook |
 | [AI Quiz Simulator](https://mrlearner1606.github.io/quiz/) | Free AI-powered quiz simulator for competitive exams with timer, scoring, and explanations. | @mrlearner1606 |
@@ -24,7 +25,6 @@
 | [EcubzBOT](https://t.me/eCubzBot) | Telegram inline AI assistant for generating answers directly within chats. | @AntikFull |
 | [Gen-Wal](https://gen-wal.laptopserver.dev) | Auto-refreshing wallpapers aligned to your goals to boost focus and habit. | @nicemit |
 | [SimpleTools](https://simpletools.lol/) | Utilities: automatic citation generator, AI humanizer, and scrambler. | @rhenryw |
-| [OpenCode Pollinations Plugin](https://www.npmjs.com/package/opencode-pollinations-plugin) | Bridge between OpenCode and Pollinations; use free or Pro AI models in your IDE. | @fkom13 |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

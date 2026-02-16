@@ -18,8 +18,8 @@
  */
 
 import { execSync } from "node:child_process";
-import { readFileSync, existsSync } from "node:fs";
-import { boolean, command, run, string, number } from "@drizzle-team/brocli";
+import { existsSync, readFileSync } from "node:fs";
+import { boolean, command, number, run, string } from "@drizzle-team/brocli";
 
 type Environment = "staging" | "production";
 

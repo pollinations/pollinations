@@ -2,13 +2,10 @@
 """
 Tier 3: Weekly Publish
 
-Sunday 18:00 UTC cron:
-  1. Find the weekly PR for this week (branch: weekly-digest-YYYY-MM-DD)
-  2. If not merged → skip
-  3. If merged → publish all 5 platforms:
-     - Buffer staging: Twitter, LinkedIn, Instagram
-     - Reddit via VPS/Devvit deployment
-     - Discord webhook post
+Publishes weekly content from the news branch. Two modes via PUBLISH_MODE env var:
+  - "buffer": Stage Twitter + LinkedIn + Instagram to Buffer (called by NEWS_summary.yml after generation)
+  - "direct": Deploy Reddit to VPS + Discord webhook (called by NEWS_publish.yml cron at 18:00 UTC Sunday)
+  - "all" (default): Both
 
 See social/PIPELINE.md for full architecture.
 """
@@ -22,7 +19,13 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Optional
 import base64
 import io
-from common import get_env, github_api_request, GITHUB_API_BASE, deploy_reddit_post, DISCORD_CHAR_LIMIT, DISCORD_CHUNK_SIZE
+from common import (
+    get_env,
+    read_news_file,
+    deploy_reddit_post,
+    DISCORD_CHAR_LIMIT,
+    DISCORD_CHUNK_SIZE,
+)
 from buffer_publish import (
     publish_twitter_post,
     publish_linkedin_post,
@@ -36,74 +39,22 @@ WEEKLY_REL_DIR = "social/news/weekly"
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
-def get_last_sunday() -> str:
-    """Get the date of the most recent Sunday (the week_end for the weekly summary).
-    The weekly covers Mon→Sun. This runs on Sunday 18:00 UTC,
-    so 'last Sunday' is today."""
+def get_week_end() -> str:
+    """Get the week_end date from env var or compute from WEEK_START_DATE.
+    Matches generate_weekly.py which uses start + 6 days (Sun→Sat window).
+    Falls back to most recent Saturday UTC if neither override is set."""
+    override = get_env("WEEK_END_DATE", required=False)
+    if override:
+        return override
+    # Match generate_weekly.py's logic: start + 6 days
+    week_start = get_env("WEEK_START_DATE", required=False)
+    if week_start:
+        start = datetime.strptime(week_start, "%Y-%m-%d").date()
+        return (start + timedelta(days=6)).strftime("%Y-%m-%d")
     today = datetime.now(timezone.utc).date()
-    # Sunday = weekday 6. Find most recent Sunday (including today).
-    days_since_sunday = (today.weekday() - 6) % 7
-    sunday = today - timedelta(days=days_since_sunday)
-    return sunday.strftime("%Y-%m-%d")
-
-
-def find_merged_weekly_pr(github_token: str, owner: str, repo: str,
-                          week_end: str) -> Optional[int]:
-    """Check if the weekly summary PR for this week was merged.
-    Returns PR number if merged, None otherwise."""
-    branch = f"weekly-digest-{week_end}"
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}",
-    }
-
-    # Search for closed PRs from this branch
-    resp = github_api_request(
-        "GET",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls"
-        f"?head={owner}:{branch}&state=closed&per_page=5",
-        headers=headers,
-    )
-
-    if resp.status_code != 200:
-        print(f"  Error searching PRs: {resp.status_code}")
-        return None
-
-    for pr in resp.json():
-        if pr.get("merged_at"):
-            return pr["number"]
-
-    return None
-
-
-def read_weekly_file(path: str, github_token: str, owner: str, repo: str) -> Optional[Dict]:
-    """Read a JSON file from the repo (local or API)."""
-    # Try local first
-    if os.path.exists(path):
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except (json.JSONDecodeError, OSError):
-            pass
-
-    # Fall back to GitHub API
-    import base64
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}",
-    }
-    resp = github_api_request(
-        "GET",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{path}",
-        headers=headers,
-    )
-    if resp.status_code == 200:
-        content = base64.b64decode(resp.json()["content"]).decode()
-        try:
-            return json.loads(content)
-        except json.JSONDecodeError:
-            pass
-    return None
+    days_since_saturday = (today.weekday() - 5) % 7
+    saturday = today - timedelta(days=days_since_saturday)
+    return saturday.strftime("%Y-%m-%d")
 
 
 def chunk_message(message: str, max_length: int = DISCORD_CHUNK_SIZE):
@@ -165,99 +116,106 @@ def post_to_discord(webhook_url: str, message: str, image_url: str = None) -> bo
     return True
 
 
+def stage_buffer_posts(weekly_dir: str, buffer_token: str, github_token: str, owner: str, repo: str) -> Dict[str, bool]:
+    """Stage Twitter + LinkedIn + Instagram to Buffer. Returns {platform: success}."""
+    results = {}
+
+    for platform, filename, publish_fn in [
+        ("twitter", "twitter.json", publish_twitter_post),
+        ("linkedin", "linkedin.json", publish_linkedin_post),
+        ("instagram", "instagram.json", publish_instagram_post),
+    ]:
+        post_path = os.path.join(weekly_dir, filename)
+        post_data = read_news_file(post_path, github_token, owner, repo)
+
+        if not post_data:
+            print(f"  No {filename} found — skipping {platform}")
+            continue
+
+        print(f"\n  Staging {platform}...")
+        try:
+            results[platform] = publish_fn(post_data, buffer_token)
+        except Exception as e:
+            print(f"  Error staging {platform}: {e}")
+            results[platform] = False
+
+    return results
+
+
 # ── Main ─────────────────────────────────────────────────────────────
 
 def main():
     print("=== Tier 3: Weekly Publish ===")
 
     github_token = get_env("GITHUB_TOKEN")
-    buffer_token = get_env("BUFFER_ACCESS_TOKEN")
-    discord_webhook = get_env("DISCORD_WEBHOOK_URL")
     repo_full = get_env("GITHUB_REPOSITORY")
-    week_end_override = get_env("WEEK_END_DATE", required=False)
+    publish_mode = get_env("PUBLISH_MODE", required=False) or "all"
 
     owner, repo = repo_full.split("/")
-    week_end = week_end_override or get_last_sunday()
+    week_end = get_week_end()
+
     print(f"  Week ending: {week_end}")
+    print(f"  Mode: {publish_mode}")
 
-    # ── Check if weekly PR was merged ────────────────────────────────
-    print(f"\n[1/2] Checking for merged weekly PR...")
-    pr_number = find_merged_weekly_pr(github_token, owner, repo, week_end)
-
-    if not pr_number:
-        print("  Weekly PR not merged — skipping publish.")
-        print("=== Done (nothing to publish) ===")
-        return
-
-    print(f"  Found merged PR #{pr_number}")
-
-    # ── Publish all 5 platforms ──────────────────────────────────────
-    print(f"\n[2/2] Publishing to all platforms...")
-    weekly_dir = f"{WEEKLY_REL_DIR}/{week_end}"
+    weekly_dir = os.path.join("social", "news", "weekly", week_end)
     results = {}
 
-    # Twitter
-    twitter_data = read_weekly_file(f"{weekly_dir}/twitter.json", github_token, owner, repo)
-    if twitter_data:
-        print("  Twitter...")
-        results["twitter"] = publish_twitter_post(twitter_data, buffer_token)
-    else:
-        print("  No twitter.json — skipping")
+    # ── Buffer staging (Twitter + LinkedIn + Instagram) ───────────
+    if publish_mode in ("buffer", "all"):
+        buffer_token = get_env("BUFFER_ACCESS_TOKEN")
+        print(f"\n[Buffer] Staging to Buffer...")
+        buffer_results = stage_buffer_posts(weekly_dir, buffer_token, github_token, owner, repo)
+        results.update(buffer_results)
+        for platform, success in buffer_results.items():
+            status = "OK" if success else "FAILED"
+            print(f"  {platform}: {status}")
 
-    # LinkedIn
-    linkedin_data = read_weekly_file(f"{weekly_dir}/linkedin.json", github_token, owner, repo)
-    if linkedin_data:
-        print("  LinkedIn...")
-        results["linkedin"] = publish_linkedin_post(linkedin_data, buffer_token)
-    else:
-        print("  No linkedin.json — skipping")
+    # ── Direct channels (Reddit + Discord) ────────────────────────
+    if publish_mode in ("direct", "all"):
+        print(f"\n[Direct] Publishing direct channels...")
 
-    # Instagram
-    instagram_data = read_weekly_file(f"{weekly_dir}/instagram.json", github_token, owner, repo)
-    if instagram_data:
-        print("  Instagram...")
-        results["instagram"] = publish_instagram_post(instagram_data, buffer_token)
-    else:
-        print("  No instagram.json — skipping")
+        # Reddit (VPS/Devvit deployment)
+        vps_host = get_env("REDDIT_VPS_HOST", required=False)
+        vps_user = get_env("REDDIT_VPS_USER", required=False)
+        vps_ssh_key_raw = get_env("REDDIT_VPS_SSH_KEY", required=False)
+        vps_ssh_key = vps_ssh_key_raw.strip() if vps_ssh_key_raw else None
 
-    # Reddit (VPS/Devvit deployment)
-    vps_host = get_env("REDDIT_VPS_HOST", required=False)
-    vps_user = get_env("REDDIT_VPS_USER", required=False)
-    vps_ssh_key_raw = get_env("REDDIT_VPS_SSH_KEY", required=False)
-    vps_ssh_key = vps_ssh_key_raw.strip() if vps_ssh_key_raw else None
-    
+        if vps_host and vps_user and vps_ssh_key:
+            import paramiko
+            private_key_str = base64.b64decode(vps_ssh_key).decode("utf-8")
+            key_file = io.StringIO(private_key_str)
+            pkey = paramiko.Ed25519Key.from_private_key(key_file)
 
-    if vps_host and vps_user and vps_ssh_key:
-        import paramiko
-        private_key_str = base64.b64decode(vps_ssh_key).decode("utf-8")
-        key_file = io.StringIO(private_key_str)
-        pkey = paramiko.Ed25519Key.from_private_key(key_file)
-        reddit_data = read_weekly_file(f"{weekly_dir}/reddit.json", github_token, owner, repo)
-        if reddit_data:
-            print("  Reddit...")
-            results["reddit"] = deploy_reddit_post(reddit_data, vps_host, vps_user, pkey)
+            reddit_path = os.path.join(weekly_dir, "reddit.json")
+            reddit_data = read_news_file(reddit_path, github_token, owner, repo)
+
+            if reddit_data:
+                print("  Reddit...")
+                results["reddit"] = deploy_reddit_post(reddit_data, vps_host, vps_user, pkey)
+            else:
+                print("  No reddit.json — skipping")
         else:
-            print("  No reddit.json — skipping")
-    else:
-        print("  Reddit VPS credentials not configured — skipping")
+            print("  Reddit VPS credentials not configured — skipping")
 
-    # Discord
-    discord_data = read_weekly_file(f"{weekly_dir}/discord.json", github_token, owner, repo)
-    if discord_data and discord_data.get("message"):
-        print("  Discord...")
-        discord_image = discord_data.get("image", {}).get("url")
-        results["discord"] = post_to_discord(discord_webhook, discord_data["message"], discord_image)
-    else:
-        print("  No discord.json — skipping")
+        # Discord
+        discord_webhook = get_env("DISCORD_WEEKLY_WEBHOOK_URL", required=False)
+        if discord_webhook:
+            discord_path = os.path.join(weekly_dir, "discord.json")
+            discord_data = read_news_file(discord_path, github_token, owner, repo)
+
+            if discord_data and discord_data.get("message"):
+                print("  Discord...")
+                discord_image = discord_data.get("image", {}).get("url")
+                results["discord"] = post_to_discord(discord_webhook, discord_data["message"], discord_image)
+            else:
+                print("  No discord.json — skipping")
+        else:
+            print("  Discord webhook not configured — skipping")
 
     # Summary
-    print("\n  Results:")
-    for platform, success in results.items():
-        print(f"    {platform}: {'OK' if success else 'FAILED'}")
-
     failed = [p for p, s in results.items() if not s]
     if failed:
-        print(f"\n  Failed platforms: {', '.join(failed)}")
+        print(f"\n=== Done with failures: {', '.join(failed)} ===")
         sys.exit(1)
 
     print("\n=== Done ===")

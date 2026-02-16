@@ -18,38 +18,52 @@
     "params": {}
   },
   "response": {
-    "status": 404,
-    "statusText": "Not Found",
+    "status": 200,
+    "statusText": "OK",
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "314",
+      "content-length": "434",
       "content-type": "application/json; charset=utf-8",
-      "date": "Mon, 09 Feb 2026 12:14:34 GMT",
-      "etag": "W/\"13a-5s5272e6jakniDWR/Pzvhon8KCU\"",
+      "date": "Sat, 14 Feb 2026 18:19:01 GMT",
+      "etag": "W/\"1b2-EF9PtBB1ADeRg8NGnRYw6oK+wE4\"",
       "keep-alive": "timeout=5",
-      "x-powered-by": "Express"
+      "x-model-used": "global.anthropic.claude-opus-4-5-20251101-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "4",
+      "x-usage-prompt-text-tokens": "289"
     },
     "body": {
       "type": "json",
       "data": {
-        "error": "Not Found",
-        "message": "Model not found: claude-legacy",
-        "requestId": "kmhner",
-        "requestParameters": {
-          "messages": [
-            {
-              "role": "user",
-              "content": "Is Berlin the capital of Germany? Reply yes or no."
-            }
-          ],
-          "jsonMode": false,
-          "seed": 42,
-          "model": "claude-legacy",
-          "referrer": null,
-          "isPrivate": true,
-          "voice": "alloy",
-          "private": true
+        "id": "pllns_9ef5d3081b988234a54280afdf2ca6b4",
+        "object": "chat.completion",
+        "created": 1771093141,
+        "model": "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        "provider": "bedrock",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Yes",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "Yes"
+                }
+              ]
+            },
+            "finish_reason": "end_turn"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 289,
+          "completion_tokens": 4,
+          "total_tokens": 293,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
         }
       }
     }

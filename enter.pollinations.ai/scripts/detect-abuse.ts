@@ -23,7 +23,7 @@
  */
 
 import { writeFileSync } from "node:fs";
-import { type ScoredUser, formatDate, scoreUsers } from "./llm-scorer.ts";
+import { formatDate, type ScoredUser, scoreUsers } from "./llm-scorer.ts";
 
 // Configuration
 const SCORE_THRESHOLDS = {

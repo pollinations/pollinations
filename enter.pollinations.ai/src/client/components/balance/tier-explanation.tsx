@@ -87,7 +87,9 @@ export const TierExplanation: FC = () => {
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <p className={requirementLabelStyle}>To unlock</p>
-                        <p className="text-xs text-gray-500">Verified account</p>
+                        <p className="text-xs text-gray-500">
+                            Verified account
+                        </p>
                         <p className="text-[10px] text-emerald-600 mt-0.5">
                             Auto-upgraded daily
                         </p>

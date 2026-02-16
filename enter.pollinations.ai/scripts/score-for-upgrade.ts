@@ -40,17 +40,27 @@ const MAX_USERS_PER_RUN = 8000;
 
 type Environment = "staging" | "production";
 
-function queryD1(query: string, env: Environment): Array<Record<string, unknown>> {
+function queryD1(
+    query: string,
+    env: Environment,
+): Array<Record<string, unknown>> {
     const sanitized = query.replace(/\n/g, " ").replace(/"/g, '\\"');
     try {
         const result = execSync(
             `npx wrangler d1 execute DB --remote --env ${env} --json --command "${sanitized}"`,
-            { encoding: "utf-8", maxBuffer: 100 * 1024 * 1024, timeout: 60_000 },
+            {
+                encoding: "utf-8",
+                maxBuffer: 100 * 1024 * 1024,
+                timeout: 60_000,
+            },
         );
         const data = JSON.parse(result);
         return data[0]?.results || [];
     } catch (error) {
-        console.error("D1 query failed:", error instanceof Error ? error.message : error);
+        console.error(
+            "D1 query failed:",
+            error instanceof Error ? error.message : error,
+        );
         return [];
     }
 }
@@ -152,24 +162,36 @@ function scoreUser(
     username: string,
 ): ScoreResult {
     if (!data) {
-        return { username, approved: false, reason: "User not found", details: null };
+        return {
+            username,
+            approved: false,
+            reason: "User not found",
+            details: null,
+        };
     }
 
     const created = new Date(data.createdAt as string);
     const ageDays = Math.floor((Date.now() - created.getTime()) / 86400000);
 
-    const repos = (data.repositories as { totalCount: number })?.totalCount || 0;
+    const repos =
+        (data.repositories as { totalCount: number })?.totalCount || 0;
     const commits =
         (data.contributionsCollection as { totalCommitContributions: number })
             ?.totalCommitContributions || 0;
     const nodes =
-        ((data.repositories as { nodes: Array<{ stargazerCount: number } | null> })?.nodes) || [];
-    const stars = nodes.reduce(
-        (sum, n) => sum + (n?.stargazerCount || 0),
-        0,
-    );
+        (
+            data.repositories as {
+                nodes: Array<{ stargazerCount: number } | null>;
+            }
+        )?.nodes || [];
+    const stars = nodes.reduce((sum, n) => sum + (n?.stargazerCount || 0), 0);
 
-    const metrics: Record<string, number> = { age_days: ageDays, repos, commits, stars };
+    const metrics: Record<string, number> = {
+        age_days: ageDays,
+        repos,
+        commits,
+        stars,
+    };
 
     const scores: Record<string, number> = {};
     for (const cfg of SCORING) {
@@ -220,8 +242,16 @@ async function fetchAndScoreBatch(
                 const resetAt = response.headers.get("X-RateLimit-Reset");
                 let wait = 60;
                 if (retryAfter) wait = parseInt(retryAfter, 10) + 1;
-                else if (resetAt) wait = Math.max(parseInt(resetAt, 10) - Math.floor(Date.now() / 1000), 0) + 1;
-                console.log(`  Rate limited (${response.status}), waiting ${wait}s...`);
+                else if (resetAt)
+                    wait =
+                        Math.max(
+                            parseInt(resetAt, 10) -
+                                Math.floor(Date.now() / 1000),
+                            0,
+                        ) + 1;
+                console.log(
+                    `  Rate limited (${response.status}), waiting ${wait}s...`,
+                );
                 await new Promise((r) => setTimeout(r, wait * 1000));
                 continue;
             }
@@ -271,7 +301,9 @@ async function validateUsers(usernames: string[]): Promise<ScoreResult[]> {
         approvedCount += batchResults.filter((r) => r.approved).length;
         const pct = ((approvedCount / results.length) * 100).toFixed(0);
         const progress = Math.min(i + BATCH_SIZE, usernames.length);
-        console.log(`  ${progress}/${usernames.length} validated (${pct}% approved)`);
+        console.log(
+            `  ${progress}/${usernames.length} validated (${pct}% approved)`,
+        );
 
         // Rate limiting between batches (same as Python)
         if (i + BATCH_SIZE < usernames.length) {
@@ -338,11 +370,15 @@ const upgradeCommand = command({
         console.log("Fetching eligible users from D1...");
         const { newUsers, sliceUsers, totalOld } = fetchEligibleUsers(env);
         console.log(`  New users (last 24h): ${newUsers.length}`);
-        console.log(`  Today's slice: ${sliceUsers.length} (of ${totalOld} total older)`);
+        console.log(
+            `  Today's slice: ${sliceUsers.length} (of ${totalOld} total older)`,
+        );
 
         let users = [...newUsers, ...sliceUsers];
         if (users.length > MAX_USERS_PER_RUN) {
-            console.log(`  Limiting to ${MAX_USERS_PER_RUN} (was ${users.length})`);
+            console.log(
+                `  Limiting to ${MAX_USERS_PER_RUN} (was ${users.length})`,
+            );
             users = users.slice(0, MAX_USERS_PER_RUN);
         }
         console.log(`  Total to process: ${users.length}`);
@@ -357,26 +393,36 @@ const upgradeCommand = command({
         const sliceResults: ScoreResult[] = [];
 
         if (newUsers.length > 0) {
-            console.log(`\nPhase 1: Validating ${newUsers.length} NEW users (last 24h)...`);
+            console.log(
+                `\nPhase 1: Validating ${newUsers.length} NEW users (last 24h)...`,
+            );
             const results = await validateUsers(newUsers);
             newResults.push(...results);
             const approved = results.filter((r) => r.approved).length;
-            console.log(`  Approved: ${approved}/${results.length} (${((approved / results.length) * 100).toFixed(0)}%)`);
+            console.log(
+                `  Approved: ${approved}/${results.length} (${((approved / results.length) * 100).toFixed(0)}%)`,
+            );
         }
 
         if (sliceUsers.length > 0) {
-            console.log(`\nPhase 2: Validating ${sliceUsers.length} SLICE users (day ${weekday + 1}/7)...`);
+            console.log(
+                `\nPhase 2: Validating ${sliceUsers.length} SLICE users (day ${weekday + 1}/7)...`,
+            );
             const results = await validateUsers(sliceUsers);
             sliceResults.push(...results);
             const approved = results.filter((r) => r.approved).length;
-            console.log(`  Approved: ${approved}/${results.length} (${((approved / results.length) * 100).toFixed(0)}%)`);
+            console.log(
+                `  Approved: ${approved}/${results.length} (${((approved / results.length) * 100).toFixed(0)}%)`,
+            );
         }
 
         const allResults = [...newResults, ...sliceResults];
         const approved = allResults.filter((r) => r.approved);
         const rejected = allResults.filter((r) => !r.approved);
 
-        console.log(`\nTotal: ${approved.length} approved, ${rejected.length} rejected`);
+        console.log(
+            `\nTotal: ${approved.length} approved, ${rejected.length} rejected`,
+        );
 
         if (rejected.length > 0) {
             console.log("\n  Rejected:");
@@ -390,8 +436,12 @@ const upgradeCommand = command({
 
         if (opts.verbose) {
             console.log("\nScore breakdown (first 20):");
-            console.log(`  ${"Username".padEnd(25)} ${"Age".padEnd(12)} ${"Repos".padEnd(12)} ${"Commits".padEnd(12)} ${"Stars".padEnd(12)} Total`);
-            console.log(`  ${"-".repeat(25)} ${"-".repeat(12)} ${"-".repeat(12)} ${"-".repeat(12)} ${"-".repeat(12)} -----`);
+            console.log(
+                `  ${"Username".padEnd(25)} ${"Age".padEnd(12)} ${"Repos".padEnd(12)} ${"Commits".padEnd(12)} ${"Stars".padEnd(12)} Total`,
+            );
+            console.log(
+                `  ${"-".repeat(25)} ${"-".repeat(12)} ${"-".repeat(12)} ${"-".repeat(12)} ${"-".repeat(12)} -----`,
+            );
             for (const r of allResults.slice(0, 20)) {
                 const d = r.details;
                 if (d) {

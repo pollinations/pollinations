@@ -31,25 +31,13 @@
 
 ## Characters — Recurring Cast
 
-Rotate between these characters across posts. The bee should appear in most images but doesn't have to be the star of every one.
+{characters}
 
-### The Bee (primary mascot)
-{bee_character}
+Rotate between these characters across posts. Polly (the bee) is the main character and should appear in most images but doesn't have to be the star of every one. The others are side characters — use one, two, or several depending on the scene.
 
-- Give her a thematic accessory per image — reading glasses, tool belt, tiny scarf, headphones, painter's beret. Match the accessory to the scene.
+- Give Polly a thematic accessory per image — reading glasses, tool belt, tiny scarf, headphones, painter's beret. Match the accessory to the scene.
 - Keep her proportions consistent — never elongated or insect-like
-- Personality: observant, slightly above-it-all but warm. the one who notices things.
-
-### The Pixel Cat (recurring guest)
-- White cat with black patches, sitting upright, half-closed eyes
-- Naps on warm server racks, sits on keyboards, ignores humans
-- Personality: aloof, unbothered. present in scenes but never working.
-- Inspired by CatGPT — sardonic feline energy in pixel form
-
-### Tiny Pixel Devs (community)
-- Small 8-bit developer characters, diverse, chunky sprites
-- Tending code-plants, fixing things, building together
-- They represent the community — always in groups, never solo hero shots
+- Personality: observant, slightly above-it-all but warm. The one who notices things.
 
 ### Supporting Elements
 - Pixel flowers, gardens, seeds, blooming plants (nature/growth motifs)
@@ -61,7 +49,7 @@ Rotate between these characters across posts. The bee should appear in most imag
 
 - Cozy pixel art style with soft lighting
 - Lime green `#ecf874` prominently
-- At least one character from the recurring cast (bee, cat, tiny devs)
+- At least one character from the cast (Polly, Pixel, Shard, Goo, Loop)
 - Nature/growth elements (flowers, gardens, vines, code-plants)
 - Warm, inviting atmosphere
 - Style keywords in every prompt: "cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes"

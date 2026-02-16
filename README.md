@@ -15,6 +15,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [OpenCode Pollinations Plugin](https://www.npmjs.com/package/opencode-pollinations-plugin) | Bridge between OpenCode and Pollinations; use free or Pro AI models in your IDE. | @fkom13 |
 | [LandPPT](https://landppt.com) | LLM-powered platform converting documents into professional PPT presentations. | @sligter |
 | [SILENOS](https://www.silenos.es) | AI creative production suite with art studios, storytelling, music, and multi-modal generation. | @todoh |
 | [SAIL Solver](https://ail-solver.vercel.app) | Academic test-solving tool that generates answers for multiple-choice and open-ended questions. | @unKnownNG |
@@ -24,7 +25,6 @@
 | [7Studio](https://7studio.edgeone.app) | AI image generation studio with prompt input, model selection, and gallery display. | @ims111we-cmd |
 | [AI Studio](https://ai-studio.puter.site) | Chat and audio AI interface with text-to-speech and conversation features. | @Chess-Base |
 | [Pollinations.ai Image Model Comparison](https://dseeker.github.io/pollinations/image-comparison/) | Side-by-side comparison of AI image generation models — test cost, speed, quality. | @dseeker |
-| [My Web Site](https://proyectodescartes.org/IATools/85_Generador_de_c%C3%B3digo_con_IA/ejemplos/game.html) | Sitio web para proyectos de aula de bachillerato con estructura completa. | @theteacherbot |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

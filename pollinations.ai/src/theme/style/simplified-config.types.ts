@@ -65,6 +65,7 @@ export interface ShadowsMacro {
 
 export interface BrandSpecialMacro {
     brandMain: string;
+    accent: string;
     logoMain: string;
     logoAccent: string;
     indicatorImage: string;

@@ -329,7 +329,7 @@ Respond with ONLY a JSON object (no markdown, no explanation):
     # Add row using the prepend script
     os.environ["NEW_ROW"] = new_row
     run_cmd(["node", ".github/scripts/app-prepend-row.js"])
-    run_cmd(["node", ".github/scripts/app-update-readme.js"])
+    run_cmd(["node", ".github/scripts/app-update-greenhouse.js"])
 
     # Configure git
     run_cmd(["git", "config", "user.name", BOT_NAME])

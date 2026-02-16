@@ -1,48 +1,107 @@
 // AppsPage content configuration
+import type { App } from "../../hooks/useApps";
 
 export const APPS_PAGE = {
     title: "Ecosystem",
-
     subtitle:
         "Paradise-built apps, tools, and experiments—pollinations.ai-powered. Browse, try, ship.",
+    noAppsMessage: "No apps found in this category yet.",
+    authorPrefix: "by",
 
-    // Submit app CTA
+    // CTAs
     submitCtaTitle: "Built something cool?",
     submitCtaDescription: "Get featured in the showcase and earn Pollen!",
     submitCtaButton: "Submit App",
+    pollenCtaTitle: "🏵️ Add Pollen to Your App",
+    pollenCtaDescription:
+        "Let users sign in with Pollinations. They pay for usage, you pay $0.",
+    pollenCtaButton: "Learn More",
 
-    // BYOP CTA
-    byopCtaTitle: "Bring Your Own Pollen",
-    byopCtaDescription:
-        "Users pay for their own AI usage. You pay $0. Ship apps without API costs.",
-    byopCtaButton: "Learn More",
+    // Badges & tooltips
+    pollenBadge: "🏵️ POLLEN",
+    pollenTooltip: "Sign in with Pollinations — Pollen covers usage",
+    buzzBadge: "🐝 BUZZ",
+    buzzTooltip: "100+ API requests in the last 24 hours",
+    newBadge: "🫧 FRESH",
+    newTooltip: "Recently added to the ecosystem",
 
-    noAppsMessage: "No apps found in this category yet.",
-
-    // Badges
-    byopBadge: "BYOP",
-    trendingBadge: "TRENDING",
-
-    // Tooltips
-    byopTooltip: "Bring Your Own Pollen — users pay for their own usage",
-    trendingTooltipSuffix: "requests in 24h",
-
-    // Card labels
-    authorPrefix: "by",
-
-    // Filter labels
-    byopFilterLabel: "BYOP",
-    newFilterLabel: "New",
+    // Legend
+    pollenLegendDesc: "In-app sign in with pollinations.ai",
+    pollenDocsLink: "</> Docs",
+    buzzLegendDesc: "100+ requests / 24h",
+    newLegendDesc: "Recently added",
 };
 
-// Category mapping for display
-// IDs must match APPS.md Category column values (lowercased)
-export const CATEGORIES = [
-    { id: "creative", label: "Creative" },
-    { id: "chat", label: "Chat" },
-    { id: "games", label: "Games" },
-    { id: "dev_tools", label: "Dev Tools" },
-    { id: "vibes", label: "Vibes" },
-    { id: "social_bots", label: "Social Bots" },
-    { id: "learn", label: "Learn" },
+// Badge predicates — reused for both badges on cards and filter logic
+const THIRTY_DAYS = 30 * 86400000;
+export const badges = {
+    new: (app: App) =>
+        !!app.approvedDate &&
+        new Date(app.approvedDate) >= new Date(Date.now() - THIRTY_DAYS),
+    pollen: (app: App) => app.byop,
+    buzz: (app: App) => app.requests24h >= 100,
+};
+
+// Genre filters — category-based
+export const GENRE_FILTERS = [
+    {
+        id: "creative",
+        label: "🎨 Creative",
+        match: (app: App) => app.category === "creative",
+    },
+    {
+        id: "chat",
+        label: "💬 Chat",
+        match: (app: App) => app.category === "chat",
+    },
+    {
+        id: "games",
+        label: "🎲 Games",
+        match: (app: App) => app.category === "games",
+    },
+    {
+        id: "dev_tools",
+        label: "🛠️ Dev Tools",
+        match: (app: App) => app.category === "dev_tools",
+    },
+    {
+        id: "vibes",
+        label: "✨ Vibes",
+        match: (app: App) => app.category === "vibes",
+    },
+    {
+        id: "social_bots",
+        label: "🤖 Social Bots",
+        match: (app: App) => app.category === "social_bots",
+    },
+    {
+        id: "learn",
+        label: "📚 Learn",
+        match: (app: App) => app.category === "learn",
+    },
 ];
+
+// Badge filters — each has a distinct glow color (CSS var with RGB triplet)
+export const BADGE_FILTERS = [
+    {
+        id: "new",
+        label: "🫧 Fresh",
+        match: badges.new,
+        glow: "var(--text-brand)",
+    },
+    {
+        id: "pollen",
+        label: "🏵️ Pollen",
+        match: badges.pollen,
+        glow: "var(--text-highlight)",
+    },
+    {
+        id: "buzz",
+        label: "🐝 Buzz",
+        match: badges.buzz,
+        glow: "var(--text-accent)",
+    },
+];
+
+// Combined for lookup
+export const ALL_FILTERS = [...GENRE_FILTERS, ...BADGE_FILTERS];

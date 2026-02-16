@@ -34,7 +34,6 @@ Think: the person in the hackerspace who just deployed something and pops into t
 ### Content Filtering:
 - Only include changes that matter to people using the tools
 - Skip internal tooling, styling tweaks, infrastructure plumbing
-- If nothing interesting shipped, return `SKIP`. silence is better than filler
 
 TONE: Concise, technically aware, genuine. Like a changelog written by someone who actually uses the product.
 

@@ -62,7 +62,7 @@ Add links naturally in the description using markdown format: [text](url)
 {links}
 
 ## CRITICAL
-- Output exactly `SKIP` if nothing qualifies
+- Always generate highlights — every merged PR is worth posting
 - Use your judgment - if something feels exciting and user-facing, include it
 - Typical weeks: 3-4 highlights. Slow weeks: 0-2. Big release weeks: up to 10
 - Trust your instincts on what users would find exciting
@@ -79,4 +79,4 @@ Typical week: 3-4 highlights. Some weeks: 0. Be very selective.
 CHANGELOG:
 {news_content}
 
-Output markdown bullets only, or SKIP if nothing qualifies.
+Output markdown bullets only.

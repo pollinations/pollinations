@@ -53,7 +53,7 @@ export default {
 
                 // Surfaces (with opacity support)
                 "surface-page":
-                    "rgb(var(--surface-page) / var(--opacity-card, 1))",
+                    "rgb(var(--surface-page) / var(--opacity-overlay, 1))",
                 "surface-card":
                     "rgb(var(--surface-card) / var(--opacity-card, 1))",
                 "surface-base":

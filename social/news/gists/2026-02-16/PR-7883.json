@@ -1,0 +1,34 @@
+{
+  "pr_number": 7883,
+  "title": "Add AI Quiz Simulator to Learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7883",
+  "merged_at": "2026-02-16T20:12:55Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Pop Quiz!",
+    "blurb": "Why pay for practice? A new AI Quiz Simulator just landed in the community showcase to help you ace your next exam.",
+    "summary": "Added the AI Quiz Simulator, a web-based tool for replicating exam mock tests, to the community apps registry.",
+    "impact": "Users can now access a free, AI-powered alternative to paid exam preparation tools.",
+    "keywords": [
+      "education",
+      "quiz",
+      "exam prep",
+      "community app",
+      "learning"
+    ],
+    "visual_concept": "A cozy study scene. The Pollinations bee is the student, wearing a tiny graduation cap and holding a pixelated pencil. There is a large exam paper with an 'A+' grade on it. The vibe is studious but relaxed, emphasizing the 'free' and 'easy' nature of the tool compared to stressful paid exams.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny graduation cap and holding a pixel pencil next to a large A+ exam paper. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T20:13:41.759295+00:00"
+}

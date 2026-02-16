@@ -81,7 +81,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           PUBLISH_MODE: direct
           WEEK_END_DATE: ${{ github.event.inputs.target_date || '' }}
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_WEEKLY_WEBHOOK_URL: ${{ secrets.DISCORD_WEEKLY_WEBHOOK_URL }}
           REDDIT_VPS_HOST: ${{ secrets.REDDIT_VPS_HOST }}
           REDDIT_VPS_USER: ${{ secrets.REDDIT_VPS_USER }}
           REDDIT_VPS_SSH_KEY: ${{ secrets.REDDIT_VPS_SSH_KEY }}

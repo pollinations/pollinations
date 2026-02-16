@@ -1,7 +1,13 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { COPY_CONSTANTS } from "../../copy/constants";
-import { APPS_PAGE, badges, FILTERS } from "../../copy/content/apps";
+import {
+    ALL_FILTERS,
+    APPS_PAGE,
+    BADGE_FILTERS,
+    badges,
+    GENRE_FILTERS,
+} from "../../copy/content/apps";
 import { LINKS } from "../../copy/content/socialLinks";
 import { type App, useApps } from "../../hooks/useApps";
 import { usePageCopy } from "../../hooks/usePageCopy";
@@ -32,9 +38,9 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
         : null;
 
     const cardBorder = badges.buzz(app)
-        ? "border border-border-brand shadow-shadow-brand-sm"
+        ? "border border-badge-buzz shadow-[0_0_8px] shadow-badge-buzz/30"
         : badges.pollen(app)
-          ? "border border-border-highlight shadow-shadow-highlight-sm"
+          ? "border border-badge-pollen shadow-[0_0_8px] shadow-badge-pollen/30"
           : "border border-border-subtle";
 
     return (
@@ -45,7 +51,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                 href={app.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between px-4 py-3 bg-input-background hover:brightness-110 transition-all"
+                className="flex items-center justify-between px-4 py-3 bg-input-background rounded-t-sub-card hover:brightness-110 transition-all"
             >
                 <span className="font-headline text-base font-black uppercase text-text-body-main">
                     {app.emoji && `${app.emoji} `}
@@ -71,34 +77,34 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                         <div className="flex flex-wrap items-center gap-1.5 mb-3">
                             {badges.pollen(app) && (
                                 <span className="relative group/byop">
-                                    <Badge variant="highlight">
+                                    <Badge variant="pollen">
                                         {copy.pollenBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/byop:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/byop:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
                                         {copy.pollenTooltip}
-                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-charcoal" />
                                     </div>
                                 </span>
                             )}
                             {badges.buzz(app) && (
                                 <span className="relative group/buzz">
-                                    <Badge variant="brand">
+                                    <Badge variant="buzz">
                                         {copy.buzzBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/buzz:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/buzz:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
                                         {copy.buzzTooltip}
-                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-charcoal" />
                                     </div>
                                 </span>
                             )}
                             {badges.new(app) && (
                                 <span className="relative group/new">
-                                    <Badge variant="muted">
+                                    <Badge variant="fresh">
                                         {copy.newBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/new:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/new:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
                                         {copy.newTooltip}
-                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-charcoal" />
                                     </div>
                                 </span>
                             )}
@@ -181,10 +187,17 @@ export default function AppsPage() {
 
     const { apps: allApps } = useApps(COPY_CONSTANTS.appsFilePath);
     const { copy: pageCopy, isTranslating } = usePageCopy(APPS_PAGE);
-    const { translated: translatedFilters } = useTranslate(FILTERS, "label");
+    const { translated: translatedGenre } = useTranslate(
+        GENRE_FILTERS,
+        "label",
+    );
+    const { translated: translatedBadge } = useTranslate(
+        BADGE_FILTERS,
+        "label",
+    );
 
     const filteredApps = useMemo(() => {
-        const f = FILTERS.find((x) => x.id === filter);
+        const f = ALL_FILTERS.find((x) => x.id === filter);
         if (!f) return [];
         return allApps.filter(f.match).sort(sortApps);
     }, [allApps, filter]);
@@ -248,13 +261,25 @@ export default function AppsPage() {
 
                 {/* Filters */}
                 <div className="flex flex-wrap gap-2 mb-8">
-                    {translatedFilters.map((f) => (
+                    {translatedGenre.map((f) => (
                         <Button
                             key={f.id}
                             variant="toggle"
                             data-active={filter === f.id}
                             onClick={() => setFilter(f.id)}
                             className="px-4 py-2 text-sm"
+                        >
+                            {f.label}
+                        </Button>
+                    ))}
+                    {translatedBadge.map((f) => (
+                        <Button
+                            key={f.id}
+                            variant="toggle-glow"
+                            data-active={filter === f.id}
+                            onClick={() => setFilter(f.id)}
+                            className="px-4 py-2 text-sm"
+                            style={{ "--glow": f.glow } as React.CSSProperties}
                         >
                             {f.label}
                         </Button>

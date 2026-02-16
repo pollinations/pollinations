@@ -12,22 +12,21 @@ export const APPS_PAGE = {
     submitCtaTitle: "Built something cool?",
     submitCtaDescription: "Get featured in the showcase and earn Pollen!",
     submitCtaButton: "Submit App",
-    pollenCtaTitle: "🌸 Add Pollen to Your App",
+    pollenCtaTitle: "🏵️ Add Pollen to Your App",
     pollenCtaDescription:
         "Let users sign in with Pollinations. They pay for usage, you pay $0.",
     pollenCtaButton: "Learn More",
 
     // Badges & tooltips
-    pollenBadge: "🌸 Pollen",
-    pollenTooltip:
-        "Sign in with your Pollinations account — your Pollen balance covers usage",
+    pollenBadge: "🏵️ POLLEN",
+    pollenTooltip: "Sign in with Pollinations — Pollen covers usage",
     buzzBadge: "🐝 BUZZ",
     buzzTooltip: "100+ API requests in the last 24 hours",
-    newBadge: "🌿 FRESH",
+    newBadge: "🫧 FRESH",
     newTooltip: "Recently added to the ecosystem",
 
     // Legend
-    pollenLegendDesc: "Sign in with Pollinations",
+    pollenLegendDesc: "In-app sign in with pollinations.ai",
     pollenDocsLink: "</> Docs",
     buzzLegendDesc: "100+ requests / 24h",
     newLegendDesc: "Recently added",
@@ -43,11 +42,8 @@ export const badges = {
     buzz: (app: App) => app.requests24h >= 100,
 };
 
-// Filters — each has a label and a match function
-// Category filters match on app.category, special filters use badge predicates
-export const FILTERS = [
-    { id: "new", label: "🌿 Fresh", match: badges.new },
-    { id: "pollen", label: "🌸 Pollen", match: badges.pollen },
+// Genre filters — category-based
+export const GENRE_FILTERS = [
     {
         id: "creative",
         label: "🎨 Creative",
@@ -84,3 +80,28 @@ export const FILTERS = [
         match: (app: App) => app.category === "learn",
     },
 ];
+
+// Badge filters — each has a distinct glow color (CSS var with RGB triplet)
+export const BADGE_FILTERS = [
+    {
+        id: "new",
+        label: "🫧 Fresh",
+        match: badges.new,
+        glow: "var(--text-brand)",
+    },
+    {
+        id: "pollen",
+        label: "🏵️ Pollen",
+        match: badges.pollen,
+        glow: "var(--text-highlight)",
+    },
+    {
+        id: "buzz",
+        label: "🐝 Buzz",
+        match: badges.buzz,
+        glow: "var(--text-accent)",
+    },
+];
+
+// Combined for lookup
+export const ALL_FILTERS = [...GENRE_FILTERS, ...BADGE_FILTERS];

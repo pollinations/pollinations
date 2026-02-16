@@ -1,0 +1,34 @@
+{
+  "pr_number": 8290,
+  "title": "refactor: move all generated content to news branch",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8290",
+  "merged_at": "2026-02-16T00:10:51Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The hive is getting tidy",
+    "blurb": "We've moved all generated news content to its own branch to keep main clean and code-focused.",
+    "summary": "Refactored the social pipeline to commit generated content to a dedicated `news` branch, removing over 200 stale artifacts from `main`.",
+    "impact": "Developers will see a cleaner main branch history without generated JSON and image files cluttering the diffs.",
+    "keywords": [
+      "infrastructure",
+      "ci/cd",
+      "github-actions",
+      "automation",
+      "cleanup"
+    ],
+    "visual_concept": "The Pollinations bee mascot acting as a librarian or archivist, sorting files. Two distinct piles: one for code (clean, organized) and one for news/media (colorful, dynamic). The bee is happily moving a stack of papers from the main area to a special 'News' bin.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot organizing stacks of pixelated papers into two neat piles, one labeled 'CODE' and one labeled 'NEWS'. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'CLEANUP'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T00:11:36.174734+00:00"
+}

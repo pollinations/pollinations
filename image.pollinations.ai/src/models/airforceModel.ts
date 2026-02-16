@@ -193,7 +193,11 @@ function buildRequestBody(
         const imageUrl = Array.isArray(safeParams.image)
             ? safeParams.image[0]
             : safeParams.image;
-        if (imageUrl) {
+        
+        // grok-imagine-video requires image_urls as an array
+        if (airforceModel === "grok-imagine-video") {
+            requestBody.image_urls = [imageUrl];
+        } else {
             requestBody.image = imageUrl;
         }
     } else if (airforceModel === "imagen-4") {

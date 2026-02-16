@@ -1,0 +1,34 @@
+{
+  "pr_number": 7892,
+  "title": "Add SimpleTools to Dev_Tools",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7892",
+  "merged_at": "2026-02-16T19:46:27Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "SimpleTools joins the hive",
+    "blurb": "A new suite of utilities has landed in our developer showcase. SimpleTools offers citation generation, AI humanization, and text scrambling for your daily workflow.",
+    "summary": "Added SimpleTools, a collection of text utilities including citation generation and AI humanization, to the community apps list.",
+    "impact": "Users can now discover and access SimpleTools directly from the Pollinations app directory.",
+    "keywords": [
+      "community",
+      "dev-tools",
+      "utilities",
+      "text-processing",
+      "apps"
+    ],
+    "visual_concept": "The Pollinations bee at a cozy wooden workbench, organizing a set of friendly-looking pixelated tools (wrench, pencil, gear) that are interacting with floating text blocks. Represents the 'utility' nature of the new app.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot organizing a neat workbench with pixelated text tools and a citation machine. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'SIMPLE TOOLS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T19:47:05.822333+00:00"
+}

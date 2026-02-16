@@ -1,0 +1,34 @@
+{
+  "pr_number": 8284,
+  "title": "feat: apps page badge system + BYOP → Pollen rebrand",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8284",
+  "merged_at": "2026-02-16T20:12:12Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Badges in bloom",
+    "blurb": "We've replaced the old acronyms with a fresh organic badge system. Spot the 🌿 Fresh, 🌸 Pollen, and 🐝 Buzz tags on your favorite apps.",
+    "summary": "Replaced the BYOP terminology with a new organic badge system (Fresh, Pollen, Buzz) and improved the Apps page with persistent filtering and category emojis.",
+    "impact": "Users will find it easier to identify app tiers and filter the ecosystem with a more intuitive, nature-themed interface.",
+    "keywords": [
+      "ui",
+      "apps",
+      "badges",
+      "ux",
+      "rebrand"
+    ],
+    "visual_concept": "The bee mascot acting as a curator or gardener, organizing app icons/boxes and applying the new nature-themed labels (Leaf, Flower, Bee). Represents the transition from technical jargon to organic growth.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, placing glowing pixel badges (Leaf, Flower, Bee) on colorful app boxes arranged on a wooden shelf. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'NEW TAGS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T20:12:53.402880+00:00"
+}

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * Generate apps/GARDEN.md — a curated highlight reel from all categories.
+ * Generate apps/GREENHOUSE.md — a curated highlight reel from all categories.
  *
  * Reads apps/APPS.md (source of truth) and writes:
- *   apps/GARDEN.md  – top apps per category + label highlights
- *   README.md       – updates "Recent Apps" section in repo root
+ *   apps/GREENHOUSE.md  – top apps per category + label highlights
+ *   README.md            – updates "Recent Apps" section in repo root
  *
  * Usage: node .github/scripts/app-update-garden.js
  */
@@ -15,7 +15,7 @@ const fs = require("fs");
 // ── Config ──────────────────────────────────────────────────────────────────
 
 const APPS_FILE = "apps/APPS.md";
-const GARDEN_FILE = "apps/GARDEN.md";
+const GARDEN_FILE = "apps/GREENHOUSE.md";
 const ROOT_README = "README.md";
 
 const THIRTY_DAYS_MS = 30 * 86400000;
@@ -104,8 +104,8 @@ function appLink(app) {
 function badgeStr(app) {
   const b = [];
   if (isBuzz(app)) b.push("🐝");
-  if (isPollen(app)) b.push("🌸");
-  if (isFresh(app)) b.push("🌿");
+  if (isPollen(app)) b.push("🏵️");
+  if (isFresh(app)) b.push("🫧");
   return b.join(" ");
 }
 
@@ -135,11 +135,11 @@ function generateGarden(apps) {
   const pollenApps = apps.filter(isPollen).sort((a, b) => (b.stars || 0) - (a.stars || 0));
   const freshApps = apps.filter(isFresh).sort((a, b) => (b.approvedDate || "").localeCompare(a.approvedDate || ""));
 
-  let md = `# 🌱 Pollinations App Garden
+  let md = `# 🔆 App Greenhouse
 
 > **${apps.length}** community apps powered by [pollinations.ai](https://pollinations.ai)
 
-🐝 **Buzz** = 100+ requests/24h · 🌸 **Pollen** = Sign in with Pollinations · 🌿 **Fresh** = Added in the last 30 days
+🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
 📋 [Full app table](APPS.md) · 🌐 [Browse on pollinations.ai](https://pollinations.ai/apps) · ✏️ [Submit your app](https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml)
 
@@ -154,13 +154,13 @@ function generateGarden(apps) {
   }
 
   if (pollenApps.length > 0) {
-    md += `## 🌸 Pollen — Sign in with Pollinations\n\n`;
+    md += `## 🏵️ Pollen — Sign in with Pollinations\n\n`;
     md += `Users pay with their own balance — developers pay $0. [Learn more →](../BRING_YOUR_OWN_POLLEN.md)\n\n`;
     md += makeTable(pollenApps.slice(0, TOP_N)) + "\n\n";
   }
 
   if (freshApps.length > 0) {
-    md += `## 🌿 Fresh — Recently Added\n\n`;
+    md += `## 🫧 Fresh — Recently Added\n\n`;
     md += makeTable(freshApps.slice(0, TOP_N)) + "\n\n";
   }
 
@@ -196,7 +196,7 @@ function updateRootReadme(apps) {
 |------|-------------|--------|
 ${rows.join("\n")}
 
-[Browse all apps →](apps/GARDEN.md)`;
+[Browse all apps →](apps/GREENHOUSE.md)`;
 
   if (!fs.existsSync(ROOT_README)) return;
 
@@ -230,4 +230,4 @@ console.log(`  ✅ Generated ${GARDEN_FILE}`);
 
 updateRootReadme(apps);
 
-console.log("\n🌱 Garden updated!");
+console.log("\n🔆 Greenhouse updated!");

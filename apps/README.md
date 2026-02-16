@@ -90,7 +90,7 @@ Each app gets:
 
 ## Community Showcase
 
-- 🌱 [**Garden**](GARDEN.md) — Curated highlights from every category
+- 🔆 [**Greenhouse**](GREENHOUSE.md) — Curated highlights from every category
 - 📋 [**All Apps**](APPS.md) — Full table (480+ apps)
 - 🌐 [Browse on pollinations.ai](https://pollinations.ai/apps)
 - ✏️ [Submit your app](https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml)

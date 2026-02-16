@@ -1,0 +1,32 @@
+{
+  "pr_number": 8291,
+  "title": "feat: add 6 BYOP app submissions to showcase",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8291",
+  "merged_at": "2026-02-16T00:22:32Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Six new flowers in the garden",
+    "blurb": "The community garden is blooming! We've added six new creative apps to our showcase, from puzzle generators to AI playgrounds.",
+    "summary": "Added six new community-built applications to the official showcase, including educational tools and AI playgrounds.",
+    "impact": "Users can now discover and explore six new creative tools built on the Pollinations platform.",
+    "keywords": [
+      "community",
+      "showcase",
+      "apps",
+      "ecosystem",
+      "education"
+    ],
+    "visual_concept": "A garden scene representing the community showcase. The 6 new apps are depicted as 6 distinct, colorful pixel art flowers or magical plants sprouting from the ground. The Pollinations bee mascot is watering them with a pixelated watering can. The vibe is growth and celebration.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot watering six unique, colorful magical flowers sprouting in a digital garden. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The bee has a yellow body, dark stripes, pink blush, and wears a tiny gardener's hat. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'NEW APPS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T00:23:17.135207+00:00"
+}

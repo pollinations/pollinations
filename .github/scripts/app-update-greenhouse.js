@@ -7,7 +7,7 @@
  *   apps/GREENHOUSE.md  – top apps per category + label highlights
  *   README.md            – updates "Recent Apps" section in repo root
  *
- * Usage: node .github/scripts/app-update-garden.js
+ * Usage: node .github/scripts/app-update-greenhouse.js
  */
 
 const fs = require("fs");
@@ -140,7 +140,7 @@ function makeTable(apps) {
     return header + "\n" + rows.join("\n");
 }
 
-// ── Generate GARDEN.md ──────────────────────────────────────────────────────
+// ── Generate GREENHOUSE.md ──────────────────────────────────────────────────
 
 function generateGarden(apps) {
     const buzzApps = apps

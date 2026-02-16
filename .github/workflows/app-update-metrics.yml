@@ -35,8 +35,8 @@ jobs:
           TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
         run: node .github/scripts/app-update-metrics.js --verbose
 
-      - name: Regenerate garden
-        run: node .github/scripts/app-update-garden.js
+      - name: Regenerate greenhouse
+        run: node .github/scripts/app-update-greenhouse.js
 
       - name: Check for changes
         id: changes

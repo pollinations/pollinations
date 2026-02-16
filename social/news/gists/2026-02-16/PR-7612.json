@@ -1,0 +1,34 @@
+{
+  "pr_number": 7612,
+  "title": "Add AI router to Dev_Tools",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7612",
+  "merged_at": "2026-02-16T20:39:31Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Traffic Control for AI",
+    "blurb": "A new tool called AI Router has joined the Dev_Tools collection. It handles API keys and directs traffic like a pro.",
+    "summary": "Added AI Router to the Dev_Tools collection, a utility for issuing API keys and routing requests across multiple services.",
+    "impact": "Developers can now access AI Router within the apps directory to manage API keys and request routing.",
+    "keywords": [
+      "community",
+      "apps",
+      "dev_tools",
+      "routing",
+      "api"
+    ],
+    "visual_concept": "The Pollinations bee acting as a traffic controller or network engineer. The key symbols are a pixelated network router (blinking lights) and old-school skeleton keys (representing API keys). The bee is connecting a cable or holding a key.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot connecting a cable to a tiny pixelated network router with blinking lights. Soft lime green (#ecf874) and pastel gradient background. Floating pixel keys and data packets around the bee. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'ROUTER'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T20:40:10.051406+00:00"
+}

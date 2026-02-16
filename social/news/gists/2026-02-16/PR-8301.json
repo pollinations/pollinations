@@ -1,0 +1,33 @@
+{
+  "pr_number": 8301,
+  "title": "Update README news — 2026-02-15",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8301",
+  "merged_at": "2026-02-16T11:14:49Z",
+  "labels": [
+    "social",
+    "readme-news"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Fresh Ink",
+    "blurb": "The daily news delivery has arrived on the front page.",
+    "summary": "Automated update to the README.md latest news section.",
+    "impact": "Ensures the project landing page reflects the most recent updates.",
+    "keywords": [
+      "readme",
+      "automation",
+      "news"
+    ],
+    "visual_concept": "The Pollinations bee delivering a rolled-up newspaper to a pixel art doorstep.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot delivering a tiny rolled-up pixel newspaper to a welcome mat. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T11:15:33.889302+00:00"
+}

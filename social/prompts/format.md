@@ -92,8 +92,6 @@ Output Format (JSON only):
 
 Return ONLY the JSON object. No markdown fences, no explanation.
 
-If nothing noteworthy shipped, return exactly `SKIP` instead of JSON.
-
 ## Discord
 
 - Greet <@&1424461167883194418> naturally and wittily
@@ -101,8 +99,6 @@ If nothing noteworthy shipped, return exactly `SKIP` instead of JSON.
 - Group changes into logical emoji sections (new features, improvements, community wins)
 - Total length: 200-400 words — punchy but complete
 - Include a pixel art image prompt following the visual style guide
-- If nothing major shipped, return SKIP
-
 Output Format (JSON only):
 {
     "message": "The Discord message text with emoji sections, bold formatting, greetings.",
@@ -111,8 +107,6 @@ Output Format (JSON only):
 }
 
 Return ONLY the JSON object. No markdown fences, no explanation.
-
-If nothing noteworthy shipped, return exactly `SKIP` instead of JSON.
 
 ## Realtime
 

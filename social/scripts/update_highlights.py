@@ -126,8 +126,8 @@ def generate_highlights_and_readme(pollinations_token: str, date_str: str) -> tu
         return None, None
 
     new_highlights = parse_response(ai_response)
-    if new_highlights.upper().strip() == "SKIP" or not new_highlights.strip():
-        print("  Highlights: skipped (AI returned SKIP or empty)")
+    if not new_highlights.strip():
+        print("  Highlights: empty response from AI")
         return None, None
 
     print(f"  Highlights: generated new entries")

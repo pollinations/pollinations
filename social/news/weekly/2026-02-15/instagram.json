@@ -1,0 +1,45 @@
+{
+  "content_type": "retro_infographic",
+  "linked_images": true,
+  "strategy_reasoning": "Uses the cozy RPG aesthetic to gamify the technical updates, making 'API integration' and 'video standardization' feel like exciting power-ups. The recurring 'Weekly Buzz' format builds habit.",
+  "visual_style": "Cozy 8-bit pixel art with Stardew Valley vibes. Chunky sprites, soft lighting, and the mandatory lime green (#ecf874) accent color.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny newsboy cap, standing next to a wooden quest board in a digital garden. The board reads 'WEEKLY BUZZ' in chunky pixel font. Soft lime green (#ecf874) and peach pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Cover image establishing the weekly update series with a warm, inviting tone.",
+      "text_in_image": "WEEKLY BUZZ",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Retro 8-bit pixel art infographic style. A floating UI panel shows three large pixel icons: a vintage movie camera (for video), a glowing magic scroll (for Polly API), and a cute robot claw (for OpenClaw). Soft lime green (#ecf874) and lavender gradient background. Text labels in pixel font: 'BETTER VIDEO', 'POLLY API', 'OPENCLAW'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Visualizing the three main technical updates as RPG inventory items.",
+      "text_in_image": "BETTER VIDEO  POLLY API  OPENCLAW",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of the cute bee mascot celebrating by high-fiving a tiny friendly pixel robot. They are surrounded by blooming pixel flowers and floating code sparkles. Soft lime green (#ecf874) and mint pastel gradient background. Text in pixel font: '27 UPDATES'. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Celebratory closing image highlighting the community effort (27 PRs).",
+      "text_in_image": "27 UPDATES",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "Level up! 🍄✨ We smashed 27 updates this week and the garden is blooming.\n\nPolly got a major brain boost (hello API! 🧠), video generation is smoother than ever 🎬, and OpenClaw is officially part of the squad. Whether you're building bots or generating dreams, we've got the tools.\n\nCome play in the open source garden! Link in bio to build. 🌸\n\n#pollinations #opensource #pixelart #weeklyupdate #buildinpublic #generativeai #indiedev #cozyvibes #8bit #aiart",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#weeklyupdate",
+    "#buildinpublic",
+    "#generativeai",
+    "#indiedev",
+    "#cozyvibes",
+    "#8bit",
+    "#aiart"
+  ],
+  "alt_text": "A carousel of cozy pixel art images. 1. A cute bee mascot in a cap stands by a 'Weekly Buzz' sign. 2. A retro inventory screen showing icons for video, API, and OpenClaw tools. 3. The bee high-fiving a robot to celebrate 27 updates. Dominant colors are lime green and soft pastels.",
+  "date": "2026-02-15",
+  "generated_at": "2026-02-16T00:22:37.104770+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

@@ -69,7 +69,7 @@ jobs:
         id: coauthors
         run: |
           # Get all commits since pre-sync SHA and extract unique authors
-          co_authors=$(git log ${{ steps.pre-sync.outputs.sha }}..HEAD --format='%an <%ae>' | sort -u | sed 's/^/Co-authored-by: /')
+          co_authors=$(git log ${{ steps.pre-sync.outputs.sha }}..HEAD --format='%an <%ae>' | sort -u | sed 's/^/Co-authored-by: /' || echo "No additional commits")
           
           # Store as multiline output
           {
@@ -95,7 +95,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          open_prs=$(gh pr list --search "sync polly subtree" --state open --json number --jq length)
+          open_prs=$(gh pr list --head "polly-sync/*" --state open --json number --jq length)
           if [ "$open_prs" -gt 0 ]; then
             echo "has_open_pr=true" >> $GITHUB_OUTPUT
             echo "⚠️ Found $open_prs existing open PR(s) — skipping creation"
@@ -106,25 +106,28 @@ jobs:
       - name: Push branch
         if: steps.check-changes.outputs.has_changes == 'true' && steps.check-pr.outputs.has_open_pr == 'false'
         run: |
-          git push origin polly-sync/${{ github.run_number }}
+          git push origin "polly-sync/${{ github.run_number }}"
 
       - name: Create Pull Request
         if: steps.check-changes.outputs.has_changes == 'true' && steps.check-pr.outputs.has_open_pr == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pr_body="Automated sync of Polly repo changes via subtree pull
+          pr_body=$(cat <<'EOF'
+Automated sync of Polly repo changes via subtree pull
 
-- Branch: \`polly-sync/${{ github.run_number }}\`
+- Branch: `polly-sync/${{ github.run_number }}`
 - Triggered by: scheduled workflow
 - Sync method: subtree pull (will be squash-merged)
 
 ## Contributors
 
-${{ steps.coauthors.outputs.list }}"
+${{ steps.coauthors.outputs.list }}
+EOF
+)
 
           gh pr create \
             --title "chore: sync polly subtree" \
             --body "$pr_body" \
             --base main \
-            --head polly-sync/${{ github.run_number }}
+            --head "polly-sync/${{ github.run_number }}"

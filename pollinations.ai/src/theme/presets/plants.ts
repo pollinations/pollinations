@@ -110,6 +110,10 @@ export const PlantsAndTreesTheme: LLMThemeResponse = {
             "hex": "#4394df",
             "ids": ["indicator.audio"],
         },
+        "slot_27": {
+            "hex": "#4394df",
+            "ids": ["text.accent", "border.accent"],
+        },
     },
     "borderRadius": {
         "radius.button": "8px",

@@ -119,7 +119,8 @@ You MUST return ONLY a single JSON object with this exact structure:
     "highlight": { "sm": "#...", "md": "#..." }
   },
   "brandSpecial": {
-    "brandMain": "#...",    // Main brand color
+    "brandMain": "#...",    // Main brand color (primary accent)
+    "accent": "#...",       // Tertiary accent color (must be distinct from brandMain and text.highlight)
     "logoMain": "#...",
     "logoAccent": "#...",
     "indicatorImage": "#...",

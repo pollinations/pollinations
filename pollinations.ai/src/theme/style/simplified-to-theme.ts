@@ -40,6 +40,7 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     addColor("text.inverse", config.text.inverse);
     addColor("text.brand", config.brandSpecial.brandMain);
     addColor("text.highlight", config.text.highlight);
+    addColor("text.accent", config.brandSpecial.accent);
 
     // Surfaces
     addColor("surface.page", config.surfaces.page);
@@ -71,6 +72,7 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     // Borders
     addColor("border.brand", config.brandSpecial.brandMain);
     addColor("border.highlight", config.borders.highlight);
+    addColor("border.accent", config.brandSpecial.accent);
     addColor("border.main", config.borders.main);
     addColor("border.strong", config.borders.strong);
     addColor("border.subtle", config.borders.subtle);

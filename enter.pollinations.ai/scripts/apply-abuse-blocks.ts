@@ -5,9 +5,9 @@
  * Processes in batches with rate limiting to avoid D1 overload.
  *
  * Usage:
- *   npx tsx scripts/apply-abuse-blocks.ts --env production
- *   npx tsx scripts/apply-abuse-blocks.ts --env production --dry-run
- *   npx tsx scripts/apply-abuse-blocks.ts --env production --batch-size 50 --delay 1000
+ *   npx tsx scripts/apply-abuse-blocks.ts apply-blocks --env production --dry-run
+ *   npx tsx scripts/apply-abuse-blocks.ts apply-blocks --env production
+ *   npx tsx scripts/apply-abuse-blocks.ts apply-blocks --env production --batch-size 50
  *
  * Options:
  *   --env          Environment (staging|production), default: production
@@ -18,8 +18,11 @@
  */
 
 import { execSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { boolean, command, number, run, string } from "@drizzle-team/brocli";
+import { TIER_POLLEN } from "../src/tier-config.js";
 
 type Environment = "staging" | "production";
 
@@ -41,7 +44,6 @@ function parseCSV(content: string): AbuseReportRow[] {
     const rows: AbuseReportRow[] = [];
 
     for (let i = 1; i < lines.length; i++) {
-        // Simple CSV parsing that handles quoted values
         const values: string[] = [];
         let current = "";
         let inQuotes = false;
@@ -50,7 +52,7 @@ function parseCSV(content: string): AbuseReportRow[] {
             const char = lines[i][j];
             if (char === '"' && inQuotes && lines[i][j + 1] === '"') {
                 current += '"';
-                j++; // skip escaped quote
+                j++;
             } else if (char === '"') {
                 inQuotes = !inQuotes;
             } else if (char === "," && !inQuotes) {
@@ -71,7 +73,7 @@ function parseCSV(content: string): AbuseReportRow[] {
 
         rows.push({
             action: row.action || "",
-            score: parseInt(row.score, 10) || 0,
+            score: Number.parseInt(row.score, 10) || 0,
             email: row.email || "",
             github_username: row.github_username || "",
             signals: row.signals || "",
@@ -85,15 +87,18 @@ function parseCSV(content: string): AbuseReportRow[] {
 
 function queryD1(env: Environment, sql: string): string {
     const envFlag = env === "production" ? "--env production" : "--env staging";
-    const cmd = `npx wrangler d1 execute DB --remote ${envFlag} --command "${sql}" --json`;
-
+    const tmpFile = join(tmpdir(), `d1-query-${Date.now()}.sql`);
+    writeFileSync(tmpFile, sql, "utf-8");
     try {
-        const result = execSync(cmd, {
-            cwd: process.cwd(),
-            encoding: "utf-8",
-            stdio: ["pipe", "pipe", "pipe"],
-            maxBuffer: 100 * 1024 * 1024,
-        });
+        const result = execSync(
+            `npx wrangler d1 execute DB --remote ${envFlag} --file "${tmpFile}" --json`,
+            {
+                cwd: process.cwd(),
+                encoding: "utf-8",
+                stdio: ["pipe", "pipe", "pipe"],
+                maxBuffer: 100 * 1024 * 1024,
+            },
+        );
         return result;
     } catch (error) {
         console.error(
@@ -101,6 +106,10 @@ function queryD1(env: Environment, sql: string): string {
             error instanceof Error ? error.message : String(error),
         );
         throw error;
+    } finally {
+        try {
+            unlinkSync(tmpFile);
+        } catch {}
     }
 }
 
@@ -113,6 +122,8 @@ const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 function validateEmail(email: string): boolean {
     return EMAIL_RE.test(email) && email.length <= 254;
 }
+
+const microbeBalance = TIER_POLLEN.microbe;
 
 const applyBlocksCommand = command({
     name: "apply-blocks",
@@ -201,65 +212,56 @@ const applyBlocksCommand = command({
             return;
         }
 
+        // Validate all emails upfront
+        const invalidEmails: string[] = [];
+        const validUsers = usersToDowngrade.filter((user) => {
+            if (!validateEmail(user.email)) {
+                invalidEmails.push(user.email);
+                return false;
+            }
+            return true;
+        });
+        if (invalidEmails.length > 0) {
+            console.log(
+                `⚠️  Skipped ${invalidEmails.length} invalid emails: ${invalidEmails.join(", ")}`,
+            );
+        }
+
         // Process in batches
-        const batches = Math.ceil(usersToDowngrade.length / opts["batch-size"]);
+        const batches = Math.ceil(validUsers.length / opts["batch-size"]);
         let processed = 0;
-        let succeeded = 0;
         let failed = 0;
 
         console.log(`\n🔄 Processing ${batches} batches...\n`);
 
         for (let b = 0; b < batches; b++) {
             const start = b * opts["batch-size"];
-            const end = Math.min(
-                start + opts["batch-size"],
-                usersToDowngrade.length,
-            );
-            const batch = usersToDowngrade.slice(start, end);
+            const end = Math.min(start + opts["batch-size"], validUsers.length);
+            const batch = validUsers.slice(start, end);
 
             console.log(
                 `⚡ Batch ${b + 1}/${batches} (${batch.length} users)...`,
             );
 
             if (!opts["dry-run"]) {
-                // Build batch UPDATE using email (more reliable than github_username)
-                // D1 doesn't support UPDATE with IN clause well, so we do individual updates
-                // but batch them in a single transaction-like approach
-                for (const user of batch) {
-                    try {
-                        if (!validateEmail(user.email)) {
-                            console.error(
-                                `   ⚠️  Skipped invalid email: ${user.email}`,
-                            );
-                            failed++;
-                            processed++;
-                            continue;
-                        }
-                        const safeEmail = user.email.replace(/'/g, "''");
-                        const sql = `UPDATE user SET tier = 'microbe', tier_balance = 0.1 WHERE email = '${safeEmail}'`;
-                        queryD1(env, sql);
-                        succeeded++;
-                    } catch {
-                        console.error(`   ❌ Failed: ${user.email}`);
-                        failed++;
-                    }
-                    processed++;
-
-                    // Progress indicator every 10 users
-                    if (processed % 10 === 0) {
-                        process.stdout.write(
-                            `   📊 ${processed}/${usersToDowngrade.length}\r`,
-                        );
-                    }
+                const emailList = batch
+                    .map((u) => `'${u.email.replace(/'/g, "''")}'`)
+                    .join(",");
+                const sql = `UPDATE user SET tier = 'microbe', tier_balance = ${microbeBalance} WHERE email IN (${emailList});`;
+                try {
+                    queryD1(env, sql);
+                    processed += batch.length;
+                } catch {
+                    console.error(`   ❌ Batch ${b + 1} failed`);
+                    failed += batch.length;
                 }
             } else {
-                // Dry run - just count
                 for (const user of batch) {
                     console.log(
                         `   📝 Would downgrade: ${user.email} (${user.tier} → microbe)`,
                     );
-                    processed++;
                 }
+                processed += batch.length;
             }
 
             // Rate limit between batches
@@ -272,7 +274,7 @@ const applyBlocksCommand = command({
         console.log(`✅ Processing complete!`);
         console.log(`   📊 Total processed: ${processed}`);
         if (!opts["dry-run"]) {
-            console.log(`   ✅ Succeeded: ${succeeded}`);
+            console.log(`   ✅ Succeeded: ${processed}`);
             console.log(`   ❌ Failed: ${failed}`);
         }
     },

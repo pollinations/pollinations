@@ -409,7 +409,6 @@ social/prompts/
   brand/                       # Brand components (auto-injected via placeholders)
     about.md                   # Company description       → {about}
     visual.md                  # Pixel art style guide     → {visual_style}
-    characters.md              # Character cast            → {characters}
     links.md                   # Official links            → {links}
 
   tone/                        # Platform voices (system prompts)
@@ -434,7 +433,6 @@ social/prompts/
 |---|---|
 | `{about}` | `brand/about.md` |
 | `{visual_style}` | `brand/visual.md` |
-| `{characters}` | `brand/characters.md` |
 | `{links}` | `brand/links.md` |
 
 ### Prompt Composition Pattern

@@ -11,7 +11,7 @@
 
 </div>
 
-<p align="center"><img src="https://gen.pollinations.ai/image/Cozy%20pixel%20art%20panoramic%20mushroom%20forest%20hackerspace%20at%20twilight.%20Giant%20bioluminescent%20mushrooms%20glow%20lime%20green%20%28%23ecf874%29%20and%20soft%20purple%20among%20wooden%20shelves%20with%20potted%20code-plants.%20Tiny%20blob%20creatures%20with%20single%20large%20eyes%20sit%20on%20mushroom%20caps%20at%20chunky%20retro%20terminals%20with%20glowing%20green%20screens.%20The%20pollinations%20bee%20mascot%20with%20a%20tool%20belt%20drifts%20between%20caps.%20A%20liquid%20white%20cat-form%20sleeps%20curled%20inside%20a%20giant%20cup%20mushroom%20near%20a%20steaming%20mug.%20Fairy%20lights%20strung%20between%20mushroom%20stems.%20Mycelium%20threads%20glow%20below%20like%20circuit%20boards.%20Warm%20amber%20and%20lavender%20atmosphere%2C%20firefly%20particles.%20Cozy%20pixel%20art%2C%208-bit%20aesthetic%2C%20soft%20pastel%20gradients%2C%20warm%20lighting%2C%20Fantastic%20Planet%20meets%20Stardew%20Valley.?model=nanobanana-pro&seed=8002&nologo=true&width=1200&height=500&quality=high" alt="Pixel art mushroom forest hackerspace — blob creatures at retro terminals on mushroom caps, bee with tool belt, cat in cup mushroom, glowing mycelium circuit-board roots" width="60%" /></p>
+<p align="center"><img src="https://gen.pollinations.ai/image/Chunky%20pixel%20art%20cozy%20hackerspace%20panorama.%20A%20cute%20chunky%20robot%20with%20CRT%20monitor%20head%20and%20stubby%20arms%20sits%20at%20a%20retro%20terminal%20glowing%20lime%20green%20%28%23ecf874%29.%20Next%20to%20it%20a%20round%20tan%20mochi-ball%20creature%20with%20tiny%20dot%20eyes%20happily%20munches%20on%20a%20stack%20of%20code%20printouts.%20The%20pollinations%20bee%20mascot%20with%20tiny%20reading%20glasses%20hovers%20between%20them.%20Potted%20pixel%20code-plants%20sprout%20on%20wooden%20shelves.%20Fairy%20lights.%20Simple%20cozy%20interior.%20Large%20visible%20chunky%20pixels%2C%20lo-fi%208-bit%20aesthetic%2C%20soft%20lime%20green%20and%20cream%20gradient%20background%2C%20warm%20lighting%2C%20Stardew%20Valley%20vibes.?model=nanobanana-pro&seed=9001&nologo=true&width=800&height=340&quality=high" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" /></p>
 
 ## 🆕 Recent Apps
 
@@ -95,8 +95,6 @@ Coding starts **May 25th 2026**
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date" width="600" />
  </picture>
 </a>
-
-<p align="center"><img src="https://gen.pollinations.ai/image/Cozy%20pixel%20art%20scene%20of%20a%20curious%20translucent%20blob%20creature%20with%20many%20tiny%20eyes%20discovering%20a%20retro%20terminal%20for%20the%20first%20time.%20Screen%20glows%20lime%20green%20%28%23ecf874%29.%20The%20bee%20mascot%20guides%20it%20gently.%20White%20fluid%20cat%20watches%20from%20a%20shelf.%20Warm%20brick%20wall%2C%20one%20potted%20bioluminescent%20plant.%20Sense%20of%20wonder%20and%20discovery.%20Fantastic%20Planet%20vibes.%20Cozy%20pixel%20art%2C%208-bit%20aesthetic%2C%20soft%20pastel%20gradients%2C%20warm%20lighting.?model=nanobanana-pro&seed=7201&nologo=true&width=1200&height=400&quality=high" alt="Pixel art blob creature discovering a retro terminal — bee mascot guiding, cat watching from shelf, Fantastic Planet vibes" width="60%" /></p>
 
 ## 🚀 Getting Started
 
@@ -221,11 +219,15 @@ Our web interface is user-friendly and doesn't require any technical knowledge. 
 
 Use our API directly in your browser or applications:
 
-    https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden
+    https://pollinations.ai/p/a_cozy_pixel_art_robot_and_bee_in_a_digital_garden_8-bit_warm_stardew_valley_vibes
 
 Replace the description with your own, and you'll get a unique image based on your words!
 
-<p align="center"><img src="https://gen.pollinations.ai/image/Cozy%20pixel%20art%20cabinet%20of%20curiosities.%20Glass%20jars%20and%20display%20cases%20on%20wooden%20shelves%20contain%20strange%20beautiful%20specimens%20%E2%80%94%20a%20bottled%20sunset%2C%20a%20captured%20melody%20shown%20as%20waveform%2C%20a%20miniature%20landscape.%20Each%20glows%20softly%2C%20lime%20green%20%28%23ecf874%29%20accents.%20The%20bee%20mascot%20examines%20one%20jar%20with%20a%20tiny%20magnifying%20glass.%20White%20cat%20sits%20atop%20the%20cabinet.%20Warm%20amber%20museum%20lighting%2C%20old%20wood.%20Cozy%20pixel%20art%2C%208-bit%20aesthetic%2C%20soft%20pastel%20gradients%2C%20warm%20lighting.?model=nanobanana-pro&seed=7301&nologo=true&width=1200&height=400&quality=high" alt="Pixel art cabinet of curiosities — glowing jars with bottled sunset, waveform, landscape; bee with magnifying glass, cat on top" width="60%" /></p>
+Here's an example of a generated image:
+
+<p align="center"><img src="https://gen.pollinations.ai/image/a_cozy_pixel_art_robot_and_bee_in_a_digital_garden_8-bit_warm_stardew_valley_vibes?model=nanobanana-pro&seed=9004&nologo=true&width=640&height=480&quality=high" alt="Pixel art robot and bee in a cozy digital garden — Stardew Valley vibes" /></p>
+
+<p align="center"><img src="https://gen.pollinations.ai/image/Chunky%20pixel%20art%20of%20a%20cute%20robot%20with%20CRT%20monitor%20head%20proudly%20holding%20up%20a%20small%20framed%20picture%20of%20a%20cozy%20pixel%20art%20garden%20it%20just%20generated.%20Square%20pixel%20eyes%20look%20excited.%20The%20round%20tan%20nomnom%20creature%20beside%20it%20munches%20on%20the%20prompt%20text.%20Lime%20green%20%28%23ecf874%29%20and%20soft%20sage%20gradient%20background.%20Speech%20bubble%20in%20pixel%20font%3A%20I%20CAN%20SEE.%20Large%20visible%20chunky%20pixels%2C%20lo-fi%208-bit%20aesthetic%2C%20warm%20lighting%2C%20cozy%20vibes%20like%20Stardew%20Valley.?model=nanobanana-pro&seed=9002&nologo=true&width=800&height=340&quality=high" alt="Robot holding generated image saying I CAN SEE, nomnom creature eating prompt text" /></p>
 
 ## 🎨 Examples
 
@@ -242,7 +244,7 @@ Python code to download the generated image:
             file.write(response.content)
         print('Image downloaded!')
 
-    download_image("conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden")
+    download_image("a_cozy_pixel_art_robot_and_bee_in_a_digital_garden_8-bit_warm_stardew_valley_vibes")
 
 ### Text Generation
 
@@ -326,8 +328,6 @@ pollinations.ai envisions a future where AI technology is:
 
 We're committed to developing AI technology that serves humanity while respecting ethical boundaries and promoting responsible innovation. Join us in shaping the future of AI.
 
-<p align="center"><img src="https://gen.pollinations.ai/image/Cozy%20pixel%20art%20scene%20of%20three%20strange%20alien%20beings%20around%20a%20warm%20bioluminescent%20campfire%20that%20glows%20lime%20green%20%28%23ecf874%29.%20One%20being%20is%20tall%20and%20crystalline%2C%20one%20is%20a%20small%20amorphous%20blob%2C%20one%20is%20a%20floating%20ring-shaped%20entity.%20They%20each%20project%20holograms%20from%20organic%20devices.%20The%20bee%20mascot%20roasts%20a%20glowing%20spore.%20White%20fluid%20cat%20curls%20near%20the%20warmth.%20Starry%20sky%2C%20alien%20trees%20in%20silhouette.%20Warm%20firelight%2C%20lo-fi%20vibes.%20Fantastic%20Planet%20meets%20lo-fi.%20Cozy%20pixel%20art%2C%208-bit%20aesthetic%2C%20soft%20pastel%20gradients%2C%20warm%20lighting.?model=nanobanana-pro&seed=7103&nologo=true&width=1200&height=400&quality=high" alt="Pixel art alien campfire — crystal being, blob, ring entity projecting holograms, bee roasting spore, cat curling near warmth, starry sky" width="60%" /></p>
-
 ## 🤝 Community and Development
 
 We believe in community-driven development. You can contribute to pollinations.ai in several ways:
@@ -368,7 +368,7 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 
 > pollinations.ai is proud to be supported by:
 
-<p align="center"><img src="https://gen.pollinations.ai/image/Cozy%20pixel%20art%20bioluminescent%20cave%20garden.%20Twelve%20glowing%20alien%20plants%20in%20crystal%20formations%20along%20cave%20walls%2C%20each%20labeled%3A%20Perplexity%2C%20AWS%2C%20io.net%2C%20BytePlus%2C%20Google%20Cloud%2C%20NVIDIA%2C%20Azure%2C%20Cloudflare%2C%20Scaleway%2C%20Modal%2C%20Nebius%2C%20api.airforce.%20The%20bee%20mascot%20floats%20among%20them%20with%20a%20tiny%20lantern.%20White%20fluid%20cat%20walks%20along%20a%20crystal%20path.%20Warm%20amber%20and%20lime%20green%20%28%23ecf874%29%20bioluminescent%20glow%20against%20dark%20cave%20walls.%20Surreal%2C%20Fantastic%20Planet%20vibes.%20Cozy%20pixel%20art%2C%208-bit%20aesthetic%2C%20soft%20pastel%20gradients%2C%20warm%20lighting.?model=nanobanana-pro&seed=8101&nologo=true&width=1200&height=500&quality=high" alt="Pixel art bioluminescent cave — supporter plants in crystal formations, bee with lantern, cat on crystal path" width="60%" /></p>
+<p align="center"><img src="https://gen.pollinations.ai/image/Chunky%20pixel%20art%20cozy%20garden%20shelf%20display.%20Twelve%20small%20glowing%20pixel%20plants%20in%20labeled%20pots%20on%20wooden%20shelves%3A%20Perplexity%2C%20AWS%2C%20io.net%2C%20BytePlus%2C%20Google%20Cloud%2C%20NVIDIA%2C%20Azure%2C%20Cloudflare%2C%20Scaleway%2C%20Modal%2C%20Nebius%2C%20api.airforce.%20The%20cute%20robot%20with%20monitor%20head%20waters%20one%20plant.%20The%20round%20nomnom%20creature%20sits%20contentedly%20on%20a%20shelf.%20Bee%20mascot%20hovers%20with%20a%20tiny%20watering%20can.%20Lime%20green%20%28%23ecf874%29%20glow%20from%20plants.%20Soft%20cream%20background.%20Large%20visible%20chunky%20pixels%2C%20lo-fi%208-bit%20aesthetic%2C%20warm%20lighting%2C%20cozy%20Stardew%20Valley%20vibes.?model=nanobanana-pro&seed=9003&nologo=true&width=800&height=340&quality=high" alt="Pixel art garden shelf — supporter plants in labeled pots, robot watering, bee with watering can" /></p>
 
 - [Perplexity AI](https://www.perplexity.ai/): AI-powered search and conversational answer engine
 - [AWS Activate](https://aws.amazon.com/): GPU Cloud Credits

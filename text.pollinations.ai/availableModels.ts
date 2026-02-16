@@ -183,6 +183,10 @@ const models: ModelDefinition[] = [
     //     config: portkeyConfig["nomnom"],
     // },
     {
+        name: "qwen-safety",
+        config: portkeyConfig["Qwen3Guard-Gen-8B"],
+    },
+    {
         name: "qwen-character",
         config: portkeyConfig["qwen-character"],
         transform: createSystemPromptTransform(BASE_PROMPTS.character),

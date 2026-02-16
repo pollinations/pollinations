@@ -1,0 +1,32 @@
+{
+  "pr_number": 8328,
+  "title": "Add Sticker Garden to Creative",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8328",
+  "merged_at": "2026-02-16T20:44:27Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Planting a Sticker Garden",
+    "blurb": "Turn your wildest ideas into peel-able reality. Sticker Garden has taken root in our Creative showcase.",
+    "summary": "Added Sticker Garden to the Creative apps list, enabling users to generate sticker-ready images with style presets and batch variants.",
+    "impact": "Users can now access a dedicated tool for creating custom stickers directly from the platform.",
+    "keywords": [
+      "community",
+      "app",
+      "stickers",
+      "image-generation",
+      "creative"
+    ],
+    "visual_concept": "The Pollinations bee in a scrapbooking setting, placing a large, glossy pixel-art sticker of a flower onto a page. The environment is a mix of a garden and a craft station.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot placing a glossy flower sticker into a pixelated scrapbook. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The bee wears a tiny artist beret and is surrounded by sheets of colorful stickers with white borders. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'STICKER GARDEN'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T20:45:18.872102+00:00"
+}

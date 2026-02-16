@@ -32,6 +32,10 @@ export interface ScoringConfig {
     parallelism?: number;
     singleChunk?: boolean;
     overlapSize?: number;
+    /** Optional: enrich users before scoring (e.g. fetch GitHub data). Called once after D1 fetch. */
+    enrichUsers?: (users: User[]) => Promise<User[]>;
+    /** Optional: custom CSV row builder. Default uses github,email,registered,upgraded. */
+    prepareCsvRow?: (user: User, idx: number) => string;
 }
 
 const DEFAULT_CHUNK_SIZE = 100;
@@ -115,21 +119,32 @@ export function buildChunkRanges(
 }
 
 /**
+ * Default CSV row: github,email,registered,upgraded
+ */
+function defaultCsvRow(user: User, idx: number): string {
+    const github = user.github_username || `user_${idx}`;
+    const humanDate = formatDate(user.created_at);
+    const upgraded = user.tier !== "spore" && user.tier !== "microbe";
+    return `${github},${user.email},${humanDate},${upgraded}`;
+}
+
+/**
  * Prepare CSV data from a chunk of users
  */
-export function prepareChunkData(chunk: User[]): {
+export function prepareChunkData(
+    chunk: User[],
+    prepareCsvRow?: (user: User, idx: number) => string,
+): {
     csvRows: string[];
     githubToIndex: Map<string, number>;
 } {
     const githubToIndex = new Map<string, number>();
+    const rowFn = prepareCsvRow ?? defaultCsvRow;
 
     const csvRows = chunk.map((user, idx) => {
         const github = user.github_username || `user_${idx}`;
-        const humanDate = formatDate(user.created_at);
-        const upgraded = user.tier !== "spore" && user.tier !== "microbe";
-
         githubToIndex.set(github, idx);
-        return `${github},${user.email},${humanDate},${upgraded}`;
+        return rowFn(user, idx);
     });
 
     return { csvRows, githubToIndex };
@@ -186,8 +201,9 @@ async function callScoringAPI(
     apiKey: string,
     modelName: string,
     buildPrompt: (csvRows: string[]) => string,
+    prepareCsvRow?: (user: User, idx: number) => string,
 ): Promise<Array<{ score: number; signals: string[] }>> {
-    const { csvRows, githubToIndex } = prepareChunkData(chunk);
+    const { csvRows, githubToIndex } = prepareChunkData(chunk, prepareCsvRow);
     const prompt = buildPrompt(csvRows);
 
     try {
@@ -237,12 +253,18 @@ export async function scoreUsers(config: ScoringConfig): Promise<ScoredUser[]> {
     const singleChunk = config.singleChunk ?? false;
 
     console.log(`Fetching users for ${config.name}...`);
-    const users = fetchUsers(config.userQuery);
+    let users = fetchUsers(config.userQuery);
     if (users.length === 0) {
         console.log("No users found");
         return [];
     }
     console.log(`Fetched ${users.length} users`);
+
+    if (config.enrichUsers) {
+        console.log("Enriching user data...");
+        users = await config.enrichUsers(users);
+        console.log(`Enrichment complete (${users.length} users)`);
+    }
 
     const mode = parallelism > 1 ? `${parallelism} parallel` : "sequential";
     console.log(
@@ -282,6 +304,7 @@ export async function scoreUsers(config: ScoringConfig): Promise<ScoredUser[]> {
                 apiKey,
                 modelName,
                 config.buildPrompt,
+                config.prepareCsvRow,
             );
             return { chunk, scores };
         });

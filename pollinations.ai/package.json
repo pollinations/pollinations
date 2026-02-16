@@ -4,10 +4,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "copy-apps": "cp ../apps/APPS.md public/APPS.md",
-        "predev": "npm run copy-apps",
         "dev": "vite",
-        "prebuild": "npm run copy-apps",
         "build": "tsc && vite build",
         "preview": "vite preview",
         "deploy:production": "npm run build && wrangler deploy"

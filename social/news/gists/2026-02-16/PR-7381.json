@@ -1,0 +1,34 @@
+{
+  "pr_number": 7381,
+  "title": "Add LandPPT to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7381",
+  "merged_at": "2026-02-16T19:39:26Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Slide into the hive",
+    "blurb": "Turn your messy notes into polished presentations with LandPPT, now available in our Creative showcase.",
+    "summary": "LandPPT has been added to the Creative apps list, offering LLM-powered document-to-presentation conversion.",
+    "impact": "Users can now discover and access LandPPT directly from the Pollinations app directory to automate slide creation.",
+    "keywords": [
+      "community",
+      "app",
+      "presentation",
+      "productivity",
+      "llm"
+    ],
+    "visual_concept": "The bee mascot as a presenter with a slide deck. Represents the new LandPPT app for creating presentations.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing smart glasses and holding a tiny pointer stick, standing next to a retro projector screen showing colorful pixelated slides and charts. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi office vibes like Stardew Valley. Text in pixel font: 'LANDPPT'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T19:40:08.250971+00:00"
+}

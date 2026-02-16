@@ -1,16 +1,9 @@
-name: Social Publish
+name: Social Publish (Direct Channels)
 
 on:
-  # Daily: triggered when a daily summary PR is merged
-  pull_request_target:
-    types: [closed]
-    branches:
-      - main
-    paths:
-      - 'social/news/daily/**'
-  # Weekly: Sunday 18:00 UTC cron publishes if weekly PR was merged
   schedule:
-    - cron: '0 18 * * 0'  # Sunday 18:00 UTC
+    - cron: '0 15 * * 1-6'  # Mon-Sat 15:00 UTC — daily Reddit
+    - cron: '0 18 * * 0'    # Sunday 18:00 UTC — weekly Reddit + Discord
   workflow_dispatch:
     inputs:
       mode:
@@ -20,10 +13,6 @@ on:
         options:
           - daily
           - weekly
-      pr_number:
-        description: 'PR number (for daily manual retry)'
-        required: false
-        type: number
       target_date:
         description: 'Date (YYYY-MM-DD) for manual publish'
         required: false
@@ -31,16 +20,9 @@ on:
 
 jobs:
   publish:
-    # For pull_request_target: only run if a daily-summary PR was merged
-    if: >
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.merged == true &&
-       contains(github.event.pull_request.labels.*.name, 'daily-summary'))
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
 
     steps:
       - name: Generate Pollinations AI Token
@@ -63,41 +45,43 @@ jobs:
       - name: Install dependencies
         run: pip install requests PyYAML Jinja2 paramiko
 
-      - name: Fetch gist data from news branch
-        run: git fetch origin news && git checkout origin/news -- social/news/gists/ || echo "No gists on news branch yet"
+      - name: Overlay news branch data
+        run: git fetch origin news && git checkout origin/news -- social/news/ || echo "No news branch data yet"
 
       - name: Determine mode
         id: mode
         run: |
-          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
-            echo "mode=daily" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event_name }}" = "schedule" ]; then
-            echo "mode=weekly" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            DOW=$(date -u +%u)  # 1=Monday, 7=Sunday
+            if [ "$DOW" = "7" ]; then
+              echo "mode=weekly" >> "$GITHUB_OUTPUT"
+            else
+              echo "mode=daily" >> "$GITHUB_OUTPUT"
+            fi
           else
             echo "mode=${{ github.event.inputs.mode }}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Publish daily content
+      - name: Publish daily Reddit
         if: steps.mode.outputs.mode == 'daily'
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
-          BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.number || github.event.inputs.pr_number }}
+          PUBLISH_MODE: direct
           TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
           REDDIT_VPS_HOST: ${{ secrets.REDDIT_VPS_HOST }}
           REDDIT_VPS_USER: ${{ secrets.REDDIT_VPS_USER }}
           REDDIT_VPS_SSH_KEY: ${{ secrets.REDDIT_VPS_SSH_KEY }}
         run: python social/scripts/publish_daily.py
 
-      - name: Publish weekly content
+      - name: Publish weekly Reddit + Discord
         if: steps.mode.outputs.mode == 'weekly'
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
-          BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          PUBLISH_MODE: direct
           WEEK_END_DATE: ${{ github.event.inputs.target_date || '' }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           REDDIT_VPS_HOST: ${{ secrets.REDDIT_VPS_HOST }}
           REDDIT_VPS_USER: ${{ secrets.REDDIT_VPS_USER }}
           REDDIT_VPS_SSH_KEY: ${{ secrets.REDDIT_VPS_SSH_KEY }}

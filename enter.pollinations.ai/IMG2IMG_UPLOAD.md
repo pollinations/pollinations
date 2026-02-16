@@ -8,7 +8,7 @@ Upload local image files directly for img2img generation without external hostin
 - **Same**: All query parameters (model, width, height, seed, etc.) work identically
 
 ## Supported Formats
-- JPEG, PNG, WebP, GIF (max 50MB)
+- JPEG, PNG, WebP, GIF (max 7MB)
 
 ## Quick Example
 ```bash

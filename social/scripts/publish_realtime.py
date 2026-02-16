@@ -134,6 +134,9 @@ def main():
 
     if not snippet:
         snippet = summary
+    elif snippet.strip().upper() == "SKIP":
+        print("  AI returned SKIP — nothing noteworthy to post")
+        return
 
     # Format message with PR metadata footer
     pr_url = gist["url"]

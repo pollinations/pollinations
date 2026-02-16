@@ -24,24 +24,30 @@ const CATEGORIES = ["Hate", "SelfHarm", "Sexual", "Violence"] as const;
 // Severity levels: 0 (safe), 2 (low), 4 (medium), 6 (high)
 const SEVERITY_THRESHOLD = 4; // Block medium and high severity content
 
-export type ContentSafetyResults = {
-    safe: boolean;
-    violations: ContentViolation[];
-    formattedViolations: string;
-};
+export interface ContentSafetyResults {
+    readonly safe: boolean;
+    readonly violations: ReadonlyArray<ContentViolation>;
+    readonly formattedViolations: string;
+}
 
 export type ContentViolationCategory = (typeof CATEGORIES)[number];
 export type ContentViolationSeverity = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
-export type ContentViolation = {
-    category: ContentViolationCategory;
-    severity: ContentViolationSeverity;
-};
+export interface ContentViolation {
+    readonly category: ContentViolationCategory;
+    readonly severity: ContentViolationSeverity;
+}
 
-export type ContentSafetyFlags = {
-    isMature: boolean;
-    isChild: boolean;
-};
+export interface ContentSafetyFlags {
+    readonly isMature: boolean;
+    readonly isChild: boolean;
+}
+
+export interface ContentSafetyConfig {
+    readonly SEVERITY_THRESHOLD: number;
+    readonly CATEGORIES: typeof CATEGORIES;
+    readonly isConfigured: boolean;
+}
 
 /**
  * Analyzes text content for safety violations
@@ -190,7 +196,7 @@ function formatViolations(violations: ContentViolation[]): string {
 }
 
 // Export configuration for testing
-export const config = {
+export const config: ContentSafetyConfig = {
     SEVERITY_THRESHOLD,
     CATEGORIES,
     isConfigured: !!client,

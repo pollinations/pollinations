@@ -1,14 +1,14 @@
+import type { IncomingHttpHeaders } from "node:http";
 import debug from "debug";
-import { IncomingHttpHeaders } from "node:http";
 
 const logger = debug("pollinations:badDomain");
-const memoizedResults = new Map();
+const memoizedResults = new Map<string, ProcessPromptResult>();
 
 /**
  * Extracts referrer from headers
- * @param {object} headers - HTTP headers to extract referrer from
- * @param {string|null} explicitReferrer - Optional explicitly provided referrer
- * @returns {string|null} - Extracted referrer
+ * @param headers - HTTP headers to extract referrer from
+ * @param explicitReferrer - Optional explicitly provided referrer
+ * @returns Extracted referrer
  */
 function getRefererFromHeaders(
     headers: IncomingHttpHeaders,
@@ -32,8 +32,8 @@ function getRefererFromHeaders(
 
 /**
  * Checks if a domain is in the bad domains list
- * @param {string} referrer - The referrer domain to check
- * @returns {boolean} - Whether the domain is in the bad domains list
+ * @param referrer - The referrer domain to check
+ * @returns Whether the domain is in the bad domains list
  */
 export function isBadDomain(referrer: string): boolean {
     if (!referrer) return false;
@@ -62,8 +62,8 @@ export function isBadDomain(referrer: string): boolean {
 
 /**
  * Transforms a prompt into its semantic opposite using text.pollinations.ai
- * @param {string} prompt - The original prompt to transform
- * @returns {Promise<string>} - The transformed prompt
+ * @param prompt - The original prompt to transform
+ * @returns The transformed prompt
  */
 export async function transformToOpposite(prompt: string): Promise<string> {
     try {
@@ -107,8 +107,8 @@ export async function transformToOpposite(prompt: string): Promise<string> {
 
 /**
  * Utility to extract domain from a URL
- * @param {string} url - The URL to extract the domain from
- * @returns {string} - The extracted domain
+ * @param url - The URL to extract the domain from
+ * @returns The extracted domain
  */
 export function extractDomain(url: string): string {
     try {
@@ -122,27 +122,27 @@ export function extractDomain(url: string): string {
     }
 }
 
-type ProcessPromtResult = {
-    prompt: string;
-    originalPrompt: string;
-    wasTransformed: boolean;
-    referrer: string | null;
-};
+export interface ProcessPromptResult {
+    readonly prompt: string;
+    readonly originalPrompt: string;
+    readonly wasTransformed: boolean;
+    readonly referrer: string | null;
+}
 
 /**
  * Processes a prompt based on referrer information
- * @param {string} prompt - Original prompt to process
- * @param {object} headers - HTTP headers to extract referrer from
- * @param {string|null} explicitReferrer - Optional explicitly provided referrer
- * @param {number} transformProbability - Probability (0.0-1.0) to transform bad domain prompts
- * @returns {Promise<ProcessPromtResult>} - Result object with processed prompt and metadata
+ * @param prompt - Original prompt to process
+ * @param headers - HTTP headers to extract referrer from
+ * @param explicitReferrer - Optional explicitly provided referrer
+ * @param transformProbability - Probability (0.0-1.0) to transform bad domain prompts
+ * @returns Result object with processed prompt and metadata
  */
 export async function processPrompt(
     prompt: string,
     headers: IncomingHttpHeaders = {},
     explicitReferrer: string | null = null,
     transformProbability: number = 0.6,
-): Promise<ProcessPromtResult> {
+): Promise<ProcessPromptResult> {
     // Extract referrer
     const referrer = getRefererFromHeaders(headers, explicitReferrer);
 
@@ -200,8 +200,15 @@ export async function processPrompt(
     return result;
 }
 
+export interface BadDomainHandler {
+    processPrompt: typeof processPrompt;
+    isBadDomain: typeof isBadDomain;
+    transformToOpposite: typeof transformToOpposite;
+    extractDomain: typeof extractDomain;
+}
+
 // Export all functions as a single object for easier imports
-export const badDomainHandler = {
+export const badDomainHandler: BadDomainHandler = {
     processPrompt,
     isBadDomain,
     transformToOpposite,

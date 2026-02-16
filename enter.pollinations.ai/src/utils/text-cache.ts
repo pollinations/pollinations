@@ -7,6 +7,7 @@
 import type { Context } from "hono";
 import type { Logger } from "@logtape/logtape";
 import stableStringify from "fast-json-stable-stringify";
+// CloudflareBindings is declared globally via worker-bindings.d.ts
 
 // Parameters to exclude from cache key (auth + cache control)
 const EXCLUDED_PARAMS = ["key", "no-cache"];

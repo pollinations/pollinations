@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| 🛠 | Bloom CLI | https://pypi.org/project/bloom-cli/ | Provides an open-source terminal coding agent that uses the Pollinations API (pollinations.ai) with a default GLM model, supporting multi-tool agent workflows and ACP integration. | en | Dev_Tools | @Ilm-Alan | 105959075 | https://github.com/Ilm-Alan/bloom-cli |  | ilm.alan | | 2026-02-16 | https://github.com/pollinations/pollinations/issues/8321 | 2026-02-16 |  |  |
 | 🎨 | SILENOS | https://www.silenos.es | AI creative production suite with art studios, storytelling, music, and multi-modal generation. | es | Creative | @todoh | 186086959 | https://github.com/todoh/SILENOS | ⭐1 |  |  | 2026-02-16 |  | 2026-02-16 | true |  |
 | 📚 | SAIL Solver | https://ail-solver.vercel.app | Academic test-solving tool that generates answers for multiple-choice and open-ended questions. | en | Learn | @unKnownNG | 91405849 |  |  |  |  | 2026-02-16 |  | 2026-02-16 | true |  |
 | 🎬 | FastStoryboard | https://faststoryboard.cloud | AI video creation platform for generating storyboards and visual narratives. | pt-BR | Creative | @thomazandreywalicoski | 138054605 |  |  |  |  | 2026-02-16 |  | 2026-02-16 | true |  |

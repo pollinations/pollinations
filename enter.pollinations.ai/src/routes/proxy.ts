@@ -541,6 +541,52 @@ export const proxyRoutes = new Hono<Env>()
                     });
                 }
 
+                // Validate file by magic bytes (first few bytes) to prevent spoofing
+                const validateMagicBytes = (
+                    buffer: ArrayBuffer,
+                    contentType: string,
+                ): boolean => {
+                    const view = new Uint8Array(buffer);
+
+                    // Magic byte signatures
+                    const signatures: { [key: string]: number[] } = {
+                        "image/jpeg": [0xff, 0xd8, 0xff],
+                        "image/png": [0x89, 0x50, 0x4e, 0x47],
+                        "image/webp": [0x52, 0x49, 0x46, 0x46],
+                        "image/gif": [0x47, 0x49, 0x46],
+                    };
+
+                    const expected = signatures[contentType];
+                    if (!expected) return false;
+
+                    // Check if file starts with expected magic bytes
+                    for (let i = 0; i < expected.length; i++) {
+                        if (view[i] !== expected[i]) {
+                            return false;
+                        }
+                    }
+
+                    // For WebP, also check for "WEBP" signature after RIFF header
+                    if (contentType === "image/webp") {
+                        const webpSignature = [0x57, 0x45, 0x42, 0x50];
+                        for (let i = 0; i < webpSignature.length; i++) {
+                            if (view[8 + i] !== webpSignature[i]) {
+                                return false;
+                            }
+                        }
+                    }
+
+                    return true;
+                };
+
+                // Validate magic bytes
+                if (!validateMagicBytes(fileBuffer, imageFile.type)) {
+                    throw new HTTPException(400, {
+                        message:
+                            "File does not appear to be a valid image. Magic bytes do not match declared type.",
+                    });
+                }
+
                 log.debug("Forwarding multipart image upload", {
                     filename: imageFile.name,
                     size: fileBuffer.byteLength,

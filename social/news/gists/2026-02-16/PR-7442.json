@@ -1,0 +1,34 @@
+{
+  "pr_number": 7442,
+  "title": "Add AIImageEditor to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7442",
+  "merged_at": "2026-02-16T20:48:26Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh Paint: AIImageEditor",
+    "blurb": "We've added a shiny new image generation and editing studio to the Creative showcase. Time to get artistic!",
+    "summary": "Added AIImageEditor, a React-based image generation and editing studio, to the community apps directory.",
+    "impact": "Users can now discover and use this new tool for advanced image manipulation directly from our apps showcase.",
+    "keywords": [
+      "community",
+      "app",
+      "image-editing",
+      "creative",
+      "react"
+    ],
+    "visual_concept": "The Pollinations bee as a digital artist using the new tool. Symbols: Digital canvas, paintbrushes, magic wand tool, retro UI.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny red painter's beret, working on a digital canvas displayed on a retro computer monitor. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites of paintbrushes and magic wands floating nearby. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'AI EDITOR'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T20:49:11.434344+00:00"
+}

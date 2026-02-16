@@ -15,16 +15,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [LandPPT](https://landppt.com) | LLM-powered platform converting documents into professional PPT presentations. | @sligter |
+| [OpenCode Pollinations Plugin](https://www.npmjs.com/package/opencode-pollinations-plugin) | Bridge between OpenCode and Pollinations; use free or Pro AI models in your IDE. | @fkom13 |
+| [SimpleTools](https://simpletools.lol/) | Utilities: automatic citation generator, AI humanizer, and scrambler. | @rhenryw |
+| [Gen-Wal](https://gen-wal.laptopserver.dev) | Auto-refreshing wallpapers aligned to your goals to boost focus and habit. | @nicemit |
+| [EcubzBOT](https://t.me/eCubzBot) | Telegram inline AI assistant for generating answers directly within chats. | @AntikFull |
+| [InferencePort AI](https://inference.js.org) | Privacy-focused UI to run local models, chat, save sessions, and launch Spaces. | @sharktide |
+| [TaleCrafter AI](https://www.talecrafter.tech/) | AI tool to craft interactive stories, characters, and narratives. | @adityashriwas |
+| [Personic](https://github.com/AlanSynn/personic) | Generate structured AI personas and matching images from brief action prompts. | @AlanSynn |
 | [SILENOS](https://www.silenos.es) | AI creative production suite with art studios, storytelling, music, and multi-modal generation. | @todoh |
 | [SAIL Solver](https://ail-solver.vercel.app) | Academic test-solving tool that generates answers for multiple-choice and open-ended questions. | @unKnownNG |
-| [FastStoryboard](https://faststoryboard.cloud) | AI video creation platform for generating storyboards and visual narratives. | @thomazandreywalicoski |
-| [Strudel AI REPL](https://strudel-ai-repl.pages.dev) | AI-powered live-coding music environment for generating and performing algorithmic compositions. | @voodoohop |
-| [PollinCoder](https://pollincoder.vercel.app) | AI app builder that generates and previews full web applications from natural language prompts. | @Spit-fires |
-| [7Studio](https://7studio.edgeone.app) | AI image generation studio with prompt input, model selection, and gallery display. | @ims111we-cmd |
-| [AI Studio](https://ai-studio.puter.site) | Chat and audio AI interface with text-to-speech and conversation features. | @Chess-Base |
-| [Pollinations.ai Image Model Comparison](https://dseeker.github.io/pollinations/image-comparison/) | Side-by-side comparison of AI image generation models — test cost, speed, quality. | @dseeker |
-| [My Web Site](https://proyectodescartes.org/IATools/85_Generador_de_c%C3%B3digo_con_IA/ejemplos/game.html) | Sitio web para proyectos de aula de bachillerato con estructura completa. | @theteacherbot |
-| [Flipbook-style digital book designer](https://proyectodescartes.org/IATools/Crea_libros_3D_caps/) | AI-powered flipbook digital book designer creating illustrated 3D page-flip books. | @Juanrivera126 |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

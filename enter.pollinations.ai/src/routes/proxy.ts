@@ -345,12 +345,22 @@ export const proxyRoutes = new Hono<Env>()
                     .min(1)
                     .max(2000)
                     .refine((val) => {
+                        // Allow newlines, tabs, carriage returns (useful for multiline prompts)
+                        // Block other control characters (null bytes, etc.)
                         for (let i = 0; i < val.length; i++) {
                             const code = val.charCodeAt(i);
-                            if (code >= 0x00 && code <= 0x1f) return false;
+                            if (
+                                code >= 0x00 &&
+                                code <= 0x1f &&
+                                code !== 0x09 &&
+                                code !== 0x0a &&
+                                code !== 0x0d
+                            ) {
+                                return false;
+                            }
                         }
                         return true;
-                    }, "Prompt cannot contain control characters")
+                    }, "Prompt cannot contain control characters (except newlines, tabs, carriage returns)")
                     .meta({
                         description: "Text prompt for generation",
                         example: "Write a haiku about coding",
@@ -458,12 +468,22 @@ export const proxyRoutes = new Hono<Env>()
                     .min(1)
                     .max(2000)
                     .refine((val) => {
+                        // Allow newlines, tabs, carriage returns (useful for multiline prompts)
+                        // Block other control characters (null bytes, etc.)
                         for (let i = 0; i < val.length; i++) {
                             const code = val.charCodeAt(i);
-                            if (code >= 0x00 && code <= 0x1f) return false;
+                            if (
+                                code >= 0x00 &&
+                                code <= 0x1f &&
+                                code !== 0x09 &&
+                                code !== 0x0a &&
+                                code !== 0x0d
+                            ) {
+                                return false;
+                            }
                         }
                         return true;
-                    }, "Prompt cannot contain control characters")
+                    }, "Prompt cannot contain control characters (except newlines, tabs, carriage returns)")
                     .meta({
                         description:
                             "Text description for image generation with the uploaded reference",
@@ -661,12 +681,22 @@ export const proxyRoutes = new Hono<Env>()
                     .min(1)
                     .max(2000)
                     .refine((val) => {
+                        // Allow newlines, tabs, carriage returns (useful for multiline prompts)
+                        // Block other control characters (null bytes, etc.)
                         for (let i = 0; i < val.length; i++) {
                             const code = val.charCodeAt(i);
-                            if (code >= 0x00 && code <= 0x1f) return false;
+                            if (
+                                code >= 0x00 &&
+                                code <= 0x1f &&
+                                code !== 0x09 &&
+                                code !== 0x0a &&
+                                code !== 0x0d
+                            ) {
+                                return false;
+                            }
                         }
                         return true;
-                    }, "Prompt cannot contain control characters")
+                    }, "Prompt cannot contain control characters (except newlines, tabs, carriage returns)")
                     .meta({
                         description:
                             "Text description of the image or video to generate",

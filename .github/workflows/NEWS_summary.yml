@@ -46,8 +46,8 @@ jobs:
       - name: Install dependencies
         run: pip install requests PyYAML Jinja2
 
-      - name: Fetch gist data from news branch
-        run: git fetch origin news && git checkout origin/news -- social/news/gists/ || echo "No gists on news branch yet"
+      - name: Overlay news branch data
+        run: git fetch origin news && git checkout origin/news -- social/news/ || echo "No news branch data yet"
 
       - name: Determine mode (daily vs weekly)
         id: mode
@@ -64,6 +64,7 @@ jobs:
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
           echo "Mode: $MODE"
 
+      # ── Daily: generate + stage to Buffer ──────────────────────────
       - name: Generate daily summary
         if: steps.mode.outputs.mode == 'daily'
         env:
@@ -71,9 +72,19 @@ jobs:
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
-          PR_LABELS: 'social,daily-summary'
+          PR_LABELS: 'social,readme-news'
         run: python social/scripts/generate_daily.py
 
+      - name: Stage daily posts to Buffer
+        if: steps.mode.outputs.mode == 'daily'
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
+          PUBLISH_MODE: buffer
+        run: python social/scripts/publish_daily.py
+
+      # ── Weekly: generate + stage to Buffer ─────────────────────────
       - name: Generate weekly digest
         if: steps.mode.outputs.mode == 'weekly'
         env:
@@ -81,5 +92,13 @@ jobs:
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           WEEK_START_DATE: ${{ github.event.inputs.target_date || '' }}
-          PR_LABELS: 'social,weekly-summary'
         run: python social/scripts/generate_weekly.py
+
+      - name: Stage weekly posts to Buffer
+        if: steps.mode.outputs.mode == 'weekly'
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
+          PUBLISH_MODE: buffer
+        run: python social/scripts/publish_weekly.py

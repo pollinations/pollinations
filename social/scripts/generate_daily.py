@@ -9,7 +9,8 @@ At 06:00 UTC daily:
   4. Generate platform posts using existing prompts: twitter.json, instagram.json, reddit.json
   5. Generate platform images (1 twitter + 3 instagram + 1 reddit)
   Note: LinkedIn is weekly-only — no daily LinkedIn posts.
-  6. Create single PR with all files
+  6. Commit all content to the news branch
+  7. Create a small README-only PR to main
 
 See social/PIPELINE.md for full architecture.
 """
@@ -174,11 +175,10 @@ def generate_platform_images(
     return urls
 
 
-# ── Step 4: Create PR ───────────────────────────────────────────────
+# ── Step 4: Commit to news branch ─────────────────────────────────
 
-def create_daily_pr(
+def commit_daily_to_news(
     date_str: str,
-    summary: Dict,
     twitter_post: Optional[Dict],
     instagram_post: Optional[Dict],
     github_token: str,
@@ -186,18 +186,21 @@ def create_daily_pr(
     repo: str,
     reddit_post: Optional[Dict] = None,
     highlights_content: Optional[str] = None,
-    readme_content: Optional[str] = None,
-) -> Optional[int]:
-    """Create a single PR with all daily post files + highlights + README. Returns PR number."""
-    branch = f"daily-summary-{date_str}"
-
-    if create_branch_from_main(branch, github_token, owner, repo) is None:
-        return None
-
+) -> bool:
+    """Commit all daily content directly to the news branch. Returns True on success."""
     base_path = f"{DAILY_REL_DIR}/{date_str}"
     now_iso = datetime.now(timezone.utc).isoformat()
 
-    # Add platform metadata and collect files
+    # Generate images (commits them directly to news branch)
+    print("\n  Generating platform images...")
+    generate_platform_images(
+        twitter_post, instagram_post,
+        date_str, get_env("POLLINATIONS_TOKEN"),
+        github_token, owner, repo, GISTS_BRANCH,
+        reddit_post=reddit_post,
+    )
+
+    # Collect files to commit
     files_to_commit = []
     if twitter_post:
         twitter_post.update({"date": date_str, "generated_at": now_iso, "platform": "twitter"})
@@ -211,72 +214,43 @@ def create_daily_pr(
     if reddit_post:
         reddit_post.update({"date": date_str, "generated_at": now_iso, "platform": "reddit"})
         files_to_commit.append((f"{base_path}/reddit.json", reddit_post))
-
-    # Include highlights and README (str data — commit_files_to_branch handles both str and dict)
     if highlights_content:
         files_to_commit.append(("social/news/highlights.md", highlights_content))
-    if readme_content:
-        files_to_commit.append(("README.md", readme_content))
 
-    # Generate images (commits them to the branch)
-    print("\n  Generating platform images...")
-    generate_platform_images(
-        twitter_post, instagram_post,
-        date_str, get_env("POLLINATIONS_TOKEN"),
-        github_token, owner, repo, branch,
-        reddit_post=reddit_post,
+    if not files_to_commit:
+        print("  No files to commit")
+        return False
+
+    commit_files_to_branch(files_to_commit, GISTS_BRANCH, github_token, owner, repo, label=f"for {date_str}")
+    print(f"  Committed {len(files_to_commit)} files to {GISTS_BRANCH} branch")
+    return True
+
+
+# ── Step 5: README-only PR to main ────────────────────────────────
+
+def create_readme_pr(
+    date_str: str,
+    readme_content: str,
+    github_token: str,
+    owner: str,
+    repo: str,
+) -> Optional[int]:
+    """Create a small PR to main containing only the README update."""
+    branch = f"readme-news-{date_str}"
+
+    if create_branch_from_main(branch, github_token, owner, repo) is None:
+        return None
+
+    commit_files_to_branch(
+        [("README.md", readme_content)],
+        branch, github_token, owner, repo,
+        label=f"for {date_str}",
     )
 
-    # Commit all files (JSON posts + text highlights/README)
-    commit_files_to_branch(files_to_commit, branch, github_token, owner, repo, label=f"for {date_str}")
-
-    # Build PR body
-    arc_preview = ""
-    for arc in summary.get("arcs", []):
-        arc_preview += f"\n**{arc['headline']}** ({arc['importance']})\n"
-        arc_preview += f"{arc['summary']}\n"
-        arc_preview += f"PRs: {', '.join(f'#{p}' for p in arc.get('prs', []))}\n"
-
-    pr_count = summary.get("pr_count", 0)
-    one_liner = summary.get("one_liner", "")
-
-    twitter_preview = ""
-    if twitter_post:
-        tweet = twitter_post.get("tweet", twitter_post.get("full_tweet", ""))
-        twitter_preview = f"\n### Twitter\n```\n{tweet}\n```\n"
-
-    instagram_preview = ""
-    if instagram_post:
-        caption = instagram_post.get("caption", "")[:200]
-        img_count = len(instagram_post.get("images", []))
-        instagram_preview = f"\n### Instagram ({img_count} images)\n{caption}...\n"
-
-    reddit_preview = ""
-    if reddit_post:
-        title = reddit_post.get("title", "")
-        reddit_preview = f"\n### Reddit\n**Title:** {title}\n"
-
-    highlights_note = ""
-    if highlights_content:
-        highlights_note = "\n### Highlights + README\nUpdated in this PR.\n"
-
-    pr_body = f"""## Daily Summary — {date_str}
-
-**{one_liner}**
-
-{pr_count} PRs merged, {len(summary.get('arcs', []))} narrative arcs.
-
-### Story Arcs
-{arc_preview}
-{twitter_preview}{instagram_preview}{reddit_preview}{highlights_note}
----
-When this PR is merged, posts will be staged to Buffer (Twitter, Instagram) and Reddit deployed to VPS. LinkedIn is weekly-only.
-
-Generated automatically by GitHub Actions.
-"""
+    pr_body = f"Update README Latest News section for {date_str}.\n\nGenerated automatically by GitHub Actions."
 
     return create_or_update_pr(
-        f"Daily Summary — {date_str}", pr_body, branch,
+        f"Update README news — {date_str}", pr_body, branch,
         github_token, owner, repo,
     )
 
@@ -297,7 +271,7 @@ def main():
     print(f"  Target date: {date_str}")
 
     # ── Read gists ───────────────────────────────────────────────────
-    print(f"\n[1/5] Reading gists for {date_str}...")
+    print(f"\n[1/6] Reading gists for {date_str}...")
 
     # Try local repo first, fall back to GitHub API
     gists = read_gists_for_date(date_str)
@@ -341,7 +315,7 @@ def main():
         return
 
     # ── Generate summary ─────────────────────────────────────────────
-    print(f"\n[2/5] Generating daily summary...")
+    print(f"\n[2/6] Generating daily summary...")
     summary = generate_summary(daily_gists, date_str, pollinations_token)
     if not summary:
         print("  Summary generation failed!")
@@ -349,7 +323,7 @@ def main():
     print(f"  {len(summary.get('arcs', []))} arcs: {summary.get('one_liner', '')}")
 
     # ── Generate platform posts ──────────────────────────────────────
-    print(f"\n[3/5] Generating platform posts...")
+    print(f"\n[3/6] Generating platform posts...")
 
     print("  Twitter...")
     twitter_post = generate_twitter_post(summary, pollinations_token)
@@ -369,25 +343,38 @@ def main():
         print(f"  Reddit: {reddit_post.get('title', '')[:80]}")
 
     # ── Generate highlights + README ─────────────────────────────────
-    print(f"\n[4/5] Generating highlights + README...")
+    print(f"\n[4/6] Generating highlights + README...")
     highlights_content, readme_content = generate_highlights_and_readme(pollinations_token, date_str)
 
-    # ── Create PR ────────────────────────────────────────────────────
-    print(f"\n[5/5] Creating PR...")
-    pr_number = create_daily_pr(
-        date_str, summary,
+    # ── Commit daily content to news branch ──────────────────────────
+    print(f"\n[5/6] Committing daily content to news branch...")
+    success = commit_daily_to_news(
+        date_str,
         twitter_post, instagram_post,
         github_token, owner, repo,
         reddit_post=reddit_post,
         highlights_content=highlights_content,
-        readme_content=readme_content,
     )
 
-    if pr_number:
-        print(f"\n=== Done! PR #{pr_number} created ===")
-    else:
-        print("\n=== Failed to create PR ===")
+    if not success:
+        print("\n=== Failed to commit daily content ===")
         sys.exit(1)
+
+    # ── Create README-only PR to main ────────────────────────────────
+    if readme_content:
+        print(f"\n[6/6] Creating README-only PR to main...")
+        pr_number = create_readme_pr(
+            date_str, readme_content,
+            github_token, owner, repo,
+        )
+        if pr_number:
+            print(f"  README PR #{pr_number} created")
+        else:
+            print("  Warning: Failed to create README PR (non-fatal)")
+    else:
+        print(f"\n[6/6] No README content — skipping PR")
+
+    print("\n=== Done! ===")
 
 
 if __name__ == "__main__":

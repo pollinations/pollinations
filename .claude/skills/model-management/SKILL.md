@@ -43,6 +43,8 @@ description: "Add, update, or remove text/image/video models. Handles any provid
 | New model | ✅ | ✅ | ✅ (pricing!) |
 | Change endpoint only | ✅ | - | - |
 | Change provider | ✅ | ✅ | ✅ (pricing!) |
+| Make paid-only | - | - | ✅ (`paidOnly: true`) |
+| Disable model | - | ✅ (remove) | ✅ (remove) |
 
 ---
 

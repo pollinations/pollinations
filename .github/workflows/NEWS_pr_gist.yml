@@ -1,0 +1,60 @@
+name: PR Gist Generator
+
+on:
+  pull_request_target:
+    types: [closed]
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to generate gist for (manual retry)'
+        required: true
+        type: number
+
+jobs:
+  generate-gist:
+    # Only run if PR was merged (skip closed-without-merge)
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests PyYAML Jinja2
+
+      - name: Generate PR gist
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
+          PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number || github.event.pull_request.number }}
+          REPO_FULL_NAME: ${{ github.repository }}
+        run: python social/scripts/generate_realtime.py
+
+      - name: Post to Discord
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
+          DISCORD_REALTIME_WEBHOOK_URL: ${{ secrets.DISCORD_REALTIME_WEBHOOK_URL }}
+          PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number || github.event.pull_request.number }}
+          REPO_FULL_NAME: ${{ github.repository }}
+        run: python social/scripts/publish_realtime.py

@@ -12,7 +12,7 @@ Prod:    Browser → economics.myceli.ai → Cloudflare Tunnel → Grafana → T
 ## Quick Start (Local)
 
 ```bash
-cd apps/myceli/economics
+cd apps/operation/economics
 
 # 1. Create .env with secrets (get from team)
 cp /path/to/shared/.env .env
@@ -31,6 +31,13 @@ open http://localhost:3000
 - **Database:** `default`
 - **Token:** `TINYBIRD_GENERATION_EVENT_READ`
 - **UID:** `PAD1A0A25CD30D456`
+
+### Tinybird Legacy (ClickHouse)
+- **Host:** `clickhouse.europe-west2.gcp.tinybird.co`
+- **Database:** `default` (workspace: `pollinations_ai`)
+- **Token:** `TINYBIRD_TEXT_EVENT_READ`
+- **UID:** `PAD1A0A25CD30D458`
+- **Table:** `text_events` — legacy API (Flux Z image, gpt-oss text)
 
 ### Cloudflare D1
 - **Type:** Infinity plugin (REST API)
@@ -69,11 +76,11 @@ Secrets are stored in `.env` (gitignored) locally and on the production server.
 
 ### Architecture on Production
 
-The production server has two paths:
-- **Source code:** `/opt/pollinations/apps/myceli/economics/` (from git)
-- **Running container mounts:** `/opt/pollinations/apps/economics-dashboard/provisioning/`
+The Grafana container bind-mounts provisioning directly from the git repo:
+- **Mount:** `/opt/pollinations/apps/operation/economics/provisioning` → `/etc/grafana/provisioning` (read-only)
+- **Data volume:** `economics_grafana-data` → `/var/lib/grafana`
 
-The Grafana container mounts provisioning files from the `economics-dashboard` path, so updates require copying files there.
+No intermediate copy step needed — just pull and restart.
 
 ### First Time Setup
 
@@ -83,19 +90,12 @@ ssh root@207.154.253.25
 cd /opt
 git clone https://github.com/pollinations/pollinations.git
 
-# Create provisioning directory structure
-mkdir -p /opt/pollinations/apps/economics-dashboard/provisioning/{dashboards,datasources}
-
-# Copy provisioning files
-cp -r /opt/pollinations/apps/myceli/economics/provisioning/* \
-   /opt/pollinations/apps/economics-dashboard/provisioning/
-
 # Create .env with secrets
-cd /opt/pollinations/apps/economics-dashboard
+cd /opt/pollinations/apps/operation/economics
 nano .env  # Add GF_ADMIN_PASSWORD, TINYBIRD_*, CLOUDFLARE_* tokens
 
 # Start
-docker compose -f /opt/pollinations/apps/myceli/economics/docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ### Update Dashboards (Most Common)
@@ -103,21 +103,15 @@ docker compose -f /opt/pollinations/apps/myceli/economics/docker-compose.prod.ym
 ```bash
 ssh root@207.154.253.25
 
-# Pull latest code
+# Pull latest code and restart
 cd /opt/pollinations && git fetch origin && git reset --hard origin/main
-
-# Copy updated provisioning files to mount path
-cp -r /opt/pollinations/apps/myceli/economics/provisioning/* \
-   /opt/pollinations/apps/economics-dashboard/provisioning/
-
-# Restart Grafana to pick up changes
 docker restart economics-grafana
 ```
 
 ### One-Liner Deploy
 
 ```bash
-ssh root@207.154.253.25 "cd /opt/pollinations && git fetch origin && git reset --hard origin/main && cp -r apps/myceli/economics/provisioning/* apps/economics-dashboard/provisioning/ && docker restart economics-grafana"
+ssh root@207.154.253.25 "cd /opt/pollinations && git fetch origin && git reset --hard origin/main && docker restart economics-grafana"
 ```
 
 ## Common Commands

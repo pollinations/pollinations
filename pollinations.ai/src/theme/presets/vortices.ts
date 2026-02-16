@@ -90,10 +90,16 @@ export const AHyperAbstractStormOfCuteBiologicalFormsInConstantTransformationSwi
                 "hex": "#150821",
                 "ids": ["surface.base"],
             },
+            "slot_17": {
+                "hex": "#A78BFA",
+                "ids": ["text.accent", "border.accent"],
+            },
         },
         "borderRadius": {
             "radius.button": "24px",
             "radius.card": "20px",
+            "radius.input": "12px",
+            "radius.subcard": "12px",
         },
         "fonts": {
             "font.title": "Fredoka",

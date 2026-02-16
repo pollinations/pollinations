@@ -43,7 +43,7 @@ Weekly KPI dashboard for pollinations.ai — the AI platform by Myceli.AI.
 ## Setup
 
 ```bash
-cd apps/kpi-dashboard
+cd apps/operation/kpi
 npm install
 
 # Load secrets (requires SOPS + age key)

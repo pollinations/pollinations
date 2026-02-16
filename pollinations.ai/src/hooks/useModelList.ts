@@ -64,19 +64,21 @@ const REGISTRY_IMAGE_MODELS: Model[] = getVisibleImageServices().map((id) =>
     serviceToModel(id, "image"),
 );
 const REGISTRY_TEXT_MODELS: Model[] = getVisibleTextServices()
-    .filter(
-        (id) => !getServiceDefinition(id).outputModalities?.includes("audio"),
-    )
+    .filter((id) => getServiceDefinition(id).outputModalities?.includes("text"))
     .map((id) => serviceToModel(id, "text"));
 const REGISTRY_AUDIO_MODELS: Model[] = [
-    // Audio models from text services (output_modalities includes "audio")
+    // Dedicated audio services that output audio
+    ...getVisibleAudioServices()
+        .filter((id) =>
+            getServiceDefinition(id).outputModalities?.includes("audio"),
+        )
+        .map((id) => serviceToModel(id, "audio")),
+    // Text services that output audio (e.g. openai-audio)
     ...getVisibleTextServices()
         .filter((id) =>
             getServiceDefinition(id).outputModalities?.includes("audio"),
         )
         .map((id) => serviceToModel(id, "audio")),
-    // Dedicated audio services
-    ...getVisibleAudioServices().map((id) => serviceToModel(id, "audio")),
 ];
 const ALL_MODELS: Model[] = [
     ...REGISTRY_IMAGE_MODELS,
@@ -148,35 +150,8 @@ export function useModelList(apiKey: string): UseModelListReturn {
                 if (controller.signal.aborted) return;
 
                 setAllowedImageModelIds(extractIds(allowedImageList || []));
-
-                // openai-audio lives in /text/models but is displayed as audio
-                // in the UI — extract it from the text response and merge with
-                // the dedicated /audio/models response.
-                type RawModel =
-                    | {
-                          id?: string;
-                          name?: string;
-                          output_modalities?: string[];
-                      }
-                    | string;
-                const hasAudioOutput = (m: RawModel) =>
-                    typeof m !== "string" &&
-                    m.output_modalities?.includes("audio");
-
-                const textOnly = (allowedTextList || []).filter(
-                    (m: RawModel) => !hasAudioOutput(m),
-                );
-                const audioFromText = (allowedTextList || []).filter(
-                    (m: RawModel) => hasAudioOutput(m),
-                );
-
-                setAllowedTextModelIds(extractIds(textOnly));
-
-                const audioIds = extractIds(allowedAudioList || []);
-                for (const id of extractIds(audioFromText)) {
-                    audioIds.add(id);
-                }
-                setAllowedAudioModelIds(audioIds);
+                setAllowedTextModelIds(extractIds(allowedTextList || []));
+                setAllowedAudioModelIds(extractIds(allowedAudioList || []));
                 setIsLoading(false);
             } catch (err) {
                 if (controller.signal.aborted) return;

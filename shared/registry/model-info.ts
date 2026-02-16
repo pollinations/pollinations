@@ -8,6 +8,14 @@ import {
     type ServiceId,
 } from "./registry";
 
+/** Check if a service has a specific output modality */
+function hasOutputModality(serviceId: ServiceId, modality: string): boolean {
+    return (
+        getServiceDefinition(serviceId).outputModalities?.includes(modality) ??
+        false
+    );
+}
+
 // Pricing uses registry field names directly, filtering out zero/undefined values
 // Fields: promptTextTokens, promptCachedTokens, promptAudioTokens, promptAudioSeconds,
 //         promptImageTokens, completionTextTokens, completionReasoningTokens,
@@ -68,10 +76,19 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
 }
 
 /**
- * Get all text models with enriched information
+ * Get all text models with enriched information.
+ * Includes text services that output text, plus audio services that output text
+ * (e.g. whisper, scribe — speech-to-text).
  */
 export function getTextModelsInfo(): ModelInfo[] {
-    return getVisibleTextServices().map(getModelInfo);
+    const textIds = getVisibleTextServices().filter((id) =>
+        hasOutputModality(id, "text"),
+    );
+    const audioWithTextOut = getVisibleAudioServices().filter((id) =>
+        hasOutputModality(id, "text"),
+    );
+    const ids = [...new Set([...textIds, ...audioWithTextOut])];
+    return ids.map(getModelInfo);
 }
 
 /**
@@ -82,8 +99,17 @@ export function getImageModelsInfo(): ModelInfo[] {
 }
 
 /**
- * Get all audio models with enriched information
+ * Get all audio models with enriched information.
+ * Includes audio services that output audio, plus text services that output audio
+ * (e.g. openai-audio — voice input & output).
  */
 export function getAudioModelsInfo(): ModelInfo[] {
-    return getVisibleAudioServices().map(getModelInfo);
+    const audioIds = getVisibleAudioServices().filter((id) =>
+        hasOutputModality(id, "audio"),
+    );
+    const textWithAudioOut = getVisibleTextServices().filter((id) =>
+        hasOutputModality(id, "audio"),
+    );
+    const ids = [...new Set([...audioIds, ...textWithAudioOut])];
+    return ids.map(getModelInfo);
 }

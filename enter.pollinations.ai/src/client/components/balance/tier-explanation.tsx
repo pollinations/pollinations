@@ -13,31 +13,25 @@ const tierColors = {
 
 const SeedTooltipContent = () => (
     <div className="w-56">
-        <p className="font-semibold text-gray-900 mb-2">Dev Points (need 8+)</p>
+        <p className="font-semibold text-gray-900 mb-2">Legitimacy Signals</p>
         <table className="w-full text-left text-[11px]">
             <tbody>
                 <tr className="border-b border-gray-100">
                     <td className="py-1 text-gray-600">Account age</td>
                     <td className="py-1 text-right text-gray-800">
-                        0.5pt/month (max 6)
+                        &gt;7 days
                     </td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                    <td className="py-1 text-gray-600">Commits</td>
+                    <td className="py-1 text-gray-600">GitHub activity</td>
                     <td className="py-1 text-right text-gray-800">
-                        0.1pt each (max 2)
-                    </td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                    <td className="py-1 text-gray-600">Public repos</td>
-                    <td className="py-1 text-right text-gray-800">
-                        0.5pt each (max 1)
+                        Repos, commits, stars
                     </td>
                 </tr>
                 <tr>
-                    <td className="py-1 text-gray-600">GitHub stars</td>
+                    <td className="py-1 text-gray-600">Organic patterns</td>
                     <td className="py-1 text-right text-gray-800">
-                        0.1pt each (max 5)
+                        Normal username &amp; email
                     </td>
                 </tr>
             </tbody>
@@ -87,9 +81,9 @@ export const TierExplanation: FC = () => {
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <p className={requirementLabelStyle}>To unlock</p>
-                        <p className="text-xs text-gray-500">Auto-verified</p>
+                        <p className="text-xs text-gray-500">Verified account</p>
                         <p className="text-[10px] text-emerald-600 mt-0.5">
-                            Checked on signup
+                            Auto-upgraded daily
                         </p>
                     </div>
                 </div>
@@ -108,7 +102,7 @@ export const TierExplanation: FC = () => {
                         <p className="text-xs text-gray-500">
                             <Tooltip content={<SeedTooltipContent />}>
                                 <span className="underline decoration-dotted cursor-help">
-                                    8+ dev points
+                                    Active developer
                                 </span>
                             </Tooltip>
                         </p>
@@ -137,7 +131,8 @@ export const TierExplanation: FC = () => {
                                 className="text-blue-600 hover:underline"
                             >
                                 Publish an app
-                            </a>
+                            </a>{" "}
+                            or contribute code
                         </p>
                         <p className="text-[10px] text-amber-600 mt-0.5">
                             {TIER_EMOJIS.seed} Must be Seed first

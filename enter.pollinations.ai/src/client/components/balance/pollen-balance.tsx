@@ -60,7 +60,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
     cryptoBalance,
-    tier = "spore",
+    tier = "microbe",
 }) => {
     const [emailCopied, setEmailCopied] = useState(false);
     const tierEmoji = getTierEmoji(tier);

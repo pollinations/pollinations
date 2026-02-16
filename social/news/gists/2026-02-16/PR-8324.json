@@ -1,0 +1,34 @@
+{
+  "pr_number": 8324,
+  "title": "Add PolliBench to Dev_Tools",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8324",
+  "merged_at": "2026-02-16T20:18:12Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Models hitting the gym",
+    "blurb": "Introducing PolliBench! A new community tool to automatically benchmark our models against frontend coding challenges.",
+    "summary": "Added PolliBench to the Dev_Tools directory, enabling automated benchmarking of Pollinations models using HTML questions.",
+    "impact": "Developers can now access a dedicated tool to test and compare model performance on frontend tasks.",
+    "keywords": [
+      "benchmarking",
+      "dev tools",
+      "community",
+      "testing",
+      "models"
+    ],
+    "visual_concept": "A cozy pixel art lab scene. The bee mascot is holding a clipboard and a stopwatch. In the background, tiny pixel robots (representing models) are solving puzzles or lifting weights (metaphor for processing).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a pixelated stopwatch and clipboard in a high-tech but cozy lab. Soft lime green (#ecf874) and lavender gradient background. Tiny pixel robots in the background are solving puzzles on retro monitors. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'BENCHMARK'. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T20:19:01.463396+00:00"
+}

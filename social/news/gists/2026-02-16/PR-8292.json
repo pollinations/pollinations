@@ -1,0 +1,34 @@
+{
+  "pr_number": 8292,
+  "title": "fix: point highlights URLs to news branch",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8292",
+  "merged_at": "2026-02-16T00:25:21Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Extra! Extra! Read all about it!",
+    "blurb": "Our news highlights were playing hide and seek on the wrong branch. We found them and brought them back to the homepage.",
+    "summary": "Updated frontend configurations to fetch news highlights from the correct `news` branch instead of `main`.",
+    "impact": "The news banners and highlight sections on both frontends will now correctly load content instead of returning 404 errors.",
+    "keywords": [
+      "frontend",
+      "bugfix",
+      "news",
+      "highlights",
+      "routing"
+    ],
+    "visual_concept": "The bee mascot reconnecting a wire to a digital newspaper stand or news feed terminal.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot fixing a tiny pixelated newspaper stand. Soft lime green (#ecf874) and pastel gradient background. The bee is connecting a glowing wire to a digital news feed. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'NEWS FEED'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T00:25:59.935529+00:00"
+}

@@ -1,0 +1,33 @@
+{
+  "pr_number": 8307,
+  "title": "fix: reduce workflow noise on PR merges",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8307",
+  "merged_at": "2026-02-16T10:48:46Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Quieting the hive",
+    "blurb": "We've taught our CI robots some manners—they'll stop buzzing on every single merge and only wake up when actually needed.",
+    "summary": "Added path filters to app review workflows to prevent unnecessary execution on unrelated PR merges.",
+    "impact": "Reduces workflow noise and conserves CI resources for the development team.",
+    "keywords": [
+      "github actions",
+      "ci/cd",
+      "workflow",
+      "optimization"
+    ],
+    "visual_concept": "A library setting representing the GitHub Actions logs. The bee is a librarian shushing a noisy robot.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing librarian glasses and holding a finger to her lips, shushing a noisy little robot in a server room. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'QUIET MODE'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-16T10:49:27.616892+00:00"
+}

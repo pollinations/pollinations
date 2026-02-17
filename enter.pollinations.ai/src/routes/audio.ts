@@ -186,6 +186,10 @@ export async function transcribeWithElevenLabs(opts: {
 
     const { timestampsGranularity } = opts;
 
+    log.info("Forwarding timestamps_granularity: {val}", {
+        val: timestampsGranularity,
+    });
+
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message:
@@ -587,6 +591,10 @@ export const audioRoutes = new Hono<Env>()
             const timestampsGranularity = formData.get(
                 "timestamps_granularity",
             ) as string | null;
+
+            log.info("Incoming timestamps_granularity: {val}", {
+                val: timestampsGranularity,
+            });
 
             if (!file) {
                 throw new UpstreamError(400 as ContentfulStatusCode, {

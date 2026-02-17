@@ -71,7 +71,6 @@ export function BuildDiary() {
     }, [timeline, x]);
 
     const entry: TimelineEntry | undefined = timeline[x];
-    const maxPRs = Math.max(...timeline.map((t) => t.prNumbers.length), 1);
     const maxY = entry ? entry.prNumbers.length : 0;
     const onPR = y > 0 && y <= maxY;
 
@@ -163,19 +162,7 @@ export function BuildDiary() {
         ? `PR #${entry.prNumbers[y - 1]}`
         : `${entry.dayName} ${entry.dateLabel}`;
 
-    const ac = (active: boolean): React.CSSProperties => ({
-        fontSize: 12,
-        userSelect: "none",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: active
-            ? "rgb(var(--text-secondary))"
-            : "rgb(var(--text-primary) / 0.15)",
-        cursor: active ? "pointer" : "default",
-    });
-
-    // Timeline bar
+    // Timeline bar — dots only, no arrows
     const TimelineBar = (
         <div
             style={{
@@ -185,12 +172,6 @@ export function BuildDiary() {
                 flex: 1,
             }}
         >
-            <div
-                onClick={() => go("left")}
-                style={{ ...ac(x > 0), width: BAR, flexShrink: 0 }}
-            >
-                &#x25C0;
-            </div>
             <div
                 style={{
                     flex: 1,
@@ -203,16 +184,13 @@ export function BuildDiary() {
                 }}
             >
                 {timeline.map((t, i) => {
-                    const prCount = t.prNumbers.length;
-                    const barH =
-                        prCount === 0 ? 2 : (prCount / maxPRs) * (BAR - 4) + 3;
                     const isCurrent = i === x;
                     const isMilestone = t.type === "week";
                     const needsGap =
                         i > 0 && t.weekNum !== timeline[i - 1].weekNum;
                     const tipLabel = isMilestone
-                        ? `\u2726 Week ${t.weekNum} \u00B7 ${t.dateLabel}`
-                        : `${t.dayName} \u00B7 ${t.dateLabel}${prCount > 0 ? ` \u00B7 ${prCount} PRs` : ""}`;
+                        ? `Week ${t.weekNum}`
+                        : t.dateLabel;
                     return (
                         <div
                             key={`${t.date}-${t.type}`}
@@ -226,30 +204,31 @@ export function BuildDiary() {
                                         setY(0);
                                     }}
                                     style={{
-                                        width: isCurrent ? 10 : 6,
-                                        height: barH,
-                                        background: isCurrent
-                                            ? "rgb(var(--text-primary))"
-                                            : isMilestone
-                                              ? "rgb(var(--text-brand))"
-                                              : "rgb(var(--border-subtle))",
+                                        width: 20,
+                                        height: 20,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
                                         cursor: "pointer",
                                     }}
-                                />
+                                >
+                                    <div
+                                        style={{
+                                            width: isCurrent ? 10 : 6,
+                                            height: isCurrent ? 10 : 6,
+                                            borderRadius: "50%",
+                                            background: isCurrent
+                                                ? "rgb(var(--text-primary))"
+                                                : isMilestone
+                                                  ? "rgb(var(--text-brand))"
+                                                  : "rgb(var(--border-subtle))",
+                                        }}
+                                    />
+                                </div>
                             </Tip>
                         </div>
                     );
                 })}
-            </div>
-            <div
-                onClick={() => go("right")}
-                style={{
-                    ...ac(x < timeline.length - 1),
-                    width: BAR,
-                    flexShrink: 0,
-                }}
-            >
-                &#x25B6;
             </div>
         </div>
     );
@@ -293,7 +272,7 @@ export function BuildDiary() {
     // Date heading label
     const dateLabel =
         entry.type === "week"
-            ? `\u2726 ${entry.dateLabel}`
+            ? `Week ${entry.weekNum}`
             : `${entry.dayName} \u00B7 ${entry.dateLabel}`;
 
     const TextPanel = (
@@ -310,13 +289,40 @@ export function BuildDiary() {
                 boxSizing: "border-box",
             }}
         >
-            {/* Date chip — big, own row */}
-            <span
-                className={`font-headline self-start inline-flex items-center px-4 py-2 text-2xl font-black uppercase tracking-wider rounded-tag cursor-pointer transition-colors ${!onPR ? chipActive : chipInactive}`}
-                onClick={() => setY(0)}
-            >
-                {dateLabel}
-            </span>
+            {/* Date chip with nav arrows */}
+            <div className="self-start inline-flex items-center gap-2">
+                <span
+                    onClick={() => go("left")}
+                    className="font-headline text-lg select-none flex items-center justify-center transition-colors"
+                    style={{
+                        color: x > 0
+                            ? "rgb(var(--text-secondary))"
+                            : "rgb(var(--text-primary) / 0.15)",
+                        cursor: x > 0 ? "pointer" : "default",
+                    }}
+                >
+                    &#x25C0;
+                </span>
+                <span
+                    className={`font-headline inline-flex items-center justify-center py-2 text-2xl font-black uppercase tracking-wider rounded-tag cursor-pointer transition-colors ${!onPR ? chipActive : chipInactive}`}
+                    style={{ minWidth: 220 }}
+                    onClick={() => setY(0)}
+                >
+                    {dateLabel}
+                </span>
+                <span
+                    onClick={() => go("right")}
+                    className="font-headline text-lg select-none flex items-center justify-center transition-colors"
+                    style={{
+                        color: x < timeline.length - 1
+                            ? "rgb(var(--text-secondary))"
+                            : "rgb(var(--text-primary) / 0.15)",
+                        cursor: x < timeline.length - 1 ? "pointer" : "default",
+                    }}
+                >
+                    &#x25B6;
+                </span>
+            </div>
 
             {/* PR chips — row below */}
             {entry.prNumbers.length > 0 && (

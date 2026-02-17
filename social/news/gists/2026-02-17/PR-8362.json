@@ -1,0 +1,34 @@
+{
+  "pr_number": 8362,
+  "title": "fix: prevent prettification from hallucinating app names",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8362",
+  "merged_at": "2026-02-17T14:41:31Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Taming the Chaos Commander",
+    "blurb": "The AI got a little too creative, renaming apps on a whim. We've reminded it that names are not optional suggestions.",
+    "summary": "Added context guardrails to the prettification pipeline to prevent the LLM from hallucinating new names for existing apps.",
+    "impact": "App names in the showcase will now correctly match what their creators called them, rather than what the AI felt like calling them.",
+    "keywords": [
+      "hallucinations",
+      "prompt engineering",
+      "ui",
+      "showcase",
+      "bugfix"
+    ],
+    "visual_concept": "The robot (representing the AI) is enthusiastically mislabeling things with exciting names like 'Chaos Commander', while the Bee (the maintainer) follows behind with a clipboard and a label maker, correcting them back to their boring real names.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot helping a chunky robot organize a shelf of software boxes. The robot holds a box labeled 'CHAOS COMMANDER', but the bee is correcting it with a label gun. Lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Pixel font text on boxes. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-17T14:43:23.547893+00:00"
+}

@@ -448,14 +448,16 @@ function RouteComponent() {
                         <UsageGraph tier={tierData?.active?.tier} />
                     )}
                 </div>
-                {tierData && (
-                    <div className="flex flex-col gap-2">
-                        <div className="flex flex-col sm:flex-row justify-between gap-3">
-                            <h2 className="font-bold flex-1">Tier</h2>
+                {tierData &&
+                    tierData.active?.tier !== "microbe" &&
+                    tierData.active?.tier !== "none" && (
+                        <div className="flex flex-col gap-2">
+                            <div className="flex flex-col sm:flex-row justify-between gap-3">
+                                <h2 className="font-bold flex-1">Tier</h2>
+                            </div>
+                            <TierPanel {...tierData} />
                         </div>
-                        <TierPanel {...tierData} />
-                    </div>
-                )}
+                    )}
                 <ApiKeyList
                     apiKeys={apiKeys}
                     onCreate={handleCreateApiKey}

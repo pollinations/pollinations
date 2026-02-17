@@ -1,5 +1,7 @@
 import { useMemo } from "react";
+import ReactMarkdown from "react-markdown";
 import { useSearchParams } from "react-router-dom";
+import remarkGfm from "remark-gfm";
 import { COPY_CONSTANTS } from "../../copy/constants";
 import {
     ALL_FILTERS,
@@ -10,7 +12,9 @@ import {
 } from "../../copy/content/apps";
 import { LINKS } from "../../copy/content/socialLinks";
 import { type App, useApps } from "../../hooks/useApps";
+import { useAuth } from "../../hooks/useAuth";
 import { usePageCopy } from "../../hooks/usePageCopy";
+import { usePrettify } from "../../hooks/usePrettify";
 import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { GithubIcon } from "../assets/SocialIcons";
@@ -53,7 +57,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                 rel="noopener noreferrer"
                 className="flex items-center justify-between px-4 py-3 bg-input-background rounded-t-sub-card hover:brightness-110 transition-all"
             >
-                <span className="font-headline text-base font-black uppercase text-text-body-main">
+                <span className="font-headline text-sm font-black uppercase text-text-body-main">
                     {app.emoji && `${app.emoji} `}
                     {app.name}
                 </span>
@@ -63,12 +67,65 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
             <div className="flex flex-col flex-1 px-4 py-3">
                 <div className="flex-1">
                     {app.description && (
-                        <Body
-                            className="text-sm text-text-body-secondary mb-3"
-                            spacing="none"
-                        >
-                            {app.description}
-                        </Body>
+                        <div className="text-sm text-text-body-secondary mb-3 font-body leading-relaxed">
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                    p: ({ node, ...props }) => (
+                                        <p
+                                            {...props}
+                                            className="mb-1 last:mb-0"
+                                        />
+                                    ),
+                                    ul: ({ node, ...props }) => (
+                                        <ul
+                                            {...props}
+                                            className="mt-1 space-y-0.5 list-disc list-inside"
+                                        />
+                                    ),
+                                    li: ({ node, ...props }) => (
+                                        <li
+                                            {...props}
+                                            className="text-text-body-secondary"
+                                        />
+                                    ),
+                                    strong: ({ node, ...props }) => (
+                                        <strong
+                                            {...props}
+                                            className="text-text-body-main font-black"
+                                        />
+                                    ),
+                                    em: ({ node, ...props }) => (
+                                        <em
+                                            {...props}
+                                            className="text-text-brand not-italic font-medium"
+                                        />
+                                    ),
+                                    code: ({ node, ...props }) => (
+                                        <code
+                                            {...props}
+                                            className="bg-input-background text-text-highlight px-1.5 py-0.5 rounded text-xs font-mono"
+                                        />
+                                    ),
+                                    a: ({ node, ...props }) => (
+                                        <a
+                                            {...props}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-text-highlight hover:underline"
+                                        />
+                                    ),
+                                    del: ({ node, ...props }) => (
+                                        <del
+                                            {...props}
+                                            className="text-text-body-secondary/50"
+                                        />
+                                    ),
+                                }}
+                            >
+                                {app.description}
+                            </ReactMarkdown>
+                        </div>
                     )}
 
                     {(badges.pollen(app) ||
@@ -80,7 +137,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                     <Badge variant="pollen">
                                         {copy.pollenBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/byop:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/byop:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
                                         {copy.pollenTooltip}
                                         <div className="absolute top-full left-4 border-4 border-transparent border-t-charcoal" />
                                     </div>
@@ -91,7 +148,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                     <Badge variant="buzz">
                                         {copy.buzzBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/buzz:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/buzz:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
                                         {copy.buzzTooltip}
                                         <div className="absolute top-full left-4 border-4 border-transparent border-t-charcoal" />
                                     </div>
@@ -102,7 +159,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                     <Badge variant="fresh">
                                         {copy.newBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/new:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/new:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
                                         {copy.newTooltip}
                                         <div className="absolute top-full left-4 border-4 border-transparent border-t-charcoal" />
                                     </div>
@@ -118,7 +175,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                             href={`https://github.com/${githubUsername}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main transition-all max-w-[200px]"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main rounded-tag transition-all max-w-[200px]"
                             title={`View ${app.github} on GitHub`}
                         >
                             <span className="text-text-body-secondary">
@@ -131,7 +188,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                         </a>
                     )}
                     {!repoName && !githubUsername && app.github && (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background border border-border-faint max-w-[200px]">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background border border-border-faint rounded-tag max-w-[200px]">
                             <span className="text-text-body-secondary">
                                 {copy.authorPrefix}
                             </span>
@@ -145,7 +202,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                             href={app.repo}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex flex-col gap-1 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main transition-all max-w-[200px]"
+                            className="inline-flex flex-col gap-1 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main rounded-tag transition-all max-w-[200px]"
                             title={`View ${repoName} on GitHub`}
                         >
                             <span className="inline-flex items-center gap-1.5 w-full">
@@ -184,6 +241,7 @@ export default function AppsPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const filter = searchParams.get("filter") || "new";
     const setFilter = (f: string) => setSearchParams({ filter: f });
+    const { apiKey } = useAuth();
 
     const { apps: allApps } = useApps(COPY_CONSTANTS.appsFilePath);
     const { copy: pageCopy, isTranslating } = usePageCopy(APPS_PAGE);
@@ -202,10 +260,9 @@ export default function AppsPage() {
         return allApps.filter(f.match).sort(sortApps);
     }, [allApps, filter]);
 
-    const { translated: displayApps } = useTranslate(
-        filteredApps,
-        "description",
-    );
+    const { prettified } = usePrettify(filteredApps, "description", apiKey);
+
+    const { translated: displayApps } = useTranslate(prettified, "description");
 
     return (
         <PageContainer>

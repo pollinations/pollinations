@@ -85,6 +85,7 @@ export interface RadiusMacro {
     card: string;
     input: string;
     subcard: string;
+    tag: string;
 }
 
 export interface BackgroundMacro {

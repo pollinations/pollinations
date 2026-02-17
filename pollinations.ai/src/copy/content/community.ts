@@ -125,6 +125,11 @@ export const COMMUNITY_PAGE = {
         },
     ],
 
+    // Build Diary section
+    buildDiaryTitle: "Build Diary",
+    buildDiarySubtitle:
+        "A visual log of what we ship every day. Use ← → to browse entries, ↑ ↓ to explore PRs, click the image to cycle platforms.",
+
     // Top Contributors section
     topContributorsTitle: "Most Active Contributors",
     topContributorsDescription:

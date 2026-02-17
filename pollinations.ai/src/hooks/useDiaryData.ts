@@ -371,6 +371,7 @@ export function useDiaryData() {
                     if (day === today) {
                         paths = cachedPaths;
                     } else {
+                        jsonCache.clear();
                         paths = await fetchTreePaths(controller.signal);
                     }
                 } else {
@@ -399,6 +400,7 @@ export function useDiaryData() {
         async (
             date: string,
             type: "day" | "week",
+            prNumbers: number[],
         ): Promise<EntryContent | null> => {
             const tier = type === "week" ? "weekly" : "daily";
 
@@ -433,18 +435,13 @@ export function useDiaryData() {
             }
 
             // Fallback: try first gist
-            if (!title) {
-                const entry = timeline.find(
-                    (e) => e.date === date && e.type === type,
+            if (!title && prNumbers.length > 0) {
+                const gist = await fetchJSON<GistJson>(
+                    `${RAW_BASE}/gists/${date}/PR-${prNumbers[0]}.json`,
                 );
-                if (entry && entry.prNumbers.length > 0) {
-                    const gist = await fetchJSON<GistJson>(
-                        `${RAW_BASE}/gists/${date}/PR-${entry.prNumbers[0]}.json`,
-                    );
-                    if (gist) {
-                        title = gist.gist.headline;
-                        summary = gist.gist.blurb;
-                    }
+                if (gist) {
+                    title = gist.gist.headline;
+                    summary = gist.gist.blurb;
                 }
             }
 
@@ -452,7 +449,7 @@ export function useDiaryData() {
 
             return { title, summary, dna };
         },
-        [timeline],
+        [],
     );
 
     const getPRContent = useCallback(

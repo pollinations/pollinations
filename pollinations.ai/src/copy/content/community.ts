@@ -133,9 +133,9 @@ export const COMMUNITY_PAGE = {
     // Top Contributors section
     topContributorsTitle: "Most Active Contributors",
     topContributorsDescription:
-        "Meet the most active contributors to the pollinations.ai",
+        "These folks are actively building and improving the platform. Want to join them? We'd love your contributions — check out our",
     githubRepositoryLink: "GitHub repository",
-    overThePastYear: "over the past year.",
+    overThePastYear: "and jump in!",
     commitsLabel: "commits",
     commitLabel: "commit",
 };

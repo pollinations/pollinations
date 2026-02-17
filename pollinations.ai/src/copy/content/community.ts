@@ -112,11 +112,6 @@ export const COMMUNITY_PAGE = {
             description: "High-performance AI infrastructure",
         },
         {
-            name: "NavyAI",
-            url: "https://api.navy/",
-            description: "AI API provider for OpenAI o3 and Gemini models",
-        },
-        {
             name: "Nebius",
             url: "https://nebius.com/",
             description:

@@ -1,0 +1,33 @@
+{
+  "pr_number": 8289,
+  "title": "feat: rewrite social prompts — hacker-zine voice",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8289",
+  "merged_at": "2026-02-17T12:48:36Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Voice modulation",
+    "blurb": "Updating the hive's vocal cords. We're switching to a drier, more observational frequency.",
+    "summary": "Rewrote all social media prompts to align with a new dry, observational, and anti-corporate voice.",
+    "impact": "Social updates will be more concise and information-dense.",
+    "keywords": [
+      "social",
+      "prompts",
+      "voice",
+      "branding"
+    ],
+    "visual_concept": "The bee mascot tuning a retro radio or microphone to represent the voice change.",
+    "image_prompt": "Cozy pixel art of the bee mascot adjusting a large retro microphone. Lime green (#ecf874) and lavender gradient background. Pixel text 'TESTING'. Warm lighting, 8-bit aesthetic."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-17T12:50:44.385273+00:00"
+}

@@ -6,7 +6,6 @@
  * - Opacity: Add /90, /80, /50 etc. (e.g., bg-primary/90)
  * - CSS variables available: var(--color-primary), var(--color-background), etc.
  */
-import type { Config } from "tailwindcss";
 import plugin from "tailwindcss/plugin";
 import { AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarknessWithVolumetricBlueHazeDiverseGlowingOrganismsOfDifferentColorsTurquoiseVioletAmberSoftPinkSizesTinySpecksToLargeFloatingFormsAndShapesJellCssVariables as DefaultCssVariables } from "./src/theme/presets/default";
 
@@ -53,7 +52,7 @@ export default {
 
                 // Surfaces (with opacity support)
                 "surface-page":
-                    "rgb(var(--surface-page) / var(--opacity-card, 1))",
+                    "rgb(var(--surface-page) / var(--opacity-overlay, 1))",
                 "surface-card":
                     "rgb(var(--surface-card) / var(--opacity-card, 1))",
                 "surface-base":
@@ -146,6 +145,7 @@ export default {
                 card: "var(--radius-card)",
                 input: "var(--radius-input)",
                 "sub-card": "var(--radius-subcard)",
+                tag: "var(--radius-tag)",
             },
             animation: {
                 "pulse-subtle": "pulse-subtle 1.5s ease-in-out infinite",

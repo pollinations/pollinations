@@ -8,7 +8,6 @@ import {
     useDiaryData,
 } from "../../hooks/useDiaryData";
 
-const BAR = 20;
 const MOBILE_BP = 580;
 
 const impactEmoji: Record<string, string> = {
@@ -28,7 +27,7 @@ function Tip({
     children: React.ReactNode;
 }) {
     return (
-        <div className="group/tip" style={{ position: "relative" }}>
+        <div className="group/tip relative">
             {children}
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-surface-card text-text-body-main text-[10px] rounded-tag shadow-lg border border-border-main opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                 {label}
@@ -117,9 +116,13 @@ export function BuildDiary() {
         [x, timeline.length, entry],
     );
 
-    // Keyboard — only ← →
+    // Keyboard — only ← →, skip when focus is in an interactive element
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
+            const tag = (e.target as HTMLElement)?.tagName;
+            if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT")
+                return;
+            if ((e.target as HTMLElement)?.isContentEditable) return;
             if (e.key === "ArrowLeft") go("left");
             if (e.key === "ArrowRight") go("right");
         };
@@ -130,14 +133,7 @@ export function BuildDiary() {
     // Loading state
     if (loading) {
         return (
-            <div
-                className="font-body"
-                style={{
-                    padding: "40px 0",
-                    textAlign: "center",
-                    color: "rgb(var(--text-tertiary))",
-                }}
-            >
+            <div className="font-body py-10 text-center text-text-body-tertiary">
                 Loading build diary...
             </div>
         );
@@ -164,25 +160,8 @@ export function BuildDiary() {
 
     // Timeline bar — dots only, no arrows
     const TimelineBar = (
-        <div
-            style={{
-                display: "flex",
-                alignItems: "center",
-                height: BAR,
-                flex: 1,
-            }}
-        >
-            <div
-                style={{
-                    flex: 1,
-                    height: 2,
-                    background: "rgb(var(--border-faint))",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "0 4px",
-                }}
-            >
+        <div className="flex items-center h-5 flex-1">
+            <div className="flex-1 h-0.5 bg-border-faint flex items-center justify-between px-1">
                 {timeline.map((t, i) => {
                     const isCurrent = i === x;
                     const isMilestone = t.type === "week";
@@ -194,35 +173,25 @@ export function BuildDiary() {
                     return (
                         <div
                             key={`${t.date}-${t.type}`}
-                            style={{ display: "flex", alignItems: "center" }}
+                            className="flex items-center"
                         >
-                            {needsGap && <div style={{ width: 4 }} />}
+                            {needsGap && <div className="w-1" />}
                             <Tip label={tipLabel}>
                                 <div
                                     onClick={() => {
                                         setX(i);
                                         setY(0);
                                     }}
-                                    style={{
-                                        width: 20,
-                                        height: 20,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        cursor: "pointer",
-                                    }}
+                                    className="w-5 h-5 flex items-center justify-center cursor-pointer"
                                 >
                                     <div
-                                        style={{
-                                            width: isCurrent ? 10 : 6,
-                                            height: isCurrent ? 10 : 6,
-                                            borderRadius: "50%",
-                                            background: isCurrent
-                                                ? "rgb(var(--text-primary))"
+                                        className={`rounded-full ${
+                                            isCurrent
+                                                ? "w-2.5 h-2.5 bg-text-body-main"
                                                 : isMilestone
-                                                  ? "rgb(var(--text-brand))"
-                                                  : "rgb(var(--border-subtle))",
-                                        }}
+                                                  ? "w-1.5 h-1.5 bg-text-brand"
+                                                  : "w-1.5 h-1.5 bg-border-subtle"
+                                        }`}
                                     />
                                 </div>
                             </Tip>
@@ -235,27 +204,13 @@ export function BuildDiary() {
 
     // Image area
     const ImageBox = (
-        <div
-            style={{
-                width: "100%",
-                aspectRatio: "1",
-                background: "rgb(var(--input-bg))",
-                flexShrink: 0,
-                position: "relative",
-                overflow: "hidden",
-            }}
-        >
+        <div className="w-full aspect-square bg-input-background shrink-0 relative overflow-hidden">
             {currentImageUrl && !imgError && (
                 <img
                     src={currentImageUrl}
                     alt={imageAlt}
                     onError={() => setImgError(true)}
-                    style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        display: "block",
-                    }}
+                    className="w-full h-full object-cover block"
                 />
             )}
         </div>
@@ -277,50 +232,35 @@ export function BuildDiary() {
 
     const TextPanel = (
         <div
-            className="font-body"
-            style={{
-                flex: 1,
-                minWidth: 0,
-                padding: isMobile ? "16px 4px 20px" : "0 28px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "flex-start",
-                overflow: "hidden",
-                boxSizing: "border-box",
-            }}
+            className={`font-body flex-1 min-w-0 flex flex-col justify-start overflow-hidden box-border ${
+                isMobile ? "px-1 pt-4 pb-5" : "px-7"
+            }`}
         >
             {/* Date chip with nav arrows */}
             <div className="self-start inline-flex items-center gap-2">
                 <span
                     onClick={() => go("left")}
-                    className="font-headline text-lg select-none flex items-center justify-center transition-colors"
-                    style={{
-                        color:
-                            x > 0
-                                ? "rgb(var(--text-secondary))"
-                                : "rgb(var(--text-primary) / 0.15)",
-                        cursor: x > 0 ? "pointer" : "default",
-                    }}
+                    className={`font-headline text-lg select-none flex items-center justify-center transition-colors ${
+                        x > 0
+                            ? "text-text-body-secondary cursor-pointer"
+                            : "text-text-body-main/15 cursor-default"
+                    }`}
                 >
                     &#x25C0;
                 </span>
                 <span
-                    className={`font-headline inline-flex items-center justify-center py-2 text-2xl font-black uppercase tracking-wider rounded-tag cursor-pointer transition-colors ${!onPR ? chipActive : chipInactive}`}
-                    style={{ minWidth: 220 }}
+                    className={`font-headline inline-flex items-center justify-center py-2 text-2xl font-black uppercase tracking-wider rounded-tag cursor-pointer transition-colors min-w-[220px] ${!onPR ? chipActive : chipInactive}`}
                     onClick={() => setY(0)}
                 >
                     {dateLabel}
                 </span>
                 <span
                     onClick={() => go("right")}
-                    className="font-headline text-lg select-none flex items-center justify-center transition-colors"
-                    style={{
-                        color:
-                            x < timeline.length - 1
-                                ? "rgb(var(--text-secondary))"
-                                : "rgb(var(--text-primary) / 0.15)",
-                        cursor: x < timeline.length - 1 ? "pointer" : "default",
-                    }}
+                    className={`font-headline text-lg select-none flex items-center justify-center transition-colors ${
+                        x < timeline.length - 1
+                            ? "text-text-body-secondary cursor-pointer"
+                            : "text-text-body-main/15 cursor-default"
+                    }`}
                 >
                     &#x25B6;
                 </span>
@@ -328,14 +268,7 @@ export function BuildDiary() {
 
             {/* PR chips — row below */}
             {entry.prNumbers.length > 0 && (
-                <div
-                    style={{
-                        display: "flex",
-                        gap: 4,
-                        marginTop: 8,
-                        flexWrap: "wrap",
-                    }}
-                >
+                <div className="flex gap-1 mt-2 flex-wrap">
                     {entry.prNumbers.map((pr, i) => (
                         <span
                             key={pr}
@@ -348,46 +281,21 @@ export function BuildDiary() {
                 </div>
             )}
 
-            <div style={{ marginBottom: 14 }} />
+            <div className="mb-3.5" />
 
             {/* Title */}
-            <div
-                className="font-headline"
-                style={{
-                    fontSize: 22,
-                    color: "rgb(var(--text-primary))",
-                    lineHeight: 1.3,
-                    marginBottom: 12,
-                    fontWeight: 700,
-                }}
-            >
+            <div className="font-headline text-[22px] text-text-body-main leading-tight mb-3 font-bold">
                 {displayTitle}
             </div>
 
             {/* Summary */}
-            <div
-                style={{
-                    fontSize: 14,
-                    color: "rgb(var(--text-secondary))",
-                    lineHeight: 1.6,
-                    overflow: "hidden",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 8,
-                    WebkitBoxOrient: "vertical",
-                }}
-            >
+            <div className="text-sm text-text-body-secondary leading-relaxed overflow-hidden line-clamp-[8]">
                 {displaySummary}
             </div>
 
             {/* PR metadata */}
             {onPR && prContent && (
-                <div
-                    style={{
-                        fontSize: 12,
-                        color: "rgb(var(--text-tertiary))",
-                        marginTop: 14,
-                    }}
-                >
+                <div className="text-xs text-text-body-tertiary mt-3.5">
                     {impactEmoji[prContent.impact] || "\u{1F4E6}"}{" "}
                     {prContent.impact} &middot; @{prContent.author}
                 </div>
@@ -395,17 +303,7 @@ export function BuildDiary() {
 
             {/* Weekly DNA quote */}
             {entry.type === "week" && entryContent?.dna && !onPR && (
-                <div
-                    style={{
-                        marginTop: 16,
-                        padding: "8px 12px",
-                        borderLeft: "2px solid rgb(var(--border-subtle))",
-                        color: "rgb(var(--text-secondary))",
-                        fontSize: 13,
-                        fontStyle: "italic",
-                        lineHeight: 1.5,
-                    }}
-                >
+                <div className="mt-4 px-3 py-2 border-l-2 border-border-subtle text-text-body-secondary text-[13px] italic leading-normal">
                     &ldquo;{entryContent.dna}&rdquo;
                 </div>
             )}
@@ -414,58 +312,20 @@ export function BuildDiary() {
 
     if (isMobile) {
         return (
-            <div
-                className="font-body"
-                style={{
-                    color: "rgb(var(--text-primary))",
-                    width: "100%",
-                    paddingTop: 16,
-                    paddingBottom: 24,
-                }}
-            >
+            <div className="font-body text-text-body-main w-full pt-4 pb-6">
                 {ImageBox}
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginTop: 8,
-                    }}
-                >
-                    {TimelineBar}
-                </div>
+                <div className="flex items-center mt-2">{TimelineBar}</div>
                 {TextPanel}
             </div>
         );
     }
 
     return (
-        <div
-            className="font-body"
-            style={{
-                color: "rgb(var(--text-primary))",
-                width: "100%",
-                padding: "16px 0",
-            }}
-        >
-            <div style={{ display: "flex", alignItems: "stretch" }}>
-                <div
-                    style={{
-                        width: "55%",
-                        flexShrink: 0,
-                        display: "flex",
-                        flexDirection: "column",
-                    }}
-                >
+        <div className="font-body text-text-body-main w-full py-4">
+            <div className="flex items-stretch">
+                <div className="w-[55%] shrink-0 flex flex-col">
                     {ImageBox}
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            marginTop: 8,
-                        }}
-                    >
-                        {TimelineBar}
-                    </div>
+                    <div className="flex items-center mt-2">{TimelineBar}</div>
                 </div>
                 {TextPanel}
             </div>

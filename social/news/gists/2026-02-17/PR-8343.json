@@ -1,0 +1,34 @@
+{
+  "pr_number": 8343,
+  "title": "fix: deploy to production branch instead of main",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8343",
+  "merged_at": "2026-02-17T01:17:46Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Main Stage Access",
+    "blurb": "We were accidentally sending apps to the rehearsal room. The bee has flipped the switch, and now your creations are live on the main stage.",
+    "summary": "Corrected a deployment script mismatch that sent apps to the 'preview' environment instead of 'production', ensuring custom domains work correctly.",
+    "impact": "Apps deployed through the unified pipeline will now correctly load on their custom domains instead of showing empty preview pages.",
+    "keywords": [
+      "deployment",
+      "bugfix",
+      "infrastructure",
+      "production",
+      "apps"
+    ],
+    "visual_concept": "A 'behind the scenes' broadcast control room metaphor. The bee is switching the feed from a monitor labeled 'TEST' to a big bright screen labeled 'LIVE'. Represents the fix from preview to production.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny headset and flipping a large lever labeled 'LIVE'. Soft lime green (#ecf874) and pastel gradient background. Behind the lever, a 'Preview' sign is dim, while a 'Production' sign lights up. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'WE ARE LIVE'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-17T01:18:29.472691+00:00"
+}

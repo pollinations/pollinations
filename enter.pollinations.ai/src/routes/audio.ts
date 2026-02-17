@@ -178,10 +178,13 @@ export async function transcribeWithElevenLabs(opts: {
     file: File;
     language?: string;
     responseFormat?: string;
+    timestampsGranularity?: string;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
     const { file, language, responseFormat = "json", apiKey, log } = opts;
+
+    const { timestampsGranularity } = opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -210,6 +213,9 @@ export async function transcribeWithElevenLabs(opts: {
     formData.append("model_id", "scribe_v2");
     if (language) {
         formData.append("language_code", language);
+    }
+    if (timestampsGranularity) {
+        formData.append("timestamps_granularity", timestampsGranularity);
     }
 
     const response = await fetch(
@@ -525,6 +531,12 @@ export const audioRoutes = new Hono<Env>()
                                     description:
                                         "The format of the transcript output.",
                                 },
+                                timestamps_granularity: {
+                                    type: "string",
+                                    enum: ["character", "word", "segment"],
+                                    description:
+                                        "(ElevenLabs Scribe only) Granularity for timestamps: `character`, `word`, or `segment`.",
+                                },
                                 temperature: {
                                     type: "number",
                                     description:
@@ -572,6 +584,9 @@ export const audioRoutes = new Hono<Env>()
             const responseFormat = formData.get("response_format") as
                 | string
                 | null;
+            const timestampsGranularity = formData.get(
+                "timestamps_granularity",
+            ) as string | null;
 
             if (!file) {
                 throw new UpstreamError(400 as ContentfulStatusCode, {
@@ -588,6 +603,7 @@ export const audioRoutes = new Hono<Env>()
                     file,
                     language: language || undefined,
                     responseFormat: responseFormat || undefined,
+                    timestampsGranularity: timestampsGranularity || undefined,
                     apiKey: elevenLabsApiKey,
                     log,
                 });

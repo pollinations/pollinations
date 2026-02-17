@@ -1,0 +1,45 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "This approach uses the 'garden' metaphor to visualize technical updates, making abstract code changes (PRs) feel tangible and rewarding. The transition to 'Pollen' is celebrated as a 'level up' moment, while the creative tools are shown as playful artistic activities. This reinforces the brand's warm, community-focused identity.",
+  "visual_style": "Cozy 8-bit pixel art with chunky sprites, soft CRT glow, and warm ambient lighting. Dominant lime green (#ecf874) accents with pastel peach and lavender gradients.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art close-up of the cute bee mascot holding a glowing golden pixelated 'Pollen' orb like a precious badge. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing a tiny celebratory sash. Soft lime green (#ecf874) and pastel peach gradient background with pixelated sparkles. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'POLLEN POWER'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Celebrates the rebranding of BYOP to 'Pollen' and the new badge system.",
+      "text_in_image": "POLLEN POWER",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-16/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of the cute bee mascot in a 'Sticker Garden', placing colorful pixel stickers on a digital canvas. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing a tiny red painter's beret. Background is a soft lime green (#ecf874) and lavender gradient. Floating pixel icons of film reels and characters (representing new creative tools). Chunky retro sprites, warm lighting, lo-fi aesthetic. Text in pixel font: 'CREATIVE MODE'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Highlights the new creative tools: Sticker Garden, Personic, and video consistency.",
+      "text_in_image": "CREATIVE MODE",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-16/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art wide shot of a lush digital garden with 20 distinct pixel flowers blooming, representing new updates. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing a tiny gardener's hat and holding a pixel watering can. Soft lime green (#ecf874) and warm cream gradient background. Clean code blocks mixed with vines. Warm lighting, wholesome vibes like A Short Hike. Text in pixel font: 'GARDEN UPDATE'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes.",
+      "description": "Visualizes the 20 merged PRs and dev tool updates as a blooming garden.",
+      "text_in_image": "GARDEN UPDATE",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-16/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "The garden is blooming! 🌸✨ We just merged 20 updates and things are looking lush.\n\nFirst up: BYOP is now POLLEN! 🐝🍯 Earn badges, get credits, keep building. It’s a whole new vibe for our ecosystem.\n\nCreatives, we see you! 👀 New tools for video consistency, character design, and a literal Sticker Garden (so cute). Plus, a bunch of new dev tools to keep your workflows smooth.\n\nOpen source, open hearts. Come build with us! 💻🌱\n\nLink in bio to see the full changelog!",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#aiart",
+    "#pixelart",
+    "#indiedev",
+    "#cozyvibes",
+    "#generativeai",
+    "#buildinpublic",
+    "#8bit",
+    "#retrogaming"
+  ],
+  "alt_text": "A carousel of cozy pixel art images featuring a cute bee mascot. 1: The bee holding a golden pollen orb. 2: The bee painting in a sticker garden. 3: The bee watering a lush garden of digital flowers. All images use soft pastel colors and lime green accents.",
+  "date": "2026-02-16",
+  "generated_at": "2026-02-17T06:20:26.526015+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

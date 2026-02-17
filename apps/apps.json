@@ -86,5 +86,12 @@
         "outputDir": ".",
         "title": "Pollinations × OpenClaw",
         "description": "Use 25+ AI models as your OpenClaw brain through Pollinations' unified API"
+    },
+    "slidepainter": {
+        "subdomain": "slidepainter",
+        "buildCommand": "npm run build",
+        "outputDir": "dist",
+        "title": "SlidePainter",
+        "description": "AI-powered slide image generator by Pollinations"
     }
 }

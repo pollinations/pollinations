@@ -33,8 +33,8 @@ jobs:
             APP_NAME="${{ github.event.inputs.app_name }}"
           else
             git fetch origin main --depth=2
-            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null | grep '^apps/' | head -1 || \
-                      git diff --name-only origin/main~1 HEAD | grep '^apps/' | head -1)
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null | grep '^apps/[^/]*/' | head -1 || \
+                      git diff --name-only origin/main~1 HEAD | grep '^apps/[^/]*/' | head -1)
             APP_NAME=$(echo "$CHANGED" | sed 's|^apps/\([^/]*\)/.*|\1|')
           fi
           

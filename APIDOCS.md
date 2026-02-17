@@ -2370,6 +2370,12 @@ Generate an image or video from a text prompt.
 - `veo`: Text-to-video only (4-8 seconds)
 - `seedance`: Text-to-video and image-to-video (2-10 seconds)
 
+**Video Parameters:**
+
+- `duration` (optional): Length of the generated video in seconds.  
+  Example: `&duration=6`  
+  Tested: returns approximately a 6-second video when used with `seedance`.
+
 **Authentication:**
 
 Include your API key either:

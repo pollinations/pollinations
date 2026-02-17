@@ -20,11 +20,12 @@ export function usePrettify<T, K extends keyof T>(
     const itemsKey = useMemo(() => JSON.stringify(items), [items]);
 
     // Keep in sync when items change
+    // biome-ignore lint/correctness/useExhaustiveDependencies: itemsKey is a stable serialization of items to avoid infinite re-renders
     useEffect(() => {
         setPrettified(items);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [itemsKey]);
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: itemsKey is a stable serialization of items to avoid infinite re-renders
     useEffect(() => {
         if (!PRETTIFY_ENABLED || items.length === 0) return;
 
@@ -45,7 +46,6 @@ export function usePrettify<T, K extends keyof T>(
             })
             .catch(() => setPrettified(items))
             .finally(() => setIsPrettifying(false));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [itemsKey, field, apiKey]);
 
     return { prettified, isPrettifying };

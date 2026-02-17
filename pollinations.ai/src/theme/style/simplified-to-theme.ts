@@ -104,6 +104,7 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     addRadius("radius.card", config.radius.card);
     addRadius("radius.input", config.radius.input);
     addRadius("radius.subcard", config.radius.subcard);
+    addRadius("radius.tag", config.radius.tag);
 
     // 3. Map Fonts
     addFont("font.title", config.typography.title);

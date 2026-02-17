@@ -146,6 +146,7 @@ export default {
                 card: "var(--radius-card)",
                 input: "var(--radius-input)",
                 "sub-card": "var(--radius-subcard)",
+                tag: "var(--radius-tag)",
             },
             animation: {
                 "pulse-subtle": "pulse-subtle 1.5s ease-in-out infinite",

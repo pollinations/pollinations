@@ -326,6 +326,27 @@ interface GistJson {
     };
 }
 
+async function fetchTreePaths(signal: AbortSignal): Promise<string[]> {
+    const res = await fetch(TREE_API, { signal });
+    if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
+    const data = await res.json();
+    const paths = (data.tree as { path: string; type: string }[])
+        .filter((t) => t.path.startsWith("social/news/"))
+        .map((t) => t.path);
+    try {
+        localStorage.setItem(
+            TREE_CACHE_KEY,
+            JSON.stringify({
+                data: paths,
+                day: new Date().toISOString().slice(0, 10),
+            }),
+        );
+    } catch {
+        // localStorage full — skip caching
+    }
+    return paths;
+}
+
 // --- Hook ---
 
 export function useDiaryData() {
@@ -340,31 +361,20 @@ export function useDiaryData() {
 
         async function load() {
             try {
-                // Check sessionStorage cache
-                const cached = sessionStorage.getItem(TREE_CACHE_KEY);
+                // Check localStorage cache (expires at start of new UTC day)
+                const today = new Date().toISOString().slice(0, 10);
+                const cached = localStorage.getItem(TREE_CACHE_KEY);
                 let paths: string[];
 
                 if (cached) {
-                    paths = JSON.parse(cached);
-                } else {
-                    const res = await fetch(TREE_API, {
-                        signal: controller.signal,
-                    });
-                    if (!res.ok)
-                        throw new Error(`GitHub API error: ${res.status}`);
-                    const data = await res.json();
-                    paths = (data.tree as { path: string; type: string }[])
-                        .filter((t) => t.path.startsWith("social/news/"))
-                        .map((t) => t.path);
-
-                    try {
-                        sessionStorage.setItem(
-                            TREE_CACHE_KEY,
-                            JSON.stringify(paths),
-                        );
-                    } catch {
-                        // sessionStorage full — skip caching
+                    const { data: cachedPaths, day } = JSON.parse(cached);
+                    if (day === today) {
+                        paths = cachedPaths;
+                    } else {
+                        paths = await fetchTreePaths(controller.signal);
                     }
+                } else {
+                    paths = await fetchTreePaths(controller.signal);
                 }
 
                 if (controller.signal.aborted) return;

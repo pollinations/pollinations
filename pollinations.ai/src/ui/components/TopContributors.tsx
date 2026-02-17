@@ -19,6 +19,24 @@ export function TopContributors() {
     const [loadingContributors, setLoadingContributors] = useState(true);
 
     useEffect(() => {
+        const CACHE_KEY = "top_contributors_v1";
+        const today = new Date().toISOString().slice(0, 10);
+
+        // Check localStorage cache (expires at start of new UTC day)
+        try {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) {
+                const { data, day } = JSON.parse(cached);
+                if (day === today) {
+                    setContributors(data);
+                    setLoadingContributors(false);
+                    return;
+                }
+            }
+        } catch {
+            // corrupted cache — continue to fetch
+        }
+
         const fetchTopContributors365 = async () => {
             try {
                 const since = new Date(
@@ -74,6 +92,19 @@ export function TopContributors() {
                     .slice(0, 16);
 
                 setContributors(topContributors);
+
+                // Cache the results
+                try {
+                    localStorage.setItem(
+                        CACHE_KEY,
+                        JSON.stringify({
+                            data: topContributors,
+                            day: today,
+                        }),
+                    );
+                } catch {
+                    // localStorage full — skip
+                }
             } catch (err) {
                 console.error("Contributor aggregation failed:", err);
             } finally {

@@ -127,8 +127,7 @@ export const COMMUNITY_PAGE = {
 
     // Build Diary section
     buildDiaryTitle: "Build Diary",
-    buildDiarySubtitle:
-        "A visual log of what we ship every day. Use ← → to browse entries, click PRs to dig in.",
+    buildDiarySubtitle: "A visual log of what we ship every day.",
 
     // Top Contributors section
     topContributorsTitle: "Most Active Contributors",

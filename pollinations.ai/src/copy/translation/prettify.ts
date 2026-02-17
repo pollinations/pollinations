@@ -9,11 +9,18 @@ import { memoizeAsync } from "../../utils";
 interface CopyItem {
     id: string;
     text: string;
+    name?: string;
 }
 
 const PRETTIFY_PROMPT = `Rewrite each app description in zine-style for a creative AI showcase. Output ONLY numbered entries — no intro, no commentary.
 
 Each entry starts with its number (e.g. "1.") on the first line, then continues with markdown on the following lines until the next number.
+
+CRITICAL — preserve facts:
+- NEVER change, rename, or replace app names or project names — keep them exactly as given
+- NEVER invent new names, nicknames, or aliases for the app
+- Preserve all proper nouns, tool names, model names, and URLs exactly
+- Only restyle the description — do not alter what the app is or does
 
 Style guide:
 - One emoji at the start — no emoji spam
@@ -36,7 +43,12 @@ async function prettifyDescriptions(
     items: CopyItem[],
     apiKey?: string,
 ): Promise<CopyItem[]> {
-    const lines = items.map((item, i) => `${i + 1}. ${item.text}`).join("\n");
+    const lines = items
+        .map((item, i) => {
+            const prefix = item.name ? `[${item.name}] ` : "";
+            return `${i + 1}. ${prefix}${item.text}`;
+        })
+        .join("\n");
     const prompt = `${PRETTIFY_PROMPT}\n\n${lines}`;
 
     console.log(`✨ [PRETTIFY] Processing ${items.length} descriptions`);

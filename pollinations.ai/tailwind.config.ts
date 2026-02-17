@@ -6,7 +6,6 @@
  * - Opacity: Add /90, /80, /50 etc. (e.g., bg-primary/90)
  * - CSS variables available: var(--color-primary), var(--color-background), etc.
  */
-import type { Config } from "tailwindcss";
 import plugin from "tailwindcss/plugin";
 import { AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarknessWithVolumetricBlueHazeDiverseGlowingOrganismsOfDifferentColorsTurquoiseVioletAmberSoftPinkSizesTinySpecksToLargeFloatingFormsAndShapesJellCssVariables as DefaultCssVariables } from "./src/theme/presets/default";
 

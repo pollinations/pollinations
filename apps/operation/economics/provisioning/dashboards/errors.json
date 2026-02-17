@@ -24,7 +24,12 @@
   "panels": [
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
       "id": 1,
       "panels": [],
       "title": "Overview",
@@ -38,7 +43,9 @@
       "description": "Total error count (response_status >= 400, excluding 403) broken down by provider + model combination over time.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "axisCenteredZero": false,
@@ -50,39 +57,66 @@
             "drawStyle": "bars",
             "fillOpacity": 10,
             "gradientMode": "hue",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
+            "scaleDistribution": {
+              "type": "linear"
+            },
             "showPoints": "auto",
             "showValues": false,
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "normal" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "green", "value": 0 }]
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
           },
           "unit": "short"
         },
         "overrides": []
       },
-      "gridPos": { "h": 13, "w": 24, "x": 0, "y": 1 },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
       "id": 2,
       "options": {
         "legend": {
-          "calcs": ["sum"],
+          "calcs": [
+            "sum"
+          ],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true,
           "sortBy": "Total",
           "sortDesc": true
         },
-        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
@@ -92,7 +126,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  count(DISTINCT request_id) AS errors\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND response_status >= 400\n  AND response_status != 403\nGROUP BY ts, provider_model\nORDER BY ts ASC",
+          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  count(DISTINCT request_id) AS errors\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\n  AND response_status >= 400\n  AND response_status != 403\nGROUP BY ts, provider_model\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -107,7 +141,9 @@
       "description": "Error rate percentage per provider+model. Formula: errors / (errors + successes) * 100. Shows which combos have the worst reliability.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "axisCenteredZero": false,
@@ -119,42 +155,71 @@
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
+            "scaleDistribution": {
+              "type": "linear"
+            },
             "showPoints": "auto",
             "showValues": false,
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": 0 },
-              { "color": "red", "value": 80 }
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
             ]
           },
           "unit": "percent"
         },
         "overrides": []
       },
-      "gridPos": { "h": 13, "w": 24, "x": 0, "y": 14 },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
       "id": 3,
       "options": {
         "legend": {
-          "calcs": ["mean", "max"],
+          "calcs": [
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true,
           "sortBy": "Mean",
           "sortDesc": true
         },
-        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
@@ -164,7 +229,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  ts,\n  provider_model,\n  error_count * 100.0 / (error_count + success_count) AS error_rate\nFROM (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n    countIf(response_status >= 400 AND response_status != 403) AS error_count,\n    countIf(response_status >= 200 AND response_status < 300) AS success_count\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n  GROUP BY ts, provider_model\n  HAVING error_count > 0 OR success_count > 0\n)\nWHERE error_count > 0\nORDER BY ts ASC",
+          "rawSql": "SELECT\n  ts,\n  provider_model,\n  error_count * 100.0 / (error_count + success_count) AS error_rate\nFROM (\n  SELECT\n    date_trunc('$granularity', start_time) AS ts,\n    concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n    countIf(response_status >= 400 AND response_status != 403) AS error_count,\n    countIf(response_status >= 200 AND response_status < 300) AS success_count\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\n  GROUP BY ts, provider_model\n  HAVING error_count > 0 OR success_count > 0\n)\nWHERE error_count > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -173,7 +238,12 @@
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
       "id": 4,
       "panels": [],
       "title": "Per Status Code (Client Errors 4xx)",
@@ -187,7 +257,9 @@
       "description": "400 Bad Request errors by provider + model. Usually caused by invalid parameters, malformed requests, or unknown model aliases.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "axisCenteredZero": false,
@@ -196,42 +268,70 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
-            "drawStyle": "bars",
-            "fillOpacity": 10,
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "gradientMode": "hue",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
+            "scaleDistribution": {
+              "type": "linear"
+            },
             "showPoints": "auto",
             "showValues": false,
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "normal" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "green", "value": 0 }]
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
-      "gridPos": { "h": 10, "w": 8, "x": 0, "y": 28 },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 28
+      },
       "id": 10,
       "options": {
         "legend": {
-          "calcs": ["sum"],
+          "calcs": [
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true,
           "sortBy": "Total",
           "sortDesc": true
         },
-        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
@@ -241,7 +341,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  count(DISTINCT request_id) AS errors\nFROM generation_event\nWHERE $__timeFilter(start_time) AND response_status = 400\nGROUP BY ts, provider_model\nORDER BY ts ASC",
+          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 400) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 400) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -256,7 +356,9 @@
       "description": "401 Unauthorized errors by provider + model. Missing or invalid API key / authentication.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "axisCenteredZero": false,
@@ -265,42 +367,70 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
-            "drawStyle": "bars",
-            "fillOpacity": 10,
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "gradientMode": "hue",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
+            "scaleDistribution": {
+              "type": "linear"
+            },
             "showPoints": "auto",
             "showValues": false,
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "normal" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "green", "value": 0 }]
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
-      "gridPos": { "h": 10, "w": 8, "x": 8, "y": 28 },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 8,
+        "y": 28
+      },
       "id": 11,
       "options": {
         "legend": {
-          "calcs": ["sum"],
+          "calcs": [
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true,
           "sortBy": "Total",
           "sortDesc": true
         },
-        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
@@ -310,7 +440,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  count(DISTINCT request_id) AS errors\nFROM generation_event\nWHERE $__timeFilter(start_time) AND response_status = 401\nGROUP BY ts, provider_model\nORDER BY ts ASC",
+          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 401) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 401) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -325,7 +455,9 @@
       "description": "402 Payment Required errors by provider + model. Insufficient pollen balance or API key budget exhausted.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "axisCenteredZero": false,
@@ -334,42 +466,70 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
-            "drawStyle": "bars",
-            "fillOpacity": 10,
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "gradientMode": "hue",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
+            "scaleDistribution": {
+              "type": "linear"
+            },
             "showPoints": "auto",
             "showValues": false,
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "normal" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "green", "value": 0 }]
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
-      "gridPos": { "h": 10, "w": 8, "x": 16, "y": 28 },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 16,
+        "y": 28
+      },
       "id": 12,
       "options": {
         "legend": {
-          "calcs": ["sum"],
+          "calcs": [
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true,
           "sortBy": "Total",
           "sortDesc": true
         },
-        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
@@ -379,7 +539,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  count(DISTINCT request_id) AS errors\nFROM generation_event\nWHERE $__timeFilter(start_time) AND response_status = 402\nGROUP BY ts, provider_model\nORDER BY ts ASC",
+          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 402) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 402) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -394,7 +554,9 @@
       "description": "404 Not Found errors by provider + model. Requested resource or endpoint doesn't exist.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "axisCenteredZero": false,
@@ -403,42 +565,70 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
-            "drawStyle": "bars",
-            "fillOpacity": 10,
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "gradientMode": "hue",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
+            "scaleDistribution": {
+              "type": "linear"
+            },
             "showPoints": "auto",
             "showValues": false,
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "normal" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "green", "value": 0 }]
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
-      "gridPos": { "h": 10, "w": 8, "x": 0, "y": 38 },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 38
+      },
       "id": 13,
       "options": {
         "legend": {
-          "calcs": ["sum"],
+          "calcs": [
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true,
           "sortBy": "Total",
           "sortDesc": true
         },
-        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
@@ -448,7 +638,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  count(DISTINCT request_id) AS errors\nFROM generation_event\nWHERE $__timeFilter(start_time) AND response_status = 404\nGROUP BY ts, provider_model\nORDER BY ts ASC",
+          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 404) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 404) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -460,148 +650,12 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "405 Method Not Allowed errors by provider + model. Wrong HTTP method used for the endpoint.",
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "bars",
-            "fillOpacity": 10,
-            "gradientMode": "hue",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "normal" },
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "green", "value": 0 }]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 10, "w": 8, "x": 8, "y": 38 },
-      "id": 14,
-      "options": {
-        "legend": {
-          "calcs": ["sum"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "sortBy": "Total",
-          "sortDesc": true
-        },
-        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "PAD1A0A25CD30D456"
-          },
-          "format": 0,
-          "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  count(DISTINCT request_id) AS errors\nFROM generation_event\nWHERE $__timeFilter(start_time) AND response_status = 405\nGROUP BY ts, provider_model\nORDER BY ts ASC",
-          "refId": "A"
-        }
-      ],
-      "title": "405 - Method Not Allowed",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "PAD1A0A25CD30D456"
-      },
-      "description": "409 Conflict errors by provider + model. Resource conflict (e.g. duplicate creation attempt).",
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "bars",
-            "fillOpacity": 10,
-            "gradientMode": "hue",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "normal" },
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "green", "value": 0 }]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 10, "w": 8, "x": 16, "y": 38 },
-      "id": 15,
-      "options": {
-        "legend": {
-          "calcs": ["sum"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "sortBy": "Total",
-          "sortDesc": true
-        },
-        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "PAD1A0A25CD30D456"
-          },
-          "format": 0,
-          "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  count(DISTINCT request_id) AS errors\nFROM generation_event\nWHERE $__timeFilter(start_time) AND response_status = 409\nGROUP BY ts, provider_model\nORDER BY ts ASC",
-          "refId": "A"
-        }
-      ],
-      "title": "409 - Conflict",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "PAD1A0A25CD30D456"
-      },
       "description": "422 Unprocessable Entity errors by provider + model. Request looks valid but has missing or invalid fields (Zod validation failures).",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "axisCenteredZero": false,
@@ -610,42 +664,70 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
-            "drawStyle": "bars",
-            "fillOpacity": 10,
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "gradientMode": "hue",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
+            "scaleDistribution": {
+              "type": "linear"
+            },
             "showPoints": "auto",
             "showValues": false,
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "normal" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "green", "value": 0 }]
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
-      "gridPos": { "h": 10, "w": 8, "x": 0, "y": 48 },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 48
+      },
       "id": 16,
       "options": {
         "legend": {
-          "calcs": ["sum"],
+          "calcs": [
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true,
           "sortBy": "Total",
           "sortDesc": true
         },
-        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
@@ -655,7 +737,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  count(DISTINCT request_id) AS errors\nFROM generation_event\nWHERE $__timeFilter(start_time) AND response_status = 422\nGROUP BY ts, provider_model\nORDER BY ts ASC",
+          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 422) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 422) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -670,7 +752,9 @@
       "description": "429 Rate Limited errors by provider + model. Too many requests from this user/IP, or publishable key pollen rate limit exceeded.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "axisCenteredZero": false,
@@ -679,42 +763,70 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
-            "drawStyle": "bars",
-            "fillOpacity": 10,
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "gradientMode": "hue",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
+            "scaleDistribution": {
+              "type": "linear"
+            },
             "showPoints": "auto",
             "showValues": false,
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "normal" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "green", "value": 0 }]
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
-      "gridPos": { "h": 10, "w": 8, "x": 8, "y": 48 },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 8,
+        "y": 48
+      },
       "id": 17,
       "options": {
         "legend": {
-          "calcs": ["sum"],
+          "calcs": [
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true,
           "sortBy": "Total",
           "sortDesc": true
         },
-        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
@@ -724,7 +836,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  count(DISTINCT request_id) AS errors\nFROM generation_event\nWHERE $__timeFilter(start_time) AND response_status = 429\nGROUP BY ts, provider_model\nORDER BY ts ASC",
+          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 429) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 429) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -733,7 +845,12 @@
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 58 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 58
+      },
       "id": 5,
       "panels": [],
       "title": "Per Status Code (Server Errors 5xx)",
@@ -747,7 +864,9 @@
       "description": "500 Internal Error by provider + model. Unexpected server-side failures in the gateway.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "axisCenteredZero": false,
@@ -756,42 +875,70 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
-            "drawStyle": "bars",
-            "fillOpacity": 10,
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "gradientMode": "hue",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
+            "scaleDistribution": {
+              "type": "linear"
+            },
             "showPoints": "auto",
             "showValues": false,
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "normal" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "green", "value": 0 }]
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
-      "gridPos": { "h": 10, "w": 8, "x": 0, "y": 59 },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 59
+      },
       "id": 20,
       "options": {
         "legend": {
-          "calcs": ["sum"],
+          "calcs": [
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true,
           "sortBy": "Total",
           "sortDesc": true
         },
-        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
@@ -801,7 +948,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  count(DISTINCT request_id) AS errors\nFROM generation_event\nWHERE $__timeFilter(start_time) AND response_status = 500\nGROUP BY ts, provider_model\nORDER BY ts ASC",
+          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 500) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 500) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -816,7 +963,9 @@
       "description": "502 Bad Gateway errors by provider + model. The gateway couldn't reach the backend service (image/text/audio). Check error_source for which upstream failed.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "axisCenteredZero": false,
@@ -825,42 +974,70 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
-            "drawStyle": "bars",
-            "fillOpacity": 10,
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "gradientMode": "hue",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
+            "scaleDistribution": {
+              "type": "linear"
+            },
             "showPoints": "auto",
             "showValues": false,
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "normal" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "green", "value": 0 }]
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
-      "gridPos": { "h": 10, "w": 8, "x": 8, "y": 59 },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 8,
+        "y": 59
+      },
       "id": 21,
       "options": {
         "legend": {
-          "calcs": ["sum"],
+          "calcs": [
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true,
           "sortBy": "Total",
           "sortDesc": true
         },
-        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
@@ -870,7 +1047,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  count(DISTINCT request_id) AS errors\nFROM generation_event\nWHERE $__timeFilter(start_time) AND response_status = 502\nGROUP BY ts, provider_model\nORDER BY ts ASC",
+          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 502) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 502) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -885,7 +1062,9 @@
       "description": "503 Service Unavailable errors by provider + model. Backend temporarily down for maintenance or DB failure during balance lookup.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "axisCenteredZero": false,
@@ -894,42 +1073,70 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
-            "drawStyle": "bars",
-            "fillOpacity": 10,
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "gradientMode": "hue",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
+            "scaleDistribution": {
+              "type": "linear"
+            },
             "showPoints": "auto",
             "showValues": false,
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "normal" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "green", "value": 0 }]
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
-      "gridPos": { "h": 10, "w": 8, "x": 16, "y": 59 },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 16,
+        "y": 59
+      },
       "id": 22,
       "options": {
         "legend": {
-          "calcs": ["sum"],
+          "calcs": [
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true,
           "sortBy": "Total",
           "sortDesc": true
         },
-        "tooltip": { "hideZeros": false, "mode": "multi", "sort": "desc" }
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
@@ -939,7 +1146,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  count(DISTINCT request_id) AS errors\nFROM generation_event\nWHERE $__timeFilter(start_time) AND response_status = 503\nGROUP BY ts, provider_model\nORDER BY ts ASC",
+          "rawSql": "SELECT\n  date_trunc('$granularity', start_time) AS ts,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  countIf(response_status = 503) * 100.0 / count() AS error_rate\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\nGROUP BY ts, provider_model\nHAVING countIf(response_status = 503) > 0\nORDER BY ts ASC",
           "refId": "A"
         }
       ],
@@ -948,7 +1155,12 @@
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 69 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 69
+      },
       "id": 6,
       "panels": [],
       "title": "Error Details",
@@ -962,57 +1174,108 @@
       "description": "Most frequent error messages aggregated by count, status code, provider+model, and error source.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "thresholds" },
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {
             "align": "auto",
-            "cellOptions": { "type": "auto" },
-            "footer": { "reducers": [] },
-            "hideFrom": { "viz": false },
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "hideFrom": {
+              "viz": false
+            },
             "inspect": false
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": 0 },
-              { "color": "yellow", "value": 10 },
-              { "color": "red", "value": 100 }
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
             ]
           }
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "error_count" },
+            "matcher": {
+              "id": "byName",
+              "options": "error_count"
+            },
             "properties": [
-              { "id": "custom.width", "value": 100 }
+              {
+                "id": "custom.width",
+                "value": 100
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "response_status" },
+            "matcher": {
+              "id": "byName",
+              "options": "response_status"
+            },
             "properties": [
-              { "id": "custom.width", "value": 80 }
+              {
+                "id": "custom.width",
+                "value": 80
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "error_source" },
+            "matcher": {
+              "id": "byName",
+              "options": "error_source"
+            },
             "properties": [
-              { "id": "custom.width", "value": 200 }
+              {
+                "id": "custom.width",
+                "value": 200
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "provider_model" },
+            "matcher": {
+              "id": "byName",
+              "options": "provider_model"
+            },
             "properties": [
-              { "id": "custom.width", "value": 250 }
+              {
+                "id": "custom.width",
+                "value": 250
+              }
             ]
           }
         ]
       },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 70 },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 70
+      },
       "id": 30,
       "options": {
         "cellHeight": "sm",
         "showHeader": true,
-        "sortBy": [{ "desc": true, "displayName": "error_count" }]
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "error_count"
+          }
+        ]
       },
       "targets": [
         {
@@ -1022,7 +1285,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  count(DISTINCT request_id) AS error_count,\n  response_status,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  error_source,\n  error_message\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND response_status >= 400\n  AND response_status != 403\n  AND error_message != 'undefined'\n  AND error_message != ''\nGROUP BY response_status, provider_model, error_source, error_message\nORDER BY error_count DESC\nLIMIT 50",
+          "rawSql": "SELECT\n  count(DISTINCT request_id) AS error_count,\n  response_status,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  error_source,\n  error_message\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\n  AND response_status >= 400\n  AND response_status != 403\n  AND error_message != 'undefined'\n  AND error_message != ''\nGROUP BY response_status, provider_model, error_source, error_message\nORDER BY error_count DESC\nLIMIT 50",
           "refId": "A"
         }
       ],
@@ -1037,65 +1300,124 @@
       "description": "Last 200 individual error events for tracing. Shows time, model, status, error source, message, user, and request ID.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "thresholds" },
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {
             "align": "auto",
-            "cellOptions": { "type": "auto" },
-            "footer": { "reducers": [] },
-            "hideFrom": { "viz": false },
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "hideFrom": {
+              "viz": false
+            },
             "inspect": false
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "green", "value": 0 }]
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
           }
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "start_time" },
+            "matcher": {
+              "id": "byName",
+              "options": "start_time"
+            },
             "properties": [
-              { "id": "custom.width", "value": 160 }
+              {
+                "id": "custom.width",
+                "value": 160
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "response_status" },
+            "matcher": {
+              "id": "byName",
+              "options": "response_status"
+            },
             "properties": [
-              { "id": "custom.width", "value": 80 }
+              {
+                "id": "custom.width",
+                "value": 80
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "provider_model" },
+            "matcher": {
+              "id": "byName",
+              "options": "provider_model"
+            },
             "properties": [
-              { "id": "custom.width", "value": 220 }
+              {
+                "id": "custom.width",
+                "value": 220
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "error_source" },
+            "matcher": {
+              "id": "byName",
+              "options": "error_source"
+            },
             "properties": [
-              { "id": "custom.width", "value": 180 }
+              {
+                "id": "custom.width",
+                "value": 180
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "user_github_username" },
+            "matcher": {
+              "id": "byName",
+              "options": "user_github_username"
+            },
             "properties": [
-              { "id": "custom.width", "value": 150 }
+              {
+                "id": "custom.width",
+                "value": 150
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "request_id" },
+            "matcher": {
+              "id": "byName",
+              "options": "request_id"
+            },
             "properties": [
-              { "id": "custom.width", "value": 120 }
+              {
+                "id": "custom.width",
+                "value": 120
+              }
             ]
           }
         ]
       },
-      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 80 },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 80
+      },
       "id": 31,
       "options": {
         "cellHeight": "sm",
         "showHeader": true,
-        "sortBy": [{ "desc": true, "displayName": "start_time" }]
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "start_time"
+          }
+        ]
       },
       "targets": [
         {
@@ -1105,7 +1427,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  start_time,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  response_status,\n  error_source,\n  error_message,\n  user_github_username,\n  request_path,\n  request_id\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND response_status >= 400\n  AND response_status != 403\nORDER BY start_time DESC\nLIMIT 200",
+          "rawSql": "SELECT\n  start_time,\n  concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model,\n  response_status,\n  error_source,\n  error_message,\n  user_github_username,\n  request_path,\n  request_id\nFROM generation_event\nWHERE\n  $__timeFilter(start_time)\n  AND concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) IN (${provider_model:singlequote})\n  AND response_status >= 400\n  AND response_status != 403\nORDER BY start_time DESC\nLIMIT 200",
           "refId": "A"
         }
       ],
@@ -1114,7 +1436,10 @@
     }
   ],
   "schemaVersion": 40,
-  "tags": ["errors", "monitoring"],
+  "tags": [
+    "errors",
+    "monitoring"
+  ],
   "templating": {
     "list": [
       {
@@ -1130,16 +1455,61 @@
         "multi": false,
         "name": "granularity",
         "options": [
-          { "selected": true, "text": "minute", "value": "minute" },
-          { "selected": false, "text": "hour", "value": "hour" },
-          { "selected": false, "text": "day", "value": "day" },
-          { "selected": false, "text": "week", "value": "week" },
-          { "selected": false, "text": "month", "value": "month" }
+          {
+            "selected": true,
+            "text": "minute",
+            "value": "minute"
+          },
+          {
+            "selected": false,
+            "text": "hour",
+            "value": "hour"
+          },
+          {
+            "selected": false,
+            "text": "day",
+            "value": "day"
+          },
+          {
+            "selected": false,
+            "text": "week",
+            "value": "week"
+          },
+          {
+            "selected": false,
+            "text": "month",
+            "value": "month"
+          }
         ],
         "query": "minute, hour, day, week, month",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PAD1A0A25CD30D456"
+        },
+        "definition": "",
+        "description": "Filter by provider + model",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Provider + Model",
+        "multi": true,
+        "name": "provider_model",
+        "options": [],
+        "query": "SELECT DISTINCT concat(model_provider_used, ' - ', CASE WHEN resolved_model_requested != 'undefined' AND resolved_model_requested != '' THEN resolved_model_requested ELSE model_used END) AS provider_model FROM generation_event WHERE $__timeFilter(start_time) AND response_status >= 400 AND response_status != 403 ORDER BY provider_model",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
       }
     ]
   },

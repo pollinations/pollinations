@@ -409,7 +409,7 @@ export function PlayGenerator({
                                                 ),
                                             )
                                         }
-                                        className="absolute -top-1 -right-1 w-5 h-5 bg-charcoal border border-border-main rounded-full flex items-center justify-center text-text-body-main hover:bg-button-secondary-bg transition-colors"
+                                        className="absolute -top-1 -right-1 w-5 h-5 bg-surface-card border border-border-main rounded-full flex items-center justify-center text-text-body-main hover:bg-button-secondary-bg transition-colors"
                                     >
                                         ×
                                     </button>
@@ -483,9 +483,9 @@ export function PlayGenerator({
                                 >
                                     {copy.seedLabel}
                                 </Label>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/seed:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-surface-card text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/seed:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                     {copy.seedTooltip}
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-surface-card" />
                                 </div>
                             </div>
                             <input
@@ -510,9 +510,9 @@ export function PlayGenerator({
                                 >
                                     {copy.enhanceLabel}
                                 </Label>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/enhance:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-surface-card text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/enhance:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                     {copy.enhanceTooltip}
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-surface-card" />
                                 </div>
                             </div>
                             <label className="relative flex items-center justify-center p-3 bg-input-background hover:bg-input-background transition-colors cursor-pointer select-none group rounded-input">
@@ -615,9 +615,9 @@ export function PlayGenerator({
                     )}
                 </Button>
                 {!prompt && !isLoading && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/generate:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-surface-card text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/generate:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                         {copy.enterPromptFirst}
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-surface-card" />
                     </div>
                 )}
             </div>

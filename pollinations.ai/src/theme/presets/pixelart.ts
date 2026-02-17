@@ -1,157 +1,124 @@
 import { type LLMThemeResponse, processTheme } from "../style/theme-processor";
 
 export const PixelartTheme: LLMThemeResponse = {
-  "slots": {
-    "slot_0": {
-      "hex": "#110518",
-      "ids": [
-        "text.primary",
-        "text.accent",
-        "input.border",
-        "input.text",
-        "button.primary.border",
-        "button.secondary.border",
-        "button.focus.ring",
-        "border.accent",
-        "border.main",
-        "border.strong",
-        "shadow.dark.md",
-        "shadow.dark.lg",
-        "logo.main"
-      ]
+    "slots": {
+        "slot_0": {
+            "hex": "#110518",
+            "ids": [
+                "text.primary",
+                "text.accent",
+                "input.border",
+                "input.text",
+                "button.primary.border",
+                "button.secondary.border",
+                "button.focus.ring",
+                "border.accent",
+                "border.main",
+                "border.strong",
+                "shadow.dark.md",
+                "shadow.dark.lg",
+                "logo.main",
+            ],
+        },
+        "slot_1": {
+            "hex": "#4A3B52",
+            "ids": ["text.secondary", "shadow.dark.sm"],
+        },
+        "slot_2": {
+            "hex": "#E0BBE4",
+            "ids": [
+                "button.secondary.bg",
+                "indicator.image",
+                "background.element2",
+            ],
+        },
+        "slot_3": {
+            "hex": "#EAEAEA",
+            "ids": ["button.disabled.bg"],
+        },
+        "slot_4": {
+            "hex": "#FFDFD3",
+            "ids": [
+                "indicator.audio",
+                "shadow.highlight.md",
+                "background.particle",
+            ],
+        },
+        "slot_5": {
+            "hex": "#B4F8C8",
+            "ids": ["indicator.video", "shadow.highlight.sm"],
+        },
+        "slot_6": {
+            "hex": "#D4C5D9",
+            "ids": ["border.subtle"],
+        },
+        "slot_7": {
+            "hex": "#F0E6F2",
+            "ids": ["border.faint"],
+        },
+        "slot_8": {
+            "hex": "#000000",
+            "ids": ["shadow.dark.xl"],
+        },
+        "slot_9": {
+            "hex": "#7D6D85",
+            "ids": ["text.tertiary"],
+        },
+        "slot_10": {
+            "hex": "#9E8FA5",
+            "ids": ["text.caption"],
+        },
+        "slot_11": {
+            "hex": "#FFFDF5",
+            "ids": ["text.inverse", "surface.page", "background.base"],
+        },
+        "slot_12": {
+            "hex": "#ecf874",
+            "ids": [
+                "indicator.text",
+                "border.brand",
+                "border.highlight",
+                "shadow.brand.sm",
+                "shadow.brand.md",
+                "shadow.brand.lg",
+                "logo.accent",
+                "background.element1",
+            ],
+        },
+        "slot_13": {
+            "hex": "#2E8B57",
+            "ids": ["text.highlight", "button.primary.bg", "text.brand"],
+        },
+        "slot_14": {
+            "hex": "#FFFFFF",
+            "ids": ["surface.card", "input.bg"],
+        },
+        "slot_15": {
+            "hex": "#F4F1DE",
+            "ids": ["surface.base"],
+        },
+        "slot_16": {
+            "hex": "#A99FB0",
+            "ids": ["input.placeholder"],
+        },
     },
-    "slot_1": {
-      "hex": "#4A3B52",
-      "ids": [
-        "text.secondary",
-        "shadow.dark.sm"
-      ]
+    "borderRadius": {
+        "radius.button": "0px",
+        "radius.input": "0px",
+        "radius.subcard": "0px",
+        "radius.card": "4px",
+        "radius.tag": "0px",
     },
-    "slot_2": {
-      "hex": "#E0BBE4",
-      "ids": [
-        "button.secondary.bg",
-        "indicator.image",
-        "background.element2"
-      ]
+    "fonts": {
+        "font.title": "Press Start 2P",
+        "font.headline": "VT323",
+        "font.body": "Space Mono",
     },
-    "slot_3": {
-      "hex": "#EAEAEA",
-      "ids": [
-        "button.disabled.bg"
-      ]
+    "opacity": {
+        "opacity.card": "1",
+        "opacity.overlay": "0.95",
+        "opacity.glass": "0.9",
     },
-    "slot_4": {
-      "hex": "#FFDFD3",
-      "ids": [
-        "indicator.audio",
-        "shadow.highlight.md",
-        "background.particle"
-      ]
-    },
-    "slot_5": {
-      "hex": "#B4F8C8",
-      "ids": [
-        "indicator.video",
-        "shadow.highlight.sm"
-      ]
-    },
-    "slot_6": {
-      "hex": "#D4C5D9",
-      "ids": [
-        "border.subtle"
-      ]
-    },
-    "slot_7": {
-      "hex": "#F0E6F2",
-      "ids": [
-        "border.faint"
-      ]
-    },
-    "slot_8": {
-      "hex": "#000000",
-      "ids": [
-        "shadow.dark.xl"
-      ]
-    },
-    "slot_9": {
-      "hex": "#7D6D85",
-      "ids": [
-        "text.tertiary"
-      ]
-    },
-    "slot_10": {
-      "hex": "#9E8FA5",
-      "ids": [
-        "text.caption"
-      ]
-    },
-    "slot_11": {
-      "hex": "#FFFDF5",
-      "ids": [
-        "text.inverse",
-        "surface.page",
-        "background.base"
-      ]
-    },
-    "slot_12": {
-      "hex": "#ecf874",
-      "ids": [
-        "indicator.text",
-        "border.brand",
-        "border.highlight",
-        "shadow.brand.sm",
-        "shadow.brand.md",
-        "shadow.brand.lg",
-        "logo.accent",
-        "background.element1"
-      ]
-    },
-    "slot_13": {
-      "hex": "#2E8B57",
-      "ids": [
-        "text.highlight",
-        "button.primary.bg",
-        "text.brand"
-      ]
-    },
-    "slot_14": {
-      "hex": "#FFFFFF",
-      "ids": [
-        "surface.card",
-        "input.bg"
-      ]
-    },
-    "slot_15": {
-      "hex": "#F4F1DE",
-      "ids": [
-        "surface.base"
-      ]
-    },
-    "slot_16": {
-      "hex": "#A99FB0",
-      "ids": [
-        "input.placeholder"
-      ]
-    }
-  },
-  "borderRadius": {
-    "radius.button": "0px",
-    "radius.input": "0px",
-    "radius.subcard": "0px",
-    "radius.card": "4px",
-    "radius.tag": "0px"
-  },
-  "fonts": {
-    "font.title": "Press Start 2P",
-    "font.headline": "VT323",
-    "font.body": "Space Mono"
-  },
-  "opacity": {
-    "opacity.card": "1",
-    "opacity.overlay": "0.95",
-    "opacity.glass": "0.9"
-  }
 };
 
 export const PixelartCssVariables = processTheme(PixelartTheme).cssVariables;

@@ -116,6 +116,21 @@ export default function CommunityPage() {
                 {/* Divider */}
                 <Divider />
 
+                {/* Build Diary */}
+                <div className="mb-12">
+                    <Heading variant="section">
+                        {pageCopy.buildDiaryTitle || "Build Diary"}
+                    </Heading>
+                    <Body size="sm" spacing="comfortable">
+                        {pageCopy.buildDiarySubtitle ||
+                            "A visual log of what we ship every day."}
+                    </Body>
+                    <BuildDiary />
+                </div>
+
+                {/* Divider */}
+                <Divider />
+
                 {/* Voting Section */}
                 <div className="mb-12">
                     <Heading variant="section">
@@ -150,21 +165,6 @@ export default function CommunityPage() {
                             </a>
                         ))}
                     </div>
-                </div>
-
-                {/* Divider */}
-                <Divider />
-
-                {/* Build Diary */}
-                <div className="mb-12">
-                    <Heading variant="section">
-                        {pageCopy.buildDiaryTitle || "Build Diary"}
-                    </Heading>
-                    <Body size="sm" spacing="comfortable">
-                        {pageCopy.buildDiarySubtitle ||
-                            "A visual log of what we ship every day."}
-                    </Body>
-                    <BuildDiary />
                 </div>
 
                 {/* Divider */}

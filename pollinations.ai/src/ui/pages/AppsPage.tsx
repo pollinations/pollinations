@@ -137,7 +137,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                     <Badge variant="pollen">
                                         {copy.pollenBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/byop:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/byop:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
                                         {copy.pollenTooltip}
                                         <div className="absolute top-full left-4 border-4 border-transparent border-t-charcoal" />
                                     </div>
@@ -148,7 +148,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                     <Badge variant="buzz">
                                         {copy.buzzBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/buzz:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/buzz:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
                                         {copy.buzzTooltip}
                                         <div className="absolute top-full left-4 border-4 border-transparent border-t-charcoal" />
                                     </div>
@@ -159,7 +159,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                                     <Badge variant="fresh">
                                         {copy.newBadge}
                                     </Badge>
-                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/new:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/new:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
                                         {copy.newTooltip}
                                         <div className="absolute top-full left-4 border-4 border-transparent border-t-charcoal" />
                                     </div>
@@ -175,7 +175,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                             href={`https://github.com/${githubUsername}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main transition-all max-w-[200px]"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main rounded-tag transition-all max-w-[200px]"
                             title={`View ${app.github} on GitHub`}
                         >
                             <span className="text-text-body-secondary">
@@ -188,7 +188,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                         </a>
                     )}
                     {!repoName && !githubUsername && app.github && (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background border border-border-faint max-w-[200px]">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background border border-border-faint rounded-tag max-w-[200px]">
                             <span className="text-text-body-secondary">
                                 {copy.authorPrefix}
                             </span>
@@ -202,7 +202,7 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                             href={app.repo}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex flex-col gap-1 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main transition-all max-w-[200px]"
+                            className="inline-flex flex-col gap-1 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main rounded-tag transition-all max-w-[200px]"
                             title={`View ${repoName} on GitHub`}
                         >
                             <span className="inline-flex items-center gap-1.5 w-full">

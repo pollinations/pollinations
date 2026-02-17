@@ -1,0 +1,34 @@
+{
+  "pr_number": 8334,
+  "title": "feat: prettify app descriptions with markdown",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8334",
+  "merged_at": "2026-02-17T09:47:33Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Markdown makeover",
+    "blurb": "App descriptions just got a glow-up! We're now using our own text API to rewrite them into zine-style markdown with bold text and lists.",
+    "summary": "Implements automatic markdown formatting for app descriptions using the Pollinations text API and adds a new Pixel Art UI theme.",
+    "impact": "Users will experience richer, easier-to-read app descriptions and can now select a cozy new pixel art interface theme.",
+    "keywords": [
+      "ui",
+      "markdown",
+      "themes",
+      "ux",
+      "design"
+    ],
+    "visual_concept": "The bee mascot acting as an editor, upgrading plain text into fancy formatted text. Since a pixel art theme was added, the scene should be explicitly meta-pixel-art.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a large pixelated quill, editing a floating holographic text panel. The text on the panel is transforming from plain gray lines into colorful bold headers and bullet points. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'MARKDOWN'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-17T09:48:42.239189+00:00"
+}

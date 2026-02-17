@@ -101,9 +101,11 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <p className={requirementLabelStyle}>To unlock</p>
-                        <p className="text-xs text-gray-500">Auto-verified</p>
+                        <p className="text-xs text-gray-500">
+                            Verified account
+                        </p>
                         <p className="text-[10px] text-emerald-600 mt-0.5">
-                            Checked on signup
+                            Auto-upgraded daily
                         </p>
                     </div>
                 </div>
@@ -124,7 +126,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                         <p className="text-xs text-gray-500">
                             <Tooltip content={<SeedTooltipContent />}>
                                 <span className="underline decoration-dotted cursor-help">
-                                    8+ dev points
+                                    Active developer
                                 </span>
                             </Tooltip>
                         </p>
@@ -155,7 +157,8 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                                 className="text-blue-600 hover:underline"
                             >
                                 Publish an app
-                            </a>
+                            </a>{" "}
+                            or contribute code
                         </p>
                         <p className="text-[10px] text-amber-600 mt-0.5">
                             {TIER_EMOJIS.seed} Must be Seed first

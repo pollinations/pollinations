@@ -13,6 +13,7 @@ export function usePrettify<T, K extends keyof T>(
     items: T[],
     field: K,
     apiKey?: string,
+    nameField?: keyof T,
 ): { prettified: T[]; isPrettifying: boolean } {
     const [prettified, setPrettified] = useState<T[]>(items);
     const [isPrettifying, setIsPrettifying] = useState(false);
@@ -34,6 +35,7 @@ export function usePrettify<T, K extends keyof T>(
         const copyItems = items.map((item, i) => ({
             id: `item-${i}`,
             text: String(item[field] ?? ""),
+            name: nameField ? String(item[nameField] ?? "") : undefined,
         }));
 
         prettifyCopy(copyItems, apiKey)

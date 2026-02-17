@@ -1,0 +1,34 @@
+{
+  "pr_number": 8375,
+  "title": "feat: improve error dashboard with percentages and filtering",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8375",
+  "merged_at": "2026-02-17T21:19:34Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Clearer signals",
+    "blurb": "Upgraded the internal error dashboard to track percentages instead of raw counts. Easier to spot when things go sideways.",
+    "summary": "Converted error dashboard panels to percentage-based rates and added provider filtering for better observability.",
+    "impact": "Internal monitoring is now more accurate, allowing faster detection of provider-specific issues.",
+    "keywords": [
+      "dashboard",
+      "monitoring",
+      "ops",
+      "observability",
+      "metrics"
+    ],
+    "visual_concept": "The Monitor Robot analyzing a large data screen with the Bee. Represents internal monitoring tools.",
+    "image_prompt": "Cozy pixel art scene of the chunky robot with a monitor head pointing excitedly at a large screen displaying a line graph. The bee mascot hovers nearby holding a clipboard. Lime green (#ecf874) and soft blue gradient background. Screen glows with data. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Pixel text on screen: 'STATS'. Nostalgic and technical."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-17T21:20:19.146315+00:00"
+}

@@ -295,9 +295,10 @@ export function BuildDiary() {
                     onClick={() => go("left")}
                     className="font-headline text-lg select-none flex items-center justify-center transition-colors"
                     style={{
-                        color: x > 0
-                            ? "rgb(var(--text-secondary))"
-                            : "rgb(var(--text-primary) / 0.15)",
+                        color:
+                            x > 0
+                                ? "rgb(var(--text-secondary))"
+                                : "rgb(var(--text-primary) / 0.15)",
                         cursor: x > 0 ? "pointer" : "default",
                     }}
                 >
@@ -314,9 +315,10 @@ export function BuildDiary() {
                     onClick={() => go("right")}
                     className="font-headline text-lg select-none flex items-center justify-center transition-colors"
                     style={{
-                        color: x < timeline.length - 1
-                            ? "rgb(var(--text-secondary))"
-                            : "rgb(var(--text-primary) / 0.15)",
+                        color:
+                            x < timeline.length - 1
+                                ? "rgb(var(--text-secondary))"
+                                : "rgb(var(--text-primary) / 0.15)",
                         cursor: x < timeline.length - 1 ? "pointer" : "default",
                     }}
                 >

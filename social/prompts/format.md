@@ -47,17 +47,19 @@ Return ONLY the JSON object. No markdown fences, no explanation.
 
 ## Instagram
 
-- Caption: 200-500 characters, genuine and brief
-- Carousel format with exactly 3 images
-- Images carry the mood — caption explains what shipped
-- Include a link or repo mention
-- No engagement farming hooks
+- Focus on mood and scene — the shared visual style handles colors and art direction
+- Caption: 300-800 characters, friendly tone, emojis welcome
+- Hashtags: 8-15 relevant tags (mix of brand + discovery tags)
+- Always use carousel format with exactly 3 images
+- Rotate characters across the carousel: e.g. Polly solo, Polly + Robot, Polly + Nomnom. Don't repeat the same pairing
+- Translate technical updates into vibes — "faster generation" = "your ideas come to life quicker"
 
 Output Format (JSON only):
 {
     "content_type": "pixel_art|retro_infographic|cozy_scene",
     "linked_images": true,
-    "visual_style": "Brief description of the pixel art approach",
+    "strategy_reasoning": "Why this visual approach works for our brand",
+    "visual_style": "Description of the pixel art style you're going for",
     "image_count": 3,
     "images": [
         {

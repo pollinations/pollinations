@@ -8,3 +8,5 @@ Rules:
 - Focus on what the app does, not how great it is
 - Must not contain pipe characters (|) or newlines
 - Do not start with "A" or "An" — start with the action or capability
+- NEVER change, rename, or replace the app name — preserve it exactly as given
+- Preserve all proper nouns, tool names, model names, and URLs exactly

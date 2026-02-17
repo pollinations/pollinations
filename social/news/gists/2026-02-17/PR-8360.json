@@ -1,0 +1,34 @@
+{
+  "pr_number": 8360,
+  "title": "feat: logo cycles themes + tokenize tooltip backgrounds",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8360",
+  "merged_at": "2026-02-17T13:14:38Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Technicolor Logo",
+    "blurb": "Click the logo to spin the color wheel! We've turned the header into a theme-switching Easter egg.",
+    "summary": "Clicking the site logo now cycles through visual theme presets and reveals the theme creator, while the desktop header has been streamlined into a single row.",
+    "impact": "Users get a cleaner interface and a fun, instant way to customize the site's look without navigating menus.",
+    "keywords": [
+      "ui",
+      "themes",
+      "design",
+      "frontend",
+      "ux"
+    ],
+    "visual_concept": "Polly the bee acting as a painter/designer. The concept is 'changing colors'. She is tapping the logo and the world changes color.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a magical paintbrush, tapping a glowing logo that shifts the colors of the room. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'COLORS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-17T13:15:31.150233+00:00"
+}

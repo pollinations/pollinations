@@ -291,6 +291,11 @@ export const TOKENS: DesignToken[] = [
         description: "Sub-card border radius",
         type: "radius",
     },
+    {
+        id: "radius.tag",
+        description: "Tag/chip border radius",
+        type: "radius",
+    },
 
     // FONTS
     {

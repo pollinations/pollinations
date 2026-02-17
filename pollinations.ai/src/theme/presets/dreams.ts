@@ -95,6 +95,7 @@ export const CrazyDreamsTheme: LLMThemeResponse = {
         "radius.card": "32px",
         "radius.input": "16px",
         "radius.subcard": "16px",
+        "radius.tag": "8px",
     },
     "fonts": {
         "font.title": "Syne",

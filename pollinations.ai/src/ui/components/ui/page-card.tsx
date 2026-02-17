@@ -18,7 +18,7 @@ export const PageCard = React.forwardRef<HTMLDivElement, PageCardProps>(
             <div
                 ref={ref}
                 className={cn(
-                    "relative bg-surface-page border-r-4 border-b-4 border-border-brand shadow-shadow-brand-lg p-6 md:p-8 rounded-card",
+                    "relative bg-surface-page backdrop-blur-sm border-r-4 border-b-4 border-border-brand shadow-shadow-brand-lg p-6 md:p-8 rounded-card",
                     className,
                 )}
                 {...props}

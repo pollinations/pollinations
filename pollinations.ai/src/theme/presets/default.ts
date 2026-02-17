@@ -119,6 +119,7 @@ export const AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarkness
             "radius.card": "20px",
             "radius.input": "12px",
             "radius.subcard": "12px",
+            "radius.tag": "6px",
         },
         "fonts": {
             "font.title": "Rajdhani",

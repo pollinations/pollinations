@@ -260,7 +260,12 @@ export default function AppsPage() {
         return allApps.filter(f.match).sort(sortApps);
     }, [allApps, filter]);
 
-    const { prettified } = usePrettify(filteredApps, "description", apiKey);
+    const { prettified } = usePrettify(
+        filteredApps,
+        "description",
+        apiKey,
+        "name",
+    );
 
     const { translated: displayApps } = useTranslate(prettified, "description");
 

@@ -76,12 +76,15 @@ export function BuildDiary() {
     // Fetch entry content when x changes
     const entryDate = entry?.date;
     const entryType = entry?.type;
+    const entryPrNumbers = entry?.prNumbers;
     useEffect(() => {
-        if (!entryDate || !entryType) return;
+        if (!entryDate || !entryType || !entryPrNumbers) return;
         setEntryContent(null);
         setPrContent(null);
-        getEntryContent(entryDate, entryType).then(setEntryContent);
-    }, [entryDate, entryType, getEntryContent]);
+        getEntryContent(entryDate, entryType, entryPrNumbers).then(
+            setEntryContent,
+        );
+    }, [entryDate, entryType, entryPrNumbers, getEntryContent]);
 
     // Fetch PR content when y changes
     const currentPrNum = entry?.prNumbers[y - 1];

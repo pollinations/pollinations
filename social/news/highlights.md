@@ -1,3 +1,7 @@
+- **2026-02-16** – **🌸 Badges in Bloom** Navigate the ecosystem with our new organic badge system (Fresh, Pollen, Buzz) to find the best [community apps](https://hello.pollinations.ai).
+- **2026-02-16** – **🎥 Consistent AI Video** Try **P2S**, a new tool for maintaining character and scene consistency across frames in AI filmmaking.
+- **2026-02-16** – **🎨 Sticker Garden** Generate custom sticker packs with style presets and batch variants in this new [creative app](https://hello.pollinations.ai).
+- **2026-02-16** – **💻 OpenCode Plugin** Developers can now access Pollinations models directly within the OpenCode environment.
 - **2026-02-15** – **🚀 Polly API** Access Polly's web research and coding skills via a new OpenAI-compatible endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs).
 - **2026-02-15** – **🛡️ New Safety Model** Qwen3Guard-8B is now available via the API for fast content moderation and safety classification.
 - **2026-02-15** – **✨ Showcase Upgrade** Explore the redesigned [App Showcase](https://hello.pollinations.ai) with AI-enhanced descriptions and real-time usage metrics.

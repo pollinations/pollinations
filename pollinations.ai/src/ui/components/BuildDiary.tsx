@@ -1,10 +1,8 @@
 // biome-ignore-all lint/a11y/useKeyWithClickEvents: Component has global keyboard navigation via arrow keys
-// biome-ignore-all lint/a11y/noStaticElementInteractions: Interactive dots/bars handled via global keydown
-// biome-ignore-all lint/suspicious/noArrayIndexKey: PR dot positions are stable indices
+// biome-ignore-all lint/a11y/noStaticElementInteractions: Interactive elements handled via global keydown
 import { useCallback, useEffect, useState } from "react";
 import {
     type EntryContent,
-    type ImageVariant,
     type PRContent,
     type TimelineEntry,
     useDiaryData,
@@ -21,17 +19,6 @@ const impactEmoji: Record<string, string> = {
     docs: "\u{1F4D6}",
     community: "\u{1F91D}",
 };
-
-function getVariantLabel(images: ImageVariant[], index: number): string {
-    const img = images[index];
-    if (!img) return "";
-    const samePlatform = images.filter((i) => i.platform === img.platform);
-    if (samePlatform.length === 1) return img.platform;
-    const num = images
-        .slice(0, index + 1)
-        .filter((i) => i.platform === img.platform).length;
-    return `${img.platform} ${num}`;
-}
 
 function Tip({
     label,
@@ -50,13 +37,19 @@ function Tip({
     );
 }
 
+const chipBase =
+    "inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium rounded-tag cursor-pointer transition-colors";
+const chipActive =
+    "bg-button-primary-bg text-text-on-color border border-border-highlight";
+const chipInactive =
+    "bg-input-background text-text-body-secondary border border-border-faint hover:border-border-main";
+
 export function BuildDiary() {
     const { timeline, loading, error, getEntryContent, getPRContent } =
         useDiaryData();
 
     const [x, setX] = useState(-1); // -1 until loaded
-    const [y, setY] = useState(0);
-    const [vi, setVi] = useState(0);
+    const [y, setY] = useState(0); // 0 = overview, 1+ = PR index
     const [isMobile, setIsMobile] = useState(false);
     const [entryContent, setEntryContent] = useState<EntryContent | null>(null);
     const [prContent, setPrContent] = useState<PRContent | null>(null);
@@ -104,50 +97,32 @@ export function BuildDiary() {
     }, [entryDate, currentPrNum, onPR, getPRContent]);
 
     // Reset image error on navigation
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-run when x/y/vi change
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-run when x/y change
     useEffect(() => {
         setImgError(false);
-    }, [x, y, vi]);
+    }, [x, y]);
 
-    // Navigation
+    // Navigation — only left/right now
     const go = useCallback(
-        (dir: "left" | "right" | "up" | "down") => {
+        (dir: "left" | "right") => {
             if (!entry) return;
             if (dir === "left" && x > 0) {
                 setX(x - 1);
                 setY(0);
-                setVi(0);
             }
             if (dir === "right" && x < timeline.length - 1) {
                 setX(x + 1);
                 setY(0);
-                setVi(0);
-            }
-            if (dir === "up" && y > 0) {
-                setY(y - 1);
-                setVi(0);
-            }
-            if (dir === "down" && y < maxY) {
-                setY(y + 1);
-                setVi(0);
             }
         },
-        [x, y, maxY, timeline.length, entry],
+        [x, timeline.length, entry],
     );
 
-    // Keyboard
+    // Keyboard — only ← →
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
             if (e.key === "ArrowLeft") go("left");
             if (e.key === "ArrowRight") go("right");
-            if (e.key === "ArrowUp") {
-                e.preventDefault();
-                go("up");
-            }
-            if (e.key === "ArrowDown") {
-                e.preventDefault();
-                go("down");
-            }
         };
         window.addEventListener("keydown", h);
         return () => window.removeEventListener("keydown", h);
@@ -173,20 +148,20 @@ export function BuildDiary() {
         return null;
     }
 
-    // Current image
+    // Current image — random platform variant (seeded by entry date for stability)
     const currentImageUrl = onPR
         ? prContent?.imageUrl || ""
-        : entry.images[vi % Math.max(entry.images.length, 1)]?.url || "";
+        : entry.images.length > 0
+          ? entry.images[
+                entry.date.charCodeAt(entry.date.length - 1) %
+                    entry.images.length
+            ]?.url || ""
+          : "";
 
-    // Image title label
-    let imageTitle: string;
-    if (onPR) {
-        imageTitle = `${entry.dayName} \u00B7 PR #${entry.prNumbers[y - 1]}`;
-    } else if (entry.type === "week") {
-        imageTitle = `\u2726 Week ${entry.weekNum} \u00B7 ${getVariantLabel(entry.images, vi % Math.max(entry.images.length, 1))}`;
-    } else {
-        imageTitle = `${entry.dayName} \u00B7 ${getVariantLabel(entry.images, vi % Math.max(entry.images.length, 1))}`;
-    }
+    // Image alt text
+    const imageAlt = onPR
+        ? `PR #${entry.prNumbers[y - 1]}`
+        : `${entry.dayName} ${entry.dateLabel}`;
 
     const ac = (active: boolean): React.CSSProperties => ({
         fontSize: 12,
@@ -200,7 +175,7 @@ export function BuildDiary() {
         cursor: active ? "pointer" : "default",
     });
 
-    // Timeline bar — spans full width
+    // Timeline bar
     const TimelineBar = (
         <div
             style={{
@@ -249,7 +224,6 @@ export function BuildDiary() {
                                     onClick={() => {
                                         setX(i);
                                         setY(0);
-                                        setVi(0);
                                     }}
                                     style={{
                                         width: isCurrent ? 10 : 6,
@@ -280,95 +254,13 @@ export function BuildDiary() {
         </div>
     );
 
-    // PR vertical bar — height determined by parent stretch
-    const PRBar = (
-        <div
-            style={{
-                width: BAR,
-                flexShrink: 0,
-                marginRight: 8,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-            }}
-        >
-            <div onClick={() => go("up")} style={{ ...ac(y > 0), height: BAR }}>
-                &#x25B2;
-            </div>
-            <div
-                style={{
-                    flex: 1,
-                    width: 2,
-                    background: "rgb(var(--border-faint))",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: maxY > 0 ? "space-between" : "center",
-                    alignItems: "center",
-                    padding: "4px 0",
-                }}
-            >
-                {maxY > 0 ? (
-                    [...Array(maxY + 1)].map((_, i) => (
-                        <Tip
-                            key={i}
-                            label={
-                                i === 0
-                                    ? "Overview"
-                                    : `PR #${entry.prNumbers[i - 1]}`
-                            }
-                        >
-                            <div
-                                onClick={() => {
-                                    setY(i);
-                                    setVi(0);
-                                }}
-                                style={{
-                                    width: y === i ? 10 : 6,
-                                    height: y === i ? 10 : 6,
-                                    background:
-                                        y === i
-                                            ? "rgb(var(--text-primary))"
-                                            : i === 0
-                                              ? "rgb(var(--border-main))"
-                                              : "rgb(var(--border-subtle))",
-                                    cursor: "pointer",
-                                    flexShrink: 0,
-                                }}
-                            />
-                        </Tip>
-                    ))
-                ) : (
-                    <div
-                        style={{
-                            width: 6,
-                            height: 6,
-                            background: "rgb(var(--border-subtle))",
-                        }}
-                    />
-                )}
-            </div>
-            <div
-                onClick={() => go("down")}
-                style={{ ...ac(y < maxY), height: BAR }}
-            >
-                &#x25BC;
-            </div>
-        </div>
-    );
-
-    // Image area — desktop: 55% width, square; mobile: fixed pixel
+    // Image area
     const ImageBox = (
         <div
-            onClick={() => {
-                if (!onPR && entry.images.length > 0)
-                    setVi((vi + 1) % entry.images.length);
-            }}
             style={{
                 width: "100%",
                 aspectRatio: "1",
                 background: "rgb(var(--input-bg))",
-                cursor:
-                    !onPR && entry.images.length > 1 ? "pointer" : "default",
                 flexShrink: 0,
                 position: "relative",
                 overflow: "hidden",
@@ -377,7 +269,7 @@ export function BuildDiary() {
             {currentImageUrl && !imgError && (
                 <img
                     src={currentImageUrl}
-                    alt={imageTitle}
+                    alt={imageAlt}
                     onError={() => setImgError(true)}
                     style={{
                         width: "100%",
@@ -398,13 +290,19 @@ export function BuildDiary() {
         ? prContent?.description || ""
         : entryContent?.summary || "";
 
+    // Date heading label
+    const dateLabel =
+        entry.type === "week"
+            ? `\u2726 ${entry.dateLabel}`
+            : `${entry.dayName} \u00B7 ${entry.dateLabel}`;
+
     const TextPanel = (
         <div
             className="font-body"
             style={{
                 flex: 1,
                 minWidth: 0,
-                padding: isMobile ? "20px 4px" : "24px 28px",
+                padding: isMobile ? "16px 4px 20px" : "0 28px",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "flex-start",
@@ -412,44 +310,39 @@ export function BuildDiary() {
                 boxSizing: "border-box",
             }}
         >
-            <div
-                className="font-headline"
-                style={{
-                    fontSize: 28,
-                    fontWeight: 900,
-                    color: "rgb(var(--text-primary))",
-                    lineHeight: 1.1,
-                    letterSpacing: -0.5,
-                    textTransform: "uppercase",
-                }}
+            {/* Date chip — big, own row */}
+            <span
+                className={`font-headline self-start inline-flex items-center px-4 py-2 text-2xl font-black uppercase tracking-wider rounded-tag cursor-pointer transition-colors ${!onPR ? chipActive : chipInactive}`}
+                onClick={() => setY(0)}
             >
-                {entry.type === "week"
-                    ? `\u2726 Week ${entry.weekNum}`
-                    : `${entry.dayName} \u00B7 ${entry.dateLabel}`}
-            </div>
-            <div
-                style={{
-                    display: "flex",
-                    gap: 6,
-                    marginTop: 6,
-                    marginBottom: 14,
-                    flexWrap: "wrap",
-                }}
-            >
-                <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium bg-input-background border border-border-faint rounded-tag text-text-body-secondary">
-                    W{entry.weekNum}
-                </span>
-                {onPR && (
-                    <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium bg-input-background border border-border-faint rounded-tag text-text-body-secondary">
-                        PR {y}/{maxY}
-                    </span>
-                )}
-                {!onPR && entry.prNumbers.length > 0 && (
-                    <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium bg-input-background border border-border-faint rounded-tag text-text-body-secondary">
-                        {entry.prNumbers.length} PRs
-                    </span>
-                )}
-            </div>
+                {dateLabel}
+            </span>
+
+            {/* PR chips — row below */}
+            {entry.prNumbers.length > 0 && (
+                <div
+                    style={{
+                        display: "flex",
+                        gap: 4,
+                        marginTop: 8,
+                        flexWrap: "wrap",
+                    }}
+                >
+                    {entry.prNumbers.map((pr, i) => (
+                        <span
+                            key={pr}
+                            className={`${chipBase} ${y === i + 1 ? chipActive : chipInactive}`}
+                            onClick={() => setY(i + 1)}
+                        >
+                            #{pr}
+                        </span>
+                    ))}
+                </div>
+            )}
+
+            <div style={{ marginBottom: 14 }} />
+
+            {/* Title */}
             <div
                 className="font-headline"
                 style={{
@@ -462,6 +355,8 @@ export function BuildDiary() {
             >
                 {displayTitle}
             </div>
+
+            {/* Summary */}
             <div
                 style={{
                     fontSize: 14,
@@ -475,6 +370,8 @@ export function BuildDiary() {
             >
                 {displaySummary}
             </div>
+
+            {/* PR metadata */}
             {onPR && prContent && (
                 <div
                     style={{
@@ -487,7 +384,9 @@ export function BuildDiary() {
                     {prContent.impact} &middot; @{prContent.author}
                 </div>
             )}
-            {entry.type === "week" && entryContent?.dna && y === 0 && (
+
+            {/* Weekly DNA quote */}
+            {entry.type === "week" && entryContent?.dna && !onPR && (
                 <div
                     style={{
                         marginTop: 16,
@@ -516,29 +415,17 @@ export function BuildDiary() {
                     paddingBottom: 24,
                 }}
             >
-                <div style={{ display: "flex", alignItems: "stretch" }}>
-                    {PRBar}
-                    <div
-                        style={{
-                            flex: 1,
-                            minWidth: 0,
-                            display: "flex",
-                            flexDirection: "column",
-                        }}
-                    >
-                        {ImageBox}
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                marginTop: 8,
-                            }}
-                        >
-                            {TimelineBar}
-                        </div>
-                    </div>
+                {ImageBox}
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginTop: 8,
+                    }}
+                >
+                    {TimelineBar}
                 </div>
-                <div style={{ paddingLeft: BAR + 8 }}>{TextPanel}</div>
+                {TextPanel}
             </div>
         );
     }
@@ -553,7 +440,6 @@ export function BuildDiary() {
             }}
         >
             <div style={{ display: "flex", alignItems: "stretch" }}>
-                {PRBar}
                 <div
                     style={{
                         width: "55%",

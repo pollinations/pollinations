@@ -1,0 +1,33 @@
+{
+  "pr_number": 8342,
+  "title": "fix: app deploy detection skips root-level files in apps/",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8342",
+  "merged_at": "2026-02-17T01:07:29Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Unclogging the deploy pipes",
+    "blurb": "We tweaked the automatic deployment sensors to better detect when community apps are ready to bloom.",
+    "summary": "Refined the CI/CD file detection logic to prevent root-level file changes in the apps directory from interfering with individual app deployments.",
+    "impact": "Community apps will now deploy more reliably when the central apps registry is updated.",
+    "keywords": [
+      "ci/cd",
+      "github actions",
+      "deployment",
+      "infrastructure"
+    ],
+    "visual_concept": "A tiny pixel art bee mechanic adjusting a conveyor belt where boxes (apps) are moving. The bee is holding a wrench.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny mechanic's hat and holding a wrench, adjusting a colorful conveyor belt carrying pixelated boxes. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'FIXED'. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-17T01:08:12.280190+00:00"
+}

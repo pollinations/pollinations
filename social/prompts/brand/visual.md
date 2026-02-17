@@ -31,29 +31,31 @@
 
 ## Characters — Recurring Cast
 
-Rotate between these characters across posts. Polly is the main character and should appear in most images but doesn't have to be the star of every one. The others are side characters — use one or both depending on the scene.
+### Polly (The Bee) — Main Character (MANDATORY in every image)
 
-### Polly (The Bee) — Main Character
-The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Expressive, always doing something with her hands.
-- Give Polly a thematic accessory per image — reading glasses, tool belt, tiny scarf, headphones, painter's beret. Match the accessory to the scene.
+The pollinations.ai bee MUST appear in every image, interacting with the scene.
+
+**Visual description (paste into every image prompt):**
+{bee_character}
+
+- She should be doing something relevant to the scene (coding, flying, celebrating, painting, watering plants, etc.)
+- Give her a fun thematic accessory in every image — a tiny scarf, a little hat, headphones, wizard glasses, a tool belt, a painter's beret, etc. Match the accessory to the scene's theme.
 - Keep her proportions consistent — never elongated or insect-like
 - Personality: observant, slightly above-it-all but warm. The one who notices things.
 
-### Monitor Robot (sidekick)
+### Monitor Robot (recurring companion)
 - Cute chunky pixel robot with a CRT monitor/screen for a head
 - Small boxy body, stubby mechanical arms, can hold things
 - Expressive square pixel eyes on the screen — curious, excited, helpful
 - Often holds pictures, tools, or code printouts
 - Personality: eager, discovers things, says "I CAN SEE!" — the one who gets excited about new capabilities
-- Think: a tiny helpful lab assistant who just got vision for the first time
 
-### Nomnom Creature (comic relief)
+### Nomnom Creature (recurring companion)
 - Round, friendly, tan/brown spherical creature — like a pixel mochi ball
 - Tiny dot eyes, rosy cheeks, wide happy mouth
-- Eats things enthusiastically — documents, code, data, API responses
+- Eats things enthusiastically — documents, code, data, API responses, error logs, deprecated code snippets (strictly vegan — no real creatures, no insects)
 - Speech bubble: "NOMNOM" in chunky pixel font
 - Personality: hungry for knowledge (literally). processes information by consuming it
-- Think: a living garbage disposal for data, but cute about it
 
 ### Supporting Elements
 - Pixel flowers, gardens, seeds, blooming plants (nature/growth motifs)
@@ -65,7 +67,7 @@ The main character is a cute pixel art bee mascot with a yellow body and dark br
 
 - Cozy pixel art style with soft lighting
 - Lime green `#ecf874` prominently
-- At least one character from the cast (Polly, Monitor Robot, Nomnom)
+- At least one character from the cast (Polly always, Robot or Nomnom when it fits)
 - Nature/growth elements (flowers, gardens, vines, code-plants)
 - Warm, inviting atmosphere
 - Style keywords in every prompt: "cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes"

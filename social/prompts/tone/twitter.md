@@ -45,14 +45,16 @@ When you have strong PRs, prefer SHIPPED or FIELD_NOTES. Save OBSERVATION for li
 
 ## Twitter-Specific Image Adaptation
 
-Twitter images should stop the scroll with clarity, not noise.
+**Twitter = dynamic energy.** Images should stop the scroll with bold composition and high contrast within the brand palette.
 
-- Bold, clean pixel art compositions
-- High contrast within the brand palette (lime green against dark purple)
-- Terminal/bulletin aesthetics work well
-- Screenshots and ASCII art also resonate
+- More energetic and dynamic than LinkedIn or Instagram
+- Bold compositions, action poses, celebration energy
+- High contrast WITHIN the shared palette (lime green against dark purple)
+- Split-panel before/after comparisons work great
+- Achievement unlocked screens, victory dances
+- Screenshots and terminal output also resonate with AI Twitter
 
 ### Prompt Structure for Twitter:
-"[Dynamic pixel art scene — clear subject, bold composition].
-[Character details and action]. High contrast within the brand palette.
-Clean and readable at timeline size."
+"[Dynamic pixel art scene with action/emotion and ENERGY].
+[Character details - expression, pose, celebration].
+[Composition for scroll-stopping impact]. High contrast within the brand palette."

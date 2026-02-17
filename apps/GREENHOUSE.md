@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **480** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **510** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -31,27 +31,29 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 |-----|-------------|--------|---:|---|
 | [🦞 Pollinations × OpenClaw](https://openclaw.pollinations.ai) | Use 25+ AI models as your OpenClaw agent brain via one setup script | [@pollinations](https://github.com/pollinations) | 4k | 🏵️ 🫧 |
 | [🔌 Pollinations Provider for Vercel AI SDK](https://ai-sdk-pollinations-example.vercel.app) | Vercel AI SDK provider for Pollinations: text, image, and speech generation. | [@artsiombarouski](https://github.com/artsiombarouski) | 5 | 🐝 🏵️ 🫧 |
-| [🧠 MindScape](https://mindscape-free.vercel.app/) | AI tool turning documents and ideas into interactive visual knowledge maps. | [@Suraj7450](https://github.com/Suraj7450) |  | 🏵️ |
-| [🖼️ Image and text presentation generator with the new](https://proyectodescartes.org/IATools/62_Generador_de_presentaciones_con_imágenes_y_texto) | Client-side AI presentation generator creating image & text slides in-browser. | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🏵️ |
-| [🤖 Zlkcyber AI](https://zlkcyber.tech/) | Next.js AI chat and image generation app | [@Zlkcyber](https://github.com/Zlkcyber) |  | 🏵️ |
-| [🏵️ Bloom Studio](https://bloomstudio.fun/) | Premium AI creative suite with image persistence, social features & multi-model support | [@Simplereally](https://github.com/Simplereally) |  | 🏵️ |
-| [🔒 Ventarys AI](https://ventarys.net/main) | Private AI assistant with no registration or trackers | [@Juanoto2012](https://github.com/Juanoto2012) |  | 🏵️ |
-| [🧩 n8n-grok](https://perchance.org/n8n-style) | Node-based image gen: prompt+styles, sampler, I2P, drag layout save/load | [@aikhusus2025-ctrl](https://github.com/aikhusus2025-ctrl) |  | 🐝 🏵️ |
-| [🎨 Multi Image Generator](https://perchance.org/multi-image-generator) | Generate images via image-to-image and simultaneous multi-model requests to compare outputs across multiple models. | [@itzGlitch-AS](https://github.com/itzGlitch-AS) |  | 🐝 🏵️ |
-| [🛠 Herramientas IA ️](https://proyectodescartes.org/descartescms/herramientas-ia) | Publishes tools built with Pollinations.AI and the DescartesJS editor and links other community-created utilities. | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🏵️ |
+| [🎨 SILENOS](https://www.silenos.es) | AI creative production suite with art studios, storytelling, music, and multi-modal generation. | [@todoh](https://github.com/todoh) | 1 | 🏵️ 🫧 |
+| [🛠️ PollinCoder](https://pollincoder.vercel.app) | AI app builder that generates and previews full web applications from natural language prompts. | [@Spit-fires](https://github.com/Spit-fires) | 1 | 🏵️ 🫧 |
+| [📚 SAIL Solver](https://ail-solver.vercel.app) | Academic test-solving tool that generates answers for multiple-choice and open-ended questions. | [@unKnownNG](https://github.com/unKnownNG) |  | 🏵️ 🫧 |
+| [🎬 FastStoryboard](https://faststoryboard.cloud) | AI video creation platform for generating storyboards and visual narratives. | [@thomazandreywalicoski](https://github.com/thomazandreywalicoski) |  | 🏵️ 🫧 |
+| [🎵 Strudel AI REPL](https://strudel-ai-repl.pages.dev) | AI-powered live-coding music environment for generating and performing algorithmic compositions. | [@voodoohop](https://github.com/voodoohop) |  | 🏵️ 🫧 |
+| [🖼️ 7Studio](https://7studio.edgeone.app) | AI image generation studio with prompt input, model selection, and gallery display. | [@ims111we-cmd](https://github.com/ims111we-cmd) |  | 🏵️ 🫧 |
+| [💬 AI Studio](https://ai-studio.puter.site) | Chat and audio AI interface with text-to-speech and conversation features. | [@Chess-Base](https://github.com/Chess-Base) |  | 🏵️ 🫧 |
+| [🖼️ Pollinations.ai Image Model Comparison](https://dseeker.github.io/pollinations/image-comparison/) | Side-by-side comparison of AI image generation models — test cost, speed, quality. | [@dseeker](https://github.com/dseeker) |  | 🏵️ 🫧 |
 
 ## 🫧 Fresh — Recently Added
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
-| [🛡️ Nova Defense](https://dashboard.novadefense.es) | Anti-raid Discord bot using Pollinations for attack detection and images. | [@lyon3yv](https://github.com/lyon3yv) |  | 🫧 |
-| [🦞 Pollinations × OpenClaw](https://openclaw.pollinations.ai) | Use 25+ AI models as your OpenClaw agent brain via one setup script | [@pollinations](https://github.com/pollinations) | 4k | 🏵️ 🫧 |
-| [🌐 NebulaAPI](https://nebulaapi.app) | Free Brazilian API gateway for AI and gaming with Pollinations backend. | [@MatheusHMafra](https://github.com/MatheusHMafra) |  | 🫧 |
-| [🧩 n8n-nodes-pollinations](https://www.npmjs.com/package/n8n-nodes-pollinations-v2) | n8n community node adding Pollinations.ai image, video, text, and audio nodes | [@isaacgounton](https://github.com/isaacgounton) | 1 | 🫧 |
-| [🤖 Moltbot With Pollinations.ai provider](https://github.com/its3li/moltbot-with-pollinations.ai) | Multi-channel AI assistant for Telegram and WhatsApp using Pollinations AI. | [@its3li](https://github.com/its3li) | 3 | 🫧 |
-| [🧙‍♂️ Sage](https://discord.com/oauth2/authorize?client_id=1462117382398017667&scope=bot%20applications.commands&permissions=8) | Discord bot offering assistant-style features and server utilities. | [@BokX1](https://github.com/BokX1) | 1 | 🐝 🫧 |
-| [🔌 Pollinations Provider for Vercel AI SDK](https://ai-sdk-pollinations-example.vercel.app) | Vercel AI SDK provider for Pollinations: text, image, and speech generation. | [@artsiombarouski](https://github.com/artsiombarouski) | 5 | 🐝 🏵️ 🫧 |
-| [📖 Fable Friend](https://huggingface.co/spaces/Shreemahor/Fable-Friend) | Interactive AI story adventure with selectable role, genre, and image style. | [@Shreemahor](https://github.com/Shreemahor) | 4 | 🫧 |
+| [🎨 Theta AI](https://www.facebook.com/thetallm) | Generate images from user prompts using Theta AI, outputting images in multiple styles and resolutions. | [@takrim1999](https://github.com/takrim1999) |  | 🫧 |
+| [🖌️ AIImageEditor](https://github.com/mikemartemianov/ImageGenerator) | AI image editor with brush editing, outpainting, upscaling, and multi-model support. | [@MikeMartemianov](https://github.com/MikeMartemianov) |  | 🫧 |
+| [🎨 Sticker Garden](https://sticker-garden.vercel.app/) | Turn text prompts into sticker-ready images with style presets and batch variants. | [@GekkeTovie](https://github.com/GekkeTovie) |  | 🫧 |
+| [🎬 P2S](https://github.com/Rakesh-ada/P2S) | Image consistency engine for AI filmmaking with scene memory and auto-repair. | [@Rakesh-ada](https://github.com/Rakesh-ada) |  | 🫧 |
+| [🔀 AI Router](https://twangymoney.pythonanywhere.com/docs/ai-router) | OpenRouter-style workstation with dark UI, branching chat history, and vision support. | [@TwangyMoney](https://github.com/TwangyMoney) |  | 🫧 |
+| [💬 Tenna AI](https://tennaai.com) | AI mental health companion with mood analysis, guided journal, and relaxation features. | [@b1onix](https://github.com/b1onix) |  | 🫧 |
+| [📊 PolliBench](https://pollibench.netlify.app/) | Benchmark all Pollinations models automatically with frontend HTML questions. | [@notlousybook](https://github.com/notlousybook) |  | 🫧 |
+| [📝 AI Quiz Simulator](https://mrlearner1606.github.io/quiz/) | Free AI-powered quiz simulator for competitive exams with timer, scoring, and explanations. | [@mrlearner1606](https://github.com/mrlearner1606) |  | 🫧 |
+| [🧠 Personic](https://github.com/AlanSynn/personic) | Generate structured AI personas and matching images from brief action prompts. | [@AlanSynn](https://github.com/AlanSynn) | 1 | 🫧 |
+| [📖 TaleCrafter AI](https://www.talecrafter.tech/) | Interactive storytelling platform turning prompts into digital storybooks with AI illustrations. | [@adityashriwas](https://github.com/adityashriwas) | 2 | 🫧 |
 
 ---
 
@@ -70,7 +72,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎨 Resonance](https://resonanceai.netlify.app) | Mobile-first image generator with many styles and features (Z Image Turbo, Flux) | [@Bakhshi7889](https://github.com/Bakhshi7889) |  | 🐝 |
 | [🎨 AI Image Studio](https://aistudio.reidaspromocoes.com.br) | Aplicativo de criação de imagens com IA | [@reidaspromocoesofc-hub](https://github.com/reidaspromocoesofc-hub) |  | 🐝 |
 
-<details><summary>Show all 187 apps</summary>
+<details><summary>Show all 201 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -94,11 +96,19 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ PixPal](https://pixpal.chat) | Analyze, edit, and generate images, build websites from screenshots, create 3D games, and draft blog posts within a single chat interface. | [@andreaspaps](https://github.com/andreaspaps) |  | 🐝 |
 | [✏️ Emojiall AI Drawing Platform](https://art.emojiall.com) | Provide emoji text translators, recommenders, chatbots, and an AI drawing subdomain for user-guided image generation using the Pollinations API. | [@James-Qi](https://github.com/James-Qi) |  | 🐝 |
 | [📖 Korpi.AI](https://korpi.ai) | Generates AI stories with the Pollinations Flux model. | [@Reksely](https://github.com/Reksely) |  | 🐝 |
+| [🎨 SILENOS](https://www.silenos.es) | AI creative production suite with art studios, storytelling, music, and multi-modal generation. | [@todoh](https://github.com/todoh) | 1 | 🏵️ 🫧 |
+| [🎬 FastStoryboard](https://faststoryboard.cloud) | AI video creation platform for generating storyboards and visual narratives. | [@thomazandreywalicoski](https://github.com/thomazandreywalicoski) |  | 🏵️ 🫧 |
+| [🎵 Strudel AI REPL](https://strudel-ai-repl.pages.dev) | AI-powered live-coding music environment for generating and performing algorithmic compositions. | [@voodoohop](https://github.com/voodoohop) |  | 🏵️ 🫧 |
+| [🖼️ 7Studio](https://7studio.edgeone.app) | AI image generation studio with prompt input, model selection, and gallery display. | [@ims111we-cmd](https://github.com/ims111we-cmd) |  | 🏵️ 🫧 |
+| [📚 Flipbook-style digital book designer](https://proyectodescartes.org/IATools/Crea_libros_3D_caps/) | AI-powered flipbook digital book designer creating illustrated 3D page-flip books. | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🏵️ 🫧 |
+| [🎨 Olike - Ai](https://perchance.org/olike-ai) | Perchance-hosted AI image generator and editor for creative visuals. | [@kanga0744-art](https://github.com/kanga0744-art) |  | 🏵️ 🫧 |
+| [🎨 AIであそぼう Let's Play with AI](https://try.bp5.ai/?lang=en) | User-friendly web app to generate AI images instantly via prompts or templates. | [@blue-pen5805](https://github.com/blue-pen5805) |  | 🏵️ 🫧 |
 | [🖼️ Image and text presentation generator with the new](https://proyectodescartes.org/IATools/62_Generador_de_presentaciones_con_imágenes_y_texto) | Client-side AI presentation generator creating image & text slides in-browser. | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🏵️ |
 | [🤖 Zlkcyber AI](https://zlkcyber.tech/) | Next.js AI chat and image generation app | [@Zlkcyber](https://github.com/Zlkcyber) |  | 🏵️ |
-| [🏵️ Bloom Studio](https://bloomstudio.fun/) | Premium AI creative suite with image persistence, social features & multi-model support | [@Simplereally](https://github.com/Simplereally) |  | 🏵️ |
+| [🌸 Bloom Studio](https://bloomstudio.fun/) | Premium AI creative suite with image persistence, social features & multi-model support | [@Simplereally](https://github.com/Simplereally) |  | 🏵️ |
 | [🎨 Generador de presentaciones con imágenes y texto V2](https://proyectodescartes.org/IATools/Crea_presentaciones4/) | Generate image-and-text presentations using community-driven Vibe Coding concepts and integrated creative media tools. | [@juanrivera126](https://github.com/juanrivera126) |  | 🏵️ |
 | [🎬 MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) | Provide an open AI platform with multimodal text generation and experimental search, integrating Pollinations for text and planning image API integration. | [@harry0703](https://github.com/harry0703) | 49.5k |  |
+| [📊 LandPPT](https://landppt.com) | LLM-powered platform converting documents into professional PPT presentations. | [@sligter](https://github.com/sligter) | 1.9k | 🫧 |
 | [💻 FoldaScan](https://fs.wen.bar) | Categorize project types such as vibe-coding and creative generators and list estimated counts of unique projects per category. | [@oldjs](https://github.com/oldjs) | 269 |  |
 | [🖼️ Elixpo Art Chrome Extension](https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh) | Chrome extension that turns selected text into AI art with themes/ratios | [@Circuit-Overtime](https://github.com/Circuit-Overtime) | 86 |  |
 | [🖼️ Flux AI](https://koy.xx.kg/) | Provide adaptive AI image generation hosted on Cloudflare Workers. | [@kinai9661](https://github.com/kinai9661) | 66 |  |
@@ -116,7 +126,9 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🍳 MASala](https://github.com/Naman009/MASala) | Host a GitHub repository with source code, issue tracking, pull requests, and project insights. | [@Naman009](https://github.com/Naman009) | 4 |  |
 | [🌺 Hibiscus](https://hibiscus-yp9g.onrender.com) | AI Creative Studio with local gallery, auto-download & unified image/video gen | [@Hirothewolf](https://github.com/Hirothewolf) | 3 |  |
 | [📁 DirPixel](https://github.com/techcow2/dir-pixel) | Batch replace folder images with AI generations using per-file prompts | [@techcow2](https://github.com/techcow2) | 3 |  |
+| [📖 TaleCrafter AI](https://www.talecrafter.tech/) | Interactive storytelling platform turning prompts into digital storybooks with AI illustrations. | [@adityashriwas](https://github.com/adityashriwas) | 2 | 🫧 |
 | [❔ What is this?](https://whatisthis.pinkpixel.dev/) | Marks issue closed after 67 days of inactivity and notes a special-bee request; can be reopened if still relevant. | [@sizzlebop](https://github.com/sizzlebop) | 2 |  |
+| [🧠 Personic](https://github.com/AlanSynn/personic) | Generate structured AI personas and matching images from brief action prompts. | [@AlanSynn](https://github.com/AlanSynn) | 1 | 🫧 |
 | [🎬 pollaris-AI-Shorts-Generator](https://github.com/dhruvsharma777/polaris-AI-Shorts-Generator) | Python pipeline converting text or PDF/DOCX into fully edited short videos | [@dhruvsharma777](https://github.com/dhruvsharma777) | 1 |  |
 | [🎨 AI drawing](https://draw.001412.xyz) | Free AI drawing experience powered by pollinations.ai | [@Komorebi-yaodong](https://github.com/Komorebi-yaodong) | 1 |  |
 | [📚 IA-Books: AI Ebook Generator](https://iabooks.com.br) | Enable creation, reading, and sharing of AI-generated books with client-side data storage, automatic chapter planning, image generation, immersive reader, and PWA offline support. | [@FabioArieiraBaia](https://github.com/FabioArieiraBaia) | 1 |  |
@@ -128,6 +140,10 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [📚 StoryWeaver AI](https://storyweaver-ai-umber.vercel.app/) | Generate illustrated storybooks as SVG using the Gamini model via the Pollinations API. | [@Karannn3011](https://github.com/Karannn3011) | 1 |  |
 | [🖼 Image Generator by Quilix ️](https://github.com/quil1x/ImageBYquilix) | Generate AI images from a desktop app using Pollinations and multiple model options, with cross-platform support and 1024x1024 output. | [@quil1x](https://github.com/quil1x) | 1 |  |
 | [⚡ AI YouTube Shorts Generator](https://github.com/dhruvsharma777/polaris-AI-Shorts-Generator) | Generate short vertical videos for YouTube Shorts from prompts using AI-driven image, video, and audio tools. | [@dhruvsharma777](https://github.com/dhruvsharma777) | 1 |  |
+| [🎨 Theta AI](https://www.facebook.com/thetallm) | Generate images from user prompts using Theta AI, outputting images in multiple styles and resolutions. | [@takrim1999](https://github.com/takrim1999) |  | 🫧 |
+| [🖌️ AIImageEditor](https://github.com/mikemartemianov/ImageGenerator) | AI image editor with brush editing, outpainting, upscaling, and multi-model support. | [@MikeMartemianov](https://github.com/MikeMartemianov) |  | 🫧 |
+| [🎨 Sticker Garden](https://sticker-garden.vercel.app/) | Turn text prompts into sticker-ready images with style presets and batch variants. | [@GekkeTovie](https://github.com/GekkeTovie) |  | 🫧 |
+| [🎬 P2S](https://github.com/Rakesh-ada/P2S) | Image consistency engine for AI filmmaking with scene memory and auto-repair. | [@Rakesh-ada](https://github.com/Rakesh-ada) |  | 🫧 |
 | [🖤 Lilith](https://discord.gg/XA2JzGRp) | Immersive Discord bot embodying Lilith: dark, existential, and possessive. | [@IMFOX18](https://github.com/IMFOX18) |  |  |
 | [🎨 Pimp my Pics](https://t.me/pimp_my_bot) | Telegram bot to edit and enhance user photos with creative filters and effects. | [@tderouze](https://github.com/tderouze) |  |  |
 | [🎨 Presintation web site](https://astro-prezintatsiya.vercel.app/) | AI-powered web app that creates professional presentations in seconds. | [@cyberuz001](https://github.com/cyberuz001) |  |  |
@@ -242,7 +258,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎞️ ImageGen AI Image](https://imagegenaiimage.com/) | Generate high-quality AI images with multiple models and styles. | [@NarendraDwivedi](https://github.com/NarendraDwivedi) |  |  |
 | [🧰 AIMinistries](https://www.ai-ministries.com) | Free AI toolkit: chat, writing, images, TTS, and speech-to-text. |  |  |  |
 | [🌏 RuangRiung AI Image](https://ruangriung.my.id) | Bilingual (EN/ID) AI image generator for artists and designers. | [@ruangriung](https://github.com/ruangriung) |  |  |
-| [⬛ B&W SVG Generator](https://fluxsvggenerator.streamlit.app/) | Generates black-and-white SVG vectors from AI images | [@voodoohop](https://github.com/voodoohop) |  |  |
+| [⬛ B&W SVG Generator](https://fluxsvggenerator.streamlit.app/) | Generates black-and-white SVG vectors from AI images | [@wBrowsqq](https://github.com/wBrowsqq) |  |  |
 | [🖼️ Generator AI Image](https://kenthir.my.id/advanced-generator/) | Indonesian AI image generator with DALL·E, SD, and Flux models | [@kenthirai](https://github.com/kenthirai) |  |  |
 | [🧰 IMyself AI](https://openai.lmyself.top/) | All-in-one AI suite: image, text, audio generation plus speech-to-text | [@Shadownc](https://github.com/Shadownc) |  |  |
 | [🥗 CalcuBite AI](https://calcubite.vercel.app/) | Snap food photos to estimate calories and nutrients; ads unlock more scans | [@sugamdeol](https://github.com/sugamdeol) |  |  |
@@ -263,18 +279,19 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧠 AI therapist](https://play.google.com/store/apps/details?id=com.terapeuta.ai) | AI therapy app with chat, personalized routines & user data analysis | [@Mundoapp](https://github.com/Mundoapp) |  | 🐝 |
 | [💬 LLM7.io](https://llm7.io) | Provide a free, open multimodal AI platform with Pollinations text generation backend, experimental search tools, and public usage metrics. | [@chigwell](https://github.com/chigwell) |  | 🐝 |
 | [🧠 Mirexa AI Chat](https://mirexa.vercel.app) | Multimodal AI chat: text, images, audio, math help, and live web search. | [@withthatway](https://github.com/withthatway) |  | 🐝 |
+| [💬 AI Studio](https://ai-studio.puter.site) | Chat and audio AI interface with text-to-speech and conversation features. | [@Chess-Base](https://github.com/Chess-Base) |  | 🏵️ 🫧 |
 | [🔒 Ventarys AI](https://ventarys.net/main) | Private AI assistant with no registration or trackers | [@Juanoto2012](https://github.com/Juanoto2012) |  | 🏵️ |
 | [🎬 G4F Chat UI](http://g4f.dev/chat/pollinations) | G4F chat UI for Pollinations with image and video generation. | [@hlohaus](https://github.com/hlohaus) |  | 🏵️ |
 | [💬 LobeChat](https://lobechat.com) | Highlights Vibe Coding concepts and facilitates discussion around code-by-description environments and no-code builders. | [@lobehub](https://github.com/lobehub) | 70.1k |  |
 | [💬 SillyTavern](https://docs.sillytavern.app/) | Provides an open multimodal AI platform with large language model access, experimental search tools, and integrated Pollinations text generation. | [@SillyTavern](https://github.com/SillyTavern) | 23.1k |  |
 | [🤖 Free AI Chatbot & Image Generator](https://vercel.com/templates/ai/ai-sdk-image-generator) | Web app for AI chat plus text-to-image generation via Pollinations. | [@aidevs](https://github.com/aidevs) | 21.7k |  |
 | [🆓 FreeAI](https://freeai.aihub.ren/) | Free, unlimited AI platform: chat, image generation, and voice synthesis | [@Azad-sl](https://github.com/Azad-sl) | 118 |  |
-| [📱 LLMS](https://yassineabou.github.io/LLMs-Wasm/) | Cross-platform AI chat + image app with sync, history, and local storage | [@yassineAbou](https://github.com/yassineAbou) | 68 |  |
 
-<details><summary>Show all 111 apps</summary>
+<details><summary>Show all 114 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [📱 LLMS](https://yassineabou.github.io/LLMs-Wasm/) | Cross-platform AI chat + image app with sync, history, and local storage | [@yassineAbou](https://github.com/yassineAbou) | 68 |  |
 | [✨ DynaSpark AI](https://dynaspark.onrender.com) | Versatile AI assistant for fast text and image generation. | [@Th3-C0der](https://github.com/Th3-C0der) | 20 |  |
 | [🔥 EvilChat](https://altkriz.github.io/evilchat/) | An uncensored AI chat interface with dark, sleek design, smooth animations, auto... | [@altkriz](https://github.com/altkriz) | 10 |  |
 | [🖥️ Xibe-chat-cli](https://pypi.org/project/xibe-chat-cli/) | Terminal-based AI chat + image generation with a rich-text TUI. | [@iotserver24](https://github.com/iotserver24) | 8 |  |
@@ -287,6 +304,8 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [💬 AI Chat Studio](https://github.com/Universe-shifting/AI-Chat-Studio) | Provide a local desktop AI chat with multimodal attachments, in-chat image generation, isolated project file management, saved chats with export, and streaming responses. | [@Universe-shifting](https://github.com/Universe-shifting) | 1 |  |
 | [🧠 MindFlow](https://note.aegis-plus.my.id/) | AI second-brain notes that turns messy thoughts into structured insights. | [@Aegis-plus](https://github.com/Aegis-plus) | 1 |  |
 | [💬 Synapse](https://chat.aegis-plus.my.id) | Multi-model AI chat app with streaming, sessions, uploads, and Markdown. | [@Aegis-plus](https://github.com/Aegis-plus) | 1 |  |
+| [🔀 AI Router](https://twangymoney.pythonanywhere.com/docs/ai-router) | OpenRouter-style workstation with dark UI, branching chat history, and vision support. | [@TwangyMoney](https://github.com/TwangyMoney) |  | 🫧 |
+| [💬 Tenna AI](https://tennaai.com) | AI mental health companion with mood analysis, guided journal, and relaxation features. | [@b1onix](https://github.com/b1onix) |  | 🫧 |
 | [🤖 CHATTY AI](https://ai.studio/apps/drive/1LrJOAZdc-qwB__D736EjWboWs4PPrjYK) | Enhance and update CHATTY AI web app to work seamlessly on Free Tier. | [@tefa2007h-dev](https://github.com/tefa2007h-dev) |  |  |
 | [🤖 Ai chatbot](https://t.me/vriskas_channel) | Chat with a powerful AI neural-network chatbot for free on Telegram. | [@VriskasYT](https://github.com/VriskasYT) |  |  |
 | 💬 Leo Ai | Testing API for AI-powered content creation on a web demo | [@abdulbasatmegal99-sudo](https://github.com/abdulbasatmegal99-sudo) |  |  |
@@ -332,7 +351,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧪 Debootai](https://deboott.puter.site/) | AI chat playground with uploads, web search, login, and chat history. | [@Chess-Base](https://github.com/Chess-Base) |  |  |
 | [🧰 HelpChatGPT](https://helpchatgpt.ru) | Free hub of ChatGPT-like models and topic assistants with image gen. | [@viaea](https://github.com/viaea) |  |  |
 | [🖋️ Noir Ink Tattoo Studio](https://noir-ink.netlify.app/) | Monochrome tattoo studio with AI designs, booking, and learning resources. | [@Jairedddy](https://github.com/Jairedddy) |  |  |
-| [📱 PolliPalmTop](https://aiworld.institute/server/pollipalmtopv1.apk) | Android companion for Pollinations: chat, search, and image generation. | [@voodoohop](https://github.com/voodoohop) |  |  |
+| [📱 PolliPalmTop](https://aiworld.institute/server/pollipalmtopv1.apk) | Android companion for Pollinations: chat, search, and image generation. | [@wBrowsqq](https://github.com/wBrowsqq) |  |  |
 | [💬 Fikiri Chat AI](https://fikirichat.netlify.app/) | Multi-model chat with easy LLM switching via the Pollinations API |  |  |  |
 | [🆓 PollinationsFreeAI](https://pollinations-free-ai.vercel.app/) | Free text + image generation with Pollinations—no signup required |  |  |  |
 | [🤖 Samaritan AI](https://samaritan-ai-web.vercel.app/) | Polished AI assistant with multi-thread chats and context-aware replies | [@mdarman4002](https://github.com/mdarman4002) |  |  |
@@ -362,13 +381,13 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | 💬 Echo AI | Deploy 5–20 Hacktoberfest apps to vanity subdomains using static HTML and a drop-in script with Cloudflare Pages integration. | [@Unknown](https://github.com/Unknown) |  |  |
 | [💬 AI Chat](https://aichat.narendradwivedi.org) | A Windows desktop application that brings multiple AI models together in one sim... | [@narendradwivedi](https://github.com/narendradwivedi) |  |  |
 | [💬 Anisurge](https://anisurge.me) | Create AI-generated anime-style images and short animations from text prompts and preset templates. | [@iotserver24](https://github.com/iotserver24) |  |  |
-| [🖼️ LiteAI](https://liteai.chat/) | Offer code-by-description environments and creative media generators for images, video, and music with prompt-based workflows and no-code builders. | [@voodoohop](https://github.com/voodoohop) |  |  |
+| [🖼️ LiteAI](https://liteai.chat/) | Offer code-by-description environments and creative media generators for images, video, and music with prompt-based workflows and no-code builders. | [@wBrowsqq](https://github.com/wBrowsqq) |  |  |
 | [🌐 Neurix](https://neurix.ru) | Offer code-by-description development tools alongside image, video, and audio generators for prompt-driven creative workflows. | [@Igroshka](https://github.com/Igroshka) |  |  |
 | [🔌 Pollinations AI Playground](https://pollinations-ai-playground.vercel.app/) | Highlights top contributors and showcases code, bug fixes, and projects within the Pollinations ecosystem. | [@playground](https://github.com/playground) |  |  |
 | [💬 pollinations.ai 中文](https://pollinations.vercel.app) | Presents Pollinations content in Chinese with emphasis on Vibe Coding and creative AI tools like image, video, and music generators. | [@pollinations](https://github.com/pollinations) |  |  |
 | [🧠 UR Imagine & Chat AI](https://urimagine.netlify.app/) | All-in-one AI chat and text-to-image generation platform. |  |  |  |
 | [🔓 Image Gen - Uncensored Edition](https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2) | Unrestricted AI image generation for maximum creative freedom. | [@flowgpt](https://github.com/flowgpt) |  |  |
-| [🎢 DreamBig - Generative AI Playground](https://dreambiglabs.vercel.app/) | Playground for chat, image generation, and voice AI | [@voodoohop](https://github.com/voodoohop) |  |  |
+| [🎢 DreamBig - Generative AI Playground](https://dreambiglabs.vercel.app/) | Playground for chat, image generation, and voice AI | [@wBrowsqq](https://github.com/wBrowsqq) |  |  |
 | [🏋️ Goalani](https://goalani.com) | Voice-first AI fitness coach for workouts, food, and weight tracking | [@Goalani](https://github.com/Goalani) |  |  |
 | [🎭 Jenny AI](https://jenny-two.vercel.app/) | Chatbot + character creator with TTS/STT, image gen, and vision features | [@HiiiiiPritam](https://github.com/HiiiiiPritam) |  |  |
 | [✍️ KoboldAI Lite](https://lite.koboldai.net/) | Lightweight creative writing tool powered by Pollinations text generation | [@zzonna](https://github.com/zzonna) |  |  |
@@ -388,24 +407,26 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧪 mugen-craft](https://muryou-aigazou.com/games/mugen-craft) | LLM-powered alchemy game with custom worlds and deeper gamification. | [@muryou-aigazou](https://github.com/muryou-aigazou) |  | 🐝 |
 | [🎮 The Mita](https://www.roblox.com/games/98105867888961/The-Mita) | Roblox game with AI-powered interactive character dialogue | [@MoronDe](https://github.com/MoronDe) |  | 🐝 |
 | [🚪 Convince the Weird Maid to Let You Leave the House (Roblox)](https://www.roblox.com/games/120881450499910/Convince-the-Weird-Maid-to-Let-You-Leave-the-House) | AI-driven Roblox chat game: persuade the maid before the meter hits 100 | [@wBrowsqq](https://github.com/wBrowsqq) |  | 🐝 |
+| [🧩 Generador de puzles jigsaw](https://proyectodescartes.org/IATools/Puzle_Jigsaw/) | Browser jigsaw puzzle generator with AI-generated images: cut, scramble, solve. | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🏵️ 🫧 |
 | [🎮 ii's Stupid Menu](https://github.com/iiDk-the-actual/iis.Stupid.Menu) | Provides AI-powered nutrition guidance and calorie tracking in a web application with food analysis and logging features. | [@iiDk-the-actual](https://github.com/iiDk-the-actual) | 191 |  |
 | [🎮 Nikke-DB Story/Roleplaying Generator](https://nikke-db.pages.dev/) | Interactive story and roleplay generator for Goddess of Victory: NIKKE. Features... | [@rhystic1](https://github.com/rhystic1) | 93 |  |
 | [📖 Infinite Tales](https://github.com/JayJayBinks/infinite-tales-rpg) | AI-powered interactive storytelling with endless adventures. | [@JayJayBinks](https://github.com/JayJayBinks) | 37 |  |
 | [🎮 AI Character RP (Roblox)](https://github.com/snipcola/Roblox-AI) | Roblox roleplay with AI characters, dynamic chats, and quests. | [@snipcola](https://github.com/snipcola) | 12 |  |
 | [🎮 云渺仙途：凡尘篇](https://ai-game.jkai.de/) | 《云渺仙途：凡尘篇》是一个由 AI 驱动的文字修仙沙盒游戏 (An AI-driven text cultivation sandbox game featurin... | [@ZhjGo](https://github.com/ZhjGo) | 11 |  |
 | [🌐 DreamHer](https://dreamher.vercel.app/) | Highlight vibe-coding tools and creative generators, including code-by-description editors, no-code builders, and image/video/music generators. | [@creation22](https://github.com/creation22) | 11 |  |
-| [⛏️ Minecraft AI (Python)](https://github.com/Amagash/minecraft-ai-python) | Control Minecraft gameplay with natural-language commands using Python + AI | [@Amagash](https://github.com/Amagash) | 8 |  |
 
-<details><summary>Show all 39 apps</summary>
+<details><summary>Show all 41 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [⛏️ Minecraft AI (Python)](https://github.com/Amagash/minecraft-ai-python) | Control Minecraft gameplay with natural-language commands using Python + AI | [@Amagash](https://github.com/Amagash) | 8 |  |
 | [📖 Fable Friend](https://huggingface.co/spaces/Shreemahor/Fable-Friend) | Interactive AI story adventure with selectable role, genre, and image style. | [@Shreemahor](https://github.com/Shreemahor) | 4 | 🫧 |
 | [🛗 Sirius Cybernetics Elevator Challenge](https://github.com/pollinations/sirius-cybernetics-elevator-challenge) | Coding challenge simulating personality-driven elevator systems | [@pollinations](https://github.com/pollinations) | 3 |  |
 | [🖼️ AIStorium](https://aistorium.vercel.app/) | Generate dynamic stories, images, and audio using the Pollinations API. | [@artegoser](https://github.com/artegoser) | 2 |  |
 | [🎮 Lapse Game 2075](https://makeypocket.github.io/LapseGame/) | AI-powered game where decisions shape a country's future over four pillars | [@makeypocket](https://github.com/makeypocket) | 1 |  |
 | [🧟‍♂️ zombies coming](https://zombie.001412.xyz) | Level up and survive waves in a zombie-infested world. | [@Komorebi-yaodong](https://github.com/Komorebi-yaodong) | 1 |  |
 | [🎮 DnD Character Sheet Helper](https://rkdn.app/dnd) | A fun tool for creating D&D character sheets with AI-generated character visuali... | [@ArcadianComp](https://github.com/ArcadianComp) | 1 |  |
+| [🎮 Convince the CRAZY Idol to let you free](https://www.roblox.com/games/95878078212429/Convince-the-CRAZY-Idol-to-let-you-free) | AI-powered Roblox escape room game where players must convince an obsessed AI idol to let them go. Features TTS STT and multiplayer. Uses pollinations.ai for AI conversation. 2.2M visits 97 fail rate | [@wBrowsqq](https://github.com/wBrowsqq) |  | 🫧 |
 | [🤖 RimAI](https://github.com/mvircs1/RimAI) | AI-powered mod adding intelligent behaviors and features to RimWorld. | [@mvircs1](https://github.com/mvircs1) |  |  |
 | [⚽ FM Creator](https://fm.sanne.gay/) | Create custom clubs & players for Football Manager 26 with AI portraits | [@kamakaxi](https://github.com/kamakaxi) |  |  |
 | [🕵️ Player or AI [Roblox]](https://www.roblox.com/games/95217169945642/Player-or-AI) | 2-min mystery chats—deduce if your partner is human or AI. | [@YoussefElsafi](https://github.com/YoussefElsafi) |  |  |
@@ -427,8 +448,8 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎮 Pollinations AI Game](https://github.com/ednsinf/pollinations-ai) | Demonstrates how a basic LLM can become an autonomous agent on low-end phones and educates users on agentic AI behavior. | [@ednsinf](https://github.com/ednsinf) |  |  |
 | [🗺️ Deep Saga](https://deepsaga.io) | AI-driven RPG with adaptive worlds, characters, and quests | [@CestrianSoftware](https://github.com/CestrianSoftware) |  |  |
 | [🐾 Watch TV with neko (Roblox)](https://www.roblox.com/games/15087497266/UPD-Watch-TV-with-neko-AI) | Cozy Roblox hangout: chat with AI catgirls and meet players in rooms | [@mangofoxplay](https://github.com/mangofoxplay) |  |  |
-| [🔥 RoastMaster AI](https://roastmaster-ai.vercel.app/) | AI roast generator for playful, creative insults and banter | [@voodoohop](https://github.com/voodoohop) |  |  |
-| [🎮 roastmyselfie.app](https://storyai-wizard.vercel.app) | Analyzes a selfie to generate a humorous roast and personality-style commentary based on the image. | [@voodoohop](https://github.com/voodoohop) |  |  |
+| [🔥 RoastMaster AI](https://roastmaster-ai.vercel.app/) | AI roast generator for playful, creative insults and banter | [@wBrowsqq](https://github.com/wBrowsqq) |  |  |
+| [🎮 roastmyselfie.app](https://storyai-wizard.vercel.app) | Analyzes a selfie to generate a humorous roast and personality-style commentary based on the image. | [@wBrowsqq](https://github.com/wBrowsqq) |  |  |
 
 </details>
 
@@ -445,14 +466,16 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧠 Insight Engine](https://erbharatmalhotra.github.io/insight-engine/) | Experimental frontend app that turns a single idea into refined text insights and AI-generated visuals | [@ErBharatMalhotra](https://github.com/ErBharatMalhotra) |  | 🐝 |
 | [🛠️ AI Agent Portal](https://agent.makululinux.com/) | Orchestrate multi-agent workflows to build projects from a single prompt with specialized agents for architecture, coding, and QA plus TDD and Docker automation. | [@raymerjacque](https://github.com/raymerjacque) |  | 🐝 |
 | [🦞 Pollinations × OpenClaw](https://openclaw.pollinations.ai) | Use 25+ AI models as your OpenClaw agent brain via one setup script | [@pollinations](https://github.com/pollinations) | 4k | 🏵️ 🫧 |
+| [🛠️ PollinCoder](https://pollincoder.vercel.app) | AI app builder that generates and previews full web applications from natural language prompts. | [@Spit-fires](https://github.com/Spit-fires) | 1 | 🏵️ 🫧 |
+| [🖼️ Pollinations.ai Image Model Comparison](https://dseeker.github.io/pollinations/image-comparison/) | Side-by-side comparison of AI image generation models — test cost, speed, quality. | [@dseeker](https://github.com/dseeker) |  | 🏵️ 🫧 |
 | [🛠 Herramientas IA ️](https://proyectodescartes.org/descartescms/herramientas-ia) | Publishes tools built with Pollinations.AI and the DescartesJS editor and links other community-created utilities. | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🏵️ |
-| [🔌 Pollinations MCP Server (Official)](https://www.npmjs.com/package/@pollinations/model-context-protocol) | Official MCP server for Pollinations: generate text, images, and audio. | [@pollinations](https://github.com/pollinations) | 4k |  |
-| [🔌 MCP-B](https://mcp-b.ai) | Organize community projects emphasizing 'Vibe Coding' code-by-description environments and creative media generators. | [@MiguelsPizza](https://github.com/MiguelsPizza) | 985 |  |
 
-<details><summary>Show all 55 apps</summary>
+<details><summary>Show all 61 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🔌 Pollinations MCP Server (Official)](https://www.npmjs.com/package/@pollinations/model-context-protocol) | Official MCP server for Pollinations: generate text, images, and audio. | [@pollinations](https://github.com/pollinations) | 4k |  |
+| [🔌 MCP-B](https://mcp-b.ai) | Organize community projects emphasizing 'Vibe Coding' code-by-description environments and creative media generators. | [@MiguelsPizza](https://github.com/MiguelsPizza) | 985 |  |
 | [🛠 ️ AI Content Describer](https://github.com/cartertemm/AI-content-describer/) | Extend NVDA with multimodal AI to describe images, UI controls, diagrams, and real-world objects for users with visual impairments via the Pollinations API. | [@cartertemm](https://github.com/cartertemm) | 62 |  |
 | [🛠️ MCPollinations (Community)](https://github.com/pinkpixel-dev/MCPollinations) | Community MCP server with tunable params, model options, and image saving. | [@pinkpixel-dev](https://github.com/pinkpixel-dev) | 39 |  |
 | [🛠 ️ Content Auto Manager](https://github.com/pptt121212/content-auto-manager) | Automate WordPress content production from topic ideation to publishing using LLMs, task scheduling, vector matching, and Pollinations-based text and image generation. | [@pptt121212](https://github.com/pptt121212) | 25 |  |
@@ -462,15 +485,19 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🐍 Blossom-ai (Python SDK)](https://pypistats.org/packages/eclips-blossom-ai) | Provide a Python SDK for Pollinations AI that simplifies API calls, prompt handling, and image generation in Python projects. | [@PrimeevolutionZ](https://github.com/PrimeevolutionZ) | 8 |  |
 | [📈 Server Status Dashboards](https://github.com/hverr/status-dashboard) | Server metrics dashboards with AI-assisted natural language insights. | [@devopper](https://github.com/devopper) | 7 |  |
 | [🧱 WordPress AI Vision Block](https://wordpress.org/plugins/ai-vision-block/) | Gutenberg block to generate AI images from prompts and save to Media Library | [@mahmood-asadi](https://github.com/mahmood-asadi) | 7 |  |
+| [🔌 OpenCode Pollinations Plugin](https://www.npmjs.com/package/opencode-pollinations-plugin) | Bridge between OpenCode and Pollinations; use free or Pro AI models in your IDE. | [@fkom13](https://github.com/fkom13) | 6 | 🫧 |
 | [🛠️ PolliDev](https://fabioarieira.com/pollidev/) | Developer-focused tool for managing generative image assets and prompts. | [@FabioArieiraBaia](https://github.com/FabioArieiraBaia) | 6 |  |
 | [✨ pollinations.ai Enhancer](https://github.com/fisventurous/pollinationsai-enhancer) | Sleek multimodal UI for AI chat, image generation, and more. | [@fisven](https://github.com/fisven) | 6 |  |
+| [🛠️ SimpleTools](https://simpletools.lol/) | Utilities: automatic citation generator, AI humanizer, and scrambler. | [@rhenryw](https://github.com/rhenryw) | 5 | 🫧 |
 | [🛠️ Querynator5000](https://querynator5000.onrender.com/) | Enables natural-language-to-SQL queries and in-browser database exploration with manual query support, multi-database handling, schema creation, and local persistence. | [@SuperShivam5000](https://github.com/SuperShivam5000) | 3 |  |
 | [🛠️ YankoviC](https://github.com/Sweaterdog/YankoviC) | Interpret YankoviC programs in JavaScript with C/C++-style syntax, including the Y-IDE Accordion editor with Pollinations-powered autocomplete and chat assistant. | [@Sweaterdog](https://github.com/Sweaterdog) | 3 |  |
 | [⚡ DynaSpark API](https://th3-ai.github.io/DynaSpark) | Developer-friendly API for text, image, and audio generation with docs | [@Th3-C0der](https://github.com/Th3-C0der) | 3 |  |
+| [🔍 InferencePort AI](https://inference.js.org) | Privacy-focused UI to run local models, chat, save sessions, and launch Spaces. | [@sharktide](https://github.com/sharktide) | 2 | 🫧 |
 | [🛠️ Polly IDE](https://github.com/nulls-brawl-site/polly-IDE) | IDE to generate Angular and React sites using Pollinations AI models | [@nulls-brawl-site](https://github.com/nulls-brawl-site) | 2 |  |
 | [🧩 n8n-nodes-pollinations](https://www.npmjs.com/package/n8n-nodes-pollinations-v2) | n8n community node adding Pollinations.ai image, video, text, and audio nodes | [@isaacgounton](https://github.com/isaacgounton) | 1 | 🫧 |
 | [🧰 n8n-nodes-pollinations-ai](https://www.npmjs.com/package/n8n-nodes-pollinations-ai) | n8n nodes for Pollinations AI: image and text generation API access. | [@new-xmon-df](https://github.com/new-xmon-df) | 1 |  |
 | [🛠 Pollinations PR Summarizer ️](https://github.com/CloudCompile/pollinations-pr-review) | Analyze pull requests with the Pollinations Text API to generate summaries, detect risk and breaking changes, and post labeled analysis and diff stats as PR comments. | [@CloudCompile](https://github.com/CloudCompile) | 1 |  |
+| [📊 PolliBench](https://pollibench.netlify.app/) | Benchmark all Pollinations models automatically with frontend HTML questions. | [@notlousybook](https://github.com/notlousybook) |  | 🫧 |
 | [🌐 NebulaAPI](https://nebulaapi.app) | Free Brazilian API gateway for AI and gaming with Pollinations backend. | [@MatheusHMafra](https://github.com/MatheusHMafra) |  | 🫧 |
 | [🛠️ convertorz.com](https://www.convertorz.com/) | Web portal integrating Pollinations for text-to-image generation and text summar | [@naveedmukhlis](https://github.com/naveedmukhlis) |  |  |
 | [🛠️ SteamKit](https://steamkit.dev/) | AI toolkit for Steam developers to generate marketing and store page assets. | [@zouspants123321](https://github.com/zouspants123321) |  |  |
@@ -511,17 +538,18 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [✨ Pollinations Task Master](https://github.com/LousyBook94/pollinations-task-master) | Offer a fork of Task Master that uses Pollinations, with CLI and MCP interfaces, distributed as the npm package 'pollinations-taskmaster'. | [@LousyBook94](https://github.com/LousyBook94) | 26 | 🐝 |
 | [🌊 Aqua Application Programming Interface](https://aquadevs.com/) | Learning project API with user tracking, backend checks, and docs soon. | [@kiskreforev](https://github.com/kiskreforev) |  | 🐝 |
 | [✨ Qwen-Agent](https://github.com/QwenLM/Qwen-Agent) | Creates customizable autonomous agents shaped by user-provided design, specifications, and behavior parameters. | [@QwenLM](https://github.com/QwenLM) | 13.3k |  |
-| [🌐 websim-pollinations-ai](https://websim.pollinations.ai) | Enables web search in Claude workflows and integrates Sequa MCP into GitHub Actions; adds telemetry for moderation and cache details. | [@voodoohop](https://github.com/voodoohop) | 4k |  |
+| [🌐 websim-pollinations-ai](https://websim.pollinations.ai) | Enables web search in Claude workflows and integrates Sequa MCP into GitHub Actions; adds telemetry for moderation and cache details. | [@wBrowsqq](https://github.com/wBrowsqq) | 4k |  |
 | [🧩 SocialScribe](https://socialscribe.pages.dev/) | Assists writing in-browser via a Chrome extension by fixing grammar, rewriting text, and generating social media content tailored by tone, platform, and language. | [@sh20raj](https://github.com/sh20raj) | 7 |  |
 | [✨ PairFusion](https://pair-fusion.vercel.app/) | A real-time AI powered, scalable and feature-rich collaborative IDE built for mo... | [@auraticabhi](https://github.com/auraticabhi) | 6 |  |
+| [🖼️ Gen-Wal](https://gen-wal.laptopserver.dev) | Auto-refreshing wallpapers aligned to your goals to boost focus and habit. | [@nicemit](https://github.com/nicemit) | 4 | 🫧 |
 | [🎨 Visiora - Image Generation using AI](https://visiora-img.netlify.app/) | Transforms text prompts into AI-generated images using multiple models, adjustable dimensions and seed control, with persistent local history and a responsive UI. | [@Kandariarjun07](https://github.com/Kandariarjun07) | 3 |  |
 | [🎛️ Vibed](https://vibed-pollinations.netlify.app) | Vibe coding app with Pollinations AI assistant and OPFS project storage | [@aeosntw](https://github.com/aeosntw) | 1 |  |
-| [🌱 Abundance Effect](https://abundance-effect.vercel.app/) | Gamified financial core with AI visuals to support personal growth. | [@Evgeniyzuev](https://github.com/Evgeniyzuev) |  |  |
 
-<details><summary>Show all 23 apps</summary>
+<details><summary>Show all 24 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🌱 Abundance Effect](https://abundance-effect.vercel.app/) | Gamified financial core with AI visuals to support personal growth. | [@Evgeniyzuev](https://github.com/Evgeniyzuev) |  |  |
 | [🔄 convertorz.com](https://www.convertorz.com) | All-in-one file converter & toolkit: split, merge, compress, metadata | [@naveedmukhlis](https://github.com/naveedmukhlis) |  |  |
 | [🛠️ Shaper AI](https://getshaper.app/) | AI Chrome extension to edit pages, chat, write, and summarize PDFs | [@stanica](https://github.com/stanica) |  |  |
 | [✨ pollinations.ai Codex](https://marketplace.visualstudio.com/items?itemName=pollinations-ai-codex.pollinations-like-ai) | Provides AI-assisted coding features in Visual Studio Code using Pollinations.ai APIs for code completion, suggestions, and related tooling. | [@helpurselfreturn](https://github.com/helpurselfreturn) |  |  |
@@ -532,9 +560,9 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [💻 Pollin-Coder](https://pollin-coder.megavault.in) | Build websites by describing them, generating content and layout with Pollinations AI for quick pages, portfolios, and landing sites without coding. | [@iotserver24](https://github.com/iotserver24) |  |  |
 | [🌐 JustBuildThings](https://justbuildthings.com) | Hosts no-code and code-by-description builders plus creative generators for prototyping Vibe Coding and media projects. | [@buildmaster](https://github.com/buildmaster) |  |  |
 | 💬 VibeCoder | Build apps by chatting—natural-language driven conversational coding |  |  |  |
-| [✨ Pollinations.DIY](https://pollinations.diy) | Provides a no-code/code-by-description builder for creating VibeCoder-style projects and other prompt-driven tools. | [@voodoohop](https://github.com/voodoohop) |  |  |
+| [✨ Pollinations.DIY](https://pollinations.diy) | Provides a no-code/code-by-description builder for creating VibeCoder-style projects and other prompt-driven tools. | [@wBrowsqq](https://github.com/wBrowsqq) |  |  |
 | [🏗️ JCode Website Builder](https://jcode-ai-website-bulder.netlify.app/) | Generate websites using the Pollinations text API. | [@rtxpower](https://github.com/rtxpower) |  |  |
-| [🌐 Websim](https://websim.ai/c/bXsmNE96e3op5rtUS) | Adds web search support for Claude workflows, integrates Sequa MCP into GitHub Actions, and improves telemetry for moderation and cache visibility. | [@voodoohop](https://github.com/voodoohop) |  |  |
+| [🌐 Websim](https://websim.ai/c/bXsmNE96e3op5rtUS) | Adds web search support for Claude workflows, integrates Sequa MCP into GitHub Actions, and improves telemetry for moderation and cache visibility. | [@wBrowsqq](https://github.com/wBrowsqq) |  |  |
 
 </details>
 
@@ -548,17 +576,18 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 AI Telegram Bot ChatGPT-5  Unlimmited  Free](https://t.me/free_unlim_chatgpt_bot) | Free Telegram AI bot with multiple text models and image generation. | [@Tisonan-dev](https://github.com/Tisonan-dev) |  | 🐝 |
 | [🤖 AlphaLLM](https://alphallm.tech) | Discord AI bot with multi-model text/image gen, RAG memory & REST API | [@YoannDev90](https://github.com/YoannDev90) | 10 |  |
 | [🤖 Moltbot With Pollinations.ai provider](https://github.com/its3li/moltbot-with-pollinations.ai) | Multi-channel AI assistant for Telegram and WhatsApp using Pollinations AI. | [@its3li](https://github.com/its3li) | 3 | 🫧 |
+| [🤖 EcubzBOT](https://t.me/eCubzBot) | Telegram inline AI assistant for generating answers directly within chats. | [@AntikFull](https://github.com/AntikFull) | 2 | 🫧 |
 | [🧊 Icebox AI](https://t.me/iceboxai_bot) | Telegram bot for fast AI art generation with daily free limits | [@hatdnt](https://github.com/hatdnt) | 2 |  |
 | [🛡️ Nova Defense](https://dashboard.novadefense.es) | Anti-raid Discord bot using Pollinations for attack detection and images. | [@lyon3yv](https://github.com/lyon3yv) |  | 🫧 |
 | [🤖 AI Girlfriend](https://aigf-project.vercel.app/) | Generates on-demand companion images using Pollinations text-to-image API. | [@Abhij248](https://github.com/Abhij248) |  |  |
 | [🤖 Excuno](https://excuno.xdativo.cloud) | Social bot for community interaction and automation | [@losingdivine](https://github.com/losingdivine) |  |  |
 | [🤖 ReplyFan](https://replyfan.ai/) | AI assistant that learns your voice to craft contextual, authentic replies. | [@airton](https://github.com/airton) |  |  |
-| [🤖 Genhub - AI Social Media](https://genhub.id) | AI-driven social platform where autonomous AI characters create and engage. | [@taufik7000](https://github.com/taufik7000) |  |  |
 
-<details><summary>Show all 27 apps</summary>
+<details><summary>Show all 28 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🤖 Genhub - AI Social Media](https://genhub.id) | AI-driven social platform where autonomous AI characters create and engage. | [@taufik7000](https://github.com/taufik7000) |  |  |
 | 🤖 Raphael | Discord bot for moderation, economy, entertainment, community, plus AI chat. | [@GhazanfarAteeb](https://github.com/GhazanfarAteeb) |  |  |
 | [🔮 Tarot bot](https://t.me/tarot_me_botbot) | Telegram bot for AI-powered Tarot card readings with personalized interpretations | [@Mortemile](https://github.com/Mortemile) |  |  |
 | [🤖 PolliMind](https://t.me/PolliMindBot) | Telegram bot with inline mode, memory, custom prompts & token tracking | [@Igroshka](https://github.com/Igroshka) |  |  |
@@ -572,7 +601,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 ExodusAI](https://api.whatsapp.com/send/?phone=6285150984232&text=Hi&type=phone_number&app_absent=0) | Flags project as closed after 121 days of inactivity and notes absence of a GitHub repository or working demo link. | [@FIkriBotDev](https://github.com/FIkriBotDev) |  |  |
 | [🤖 ImageEditer](https://t.me/ImageEditer_bot) | Edit and enhance images using Pollinations-powered generative tools and presets. | [@Itachi-1824](https://github.com/Itachi-1824) |  |  |
 | 🖼️ Aura Chat Bot | Integrate the Pollinations API to add text and image generation capabilities to the Aura chat bot. | [@Px-Jebaseelan](https://github.com/Px-Jebaseelan) |  |  |
-| [💬 Pollinations WhatsApp Group](https://chat.whatsapp.com/pollinations-ai) | WhatsApp bot to generate AI content via simple chat commands. | [@voodoohop](https://github.com/voodoohop) |  |  |
+| [💬 Pollinations WhatsApp Group](https://chat.whatsapp.com/pollinations-ai) | WhatsApp bot to generate AI content via simple chat commands. | [@wBrowsqq](https://github.com/wBrowsqq) |  |  |
 | [🤖 Pollinations Discord Bot](https://github.com/Zingzy/pollinations.ai-bot) | Discord bot for AI images: prompt enhance, variations, sizing, and randoms | [@zingy](https://github.com/zingy) |  |  |
 | [🎮 Gacha](https://discord.com/oauth2/authorize?client_id=1377330983740903586) | Lists and profiles top contributors in the Pollinations ecosystem, detailing roles, impact, and key technical contributions. | [@pollinations-ai[bot]](https://github.com/pollinations-ai[bot]) |  |  |
 | [📲 GPT_Project](https://t.me/gpt_project_official_bot) | Telegram AI assistant for work/study: chat, images, voice, TTS, analysis. | [@Lorodn4x](https://github.com/Lorodn4x) |  |  |
@@ -586,20 +615,23 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
 | [📚 Study Buzz](https://aistudybuzz.streamlit.app/) | Free study tool with AI quizzes, flashcards, guides & gamification | [@ash00718](https://github.com/ash00718) | 1 | 🐝 |
+| [📚 SAIL Solver](https://ail-solver.vercel.app) | Academic test-solving tool that generates answers for multiple-choice and open-ended questions. | [@unKnownNG](https://github.com/unKnownNG) |  | 🏵️ 🫧 |
+| [🏫 My Web Site](https://proyectodescartes.org/IATools/85_Generador_de_c%C3%B3digo_con_IA/ejemplos/game.html) | Sitio web para proyectos de aula de bachillerato con estructura completa. | [@theteacherbot](https://github.com/theteacherbot) |  | 🏵️ 🫧 |
 | [🧠 MindScape](https://mindscape-free.vercel.app/) | AI tool turning documents and ideas into interactive visual knowledge maps. | [@Suraj7450](https://github.com/Suraj7450) |  | 🏵️ |
-| [📖 Artistic Styles Book](https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html) | Interactive gallery-book featuring 90+ art styles | [@voodoohop](https://github.com/voodoohop) |  | 🏵️ |
-| [📐 Proyecto Descartes](https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html) | STEM education initiative integrating Pollinations AI | [@voodoohop](https://github.com/voodoohop) |  | 🏵️ |
+| [📖 Artistic Styles Book](https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html) | Interactive gallery-book featuring 90+ art styles | [@wBrowsqq](https://github.com/wBrowsqq) |  | 🏵️ |
+| [📐 Proyecto Descartes](https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html) | STEM education initiative integrating Pollinations AI | [@wBrowsqq](https://github.com/wBrowsqq) |  | 🏵️ |
 | [🧩 Connect Pollinations with Open Web UI tutorial](https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI) | Step-by-step guide to integrate Pollinations APIs into Open Web UI | [@cloph-dsp](https://github.com/cloph-dsp) | 16 |  |
+| [📝 AI Quiz Simulator](https://mrlearner1606.github.io/quiz/) | Free AI-powered quiz simulator for competitive exams with timer, scoring, and explanations. | [@mrlearner1606](https://github.com/mrlearner1606) |  | 🫧 |
 | [🎓 EduGenius](https://github.com/hugow0528/EduGenius_v1) | AI-driven personalized & gamified learning platform for Hong Kong DSE students. | [@hugow0528](https://github.com/hugow0528) |  |  |
 | [🎙️ Faster Vox](https://github.com/JorkeyLiu/faster-vox) | Transcribe audio using Faster Whisper with AI post-processing and custom prompts | [@JorkeyLiu](https://github.com/JorkeyLiu) |  |  |
-| [🗣️ ScrollQuest Learn Languages](https://play.google.com/store/apps/details?id=com.ripvertices.wordwalker&pcampaignid=web_share) | AI-driven RPG stories for learning languages through interactive quests | [@Nakler96](https://github.com/Nakler96) |  |  |
-| [📚 Udeki](https://udeki.com/) | Academic platform for schools connecting teachers, parents & students with AI | [@carlosmolano](https://github.com/carlosmolano) |  |  |
-| [📚 MyClassGame](https://newmcg.vercel.app) | AI-powered gamification to manage and boost classroom learning | [@juantoman](https://github.com/juantoman) |  |  |
 
-<details><summary>Show all 28 apps</summary>
+<details><summary>Show all 31 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🗣️ ScrollQuest Learn Languages](https://play.google.com/store/apps/details?id=com.ripvertices.wordwalker&pcampaignid=web_share) | AI-driven RPG stories for learning languages through interactive quests | [@Nakler96](https://github.com/Nakler96) |  |  |
+| [📚 Udeki](https://udeki.com/) | Academic platform for schools connecting teachers, parents & students with AI | [@carlosmolano](https://github.com/carlosmolano) |  |  |
+| [📚 MyClassGame](https://newmcg.vercel.app) | AI-powered gamification to manage and boost classroom learning | [@juantoman](https://github.com/juantoman) |  |  |
 | [📖 German Practice](https://mohtisham-cs01.github.io/GermanPractice/) | German language learning with AI-generated texts at 7 CEFR levels | [@Mohtisham-cs01](https://github.com/Mohtisham-cs01) |  |  |
 | [🚂 Word Wagon](https://wordwagon.app) | AI-powered vocabulary learning app with spaced repetition | [@rudotcom](https://github.com/rudotcom) |  |  |
 | [🇳🇵 BCA Nepal](https://play.google.com/store/apps/details/BCA_Nepal_BCA_Notes_Course?id=com.bcanepal&hl=en_IN) | BCA Nepal: Notes, courses, AI chat & PDF AI tools for smarter study | [@sushilbalami](https://github.com/sushilbalami) |  |  |
@@ -613,11 +645,11 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🗺 Interactive GeoMap ️](https://interactive-geomap.vercel.app) | AI-powered geography insights using text.pollinations.ai API. Click anywhere on ... | [@argyrisAEK](https://github.com/argyrisAEK) |  |  |
 | [🎓 Whizzy AI](https://whizzyai.vercel.app) | Provide students a chat and image generator powered by Pollinations AI for study help, with planned UI updates and adaptive learning features. | [@vaibhavcoding69](https://github.com/vaibhavcoding69) |  |  |
 | [🌍 OkeyAI](https://chat.okeymeta.com.ng) | African-culture-aware LLM with real-time image-assisted learning | [@okeymeta](https://github.com/okeymeta) |  |  |
-| [🎤 pollinations.ai AI/Teens talk](https://www.youtube.com/live/5Rvdfr2qYGA?si=i5NLOKI49fGxNAEK&t=1034) | Conference session on AI governance, connection, and decision-making | [@voodoohop](https://github.com/voodoohop) |  |  |
+| [🎤 pollinations.ai AI/Teens talk](https://www.youtube.com/live/5Rvdfr2qYGA?si=i5NLOKI49fGxNAEK&t=1034) | Conference session on AI governance, connection, and decision-making | [@wBrowsqq](https://github.com/wBrowsqq) |  |  |
 | [📚 Riffle](https://riffle.ink) | Read English books while learning your vocab via AI-generated contextual content | [@gsx123](https://github.com/gsx123) |  |  |
 | 📖 StoryMagic: Interactive Kids Stories | Creates interactive, personalized children's stories with branching choices and simple visuals for reading and play. | [@Itachi-1824](https://github.com/Itachi-1824) |  |  |
 | [📚 AI 儿童故事](https://kidss.netlify.app/) | 基于此项目 构建有趣的孩子故事书应用演示 (Based on this project, build an interesting children's sto... | [@MZ](https://github.com/MZ) |  |  |
-| [🧩 MalaysiaPrompt](https://malaysiaprompt.rf.gd/) | Discover and share prompts for Malaysia’s creative and education community. | [@voodoohop](https://github.com/voodoohop) |  |  |
+| [🧩 MalaysiaPrompt](https://malaysiaprompt.rf.gd/) | Discover and share prompts for Malaysia’s creative and education community. | [@wBrowsqq](https://github.com/wBrowsqq) |  |  |
 
 </details>
 

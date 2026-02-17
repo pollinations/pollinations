@@ -1120,8 +1120,8 @@
       {
         "current": {
           "selected": false,
-          "text": "hour",
-          "value": "hour"
+          "text": "minute",
+          "value": "minute"
         },
         "description": "Time granularity for aggregation",
         "hide": 0,
@@ -1130,8 +1130,8 @@
         "multi": false,
         "name": "granularity",
         "options": [
-          { "selected": false, "text": "minute", "value": "minute" },
-          { "selected": true, "text": "hour", "value": "hour" },
+          { "selected": true, "text": "minute", "value": "minute" },
+          { "selected": false, "text": "hour", "value": "hour" },
           { "selected": false, "text": "day", "value": "day" },
           { "selected": false, "text": "week", "value": "week" },
           { "selected": false, "text": "month", "value": "month" }
@@ -1144,7 +1144,7 @@
     ]
   },
   "time": {
-    "from": "now-7d",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {},

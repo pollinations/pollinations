@@ -1,3 +1,6 @@
+- **2026-02-17** – **📊 SlidePainter** Generate illustrated slide decks and export to PDF with this new community app.
+- **2026-02-17** – **👾 Pixel Art & Markdown** A cozy new retro theme is available, plus app descriptions are now auto-formatted via the [Text API](https://gen.pollinations.ai).
+- **2026-02-17** – **🎨 UI Theme Cycling** Click the [pollinations.ai](https://hello.pollinations.ai) logo to instantly cycle through visual themes.
 - **2026-02-16** – **🌸 Badges in Bloom** Navigate the ecosystem with our new organic badge system (Fresh, Pollen, Buzz) to find the best [community apps](https://hello.pollinations.ai).
 - **2026-02-16** – **🎥 Consistent AI Video** Try **P2S**, a new tool for maintaining character and scene consistency across frames in AI filmmaking.
 - **2026-02-16** – **🎨 Sticker Garden** Generate custom sticker packs with style presets and batch variants in this new [creative app](https://hello.pollinations.ai).

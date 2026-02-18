@@ -1,0 +1,34 @@
+{
+  "pr_number": 8397,
+  "title": "fix: resolve recurring TinyBird query timeouts on KPI dashboard",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8397",
+  "merged_at": "2026-02-18T13:11:45Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Taming the TinyBird",
+    "blurb": "Our internal KPI dashboard was getting a bit too enthusiastic with its queries. We taught it some patience and gave it a cache.",
+    "summary": "Implemented request batching and Cloudflare caching for TinyBird queries to resolve timeouts on the KPI dashboard.",
+    "impact": "Ensures reliable loading of internal metrics without hitting API concurrency limits.",
+    "keywords": [
+      "internal",
+      "kpi",
+      "tinybird",
+      "caching",
+      "performance"
+    ],
+    "visual_concept": "The bee mascot organizing a chaotic flock of small pixel birds (representing data queries) into an orderly queue. A 'CACHE' birdhouse sits nearby.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot organizing a queue of small pixel birds entering a birdhouse labeled 'CACHE'. A robot with a monitor head checks a stopwatch nearby. Lime green (#ecf874) and pastel blue background. Warm lighting, organized vibes. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-18T13:12:35.994274+00:00"
+}

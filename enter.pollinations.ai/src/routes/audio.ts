@@ -10,7 +10,11 @@ import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
-import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
+import {
+    getDefaultErrorMessage,
+    remapUpstreamStatus,
+    UpstreamError,
+} from "@/error.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import { resolveModel } from "@/middleware/model.ts";
@@ -141,7 +145,7 @@ export async function generateSpeech(opts: {
             status: response.status,
             body: errorText,
         });
-        throw new UpstreamError(response.status as ContentfulStatusCode, {
+        throw new UpstreamError(remapUpstreamStatus(response.status), {
             message: errorText || getDefaultErrorMessage(response.status),
         });
     }
@@ -229,7 +233,7 @@ export async function transcribeWithElevenLabs(opts: {
             status: response.status,
             body: errorText,
         });
-        throw new UpstreamError(response.status as ContentfulStatusCode, {
+        throw new UpstreamError(remapUpstreamStatus(response.status), {
             message: errorText || getDefaultErrorMessage(response.status),
         });
     }
@@ -356,7 +360,7 @@ export async function generateMusic(opts: {
             status: response.status,
             body: errorText,
         });
-        throw new UpstreamError(response.status as ContentfulStatusCode, {
+        throw new UpstreamError(remapUpstreamStatus(response.status), {
             message: errorText || getDefaultErrorMessage(response.status),
         });
     }
@@ -632,14 +636,10 @@ export const audioRoutes = new Hono<Env>()
                     status: response.status,
                     body: errorText,
                 });
-                throw new UpstreamError(
-                    response.status as ContentfulStatusCode,
-                    {
-                        message:
-                            errorText ||
-                            getDefaultErrorMessage(response.status),
-                    },
-                );
+                throw new UpstreamError(remapUpstreamStatus(response.status), {
+                    message:
+                        errorText || getDefaultErrorMessage(response.status),
+                });
             }
 
             // Read body to extract duration for usage billing

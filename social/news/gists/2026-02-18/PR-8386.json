@@ -1,0 +1,33 @@
+{
+  "pr_number": 8386,
+  "title": "fix: use NEWS label on README news PRs for correct project routing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8386",
+  "merged_at": "2026-02-18T10:31:39Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sorting the mail",
+    "blurb": "Fixed the labeling logic for daily news updates so they land on the right desk.",
+    "summary": "Updated the automated news workflow to apply the correct `NEWS` label for proper project board routing.",
+    "impact": "Automated PRs will now bypass AI classification and go straight to the News project.",
+    "keywords": [
+      "workflow",
+      "github-actions",
+      "labels",
+      "automation"
+    ],
+    "visual_concept": "A robot sorting letters into slots. Since it's discord_only, the image prompt is less critical but still required by the schema.",
+    "image_prompt": "Cozy pixel art of a cute robot sorting envelopes into labeled slots on a wooden shelf. The bee mascot watches helpfully. Lime green (#ecf874) accents. Warm lighting, lo-fi aesthetic."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-18T10:32:19.714510+00:00"
+}

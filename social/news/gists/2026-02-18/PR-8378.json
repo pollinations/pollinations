@@ -1,0 +1,34 @@
+{
+  "pr_number": 8378,
+  "title": "fix: remap upstream provider 429s to 502",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8378",
+  "merged_at": "2026-02-18T03:04:27Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "It's not you, it's them",
+    "blurb": "We stopped the gaslighting. Now when upstream providers hit their limits, we tell you it's their fault (502), not yours (429).",
+    "summary": "Remapped upstream provider rate limits to 502 Bad Gateway to distinguish them from user-specific rate limits.",
+    "impact": "Clients can now clearly distinguish between their own rate limits and upstream provider capacity issues.",
+    "keywords": [
+      "api",
+      "error-handling",
+      "status-codes",
+      "dx",
+      "reliability"
+    ],
+    "visual_concept": "The robot mascot acting as a traffic controller, distinguishing between local traffic and upstream roadblocks. A clear separation of concerns.",
+    "image_prompt": "Cozy pixel art scene of the robot mascot sorting glowing data packets into two distinct piles. The bee mascot holds a sign reading '502' with a reassuring smile. Lime green (#ecf874) and soft peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel font text: 'STATUS SORTED'. Emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-18T03:05:16.303691+00:00"
+}

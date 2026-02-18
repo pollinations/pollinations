@@ -1,0 +1,34 @@
+{
+  "pr_number": 8404,
+  "title": "feat: add tier cost simulation dashboard",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8404",
+  "merged_at": "2026-02-18T21:37:12Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Crystal ball for credits",
+    "blurb": "New simulation tools help us predict how tier changes affect the ecosystem. Modeling the future before we build it.",
+    "summary": "Added a Grafana dashboard to simulate the economic impact of adjusting daily tier caps using historical usage data.",
+    "impact": "Enables data-driven decisions on tier limits to ensure sustainability without guessing.",
+    "keywords": [
+      "grafana",
+      "economics",
+      "simulation",
+      "tiers",
+      "ops"
+    ],
+    "visual_concept": "The robot and bee analyzing a data chart in the garden. Represents the 'simulation' and 'economics' aspect—planning the harvest.",
+    "image_prompt": "Cozy pixel art scene of the chunky robot holding a glowing clipboard with a line graph, standing in a lush garden. The bee mascot hovers nearby wearing a tiny monocle, inspecting the data. Lime green (#ecf874) and soft lavender background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-18T21:38:03.479680+00:00"
+}

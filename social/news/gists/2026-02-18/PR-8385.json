@@ -1,0 +1,34 @@
+{
+  "pr_number": 8385,
+  "title": "fix: seed tier uses 90-day commit window, update UI to weekly",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8385",
+  "merged_at": "2026-02-18T10:14:47Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Calendar-proof seeds",
+    "blurb": "The new year used to wipe your commit history for tier upgrades. We fixed that. Your last 90 days now count, regardless of what the calendar says.",
+    "summary": "Updated Seed tier qualification to track commits over a rolling 90-day window instead of the calendar year.",
+    "impact": "Developers won't lose their Seed status in January, and the UI now accurately reflects the weekly evaluation schedule.",
+    "keywords": [
+      "tiers",
+      "github",
+      "community",
+      "bugfix",
+      "seed"
+    ],
+    "visual_concept": "Polly the Bee tending to a seedling that is growing strong despite a calendar on the wall showing January. Represents growth continuity and resilience against arbitrary dates.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot watering a sprouting code-plant next to a wall calendar showing a page turn. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The bee has chunky retro sprites and a tiny scarf. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Pixel text: 'CONTINUITY'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-18T10:15:39.401568+00:00"
+}

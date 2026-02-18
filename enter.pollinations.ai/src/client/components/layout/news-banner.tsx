@@ -2,9 +2,9 @@ import { type FC, useEffect, useState } from "react";
 import { Panel } from "../ui/panel.tsx";
 
 const HIGHLIGHTS_RAW_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/main/social/news/transformed/highlights.md";
+    "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/highlights.md";
 const HIGHLIGHTS_GITHUB_URL =
-    "https://github.com/pollinations/pollinations/blob/main/social/news/transformed/highlights.md";
+    "https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md";
 
 interface Highlight {
     date: string;

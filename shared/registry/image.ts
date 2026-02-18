@@ -216,21 +216,20 @@ export const IMAGE_SERVICES = {
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
         modelId: "wan",
-        provider: "alibaba",
+        provider: "airforce",
         alpha: true,
         cost: [
-            // Wan 2.6 I2V Flash (Singapore/International region)
-            // Video base: 720P $0.025/sec (without audio)
-            // Audio add-on: $0.025/sec (when audio=true)
-            // Total with audio: $0.05/sec
+            // Wan 2.6 - Pricing derived from Alibaba DashScope rates
+            // Video: $0.0125/sec, Audio: $0.0125/sec, Total: $0.025/sec (with audio)
+            // Applies to both Airforce (primary) and DashScope (fallback)
             {
-                date: new Date("2026-01-20").getTime(), // Launch date
-                completionVideoSeconds: 0.025, // $0.025 per second (video only)
-                completionAudioSeconds: 0.025, // $0.025 per second of audio
+                date: new Date("2026-02-13").getTime(),
+                completionVideoSeconds: 0.0125, // $0.0125 per second (video only)
+                completionAudioSeconds: 0.0125, // $0.0125 per second (audio)
             },
         ],
         description:
-            "Wan 2.6 - Alibaba image-to-video with audio (2-15s, up to 1080P)",
+            "Wan 2.6 - Alibaba text/image-to-video with audio (2-15s, up to 1080P). Primary via api.airforce, fallback via DashScope",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
@@ -278,8 +277,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.0025, // $0.0025 per image
             },
         ],
-        description:
-            "Imagen 4 (alpha) - Google's latest image gen, powered by api.airforce",
+        description: "Imagen 4 (api.airforce) - Google's latest image gen",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -294,9 +292,8 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.0025, // $0.0025 per second
             },
         ],
-        description:
-            "Grok Video (alpha) - xAI video gen, powered by api.airforce",
-        inputModalities: ["text"],
+        description: "Grok Video (api.airforce) - xAI video gen",
+        inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
     "ltx-2": {

@@ -18,4 +18,8 @@ export const AUTH_COPY = {
     // Header
     registerButton: "Register",
     enterButton: "Enter",
+
+    // Dropdown
+    enterLink: "Dashboard",
+    defaultUsername: "User",
 };

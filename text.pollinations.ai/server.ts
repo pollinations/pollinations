@@ -8,6 +8,7 @@ import { stream } from "hono/streaming";
 import type { Context } from "hono";
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
+import { logIp } from "../shared/ipLogger.js";
 import { getServiceDefinition } from "../shared/registry/registry.ts";
 import {
     buildUsageHeaders,
@@ -34,6 +35,14 @@ app.use(
         maxSize: 20 * 1024 * 1024,
     }),
 );
+
+// IP logging middleware
+app.use("*", async (c, next) => {
+    const ip = getIp(c.req.raw);
+    const model = new URL(c.req.url).searchParams.get("model") || "unknown";
+    logIp(ip, "text", `path=${c.req.path} model=${model}`);
+    await next();
+});
 
 app.use("*", async (c, next) => {
     const token = c.req.header("x-enter-token");

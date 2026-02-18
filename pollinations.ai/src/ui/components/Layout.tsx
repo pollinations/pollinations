@@ -1,41 +1,51 @@
-import { useCallback, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useRef, useState } from "react";
+import { NavLink, Outlet } from "react-router-dom";
 import { AUTH_COPY } from "../../copy/content/auth";
+import { LAYOUT } from "../../copy/content/layout";
 import { SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { useTheme } from "../contexts/ThemeContext";
 import { BackgroundRenderer } from "./BackgroundRenderer";
-import { BetaBanner } from "./BetaBanner";
 import { Logo } from "./Logo";
 import { AIPromptInput } from "./theme/AIPromptInput";
 import { UserMenu } from "./UserMenu";
 import { Button } from "./ui/button";
 
-const tabs = [
-    { path: "/", label: "Hello" },
-    { path: "/play", label: "Play" },
-    { path: "/apps", label: "Apps" },
-    { path: "/community", label: "Community" },
+const tabKeys = [
+    { path: "/", copyKey: "navHello" as const },
+    { path: "/play", copyKey: "navPlay" as const },
+    { path: "/apps", copyKey: "navApps" as const },
+    { path: "/community", copyKey: "navCommunity" as const },
 ];
 
 import { useFooterVisibility } from "../../hooks/useFooterVisibility";
 import { useHeaderVisibility } from "../../hooks/useHeaderVisibility";
 
+const THROTTLE_MS = 1000;
+
 function Layout() {
     const showFooter = useFooterVisibility();
     const showHeader = useHeaderVisibility();
     const [emailCopied, setEmailCopied] = useState(false);
-    const [isBannerVisible, setIsBannerVisible] = useState(false);
-    const { backgroundHtml } = useTheme();
+    const {
+        backgroundHtml,
+        cyclePreset,
+        showThemeCreator,
+        setShowThemeCreator,
+    } = useTheme();
     const { isLoggedIn, login, apiKey } = useAuth();
     const { copy: authCopy } = usePageCopy(AUTH_COPY);
-    const navigate = useNavigate();
+    const { copy: layoutCopy } = usePageCopy(LAYOUT);
+    const lastClickRef = useRef(0);
 
-    const handleBannerVisibilityChange = useCallback((visible: boolean) => {
-        setIsBannerVisible(visible);
-    }, []);
+    const handleLogoClick = () => {
+        const now = Date.now();
+        if (now - lastClickRef.current < THROTTLE_MS) return;
+        lastClickRef.current = now;
+        cyclePreset();
+    };
 
     return (
         <div
@@ -43,38 +53,42 @@ function Layout() {
                 backgroundHtml ? "bg-transparent" : "bg-surface-base"
             }`}
         >
-            <BetaBanner onVisibilityChange={handleBannerVisibilityChange} />
             <BackgroundRenderer />
             {/* Fixed Header */}
             <header
                 className={`fixed left-0 right-0 z-50 transition-all duration-300 flex flex-col ${
                     showHeader ? "translate-y-0" : "-translate-y-full"
                 }`}
-                style={{ top: isBannerVisible ? "44px" : "0" }}
+                style={{ top: 0 }}
             >
                 <div className="w-full px-4 py-3 pb-5 lg:py-4 lg:pb-5">
                     <div className="max-w-4xl mx-auto relative overflow-visible">
-                        {/* Mobile/Tablet: Grid — Logo spans all rows, content on right */}
+                        {/* Mobile/Tablet: Grid — Logo + content on right */}
                         <div
                             className="lg:hidden grid overflow-visible"
                             style={{
                                 gridTemplateColumns: "auto minmax(0, 1fr)",
-                                gridTemplateRows: "auto auto auto",
+                                gridTemplateRows: "auto auto",
                             }}
                         >
-                            {/* Logo: spans all rows */}
-                            <div className="row-span-3 flex items-start pr-3">
-                                <button
-                                    type="button"
-                                    onClick={() => navigate("/")}
-                                    className="flex-shrink-0 focus:outline-none transition-transform active:scale-95"
-                                >
-                                    <Logo className="w-20 h-20 object-contain" />
-                                </button>
+                            {/* Logo: spans both rows */}
+                            <div className="row-span-2 flex items-start pr-3">
+                                <div className="relative group">
+                                    <button
+                                        type="button"
+                                        onClick={handleLogoClick}
+                                        className="flex-shrink-0 focus:outline-none transition-transform active:scale-95"
+                                    >
+                                        <Logo className="w-20 h-20 object-contain" />
+                                    </button>
+                                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-surface-card text-text-body-main text-[10px] rounded-tag shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                        Change theme
+                                    </div>
+                                </div>
                             </div>
-                            {/* Row 1: Nav tabs + Enter/Register */}
+                            {/* Row 1: Nav tabs */}
                             <div className="flex flex-wrap gap-1 items-center justify-end pb-1">
-                                {tabs.map((tab) => (
+                                {tabKeys.map((tab) => (
                                     <NavLink
                                         key={tab.path}
                                         to={tab.path}
@@ -87,63 +101,54 @@ function Layout() {
                                                 size={null}
                                                 data-active={isActive}
                                             >
-                                                {tab.label}
+                                                {layoutCopy[tab.copyKey]}
                                             </Button>
                                         )}
                                     </NavLink>
                                 ))}
-                                <Button
-                                    as="a"
-                                    href="https://enter.pollinations.ai"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="iconText"
-                                    size={null}
-                                >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
-                                        {isLoggedIn
-                                            ? authCopy.enterButton
-                                            : authCopy.registerButton}
-                                    </span>
-                                    <ExternalLinkIcon className="w-3 h-3 text-text-brand" />
-                                </Button>
                             </div>
                             {/* Row 2: Login/Account */}
                             <div className="flex flex-wrap gap-1.5 items-center justify-end pb-1">
                                 <UserMenu />
                             </div>
-                            {/* Row 3: Theme Creator */}
-                            <div className="flex items-center justify-end gap-1.5 min-w-0 pb-1">
+                        </div>
+                        {/* Mobile: Theme Creator (Easter egg — shown after logo click) */}
+                        {showThemeCreator && (
+                            <div className="lg:hidden flex items-center gap-1.5 pt-1 animate-in fade-in duration-300">
                                 <AIPromptInput
                                     isLoggedIn={isLoggedIn}
                                     onLoginRequired={login}
                                     apiKey={apiKey}
                                     compact
                                 />
-                            </div>
-                        </div>
-
-                        {/* Desktop: Grid — Logo spans both rows, content on right */}
-                        <div
-                            className="hidden lg:grid overflow-visible"
-                            style={{
-                                gridTemplateColumns: "auto 1fr",
-                                gridTemplateRows: "1fr auto",
-                            }}
-                        >
-                            {/* Logo: spans both rows */}
-                            <div className="row-span-2 flex items-center pr-4">
                                 <button
                                     type="button"
-                                    onClick={() => navigate("/")}
+                                    onClick={() => setShowThemeCreator(false)}
+                                    className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-text-body-main hover:text-text-body-main/80 transition-colors"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Desktop: Single row — Logo + Nav + Social + UserMenu */}
+                        <div className="hidden lg:flex items-center gap-4 overflow-visible">
+                            {/* Logo */}
+                            <div className="relative group flex-shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={handleLogoClick}
                                     className="flex-shrink-0 focus:outline-none transition-transform active:scale-95"
                                 >
                                     <Logo className="w-20 h-20 object-contain" />
                                 </button>
+                                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-surface-card text-text-body-main text-[10px] rounded-tag shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                    Change theme
+                                </div>
                             </div>
-                            {/* Row 1: Nav Tabs + Social Icons (right-aligned, vertically centered) */}
-                            <div className="flex gap-3 items-center justify-end overflow-x-auto overflow-y-visible scrollbar-hide pb-2">
-                                {tabs.map((tab) => (
+                            {/* Nav Tabs + Social Icons (scrollable) */}
+                            <div className="flex-1 flex gap-3 items-center justify-end overflow-x-auto overflow-y-visible scrollbar-hide">
+                                {tabKeys.map((tab) => (
                                     <NavLink
                                         key={tab.path}
                                         to={tab.path}
@@ -156,7 +161,7 @@ function Layout() {
                                                 size={null}
                                                 data-active={isActive}
                                             >
-                                                {tab.label}
+                                                {layoutCopy[tab.copyKey]}
                                             </Button>
                                         )}
                                     </NavLink>
@@ -185,48 +190,33 @@ function Layout() {
                                         ),
                                     )}
                             </div>
-                            {/* Row 2: Theme Creator + Login + Register (right-aligned) */}
-                            <div className="flex items-center justify-end gap-2 overflow-visible pb-1">
+                            {/* UserMenu (outside scroll container so dropdown isn't clipped) */}
+                            <UserMenu />
+                        </div>
+                        {/* Desktop: Theme Creator (Easter egg — shown after logo click) */}
+                        {showThemeCreator && (
+                            <div className="hidden lg:flex items-center gap-2 pt-2 animate-in fade-in duration-300">
                                 <AIPromptInput
                                     isLoggedIn={isLoggedIn}
                                     onLoginRequired={login}
                                     apiKey={apiKey}
                                     compact
                                 />
-
-                                <UserMenu />
-
-                                {/* Register Button */}
-                                <Button
-                                    as="a"
-                                    href="https://enter.pollinations.ai"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="iconText"
-                                    size={null}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowThemeCreator(false)}
+                                    className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-text-body-main hover:text-text-body-main/80 transition-colors"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
-                                        {isLoggedIn
-                                            ? authCopy.enterButton
-                                            : authCopy.registerButton}
-                                    </span>
-                                    <ExternalLinkIcon className="w-4 h-4 text-text-brand" />
-                                </Button>
+                                    ×
+                                </button>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </header>
 
             {/* Main Content - Full Bleed */}
-            <main
-                className="w-full min-h-screen pb-40 lg:pb-24 transition-all duration-200 pt-[calc(12rem+var(--banner-offset))] lg:pt-[calc(10rem+var(--banner-offset))]"
-                style={
-                    {
-                        "--banner-offset": isBannerVisible ? "44px" : "0px",
-                    } as React.CSSProperties
-                }
-            >
+            <main className="w-full min-h-screen pb-40 lg:pb-24 transition-all duration-200 pt-48 lg:pt-40">
                 <Outlet />
             </main>
 
@@ -307,7 +297,7 @@ function Layout() {
                                     className="h-10"
                                 >
                                     <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
-                                        Terms
+                                        {layoutCopy.termsLink}
                                     </span>
                                 </Button>
                                 <Button
@@ -318,7 +308,7 @@ function Layout() {
                                     className="h-10"
                                 >
                                     <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
-                                        Privacy
+                                        {layoutCopy.privacyLink}
                                     </span>
                                 </Button>
                                 <Button
@@ -338,11 +328,11 @@ function Layout() {
                                     className="h-10"
                                 >
                                     <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
-                                        Email
+                                        {layoutCopy.emailLink}
                                     </span>
                                     {emailCopied && (
                                         <span className="absolute -top-8 left-0 font-headline text-xs font-black text-text-brand uppercase tracking-wider">
-                                            Copied!
+                                            {layoutCopy.copiedLabel}
                                         </span>
                                     )}
                                 </Button>
@@ -374,10 +364,10 @@ function Layout() {
                             {/* Left: Branding Text */}
                             <div className="text-left flex-shrink-0">
                                 <p className="font-headline text-xs font-black text-text-body-main uppercase tracking-wider">
-                                    pollinations.ai - 2026
+                                    {layoutCopy.footerBranding}
                                 </p>
                                 <p className="font-body text-[10px] text-text-body-main">
-                                    Open source AI innovation from Berlin
+                                    {layoutCopy.footerTagline}
                                 </p>
                             </div>
 
@@ -391,7 +381,7 @@ function Layout() {
                                     className="h-10"
                                 >
                                     <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
-                                        Terms
+                                        {layoutCopy.termsLink}
                                     </span>
                                 </Button>
                                 <Button
@@ -402,7 +392,7 @@ function Layout() {
                                     className="h-10"
                                 >
                                     <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
-                                        Privacy
+                                        {layoutCopy.privacyLink}
                                     </span>
                                 </Button>
                                 <Button
@@ -422,11 +412,11 @@ function Layout() {
                                     className="h-10"
                                 >
                                     <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
-                                        Email
+                                        {layoutCopy.emailLink}
                                     </span>
                                     {emailCopied && (
                                         <span className="absolute -top-8 left-0 font-headline text-xs font-black text-text-brand uppercase tracking-wider">
-                                            Copied!
+                                            {layoutCopy.copiedLabel}
                                         </span>
                                     )}
                                 </Button>

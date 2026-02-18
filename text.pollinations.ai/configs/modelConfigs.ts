@@ -229,23 +229,27 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // OVHcloud AI Endpoints - qwen3-coder
+    // OVHcloud AI Endpoints - qwen3-coder, qwen3guard
     // ============================================================================
     "qwen3-coder-30b-a3b-instruct": () =>
         createOVHcloudModelConfig({
             model: "Qwen3-Coder-30B-A3B-Instruct",
         }),
+    "Qwen3Guard-Gen-8B": () =>
+        createOVHcloudMistralConfig({
+            model: "Qwen3Guard-Gen-8B",
+        }),
 
     // ============================================================================
-    // Fireworks AI - glm-4.7, minimax-m2.1, deepseek-v3.2, kimi-k2.5
+    // Fireworks AI - glm-5, minimax-m2.1, deepseek-v3.2, kimi-k2.5
     // ============================================================================
     "accounts/fireworks/models/kimi-k2p5": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p5",
         }),
-    "accounts/fireworks/models/glm-4p7": () =>
+    "accounts/fireworks/models/glm-5": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/glm-4p7",
+            model: "accounts/fireworks/models/glm-5",
         }),
     "accounts/fireworks/models/minimax-m2p1": () =>
         createFireworksModelConfig({

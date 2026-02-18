@@ -168,7 +168,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "glm",
-        config: portkeyConfig["accounts/fireworks/models/glm-4p7"],
+        config: portkeyConfig["accounts/fireworks/models/glm-5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -180,6 +180,10 @@ const models: ModelDefinition[] = [
     //     name: "nomnom",
     //     config: portkeyConfig["nomnom"],
     // },
+    {
+        name: "qwen-safety",
+        config: portkeyConfig["Qwen3Guard-Gen-8B"],
+    },
     {
         name: "qwen-character",
         config: portkeyConfig["qwen-character"],

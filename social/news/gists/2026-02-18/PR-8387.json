@@ -1,0 +1,33 @@
+{
+  "pr_number": 8387,
+  "title": "fix: add `to` prop to ButtonProps for React Router Link compatibility",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8387",
+  "merged_at": "2026-02-18T10:39:00Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The compiler is appeased",
+    "blurb": "Fixed a TypeScript definition that forgot buttons sometimes need to go places. The build pipeline is green again.",
+    "summary": "Added the `to` property to Button type definitions to support React Router Link usage without build errors.",
+    "impact": "Restores successful production builds by resolving TypeScript validation errors.",
+    "keywords": [
+      "typescript",
+      "react",
+      "ui",
+      "build-fix"
+    ],
+    "visual_concept": "The robot character fixing a connection between a button and a signpost (representing a link/path). The bee watches approvingly.",
+    "image_prompt": "Cozy pixel art scene of the robot connecting a wire from a chunky pixel button to a signpost. The bee mascot hovers nearby holding a wrench. Lime green (#ecf874) and pastel gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-18T10:39:47.379692+00:00"
+}

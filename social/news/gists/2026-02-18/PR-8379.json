@@ -1,0 +1,34 @@
+{
+  "pr_number": 8379,
+  "title": "feat: extract upstream error messages from JSON",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8379",
+  "merged_at": "2026-02-18T03:15:39Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Clearer signals from the hive",
+    "blurb": "Sometimes upstream services buzz in riddles. We've taught our proxy to translate those cryptic JSON errors into plain English.",
+    "summary": "Improved the API proxy to parse upstream JSON error responses and extract the most meaningful message fields automatically.",
+    "impact": "Developers will receive clear, actionable error descriptions instead of raw JSON dumps when upstream services fail.",
+    "keywords": [
+      "api",
+      "error-handling",
+      "proxy",
+      "dx",
+      "debugging"
+    ],
+    "visual_concept": "The concept is 'clarity from chaos'. The Robot (who usually sees things) is holding a printout that was previously static/garbled, but now shows clear text. The Bee is helping adjust the antenna/signal.",
+    "image_prompt": "Cozy pixel art scene of the cute robot with a monitor head holding a data printout that clearly reads 'OOPS'. The bee mascot hovers nearby adjusting a lime green (#ecf874) antenna to clear the signal. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Cute robot and bee with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'OOPS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-18T03:16:26.545170+00:00"
+}

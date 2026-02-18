@@ -1,12 +1,11 @@
 import crypto from "node:crypto";
 import debug from "debug";
 import dotenv from "dotenv";
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { stream } from "hono/streaming";
-import type { Context } from "hono";
-// Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
 import { logIp } from "../shared/ipLogger.js";
 import { getServiceDefinition } from "../shared/registry/registry.ts";
@@ -17,6 +16,7 @@ import {
 import { availableModels, findModelByName } from "./availableModels.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { getRequestData } from "./requestUtils.js";
+
 dotenv.config({ path: ".env.local" });
 dotenv.config();
 
@@ -26,7 +26,8 @@ const log = debug("pollinations:server");
 const errorLog = debug("pollinations:error");
 const authLog = debug("pollinations:auth");
 
-// CORS middleware
+// --- Middleware ---
+
 app.use("*", cors());
 
 app.use(
@@ -36,7 +37,6 @@ app.use(
     }),
 );
 
-// IP logging middleware
 app.use("*", async (c, next) => {
     const ip = getIp(c.req.raw);
     const model = new URL(c.req.url).searchParams.get("model") || "unknown";
@@ -50,17 +50,23 @@ app.use("*", async (c, next) => {
 
     if (!expectedToken) {
         authLog("PLN_ENTER_TOKEN not configured - allowing request");
-        return await next();
+        await next();
+        return;
     }
 
     if (token !== expectedToken) {
-        authLog("❌ Invalid or missing PLN_ENTER_TOKEN from IP:", getIp(c.req.raw));
+        authLog(
+            "Invalid or missing PLN_ENTER_TOKEN from IP:",
+            getIp(c.req.raw),
+        );
         return c.json({ error: "Unauthorized" }, 403);
     }
 
-    authLog("✅ Valid PLN_ENTER_TOKEN from IP:", getIp(c.req.raw));
+    authLog("Valid PLN_ENTER_TOKEN from IP:", getIp(c.req.raw));
     await next();
 });
+
+// --- Static routes ---
 
 app.get("/", (c) => {
     return c.redirect(
@@ -94,7 +100,303 @@ app.get("/models", (c) => {
     );
 });
 
-async function handleRequest(c: Context, requestData: any): Promise<Response> {
+// --- Helper functions ---
+
+function generatePollinationsId(): string {
+    const hash = crypto.randomBytes(16).toString("hex");
+    return `pllns_${hash}`;
+}
+
+function setUsageHeaders(c: Context, completion: any): void {
+    if (completion?.usage && completion?.model) {
+        const usage = openaiUsageToUsage(completion.usage);
+        const usageHeaders = buildUsageHeaders(completion.model, usage);
+        for (const [key, value] of Object.entries(usageHeaders)) {
+            c.header(key, String(value));
+        }
+    }
+}
+
+function summarizeMessages(messages: any[], maxLen = 50): any[] {
+    return messages.map((m: any) => ({
+        role: m.role,
+        content:
+            typeof m.content === "string"
+                ? `${m.content.substring(0, maxLen)}${m.content.length > maxLen ? "..." : ""}`
+                : "[non-string content]",
+    }));
+}
+
+function parseErrorDetails(error: any): any {
+    if (error.details) return error.details;
+    if (!error.response?.data) return null;
+    if (typeof error.response.data !== "string") return error.response.data;
+    try {
+        return JSON.parse(error.response.data);
+    } catch {
+        return error.response.data;
+    }
+}
+
+function createExpressLikeRequest(c: Context, body: any = null): any {
+    const query = Object.fromEntries(new URL(c.req.url).searchParams);
+    const wildcardPath = c.req.param("*") || c.req.path.slice(1);
+    const params: any = { ...c.req.param() };
+    if (wildcardPath) params[0] = wildcardPath;
+
+    return {
+        query,
+        body: body || {},
+        path: c.req.path,
+        params,
+        method: c.req.method,
+        headers: Object.fromEntries(c.req.raw.headers.entries()),
+    };
+}
+
+function prepareRequestParameters(requestParams: any): any {
+    let isAudioModel = false;
+    try {
+        const serviceDef = getServiceDefinition(requestParams.model);
+        isAudioModel =
+            serviceDef?.outputModalities?.includes("audio") ?? false;
+    } catch {
+        // Model not in registry
+    }
+
+    if (!isAudioModel) {
+        return { ...requestParams };
+    }
+
+    const voice =
+        requestParams.voice || requestParams.audio?.voice || "amuch";
+    const audioFormat = requestParams.stream ? "pcm16" : "mp3";
+
+    log(
+        "Adding audio parameters for model: %s, voice: %s",
+        requestParams.model,
+        voice,
+    );
+
+    return {
+        ...requestParams,
+        modalities: requestParams.modalities || ["text", "audio"],
+        audio: requestParams.audio
+            ? {
+                  ...requestParams.audio,
+                  format: requestParams.audio.format || audioFormat,
+              }
+            : { voice, format: audioFormat },
+    };
+}
+
+// --- Response senders ---
+
+export function sendOpenAIResponse(c: Context, completion: any): Response {
+    c.header("Content-Type", "application/json; charset=utf-8");
+    setUsageHeaders(c, completion);
+
+    const response = {
+        ...completion,
+        id: completion.id || generatePollinationsId(),
+        object: completion.object || "chat.completion",
+        created: completion.created || Date.now(),
+    };
+
+    return c.json(response);
+}
+
+export function sendContentResponse(c: Context, completion: any): Response {
+    setUsageHeaders(c, completion);
+    c.header("Cache-Control", "public, max-age=31536000, immutable");
+
+    if (typeof completion === "string") {
+        c.header("Content-Type", "text/plain; charset=utf-8");
+        return c.text(completion);
+    }
+
+    if (!completion.choices?.[0]) {
+        errorLog(
+            "Unrecognized completion format:",
+            JSON.stringify(completion),
+        );
+        const error: any = new Error(
+            "Unrecognized response format from model",
+        );
+        error.status = 500;
+        throw error;
+    }
+
+    const message = completion.choices[0].message;
+
+    if (typeof message !== "object" || !message) {
+        c.header("Content-Type", "text/plain; charset=utf-8");
+        return c.text(String(message));
+    }
+
+    if (message.audio?.data) {
+        c.header("Content-Type", "audio/mpeg");
+        return c.body(Buffer.from(message.audio.data, "base64"));
+    }
+
+    if (message.content) {
+        c.header("Content-Type", "text/plain; charset=utf-8");
+        let content = message.content;
+        if (completion.citations?.length > 0) {
+            content += "\n\n---\nSources:\n";
+            content += completion.citations
+                .map((url: string, i: number) => `[${i + 1}] ${url}`)
+                .join("\n");
+            content += "\n";
+        }
+        return c.text(content);
+    }
+
+    if (Object.keys(message).length > 0) {
+        c.header("Content-Type", "application/json; charset=utf-8");
+        return c.json(message);
+    }
+
+    c.header("Content-Type", "text/plain; charset=utf-8");
+    return c.text("");
+}
+
+export function sendErrorResponse(
+    c: Context,
+    error: any,
+    requestData: any,
+    statusCode = 500,
+): Response {
+    const responseStatus = error.status || statusCode;
+    const errorTypes: Record<number, string> = {
+        400: "Bad Request",
+        401: "Unauthorized",
+        403: "Forbidden",
+        404: "Not Found",
+        429: "Too Many Requests",
+    };
+    const errorType = errorTypes[responseStatus] || "Internal Server Error";
+
+    const errorDetails = error.details || error.response?.data;
+    const errorResponse: any = {
+        error: errorType,
+        message: error.message || "An error occurred",
+        requestId: Math.random().toString(36).substring(7),
+        requestParameters: requestData || {},
+    };
+    if (errorDetails) errorResponse.details = errorDetails;
+
+    const clientInfo = {
+        ip: getIp(c.req.raw) || "unknown",
+        userAgent: c.req.header("user-agent") || "unknown",
+        referer: c.req.header("referer") || "unknown",
+        origin: c.req.header("origin") || "unknown",
+        cf_ray: c.req.header("cf-ray") || "",
+    };
+
+    const messages = requestData?.messages;
+    const sanitizedRequestData = requestData
+        ? {
+              model: requestData.model || "unknown",
+              temperature: requestData.temperature,
+              max_tokens: requestData.max_tokens,
+              top_p: requestData.top_p,
+              frequency_penalty: requestData.frequency_penalty,
+              presence_penalty: requestData.presence_penalty,
+              stream: requestData.stream,
+              referrer: requestData.referrer || "unknown",
+              messageCount: messages?.length ?? 0,
+              totalMessageLength:
+                  messages?.reduce?.(
+                      (total: number, msg: any) =>
+                          total +
+                          (typeof msg?.content === "string"
+                              ? msg.content.length
+                              : 0),
+                      0,
+                  ) ?? 0,
+          }
+        : "no request data";
+
+    const authResult = (c as any).authResult || {};
+    const userContext = authResult.username
+        ? `${authResult.username} (${authResult.userId})`
+        : "anonymous";
+
+    errorLog("Error occurred:", {
+        error: {
+            message: error.message,
+            status: responseStatus,
+            details: error.details,
+        },
+        user: {
+            username: authResult.username || null,
+            userId: authResult.userId || null,
+            context: userContext,
+        },
+        model: error.model || requestData?.model || "unknown",
+        provider: error.provider || "Pollinations",
+        originalProvider: error.originalProvider,
+        clientInfo,
+        requestData: sanitizedRequestData,
+        stack: error.stack,
+    });
+
+    if (responseStatus === 429) {
+        const userLabel = authResult.username
+            ? `User ${authResult.username} (${authResult.userId})`
+            : "Anonymous user";
+        errorLog(
+            "RATE LIMIT: %s exceeded limits - IP: %s, tier: %s, model: %s",
+            userLabel,
+            clientInfo.ip,
+            authResult.tier || "none",
+            requestData?.model || "unknown",
+        );
+    }
+
+    return c.json(errorResponse, responseStatus);
+}
+
+async function sendAsOpenAIStream(
+    c: Context,
+    completion: any,
+): Promise<Response> {
+    log("sendAsOpenAIStream: stream=%s, hasResponseStream=%s",
+        completion.stream, !!completion.responseStream);
+
+    if (completion.error) {
+        errorLog("Error detected in streaming request");
+        return c.text("");
+    }
+
+    const responseStream = completion.responseStream;
+
+    c.header("Content-Type", "text/event-stream; charset=utf-8");
+    c.header("Cache-Control", "no-cache");
+    c.header("Connection", "keep-alive");
+
+    return stream(c, async (stream) => {
+        if (responseStream) {
+            for await (const chunk of responseStream) {
+                await stream.write(chunk);
+            }
+        } else {
+            log("No responseStream available");
+            await stream.write(
+                `data: ${JSON.stringify({ choices: [{ delta: { content: "Streaming response could not be processed." }, finish_reason: "stop", index: 0 }] })}\n\n`,
+            );
+            await stream.write("data: [DONE]\n\n");
+        }
+    });
+}
+
+// --- Core request handler ---
+
+async function handleRequest(
+    c: Context,
+    requestData: any,
+): Promise<Response> {
     log(
         "Request: model=%s referrer=%s",
         requestData.model,
@@ -105,18 +407,16 @@ async function handleRequest(c: Context, requestData: any): Promise<Response> {
     try {
         const requestId = generatePollinationsId();
         const authResult = (c as any).authResult || {};
+        const modelDef = findModelByName(requestData.model);
 
-        const model = findModelByName(requestData.model);
+        log("Model lookup: model=%s, found=%s", requestData.model, !!modelDef);
 
-        log(`Model lookup: model=${requestData.model}, found=${!!model}`);
-
-        if (!model) {
-            log(`Model not found: ${requestData.model}`);
-            const error: any = new Error(
+        if (!modelDef) {
+            const err: any = new Error(
                 `Model not found: ${requestData.model}`,
             );
-            error.status = 404;
-            return await sendErrorResponse(c, error, requestData, 404);
+            err.status = 404;
+            return sendErrorResponse(c, err, requestData, 404);
         }
 
         const { messages: _, ...requestDataWithoutMessages } = requestData;
@@ -148,24 +448,24 @@ async function handleRequest(c: Context, requestData: any): Promise<Response> {
                     ? { message: completion.error }
                     : completion.error;
 
-            const error: any = new Error(
+            const err: any = new Error(
                 errorObj.message || "An error occurred",
             );
-            if (errorObj.details) error.response = { data: errorObj.details };
+            if (errorObj.details) err.response = { data: errorObj.details };
 
-            return await sendErrorResponse(
+            return sendErrorResponse(
                 c,
-                error,
+                err,
                 requestData,
                 errorObj.status || 500,
             );
         }
 
         log(
-            "Generated response",
+            "Generated response: %s",
             completion.stream
                 ? "Streaming"
-                : completion.choices?.[0]?.message?.content || "",
+                : (completion.choices?.[0]?.message?.content || ""),
         );
 
         if (requestData.stream) {
@@ -178,288 +478,54 @@ async function handleRequest(c: Context, requestData: any): Promise<Response> {
         }
         return sendOpenAIResponse(c, completion);
     } catch (error: any) {
-        if (requestData.stream) {
-            log("Error in streaming mode:", error.message);
-            return await sendErrorResponse(
-                c,
-                error,
-                requestData,
-                error.status || error.code || 500,
-            );
-        }
-        return sendErrorResponse(c, error, requestData);
+        return sendErrorResponse(
+            c,
+            error,
+            requestData,
+            error.status || error.code || 500,
+        );
     }
 }
 
-export async function sendErrorResponse(
-    c: Context,
-    error: any,
-    requestData: any,
-    statusCode = 500,
-) {
-    const responseStatus = error.status || statusCode;
-    const errorTypes: Record<number, string> = {
-        400: "Bad Request",
-        401: "Unauthorized",
-        403: "Forbidden",
-        404: "Not Found",
-        429: "Too Many Requests",
-    };
-    const errorType = errorTypes[responseStatus] || "Internal Server Error";
-
-    const errorDetails = error.details || error.response?.data;
-    const errorResponse: any = {
-        error: errorType,
-        message: error.message || "An error occurred",
-        requestId: Math.random().toString(36).substring(7),
-        requestParameters: requestData || {},
-    };
-    if (errorDetails) errorResponse.details = errorDetails;
-
-    const clientInfo = {
-        ip: getIp(c.req.raw) || "unknown",
-        userAgent: c.req.header("user-agent") || "unknown",
-        referer: c.req.header("referer") || "unknown",
-        origin: c.req.header("origin") || "unknown",
-        cf_ray: c.req.header("cf-ray") || "",
-    };
-
-    const sanitizedRequestData = requestData
-        ? {
-              model: requestData.model || "unknown",
-              temperature: requestData.temperature,
-              max_tokens: requestData.max_tokens,
-              top_p: requestData.top_p,
-              frequency_penalty: requestData.frequency_penalty,
-              presence_penalty: requestData.presence_penalty,
-              stream: requestData.stream,
-              referrer: requestData.referrer || "unknown",
-              messageCount: requestData.messages
-                  ? requestData.messages.length
-                  : 0,
-              totalMessageLength: requestData.messages
-                  ? requestData.messages?.reduce?.(
-                        (total: number, msg: any) =>
-                            total +
-                            (typeof msg?.content === "string"
-                                ? msg.content.length
-                                : 0),
-                        0,
-                    )
-                  : 0,
-          }
-        : "no request data";
-
-    const authResult = (c as any).authResult || {};
-    const userContext = authResult.username
-        ? `${authResult.username} (${authResult.userId})`
-        : "anonymous";
-
-    errorLog("Error occurred:", {
-        error: {
-            message: error.message,
-            status: responseStatus,
-            details: error.details,
-        },
-        user: {
-            username: authResult.username || null,
-            userId: authResult.userId || null,
-            context: userContext,
-        },
-        model: error.model || requestData?.model || "unknown",
-        provider: error.provider || "Pollinations",
-        originalProvider: error.originalProvider,
-        clientInfo,
-        requestData: sanitizedRequestData,
-        stack: error.stack,
-    });
-
-    if (responseStatus === 429) {
-        if (authResult.username) {
-            errorLog(
-                "🚫 RATE LIMIT ERROR: User %s (%s) exceeded limits - IP: %s, tier: %s, model: %s",
-                authResult.username,
-                authResult.userId,
-                clientInfo.ip,
-                authResult.tier,
-                requestData?.model || "unknown",
-            );
-        } else {
-            errorLog(
-                "🚫 RATE LIMIT ERROR: Anonymous user exceeded limits - IP: %s, model: %s",
-                clientInfo.ip,
-                requestData?.model || "unknown",
-            );
-        }
+async function generateTextBasedOnModel(
+    messages: any[],
+    options: any,
+): Promise<any> {
+    if (!options.model) {
+        throw new Error("Model parameter is required");
     }
 
-    return c.json(errorResponse, responseStatus);
-}
+    log("Using model: %s, stream: %s", options.model, !!options.stream);
+    log("Messages: %j", summarizeMessages(messages));
 
-function generatePollinationsId(): string {
-    const hash = crypto.randomBytes(16).toString("hex");
-    return `pllns_${hash}`;
-}
+    try {
+        return await generateTextPortkey(messages, options);
+    } catch (error: any) {
+        errorLog("Error in generateTextBasedOnModel: %j", {
+            error: error.message,
+            model: options.model,
+            provider: error.provider || "unknown",
+            messages: summarizeMessages(messages, 100),
+            errorDetails: error.response?.data || null,
+        });
 
-export function sendOpenAIResponse(c: Context, completion: any): Response {
-    if (completion.foo) {
-        return c.json(completion);
-    }
-
-    c.header("Content-Type", "application/json; charset=utf-8");
-
-    if (completion.usage && completion.model) {
-        const usage = openaiUsageToUsage(completion.usage);
-        const usageHeaders = buildUsageHeaders(completion.model, usage);
-
-        for (const [key, value] of Object.entries(usageHeaders)) {
-            c.header(key, String(value));
-        }
-    }
-
-    const response = {
-        ...completion,
-        id: completion.id || generatePollinationsId(),
-        object: completion.object || "chat.completion",
-        created: completion.created || Date.now(),
-    };
-
-    return c.json(response);
-}
-
-export function sendContentResponse(c: Context, completion: any): Response {
-    if (
-        completion &&
-        typeof completion === "object" &&
-        completion.usage &&
-        completion.model
-    ) {
-        const usage = openaiUsageToUsage(completion.usage);
-        const usageHeaders = buildUsageHeaders(completion.model, usage);
-
-        for (const [key, value] of Object.entries(usageHeaders)) {
-            c.header(key, String(value));
-        }
-    }
-
-    if (typeof completion === "string") {
-        c.header("Content-Type", "text/plain; charset=utf-8");
-        c.header("Cache-Control", "public, max-age=31536000, immutable");
-        return c.text(completion);
-    }
-
-    if (completion.choices?.[0]) {
-        const message = completion.choices[0].message;
-
-        if (typeof message === "string") {
-            c.header("Content-Type", "text/plain; charset=utf-8");
-            c.header("Cache-Control", "public, max-age=31536000, immutable");
-            return c.text(message);
+        if (options.stream) {
+            return {
+                error: {
+                    message:
+                        error.message ||
+                        "An error occurred during text generation",
+                    status: error.status || error.code || 500,
+                    details: parseErrorDetails(error),
+                },
+            };
         }
 
-        if (!message || typeof message !== "object") {
-            c.header("Content-Type", "text/plain; charset=utf-8");
-            c.header("Cache-Control", "public, max-age=31536000, immutable");
-            return c.text(String(message));
-        }
-
-        if (message.audio?.data) {
-            c.header("Content-Type", "audio/mpeg");
-            c.header("Cache-Control", "public, max-age=31536000, immutable");
-            return c.body(Buffer.from(message.audio.data, "base64"));
-        } else if (message.content) {
-            c.header("Content-Type", "text/plain; charset=utf-8");
-            c.header("Cache-Control", "public, max-age=31536000, immutable");
-            let content = message.content;
-            if (completion.citations?.length > 0) {
-                content += "\n\n---\nSources:\n";
-                completion.citations.forEach((url: string, index: number) => {
-                    content += `[${index + 1}] ${url}\n`;
-                });
-            }
-            return c.text(content);
-        } else if (Object.keys(message).length > 0) {
-            c.header("Content-Type", "application/json; charset=utf-8");
-            c.header("Cache-Control", "public, max-age=31536000, immutable");
-            return c.json(message);
-        }
-    } else {
-        errorLog("Unrecognized completion format:", JSON.stringify(completion));
-        const error: any = new Error("Unrecognized response format from model");
-        error.status = 500;
         throw error;
     }
 }
 
-async function processRequest(c: Context, requestData: any): Promise<Response> {
-    return await handleRequest(c, requestData);
-}
-
-function prepareRequestParameters(requestParams: any): any {
-    let isAudioModel = false;
-    try {
-        const serviceDef = getServiceDefinition(requestParams.model);
-        isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
-    } catch {
-        // Model not in registry
-    }
-
-    log("Is audio model:", isAudioModel);
-
-    const finalParams = {
-        ...requestParams,
-    };
-
-    if (isAudioModel) {
-        const voice =
-            requestParams.voice || requestParams.audio?.voice || "amuch";
-        log(
-            "Adding audio parameters for model:",
-            requestParams.model,
-            "voice:",
-            voice,
-        );
-
-        if (!finalParams.modalities) {
-            finalParams.modalities = ["text", "audio"];
-        }
-
-        if (!finalParams.audio) {
-            finalParams.audio = {
-                voice,
-                format: requestParams.stream ? "pcm16" : "mp3",
-            };
-        } else if (!finalParams.audio.format) {
-            finalParams.audio.format = requestParams.stream ? "pcm16" : "mp3";
-        }
-
-        requestParams.modalities = finalParams.modalities;
-        requestParams.audio = finalParams.audio;
-    }
-
-    return finalParams;
-}
-
-function createExpressLikeRequest(c: Context, body: any = null): any {
-    const url = new URL(c.req.url);
-    const query: Record<string, string> = {};
-    url.searchParams.forEach((value, key) => {
-        query[key] = value;
-    });
-
-    const params: any = { ...c.req.param() };
-    const wildcardPath = c.req.param("*") || c.req.path.slice(1);
-    if (wildcardPath) params[0] = wildcardPath;
-
-    return {
-        query,
-        body: body || {},
-        path: c.req.path,
-        params,
-        method: c.req.method,
-        headers: Object.fromEntries(c.req.raw.headers.entries()),
-    };
-}
+// --- Route handlers ---
 
 app.post("/", async (c) => {
     const body = await c.req.json();
@@ -468,31 +534,21 @@ app.post("/", async (c) => {
     }
 
     const req = createExpressLikeRequest(c, body);
-    const requestParams = getRequestData(req as any);
-    const finalRequestParams = prepareRequestParameters(requestParams);
-
-    try {
-        return await processRequest(c, finalRequestParams);
-    } catch (error: any) {
-        return sendErrorResponse(c, error, requestParams);
-    }
+    const requestParams = prepareRequestParameters(
+        getRequestData(req as any),
+    );
+    return handleRequest(c, requestParams);
 });
 
 app.get("/openai/models", (c) => {
-    const models = availableModels.map((model: any) => {
-        return {
-            id: model.name,
-            object: "model",
-            created: Date.now(),
-        };
-    });
-    return c.json({
-        object: "list",
-        data: models,
-    });
+    const models = availableModels.map((model: any) => ({
+        id: model.name,
+        object: "model",
+        created: Date.now(),
+    }));
+    return c.json({ object: "list", data: models });
 });
 
-// POST /openai/* request handler
 app.post("/openai*", async (c) => {
     const body = await c.req.json().catch(() => ({}));
     const req = createExpressLikeRequest(c, body);
@@ -501,15 +557,9 @@ app.post("/openai*", async (c) => {
         isPrivate: true,
         private: true,
     };
-
-    try {
-        return await processRequest(c, requestParams);
-    } catch (error: any) {
-        return sendErrorResponse(c, error, requestParams);
-    }
+    return handleRequest(c, requestParams);
 });
 
-// OpenAI-compatible v1 endpoint for chat completions
 app.post("/v1/chat/completions", async (c) => {
     const body = await c.req.json().catch(() => ({}));
     const req = createExpressLikeRequest(c, body);
@@ -517,165 +567,15 @@ app.post("/v1/chat/completions", async (c) => {
         ...getRequestData(req as any),
         isPrivate: true,
     };
-
-    try {
-        return await processRequest(c, requestParams);
-    } catch (error: any) {
-        return sendErrorResponse(c, error, requestParams);
-    }
+    return handleRequest(c, requestParams);
 });
 
-async function sendAsOpenAIStream(
-    c: Context,
-    completion: any,
-): Promise<Response> {
-    log("sendAsOpenAIStream:", {
-        stream: completion.stream,
-        hasResponseStream: !!completion.responseStream,
-    });
-
-    if (completion.error) {
-        errorLog("Error detected in streaming request");
-        return c.text("");
-    }
-
-    const responseStream = completion.responseStream;
-
-    // Set headers BEFORE returning stream (headers set inside callback are ignored)
-    c.header("Content-Type", "text/event-stream; charset=utf-8");
-    c.header("Cache-Control", "no-cache");
-    c.header("Connection", "keep-alive");
-
-    return stream(c, async (stream) => {
-        if (responseStream) {
-            for await (const chunk of responseStream) {
-                await stream.write(chunk);
-            }
-        } else {
-            log("No responseStream available");
-            await stream.write(
-                `data: ${JSON.stringify({ choices: [{ delta: { content: "Streaming response could not be processed." }, finish_reason: "stop", index: 0 }] })}\n\n`,
-            );
-            await stream.write("data: [DONE]\n\n");
-        }
-    });
-}
-
-async function generateTextBasedOnModel(messages: any[], options: any) {
-    // Gateway must provide a valid model - no fallback
-    if (!options.model) {
-        throw new Error("Model parameter is required");
-    }
-    const model = options.model;
-
-    log("Using model:", model, "with options:", JSON.stringify(options));
-
-    try {
-        // Log if streaming is enabled
-        if (options.stream) {
-            log(
-                "Streaming mode enabled for model:",
-                model,
-                "stream value:",
-                options.stream,
-            );
-        }
-
-        const processedMessages = messages;
-
-        // Log the messages being sent
-        log(
-            "Sending messages to model handler:",
-            JSON.stringify(
-                processedMessages.map((m: any) => ({
-                    role: m.role,
-                    content:
-                        typeof m.content === "string"
-                            ? `${m.content.substring(0, 50)}...`
-                            : "[non-string content]",
-                })),
-            ),
-        );
-
-        // Call generateTextPortkey with the processed messages and options
-        const response = await generateTextPortkey(processedMessages, options);
-
-        // Log streaming response details
-        if (options.stream && response) {
-            log("Received streaming response from handler:", response);
-        }
-
-        return response;
-    } catch (error: any) {
-        errorLog(
-            "Error in generateTextBasedOnModel:",
-            JSON.stringify({
-                error: error.message,
-                model: model,
-                provider: error.provider || "unknown",
-                requestParams: {
-                    ...options,
-                    messages: messages
-                        ? messages.map((m: any) => ({
-                              role: m.role,
-                              content:
-                                  typeof m.content === "string"
-                                      ? m.content.substring(0, 100) +
-                                        (m.content.length > 100 ? "..." : "")
-                                      : "[non-string content]",
-                          }))
-                        : "none",
-                },
-                errorDetails: error.response?.data || null,
-                stack: error.stack,
-            }),
-        );
-
-        // For streaming errors, return a special error response that can be streamed
-        if (options.stream) {
-            // Get error details from error.details or parse error.response.data
-            let errorDetails = error.details || null;
-            if (!errorDetails && error.response?.data) {
-                try {
-                    errorDetails =
-                        typeof error.response.data === "string"
-                            ? JSON.parse(error.response.data)
-                            : error.response.data;
-                } catch {
-                    errorDetails = error.response.data;
-                }
-            }
-
-            // Return an error object with detailed information
-            return {
-                error: {
-                    message:
-                        error.message ||
-                        "An error occurred during text generation",
-                    status: error.status || error.code || 500,
-                    details: errorDetails,
-                },
-            };
-        }
-
-        throw error;
-    }
-}
-
-// GET request handler (catch-all)
 app.get("/*", async (c) => {
     const req = createExpressLikeRequest(c);
-    const requestData = getRequestData(req as any);
-    const finalRequestData = prepareRequestParameters(requestData);
-
-    try {
-        // For streaming requests, handle them with the same code paths as POST requests
-        // This ensures consistent handling of streaming for both GET and POST
-        return await processRequest(c, finalRequestData);
-    } catch (error: any) {
-        errorLog("Error in catch-all GET handler: %s", error.message);
-        return sendErrorResponse(c, error, requestData);
-    }
+    const requestParams = prepareRequestParameters(
+        getRequestData(req as any),
+    );
+    return handleRequest(c, requestParams);
 });
 
 export default app;

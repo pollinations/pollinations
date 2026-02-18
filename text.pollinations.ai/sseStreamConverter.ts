@@ -1,55 +1,41 @@
-import { Transform } from "stream";
+import { Transform } from "node:stream";
 
 /**
  * Creates a Transform stream that converts SSE JSON events using a mapper function.
- * @param mapper - Function to transform each parsed JSON event.
- * @returns Transform stream that emits mapped SSE events.
  */
 export function createSseStreamConverter(
-    mapper: (json: any) => any,
+    mapper: (json: unknown) => unknown,
 ): Transform {
     let buffer = "";
 
     return new Transform({
-        readableObjectMode: false,
-        writableObjectMode: false,
-        transform(chunk, encoding, callback) {
+        transform(chunk, _encoding, callback) {
             buffer += chunk.toString();
             const eventRegex = /(^|\n)data:(.*?)(?=\n\n|$)/gs;
-            let match;
+            let match: RegExpExecArray | null;
             let lastIndex = 0;
+
             while ((match = eventRegex.exec(buffer)) !== null) {
                 const dataLine = match[2].trim();
                 lastIndex = eventRegex.lastIndex;
+
                 if (!dataLine) continue;
                 if (dataLine === "[DONE]") {
-                    // Forward the DONE event as-is
                     this.push("data: [DONE]\n\n");
                     continue;
                 }
-                let parsed;
+
                 try {
-                    parsed = JSON.parse(dataLine);
-                } catch (e) {
-                    // If not valid JSON, skip this event
-                    continue;
-                }
-                let mapped;
-                try {
-                    mapped = mapper(parsed);
-                } catch (e) {
-                    // If mapper throws, skip this event
-                    continue;
-                }
-                // Emit as SSE event
-                this.push(`data: ${JSON.stringify(mapped)}\n\n`);
+                    const parsed = JSON.parse(dataLine);
+                    const mapped = mapper(parsed);
+                    this.push(`data: ${JSON.stringify(mapped)}\n\n`);
+                } catch {}
             }
-            // Keep any trailing incomplete data for next chunk
+
             buffer = buffer.slice(lastIndex);
             callback();
         },
         flush(callback) {
-            // Handle any remaining buffered data
             if (buffer.trim()) {
                 const dataLine = buffer.replace(/^data:/, "").trim();
                 if (dataLine === "[DONE]") {
@@ -59,8 +45,8 @@ export function createSseStreamConverter(
                         const parsed = JSON.parse(dataLine);
                         const mapped = mapper(parsed);
                         this.push(`data: ${JSON.stringify(mapped)}\n\n`);
-                    } catch (e) {
-                        // Ignore errors on flush
+                    } catch {
+                        // Ignore unparseable trailing data
                     }
                 }
             }

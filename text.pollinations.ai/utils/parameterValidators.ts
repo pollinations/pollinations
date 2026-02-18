@@ -1,53 +1,33 @@
 /**
- * Simple parameter validation utilities
- * Eliminates duplication across requestUtils.js, textGenerationUtils.js, and transforms
+ * Parameter validation utilities for text generation requests.
+ * No range clamping -- downstream APIs validate and return proper errors.
  */
 
-/**
- * Validates a float value without clamping - lets downstream API handle range validation
- * @param {*} value - Value to validate
- * @returns {number|undefined} Validated float or undefined
- */
-export const validateFloat = (value) => {
+/** Maximum seed value: INT32_MAX for compatibility with strict providers like Vertex AI */
+const MAX_SEED_VALUE = 2147483647;
+
+export function validateFloat(value: unknown): number | undefined {
     if (value === undefined || value === null) return undefined;
-    const parsed = parseFloat(value);
-    if (isNaN(parsed)) return undefined;
-    return parsed;
-};
+    const parsed = Number.parseFloat(String(value));
+    return Number.isNaN(parsed) ? undefined : parsed;
+}
 
-/**
- * Validates an integer value without clamping - lets downstream API handle range validation
- * @param {*} value - Value to validate
- * @returns {number|undefined} Validated integer or undefined
- */
-export const validateInt = (value) => {
+export function validateInt(value: unknown): number | undefined {
     if (value === undefined || value === null) return undefined;
-    const parsed = parseInt(value, 10);
-    if (isNaN(parsed)) return undefined;
-    return parsed;
-};
-
-// Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
-const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
+    const parsed = Number.parseInt(String(value), 10);
+    return Number.isNaN(parsed) ? undefined : parsed;
+}
 
 /**
- * Processes seed value, converting -1 to a random seed (parity with image generation)
- * @param {*} value - Value to validate
- * @returns {number|undefined} Processed seed or undefined
+ * Processes seed value. seed=-1 means "random" (parity with image generation).
  */
-export const processSeed = (value) => {
+export function processSeed(value: unknown): number | undefined {
     const seed = validateInt(value);
     if (seed === undefined) return undefined;
-    // seed=-1 means "random" - generate a random seed
     return seed === -1 ? Math.floor(Math.random() * MAX_SEED_VALUE) : seed;
-};
+}
 
-/**
- * Validates boolean values including string representations
- * @param {*} value - Value to validate
- * @returns {boolean|undefined} Validated boolean or undefined
- */
-export const validateBoolean = (value) => {
+export function validateBoolean(value: unknown): boolean | undefined {
     if (value === undefined || value === null) return undefined;
     if (typeof value === "boolean") return value;
     if (typeof value === "string") {
@@ -56,71 +36,65 @@ export const validateBoolean = (value) => {
         if (["false", "0", "no"].includes(lower)) return false;
     }
     return Boolean(value);
-};
+}
 
-/**
- * Validates value against allowed enum values
- * @param {*} value - Value to validate
- * @param {Array} allowedValues - Array of allowed values
- * @returns {*|undefined} Valid value or undefined
- */
-export const validateEnum = (value, allowedValues) => {
+export function validateEnum<T>(
+    value: unknown,
+    allowedValues: T[],
+): T | undefined {
     if (value === undefined || value === null) return undefined;
-    return allowedValues.includes(value) ? value : undefined;
-};
+    return allowedValues.includes(value as T) ? (value as T) : undefined;
+}
 
-/**
- * Validates string with optional default
- * @param {*} value - Value to validate
- * @param {string} defaultValue - Default value if undefined/null
- * @returns {string|undefined} Validated string
- */
-export const validateString = (value, defaultValue = undefined) => {
+export function validateString(
+    value: unknown,
+    defaultValue?: string,
+): string | undefined {
     if (value === undefined || value === null) return defaultValue;
     return String(value);
-};
+}
 
 /**
- * Validates JSON mode from various input formats
- * @param {*} data - Input data object
- * @returns {boolean} Whether JSON mode is enabled
+ * Checks whether JSON mode is enabled from various input formats.
  */
-export const validateJsonMode = (data) => {
-    return (
+export function validateJsonMode(data: Record<string, any>): boolean {
+    return !!(
         data.jsonMode ||
         (typeof data.json === "string" && data.json.toLowerCase() === "true") ||
-        (typeof data.json === "boolean" && data.json === true) ||
+        data.json === true ||
         data.response_format?.type === "json_object"
     );
-};
+}
 
 /**
- * Validates all common text generation parameters from data object
- * No range clamping - downstream APIs will validate and return proper errors
- * @param {Object} data - Input data object
- * @returns {Object} Validated parameters
+ * Resolves thinking_budget from either a direct parameter or
+ * Anthropic/OpenAI-style thinking object: { type: "enabled"|"disabled", budget_tokens: N }
  */
-export const validateTextGenerationParams = (data) => {
-    // Handle thinking_budget from multiple sources:
-    // 1. Direct thinking_budget parameter
-    // 2. Anthropic/OpenAI-style thinking object: { type: "enabled"|"disabled", budget_tokens: N }
-    let thinking_budget = validateInt(data.thinking_budget);
+function resolveThinkingBudget(data: Record<string, any>): number | undefined {
+    const direct = validateInt(data.thinking_budget);
+    if (direct !== undefined) return direct;
 
-    if (
-        thinking_budget === undefined &&
-        data.thinking &&
-        typeof data.thinking === "object"
-    ) {
+    if (data.thinking && typeof data.thinking === "object") {
         if (
             data.thinking.type === "enabled" &&
             data.thinking.budget_tokens !== undefined
         ) {
-            thinking_budget = validateInt(data.thinking.budget_tokens);
-        } else if (data.thinking.type === "disabled") {
-            thinking_budget = 0;
+            return validateInt(data.thinking.budget_tokens);
+        }
+        if (data.thinking.type === "disabled") {
+            return 0;
         }
     }
 
+    return undefined;
+}
+
+/**
+ * Validates all common text generation parameters from a data object.
+ */
+export function validateTextGenerationParams(
+    data: Record<string, any>,
+): Record<string, any> {
     return {
         temperature: validateFloat(data.temperature),
         top_p: validateFloat(data.top_p),
@@ -130,10 +104,10 @@ export const validateTextGenerationParams = (data) => {
         seed: processSeed(data.seed),
         stream: validateBoolean(data.stream),
         private: validateBoolean(data.private),
-        model: validateString(data.model), // No default - gateway must provide valid model
+        model: validateString(data.model),
         voice: validateString(data.voice, "alloy"),
         reasoning_effort: validateString(data.reasoning_effort),
-        thinking_budget: thinking_budget,
+        thinking_budget: resolveThinkingBudget(data),
         jsonMode: validateJsonMode(data),
     };
-};
+}

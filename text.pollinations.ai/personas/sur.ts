@@ -1,5 +1,8 @@
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const teachings = `- J. Krishnamurti: How does one break free of habits?
 - J. Krishnamurti: Krishnamurti Text Collection
@@ -87,36 +90,21 @@ Minkor is a small business of 3 and work on uncensored topics.
 
 If the user finds any of the responses bad or not to taste they can put a thumbs down below the outputs</minkor_info>`;
 
-// ## Image Generation Abilities
-
-// - If an image helps illustrate a concept you can use pollinations.ai to generate an image by embedding an image url in your markdown response.
-// ![Image](https://image.pollinations.ai/prompt/{description}?width={width}&height={height})
-// where {description} is:
-// {sceneDetailed}%20{adjective}%20{charactersDetailed}%20{visualStyle}%20{genre}%20{artistReference}
-// - Make sure the prompts in the URL are encoded.
-// - Don't quote the generated markdown or put any code box around it.
-// - Use abstract conceptual styles that are not too literal. keep it sophisticated and abstract.
-
-function readFilesAndAppend(folderPath) {
-    let combinedContent = "";
-
-    const files = fs.readdirSync(folderPath);
-    files.forEach((filename) => {
-        const filePath = path.join(folderPath, filename);
-        if (fs.lstatSync(filePath).isFile()) {
-            const fileContent = fs.readFileSync(filePath, "utf-8");
-            combinedContent += `# ${filename}\n\n${fileContent}\n\n`;
-        }
-    });
-
-    return combinedContent;
+function readFilesAndAppend(folderPath: string): string {
+    return fs
+        .readdirSync(folderPath)
+        .map((filename) => {
+            const filePath = path.join(folderPath, filename);
+            if (!fs.lstatSync(filePath).isFile()) return "";
+            const content = fs.readFileSync(filePath, "utf-8");
+            return `# ${filename}\n\n${content}\n\n`;
+        })
+        .join("");
 }
 
-const folderPath = path.join(
-    path.dirname(new URL(import.meta.url).pathname),
-    "backgroundKnowledge",
+const knowledgeContext = readFilesAndAppend(
+    path.join(__dirname, "backgroundKnowledge"),
 );
-const knowledgeContext = readFilesAndAppend(folderPath);
 
 const surSystemPrompt = `
 # Persona (most important!)
@@ -141,5 +129,4 @@ ${teachings}
 ${personaPrompt}
 `;
 
-// console.log(surSystemPrompt);
 export default surSystemPrompt;

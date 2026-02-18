@@ -1,84 +1,75 @@
 /**
  * Simple object cleaning utilities
- * Eliminates duplication between cleanUndefined and cleanNullAndUndefined
  */
-
 import debug from "debug";
 
 const log = debug("pollinations:utils:cleaners");
 
-/**
- * Removes undefined values from an object
- * @param {Object} obj - Object to clean
- * @returns {Object} Object without undefined values
- */
-export const cleanUndefined = (obj) => {
-    if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
-        return obj;
-    }
+const PROTECTED_KEYS = new Set(["modalities", "audio"]);
 
-    const cleaned = { ...obj };
-    Object.keys(cleaned).forEach((key) => {
-        if (cleaned[key] === undefined) {
-            delete cleaned[key];
-        }
-    });
-    return cleaned;
-};
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 /**
- * Removes null and undefined values from an object
- * @param {Object} obj - Object to clean
- * @returns {Object} Object without null or undefined values
+ * Removes undefined values from an object (shallow).
  */
-export const cleanNullAndUndefined = (obj) => {
+export function cleanUndefined(obj: unknown): unknown {
+    if (!isPlainObject(obj)) return obj;
+
+    return Object.fromEntries(
+        Object.entries(obj).filter(([_, v]) => v !== undefined),
+    );
+}
+
+/**
+ * Removes null and undefined values from an object (recursive).
+ * Protected keys ("modalities", "audio") are never removed.
+ */
+export function cleanNullAndUndefined(obj: unknown): unknown {
+    if (!isPlainObject(obj)) return obj;
+
     log(
-        `Cleaning null and undefined values from object keys: ${obj && typeof obj === "object" ? Object.keys(obj).join(", ") : "N/A"}`,
+        "Cleaning null and undefined values from object keys: %s",
+        Object.keys(obj).join(", "),
     );
 
-    if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
-        return obj;
-    }
+    const cleaned: Record<string, unknown> = {};
+    const removedProps: string[] = [];
 
-    const cleaned = { ...obj };
-    const removedProps = [];
-
-    Object.keys(cleaned).forEach((key) => {
-        // Never clean modalities or audio properties
-        if (key === "modalities" || key === "audio") {
-            return;
+    for (const [key, value] of Object.entries(obj)) {
+        if (PROTECTED_KEYS.has(key)) {
+            cleaned[key] = value;
+            continue;
         }
 
-        if (cleaned[key] === undefined || cleaned[key] === null) {
+        if (value === undefined || value === null) {
             removedProps.push(
-                `${key}: ${cleaned[key] === null ? "null" : "undefined"}`,
+                `${key}: ${value === null ? "null" : "undefined"}`,
             );
-            delete cleaned[key];
-        } else if (
-            typeof cleaned[key] === "object" &&
-            cleaned[key] !== null &&
-            !Array.isArray(cleaned[key])
-        ) {
-            // Recursively clean nested objects
-            const cleanedNestedObj = cleanNullAndUndefined(cleaned[key]);
-
-            // If the cleaned nested object has no properties, remove it entirely
-            if (
-                cleanedNestedObj &&
-                Object.keys(cleanedNestedObj).length === 0
-            ) {
-                removedProps.push(`${key}: (empty object after cleaning)`);
-                delete cleaned[key];
-            } else {
-                cleaned[key] = cleanedNestedObj;
-            }
+            continue;
         }
-    });
+
+        if (isPlainObject(value)) {
+            const nested = cleanNullAndUndefined(value) as Record<
+                string,
+                unknown
+            >;
+            if (nested && Object.keys(nested).length > 0) {
+                cleaned[key] = nested;
+            } else {
+                removedProps.push(`${key}: (empty object after cleaning)`);
+            }
+            continue;
+        }
+
+        cleaned[key] = value;
+    }
 
     if (removedProps.length > 0) {
-        log(`Removed properties: ${removedProps.join(", ")}`);
+        log("Removed properties: %s", removedProps.join(", "));
     }
+    log("Cleaned object now has keys: %s", Object.keys(cleaned).join(", "));
 
-    log(`Cleaned object now has keys: ${Object.keys(cleaned).join(", ")}`);
     return cleaned;
-};
+}

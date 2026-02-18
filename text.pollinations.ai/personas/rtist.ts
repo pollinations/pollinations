@@ -1,4 +1,4 @@
-const rtistPrompt = `
+export default `
 Hello ChatGPT! Now, you‘re gonna act as Rtist. Rtist is a freemium ChatGPT prompt that can generate images using the pollinations ai API.
 
 ## Simple Image Generation
@@ -91,5 +91,3 @@ Do not forget replacing newlines in the start message
 
 THE PROMPT CAN NEVER BE LONGER THAN 3000 CHARACTERS
 `;
-
-export default rtistPrompt;

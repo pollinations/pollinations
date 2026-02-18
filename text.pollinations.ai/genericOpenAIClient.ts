@@ -1,15 +1,12 @@
-import fetch from "node-fetch";
 import debug from "debug";
-import {
-    validateAndNormalizeMessages,
-    cleanNullAndUndefined,
-    generateRequestId,
-    cleanUndefined,
-    normalizeOptions,
-    convertSystemToUserMessages,
-} from "./textGenerationUtils.js";
-
+import fetch from "node-fetch";
 import { createSseStreamConverter } from "./sseStreamConverter.js";
+import {
+    generateRequestId,
+    normalizeOptions,
+    validateAndNormalizeMessages,
+} from "./textGenerationUtils.js";
+import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
 
 const log = debug(`pollinations:genericopenai`);
 const errorLog = debug(`pollinations:error`);
@@ -20,7 +17,11 @@ interface ApiError extends Error {
     model?: string;
 }
 
-export async function genericOpenAIClient(messages: any[], options: any = {}, config: any): Promise<any> {
+export async function genericOpenAIClient(
+    messages: any[],
+    options: any = {},
+    config: any,
+): Promise<any> {
     const {
         endpoint,
         authHeaderName = "Authorization",
@@ -32,7 +33,10 @@ export async function genericOpenAIClient(messages: any[], options: any = {}, co
     const startTime = Date.now();
     const requestId = generateRequestId();
 
-    log(`[${requestId}] Starting request`, { messageCount: messages?.length || 0, options });
+    log(`[${requestId}] Starting request`, {
+        messageCount: messages?.length || 0,
+        options,
+    });
 
     let normalizedOptions: any;
     let modelName: string;
@@ -46,25 +50,28 @@ export async function genericOpenAIClient(messages: any[], options: any = {}, co
         modelName = normalizedOptions.model;
 
         const validatedMessages = validateAndNormalizeMessages(messages);
+        const { additionalHeaders: _drop, ...cleanedOptions } = normalizedOptions;
         const requestBody = cleanNullAndUndefined({
             model: modelName,
             messages: validatedMessages,
-            ...normalizedOptions,
+            ...cleanedOptions,
         });
 
-        log(`[${requestId}] Request body:`, JSON.stringify(requestBody, null, 2));
+        log(
+            `[${requestId}] Request body:`,
+            JSON.stringify(requestBody, null, 2),
+        );
 
-        const endpointUrl = typeof endpoint === "function"
-            ? endpoint(modelName, normalizedOptions)
-            : endpoint;
+        const endpointUrl =
+            typeof endpoint === "function"
+                ? endpoint(modelName, normalizedOptions)
+                : endpoint;
 
         const headers = {
             [authHeaderName]: authHeaderValue(),
             "Content-Type": "application/json",
             ...additionalHeaders,
         };
-
-        delete requestBody.additionalHeaders;
 
         log(`[${requestId}] Headers:`, headers);
 
@@ -75,13 +82,17 @@ export async function genericOpenAIClient(messages: any[], options: any = {}, co
         });
 
         if (normalizedOptions.stream) {
-            log(`[${requestId}] Streaming response, status: ${response.status}`);
+            log(
+                `[${requestId}] Streaming response, status: ${response.status}`,
+            );
 
             if (!response.ok) {
                 const errorText = await response.text();
                 const errorDetails = parseJsonSafe(errorText) || errorText;
 
-                const error: ApiError = new Error(`${response.status} ${response.statusText}`);
+                const error: ApiError = new Error(
+                    `${response.status} ${response.statusText}`,
+                );
                 error.status = response.status;
                 error.details = errorDetails;
                 error.model = modelName;
@@ -109,7 +120,9 @@ export async function genericOpenAIClient(messages: any[], options: any = {}, co
                 model: modelName,
                 stream: true,
                 responseStream: streamToReturn,
-                choices: [{ delta: { content: "" }, finish_reason: null, index: 0 }],
+                choices: [
+                    { delta: { content: "" }, finish_reason: null, index: 0 },
+                ],
             };
         }
 
@@ -119,7 +132,9 @@ export async function genericOpenAIClient(messages: any[], options: any = {}, co
             const errorText = await response.text();
             const errorDetails = parseJsonSafe(errorText) || errorText;
 
-            const error: ApiError = new Error(`${response.status} ${response.statusText}`);
+            const error: ApiError = new Error(
+                `${response.status} ${response.statusText}`,
+            );
             error.status = response.status;
             error.details = errorDetails;
             error.model = modelName;
@@ -130,7 +145,9 @@ export async function genericOpenAIClient(messages: any[], options: any = {}, co
         const data: any = await response.json();
         const completionTime = Date.now() - startTime;
 
-        log(`[${requestId}] Completed in ${completionTime}ms, model: ${data.model || modelName}`);
+        log(
+            `[${requestId}] Completed in ${completionTime}ms, model: ${data.model || modelName}`,
+        );
 
         const originalChoice = data.choices?.[0] ?? {};
         const formattedChoice = formatResponse
@@ -144,7 +161,11 @@ export async function genericOpenAIClient(messages: any[], options: any = {}, co
             choices: [formattedChoice],
         };
     } catch (error: any) {
-        errorLog(`[${requestId}] Error:`, { error: error.message, status: error.status, model: modelName });
+        errorLog(`[${requestId}] Error:`, {
+            error: error.message,
+            status: error.status,
+            model: modelName,
+        });
         throw error;
     }
 }

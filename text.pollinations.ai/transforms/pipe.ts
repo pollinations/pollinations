@@ -1,28 +1,28 @@
+interface TransformResult {
+    messages: unknown[];
+    options: Record<string, any>;
+}
+
+type Transform = (
+    messages: unknown[],
+    options: Record<string, any>,
+) => TransformResult;
+
 /**
- * Simple functional pipe for composing transforms
- * @param {...Function} transforms - Transform functions to compose
- * @returns {Function} Composed transform function
+ * Composes multiple transforms into a single transform, applying them left to right.
  */
-export function pipe(...transforms) {
+export function pipe(...transforms: Transform[]): Transform {
     return (messages, options) =>
-        transforms.reduce(
-            (acc, transform) => {
-                const result = transform(acc.messages, acc.options);
-                return {
-                    messages: result.messages,
-                    options: result.options,
-                };
-            },
+        transforms.reduce<TransformResult>(
+            (acc, transform) => transform(acc.messages, acc.options),
             { messages, options },
         );
 }
 
 /**
- * Simple transform to add tools (always appends)
- * @param {Array} tools - Tools to add
- * @returns {Function} Transform function
+ * Creates a transform that always appends the given tools to existing tools.
  */
-export function addTools(tools) {
+export function addTools(tools: unknown[]): Transform {
     return (messages, options) => ({
         messages,
         options: { ...options, tools: [...(options.tools || []), ...tools] },
@@ -30,28 +30,23 @@ export function addTools(tools) {
 }
 
 /**
- * Transform to add default tools only if user hasn't passed any
- * @param {Array} defaultTools - Default tools to use when none provided
- * @returns {Function} Transform function
+ * Creates a transform that sets default tools only if the user hasn't provided any.
+ * Respects explicit empty arrays (user intent to disable tools).
  */
-export function addDefaultTools(defaultTools) {
+export function addDefaultTools(defaultTools: unknown[]): Transform {
     return (messages, options) => ({
         messages,
         options: {
             ...options,
-            // Only add defaults if user hasn't explicitly passed tools (even empty array)
-            // Check for undefined/null, not just length, to respect user's intent to disable tools
             tools: options.tools !== undefined ? options.tools : defaultTools,
         },
     });
 }
 
 /**
- * Simple transform to override model name
- * @param {string|Function} modelName - New model name or function that returns model name
- * @returns {Function} Transform function
+ * Creates a transform that overrides the model name.
  */
-export function overrideModel(modelName) {
+export function overrideModel(modelName: string | (() => string)): Transform {
     return (messages, options) => ({
         messages,
         options: {

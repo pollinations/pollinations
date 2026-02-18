@@ -1,25 +1,51 @@
-import dotenv from "dotenv";
 import {
     extractApiVersion,
     extractDeploymentName,
     extractResourceName,
 } from "../portkeyUtils.js";
 
-dotenv.config();
-
 // =============================================================================
-// ACTIVE PROVIDER FACTORIES - Used by public models in availableModels.ts
+// Shared Types
 // =============================================================================
 
-/**
- * Creates an Azure model configuration
- */
+interface ProviderConfig {
+    provider: string;
+    [key: string]: unknown;
+}
+
+interface ModelOverride {
+    model?: string;
+    [key: string]: unknown;
+}
+
+// =============================================================================
+// Internal Helpers
+// =============================================================================
+
+/** Creates a config for any OpenAI-compatible provider with a custom host. */
+function createOpenAICompatibleConfig(
+    customHost: string,
+    authKey: string | undefined,
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return {
+        provider: "openai",
+        "custom-host": customHost,
+        authKey,
+        ...overrides,
+    };
+}
+
+// =============================================================================
+// Provider Factories
+// =============================================================================
+
 export function createAzureModelConfig(
-    apiKey,
-    endpoint,
-    modelName,
-    resourceName = null,
-) {
+    apiKey: string | undefined,
+    endpoint: string | undefined,
+    modelName: string,
+    resourceName?: string,
+): ProviderConfig {
     const deploymentId = extractDeploymentName(endpoint) || modelName;
     return {
         provider: "azure-openai",
@@ -32,114 +58,84 @@ export function createAzureModelConfig(
     };
 }
 
-/**
- * Creates a Scaleway model configuration
- */
-export function createScalewayModelConfig(additionalConfig = {}) {
-    return {
-        provider: "openai",
-        "custom-host": `${process.env.SCALEWAY_BASE_URL || "https://api.scaleway.com/ai-apis/v1"}`,
-        authKey: process.env.SCALEWAY_API_KEY,
-        ...additionalConfig,
-    };
-}
-
-/**
- * Creates native AWS Bedrock model configuration via Portkey
- */
-export function createBedrockNativeConfig(additionalConfig = {}) {
+export function createBedrockNativeConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
     return {
         provider: "bedrock",
         "aws-access-key-id": process.env.AWS_ACCESS_KEY_ID,
         "aws-secret-access-key": process.env.AWS_SECRET_ACCESS_KEY,
         "aws-region": process.env.AWS_REGION || "us-east-1",
-        ...additionalConfig,
+        ...overrides,
     };
 }
 
-/**
- * Creates a Myceli Grok 4 Fast model configuration
- */
-export function createMyceliGrok4FastConfig(additionalConfig = {}) {
-    return {
-        provider: "openai",
-        "custom-host": "https://myceli.services.ai.azure.com/openai/v1",
-        authKey: process.env.AZURE_MYCELI_GROK_API_KEY,
-        model: "grok-4-fast-non-reasoning",
-        ...additionalConfig,
-    };
+export function createMyceliGrok4FastConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://myceli.services.ai.azure.com/openai/v1",
+        process.env.AZURE_MYCELI_GROK_API_KEY,
+        { model: "grok-4-fast-non-reasoning", ...overrides },
+    );
 }
 
-/**
- * Creates a Perplexity model configuration
- */
-export function createPerplexityModelConfig(additionalConfig = {}) {
+export function createScalewayModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        process.env.SCALEWAY_BASE_URL || "https://api.scaleway.com/ai-apis/v1",
+        process.env.SCALEWAY_API_KEY,
+        overrides,
+    );
+}
+
+export function createPerplexityModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
     return {
         provider: "perplexity-ai",
         authKey: process.env.PERPLEXITY_API_KEY,
-        ...additionalConfig,
+        ...overrides,
     };
 }
 
-/**
- * Creates an OVHcloud AI Endpoints model configuration (Qwen endpoint)
- */
-export function createOVHcloudModelConfig(additionalConfig = {}) {
-    return {
-        provider: "openai",
-        "custom-host":
-            "https://qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1",
-        authKey: process.env.OVHCLOUD_API_KEY,
-        ...additionalConfig,
-    };
+export function createOVHcloudModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1",
+        process.env.OVHCLOUD_API_KEY,
+        overrides,
+    );
 }
 
-/**
- * Creates an OVHcloud AI Endpoints model configuration for Mistral
- */
-export function createOVHcloudMistralConfig(additionalConfig = {}) {
-    return {
-        provider: "openai",
-        "custom-host": "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1",
-        authKey: process.env.OVHCLOUD_API_KEY,
-        ...additionalConfig,
-    };
+export function createOVHcloudMistralConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1",
+        process.env.OVHCLOUD_API_KEY,
+        overrides,
+    );
 }
 
-/**
- * Creates a Fireworks AI model configuration
- */
-export function createFireworksModelConfig(additionalConfig = {}) {
-    return {
-        provider: "openai",
-        "custom-host": "https://api.fireworks.ai/inference/v1",
-        authKey: process.env.FIREWORKS_API_KEY,
-        ...additionalConfig,
-    };
+export function createFireworksModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.fireworks.ai/inference/v1",
+        process.env.FIREWORKS_API_KEY,
+        overrides,
+    );
 }
 
-/**
- * Creates an api.airforce model configuration
- */
-export function createAirforceModelConfig(additionalConfig = {}) {
-    return {
-        provider: "openai",
-        "custom-host": "https://api.airforce/v1",
-        authKey: process.env.AIRFORCE_API_KEY,
-        ...additionalConfig,
-    };
-}
-
-/**
- * Creates a NomNom model configuration (community model with web search/scrape/crawl)
- * Uses user's API key for billing passthrough - NomNom calls Pollinations internally
- */
-export function createNomNomConfig(additionalConfig = {}) {
-    return {
-        provider: "openai",
-        "custom-host": "https://scrape.pollinations.ai/v1",
-        // Flag to use user's API key from x-user-api-key header for billing passthrough
-        useUserApiKey: true,
-        ...additionalConfig,
-    };
+export function createAirforceModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.airforce/v1",
+        process.env.AIRFORCE_API_KEY,
+        overrides,
+    );
 }

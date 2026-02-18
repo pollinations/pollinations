@@ -4,12 +4,12 @@ import { generatePortkeyHeaders } from "../portkeyUtils.js";
 const log = debug("pollinations:transforms:headers");
 
 /**
- * Transform that generates provider-specific headers for the request
- * @param {Array} messages - Array of message objects
- * @param {Object} options - Request options with modelConfig
- * @returns {Promise<{messages: Array, options: Object}>}
+ * Transform that generates provider-specific headers for the request.
  */
-export async function generateHeaders(messages, options) {
+export async function generateHeaders(
+    messages: unknown[],
+    options: Record<string, any>,
+): Promise<{ messages: unknown[]; options: Record<string, any> }> {
     if (!options.modelConfig) {
         return { messages, options };
     }
@@ -20,16 +20,12 @@ export async function generateHeaders(messages, options) {
     );
 
     log("Generated headers:", JSON.stringify(additionalHeaders, null, 2));
-    log("Input options has modelDef:", !!options.modelDef);
 
-    const result = {
+    return {
         messages,
         options: {
             ...options,
-            additionalHeaders: additionalHeaders,
+            additionalHeaders,
         },
     };
-
-    log("Output options has modelDef:", !!result.options.modelDef);
-    return result;
 }

@@ -3,21 +3,38 @@ import debug from "debug";
 const log = debug("pollinations:portkey-utils");
 const errorLog = debug("pollinations:portkey-utils:error");
 
-export function extractResourceName(endpoint: string | null | undefined): string | null {
+const DEFAULT_API_VERSION = "2024-08-01-preview";
+
+interface PortkeyTarget {
+    authKey?: string | (() => string | Promise<string>);
+    defaultOptions?: Record<string, unknown>;
+    [key: string]: unknown;
+}
+
+interface PortkeyConfig {
+    strategy?: { mode: string };
+    targets?: PortkeyTarget[];
+    useUserApiKey?: boolean;
+    authKey?: string | (() => string | Promise<string>);
+    removeSeed?: boolean;
+    [key: string]: unknown;
+}
+
+interface RequestOptions {
+    userApiKey?: string;
+    [key: string]: unknown;
+}
+
+export function extractResourceName(
+    endpoint: string | null | undefined,
+): string | null {
     if (endpoint == null) return null;
     log("Extracting resource name from endpoint:", endpoint);
 
-    // Extract resource name from both Azure OpenAI patterns:
-    // 1. https://pollinations4490940554.openai.azure.com
-    // 2. https://gpt-image-jp.cognitiveservices.azure.com
-    let match = endpoint.match(/https:\/\/([^.]+)\.openai\.azure\.com/);
-    if (!match) {
-        match = endpoint.match(
-            /https:\/\/([^.]+)\.cognitiveservices\.azure\.com/,
-        );
-    }
-
-    const result = match ? match[1] : null;
+    const match = endpoint.match(
+        /https:\/\/([^.]+)\.(?:openai|cognitiveservices)\.azure\.com/,
+    );
+    const result = match?.[1] ?? null;
     log("Extracted resource name:", result);
 
     if (!result || result === "undefined") {
@@ -27,7 +44,9 @@ export function extractResourceName(endpoint: string | null | undefined): string
     return result;
 }
 
-export function extractDeploymentName(endpoint: string | null | undefined): string | null {
+export function extractDeploymentName(
+    endpoint: string | null | undefined,
+): string | null {
     if (!endpoint) return null;
     log("Extracting deployment name from endpoint:", endpoint);
 
@@ -37,32 +56,38 @@ export function extractDeploymentName(endpoint: string | null | undefined): stri
 }
 
 export function extractApiVersion(endpoint: string | null | undefined): string {
-    if (!endpoint) return process.env.OPENAI_API_VERSION || "2024-08-01-preview";
+    if (!endpoint) return process.env.OPENAI_API_VERSION || DEFAULT_API_VERSION;
     log("Extracting API version from endpoint:", endpoint);
 
     const match = endpoint.match(/api-version=([^&]+)/);
-    const version = match?.[1] ?? process.env.OPENAI_API_VERSION ?? "2024-08-01-preview";
+    const version =
+        match?.[1] ?? process.env.OPENAI_API_VERSION ?? DEFAULT_API_VERSION;
     log("Extracted API version:", version);
     return version;
 }
 
-async function resolveTargetAuth(target: any): Promise<any> {
-    const { authKey, defaultOptions, ...rest } = target;
-
-    if (!authKey) {
-        return rest;
-    }
-
-    try {
-        const token = typeof authKey === "function" ? await authKey() : authKey;
-        return { ...rest, api_key: token };
-    } catch (error) {
-        errorLog("Error resolving auth for target:", error);
-        throw error;
-    }
+async function resolveAuthKey(
+    authKey: string | (() => string | Promise<string>),
+): Promise<string> {
+    return typeof authKey === "function" ? await authKey() : authKey;
 }
 
-export async function generatePortkeyHeaders(config: any, requestOptions: any = {}): Promise<Record<string, string>> {
+async function resolveTargetAuth(
+    target: PortkeyTarget,
+): Promise<Record<string, unknown>> {
+    const { authKey, defaultOptions, ...rest } = target;
+    if (!authKey) return rest;
+
+    const token = await resolveAuthKey(authKey);
+    return { ...rest, api_key: token };
+}
+
+const SKIPPED_CONFIG_KEYS = new Set(["removeSeed", "authKey", "useUserApiKey"]);
+
+export async function generatePortkeyHeaders(
+    config: PortkeyConfig,
+    requestOptions: RequestOptions = {},
+): Promise<Record<string, string>> {
     if (!config) {
         errorLog("No configuration provided for header generation");
         throw new Error("No configuration provided for header generation");
@@ -70,12 +95,17 @@ export async function generatePortkeyHeaders(config: any, requestOptions: any = 
 
     if (config.strategy && config.targets) {
         log("Detected fallback/loadbalance config");
-
-        const resolvedTargets = await Promise.all(config.targets.map(resolveTargetAuth));
-        const configPayload = { strategy: config.strategy, targets: resolvedTargets };
-
-        log("Resolved fallback config:", JSON.stringify(configPayload, null, 2));
-
+        const resolvedTargets = await Promise.all(
+            config.targets.map(resolveTargetAuth),
+        );
+        const configPayload = {
+            strategy: config.strategy,
+            targets: resolvedTargets,
+        };
+        log(
+            "Resolved fallback config:",
+            JSON.stringify(configPayload, null, 2),
+        );
         return { "x-portkey-config": JSON.stringify(configPayload) };
     }
 
@@ -85,25 +115,15 @@ export async function generatePortkeyHeaders(config: any, requestOptions: any = 
 
     let apiKey: string | undefined;
 
-    if (config.useUserApiKey && requestOptions?.userApiKey) {
+    if (config.useUserApiKey && requestOptions.userApiKey) {
         apiKey = requestOptions.userApiKey;
         log("Using user's API key for billing passthrough");
     } else if (config.authKey) {
-        try {
-            if (typeof config.authKey === "function") {
-                const token = config.authKey();
-                apiKey = token instanceof Promise ? await token : token;
-            } else {
-                apiKey = config.authKey;
-            }
-        } catch (error) {
-            errorLog("Error getting auth token:", error);
-            throw error;
-        }
+        apiKey = await resolveAuthKey(config.authKey);
     }
 
     for (const [key, value] of Object.entries(config)) {
-        if (key === "removeSeed" || key === "authKey" || key === "useUserApiKey") continue;
+        if (SKIPPED_CONFIG_KEYS.has(key)) continue;
         headers[`x-portkey-${key}`] = String(value);
     }
 

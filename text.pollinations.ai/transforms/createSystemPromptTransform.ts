@@ -1,21 +1,29 @@
 import { convertSystemToUserMessages } from "../textGenerationUtils.js";
 
+interface Message {
+    role: string;
+    content: string;
+}
+
+type TransformResult = {
+    messages: Message[];
+    options: Record<string, unknown>;
+};
+
 /**
- * Creates a system prompt transform function that adds a default system prompt
- * only if no system message already exists in the conversation
- * @param {string} defaultSystemPrompt - The default system prompt to add
- * @returns {Function} Transform function that conditionally adds system prompt
- * @example
- * const transform = createSystemPromptTransform("You are a helpful assistant.");
- * const result = transform([{role: "user", content: "Hello"}], {});
- * // Returns: { messages: [{role: "system", content: "You are a helpful assistant."}, {role: "user", content: "Hello"}], options: {} }
+ * Creates a transform that adds a default system prompt only if no system message already exists.
  */
-export function createSystemPromptTransform(defaultSystemPrompt) {
+export function createSystemPromptTransform(
+    defaultSystemPrompt: string,
+): (messages: Message[], options: Record<string, unknown>) => TransformResult {
     if (!defaultSystemPrompt || typeof defaultSystemPrompt !== "string") {
         throw new Error("defaultSystemPrompt must be a non-empty string");
     }
 
-    return function transform(messages, options) {
+    return function transform(
+        messages: Message[],
+        options: Record<string, unknown>,
+    ): TransformResult {
         if (!Array.isArray(messages)) {
             throw new Error("messages must be an array");
         }
@@ -23,39 +31,29 @@ export function createSystemPromptTransform(defaultSystemPrompt) {
             throw new Error("options must be an object");
         }
 
-        // Check if there's already a system message
-        const hasSystemMessage = messages.some(
-            (message) => message.role === "system",
-        );
+        const hasSystemMessage = messages.some((msg) => msg.role === "system");
 
-        // If there's already a system message, don't override it
         if (hasSystemMessage) {
-            return {
-                messages,
-                options,
-            };
+            return { messages, options };
         }
 
-        // Add the default system prompt at the beginning
-        const messagesWithSystemPrompt = [
-            { role: "system", content: defaultSystemPrompt },
-            ...messages,
-        ];
-
         return {
-            messages: messagesWithSystemPrompt,
+            messages: [
+                { role: "system", content: defaultSystemPrompt },
+                ...messages,
+            ],
             options,
         };
     };
 }
 
 /**
- * Transform that removes system messages by converting them to user messages
- * @param {Array} messages - Array of message objects
- * @param {Object} options - Request options
- * @returns {Object} Object with converted messages and options
+ * Transform that converts system messages to user messages for providers that don't support system role.
  */
-export function removeSystemMessages(messages, options) {
+export function removeSystemMessages(
+    messages: Message[],
+    options: Record<string, unknown>,
+): TransformResult {
     return {
         messages: convertSystemToUserMessages(messages),
         options,

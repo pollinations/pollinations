@@ -2,54 +2,49 @@ import debug from "debug";
 
 const log = debug("pollinations:transforms:sanitizer");
 
+interface Message {
+    role: string;
+    content?: string | unknown[];
+    [key: string]: unknown;
+}
+
 /**
- * Sanitizes messages by replacing empty user content with placeholder text
- * @param {Array} messages - Array of message objects
- * @param {Object} modelConfig - Model configuration object
- * @param {string} requestedModel - Requested model name for logging
- * @returns {Object} Object with sanitized messages and replacement count
+ * Replaces empty user message content with placeholder text.
  */
-function sanitizeMessagesWithPlaceholder(
-    messages,
-    modelConfig,
-    requestedModel,
-) {
+function sanitizeEmptyUserMessages(messages: Message[]): {
+    messages: Message[];
+    replacedCount: number;
+} {
     if (!Array.isArray(messages)) {
         return { messages, replacedCount: 0 };
     }
 
     let replacedCount = 0;
     const sanitized = messages.map((message) => {
-        if (message.role === "user") {
-            // Check if content is empty, considering different types
-            const isEmpty =
-                !message.content ||
-                (typeof message.content === "string" &&
-                    message.content.trim() === "") ||
-                (Array.isArray(message.content) &&
-                    message.content.length === 0);
+        if (message.role !== "user") return message;
 
-            if (isEmpty) {
-                replacedCount++;
-                return {
-                    ...message,
-                    content: "Please provide a response.",
-                };
-            }
-        }
-        return message;
+        const isEmpty =
+            !message.content ||
+            (typeof message.content === "string" &&
+                message.content.trim() === "") ||
+            (Array.isArray(message.content) && message.content.length === 0);
+
+        if (!isEmpty) return message;
+
+        replacedCount++;
+        return { ...message, content: "Please provide a response." };
     });
 
     return { messages: sanitized, replacedCount };
 }
 
 /**
- * Transform that sanitizes messages and applies provider-specific fixes
- * @param {Array} messages - Array of message objects
- * @param {Object} options - Request options with modelDef and requestedModel
- * @returns {Object} Object with messages and options
+ * Transform that sanitizes messages by replacing empty user content with placeholder text.
  */
-export function sanitizeMessages(messages, options) {
+export function sanitizeMessages(
+    messages: Message[],
+    options: Record<string, any>,
+): { messages: Message[]; options: Record<string, any> } {
     if (
         !Array.isArray(messages) ||
         !options.modelDef ||
@@ -59,11 +54,7 @@ export function sanitizeMessages(messages, options) {
     }
 
     const { messages: sanitized, replacedCount } =
-        sanitizeMessagesWithPlaceholder(
-            messages,
-            options.modelDef,
-            options.requestedModel,
-        );
+        sanitizeEmptyUserMessages(messages);
 
     if (replacedCount > 0) {
         log(
@@ -71,8 +62,5 @@ export function sanitizeMessages(messages, options) {
         );
     }
 
-    return {
-        messages: sanitized,
-        options,
-    };
+    return { messages: sanitized, options };
 }

@@ -2,18 +2,18 @@
  * Model configuration resolution utilities
  */
 import debug from "debug";
-import { portkeyConfig } from "../configs/modelConfigs.js";
 import { findModelByName } from "../availableModels.js";
 
 const log = debug("pollinations:model-resolver");
 
 /**
- * Transform function that resolves model configuration and sets up internal properties
- * @param {Array} messages - Array of message objects
- * @param {Object} options - Request options with model name
- * @returns {Object} Object with messages and resolved options
+ * Resolves model configuration and sets up internal properties.
+ * User-provided options take precedence over model defaults.
  */
-export function resolveModelConfig(messages, options) {
+export function resolveModelConfig(
+    messages: any[],
+    options: Record<string, any>,
+): { messages: any[]; options: Record<string, any> } {
     const requestedModel = options.model;
     const modelDef = findModelByName(requestedModel);
 
@@ -21,13 +21,11 @@ export function resolveModelConfig(messages, options) {
         throw new Error(`Model configuration not found for: ${requestedModel}`);
     }
 
-    // Get the model configuration object
     const config: any =
         typeof modelDef.config === "function"
             ? modelDef.config()
             : modelDef.config;
 
-    // Extract the actual model name used by the provider
     const usedModel =
         config.model ||
         config["azure-model-name"] ||
@@ -43,13 +41,12 @@ export function resolveModelConfig(messages, options) {
         config.provider,
     );
 
-    // Merge defaultOptions from config (e.g., max_tokens for Bedrock)
-    // User-provided options take precedence over defaults
-    // Filter out undefined values from options so they don't overwrite defaults
+    // Filter out undefined values so they don't overwrite config defaults
     const definedOptions = Object.fromEntries(
-        Object.entries(options).filter(([_, v]) => v !== undefined)
+        Object.entries(options).filter(([_, v]) => v !== undefined),
     );
-    const result = {
+
+    return {
         messages,
         options: {
             ...(config.defaultOptions || {}),
@@ -60,15 +57,4 @@ export function resolveModelConfig(messages, options) {
             requestedModel,
         },
     };
-
-    log(
-        "resolveModelConfig output - modelDef exists:",
-        !!result.options.modelDef,
-    );
-    log(
-        "resolveModelConfig output - modelConfig exists:",
-        !!result.options.modelConfig,
-    );
-
-    return result;
 }

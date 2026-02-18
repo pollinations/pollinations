@@ -168,12 +168,12 @@ export default function App() {
                         };
                         weekMap.set(row.week, {
                             ...existing,
-                            developerUsers: row.developer_users,
-                            developerPollen: row.developer_pollen,
-                            enduserUsers: row.enduser_users,
-                            enduserPollen: row.enduser_pollen,
-                            enduserUserPct: row.enduser_user_pct,
-                            enduserPollenPct: row.enduser_pollen_pct,
+                            byopUsers: row.byop_users,
+                            byopPollen: row.byop_pollen,
+                            otherUsers: row.other_users,
+                            otherPollen: row.other_pollen,
+                            byopUserPct: row.byop_user_pct,
+                            byopPollenPct: row.byop_pollen_pct,
                         });
                     }
                 }

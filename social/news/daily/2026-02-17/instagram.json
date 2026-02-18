@@ -1,0 +1,43 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "Uses the cozy pixel art aesthetic to translate abstract code updates (markdown formatting, new apps, bug fixes) into tangible, warm interactions between the mascot characters. The sequence moves from visual polish to new tools to maintenance.",
+  "visual_style": "Chunky 8-bit pixel art with soft lighting, CRT scanlines, and the signature lime green (#ecf874) accent color. Lo-fi Stardew Valley atmosphere.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of Polly the Bee (yellow body, brown stripes, pink blush, blue wings) holding a large pixel paintbrush, adding sparkles to a floating text box. The text box looks neat and formatted. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Polly wears a tiny painter's beret. Nostalgic, clean aesthetic.",
+      "description": "Polly sprucing up the UI, representing the markdown prettification update.",
+      "text_in_image": "PRETTY DOCS",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-17/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Chunky pixel art of the Monitor Robot (CRT head, stubby arms) projecting a colorful pixel landscape slide onto a screen. Polly the Bee hovers nearby watching the presentation. The robot's screen eyes look excited. Lime green (#ecf874) and mint pastel gradient background. Warm ambient glow, retro gaming vibes. 8-bit aesthetic.",
+      "description": "The Robot demonstrating the new SlidePainter app.",
+      "text_in_image": "SLIDE PAINTER",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-17/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a crumpled piece of paper labeled 'BUGS'. Polly the Bee stands next to a retro server rack with a lime green (#ecf874) status light, holding a clipboard. Soft peach and cream gradient background. Chunky pixels, warm lighting, cozy atmosphere.",
+      "description": "Nomnom consuming the bugs (hallucinations and deployment issues) while Polly manages the release.",
+      "text_in_image": "NOMNOM",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-17/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "We taught the interface to dress better this week — app descriptions now support markdown, so things look tidy. \n\nAlso shipped SlidePainter for when you need to generate visuals instead of doing real work. \n\nFixed a bug where the prettifier was getting too creative and hallucinating app names. It was inspired, but incorrect. Plus, deployments actually go to the right branch now. \n\nCode is live. Go build something weird.",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#indiedev",
+    "#creativecoding",
+    "#generativeart",
+    "#buildinpublic",
+    "#github"
+  ],
+  "alt_text": "Pixel art carousel: 1. A bee mascot painting a text box. 2. A robot projecting a slide presentation. 3. A round creature eating a bug report.",
+  "date": "2026-02-17",
+  "generated_at": "2026-02-18T06:22:11.715445+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

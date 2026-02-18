@@ -1,7 +1,7 @@
 import { env, SELF } from "cloudflare:test";
-import { test } from "./fixtures.ts";
-import { expect } from "vitest";
 import { getLogger } from "@logtape/logtape";
+import { expect } from "vitest";
+import { test } from "./fixtures.ts";
 
 const endpoint = "http://localhost:3000/api/generate/v1/chat/completions";
 const log = getLogger(["test", "rate-limit"]);
@@ -272,9 +272,15 @@ test(
             if (new URL(url).host === textServiceHost) {
                 return new Response(
                     JSON.stringify({
-                        error: { message: "Rate limit exceeded", type: "rate_limit_error" },
+                        error: {
+                            message: "Rate limit exceeded",
+                            type: "rate_limit_error",
+                        },
                     }),
-                    { status: 429, headers: { "content-type": "application/json" } },
+                    {
+                        status: 429,
+                        headers: { "content-type": "application/json" },
+                    },
                 );
             }
             return originalFetch(input, init);

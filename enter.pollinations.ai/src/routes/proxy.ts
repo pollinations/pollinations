@@ -380,15 +380,11 @@ export const proxyRoutes = new Hono<Env>()
                     status: response.status,
                     body: responseText,
                 });
-                throw new UpstreamError(
-                    remapUpstreamStatus(response.status),
-                    {
-                        message:
-                            responseText ||
-                            getDefaultErrorMessage(response.status),
-                        requestUrl: targetUrl,
-                    },
-                );
+                throw new UpstreamError(remapUpstreamStatus(response.status), {
+                    message:
+                        responseText || getDefaultErrorMessage(response.status),
+                    requestUrl: targetUrl,
+                });
             }
 
             // Backend returns plain text for text models and raw audio for audio models
@@ -496,15 +492,11 @@ export const proxyRoutes = new Hono<Env>()
                     status: response.status,
                     body: responseText,
                 });
-                throw new UpstreamError(
-                    remapUpstreamStatus(response.status),
-                    {
-                        message:
-                            responseText ||
-                            getDefaultErrorMessage(response.status),
-                        requestUrl: targetUrl,
-                    },
-                );
+                throw new UpstreamError(remapUpstreamStatus(response.status), {
+                    message:
+                        responseText || getDefaultErrorMessage(response.status),
+                    requestUrl: targetUrl,
+                });
             }
 
             return response;

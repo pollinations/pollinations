@@ -636,14 +636,10 @@ export const audioRoutes = new Hono<Env>()
                     status: response.status,
                     body: errorText,
                 });
-                throw new UpstreamError(
-                    remapUpstreamStatus(response.status),
-                    {
-                        message:
-                            errorText ||
-                            getDefaultErrorMessage(response.status),
-                    },
-                );
+                throw new UpstreamError(remapUpstreamStatus(response.status), {
+                    message:
+                        errorText || getDefaultErrorMessage(response.status),
+                });
             }
 
             // Read body to extract duration for usage billing

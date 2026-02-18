@@ -1,0 +1,33 @@
+{
+  "pr_number": 8393,
+  "title": "fix: replace misleading KPI metric, add deployment docs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8393",
+  "merged_at": "2026-02-18T11:54:56Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Better bean counting",
+    "blurb": "We realized our math was a bit fuzzy on the purchase metrics. Swapped out a misleading formula for a solid Purchase Rate.",
+    "summary": "Updated the internal KPI dashboard to calculate purchase rate based on weekly active users instead of unrelated activation cohorts.",
+    "impact": "Provides the team with accurate conversion data to better understand pollen pack usage.",
+    "keywords": [
+      "kpi",
+      "metrics",
+      "dashboard",
+      "operations"
+    ],
+    "visual_concept": "Internal metrics dashboard. The Nomnom creature is analyzing a chart while Polly the bee adjusts the trend line. Represents fixing the data visualization.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature studying a pixelated line graph on a whiteboard. The bee mascot hovers nearby holding a red marker. Lime green (#ecf874) and soft lavender gradient background. Chunky pixels, warm lighting, lo-fi office vibes. Text in pixel font: 'DATA'. Nostalgic and cute."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-18T11:55:39.174273+00:00"
+}

@@ -18,43 +18,40 @@ export const HELLO_PAGE = {
     // Pollen Section
     pollenTitle: "Pollen — One Credit, Every Model",
     pollenDescription:
-        "Running AI models costs money. Pollen is how we keep the lights on without ads or selling your data. One credit works across every model — images, text, audio, video. Buy pollen packs or earn daily grants by contributing to the ecosystem.",
+        "Running AI models costs money. One credit works across every model — images, text, audio, video. Every account gets a daily pollen grant as runway — enough to experiment, prototype, and ship. As you contribute, your tier grows and so does your grant.",
 
     // Flywheel Steps
-    flywheelStep1Title: "1. Start Free",
+    flywheelStep1Title: "1. Sign Up",
     flywheelStep1Description:
-        "Sign up, verify your account, and get a daily pollen grant as runway. Enough to experiment and prototype.",
-    flywheelStep1Tier: "🍄 Spore — 1 pollen/day",
+        "Create your account and get verified automatically. You start with a daily pollen grant to build with 40+ models right away.",
 
     flywheelStep2Title: "2. Build & Ship",
     flywheelStep2Description:
-        "Use your grants to build with 40+ models. Be active on GitHub, contribute code or docs, and watch your tier climb.",
-    flywheelStep2Tier: "🌱 Seed — 3 pollen/day",
+        "Use your grants to build your app. As we verify your GitHub activity, your tier upgrades automatically — giving you a bigger daily grant.",
 
-    flywheelStep3Title: "3. Your Users Pay",
+    flywheelStep3Title: "3. Bring Your Own Pollen",
     flywheelStep3Description:
-        "Integrate BYOP (Bring Your Own Pollen) and let your users pay for what they use. You build, they fuel it — zero compute costs for you.",
-    flywheelStep3Tier: "🌸 Active contributor — 10 pollen/day",
+        "Integrate BYOP and let your users pay for what they use. Your app runs at zero compute cost to you. Integrating BYOP is the fastest way to level up.",
 
     flywheelStep4Title: "4. Scale Up",
     flywheelStep4Description:
-        "More users, more contributions, higher tier. Top contributors and BYOP integrators unlock the highest daily grants.",
-    flywheelStep4Tier: "🍯 Nectar — 20 pollen/day",
+        "More users, more contributions, higher tier. The ecosystem rewards builders who bring value.",
 
-    flywheelClosingLine:
-        "Every step feeds the next. Build something people want, and the ecosystem pays you back.",
-
-    // Point System
+    // How You Level Up
     pointSystemTitle: "How You Level Up",
     pointSystemDescription:
-        "Everything you do earns points — GitHub activity, code contributions, community support, publishing apps, buying pollen, integrating BYOP. Your total points determine your tier. The more ways you contribute, the faster you climb.",
+        "Every step feeds the next. Build something people want, and the ecosystem pays you back. Everything you do earns points toward your next tier. Your total points determine which tier you're in — and each tier unlocks a bigger daily pollen grant.",
+    pointActivity1: "Sign up and verify your account",
+    pointActivity2: "GitHub activity and open-source contributions",
+    pointActivity3: "Code, docs, and community support",
+    pointActivity4: "Publish apps and complete quests",
 
     // Tier names (for tier ladder)
     tierSporeTitle: "Spore",
     tierSporePollen: "1",
     tierSeedTitle: "Seed",
     tierSeedPollen: "3",
-    tierFlowerTitle: "Active contributor",
+    tierFlowerTitle: "Flower",
     tierFlowerPollen: "10",
     tierNectarTitle: "Nectar",
     tierNectarPollen: "20",
@@ -62,8 +59,13 @@ export const HELLO_PAGE = {
     // Buy Pollen
     buyCardTitle: "Buy Pollen",
     buyCardDescription:
-        "Straightforward packs, no subscriptions. Or let your app's users pay with their own Pollen via BYOP.",
+        "Straightforward packs, no subscriptions. Buying pollen also earns you points toward your next tier.",
     buyCardPromo: "🎁 Buy 1, get 1 free during beta!",
+
+    // BYOP
+    sellCardTitle: "Let Your Users Pay",
+    sellCardDescription:
+        "Integrate BYOP — your users authenticate with their own Pollen. You ship the app, they cover the compute.",
     byopLearnMore: "BYOP Docs",
 
     // Beta note
@@ -103,16 +105,24 @@ export const HELLO_PAGE = {
     // Roadmap Section
     roadmapTitle: "What's Next",
     roadmapIntro: "Here's what we're working on:",
-    roadmapItem1Title: "Frontend Auth",
+    roadmapItem1Title: "Creator Earnings",
     roadmapItem1Description:
-        "Call the API from the browser — no backend needed.",
-    roadmapItem2Title: "User Pollen",
+        "Pollen spent inside your app flows back to you. Track performance, cash out to fiat or crypto.",
+    roadmapItem2Title: "Quests & Rewards",
     roadmapItem2Description:
-        "Your users bring their own Pollen. You build, they pay for what they use.",
-    roadmapItem3Title: "App Hosting & Discovery",
-    roadmapItem3Description: "Ship your app and make it easy to find.",
-    roadmapItem4Title: "More Models, More Modalities",
-    roadmapItem4Description: "Video, real-time, and whatever comes next.",
+        "Gamified challenges that award points. Publish your first app, hit milestones, help the community.",
+    roadmapItem3Title: "App Directory",
+    roadmapItem3Description:
+        "Browse, discover, and rank community-built apps. More visibility for builders.",
+    roadmapItem4Title: "Agent Economy",
+    roadmapItem4Description:
+        "AI agents as first-class participants via 402 payment protocol. Bots consume, publish, and earn — just like humans.",
+    roadmapItem5Title: "Pollen Widget SDK",
+    roadmapItem5Description:
+        "Embeddable component for your app — login state, pollen balance, and in-app purchase in one drop-in.",
+    roadmapItem6Title: "Crypto Payments",
+    roadmapItem6Description:
+        "Buy pollen with USDC and stablecoins. Native crypto rails for the ecosystem.",
 
     // CTA Section
     ctaTitle: "Ready to Create?",
@@ -122,7 +132,7 @@ export const HELLO_PAGE = {
     getApiKeyButton: "Get Your API Key",
     startCreatingButton: "Start Creating",
     joinCommunityButton: "Join the Community",
-    viewPricingButton: "View Pricing",
+    viewPricingButton: "Pricing",
     exploreTiersButton: "Learn More About Tiers",
     seeAppsButton: "See Featured Apps",
     contributeOnGitHubButton: "Contribute on GitHub",

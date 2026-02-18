@@ -80,68 +80,12 @@ function HelloPage() {
                         {pageCopy.pollenDescription}
                     </Body>
 
-                    {/* Flywheel */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <SubCard size="compact">
-                            <Heading variant="lime" as="h3">
-                                {pageCopy.flywheelStep1Title}
-                            </Heading>
-                            <Body size="sm" spacing="tight">
-                                {pageCopy.flywheelStep1Description}
-                            </Body>
-                            <p className="text-xs font-semibold text-text-highlight mt-2">
-                                {pageCopy.flywheelStep1Tier}
-                            </p>
-                        </SubCard>
-                        <SubCard size="compact">
-                            <Heading variant="lime" as="h3">
-                                {pageCopy.flywheelStep2Title}
-                            </Heading>
-                            <Body size="sm" spacing="tight">
-                                {pageCopy.flywheelStep2Description}
-                            </Body>
-                            <p className="text-xs font-semibold text-text-highlight mt-2">
-                                {pageCopy.flywheelStep2Tier}
-                            </p>
-                        </SubCard>
-                        <SubCard size="compact">
-                            <Heading variant="lime" as="h3">
-                                {pageCopy.flywheelStep3Title}
-                            </Heading>
-                            <Body size="sm" spacing="tight">
-                                {pageCopy.flywheelStep3Description}
-                            </Body>
-                            <p className="text-xs font-semibold text-text-highlight mt-2">
-                                {pageCopy.flywheelStep3Tier}
-                            </p>
-                        </SubCard>
-                        <SubCard size="compact">
-                            <Heading variant="lime" as="h3">
-                                {pageCopy.flywheelStep4Title}
-                            </Heading>
-                            <Body size="sm" spacing="tight">
-                                {pageCopy.flywheelStep4Description}
-                            </Body>
-                            <p className="text-xs font-semibold text-text-highlight mt-2">
-                                {pageCopy.flywheelStep4Tier}
-                            </p>
-                        </SubCard>
-                    </div>
-
-                    <Body size="sm" spacing="comfortable" className="italic">
-                        {pageCopy.flywheelClosingLine}
-                    </Body>
-
-                    {/* How You Level Up */}
-                    <Heading variant="simple" as="h3" spacing="comfortable">
-                        {pageCopy.pointSystemTitle}
-                    </Heading>
-                    <Body size="sm" spacing="comfortable">
-                        {pageCopy.pointSystemDescription}
-                    </Body>
+                    <p className="inline-block text-xs text-text-body-secondary bg-surface-card border border-border-subtle rounded-full px-4 py-1.5 mb-8">
+                        {pageCopy.tiersBetaNote}
+                    </p>
 
                     {/* Tier Ladder */}
-                    <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+                    <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
                         <div className="flex flex-col items-center text-center px-4 py-4 rounded-lg bg-surface-card border border-border-subtle min-w-[100px]">
                             <span className="text-3xl mb-2">🍄</span>
                             <p className="text-sm font-semibold text-text-body-main">
@@ -189,50 +133,145 @@ function HelloPage() {
                         </div>
                     </div>
 
-                    {/* Buy Pollen */}
-                    <SubCard size="compact" className="mb-6">
-                        <Heading variant="lime" as="h3">
-                            {pageCopy.buyCardTitle}
-                        </Heading>
-                        <Body size="sm" spacing="tight">
-                            {pageCopy.buyCardDescription}
-                        </Body>
-                        <Body
-                            size="xs"
-                            spacing="comfortable"
-                            className="text-text-highlight font-bold"
-                        >
-                            {pageCopy.buyCardPromo}
-                        </Body>
-                        <div className="flex flex-wrap gap-2">
-                            <Button
-                                as="a"
-                                href="https://enter.pollinations.ai"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                variant="secondary"
-                                size="sm"
-                            >
-                                {pageCopy.viewPricingButton}
-                                <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
-                            </Button>
-                            <Button
-                                as="a"
-                                href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                variant="secondary"
-                                size="sm"
-                            >
-                                {pageCopy.byopLearnMore}
-                                <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
-                            </Button>
-                        </div>
-                    </SubCard>
+                    {/* Flywheel */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <SubCard size="compact">
+                            <Heading variant="lime" as="h3">
+                                {pageCopy.flywheelStep1Title}
+                            </Heading>
+                            <Body size="sm" spacing="none">
+                                {pageCopy.flywheelStep1Description}
+                            </Body>
+                        </SubCard>
+                        <SubCard size="compact">
+                            <Heading variant="lime" as="h3">
+                                {pageCopy.flywheelStep2Title}
+                            </Heading>
+                            <Body size="sm" spacing="none">
+                                {pageCopy.flywheelStep2Description}
+                            </Body>
+                        </SubCard>
+                        <SubCard size="compact">
+                            <Heading variant="lime" as="h3">
+                                {pageCopy.flywheelStep3Title}
+                            </Heading>
+                            <Body size="sm" spacing="none">
+                                {pageCopy.flywheelStep3Description}
+                            </Body>
+                        </SubCard>
+                        <SubCard size="compact">
+                            <Heading variant="lime" as="h3">
+                                {pageCopy.flywheelStep4Title}
+                            </Heading>
+                            <Body size="sm" spacing="none">
+                                {pageCopy.flywheelStep4Description}
+                            </Body>
+                        </SubCard>
+                    </div>
 
-                    <p className="text-sm text-text-highlight">
-                        {pageCopy.tiersBetaNote}
-                    </p>
+                    {/* How You Level Up */}
+                    <Heading variant="simple" as="h3" spacing="comfortable">
+                        {pageCopy.pointSystemTitle}
+                    </Heading>
+                    <Body size="sm" spacing="comfortable">
+                        {pageCopy.pointSystemDescription}
+                    </Body>
+                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-6">
+                        <FeatureItem variant="highlight" icon="👤">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span>{pageCopy.pointActivity1}</span>
+                                <a
+                                    href="https://enter.pollinations.ai"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-text-highlight hover:underline"
+                                >
+                                    Enter
+                                    <ExternalLinkIcon className="w-3 h-3" />
+                                </a>
+                            </div>
+                        </FeatureItem>
+                        <FeatureItem variant="highlight" icon="🔗">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span>{pageCopy.pointActivity2}</span>
+                                <a
+                                    href="https://github.com/pollinations/pollinations"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-text-highlight hover:underline"
+                                >
+                                    GitHub
+                                    <ExternalLinkIcon className="w-3 h-3" />
+                                </a>
+                            </div>
+                        </FeatureItem>
+                        <FeatureItem variant="highlight" icon="🛠️">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span>{pageCopy.pointActivity3}</span>
+                                <a
+                                    href="https://github.com/pollinations/pollinations"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-text-highlight hover:underline"
+                                >
+                                    GitHub
+                                    <ExternalLinkIcon className="w-3 h-3" />
+                                </a>
+                            </div>
+                        </FeatureItem>
+                        <FeatureItem variant="highlight" icon="🎯">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span>{pageCopy.pointActivity4}</span>
+                                <Link
+                                    to="/apps"
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-text-highlight hover:underline"
+                                >
+                                    Apps
+                                </Link>
+                            </div>
+                        </FeatureItem>
+                        <FeatureItem variant="brand" icon="💰">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-semibold text-text-body-main">
+                                    {pageCopy.buyCardTitle}
+                                </span>
+                                <a
+                                    href="https://enter.pollinations.ai"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-text-highlight hover:underline"
+                                >
+                                    {pageCopy.viewPricingButton}
+                                    <ExternalLinkIcon className="w-3 h-3" />
+                                </a>
+                            </div>
+                            <p className="mt-1">
+                                {pageCopy.buyCardDescription}
+                            </p>
+                            <p className="text-xs text-text-highlight font-bold mt-1">
+                                {pageCopy.buyCardPromo}
+                            </p>
+                        </FeatureItem>
+                        <FeatureItem variant="brand" icon="🐝">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-semibold text-text-body-main">
+                                    {pageCopy.sellCardTitle}
+                                </span>
+                                <a
+                                    href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-text-brand hover:underline"
+                                >
+                                    {pageCopy.byopLearnMore}
+                                    <ExternalLinkIcon className="w-3 h-3" />
+                                </a>
+                            </div>
+                            <p className="mt-1">
+                                {pageCopy.sellCardDescription}
+                            </p>
+                        </FeatureItem>
+                    </ul>
                 </div>
 
                 <Divider />
@@ -322,24 +361,34 @@ function HelloPage() {
                     <Body spacing="comfortable">{pageCopy.roadmapIntro}</Body>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <RoadmapItem
-                            icon="🔐"
+                            icon="💸"
                             title={pageCopy.roadmapItem1Title}
                             description={pageCopy.roadmapItem1Description}
                         />
                         <RoadmapItem
-                            icon="💳"
+                            icon="🏆"
                             title={pageCopy.roadmapItem2Title}
                             description={pageCopy.roadmapItem2Description}
                         />
                         <RoadmapItem
-                            icon="🚀"
+                            icon="🗺️"
                             title={pageCopy.roadmapItem3Title}
                             description={pageCopy.roadmapItem3Description}
                         />
                         <RoadmapItem
-                            icon="🎬"
+                            icon="🤖"
                             title={pageCopy.roadmapItem4Title}
                             description={pageCopy.roadmapItem4Description}
+                        />
+                        <RoadmapItem
+                            icon="🧩"
+                            title={pageCopy.roadmapItem5Title}
+                            description={pageCopy.roadmapItem5Description}
+                        />
+                        <RoadmapItem
+                            icon="💎"
+                            title={pageCopy.roadmapItem6Title}
+                            description={pageCopy.roadmapItem6Description}
                         />
                     </div>
                 </div>

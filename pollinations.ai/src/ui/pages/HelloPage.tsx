@@ -1,10 +1,8 @@
 import { Link } from "react-router-dom";
 import { HELLO_PAGE } from "../../copy/content/hello";
-import { LINKS } from "../../copy/content/socialLinks";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { NewsSection } from "../components/NewsSection";
-import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
 import { FeatureItem } from "../components/ui/feature-item";
@@ -82,23 +80,131 @@ function HelloPage() {
                         {pageCopy.pollenDescription}
                     </Body>
 
-                    {/* Two main paths: Buy and Earn */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                        {/* 1. Buy Pollen */}
-                        <SubCard>
+                    {/* Flywheel */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <SubCard size="compact">
                             <Heading variant="lime" as="h3">
-                                {pageCopy.buyCardTitle}
+                                {pageCopy.flywheelStep1Title}
                             </Heading>
                             <Body size="sm" spacing="tight">
-                                {pageCopy.buyCardDescription}
+                                {pageCopy.flywheelStep1Description}
                             </Body>
-                            <Body
-                                size="xs"
-                                spacing="comfortable"
-                                className="text-text-highlight font-bold"
-                            >
-                                {pageCopy.buyCardPromo}
+                            <p className="text-xs font-semibold text-text-highlight mt-2">
+                                {pageCopy.flywheelStep1Tier}
+                            </p>
+                        </SubCard>
+                        <SubCard size="compact">
+                            <Heading variant="lime" as="h3">
+                                {pageCopy.flywheelStep2Title}
+                            </Heading>
+                            <Body size="sm" spacing="tight">
+                                {pageCopy.flywheelStep2Description}
                             </Body>
+                            <p className="text-xs font-semibold text-text-highlight mt-2">
+                                {pageCopy.flywheelStep2Tier}
+                            </p>
+                        </SubCard>
+                        <SubCard size="compact">
+                            <Heading variant="lime" as="h3">
+                                {pageCopy.flywheelStep3Title}
+                            </Heading>
+                            <Body size="sm" spacing="tight">
+                                {pageCopy.flywheelStep3Description}
+                            </Body>
+                            <p className="text-xs font-semibold text-text-highlight mt-2">
+                                {pageCopy.flywheelStep3Tier}
+                            </p>
+                        </SubCard>
+                        <SubCard size="compact">
+                            <Heading variant="lime" as="h3">
+                                {pageCopy.flywheelStep4Title}
+                            </Heading>
+                            <Body size="sm" spacing="tight">
+                                {pageCopy.flywheelStep4Description}
+                            </Body>
+                            <p className="text-xs font-semibold text-text-highlight mt-2">
+                                {pageCopy.flywheelStep4Tier}
+                            </p>
+                        </SubCard>
+                    </div>
+
+                    <Body size="sm" spacing="comfortable" className="italic">
+                        {pageCopy.flywheelClosingLine}
+                    </Body>
+
+                    {/* How You Level Up */}
+                    <Heading variant="simple" as="h3" spacing="comfortable">
+                        {pageCopy.pointSystemTitle}
+                    </Heading>
+                    <Body size="sm" spacing="comfortable">
+                        {pageCopy.pointSystemDescription}
+                    </Body>
+
+                    {/* Tier Ladder */}
+                    <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+                        <div className="flex flex-col items-center text-center px-4 py-4 rounded-lg bg-surface-card border border-border-subtle min-w-[100px]">
+                            <span className="text-3xl mb-2">🍄</span>
+                            <p className="text-sm font-semibold text-text-body-main">
+                                {pageCopy.tierSporeTitle}
+                            </p>
+                            <p className="text-xs text-text-body-secondary mt-1">
+                                {pageCopy.tierSporePollen}/day
+                            </p>
+                        </div>
+                        <span className="text-xl text-text-body-tertiary">
+                            →
+                        </span>
+                        <div className="flex flex-col items-center text-center px-4 py-4 rounded-lg bg-surface-card border border-border-subtle min-w-[100px]">
+                            <span className="text-3xl mb-2">🌱</span>
+                            <p className="text-sm font-semibold text-text-body-main">
+                                {pageCopy.tierSeedTitle}
+                            </p>
+                            <p className="text-xs text-text-body-secondary mt-1">
+                                {pageCopy.tierSeedPollen}/day
+                            </p>
+                        </div>
+                        <span className="text-xl text-text-body-tertiary">
+                            →
+                        </span>
+                        <div className="flex flex-col items-center text-center px-4 py-4 rounded-lg bg-surface-card border border-border-subtle min-w-[100px]">
+                            <span className="text-3xl mb-2">🌸</span>
+                            <p className="text-sm font-semibold text-text-body-main">
+                                {pageCopy.tierFlowerTitle}
+                            </p>
+                            <p className="text-xs text-text-body-secondary mt-1">
+                                {pageCopy.tierFlowerPollen}/day
+                            </p>
+                        </div>
+                        <span className="text-xl text-text-body-tertiary">
+                            →
+                        </span>
+                        <div className="flex flex-col items-center text-center px-4 py-4 rounded-lg bg-surface-card border border-border-subtle min-w-[100px]">
+                            <span className="text-3xl mb-2">🍯</span>
+                            <p className="text-sm font-semibold text-text-body-main">
+                                {pageCopy.tierNectarTitle}
+                            </p>
+                            <p className="text-xs text-text-body-secondary mt-1">
+                                {pageCopy.tierNectarPollen}/day
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Buy Pollen */}
+                    <SubCard size="compact" className="mb-6">
+                        <Heading variant="lime" as="h3">
+                            {pageCopy.buyCardTitle}
+                        </Heading>
+                        <Body size="sm" spacing="tight">
+                            {pageCopy.buyCardDescription}
+                        </Body>
+                        <Body
+                            size="xs"
+                            spacing="comfortable"
+                            className="text-text-highlight font-bold"
+                        >
+                            {pageCopy.buyCardPromo}
+                        </Body>
+                        <div className="flex flex-wrap gap-2">
                             <Button
                                 as="a"
                                 href="https://enter.pollinations.ai"
@@ -110,125 +216,23 @@ function HelloPage() {
                                 {pageCopy.viewPricingButton}
                                 <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
                             </Button>
-                        </SubCard>
-
-                        {/* 2. Earn Pollen */}
-                        <SubCard>
-                            <div className="flex items-baseline gap-2 mb-2">
-                                <Heading variant="rose" as="h3" spacing="tight">
-                                    {pageCopy.earnCardTitle}
-                                </Heading>
-                                <Badge variant="highlight">
-                                    {pageCopy.newBadge}
-                                </Badge>
-                            </div>
-                            <Body size="sm" spacing="comfortable">
-                                {pageCopy.earnCardDescription}
-                            </Body>
-                            <div className="flex flex-wrap gap-2">
-                                <Button
-                                    as="a"
-                                    href="https://github.com/pollinations/pollinations"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="secondary"
-                                    size="sm"
-                                >
-                                    {pageCopy.contributeOnGitHubButton}
-                                    <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
-                                </Button>
-                                <Button
-                                    as="a"
-                                    href={LINKS.githubSubmitApp}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="secondary"
-                                    size="sm"
-                                >
-                                    {pageCopy.submitYourAppButton}
-                                    <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
-                                </Button>
-                            </div>
-                        </SubCard>
-                    </div>
-
-                    {/* Earn Pollen Details: Tiers + Quests */}
-                    <div className="space-y-6">
-                        {/* Sponsorship Tiers */}
-                        <div>
-                            <Heading
-                                variant="simple"
-                                as="h3"
-                                spacing="comfortable"
+                            <Button
+                                as="a"
+                                href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="secondary"
+                                size="sm"
                             >
-                                {pageCopy.tiersSubtitle}
-                            </Heading>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                                {[
-                                    {
-                                        emoji: "🍄",
-                                        name: pageCopy.tierSporeTitle,
-                                        pollen: pageCopy.tierSporePollen,
-                                        desc: pageCopy.tierSporeDescription,
-                                    },
-                                    {
-                                        emoji: "🌱",
-                                        name: pageCopy.tierSeedTitle,
-                                        pollen: pageCopy.tierSeedPollen,
-                                        desc: pageCopy.tierSeedDescription,
-                                    },
-                                    {
-                                        emoji: "🌸",
-                                        name: pageCopy.tierFlowerTitle,
-                                        pollen: pageCopy.tierFlowerPollen,
-                                        desc: pageCopy.tierFlowerDescription,
-                                    },
-                                    {
-                                        emoji: "🍯",
-                                        name: pageCopy.tierNectarTitle,
-                                        pollen: pageCopy.tierNectarPollen,
-                                        desc: pageCopy.tierNectarDescription,
-                                    },
-                                ].map((tier) => (
-                                    <div
-                                        key={tier.name}
-                                        className="flex flex-col items-center text-center px-3 py-4 rounded-lg bg-surface-card border border-border-subtle"
-                                    >
-                                        <span className="text-3xl mb-2">
-                                            {tier.emoji}
-                                        </span>
-                                        <p className="text-sm font-semibold text-text-body-main">
-                                            {tier.name}
-                                        </p>
-                                        <p className="text-xs text-text-body-secondary mt-1">
-                                            {tier.pollen} pollen/day
-                                        </p>
-                                        <p className="text-[10px] text-text-body-tertiary mt-0.5">
-                                            {tier.desc}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                            {/* Beta note */}
-                            <p className="text-sm text-text-highlight mt-4">
-                                {pageCopy.tiersBetaNote}
-                            </p>
-                            {/* Tiers CTA */}
-                            <div className="mt-4">
-                                <Button
-                                    as="a"
-                                    href="https://enter.pollinations.ai"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="secondary"
-                                    size="default"
-                                >
-                                    {pageCopy.exploreTiersButton}
-                                    <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
-                                </Button>
-                            </div>
+                                {pageCopy.byopLearnMore}
+                                <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
+                            </Button>
                         </div>
-                    </div>
+                    </SubCard>
+
+                    <p className="text-sm text-text-highlight">
+                        {pageCopy.tiersBetaNote}
+                    </p>
                 </div>
 
                 <Divider />

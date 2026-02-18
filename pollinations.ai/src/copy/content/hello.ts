@@ -16,43 +16,59 @@ export const HELLO_PAGE = {
         "No black boxes. No vendor lock-in. Just a friendly API and a Discord full of people who actually help each other.",
 
     // Pollen Section
-    pollenTitle: "Pollen",
+    pollenTitle: "Pollen — One Credit, Every Model",
     pollenDescription:
-        "Running AI models costs money. Pollen is how we keep the servers humming without ads or selling your data. One simple credit across all models — predictable, transparent, no surprises. Note: Premium models (claude-large, veo, seedream-pro) require paid balance only.",
+        "Running AI models costs money. Pollen is how we keep the lights on without ads or selling your data. One credit works across every model — images, text, audio, video. Buy pollen packs or earn daily grants by contributing to the ecosystem.",
 
-    // Get Pollen Section
-    getPollenTitle: "How to Get Pollen",
-    getPollenIntro: "Two main paths:",
-    buyCardTitle: "Buy Pollen",
-    buyCardDescription:
-        "Add Pollen to your wallet and build. Straightforward packs, no subscriptions, no locked-in tiers.",
-    buyCardPromo: "🎁 Buy 1, get 1 free during beta!",
-    earnCardTitle: "Contribute & Get Pollen",
-    earnCardDescription:
-        "Ship an app, help in Discord, fix bugs, improve docs — every contribution earns you Pollen. We notice and we share.",
+    // Flywheel Steps
+    flywheelStep1Title: "1. Start Free",
+    flywheelStep1Description:
+        "Sign up, verify your account, and get a daily pollen grant as runway. Enough to experiment and prototype.",
+    flywheelStep1Tier: "🍄 Spore — 1 pollen/day",
 
-    // Earn Pollen: Sponsorship Tiers
-    tiersSubtitle: "Grow Through Our Tier System",
-    tiersBetaNote:
-        "⚠️ We're in beta — tiers, rewards, and values may change as we fine-tune the ecosystem.",
+    flywheelStep2Title: "2. Build & Ship",
+    flywheelStep2Description:
+        "Use your grants to build with 40+ models. Be active on GitHub, contribute code or docs, and watch your tier climb.",
+    flywheelStep2Tier: "🌱 Seed — 3 pollen/day",
+
+    flywheelStep3Title: "3. Your Users Pay",
+    flywheelStep3Description:
+        "Integrate BYOP (Bring Your Own Pollen) and let your users pay for what they use. You build, they fuel it — zero compute costs for you.",
+    flywheelStep3Tier: "🌸 Active contributor — 10 pollen/day",
+
+    flywheelStep4Title: "4. Scale Up",
+    flywheelStep4Description:
+        "More users, more contributions, higher tier. Top contributors and BYOP integrators unlock the highest daily grants.",
+    flywheelStep4Tier: "🍯 Nectar — 20 pollen/day",
+
+    flywheelClosingLine:
+        "Every step feeds the next. Build something people want, and the ecosystem pays you back.",
+
+    // Point System
+    pointSystemTitle: "How You Level Up",
+    pointSystemDescription:
+        "Everything you do earns points — GitHub activity, code contributions, community support, publishing apps, buying pollen, integrating BYOP. Your total points determine your tier. The more ways you contribute, the faster you climb.",
+
+    // Tier names (for tier ladder)
     tierSporeTitle: "Spore",
-    tierSporeDescription: "Verified account",
     tierSporePollen: "1",
     tierSeedTitle: "Seed",
-    tierSeedDescription: "Active developer",
     tierSeedPollen: "3",
-    tierFlowerTitle: "Flower",
-    tierFlowerDescription: "Active contributor",
+    tierFlowerTitle: "Active contributor",
     tierFlowerPollen: "10",
     tierNectarTitle: "Nectar",
-    tierNectarDescription: "Soon",
     tierNectarPollen: "20",
 
-    // Earn Pollen: Quests
-    questsSubtitle: "Ways to Contribute",
-    questsDescription:
-        "Fix a bug, answer a question, share what you built, improve the docs. Every contribution matters and gets recognized.",
-    questsStatus: "New",
+    // Buy Pollen
+    buyCardTitle: "Buy Pollen",
+    buyCardDescription:
+        "Straightforward packs, no subscriptions. Or let your app's users pay with their own Pollen via BYOP.",
+    buyCardPromo: "🎁 Buy 1, get 1 free during beta!",
+    byopLearnMore: "BYOP Docs",
+
+    // Beta note
+    tiersBetaNote:
+        "⚠️ Beta — tiers, points, and rewards may evolve as we fine-tune the ecosystem.",
 
     // What You Can Build Section
     buildTitle: "What People Build",

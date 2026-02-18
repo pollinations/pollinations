@@ -4,8 +4,8 @@ import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
+import { BuildDiary } from "../components/BuildDiary";
 import { ImageGenerator } from "../components/ImageGenerator";
-import { NewsSection } from "../components/NewsSection";
 import { TopContributors } from "../components/TopContributors";
 import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
@@ -116,6 +116,21 @@ export default function CommunityPage() {
                 {/* Divider */}
                 <Divider />
 
+                {/* Build Diary */}
+                <div className="mb-12">
+                    <Heading variant="section">
+                        {pageCopy.buildDiaryTitle || "Build Diary"}
+                    </Heading>
+                    <Body size="sm" spacing="comfortable">
+                        {pageCopy.buildDiarySubtitle ||
+                            "A visual log of what we ship every day."}
+                    </Body>
+                    <BuildDiary />
+                </div>
+
+                {/* Divider */}
+                <Divider />
+
                 {/* Voting Section */}
                 <div className="mb-12">
                     <Heading variant="section">
@@ -157,9 +172,6 @@ export default function CommunityPage() {
 
                 {/* Top Contributors Component */}
                 <TopContributors />
-
-                {/* News Section */}
-                <NewsSection limit={15} title={pageCopy.newsTitle} />
 
                 {/* Supporters Section */}
                 <div>

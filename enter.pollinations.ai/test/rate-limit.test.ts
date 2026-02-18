@@ -264,45 +264,37 @@ test(
     async ({ apiKey, mocks }) => {
         await mocks.enable("polar", "tinybird");
 
-        // Mock text service to return 429 (simulating upstream provider rate limit)
         const textServiceHost = new URL(env.TEXT_SERVICE_URL).host;
-        const currentFetch = globalThis.fetch;
+        const originalFetch = globalThis.fetch;
+
         globalThis.fetch = async (input: any, init?: any) => {
-            const url = new URL(
-                input instanceof Request ? input.url : input.toString(),
-            );
-            if (url.host === textServiceHost) {
+            const url = input instanceof Request ? input.url : String(input);
+            if (new URL(url).host === textServiceHost) {
                 return new Response(
                     JSON.stringify({
-                        error: {
-                            message: "Rate limit exceeded",
-                            type: "rate_limit_error",
-                        },
+                        error: { message: "Rate limit exceeded", type: "rate_limit_error" },
                     }),
-                    {
-                        status: 429,
-                        headers: { "content-type": "application/json" },
-                    },
+                    { status: 429, headers: { "content-type": "application/json" } },
                 );
             }
-            return currentFetch(input, init);
+            return originalFetch(input, init);
         };
 
-        const response = await sendTestOpenAIRequest({
-            apiKey,
-            clientIp: "192.0.200.1",
-            model: "openai",
-            message: "Hello",
-        });
+        try {
+            const response = await sendTestOpenAIRequest({
+                apiKey,
+                clientIp: "192.0.200.1",
+                model: "openai",
+                message: "Hello",
+            });
 
-        // Upstream 429 should be remapped to 502 Bad Gateway
-        expect(response.status).toBe(502);
+            expect(response.status).toBe(502);
+            const body: any = await response.json();
+            expect(body.error.code).toBe("BAD_GATEWAY");
 
-        const body: any = await response.json();
-        expect(body.error.code).toBe("BAD_GATEWAY");
-
-        globalThis.fetch = currentFetch;
-
-        log.info("✓ Upstream 429 remapped to 502 Bad Gateway");
+            log.info("✓ Upstream 429 remapped to 502 Bad Gateway");
+        } finally {
+            globalThis.fetch = originalFetch;
+        }
     },
 );

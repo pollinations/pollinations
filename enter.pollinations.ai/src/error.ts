@@ -95,18 +95,16 @@ export const handleError: ErrorHandler<Env> = async (err, c) => {
 
     if (err instanceof HTTPException) {
         const status = err.status;
-        const response = createBaseErrorResponse(err, status, timestamp);
         log.trace("HttpException: {message}", {
             message: err.message || getDefaultErrorMessage(err.status),
         });
-        return c.json(response, status);
+        return c.json(createErrorResponse(err, status, timestamp), status);
     }
 
     if (err instanceof APIError) {
         const status = err.statusCode as ContentfulStatusCode;
-        const response = createBaseErrorResponse(err, status, timestamp);
         log.trace("APIError: {error}", { error: err });
-        return c.json(response, status);
+        return c.json(createErrorResponse(err, status, timestamp), status);
     }
 
     if (err instanceof ValidationError) {
@@ -156,14 +154,6 @@ function createErrorResponse(
     };
 }
 
-function createBaseErrorResponse(
-    error: Error,
-    status: ContentfulStatusCode,
-    timestamp: string,
-): ErrorResponse {
-    return createErrorResponse(error, status, timestamp);
-}
-
 function createValidationErrorResponse(
     error: ValidationError,
     status: ContentfulStatusCode,
@@ -188,11 +178,8 @@ function createInternalErrorResponse(
 }
 
 /**
- * Remap upstream provider error status codes that aren't the user's fault.
- * A 429 from a downstream provider (e.g. OpenAI/Portkey/ElevenLabs rate limit)
- * means *we* hit their quota — not that the user is sending too many requests.
- * We convert these to 502 Bad Gateway so clients can distinguish between
- * "you're rate-limited" (our own 429) and "upstream provider issue" (502).
+ * Remap upstream 429s to 502 so clients can distinguish between our own rate
+ * limit (429) and a downstream provider quota issue (502 Bad Gateway).
  */
 export function remapUpstreamStatus(status: number): ContentfulStatusCode {
     if (status === 429) return 502;

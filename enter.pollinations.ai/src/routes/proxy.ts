@@ -74,8 +74,6 @@ const chatCompletionHandlers = factory.createHandlers(
         });
 
         if (!response.ok) {
-            // Read upstream error and throw UpstreamError to get structured error response
-            // This preserves the status code while providing consistent error format
             const responseText = await response.text();
             log.warn("Chat completions error {status}: {body}", {
                 status: response.status,
@@ -377,8 +375,6 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             if (!response.ok) {
-                // Read upstream error and throw UpstreamError to get structured error response
-                // This preserves the status code while providing consistent error format
                 const responseText = await response.text();
                 log.warn("Text service error {status}: {body}", {
                     status: response.status,
@@ -495,8 +491,6 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             if (!response.ok) {
-                // Read upstream error and throw UpstreamError to get structured error response
-                // This preserves the status code while providing consistent error format
                 const responseText = await response.text();
                 log.warn("Image service error {status}: {body}", {
                     status: response.status,

@@ -1,6 +1,10 @@
 import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+// Wrapper for resolver that enables schema deduplication via $ref
+// Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
+// @ts-expect-error - Import StandardSchemaV1 from the correct location
+import type { StandardSchemaV1 } from "hono-openapi";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
 import { type BalanceVariables, balance } from "@/middleware/balance.ts";
@@ -14,9 +18,7 @@ import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import type { Env } from "../env.ts";
 
-// Wrapper for resolver that enables schema deduplication via $ref
-// Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
-const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
+const resolver = <T extends StandardSchemaV1>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
@@ -357,10 +359,31 @@ export const proxyRoutes = new Hono<Env>()
         validator(
             "param",
             z.object({
-                prompt: z.string().min(1).meta({
-                    description: "Text prompt for generation",
-                    example: "Write a haiku about coding",
-                }),
+                prompt: z
+                    .string()
+                    .min(1)
+                    .max(2000)
+                    .refine((val) => {
+                        // Allow newlines, tabs, carriage returns (useful for multiline prompts)
+                        // Block other control characters (null bytes, etc.)
+                        for (let i = 0; i < val.length; i++) {
+                            const code = val.charCodeAt(i);
+                            if (
+                                code >= 0x00 &&
+                                code <= 0x1f &&
+                                code !== 0x09 &&
+                                code !== 0x0a &&
+                                code !== 0x0d
+                            ) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }, "Prompt cannot contain control characters (except newlines, tabs, carriage returns)")
+                    .meta({
+                        description: "Text prompt for generation",
+                        example: "Write a haiku about coding",
+                    }),
             }),
         ),
         validator("query", GenerateTextRequestQueryParamsSchema),
@@ -407,6 +430,253 @@ export const proxyRoutes = new Hono<Env>()
             // Backend returns plain text for text models and raw audio for audio models
             // No JSON parsing needed for GET endpoint - just pass through the response
             return response;
+        },
+    )
+    .post(
+        // Use :prompt{[\s\S]+} regex to capture everything including slashes AND newlines
+        // .+ does not match newlines, but [\s\S]+ matches any character including \n
+        // This creates a named param for OpenAPI docs while matching any characters
+        "/image/:prompt{[\\s\\S]+}",
+        // File uploads aren't cached - cache key doesn't include file content, causing cache poisoning
+        describeRoute({
+            tags: ["gen.pollinations.ai"],
+            description: [
+                "Generate an image or video from a text prompt with an uploaded reference image.",
+                "",
+                "Upload an image file as multipart/form-data for Image-to-Image (img2img) generation.",
+                "",
+                "**Form Parameters:**",
+                "- `image`: The image file (multipart file upload). Supported: JPEG, PNG, WebP, GIF (max 7MB)",
+                "",
+                "**Query Parameters:**",
+                "All standard image generation parameters (model, width, height, seed, etc.) work identically to the GET endpoint.",
+                "",
+                "**Authentication:**",
+                "Include your API key as a Bearer token in the Authorization header.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description:
+                        "Success - Returns the generated image or video",
+                    content: {
+                        "image/jpeg": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "image/png": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                        "video/mp4": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                prompt: z
+                    .string()
+                    .min(1)
+                    .max(2000)
+                    .refine((val) => {
+                        // Allow newlines, tabs, carriage returns (useful for multiline prompts)
+                        // Block other control characters (null bytes, etc.)
+                        for (let i = 0; i < val.length; i++) {
+                            const code = val.charCodeAt(i);
+                            if (
+                                code >= 0x00 &&
+                                code <= 0x1f &&
+                                code !== 0x09 &&
+                                code !== 0x0a &&
+                                code !== 0x0d
+                            ) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }, "Prompt cannot contain control characters (except newlines, tabs, carriage returns)")
+                    .meta({
+                        description:
+                            "Text description for image generation with the uploaded reference",
+                        example: "a beautiful sunset over mountains",
+                    }),
+            }),
+        ),
+        validator("query", GenerateImageRequestQueryParamsSchema),
+        resolveModel("generate.image"),
+        track("generate.image"),
+        async (c) => {
+            const log = c.get("log").getChild("image-upload");
+            await c.var.auth.requireAuthorization();
+            c.var.auth.requireModelAccess();
+            c.var.auth.requireKeyBudget();
+            await checkBalance(c.var);
+
+            try {
+                // Parse multipart form data
+                const formData = await c.req.formData();
+                const imageFile = formData.get("image") as File | null;
+
+                if (!imageFile) {
+                    throw new HTTPException(400, {
+                        message: 'Missing required "image" form field',
+                    });
+                }
+
+                // Validate it is a file
+                if (!(imageFile instanceof File)) {
+                    throw new HTTPException(400, {
+                        message: '"image" must be a file upload',
+                    });
+                }
+
+                // Validate file size - 7MB limit prevents Cloudflare Workers heap exhaustion
+                const MAX_FILE_SIZE = 7 * 1024 * 1024;
+                if (imageFile.size > MAX_FILE_SIZE) {
+                    throw new HTTPException(413, {
+                        message: `Image file too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+                    });
+                }
+                const fileBuffer = await imageFile.arrayBuffer();
+
+                // Validate content-type
+                const validContentTypes = [
+                    "image/jpeg",
+                    "image/png",
+                    "image/webp",
+                    "image/gif",
+                ];
+                if (!validContentTypes.includes(imageFile.type)) {
+                    throw new HTTPException(400, {
+                        message: `Invalid image type. Supported: ${validContentTypes.join(", ")}`,
+                    });
+                }
+
+                // Validate file by magic bytes (first few bytes) to prevent spoofing
+                const validateMagicBytes = (
+                    buffer: ArrayBuffer,
+                    contentType: string,
+                ): boolean => {
+                    const view = new Uint8Array(buffer);
+
+                    // Magic byte signatures
+                    const signatures: { [key: string]: number[] } = {
+                        "image/jpeg": [0xff, 0xd8, 0xff],
+                        "image/png": [0x89, 0x50, 0x4e, 0x47],
+                        "image/webp": [0x52, 0x49, 0x46, 0x46],
+                        "image/gif": [0x47, 0x49, 0x46],
+                    };
+
+                    const expected = signatures[contentType];
+                    if (!expected) return false;
+
+                    // Check if file starts with expected magic bytes
+                    for (let i = 0; i < expected.length; i++) {
+                        if (view[i] !== expected[i]) {
+                            return false;
+                        }
+                    }
+
+                    // For WebP, also check for "WEBP" signature after RIFF header
+                    if (contentType === "image/webp") {
+                        const webpSignature = [0x57, 0x45, 0x42, 0x50];
+                        for (let i = 0; i < webpSignature.length; i++) {
+                            if (view[8 + i] !== webpSignature[i]) {
+                                return false;
+                            }
+                        }
+                    }
+
+                    return true;
+                };
+
+                // Validate magic bytes
+                if (!validateMagicBytes(fileBuffer, imageFile.type)) {
+                    throw new HTTPException(400, {
+                        message:
+                            "File does not appear to be a valid image. Magic bytes do not match declared type.",
+                    });
+                }
+
+                log.debug("Forwarding multipart image upload", {
+                    filename: imageFile.name,
+                    size: fileBuffer.byteLength,
+                    contentType: imageFile.type,
+                });
+
+                // Build new FormData to send to backend
+                const backendFormData = new FormData();
+                backendFormData.append(
+                    "image",
+                    new Blob([fileBuffer], { type: imageFile.type }),
+                    imageFile.name,
+                );
+
+                // Build backend URL with prompt and all query parameters
+                const targetUrl = proxyUrl(
+                    c,
+                    `${c.env.IMAGE_SERVICE_URL}/prompt`,
+                );
+                // Encode prompt to prevent path traversal attacks (e.g., ../../admin/config)
+                targetUrl.pathname = joinPaths(
+                    targetUrl.pathname,
+                    encodeURIComponent(c.req.param("prompt")),
+                );
+
+                // Add all query parameters from original request
+                const originalParams = new URL(c.req.url).searchParams;
+                for (const [key, value] of Array.from(
+                    originalParams.entries(),
+                )) {
+                    targetUrl.searchParams.set(key, value);
+                }
+
+                // Forward to backend image service as multipart
+                const response = await fetch(targetUrl.toString(), {
+                    method: "POST",
+                    headers: {
+                        "x-request-id": c.get("requestId"),
+                        "x-forwarded-host": c.req.header("host") || "",
+                        "x-forwarded-for":
+                            c.req.header("cf-connecting-ip") || "",
+                        "x-real-ip": c.req.header("cf-connecting-ip") || "",
+                        "x-enter-token": c.env.PLN_ENTER_TOKEN,
+                        "x-user-api-key": c.var.auth?.apiKey?.rawKey || "",
+                    },
+                    body: backendFormData,
+                });
+
+                if (!response.ok) {
+                    const responseText = await response.text();
+                    log.warn("Image service error {status}: {body}", {
+                        status: response.status,
+                        body: responseText,
+                    });
+                    throw new UpstreamError(
+                        response.status as ContentfulStatusCode,
+                        {
+                            message:
+                                responseText ||
+                                getDefaultErrorMessage(response.status),
+                            requestUrl: targetUrl,
+                        },
+                    );
+                }
+
+                return response;
+            } catch (e) {
+                if (e instanceof HTTPException) {
+                    throw e;
+                }
+
+                log.error("Image upload error: {error}", { error: e });
+                throw new HTTPException(500, {
+                    message: "Failed to process image upload",
+                    cause: e,
+                });
+            }
         },
     )
     .get(
@@ -465,11 +735,32 @@ export const proxyRoutes = new Hono<Env>()
         validator(
             "param",
             z.object({
-                prompt: z.string().min(1).meta({
-                    description:
-                        "Text description of the image or video to generate",
-                    example: "a beautiful sunset over mountains",
-                }),
+                prompt: z
+                    .string()
+                    .min(1)
+                    .max(2000)
+                    .refine((val) => {
+                        // Allow newlines, tabs, carriage returns (useful for multiline prompts)
+                        // Block other control characters (null bytes, etc.)
+                        for (let i = 0; i < val.length; i++) {
+                            const code = val.charCodeAt(i);
+                            if (
+                                code >= 0x00 &&
+                                code <= 0x1f &&
+                                code !== 0x09 &&
+                                code !== 0x0a &&
+                                code !== 0x0d
+                            ) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }, "Prompt cannot contain control characters (except newlines, tabs, carriage returns)")
+                    .meta({
+                        description:
+                            "Text description of the image or video to generate",
+                        example: "a beautiful sunset over mountains",
+                    }),
             }),
         ),
         validator("query", GenerateImageRequestQueryParamsSchema),

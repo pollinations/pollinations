@@ -56,6 +56,7 @@ export interface ButtonProps
         VariantProps<typeof buttonVariants> {
     as?: React.ElementType;
     href?: string;
+    to?: string;
     target?: string;
     rel?: string;
 }

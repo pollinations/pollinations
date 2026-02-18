@@ -165,13 +165,13 @@ export function KPITrendTable({ weeklyData, title }) {
                 "Formula: (Revenue / Total Tokens) × 1,000,000. Unit economics — how much revenue per million tokens consumed.",
         },
         {
-            key: "conversionRate",
-            name: "Activation→Purchase",
+            key: "purchaseRate",
+            name: "Purchase Rate",
             category: "Efficiency",
             format: "percent",
-            calc: (w) => (w.packPurchases / w.activations) * 100,
+            calc: (w) => (w.packPurchases / w.wau) * 100,
             tooltip:
-                "Formula: (Pack Purchases / Activated Users) × 100. Funnel conversion from activation to paying customer.",
+                "Formula: (Pack Purchases / WAU) × 100. What % of active users bought a pollen pack this week.",
         },
         {
             key: "availability",

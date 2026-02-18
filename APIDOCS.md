@@ -135,19 +135,19 @@ Get the current user's tier status and daily pollen information.
 
   - **`tier` (required)**
 
-    `string`, possible values: `"microbe", "spore", "seed", "flower", "nectar", "router", "none"`
+    `string`, possible values: `"spore", "seed", "flower", "nectar", "router", "none"`
 
 - **`target` (required)**
 
-  `string`, possible values: `"microbe", "spore", "seed", "flower", "nectar", "router"`
+  `string`, possible values: `"spore", "seed", "flower", "nectar", "router"`
 
 **Example:**
 
 ```json
 {
-  "target": "microbe",
+  "target": "spore",
   "active": {
-    "tier": "microbe",
+    "tier": "spore",
     "displayName": "",
     "dailyPollen": 1
   }
@@ -318,7 +318,7 @@ Get user profile info (name, email, GitHub username, tier, createdAt, nextResetA
 
 - **`tier` (required)**
 
-  `string`, possible values: `"anonymous", "microbe", "spore", "seed", "flower", "nectar", "router"` — User's current tier level
+  `string`, possible values: `"anonymous", "spore", "seed", "flower", "nectar", "router"` — User's current tier level
 
 **Example:**
 

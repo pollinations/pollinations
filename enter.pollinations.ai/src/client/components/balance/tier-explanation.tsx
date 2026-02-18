@@ -68,26 +68,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 📈 <strong>Grow Your Tier:</strong> For developers building with
                 pollinations.ai. Level up to earn more daily pollen.
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                {/* Microbe */}
-                <div
-                    className={`${tierColors.microbe} ${currentTier === "microbe" ? tierActiveRing.microbe : ""}`}
-                >
-                    <div className="flex items-center gap-1.5">
-                        <span>{TIER_EMOJIS.microbe}</span>
-                        <strong className="text-gray-800 text-sm">
-                            Microbe
-                        </strong>
-                    </div>
-                    <p className="text-xs font-mono text-gray-600 mt-1">
-                        {TIER_POLLEN.microbe} pollen/day
-                    </p>
-                    <div className="mt-1.5 border-t border-gray-200 pt-1.5">
-                        <p className={requirementLabelStyle}>To unlock</p>
-                        <p className="text-xs text-gray-500">Sign up</p>
-                    </div>
-                </div>
-
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {/* Spore */}
                 <div
                     className={`${tierColors.spore} ${currentTier === "spore" ? tierActiveRing.spore : ""}`}
@@ -101,10 +82,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <p className={requirementLabelStyle}>To unlock</p>
-                        <p className="text-xs text-gray-500">Auto-verified</p>
-                        <p className="text-[10px] text-emerald-600 mt-0.5">
-                            Checked on signup
-                        </p>
+                        <p className="text-xs text-gray-500">Sign up</p>
                     </div>
                 </div>
 

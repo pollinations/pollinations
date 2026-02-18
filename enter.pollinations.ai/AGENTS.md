@@ -626,11 +626,12 @@ https://myapp.com/callback#api_key=pk_xxxxx
 
 | Tier   | Emoji | Pollen/Day | Criteria                 |
 | ------ | ----- | ---------- | ------------------------ |
-| microbe| 🦠    | 0.1        | Entry tier (auto-upgrades once verified) |
-| spore  | 🍄    | 1          | Verified accounts        |
+| spore  | 🍄    | 1          | Verified accounts (entry tier) |
 | seed   | 🌱    | 3          | GitHub engagement        |
 | flower | 🌸    | 10         | Contributor              |
 | nectar | 🍯    | 20         | Coming soon              |
+
+> **Internal:** All authenticated users get a baseline 0.1 pollen/day grant (stored as `microbe` tier in DB). Not surfaced in public docs/UI — public tiers start at spore.
 
 ### Quick Tier Update
 

@@ -166,12 +166,6 @@ function HelloPage() {
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                                 {[
                                     {
-                                        emoji: "🦠",
-                                        name: pageCopy.tierMicrobeTitle,
-                                        pollen: pageCopy.tierMicrobePollen,
-                                        desc: pageCopy.tierMicrobeDescription,
-                                    },
-                                    {
                                         emoji: "🍄",
                                         name: pageCopy.tierSporeTitle,
                                         pollen: pageCopy.tierSporePollen,

@@ -20,11 +20,12 @@ Must run from the `pollinations` repo root with access to `enter.pollinations.ai
 
 | Tier | Emoji | Pollen/Day | Criteria |
 |------|-------|------------|----------|
-| microbe | 🦠 | 0.1 | Entry tier (auto-upgrades once verified) |
-| spore | 🍄 | 1 | Verified accounts |
+| spore | 🍄 | 1 | Verified accounts (entry tier) |
 | seed | 🌱 | 3 | GitHub engagement |
 | flower | 🌸 | 10 | Contributor |
 | nectar | 🍯 | 20 | Coming soon |
+
+> **Internal:** All authenticated users get a baseline 0.1 pollen/day (`microbe` tier in DB). Not surfaced publicly — tiers start at spore in docs/UI.
 
 ---
 

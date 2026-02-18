@@ -35,11 +35,8 @@ export const HELLO_PAGE = {
     tiersSubtitle: "Grow Through Our Tier System",
     tiersBetaNote:
         "⚠️ We're in beta — tiers, rewards, and values may change as we fine-tune the ecosystem.",
-    tierMicrobeTitle: "Microbe",
-    tierMicrobeDescription: "Entry tier",
-    tierMicrobePollen: "0.1",
     tierSporeTitle: "Spore",
-    tierSporeDescription: "Verified",
+    tierSporeDescription: "Verified (entry tier)",
     tierSporePollen: "1",
     tierSeedTitle: "Seed",
     tierSeedDescription: "GitHub activity",

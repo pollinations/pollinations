@@ -1,149 +1,132 @@
 // HelloPage content configuration
 
 export const HELLO_PAGE = {
-    // Hero Section
-    heroTitle: "Open-source AI for people who make things.",
-    heroIntro:
-        "A community-driven platform where developers, artists, and tinkerers build together. No gatekeeping, no corporate nonsense — just good tools and good people.",
-    heroTagline:
-        "APIs built in the open. Loved by developers. Powered by community.",
+    // Section 1 — Hero
+    heroTitle: "Build AI apps. For free.",
+    heroBody:
+        "One API. 40+ models. Text, image, audio, video. You get free compute every day — enough to build, test, and ship a real app. No credit card, no backend, no catch.",
+    heroStat1: "500+",
+    heroStat1Label: "live apps",
+    heroStat2: "3M",
+    heroStat2Label: "monthly users",
+    heroStat3: "200",
+    heroStat3Label: "countries",
+    startBuildingButton: "Start Building",
+    joinDiscordButton: "Join the Discord",
 
-    // What pollinations.ai Is
-    whatIsTitle: "What pollinations.ai Is",
-    whatIsDescription:
-        "pollinations.ai is an open-source AI platform built by and for the community. We offer a unified API for images, text, audio, and video. Everything runs in the open: our code, our roadmap, our conversations. Hundreds of developers are already building tools, games, bots, and weird experiments with us. You're welcome to join.",
-    whatIsTagline:
-        "No black boxes. No vendor lock-in. Just a friendly API and a Discord full of people who actually help each other.",
-
-    // Pollen Section
-    pollenTitle: "Pollen — One Credit, Every Model",
-    pollenDescription:
-        "Running AI models costs money. One credit works across every model — images, text, audio, video. Every account gets a daily pollen grant as runway — enough to experiment, prototype, and ship. As you contribute, your tier grows and so does your grant.",
-
-    // Flywheel Steps
-    flywheelStep1Title: "1. Sign Up",
-    flywheelStep1Description:
-        "Create your account and get verified automatically. You start with a daily pollen grant to build with 40+ models right away.",
-
-    flywheelStep2Title: "2. Build & Ship",
-    flywheelStep2Description:
-        "Use your grants to build your app. As we verify your GitHub activity, your tier upgrades automatically — giving you a bigger daily grant.",
-
-    flywheelStep3Title: "3. Bring Your Own Pollen",
-    flywheelStep3Description:
-        "Integrate BYOP and let your users pay for what they use. Your app runs at zero compute cost to you. Integrating BYOP is the fastest way to level up.",
-
-    flywheelStep4Title: "4. Scale Up",
-    flywheelStep4Description:
-        "More users, more contributions, higher tier. The ecosystem rewards builders who bring value.",
-
-    // How You Level Up
-    pointSystemTitle: "How You Level Up",
-    pointSystemDescription:
-        "Every step feeds the next. Build something people want, and the ecosystem pays you back. Everything you do earns points toward your next tier. Your total points determine which tier you're in — and each tier unlocks a bigger daily pollen grant.",
-    pointActivity1: "Sign up and verify your account",
-    pointActivity2: "GitHub activity and open-source contributions",
-    pointActivity3: "Code, docs, and community support",
-    pointActivity4: "Publish apps and complete quests",
-
-    // Tier names (for tier ladder)
-    tierSporeTitle: "Spore",
-    tierSporePollen: "1",
-    tierSeedTitle: "Seed",
-    tierSeedPollen: "3",
-    tierFlowerTitle: "Flower",
-    tierFlowerPollen: "10",
-    tierNectarTitle: "Nectar",
-    tierNectarPollen: "20",
-
-    // Buy Pollen
-    buyCardTitle: "Buy Pollen",
-    buyCardDescription:
-        "Straightforward packs, no subscriptions. Buying pollen also earns you points toward your next tier.",
-    buyCardPromo: "🎁 Buy 1, get 1 free during beta!",
-
-    // BYOP
-    sellCardTitle: "Let Your Users Pay",
-    sellCardDescription:
-        "Integrate BYOP — your users authenticate with their own Pollen. You ship the app, they cover the compute.",
-    byopLearnMore: "BYOP Docs",
-
-    // Beta note
-    tiersBetaNote:
-        "⚠️ Beta — tiers, points, and rewards may evolve as we fine-tune the ecosystem.",
-
-    // What You Can Build Section
-    buildTitle: "What People Build",
-    buildIntro: "Some things the community has made:",
-    buildFeature1: "Chatbots and agents with memory",
-    buildFeature2: "Visual worlds with consistent characters and assets",
-    buildFeature3:
-        "Multi-step workflows for research, summarization, and creation",
-    buildFeature4:
-        "Interactive media and new modalities (video, audio, and more — coming soon)",
-
-    // Why Choose Section
-    whyChooseTitle: "Why Developers Choose pollinations.ai",
-    whyChooseIntro:
-        "You get a platform that cares about aesthetics and ergonomics as much as raw capability.",
-    whyChooseFeature1:
-        "Beautiful Dev Experience — clean APIs, thoughtful defaults, and friendly docs.",
-    whyChooseFeature2:
-        "Unified API — work with multiple models and modalities through one place.",
-    whyChooseFeature3:
-        "No BS Pricing — Pollen is simple and transparent. You always know what you're paying.",
-    whyChooseFeature4:
-        "Community-Driven — the roadmap comes from Discord conversations, not boardrooms.",
-    whyChooseFeature5:
-        "Fully Open Source — every line of code is on GitHub. Fork it, read it, improve it.",
-
-    // Community Section
-    communityTitle: "Built Together",
-    communityDescription:
-        "Students, indie devs, artists, researchers, hobbyists — all building weird and wonderful things together. Jump into Discord, browse the GitHub, see what people are making. This is a place where people actually help each other.",
-
-    // Roadmap Section
-    roadmapTitle: "What's Next",
-    roadmapIntro: "Here's what we're working on:",
-    roadmapItem1Title: "Creator Earnings",
-    roadmapItem1Description:
-        "Pollen spent inside your app flows back to you. Track performance, cash out to fiat or crypto.",
-    roadmapItem2Title: "Quests & Rewards",
-    roadmapItem2Description:
-        "Gamified challenges that award points. Publish your first app, hit milestones, help the community.",
-    roadmapItem3Title: "App Directory",
-    roadmapItem3Description:
-        "Browse, discover, and rank community-built apps. More visibility for builders.",
-    roadmapItem4Title: "Agent Economy",
-    roadmapItem4Description:
-        "AI agents as first-class participants via 402 payment protocol. Bots consume, publish, and earn — just like humans.",
-    roadmapItem5Title: "Pollen Widget SDK",
-    roadmapItem5Description:
-        "Embeddable component for your app — login state, pollen balance, and in-app purchase in one drop-in.",
-    roadmapItem6Title: "Crypto Payments",
-    roadmapItem6Description:
-        "Buy pollen with USDC and stablecoins. Native crypto rails for the ecosystem.",
-
-    // CTA Section
-    ctaTitle: "Ready to Create?",
-    ctaDescription: "Start building with tools that feel good to use.",
-
-    // CTA Buttons
-    getApiKeyButton: "Get Your API Key",
-    startCreatingButton: "Start Creating",
-    joinCommunityButton: "Join the Community",
-    viewPricingButton: "Pricing",
-    exploreTiersButton: "Learn More About Tiers",
-    seeAppsButton: "See Featured Apps",
-    contributeOnGitHubButton: "Contribute on GitHub",
-    submitYourAppButton: "Submit Your App",
-
-    // Badges
-    newBadge: "New",
-
-    // Section titles
-    whatsNewTitle: "What's New",
-
-    // Buttons
+    // Section 2 — What Your App Gets
+    appGetsTitle: "Everything your app needs. Nothing it doesn't.",
+    appGetsCard1Title: "One API, every model",
+    appGetsCard1Body:
+        "40+ models from 15+ providers. Text, image, audio, video. One integration.",
+    appGetsCard2Title: "Free compute every day",
+    appGetsCard2Body:
+        "Pollen grants land in your account daily. Build, test, iterate, ship.",
+    appGetsCard3Title: "No backend needed",
+    appGetsCard3Body:
+        "Call the API straight from the browser. We handle routing, reliability, and scale.",
+    appGetsFooter:
+        "We give you the intelligence layer. The UI, the design, the product — that's yours.",
     readTheDocsButton: "Read the Docs",
+
+    // Section 3 — How It Works
+    howItWorksTitle: "From zero to live app. Here's the path.",
+    howItWorksStep1Title: "Sign up",
+    howItWorksStep1Body:
+        "Create an account. Verify. You start getting free compute daily.",
+    howItWorksStep2Title: "Build",
+    howItWorksStep2Body:
+        "Use the API to build whatever you want. Chatbot, image gen, game, research tool — your call.",
+    howItWorksStep3Title: "Get users",
+    howItWorksStep3Body:
+        "Ship your app. Your users spend their own Pollen. Your API costs drop to zero.",
+    howItWorksStep4Title: "Grow",
+    howItWorksStep4Body:
+        "More users = higher tier = bigger daily grants. The platform grows with you.",
+    howItWorksFooter: "Each step feeds the next. You never stop moving.",
+
+    // Section 4 — Pollen
+    pollenTitle: "Pollen — one credit, every model.",
+    pollenBody:
+        "Pollen is what powers every AI generation on the platform. Users buy it once and spend it across any app — no subscriptions, no per-app billing. As a creator, you get Pollen for free through daily grants. That's your runway.",
+    buyCardTitle: "Buy Pollen",
+    buyCardBody:
+        "Simple packs. No subscriptions. Use it across every app on the platform.",
+    buyCardPromo: "Buy 1, get 1 free during beta!",
+    earnCardTitle: "Earn Pollen",
+    earnCardBody:
+        "Contribute — code, docs, community help — and the platform gives back.",
+    pollenFinePrint: "Note: premium models require paid balance.",
+
+    // Section 5 — Tiers
+    tiersTitle: "Do more, get more.",
+    tiersIntro:
+        "Your tier reflects how active you are. The more you build and contribute, the more free compute you get every day.",
+    tierSporeTitle: "Spore",
+    tierSporeDescription:
+        "Verified human. You're real — here's your first grant.",
+    tierSeedTitle: "Seed",
+    tierSeedDescription: "Active creator. Contributing, shipping apps.",
+    tierFlowerTitle: "Flower",
+    tierFlowerDescription:
+        "Your app has real users. Scales with your app activity.",
+    tierNectarTitle: "Nectar",
+    tierNectarDescription:
+        "Top-tier creator. Biggest grants. First in line when revenue share goes live.",
+    tiersPath1Label: "Contribute",
+    tiersPath1Body: "Code, docs, community help, GitHub activity.",
+    tiersPath2Label: "Grow the economy",
+    tiersPath2Body: "Publish apps, integrate BYOP, drive real usage.",
+    tiersBetaNote:
+        "We're in beta — tier thresholds and grant amounts may shift as we tune things together.",
+
+    // Section 6 — BYOP Spotlight
+    byopTitle: "Your users pay. Your costs disappear.",
+    byopBody:
+        "Bring Your Own Pollen (BYOP) is one integration. Your users log in with their Pollen account and pay for what they use inside your app. You don't spend a thing. This is how you go from burning grants to running an app at zero compute cost.",
+    byopDocsButton: "BYOP Docs",
+
+    // Section 7 — What People Are Building
+    buildingTitle: "Already happening.",
+    buildingBody:
+        "500+ apps live on the platform — chatbots, image generators, research tools, games, creative media. All built on free compute grants, all with real users.",
+    browseAppsButton: "Browse the Apps",
+
+    // Section 8 — We Build in the Open
+    openTitle: "We build in the open.",
+    recentUpdatesTitle: "What's New",
+    comingSoonLabel: "Shipping Soon",
+    comingSoonItem1Title: "Secure Frontend Auth",
+    comingSoonItem1Description:
+        "Frontend Auth is live in beta. Secure token handling and production-ready auth coming soon.",
+    comingSoonItem2Title: "Pollinations Login",
+    comingSoonItem2Description:
+        "One-click sign-in for your users. OAuth with any provider — simple for you, seamless for them.",
+    comingSoonItem3Title: "App Hosting",
+    comingSoonItem3Description:
+        "Ship your app on our infra. No deploy setup, no separate hosting bill.",
+    comingSoonItem4Title: "More Models, Better APIs",
+    comingSoonItem4Description:
+        "New models landing regularly. Video, audio, and whatever the community asks for next.",
+    comingSoonItem5Title: "Pollen Widget SDK",
+    comingSoonItem5Description:
+        "Drop-in component — login, balance, and in-app purchase in one embed.",
+    comingLaterLabel: "Later This Year",
+    comingLaterItem1Title: "Creator Revenue Share",
+    comingLaterItem1Description:
+        "Earn from Pollen spent in your app. Cash out or reinvest to grow.",
+    comingLaterItem2Title: "Monetization Tools",
+    comingLaterItem2Description:
+        "Content-relevant ads inside your app — an SDK you drop in. Another way to earn.",
+    comingLaterItem3Title: "App Discovery",
+    comingLaterItem3Description: "A marketplace where users find your app.",
+    comingFooter:
+        "Right now, the platform gives you runway — free compute that grows as you grow. We're building the rest together, in the open.",
+
+    // Section 10 — CTA
+    ctaTitle: "Come build with us.",
+    ctaBody:
+        "Free compute. One API. No gatekeeping. A community that actually shows up. Everything's open — the code, the roadmap, the conversations. Jump in.",
+    browseAppsLink: "Browse Apps",
+    communityLink: "Community",
 };

@@ -252,7 +252,7 @@ export function BuildDiary() {
                     &#x25C0;
                 </span>
                 <span
-                    className={`font-headline inline-flex items-center justify-center py-2 text-2xl font-black uppercase tracking-wider rounded-tag cursor-pointer transition-colors min-w-[220px] ${!onPR ? chipActive : chipInactive}`}
+                    className={`font-headline inline-flex items-center justify-center py-2 text-2xl font-black uppercase tracking-wider rounded-tag cursor-pointer transition-colors min-w-[220px] ${!onPR ? "bg-button-primary-bg text-text-on-color" : "bg-input-background text-text-body-secondary hover:text-text-body-main"}`}
                     onClick={() => setY(0)}
                 >
                     {dateLabel}
@@ -268,21 +268,6 @@ export function BuildDiary() {
                     &#x25B6;
                 </span>
             </div>
-
-            {/* PR chips — row below */}
-            {entry.prNumbers.length > 0 && (
-                <div className="flex gap-1 mt-2 flex-wrap">
-                    {entry.prNumbers.map((pr, i) => (
-                        <span
-                            key={pr}
-                            className={`${chipBase} ${y === i + 1 ? chipActive : chipInactive}`}
-                            onClick={() => setY(i + 1)}
-                        >
-                            #{pr}
-                        </span>
-                    ))}
-                </div>
-            )}
 
             <div className="mb-3.5" />
 
@@ -301,6 +286,21 @@ export function BuildDiary() {
                 <div className="text-xs text-text-body-tertiary mt-3.5">
                     {impactEmoji[prContent.impact] || "\u{1F4E6}"}{" "}
                     {prContent.impact} &middot; @{prContent.author}
+                </div>
+            )}
+
+            {/* PR chips — after description */}
+            {entry.prNumbers.length > 0 && (
+                <div className="flex gap-1 mt-3.5 flex-wrap">
+                    {entry.prNumbers.map((pr, i) => (
+                        <span
+                            key={pr}
+                            className={`${chipBase} ${y === i + 1 ? chipActive : chipInactive}`}
+                            onClick={() => setY(i + 1)}
+                        >
+                            #{pr}
+                        </span>
+                    ))}
                 </div>
             )}
 

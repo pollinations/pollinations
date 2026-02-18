@@ -1,0 +1,34 @@
+{
+  "pr_number": 8366,
+  "title": "feat: add interactive Build Diary to Community page",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8366",
+  "merged_at": "2026-02-18T10:10:21Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Dear Build Diary",
+    "blurb": "We've visualized the hive's memory. The new interactive Build Diary lets you scroll through our history, seeing every PR and daily update in glorious pixelated detail.",
+    "summary": "Replaced the static news section on the Community page with an interactive Build Diary that visualizes the project's development timeline using data from the repository history.",
+    "impact": "Visitors can now navigate the project's history visually, using keyboard controls to explore daily changes, weekly digests, and platform-specific content variants.",
+    "keywords": [
+      "community",
+      "ui",
+      "visualization",
+      "timeline",
+      "open source"
+    ],
+    "visual_concept": "The bee mascot interacting with a magical open book (the diary) that projects a glowing timeline of events. The book represents the new UI component.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot hovering over a large open pixelated book that projects a glowing holographic timeline of code blocks. Lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Pixel text: 'BUILD DIARY'. Emotionally warm, magical vibes."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-18T10:11:08.767034+00:00"
+}

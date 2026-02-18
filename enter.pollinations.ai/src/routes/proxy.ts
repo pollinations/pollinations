@@ -29,7 +29,11 @@ import { getServiceDefinition } from "@shared/registry/registry.ts";
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
+import {
+    getDefaultErrorMessage,
+    remapUpstreamStatus,
+    UpstreamError,
+} from "@/error.ts";
 import { validator } from "@/middleware/validator.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import {
@@ -70,8 +74,6 @@ const chatCompletionHandlers = factory.createHandlers(
         });
 
         if (!response.ok) {
-            // Read upstream error and throw UpstreamError to get structured error response
-            // This preserves the status code while providing consistent error format
             const responseText = await response.text();
             log.warn("Chat completions error {status}: {body}", {
                 status: response.status,
@@ -97,7 +99,7 @@ const chatCompletionHandlers = factory.createHandlers(
                 // Not JSON or parse failed - use raw text as-is
             }
 
-            throw new UpstreamError(response.status as ContentfulStatusCode, {
+            throw new UpstreamError(remapUpstreamStatus(response.status), {
                 message: errorMessage,
                 requestUrl: targetUrl,
             });
@@ -392,22 +394,16 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             if (!response.ok) {
-                // Read upstream error and throw UpstreamError to get structured error response
-                // This preserves the status code while providing consistent error format
                 const responseText = await response.text();
                 log.warn("Text service error {status}: {body}", {
                     status: response.status,
                     body: responseText,
                 });
-                throw new UpstreamError(
-                    response.status as ContentfulStatusCode,
-                    {
-                        message:
-                            responseText ||
-                            getDefaultErrorMessage(response.status),
-                        requestUrl: targetUrl,
-                    },
-                );
+                throw new UpstreamError(remapUpstreamStatus(response.status), {
+                    message:
+                        responseText || getDefaultErrorMessage(response.status),
+                    requestUrl: targetUrl,
+                });
             }
 
             // Backend returns plain text for text models and raw audio for audio models
@@ -510,22 +506,16 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             if (!response.ok) {
-                // Read upstream error and throw UpstreamError to get structured error response
-                // This preserves the status code while providing consistent error format
                 const responseText = await response.text();
                 log.warn("Image service error {status}: {body}", {
                     status: response.status,
                     body: responseText,
                 });
-                throw new UpstreamError(
-                    response.status as ContentfulStatusCode,
-                    {
-                        message:
-                            responseText ||
-                            getDefaultErrorMessage(response.status),
-                        requestUrl: targetUrl,
-                    },
-                );
+                throw new UpstreamError(remapUpstreamStatus(response.status), {
+                    message:
+                        responseText || getDefaultErrorMessage(response.status),
+                    requestUrl: targetUrl,
+                });
             }
 
             return response;

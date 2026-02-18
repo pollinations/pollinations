@@ -42,7 +42,7 @@ export const HELLO_PAGE = {
     tierSeedDescription: "Active developer",
     tierSeedPollen: "3",
     tierFlowerTitle: "Flower",
-    tierFlowerDescription: "App contributor",
+    tierFlowerDescription: "Active contributor",
     tierFlowerPollen: "10",
     tierNectarTitle: "Nectar",
     tierNectarDescription: "Soon",

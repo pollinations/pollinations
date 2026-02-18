@@ -8,7 +8,7 @@ The pollinations.ai tier system rewards contributors with increasing API credits
 |------|------------|------------|
 | **Spore** | 1 | Verified account (automatic after sign-up) |
 | **Seed** | 3 | Active developer (auto-upgraded daily via GitHub activity score) |
-| **Flower** | 10 | App contributor (submit app via issue) |
+| **Flower** | 10 | Active contributor (publish app or contribute code/docs) |
 | **Nectar** | 20 | Coming soon |
 
 > **Internal note:** All authenticated users receive a baseline 0.1 pollen/day grant on login (internally called "microbe" tier in code/DB). This is not surfaced in public docs or UI — the public tier system starts at Spore.

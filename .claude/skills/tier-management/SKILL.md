@@ -22,7 +22,7 @@ Must run from the `pollinations` repo root with access to `enter.pollinations.ai
 |------|-------|------------|----------|
 | spore | 🍄 | 1 | Verified account (automatic after sign-up) |
 | seed | 🌱 | 3 | Active developer (auto-upgraded daily via GitHub score) |
-| flower | 🌸 | 10 | App contributor (submit app via issue) |
+| flower | 🌸 | 10 | Active contributor (publish app or contribute code/docs) |
 | nectar | 🍯 | 20 | Coming soon |
 
 > **Internal:** All authenticated users get a baseline 0.1 pollen/day (`microbe` tier in DB). Not surfaced publicly — tiers start at spore in docs/UI.

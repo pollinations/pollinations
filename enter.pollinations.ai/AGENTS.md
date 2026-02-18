@@ -628,7 +628,7 @@ https://myapp.com/callback#api_key=pk_xxxxx
 | ------ | ----- | ---------- | ------------------------ |
 | spore  | 🍄    | 1          | Verified account (automatic after sign-up) |
 | seed   | 🌱    | 3          | Active developer (auto-upgraded daily via GitHub score) |
-| flower | 🌸    | 10         | App contributor (submit app via issue) |
+| flower | 🌸    | 10         | Active contributor (publish app or contribute code/docs) |
 | nectar | 🍯    | 20         | Coming soon              |
 
 > **Internal:** All authenticated users get a baseline 0.1 pollen/day grant (stored as `microbe` tier in DB). Not surfaced in public docs/UI — public tiers start at spore.

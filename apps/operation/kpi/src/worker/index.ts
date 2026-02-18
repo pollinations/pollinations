@@ -56,6 +56,76 @@ async function queryD1(env: Env, sql: string, params: unknown[] = []) {
     return data.result?.[0]?.results || [];
 }
 
+// Helper to fetch from Tinybird with caching, retry, and error logging
+// Uses Cloudflare Cache API to avoid hammering Tinybird on concurrent page loads
+const TINYBIRD_CACHE_TTL = 300; // 5 minutes — weekly data barely changes
+
+async function fetchTinybird(
+    env: Env,
+    pipe: string,
+    params: Record<string, string | number> = {},
+): Promise<{ data: unknown[]; error?: string }> {
+    const query = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) {
+        query.set(k, String(v));
+    }
+    const url = `${env.TINYBIRD_API}/v0/pipes/${pipe}.json?${query}`;
+
+    // Check Cloudflare edge cache first
+    const cache = caches.default;
+    const cacheKey = new Request(url);
+    const cached = await cache.match(cacheKey);
+    if (cached) {
+        const json = (await cached.json()) as { data: unknown[] };
+        return { data: json.data };
+    }
+
+    const headers = { Authorization: `Bearer ${env.TINYBIRD_TOKEN}` };
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+            const res = await fetch(url, { headers });
+            if (res.ok) {
+                const json = (await res.json()) as { data: unknown[] };
+                // Cache successful responses at the edge
+                const cacheResponse = new Response(JSON.stringify(json), {
+                    headers: {
+                        "Cache-Control": `public, max-age=${TINYBIRD_CACHE_TTL}`,
+                    },
+                });
+                await cache.put(cacheKey, cacheResponse);
+                return { data: json.data };
+            }
+            const body = await res.text();
+            console.error(
+                `Tinybird ${pipe} failed (attempt ${attempt + 1}): status=${res.status} body=${body}`,
+            );
+            // Retry on 408 (timeout), 429 (rate limit), or 5xx
+            if (
+                attempt === 0 &&
+                (res.status === 408 || res.status === 429 || res.status >= 500)
+            ) {
+                await new Promise((r) => setTimeout(r, 1000));
+                continue;
+            }
+            return {
+                data: [],
+                error: `Tinybird ${res.status}: ${body.slice(0, 200)}`,
+            };
+        } catch (e) {
+            console.error(
+                `Tinybird ${pipe} network error (attempt ${attempt + 1}): ${e}`,
+            );
+            if (attempt === 0) {
+                await new Promise((r) => setTimeout(r, 1000));
+                continue;
+            }
+            return { data: [], error: `Network error: ${e}` };
+        }
+    }
+    return { data: [], error: "Exhausted retries" };
+}
+
 const app = new Hono<{ Bindings: Env }>();
 
 app.use("*", cors());
@@ -145,16 +215,16 @@ app.get("/api/kpi/activations", async (c) => {
         }>;
 
         // 2. Get first activity per user from Tinybird
-        const tinybirdRes = await fetch(
-            `${c.env.TINYBIRD_API}/v0/pipes/weekly_activations.json?weeks_back=${weeksBack}`,
-            { headers: { Authorization: `Bearer ${c.env.TINYBIRD_TOKEN}` } },
+        const tinybirdResult = await fetchTinybird(
+            c.env,
+            "weekly_activations",
+            { weeks_back: weeksBack },
         );
-
-        if (!tinybirdRes.ok) {
-            return c.json({ error: "Tinybird error", data: [] }, 500);
+        if (tinybirdResult.error) {
+            return c.json({ error: tinybirdResult.error, data: [] }, 500);
         }
 
-        const tinybirdData = (await tinybirdRes.json()) as {
+        const tinybirdData = { data: tinybirdResult.data } as {
             data: Array<{
                 user_id: string;
                 first_activity_date: string;
@@ -209,53 +279,41 @@ app.get("/api/kpi/activations", async (c) => {
 // Tinybird: WAU (from Oct 1, 2025)
 app.get("/api/kpi/wau", async (c) => {
     const weeksBack = getWeeksSinceStart();
-    const res = await fetch(
-        `${c.env.TINYBIRD_API}/v0/pipes/weekly_active_users.json?weeks_back=${weeksBack}`,
-        { headers: { Authorization: `Bearer ${c.env.TINYBIRD_TOKEN}` } },
-    );
-
-    if (!res.ok) return c.json({ error: "Tinybird error", data: [] }, 500);
-    const data = (await res.json()) as { data: unknown[] };
-    return c.json({ data: data.data });
+    const result = await fetchTinybird(c.env, "weekly_active_users", {
+        weeks_back: weeksBack,
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    return c.json({ data: result.data });
 });
 
 // Tinybird: Usage stats (from Oct 1, 2025)
 app.get("/api/kpi/usage", async (c) => {
     const weeksBack = getWeeksSinceStart();
-    const res = await fetch(
-        `${c.env.TINYBIRD_API}/v0/pipes/weekly_usage_stats.json?weeks_back=${weeksBack}`,
-        { headers: { Authorization: `Bearer ${c.env.TINYBIRD_TOKEN}` } },
-    );
-
-    if (!res.ok) return c.json({ error: "Tinybird error", data: [] }, 500);
-    const data = (await res.json()) as { data: unknown[] };
-    return c.json({ data: data.data });
+    const result = await fetchTinybird(c.env, "weekly_usage_stats", {
+        weeks_back: weeksBack,
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    return c.json({ data: result.data });
 });
 
 // Tinybird: Retention (from Oct 1, 2025)
 app.get("/api/kpi/retention", async (c) => {
     const weeksBack = getWeeksSinceStart();
-    const res = await fetch(
-        `${c.env.TINYBIRD_API}/v0/pipes/weekly_retention.json?weeks_back=${weeksBack}`,
-        { headers: { Authorization: `Bearer ${c.env.TINYBIRD_TOKEN}` } },
-    );
-
-    if (!res.ok) return c.json({ error: "Tinybird error", data: [] }, 500);
-    const data = (await res.json()) as { data: unknown[] };
-    return c.json({ data: data.data });
+    const result = await fetchTinybird(c.env, "weekly_retention", {
+        weeks_back: weeksBack,
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    return c.json({ data: result.data });
 });
 
 // Tinybird: Health stats - service availability (from Oct 1, 2025)
 app.get("/api/kpi/health", async (c) => {
     const weeksBack = getWeeksSinceStart();
-    const res = await fetch(
-        `${c.env.TINYBIRD_API}/v0/pipes/weekly_health_stats.json?weeks_back=${weeksBack}`,
-        { headers: { Authorization: `Bearer ${c.env.TINYBIRD_TOKEN}` } },
-    );
-
-    if (!res.ok) return c.json({ error: "Tinybird error", data: [] }, 500);
-    const data = (await res.json()) as { data: unknown[] };
-    return c.json({ data: data.data });
+    const result = await fetchTinybird(c.env, "weekly_health_stats", {
+        weeks_back: weeksBack,
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    return c.json({ data: result.data });
 });
 
 // Helper: Get Monday of the week for a date (ISO week starts on Monday)
@@ -275,16 +333,11 @@ function getWeekStart(date: Date): string {
 // Tinybird: Daily Stripe revenue (aggregated from checkout events)
 app.get("/api/kpi/stripe-revenue", async (c) => {
     const daysBack = 90; // ~12 weeks
-    const res = await fetch(
-        `${c.env.TINYBIRD_API}/v0/pipes/daily_stripe_revenue.json?days_back=${daysBack}`,
-        { headers: { Authorization: `Bearer ${c.env.TINYBIRD_TOKEN}` } },
-    );
-
-    if (!res.ok) return c.json({ error: "Tinybird error", data: [] }, 500);
-    const data = (await res.json()) as {
-        data: Array<{ date: string; revenue: number; purchases: number }>;
-    };
-    return c.json({ data: data.data });
+    const result = await fetchTinybird(c.env, "daily_stripe_revenue", {
+        days_back: daysBack,
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    return c.json({ data: result.data });
 });
 
 // Polar: Revenue (one-time pollen purchases only) - legacy, being phased out
@@ -361,14 +414,12 @@ async function fetchStripeRevenue(
     env: Env,
 ): Promise<Array<{ week: string; revenue: number; purchases: number }>> {
     const daysBack = 90;
-    const res = await fetch(
-        `${env.TINYBIRD_API}/v0/pipes/daily_stripe_revenue.json?days_back=${daysBack}`,
-        { headers: { Authorization: `Bearer ${env.TINYBIRD_TOKEN}` } },
-    );
+    const result = await fetchTinybird(env, "daily_stripe_revenue", {
+        days_back: daysBack,
+    });
+    if (result.error) return [];
 
-    if (!res.ok) return [];
-
-    const data = (await res.json()) as {
+    const data = { data: result.data } as {
         data: Array<{ date: string; revenue: number; purchases: number }>;
     };
 
@@ -435,13 +486,11 @@ app.get("/api/kpi/revenue", async (c) => {
 // Churn = 100 - w4_retention (% of users from 4 weeks ago who didn't return)
 app.get("/api/kpi/churn", async (c) => {
     const weeksBack = 8; // retention data has limited weeks
-    const res = await fetch(
-        `${c.env.TINYBIRD_API}/v0/pipes/weekly_retention.json?weeks_back=${weeksBack}`,
-        { headers: { Authorization: `Bearer ${c.env.TINYBIRD_TOKEN}` } },
-    );
-
-    if (!res.ok) return c.json({ error: "Tinybird error", data: [] }, 500);
-    const data = (await res.json()) as {
+    const result = await fetchTinybird(c.env, "weekly_retention", {
+        weeks_back: weeksBack,
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    const data = { data: result.data } as {
         data: Array<{
             cohort: string;
             cohort_size: number;
@@ -474,29 +523,11 @@ app.get("/api/kpi/churn", async (c) => {
 // Tinybird: B2B/B2C User Segments (developer vs end-user)
 app.get("/api/kpi/user-segments", async (c) => {
     const weeksBack = 12;
-    const res = await fetch(
-        `${c.env.TINYBIRD_API}/v0/pipes/weekly_user_segment.json?weeks_back=${weeksBack}`,
-        { headers: { Authorization: `Bearer ${c.env.TINYBIRD_TOKEN}` } },
-    );
-
-    if (!res.ok) return c.json({ error: "Tinybird error", data: [] }, 500);
-    const data = (await res.json()) as {
-        data: Array<{
-            week: string;
-            developer_users: number;
-            developer_pollen: number;
-            developer_requests: number;
-            enduser_users: number;
-            enduser_pollen: number;
-            enduser_requests: number;
-            total_users: number;
-            total_pollen: number;
-            total_requests: number;
-            enduser_user_pct: number;
-            enduser_pollen_pct: number;
-        }>;
-    };
-    return c.json({ data: data.data });
+    const result = await fetchTinybird(c.env, "weekly_user_segment", {
+        weeks_back: weeksBack,
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    return c.json({ data: result.data });
 });
 
 // GitHub: Stars

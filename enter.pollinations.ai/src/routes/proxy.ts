@@ -29,7 +29,11 @@ import { getServiceDefinition } from "@shared/registry/registry.ts";
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
+import {
+    getDefaultErrorMessage,
+    remapUpstreamStatus,
+    UpstreamError,
+} from "@/error.ts";
 import { validator } from "@/middleware/validator.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import {
@@ -77,7 +81,7 @@ const chatCompletionHandlers = factory.createHandlers(
                 status: response.status,
                 body: responseText,
             });
-            throw new UpstreamError(response.status as ContentfulStatusCode, {
+            throw new UpstreamError(remapUpstreamStatus(response.status), {
                 message:
                     responseText || getDefaultErrorMessage(response.status),
                 requestUrl: targetUrl,
@@ -381,7 +385,7 @@ export const proxyRoutes = new Hono<Env>()
                     body: responseText,
                 });
                 throw new UpstreamError(
-                    response.status as ContentfulStatusCode,
+                    remapUpstreamStatus(response.status),
                     {
                         message:
                             responseText ||
@@ -499,7 +503,7 @@ export const proxyRoutes = new Hono<Env>()
                     body: responseText,
                 });
                 throw new UpstreamError(
-                    response.status as ContentfulStatusCode,
+                    remapUpstreamStatus(response.status),
                     {
                         message:
                             responseText ||

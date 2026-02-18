@@ -187,6 +187,18 @@ function createInternalErrorResponse(
     });
 }
 
+/**
+ * Remap upstream provider error status codes that aren't the user's fault.
+ * A 429 from a downstream provider (e.g. OpenAI/Portkey/ElevenLabs rate limit)
+ * means *we* hit their quota — not that the user is sending too many requests.
+ * We convert these to 502 Bad Gateway so clients can distinguish between
+ * "you're rate-limited" (our own 429) and "upstream provider issue" (502).
+ */
+export function remapUpstreamStatus(status: number): ContentfulStatusCode {
+    if (status === 429) return 502;
+    return status as ContentfulStatusCode;
+}
+
 export function getErrorCode(status: number): string {
     const codes: Record<number, string> = {
         400: "BAD_REQUEST",

@@ -483,17 +483,17 @@ app.get("/api/kpi/user-segments", async (c) => {
     const data = (await res.json()) as {
         data: Array<{
             week: string;
-            developer_users: number;
-            developer_pollen: number;
-            developer_requests: number;
-            enduser_users: number;
-            enduser_pollen: number;
-            enduser_requests: number;
+            byop_users: number;
+            byop_pollen: number;
+            byop_requests: number;
+            other_users: number;
+            other_pollen: number;
+            other_requests: number;
             total_users: number;
             total_pollen: number;
             total_requests: number;
-            enduser_user_pct: number;
-            enduser_pollen_pct: number;
+            byop_user_pct: number;
+            byop_pollen_pct: number;
         }>;
     };
     return c.json({ data: data.data });

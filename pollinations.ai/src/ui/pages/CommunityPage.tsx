@@ -156,30 +156,17 @@ export default function CommunityPage() {
                             <Body size="sm" spacing="comfortable">
                                 {pageCopy.githubSubtitle}
                             </Body>
-                            <div className="flex flex-wrap gap-2">
-                                <Button
-                                    as="a"
-                                    href={SOCIAL_LINKS.github.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="primary"
-                                    size="default"
-                                >
-                                    {pageCopy.starContributeButton}
-                                    <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
-                                </Button>
-                                <Button
-                                    as="a"
-                                    href="https://github.com/pollinations/pollinations/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="secondary"
-                                    size="default"
-                                >
-                                    {pageCopy.goodFirstIssuesButton}
-                                    <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
-                                </Button>
-                            </div>
+                            <Button
+                                as="a"
+                                href={SOCIAL_LINKS.github.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="primary"
+                                size="default"
+                            >
+                                {pageCopy.starContributeButton}
+                                <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
+                            </Button>
                         </SubCard>
 
                         {/* Submit App */}

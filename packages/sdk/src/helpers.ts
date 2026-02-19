@@ -19,24 +19,24 @@
  */
 
 import { Pollinations } from "./client.js";
-import type {
-    ImageGenerateOptions,
-    VideoGenerateOptions,
-    TextGenerateOptions,
-    ChatOptions,
-    AudioGenerateOptions,
-    Message,
-    ModelInfo,
-} from "./types.js";
 import {
-    wrapImageResponse,
-    wrapVideoResponse,
-    wrapChatResponse,
+    type ChatResponseExt,
     Conversation,
     type ImageResponseExt,
     type VideoResponseExt,
-    type ChatResponseExt,
+    wrapChatResponse,
+    wrapImageResponse,
+    wrapVideoResponse,
 } from "./extras.js";
+import type {
+    AudioGenerateOptions,
+    ChatOptions,
+    ImageGenerateOptions,
+    Message,
+    ModelInfo,
+    TextGenerateOptions,
+    VideoGenerateOptions,
+} from "./types.js";
 
 // Default client instance
 let defaultClient: Pollinations | null = null;

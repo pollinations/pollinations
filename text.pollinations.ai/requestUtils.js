@@ -3,10 +3,7 @@ import dotenv from "dotenv";
 // Import shared utilities for authentication and environment handling
 import { extractReferrer } from "../shared/extractFromRequest.js";
 // Import parameter validators
-import {
-    validateTextGenerationParams,
-    validateJsonMode,
-} from "./utils/parameterValidators.js";
+import { validateTextGenerationParams } from "./utils/parameterValidators.js";
 
 // Load environment variables including .env.local overrides
 // Load .env.local first (higher priority), then .env as fallback
@@ -14,7 +11,7 @@ dotenv.config();
 
 dotenv.config({ path: ".env.local" });
 
-const log = debug("pollinations:requestUtils");
+const _log = debug("pollinations:requestUtils");
 
 /**
  * Common function to handle request data
@@ -68,6 +65,9 @@ export function getRequestData(req) {
     // Extract user identifier
     const user = data.user || undefined;
 
+    // Gemini thought signature
+    const thought_signature = data.thought_signature || undefined;
+
     const messages = data.messages || [
         { role: "user", content: req.params[0] },
     ];
@@ -104,5 +104,6 @@ export function getRequestData(req) {
         top_logprobs,
         logit_bias,
         user,
+        thought_signature,
     };
 }

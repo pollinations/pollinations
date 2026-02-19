@@ -1,5 +1,5 @@
 {
-  "name": "oh-my-pollicode",
+  "name": "@pollinations_ai/oh-my-pollicode",
   "version": "1.0.0",
   "description": "Pre-configured OpenCode + oh-my-opencode with Pollinations AI models",
   "type": "module",

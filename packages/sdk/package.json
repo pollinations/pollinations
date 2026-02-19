@@ -71,7 +71,7 @@
     "url": "https://github.com/pollinations/pollinations/issues"
   },
   "publishConfig": {
-        "access": "public"
+    "access": "public"
   },
   "engines": {
     "node": ">=18.0.0"

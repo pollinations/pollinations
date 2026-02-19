@@ -2367,8 +2367,11 @@ Generate an image or video from a text prompt.
 
 **Video Models:** `veo`, `seedance`
 
-- `veo`: Text-to-video only (4-8 seconds)
-- `seedance`: Text-to-video and image-to-video (2-10 seconds)
+- `veo`: Text-to-video only (4-8 seconds). Supports `duration` parameter (default: 4 seconds).
+- `seedance`: Text-to-video and image-to-video (2-10 seconds). Supports `duration` parameter (default: 2 seconds).
+
+
+
 
 **Authentication:**
 

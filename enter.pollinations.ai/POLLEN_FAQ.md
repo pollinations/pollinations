@@ -4,6 +4,16 @@
 
 Pollen is our prepaid credit system. **$1 ≈ 1 Pollen** *(pricing may evolve)*. You spend it to make API calls — every generation costs Pollen based on the model you use.
 
+## 🧩 Is Pollinations a coding tool or app builder?
+
+No. Pollinations is **not** a code editor, no-code builder, or app development platform like Lovable, Bolt, or Cursor. We provide the **building blocks** that creators integrate into their own apps:
+
+- **AI Generation APIs** — Access 38+ models (text, image, audio, video) through a single API.
+- **Payment Infrastructure** — Let your app's users pay per use with Pollen credits, so you don't foot the compute bill.
+- **Monetization Tools** — Revenue share (launching Q2), and soon ads SDK — everything you need to earn from your app.
+
+You build the app your way — with any framework, any tool, any language. Then you plug in Pollinations for the AI capabilities and the monetization. We're the engine and the cash register, not the workshop.
+
 ## 🛒 How do I get Pollen?
 
 There are three ways:

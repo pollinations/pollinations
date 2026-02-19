@@ -1,0 +1,35 @@
+{
+  "pr_number": 7942,
+  "title": "Complete API error response documentation (429, 400)",
+  "author": "mohityadav8",
+  "url": "https://github.com/pollinations/pollinations/pull/7942",
+  "merged_at": "2026-02-19T21:38:28Z",
+  "labels": [
+    "API",
+    ".DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Decoding the buzz",
+    "blurb": "Even the best bees get lost sometimes. We've added a map for when the API says 'no', so you can get back to building.",
+    "summary": "Added comprehensive examples and handling guidance for common API error codes (401, 403, 429, 400) to the documentation.",
+    "impact": "Developers can now debug integration issues faster with clear explanations of failure states.",
+    "keywords": [
+      "documentation",
+      "api",
+      "errors",
+      "developer experience",
+      "guides"
+    ],
+    "visual_concept": "The Nomnom creature consuming error logs (turning negatives into positives/knowledge), while the Bee reads the manual. Represents understanding errors.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature happily eating a stack of papers labeled '404' and '429'. The bee mascot hovers nearby reading a tiny guidebook. Lime green (#ecf874) and lavender soft gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-19T21:41:00.020524+00:00"
+}

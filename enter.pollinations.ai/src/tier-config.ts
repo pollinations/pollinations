@@ -34,12 +34,15 @@ export function getTierEmoji(tier: string): string {
     return isValidTier(tier) ? TIERS[tier].emoji : TIERS[DEFAULT_TIER].emoji;
 }
 
-// ── Scoring criteria ────────────────────────────────────────────────────
-// Each criterion has a data source so the upgrade script knows where to
-// fetch the raw value from:
-//   "github"   – GitHub GraphQL API (age, commits, repos, stars)
-//   "tinybird" – Tinybird /v0/sql (avg daily pollen spend)
-//   "llm"      – LLM legitimacy scorer (trust_score = 100 - abuse_score)
+// ── Scoring ─────────────────────────────────────────────────────────────
+// One flat list of criteria. Each criterion unlocks at a specific tier.
+// Score for a target tier = sum of min(value * multiplier, max)
+//   for all criteria where unlocksAt <= target tier.
+//
+// Data sources:
+//   "github"   - GitHub GraphQL API (age, commits, repos, stars)
+//   "tinybird" - Tinybird /v0/sql (avg daily pollen spend)
+//   "llm"      - LLM scorer (trust_score = 100 - abuse_score)
 
 export interface ScoringCriterion {
     field: string;
@@ -47,155 +50,108 @@ export interface ScoringCriterion {
     source: "github" | "tinybird" | "llm";
     multiplier: number;
     max: number;
-    unit: string;
+    /** The tier at which this criterion starts contributing to the score */
+    unlocksAt: TierName;
 }
 
-// ── Per-tier upgrade rules ──────────────────────────────────────────────
-// Describes how to reach each tier from the one below it.
-// The upgrade script iterates these in order.
-
-export interface TierUpgradeRule {
-    from: TierName[];
-    to: TierName;
-    label: string;
-    auto: boolean;
-    criteria: ScoringCriterion[];
-    threshold: number;
+export function tierIndex(tier: TierName): number {
+    return tierNames.indexOf(tier);
 }
 
-export const TIER_UPGRADES: TierUpgradeRule[] = [
+export const SCORING_CRITERIA: ScoringCriterion[] = [
+    // Base criteria (unlock at spore)
     {
-        from: ["microbe"],
-        to: "spore",
-        label: "Verified account",
-        auto: true,
-        criteria: [
-            {
-                field: "age_days",
-                label: "Account age",
-                source: "github",
-                multiplier: 0.5 / 30,
-                max: 3.0,
-                unit: "month",
-            },
-            {
-                field: "avg_daily_spend_7d",
-                label: "Avg daily spend (7d)",
-                source: "tinybird",
-                multiplier: 1.0,
-                max: 2.0,
-                unit: "pollen/day",
-            },
-            {
-                field: "trust_score",
-                label: "Legitimacy (AI)",
-                source: "llm",
-                multiplier: 0.05,
-                max: 3.0,
-                unit: "score",
-            },
-        ],
-        threshold: 2.0,
+        field: "age_days",
+        label: "Account age",
+        source: "github",
+        multiplier: 0.5 / 30,
+        max: 6,
+        unlocksAt: "spore",
     },
     {
-        from: ["microbe", "spore"],
-        to: "seed",
-        label: "Active developer",
-        auto: true,
-        criteria: [
-            {
-                field: "age_days",
-                label: "Account age",
-                source: "github",
-                multiplier: 0.5 / 30,
-                max: 6.0,
-                unit: "month",
-            },
-            {
-                field: "commits",
-                label: "Commits",
-                source: "github",
-                multiplier: 0.1,
-                max: 2.0,
-                unit: "each",
-            },
-            {
-                field: "repos",
-                label: "Public repos",
-                source: "github",
-                multiplier: 0.5,
-                max: 1.0,
-                unit: "each",
-            },
-            {
-                field: "stars",
-                label: "GitHub stars",
-                source: "github",
-                multiplier: 0.1,
-                max: 5.0,
-                unit: "each",
-            },
-            {
-                field: "avg_daily_spend_7d",
-                label: "Avg daily spend (7d)",
-                source: "tinybird",
-                multiplier: 0.5,
-                max: 3.0,
-                unit: "pollen/day",
-            },
-        ],
-        threshold: 8.0,
+        field: "avg_daily_spend_7d",
+        label: "Pollen spend",
+        source: "tinybird",
+        multiplier: 1.0,
+        max: 15,
+        unlocksAt: "spore",
     },
     {
-        from: ["seed"],
-        to: "flower",
-        label: "Power user",
-        auto: true,
-        criteria: [
-            {
-                field: "age_days",
-                label: "Account age",
-                source: "github",
-                multiplier: 0.5 / 30,
-                max: 6.0,
-                unit: "month",
-            },
-            {
-                field: "commits",
-                label: "Commits",
-                source: "github",
-                multiplier: 0.1,
-                max: 2.0,
-                unit: "each",
-            },
-            {
-                field: "repos",
-                label: "Public repos",
-                source: "github",
-                multiplier: 0.5,
-                max: 1.0,
-                unit: "each",
-            },
-            {
-                field: "stars",
-                label: "GitHub stars",
-                source: "github",
-                multiplier: 0.1,
-                max: 5.0,
-                unit: "each",
-            },
-            {
-                field: "avg_daily_spend_7d",
-                label: "Avg daily spend (7d)",
-                source: "tinybird",
-                multiplier: 1.0,
-                max: 5.0,
-                unit: "pollen/day",
-            },
-        ],
-        threshold: 14.0,
+        field: "trust_score",
+        label: "Human check",
+        source: "llm",
+        multiplier: 0.05,
+        max: 3,
+        unlocksAt: "spore",
+    },
+    // Developer criteria (unlock at seed)
+    {
+        field: "commits",
+        label: "Commits",
+        source: "github",
+        multiplier: 0.1,
+        max: 3,
+        unlocksAt: "seed",
+    },
+    {
+        field: "repos",
+        label: "Public repos",
+        source: "github",
+        multiplier: 0.5,
+        max: 1,
+        unlocksAt: "seed",
+    },
+    {
+        field: "stars",
+        label: "GitHub stars",
+        source: "github",
+        multiplier: 0.1,
+        max: 5,
+        unlocksAt: "seed",
     },
 ];
+
+export const TIER_THRESHOLDS: Record<string, number> = {
+    spore: 3.5,
+    seed: 8,
+    flower: 14,
+    nectar: 22,
+};
+
+/** Get criteria active for a given tier */
+export function criteriaForTier(tier: TierName): ScoringCriterion[] {
+    const idx = tierIndex(tier);
+    return SCORING_CRITERIA.filter((c) => tierIndex(c.unlocksAt) <= idx);
+}
+
+/** Compute score for a single criterion */
+export function scoreCriterion(c: ScoringCriterion, rawValue: number): number {
+    return Math.min(rawValue * c.multiplier, c.max);
+}
+
+/** Compute total score for a target tier from raw metric values */
+export function computeScore(
+    metrics: Record<string, number>,
+    tier: TierName,
+): number {
+    return criteriaForTier(tier).reduce(
+        (sum, c) => sum + scoreCriterion(c, metrics[c.field] ?? 0),
+        0,
+    );
+}
+
+/** Tiers with thresholds, sorted highest-first for greedy matching */
+const SCORED_TIERS = (Object.keys(TIER_THRESHOLDS) as TierName[]).sort(
+    (a, b) => tierIndex(b) - tierIndex(a),
+);
+
+/** Determine the highest tier a user qualifies for */
+export function bestTierForMetrics(metrics: Record<string, number>): TierName {
+    for (const tier of SCORED_TIERS) {
+        if (computeScore(metrics, tier) >= TIER_THRESHOLDS[tier]) return tier;
+    }
+    return DEFAULT_TIER;
+}
 
 // ── Frontend display helpers ────────────────────────────────────────────
 
@@ -207,11 +163,5 @@ export const TIER_COLORS: Record<string, string> = {
     nectar: "bg-purple-100/60",
 };
 
-/** Display tiers — excludes router (internal only) */
-export const DISPLAY_TIERS = [
-    "microbe",
-    "spore",
-    "seed",
-    "flower",
-    "nectar",
-] as const;
+/** Display tiers - excludes router (internal only) */
+export const DISPLAY_TIERS = ["spore", "seed", "flower", "nectar"] as const;

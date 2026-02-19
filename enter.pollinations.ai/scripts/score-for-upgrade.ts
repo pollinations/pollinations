@@ -2,28 +2,33 @@
 /**
  * Unified Tier Upgrade Script
  *
- * Processes all tier transitions defined in TIER_UPGRADES (tier-config.ts):
- *   microbe  → spore  (legitimacy score + account age + avg daily pollen spend 7d)
- *   microbe/spore → seed  (age + commits + repos + stars + spend)
- *   seed     → flower (all GitHub signals + higher spend)
+ * Computes a single score per user from all SCORING_CRITERIA, then
+ * upgrades them to the highest tier whose threshold they meet.
  *
  * Data sources:
  *   - D1 (wrangler)         : user list, current tier, user_id
  *   - GitHub GraphQL        : age, commits, repos, stars
  *   - Tinybird /v0/sql      : avg_daily_spend_7d (one bulk query, joined by user_id)
- *   - LLM scorer (llm-scorer.ts) : legitimacy / trust_score, contributes points
+ *   - LLM scorer            : trust_score (100 - abuse_score)
  *
  * USAGE:
  *   cd enter.pollinations.ai
  *   npx tsx scripts/score-for-upgrade.ts upgrade --dry-run --env production
  *   npx tsx scripts/score-for-upgrade.ts upgrade --env production --verbose
- *   npx tsx scripts/score-for-upgrade.ts upgrade --to spore --dry-run
  */
 
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { boolean, command, run, string } from "@drizzle-team/brocli";
-import { TIER_UPGRADES, type TierName } from "../src/tier-config.ts";
+import {
+    bestTierForMetrics,
+    computeScore,
+    SCORING_CRITERIA,
+    scoreCriterion,
+    TIER_THRESHOLDS,
+    type TierName,
+    tierIndex,
+} from "../src/tier-config.ts";
 import { scoreUsers as runLLMScorer } from "./llm-scorer.ts";
 
 const GITHUB_GRAPHQL = "https://api.github.com/graphql";
@@ -31,6 +36,9 @@ const TINYBIRD_BASE = "https://api.europe-west2.gcp.tinybird.co";
 const BATCH_SIZE = 50;
 const MAX_USERS_PER_RUN = 8000;
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+// Tiers eligible for automatic upgrade (below nectar)
+const UPGRADEABLE_TIERS: TierName[] = ["microbe", "spore", "seed", "flower"];
 
 // ── Token helpers ───────────────────────────────────────────────────────
 
@@ -94,12 +102,13 @@ function queryD1(
     }
 }
 
-/** Fetch users eligible for a given tier transition, with day-slice strategy */
-function fetchEligibleUsers(
-    fromTiers: TierName[],
-    env: Environment,
-): { newUsers: D1User[]; sliceUsers: D1User[]; totalOld: number } {
-    const tierList = fromTiers.map((t) => `'${t}'`).join(", ");
+/** Fetch users eligible for upgrade (any tier below nectar), with day-slice strategy */
+function fetchEligibleUsers(env: Environment): {
+    newUsers: D1User[];
+    sliceUsers: D1User[];
+    totalOld: number;
+} {
+    const tierList = UPGRADEABLE_TIERS.map((t) => `'${t}'`).join(", ");
     const weekday = new Date().getUTCDay();
     const yesterday = Math.floor(Date.now() / 1000) - 86400;
 
@@ -251,11 +260,11 @@ async function fetchGitHubBatch(
                 const retryAfter = response.headers.get("Retry-After");
                 const resetAt = response.headers.get("X-RateLimit-Reset");
                 let wait = 60;
-                if (retryAfter) wait = parseInt(retryAfter, 10) + 1;
+                if (retryAfter) wait = Number.parseInt(retryAfter, 10) + 1;
                 else if (resetAt)
                     wait =
                         Math.max(
-                            parseInt(resetAt, 10) -
+                            Number.parseInt(resetAt, 10) -
                                 Math.floor(Date.now() / 1000),
                             0,
                         ) + 1;
@@ -316,53 +325,52 @@ async function fetchGitHubMetrics(
 interface ScoreResult {
     userId: string;
     username: string;
-    approved: boolean;
-    reason: string;
+    currentTier: string;
+    newTier: TierName;
+    upgraded: boolean;
     scores: Record<string, number>;
     total: number;
 }
+
+const EMPTY_GITHUB: GitHubMetrics = {
+    age_days: 0,
+    repos: 0,
+    commits: 0,
+    stars: 0,
+};
 
 function scoreUser(
     user: D1User,
     githubMetrics: GitHubMetrics | null,
     avgDailySpend: number,
     trustScore: number,
-    ruleIndex: number,
 ): ScoreResult {
-    const rule = TIER_UPGRADES[ruleIndex];
     const rawMetrics: Record<string, number> = {
-        ...(githubMetrics ?? { age_days: 0, repos: 0, commits: 0, stars: 0 }),
+        ...(githubMetrics ?? EMPTY_GITHUB),
         avg_daily_spend_7d: avgDailySpend,
         trust_score: trustScore,
     };
 
+    // Per-criterion scores (all criteria, for verbose output)
     const scores: Record<string, number> = {};
-    let needsGitHub = false;
-
-    for (const crit of rule.criteria) {
-        if (crit.source === "github") needsGitHub = true;
-        const raw = (rawMetrics[crit.field] ?? 0) * crit.multiplier;
-        scores[crit.field] = Math.min(raw, crit.max);
+    for (const c of SCORING_CRITERIA) {
+        scores[c.field] = scoreCriterion(c, rawMetrics[c.field] ?? 0);
     }
 
-    // If GitHub data required but unavailable, reject
-    if (needsGitHub && !githubMetrics) {
-        return {
-            userId: user.id,
-            username: user.github_username,
-            approved: false,
-            reason: "GitHub profile not found",
-            scores,
-            total: 0,
-        };
-    }
+    const newTier = bestTierForMetrics(rawMetrics);
+    const total = computeScore(rawMetrics, newTier);
 
-    const total = Object.values(scores).reduce((a, b) => a + b, 0);
+    // Only upgrade, never downgrade
+    const currentIdx = tierIndex(user.tier as TierName);
+    const newIdx = tierIndex(newTier);
+    const upgraded = newIdx > currentIdx;
+
     return {
         userId: user.id,
         username: user.github_username,
-        approved: total >= rule.threshold,
-        reason: `${total.toFixed(1)} pts`,
+        currentTier: user.tier,
+        newTier: upgraded ? newTier : (user.tier as TierName),
+        upgraded,
         scores,
         total,
     };
@@ -388,7 +396,7 @@ function applyUpgrade(
         if (result.includes("SKIP_UPGRADE=true")) {
             console.log(`  ${username}: already at higher tier`);
         } else {
-            console.log(`  ${username}: → ${toTier}`);
+            console.log(`  ${username}: -> ${toTier}`);
         }
         return true;
     } catch (error) {
@@ -428,7 +436,7 @@ ${csvRows.join("\n")}`;
 
 /**
  * Run LLM scorer and return legitimacy scores per github username.
- * Legitimate accounts get ≈ 100, suspicious ones get low/zero.
+ * Legitimate accounts get ~ 100, suspicious ones get low/zero.
  */
 async function fetchLLMTrustScores(
     users: D1User[],
@@ -458,14 +466,9 @@ async function fetchLLMTrustScores(
 
 const upgradeCommand = command({
     name: "upgrade",
-    desc: "Run tier upgrades for all transitions (or a specific target tier)",
+    desc: "Compute scores and upgrade all eligible users",
     options: {
         env: string().enum("staging", "production").default("production"),
-        to: string()
-            .optional()
-            .desc(
-                "Only run the transition that targets this tier (e.g. spore, seed)",
-            ),
         dryRun: boolean().default(false).desc("Validate only, no upgrades"),
         verbose: boolean()
             .default(false)
@@ -475,168 +478,115 @@ const upgradeCommand = command({
         const env = opts.env as Environment;
         const weekday = new Date().getUTCDay();
 
-        const rules = opts.to
-            ? TIER_UPGRADES.filter((r) => r.to === opts.to)
-            : TIER_UPGRADES;
-
-        if (rules.length === 0) {
-            console.error(`No upgrade rule found for --to ${opts.to}`);
-            process.exit(1);
-        }
-
-        // Pre-fetch Tinybird spend once (covers all active rules)
-        const needsTinybird = rules.some((r) =>
-            r.criteria.some((c) => c.source === "tinybird"),
+        console.log(`Tier upgrade run`);
+        console.log(
+            `Environment: ${env} | Mode: ${opts.dryRun ? "DRY RUN" : "LIVE"} | Day: ${DAY_NAMES[weekday]}`,
         );
-        let spendByUserId = new Map<string, number>();
-        if (needsTinybird) {
-            console.log("Fetching 7-day avg pollen spend from Tinybird...");
-            spendByUserId = await fetchSpendByUserId();
-            console.log(`  Got spend data for ${spendByUserId.size} users\n`);
+        console.log(
+            `Criteria: ${SCORING_CRITERIA.length} | Thresholds: ${JSON.stringify(TIER_THRESHOLDS)}\n`,
+        );
+
+        // Fetch all eligible users
+        const { newUsers, sliceUsers, totalOld } = fetchEligibleUsers(env);
+        console.log(
+            `New (last 24h): ${newUsers.length} | Slice (1/7): ${sliceUsers.length} of ${totalOld}`,
+        );
+
+        let users = [...newUsers, ...sliceUsers];
+        if (users.length > MAX_USERS_PER_RUN) {
+            users = users.slice(0, MAX_USERS_PER_RUN);
+            console.log(`Capped at ${MAX_USERS_PER_RUN}`);
+        }
+        if (users.length === 0) {
+            console.log("No eligible users");
+            return;
         }
 
-        let totalSuccess = 0;
-        let totalFailed = 0;
+        // Fetch all data sources in parallel
+        console.log(`\nFetching data for ${users.length} users...`);
+        const [spendByUserId, githubMetrics, llmTrustScores] =
+            await Promise.all([
+                fetchSpendByUserId(),
+                fetchGitHubMetrics(users.map((u) => u.github_username)),
+                fetchLLMTrustScores(users),
+            ]);
+        console.log(
+            `  Tinybird: ${spendByUserId.size} | GitHub: ${githubMetrics.size} | LLM: ${llmTrustScores.size}`,
+        );
 
-        for (const rule of rules) {
-            const ruleIndex = TIER_UPGRADES.indexOf(rule);
-            console.log(
-                `${"=".repeat(55)}\n${rule.from.join("/")} → ${rule.to} (threshold: ${rule.threshold} pts)`,
-            );
-            console.log(
-                `Environment: ${env} | Mode: ${opts.dryRun ? "DRY RUN" : "LIVE"} | Day: ${DAY_NAMES[weekday]}`,
-            );
+        // Score all users
+        const results: ScoreResult[] = users.map((user) =>
+            scoreUser(
+                user,
+                githubMetrics.get(user.github_username) ?? null,
+                spendByUserId.get(user.id) ?? 0,
+                llmTrustScores.get(user.github_username) ?? 100,
+            ),
+        );
 
-            // Fetch eligible users from D1
-            const { newUsers, sliceUsers, totalOld } = fetchEligibleUsers(
-                rule.from,
-                env,
-            );
-            console.log(
-                `  New (last 24h): ${newUsers.length} | Slice (1/7): ${sliceUsers.length} of ${totalOld}`,
-            );
+        const upgraded = results.filter((r) => r.upgraded);
+        const unchanged = results.filter((r) => !r.upgraded);
+        console.log(
+            `\nScored: ${results.length} | To upgrade: ${upgraded.length} | Unchanged: ${unchanged.length}`,
+        );
 
-            let users = [...newUsers, ...sliceUsers];
-            if (users.length > MAX_USERS_PER_RUN) {
-                users = users.slice(0, MAX_USERS_PER_RUN);
-                console.log(`  Capped at ${MAX_USERS_PER_RUN}`);
-            }
-            if (users.length === 0) {
-                console.log("  No eligible users\n");
-                continue;
-            }
-
-            // Fetch LLM trust scores if any criterion uses it
-            const needsLLM = rule.criteria.some((c) => c.source === "llm");
-            let llmTrustScores = new Map<string, number>();
-            if (needsLLM) {
-                console.log(
-                    `  Running legitimacy scorer on ${users.length} users...`,
-                );
-                llmTrustScores = await fetchLLMTrustScores(users);
-                console.log(
-                    `  Got legitimacy scores for ${llmTrustScores.size} users`,
-                );
-            }
-
-            // Fetch GitHub metrics if any criterion uses it
-            const needsGitHub = rule.criteria.some(
-                (c) => c.source === "github",
-            );
-            let githubMetrics = new Map<string, GitHubMetrics>();
-            if (needsGitHub) {
-                console.log(
-                    `  Fetching GitHub data for ${users.length} users...`,
-                );
-                githubMetrics = await fetchGitHubMetrics(
-                    users.map((u) => u.github_username),
-                );
-            }
-
-            // Score all users
-            const results: ScoreResult[] = users.map((user) =>
-                scoreUser(
-                    user,
-                    githubMetrics.get(user.github_username) ?? null,
-                    spendByUserId.get(user.id) ?? 0,
-                    llmTrustScores.get(user.github_username) ?? 100,
-                    ruleIndex,
-                ),
-            );
-
-            const approved = results.filter((r) => r.approved);
-            const rejected = results.filter((r) => !r.approved);
-            console.log(
-                `\n  Scored: ${results.length} | Approved: ${approved.length} | Rejected: ${rejected.length}`,
-            );
-
-            if (opts.verbose) {
-                const criteriaFields = rule.criteria.map((c) => c.field);
-                const header = [
-                    "Username".padEnd(25),
-                    ...criteriaFields.map((f) => f.padEnd(10)),
-                    "Total",
+        if (opts.verbose) {
+            const fields = SCORING_CRITERIA.map((c) => c.field);
+            const header = [
+                "Username".padEnd(25),
+                "Tier".padEnd(8),
+                ...fields.map((f) => f.slice(0, 10).padEnd(10)),
+                "Total",
+                "New tier",
+            ];
+            console.log(`\n  ${header.join(" ")}`);
+            const separator = [
+                "-".repeat(25),
+                "-".repeat(8),
+                ...fields.map(() => "-".repeat(10)),
+                "-----",
+                "--------",
+            ].join(" ");
+            console.log(`  ${separator}`);
+            for (const r of results.slice(0, 30)) {
+                const cols = [
+                    r.username.padEnd(25),
+                    r.currentTier.padEnd(8),
+                    ...fields.map((f) =>
+                        (r.scores[f] ?? 0).toFixed(1).padStart(10),
+                    ),
+                    `${r.upgraded ? "+" : " "}${r.total.toFixed(1)}`,
+                    r.upgraded ? r.newTier : "",
                 ];
-                console.log(`\n  ${header.join(" ")}`);
-                const separator = [
-                    "-".repeat(25),
-                    ...criteriaFields.map(() => "-".repeat(10)),
-                    "-----",
-                ].join(" ");
-                console.log(`  ${separator}`);
-                for (const r of results.slice(0, 20)) {
-                    const cols = [
-                        r.username.padEnd(25),
-                        ...criteriaFields.map((f) =>
-                            (r.scores[f] ?? 0).toFixed(1).padStart(10),
-                        ),
-                        `${r.approved ? "+" : "-"}${r.total.toFixed(1)}`,
-                    ];
-                    console.log(`  ${cols.join(" ")}`);
-                }
-                if (results.length > 20)
-                    console.log(`  ... and ${results.length - 20} more`);
+                console.log(`  ${cols.join(" ")}`);
             }
-
-            if (rejected.length > 0 && opts.verbose) {
-                console.log("\n  Sample rejected:");
-                for (const r of rejected.slice(0, 5)) {
-                    console.log(`    ${r.username}: ${r.reason}`);
-                }
-            }
-
-            if (approved.length === 0 || opts.dryRun) {
-                if (opts.dryRun && approved.length > 0) {
-                    console.log(
-                        `\n  [DRY RUN] Would upgrade ${approved.length}:`,
-                    );
-                    for (const r of approved.slice(0, 10)) {
-                        console.log(`    ${r.username} (${r.reason})`);
-                    }
-                    if (approved.length > 10)
-                        console.log(`    ... and ${approved.length - 10} more`);
-                }
-                console.log();
-                continue;
-            }
-
-            console.log(
-                `\n  Upgrading ${approved.length} users to ${rule.to}...`,
-            );
-            let success = 0;
-            let failed = 0;
-            for (const r of approved) {
-                if (applyUpgrade(r.username, rule.to, env)) success++;
-                else failed++;
-            }
-            console.log(`  Done: ${success} upgraded, ${failed} failed\n`);
-            totalSuccess += success;
-            totalFailed += failed;
+            if (results.length > 30)
+                console.log(`  ... and ${results.length - 30} more`);
         }
 
-        console.log("=".repeat(55));
-        console.log(`Total: ${totalSuccess} upgraded, ${totalFailed} failed`);
-        if (totalFailed > 0) process.exit(1);
+        if (upgraded.length === 0 || opts.dryRun) {
+            if (opts.dryRun && upgraded.length > 0) {
+                console.log(`\n[DRY RUN] Would upgrade ${upgraded.length}:`);
+                for (const r of upgraded.slice(0, 15)) {
+                    console.log(
+                        `  ${r.username}: ${r.currentTier} -> ${r.newTier} (${r.total.toFixed(1)} pts)`,
+                    );
+                }
+                if (upgraded.length > 15)
+                    console.log(`  ... and ${upgraded.length - 15} more`);
+            }
+            return;
+        }
+
+        console.log(`\nUpgrading ${upgraded.length} users...`);
+        let success = 0;
+        let failed = 0;
+        for (const r of upgraded) {
+            if (applyUpgrade(r.username, r.newTier, env)) success++;
+            else failed++;
+        }
+        console.log(`\nDone: ${success} upgraded, ${failed} failed`);
+        if (failed > 0) process.exit(1);
     },
 });
 

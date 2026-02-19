@@ -1,0 +1,34 @@
+{
+  "pr_number": 8398,
+  "title": "feat: add HTTP Basic Auth to KPI dashboard",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8398",
+  "merged_at": "2026-02-19T15:36:10Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The hive gets a bouncer",
+    "blurb": "Added a password lock to our internal KPI dashboard. Keeping the honey safe from accidental clicks.",
+    "summary": "Implemented optional HTTP Basic Auth middleware for the KPI dashboard worker, allowing password protection via Wrangler secrets.",
+    "impact": "Internal operational metrics can now be secured while maintaining backward compatibility for public access.",
+    "keywords": [
+      "security",
+      "cloudflare",
+      "auth",
+      "internal",
+      "kpi"
+    ],
+    "visual_concept": "A pixel art gate or door with a lock, guarding a garden of charts/graphs. The bee is the gatekeeper.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot wearing a tiny security guard hat, hovering next to a locked gate that leads to a garden of glowing charts. A robot companion checks a clipboard. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel peach gradient background. The bee and robot have chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Pixel text: 'ACCESS GRANTED'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-19T15:37:14.716694+00:00"
+}

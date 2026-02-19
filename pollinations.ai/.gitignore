@@ -22,3 +22,4 @@ build
 
 # Copied from apps/ at build time (source of truth: apps/APPS.md)
 src/lib/APPS.md
+public/APPS.md

@@ -14,7 +14,7 @@ import os
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from tqdm import tqdm
 
@@ -36,6 +36,7 @@ THRESHOLD = 8.0
 
 def build_query(usernames: list[str]) -> str:
     """Build GraphQL query for multiple users."""
+    from_date = (datetime.now(timezone.utc) - timedelta(days=90)).strftime("%Y-%m-%dT00:00:00Z")
     fragments = []
     for i, username in enumerate(usernames):
         safe_username = username.replace('"', '\\"').replace("\\", "\\\\")
@@ -47,7 +48,7 @@ def build_query(usernames: list[str]) -> str:
             totalCount
             nodes {{ stargazerCount }}
         }}
-        contributionsCollection {{ totalCommitContributions }}
+        contributionsCollection(from: "{from_date}") {{ totalCommitContributions }}
     }}''')
     return f"query {{ {''.join(fragments)} }}"
 

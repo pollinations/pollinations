@@ -75,6 +75,25 @@ MODEL_ID = "black-forest-labs/FLUX.2-klein-9B"
 
 MINUTES = 60
 
+# Maximum resolution to prevent OOM - 9B model is memory-hungry
+MAX_TOTAL_PIXELS = 1024 * 1024  # 1 megapixel max
+
+def clamp_dimensions(width: int, height: int) -> tuple[int, int]:
+    """Scale down dimensions while maintaining aspect ratio to prevent OOM errors."""
+    # Scale down proportionally if total pixels exceed max
+    total_pixels = width * height
+    if total_pixels > MAX_TOTAL_PIXELS:
+        scale = (MAX_TOTAL_PIXELS / total_pixels) ** 0.5
+        width = int(width * scale)
+        height = int(height * scale)
+    
+    # Ensure divisible by 16 (required by model)
+    width = (width // 16) * 16
+    height = (height // 16) * 16
+    
+    return max(width, 256), max(height, 256)
+
+
 class EditRequest(BaseModel):
     prompt: str
     images: list[str] | None = None
@@ -142,10 +161,13 @@ class FluxKlein9B:
         image_bytes_list: list[bytes] | None = None,
     ) -> bytes:
         """Generate an image from a text prompt, optionally with reference images."""
+        import gc
         import torch
         from PIL import Image
         
-        print(f"🎨 Generating: {prompt[:50]}...")
+        # Clamp dimensions to prevent OOM
+        width, height = clamp_dimensions(width, height)
+        print(f"🎨 Generating: {prompt[:50]}... (clamped to {width}x{height})")
         
         generator = None
         if seed is not None:
@@ -177,6 +199,14 @@ class FluxKlein9B:
         
         byte_stream = BytesIO()
         image.save(byte_stream, format="PNG")
+        
+        # Clean up to prevent memory fragmentation
+        del image
+        if reference_images is not None:
+            del reference_images
+        gc.collect()
+        torch.cuda.empty_cache()
+        
         return byte_stream.getvalue()
     
     def _verify_token(self, token: str | None) -> None:

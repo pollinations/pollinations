@@ -1,5 +1,11 @@
 import { CssBaseline, createTheme, ThemeProvider } from "@mui/material";
-import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import {
+    Route,
+    BrowserRouter as Router,
+    Routes,
+    useLocation,
+} from "react-router-dom";
 import FloatingAssistant from "./components/FloatingAssistant";
 import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
@@ -47,12 +53,23 @@ const darkTheme = createTheme({
     },
 });
 
+// Scroll-to-top on route change
+function ScrollToTop() {
+    const { pathname } = useLocation();
+    useEffect(() => {
+        void pathname;
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }, [pathname]);
+    return null;
+}
+
 function App() {
     return (
         <ThemeProvider theme={darkTheme}>
             <CssBaseline />
             <Router>
                 <Navbar />
+                <ScrollToTop />
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/projects" element={<Projects />} />

@@ -44,6 +44,18 @@ function buildUpdatedPermissions(
 }
 
 /**
+ * Parse permissions JSON, returning null for empty objects or invalid JSON.
+ */
+function parsePermissions(raw: string): Record<string, string[]> | null {
+    try {
+        const parsed = JSON.parse(raw);
+        return Object.keys(parsed).length > 0 ? parsed : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Parse potentially double-serialized JSON metadata
  */
 function parseMetadata(metadata: string): Record<string, unknown> | null {
@@ -126,7 +138,7 @@ export const apiKeysRoutes = new Hono<Env>()
                     lastRequest: key.lastRequest,
                     expiresAt: key.expiresAt,
                     permissions: key.permissions
-                        ? JSON.parse(key.permissions)
+                        ? parsePermissions(key.permissions)
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,

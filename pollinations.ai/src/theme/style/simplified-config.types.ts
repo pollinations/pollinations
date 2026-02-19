@@ -65,6 +65,7 @@ export interface ShadowsMacro {
 
 export interface BrandSpecialMacro {
     brandMain: string;
+    accent: string;
     logoMain: string;
     logoAccent: string;
     indicatorImage: string;
@@ -84,6 +85,7 @@ export interface RadiusMacro {
     card: string;
     input: string;
     subcard: string;
+    tag: string;
 }
 
 export interface BackgroundMacro {

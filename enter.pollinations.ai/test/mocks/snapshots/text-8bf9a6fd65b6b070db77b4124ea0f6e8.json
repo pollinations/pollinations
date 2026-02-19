@@ -1,0 +1,33 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/Is%20Berlin%20the%20capital%20of%20Germany%3F%20Reply%20yes%20or%20no.?model=nova-fast&seed=42",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "public, max-age=31536000, immutable",
+      "connection": "keep-alive",
+      "content-length": "281",
+      "content-type": "text/plain; charset=utf-8",
+      "date": "Sun, 08 Feb 2026 00:05:44 GMT",
+      "etag": "W/\"119-pmIrq68R68K+bjewdKNw+UZFZOA\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "amazon.nova-micro-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "65",
+      "x-usage-prompt-text-tokens": "262"
+    },
+    "body": {
+      "type": "text",
+      "data": "Absolutely, yes. Berlin is the capital of Germany. It's a vibrant city with a rich history and a lot to offer, from its intriguing museums to its bustling nightlife. If you ever get the chance to visit, you'll find it's a place where the past and present blend in fascinating ways."
+    }
+  }
+}

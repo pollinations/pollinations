@@ -119,6 +119,18 @@ export function createFireworksModelConfig(additionalConfig = {}) {
 }
 
 /**
+ * Creates an api.airforce model configuration
+ */
+export function createAirforceModelConfig(additionalConfig = {}) {
+    return {
+        provider: "openai",
+        "custom-host": "https://api.airforce/v1",
+        authKey: process.env.AIRFORCE_API_KEY,
+        ...additionalConfig,
+    };
+}
+
+/**
  * Creates a NomNom model configuration (community model with web search/scrape/crawl)
  * Uses user's API key for billing passthrough - NomNom calls Pollinations internally
  */

@@ -23,23 +23,23 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "494",
+      "content-length": "495",
       "content-type": "application/json; charset=utf-8",
-      "date": "Mon, 05 Jan 2026 14:41:43 GMT",
-      "etag": "W/\"1ee-m8Z+MVbxlcuFx+zLrrwPcAeAvjw\"",
+      "date": "Sat, 14 Feb 2026 18:19:04 GMT",
+      "etag": "W/\"1ef-JdnAbDQyGLZeF7NBblfaP9oaHOU\"",
       "keep-alive": "timeout=5",
       "x-model-used": "gemini-3-pro-preview",
       "x-powered-by": "Express",
       "x-usage-completion-reasoning-tokens": "93",
-      "x-usage-prompt-text-tokens": "265",
-      "x-usage-total-tokens": "358"
+      "x-usage-completion-text-tokens": "2",
+      "x-usage-prompt-text-tokens": "265"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_37e34adc8e2fcf72b82210700951b678",
+        "id": "pllns_a08f44f176e77029d798e8f108e0f414",
         "object": "chat.completion",
-        "created": 1767624103,
+        "created": 1771093144,
         "model": "gemini-3-pro-preview",
         "provider": "vertex-ai",
         "choices": [
@@ -60,7 +60,7 @@
         ],
         "usage": {
           "prompt_tokens": 265,
-          "completion_tokens": 2,
+          "completion_tokens": 95,
           "total_tokens": 360,
           "completion_tokens_details": {
             "reasoning_tokens": 93,

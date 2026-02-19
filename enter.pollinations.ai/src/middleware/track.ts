@@ -114,7 +114,9 @@ export const track = (eventType: EventType) =>
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
             userTier: c.var.auth.user?.tier,
-            userGithubId: `${c.var.auth.user?.githubId}`,
+            userGithubId: c.var.auth.user?.githubId
+                ? String(c.var.auth.user.githubId)
+                : undefined,
             userGithubUsername: c.var.auth.user?.githubUsername,
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyType: c.var.auth.apiKey?.metadata?.keyType as ApiKeyType,
@@ -265,6 +267,28 @@ async function trackResponse(
         ) {
             log.warn(
                 "Image generation returned non-image content-type: {contentType}",
+                { contentType },
+            );
+            return {
+                responseOk: response.ok,
+                responseStatus: response.status,
+                cacheData: cacheInfo,
+                isBilledUsage: false,
+            };
+        }
+    }
+    // For audio generation, verify the response content-type is expected.
+    // TTS returns audio/*, STT (whisper) returns application/json — both are valid.
+    if (eventType === "generate.audio") {
+        const contentType = response.headers.get("content-type") || "";
+        const isAudio = contentType.startsWith("audio/");
+        const isSTT =
+            contentType.startsWith("application/json") &&
+            getServiceDefinition(resolvedModelRequested as ServiceId)
+                ?.outputModalities?.[0] === "text";
+        if (!isAudio && !isSTT) {
+            log.warn(
+                "Audio generation returned unexpected content-type: {contentType}",
                 { contentType },
             );
             return {
@@ -431,8 +455,17 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
         return z.safeParse(z.coerce.boolean(), stream).data || false;
     }
     if (request.method === "POST") {
-        const stream = (await request.json()).stream;
-        return z.safeParse(z.coerce.boolean(), stream).data || false;
+        const contentType = request.header("content-type") || "";
+        // Skip JSON parsing for multipart requests (e.g., audio transcription)
+        if (contentType.includes("multipart/form-data")) {
+            return false;
+        }
+        try {
+            const stream = (await request.json()).stream;
+            return z.safeParse(z.coerce.boolean(), stream).data || false;
+        } catch {
+            return false;
+        }
     }
     return false;
 }

@@ -1,12 +1,12 @@
-import dotenv from "dotenv";
-import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import debug from "debug";
-import { resolveModelConfig } from "./utils/modelResolver.js";
-import { generateHeaders } from "./transforms/headerGenerator.js";
-import { sanitizeMessages } from "./transforms/messageSanitizer.js";
-import { createImageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
-import { processParameters } from "./transforms/parameterProcessor.js";
+import dotenv from "dotenv";
 import { findModelByName } from "./availableModels.js";
+import { genericOpenAIClient } from "./genericOpenAIClient.js";
+import { generateHeaders } from "./transforms/headerGenerator.js";
+import { createImageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
+import { sanitizeMessages } from "./transforms/messageSanitizer.js";
+import { processParameters } from "./transforms/parameterProcessor.js";
+import { resolveModelConfig } from "./utils/modelResolver.js";
 
 dotenv.config();
 
@@ -32,9 +32,9 @@ const DEFAULT_OPTIONS = {
  * Configuration object for the Portkey client
  */
 const clientConfig = {
-    // Use Portkey API Gateway URL from .env with fallback to localhost
+    // Use Portkey API Gateway URL from .env with fallback to production
     endpoint: () =>
-        `${process.env.PORTKEY_GATEWAY_URL || "http://localhost:8787"}/v1/chat/completions`,
+        `${process.env.PORTKEY_GATEWAY_URL || "https://portkey.pollinations.ai"}/v1/chat/completions`,
 
     // Auth header configuration
     authHeaderName: "Authorization",

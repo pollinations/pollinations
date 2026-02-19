@@ -81,6 +81,10 @@ const profileResponseSchema = z.object({
     name: z.string().nullable().describe("User's display name"),
     email: z.email().nullable().describe("User's email address"),
     githubUsername: z.string().nullable().describe("GitHub username if linked"),
+    image: z
+        .string()
+        .nullable()
+        .describe("Profile picture URL (e.g. GitHub avatar)"),
     tier: z
         .enum(["anonymous", ...tierNames])
         .describe("User's current tier level"),
@@ -193,6 +197,7 @@ export const accountRoutes = new Hono<Env>()
                     name: userTable.name,
                     email: userTable.email,
                     githubUsername: userTable.githubUsername,
+                    image: userTable.image,
                     tier: userTable.tier,
                     createdAt: userTable.createdAt,
                     lastTierGrant: userTable.lastTierGrant,
@@ -213,6 +218,7 @@ export const accountRoutes = new Hono<Env>()
                 name: profile.name,
                 email: profile.email,
                 githubUsername: profile.githubUsername ?? null,
+                image: profile.image ?? null,
                 tier: profile.tier,
                 createdAt: profile.createdAt,
                 nextResetAt,
@@ -275,8 +281,13 @@ export const accountRoutes = new Hono<Env>()
             const packBalance = users[0]?.packBalance ?? 0;
             const cryptoBalance = users[0]?.cryptoBalance ?? 0;
 
+            // Clamp each bucket at 0 before summing — individual buckets can go negative
+            // from overage but shouldn't reduce the visible total
             return c.json({
-                balance: tierBalance + packBalance + cryptoBalance,
+                balance:
+                    Math.max(0, tierBalance) +
+                    Math.max(0, packBalance) +
+                    Math.max(0, cryptoBalance),
             });
         },
     )
@@ -666,7 +677,6 @@ export const accountRoutes = new Hono<Env>()
             const keyDetails = await db
                 .select({
                     expiresAt: apikeyTable.expiresAt,
-                    rateLimitEnabled: apikeyTable.rateLimitEnabled,
                 })
                 .from(apikeyTable)
                 .where(eq(apikeyTable.id, apiKey.id))
@@ -706,7 +716,8 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
-                rateLimitEnabled: keyDetails?.rateLimitEnabled ?? true,
+                // Rate limiting applies to publishable keys only (see rate-limit-durable.ts)
+                rateLimitEnabled: keyType === "publishable",
             });
         },
     );

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import fs from "fs";
-import path from "path";
 import os from "os";
+import path from "path";
 
 // Determine the Claude Desktop config file path based on the operating system
 const getConfigPath = () => {

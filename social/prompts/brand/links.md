@@ -17,8 +17,8 @@
 - **Repo Star History:** https://star-history.com/#pollinations/pollinations  
 
 ## Packages
-- **NPM Package (@pollinations/model-context-protocol):**  
-  https://www.npmjs.com/package/@pollinations/model-context-protocol  
+- **NPM Package (@pollinations_ai/model-context-protocol):**  
+  https://www.npmjs.com/package/@pollinations_ai/model-context-protocol  
 - **PyPI Stats (eclips-blossom-ai):**  
   https://pypistats.org/packages/eclips-blossom-ai  
 

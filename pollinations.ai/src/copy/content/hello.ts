@@ -56,7 +56,8 @@ export const HELLO_PAGE = {
     earnCardTitle: "Earn Pollen",
     earnCardBody:
         "Contribute — code, docs, community help — and the platform gives back.",
-    pollenFinePrint: "Note: premium models require paid balance.",
+    pollenFinePrint:
+        "Not all models accept daily Pollen. Look for the 💎 badge.",
 
     // Section 5 — Tiers
     tiersTitle: "Do more, get more.",

@@ -38,3 +38,34 @@ export function getTierEmoji(tier: string): string;
 export function getTierEmoji(tier: string): string {
     return isValidTier(tier) ? TIERS[tier].emoji : TIERS[DEFAULT_TIER].emoji;
 }
+
+// Points required to reach each tier
+export const TIER_THRESHOLDS = {
+    microbe: 0,
+    spore: 3,
+    seed: 8,
+    flower: 20,
+    nectar: 50,
+} as const;
+
+// Ordered progression (excludes router, which is admin-only)
+const TIER_PROGRESSION: TierName[] = [
+    "microbe",
+    "spore",
+    "seed",
+    "flower",
+    "nectar",
+];
+
+/** Returns the next tier's name and point threshold, or null if already at max (nectar). */
+export function getNextTier(
+    currentTier: TierStatus,
+): { name: TierName; threshold: number } | null {
+    const idx = TIER_PROGRESSION.indexOf(currentTier as TierName);
+    if (idx === -1 || idx >= TIER_PROGRESSION.length - 1) return null;
+    const next = TIER_PROGRESSION[idx + 1];
+    return {
+        name: next,
+        threshold: TIER_THRESHOLDS[next as keyof typeof TIER_THRESHOLDS],
+    };
+}

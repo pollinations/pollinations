@@ -1,0 +1,35 @@
+{
+  "pr_number": 8423,
+  "title": "fix: expand POLLINATIONS_TOKEN env var in router config",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8423",
+  "merged_at": "2026-02-19T18:11:20Z",
+  "labels": [
+    "DEV-BUG",
+    "polly"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polly finds the right keys",
+    "blurb": "Fixed a variable expansion bug in our internal auto-fix workflow. The robots can authenticate again.",
+    "summary": "Updated the GitHub Actions workflow to correctly expand the authentication token environment variable in the router configuration.",
+    "impact": "Restores functionality to the automated issue-fixing pipeline.",
+    "keywords": [
+      "github actions",
+      "ci/cd",
+      "automation",
+      "auth",
+      "devops"
+    ],
+    "visual_concept": "The bee mascot (Polly) handing a glowing access key (token) to the monitor robot (automation system). Represents the authentication fix.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot handing a glowing lime green (#ecf874) key card to the cute monitor-head robot. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text: 'ACCESS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-19T18:12:13.896252+00:00"
+}

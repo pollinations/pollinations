@@ -1,0 +1,34 @@
+{
+  "pr_number": 8424,
+  "title": "fix: correct invalid model name and enable router logging",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8424",
+  "merged_at": "2026-02-19T18:54:32Z",
+  "labels": [
+    "DEV-BUG",
+    "polly"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polly checks the phonebook",
+    "blurb": "Fixed a typo in our internal automation model selection. Even bots need to dial the right number.",
+    "summary": "Corrected an invalid model identifier in the auto-fix workflow and enabled router logging for better debugging.",
+    "impact": "Restores functionality to the automated issue-handling bot.",
+    "keywords": [
+      "automation",
+      "github-actions",
+      "debugging",
+      "internal"
+    ],
+    "visual_concept": "The bee mascot looking at a large directory or phonebook, realizing a name was wrong. A robot companion holds a lantern.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot looking at a large pixelated directory book, correcting a name with a pencil. A small robot with a monitor head holds a lantern nearby. Lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text: 'DEBUG'. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-19T18:55:16.359359+00:00"
+}

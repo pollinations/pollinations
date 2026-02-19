@@ -1,0 +1,35 @@
+{
+  "pr_number": 7939,
+  "title": "Improve Getting Started onboarding steps",
+  "author": "mohityadav8",
+  "url": "https://github.com/pollinations/pollinations/pull/7939",
+  "merged_at": "2026-02-19T21:36:24Z",
+  "labels": [
+    "API",
+    ".DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Planting the first seeds",
+    "blurb": "The path to the garden is a little clearer now. We added a quick 3-step guide to help new developers find their footing.",
+    "summary": "Updated the main README with a streamlined 3-step onboarding guide for new contributors.",
+    "impact": "New developers can get their environment set up and start coding without the guesswork.",
+    "keywords": [
+      "docs",
+      "onboarding",
+      "readme",
+      "guide",
+      "developer experience"
+    ],
+    "visual_concept": "A welcoming garden path. Polly the Bee standing next to a wooden signpost with three distinct arrows/boards, guiding the way for new visitors. Represents the 3-step onboarding guide.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot hovering next to a wooden garden signpost with three arrows. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. The bee wears a tiny tour guide hat. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-19T21:37:17.198412+00:00"
+}

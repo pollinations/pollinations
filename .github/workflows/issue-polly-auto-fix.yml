@@ -99,5 +99,6 @@ jobs:
             Read the issue body from the GitHub API to get the full details, then fix it.
 
             Create a PR that fixes this issue and include "Fixes #${{ github.event.issue.number }}" in the PR description.
+          show_full_output: true
           additional_permissions: |
             actions: read

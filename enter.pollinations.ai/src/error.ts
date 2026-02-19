@@ -97,11 +97,10 @@ export const handleError: ErrorHandler<Env> = async (err, c) => {
     // Use name check as fallback for bundling/prototype chain issues
     if (err instanceof UpstreamError || err.name === "UpstreamError") {
         const status = (err as UpstreamError).status;
-        const response = createBaseErrorResponse(err, status, timestamp);
         log.trace("UpstreamError: {message}", {
             message: err.message || getDefaultErrorMessage(status),
         });
-        return c.json(response, status);
+        return c.json(createErrorResponse(err, status, timestamp), status);
     }
 
     if (err instanceof HTTPException) {

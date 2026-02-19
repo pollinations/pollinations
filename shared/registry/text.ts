@@ -225,19 +225,19 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemini-search": {
-        aliases: ["gemini-3-flash-search"],
-        modelId: "gemini-3-flash-preview",
+        aliases: ["gemini-2.5-flash-search", "gemini-2.5-flash-lite-search"],
+        modelId: "gemini-2.5-flash-lite",
         provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.5),
-                promptCachedTokens: perMillion(0.05),
-                promptAudioTokens: perMillion(0.5), // Audio billed at same rate as text
-                completionTextTokens: perMillion(3.0),
+                promptTextTokens: perMillion(0.1),
+                promptCachedTokens: perMillion(0.01),
+                promptAudioTokens: perMillion(0.1), // Audio billed at same rate as text
+                completionTextTokens: perMillion(0.4),
             },
         ],
-        description: "Google Gemini 3 Flash - With Google Search",
+        description: "Google Gemini 2.5 Flash Lite - With Google Search",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: false,
@@ -333,6 +333,25 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
+    "claude-legacy": {
+        aliases: ["claude-opus-4.5", "claude-large-legacy"],
+        modelId: "claude-opus-4-5-20251101",
+        provider: "google",
+        paidOnly: true,
+        hidden: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(5.0),
+                completionTextTokens: perMillion(25.0),
+            },
+        ],
+        description: "Anthropic Claude Opus 4.5 - Legacy",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
     "perplexity-fast": {
         aliases: ["sonar"],
         modelId: "sonar",
@@ -420,6 +439,7 @@ export const TEXT_SERVICES = {
         modelId: "gemini-2.5-pro",
         provider: "google",
         paidOnly: true,
+        hidden: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -456,18 +476,19 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "glm": {
-        aliases: ["glm-4.7", "glm-4p7"],
-        modelId: "accounts/fireworks/models/glm-4p7",
+        aliases: ["glm-5", "glm-4.7", "glm-4p7"],
+        modelId: "accounts/fireworks/models/glm-5",
         provider: "fireworks",
         cost: [
             {
-                date: new Date("2026-01-05").getTime(),
+                date: new Date("2026-02-13").getTime(),
                 promptTextTokens: perMillion(0.6),
                 promptCachedTokens: perMillion(0.3),
                 completionTextTokens: perMillion(2.2),
             },
         ],
-        description: "Z.ai GLM-4.7 - Coding, Reasoning & Agentic Workflows",
+        description:
+            "Z.ai GLM-5 - 744B MoE, Long Context Reasoning & Agentic Workflows",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -495,23 +516,58 @@ export const TEXT_SERVICES = {
         contextWindow: 200000,
         isSpecialized: false,
     },
-    "nomnom": {
-        aliases: ["gemini-scrape", "web-research"],
-        modelId: "nomnom",
-        provider: "community",
+    // "nomnom": {
+    //     aliases: ["gemini-scrape", "web-research"],
+    //     modelId: "nomnom",
+    //     provider: "community",
+    //     cost: [
+    //         {
+    //             date: new Date("2026-01-17").getTime(),
+    //             promptTextTokens: perMillion(0.0), // Free - uses Pollinations under the hood
+    //             completionTextTokens: perMillion(0.0),
+    //         },
+    //     ],
+    //     description:
+    //         "NomNom by @Itachi-1824 - Web Research with Search, Scrape & Crawl (Alpha)",
+    //     inputModalities: ["text"],
+    //     outputModalities: ["text"],
+    //     tools: true,
+    //     search: true,
+    //     isSpecialized: false,
+    //     alpha: true,
+    // },
+    "qwen-safety": {
+        aliases: ["qwen3guard-gen-8b"],
+        modelId: "Qwen3Guard-Gen-8B",
+        provider: "ovhcloud",
         cost: [
             {
-                date: new Date("2026-01-17").getTime(),
-                promptTextTokens: perMillion(0.0), // Free - uses Pollinations under the hood
-                completionTextTokens: perMillion(0.0),
+                date: new Date("2026-02-15").getTime(),
+                promptTextTokens: perMillion(0.01),
+                completionTextTokens: perMillion(0.01),
+            },
+        ],
+        description: "Qwen3Guard 8B - Content Safety & Moderation (OVH)",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        isSpecialized: true,
+    },
+    "qwen-character": {
+        aliases: [],
+        modelId: "qwen-character",
+        provider: "airforce",
+        cost: [
+            {
+                date: new Date("2026-02-09").getTime(),
+                promptTextTokens: perMillion(0.01), // $0.01/M via api.airforce
+                completionTextTokens: perMillion(0.01),
             },
         ],
         description:
-            "NomNom by @Itachi-1824 - Web Research with Search, Scrape & Crawl (Alpha)",
+            "Qwen Character (api.airforce) - roleplay & character chat",
         inputModalities: ["text"],
         outputModalities: ["text"],
-        tools: true,
-        search: true,
-        isSpecialized: false,
+        isSpecialized: true,
+        alpha: true,
     },
 } as const satisfies Record<string, ServiceDefinition<string>>;

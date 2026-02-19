@@ -3,12 +3,15 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { calculateVideoResolution } from "../utils/videoResolution.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:airforce:ops");
 const logError = debug("pollinations:airforce:error");
 
 const AIRFORCE_API_URL = "https://api.airforce/v1/images/generations";
+
+const VIDEO_MODELS = ["grok-imagine-video"];
 
 // api.airforce only supports these exact sizes (OpenAI DALL-E 3 compatible)
 const SUPPORTED_SIZES: Array<{ width: number; height: number }> = [
@@ -75,18 +78,21 @@ async function fetchFromAirforce(
     const requestBody = buildRequestBody(prompt, safeParams, airforceModel);
     logOps("Request body:", JSON.stringify(requestBody));
 
+    const isVideo = VIDEO_MODELS.includes(airforceModel);
     const response = await makeApiRequest(apiKey, requestBody);
 
     if (!response.ok) {
         await handleApiError(response, airforceModel);
     }
 
-    const resultBuffer = await processApiResponse(
-        response,
-        airforceModel,
-        progress,
-        requestId,
-    );
+    const resultBuffer = isVideo
+        ? await processSseResponse(response, airforceModel, progress, requestId)
+        : await processApiResponse(
+              response,
+              airforceModel,
+              progress,
+              requestId,
+          );
 
     progress.updateBar(
         requestId,
@@ -99,7 +105,7 @@ async function fetchFromAirforce(
 }
 
 /**
- * Image generation via api.airforce (e.g. imagen-3)
+ * Image generation via api.airforce (e.g. imagen-4)
  */
 export async function callAirforceImageAPI(
     prompt: string,
@@ -141,7 +147,56 @@ function buildRequestBody(
         n: 1,
     };
 
-    if (airforceModel === "imagen-3") {
+    if (VIDEO_MODELS.includes(airforceModel)) {
+        requestBody.sse = true;
+        requestBody.response_format = "url";
+
+        // Calculate resolution and aspect ratio for video models
+        const { aspectRatio, resolution } = calculateVideoResolution({
+            width: safeParams.width,
+            height: safeParams.height,
+            aspectRatio: safeParams.aspectRatio,
+            defaultResolution: "720P",
+        });
+
+        // grok-imagine-video at airforce does not support 16:9 or 9:16, so we need to convert to 3:2 or 2:3 which is closest to these values
+        if (airforceModel === "grok-imagine-video") {
+            const airforceAspectRatio =
+                aspectRatio === "16:9"
+                    ? "3:2"
+                    : aspectRatio === "9:16"
+                      ? "2:3"
+                      : aspectRatio;
+            requestBody.aspectRatio = airforceAspectRatio;
+        }
+
+        // Map resolution to size parameter (grok-video uses WxH format)
+        const sizeMap: Record<string, Record<string, string>> = {
+            "16:9": {
+                "480P": "854x480",
+                "720P": "1280x720",
+                "1080P": "1920x1080",
+            },
+            "9:16": {
+                "480P": "480x854",
+                "720P": "720x1280",
+                "1080P": "1080x1920",
+            },
+        };
+
+        const size = sizeMap[aspectRatio]?.[resolution];
+        if (size) {
+            requestBody.size = size;
+        }
+
+        // Support image-to-video: pass reference image URL if provided
+        const imageUrl = Array.isArray(safeParams.image)
+            ? safeParams.image[0]
+            : safeParams.image;
+        if (imageUrl) {
+            requestBody.image = imageUrl;
+        }
+    } else if (airforceModel === "imagen-4") {
         const size = closestSupportedSize(safeParams.width, safeParams.height);
         if (size) requestBody.size = size;
     } else if (safeParams.width && safeParams.height) {
@@ -212,6 +267,58 @@ async function processApiResponse(
     throw new HttpError(`api.airforce ${airforceModel} returned no data`, 500);
 }
 
+async function processSseResponse(
+    response: Response,
+    airforceModel: string,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<Buffer> {
+    const text = await response.text();
+    logOps("SSE response received, parsing...");
+
+    let resultUrl: string | undefined;
+
+    for (const line of text.split("\n")) {
+        const trimmed = line.trim();
+        if (
+            !trimmed.startsWith("data: ") ||
+            trimmed === "data: [DONE]" ||
+            trimmed === "data: : keepalive"
+        ) {
+            continue;
+        }
+        try {
+            const parsed = JSON.parse(trimmed.slice(6)) as {
+                data?: Array<{ url?: string }>;
+                error?: string;
+            };
+            if (parsed.error) {
+                throw new HttpError(
+                    `api.airforce ${airforceModel} error: ${parsed.error}`,
+                    500,
+                );
+            }
+            const url = parsed.data?.[0]?.url;
+            if (url) {
+                resultUrl = url;
+            }
+        } catch (e) {
+            if (e instanceof HttpError) throw e;
+            logError("Failed to parse SSE line:", trimmed);
+        }
+    }
+
+    if (!resultUrl) {
+        throw new HttpError(
+            `api.airforce ${airforceModel} SSE returned no result URL`,
+            500,
+        );
+    }
+
+    logOps("SSE result URL:", resultUrl);
+    return downloadResultFromUrl(resultUrl, progress, requestId);
+}
+
 async function downloadResultFromUrl(
     url: string,
     progress: ProgressManager,
@@ -234,8 +341,11 @@ async function downloadResultFromUrl(
     return buffer;
 }
 
+const MAX_VIDEO_RETRIES = 3;
+
 /**
  * Video generation via api.airforce (e.g. grok-imagine-video)
+ * Includes retry logic since video models can be flaky.
  */
 export async function callAirforceVideoAPI(
     prompt: string,
@@ -244,26 +354,58 @@ export async function callAirforceVideoAPI(
     requestId: string,
     airforceModel: string,
 ): Promise<VideoGenerationResult> {
-    const buffer = await fetchFromAirforce(
-        prompt,
-        safeParams,
-        progress,
-        requestId,
-        airforceModel,
+    let lastError: Error | undefined;
+
+    for (let attempt = 1; attempt <= MAX_VIDEO_RETRIES; attempt++) {
+        try {
+            if (attempt > 1) {
+                logOps(
+                    `Retry ${attempt}/${MAX_VIDEO_RETRIES} for ${airforceModel}`,
+                );
+                progress.updateBar(
+                    requestId,
+                    20,
+                    "Retrying",
+                    `Attempt ${attempt}/${MAX_VIDEO_RETRIES}...`,
+                );
+            }
+
+            const buffer = await fetchFromAirforce(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+                airforceModel,
+            );
+
+            const durationSeconds = safeParams.duration || 5;
+
+            return {
+                buffer,
+                mimeType: "video/mp4",
+                durationSeconds,
+                trackingData: {
+                    actualModel: safeParams.model,
+                    usage: {
+                        completionVideoSeconds: durationSeconds,
+                        totalTokenCount: 1,
+                    },
+                },
+            };
+        } catch (error) {
+            lastError = error as Error;
+            logError(
+                `${airforceModel} attempt ${attempt}/${MAX_VIDEO_RETRIES} failed:`,
+                lastError.message,
+            );
+        }
+    }
+
+    throw (
+        lastError ||
+        new HttpError(
+            `${airforceModel} failed after ${MAX_VIDEO_RETRIES} retries`,
+            500,
+        )
     );
-
-    const durationSeconds = safeParams.duration || 5;
-
-    return {
-        buffer,
-        mimeType: "video/mp4",
-        durationSeconds,
-        trackingData: {
-            actualModel: safeParams.model,
-            usage: {
-                completionVideoSeconds: durationSeconds,
-                totalTokenCount: 1,
-            },
-        },
-    };
 }

@@ -1,0 +1,52 @@
+FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04 AS builder
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    python3.10 \
+    python3-pip \
+    ffmpeg \
+    libsndfile1 \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
+
+RUN pip install --upgrade pip setuptools wheel
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    python3.10 \
+    python3-pip \
+    ffmpeg \
+    libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
+
+RUN pip install --upgrade pip
+
+COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+
+COPY app.py .
+COPY tts.py .
+COPY voiceMap.py .
+
+RUN mkdir -p model_cache temp_audio
+
+ENV PYTHONUNBUFFERED=1
+ENV TORCH_HOME=/app/model_cache
+ENV CUDA_VISIBLE_DEVICES=0
+
+EXPOSE 8001
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')" || exit 1
+
+CMD ["python", "app.py"]

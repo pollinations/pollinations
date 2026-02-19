@@ -1,5 +1,5 @@
 {
-    "name": "@pollinations_ai/model-context-protocol",
+    "name": "@pollinations/model-context-protocol",
     "version": "2.0.0",
     "description": "Model Context Protocol (MCP) server for pollinations.ai - image, text, audio & video generation",
     "type": "module",
@@ -13,6 +13,10 @@
         "LICENSE"
     ],
     "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch",
+        "typecheck": "tsc --noEmit",
+        "prepublishOnly": "npm run typecheck",
         "test": "node test-mcp-client.js",
         "test:integration": "vitest run tests/integration",
         "test:integration:watch": "vitest watch tests/integration",
@@ -50,6 +54,9 @@
     "homepage": "https://github.com/pollinations/pollinations#readme",
     "engines": {
         "node": ">=18.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
     },
     "devDependencies": {
         "@types/node": "^22.14.1",

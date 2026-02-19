@@ -121,9 +121,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         "vertex-model-id": "anthropic.claude-sonnet-4-5@20250929",
         "strict-open-ai-compliance": "true",
     }),
+    "claude-opus-4-6-vertex": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
+        "vertex-region": "europe-west1",
+        "vertex-model-id": "claude-opus-4-6",
+        "strict-open-ai-compliance": "true",
+    }),
 
     // ============================================================================
-    // Claude Models - Bedrock only (no fallback needed since Claude is paid tier)
+    // Claude Models
     // ============================================================================
     "claude-sonnet-4-5": () =>
         createBedrockNativeConfig({

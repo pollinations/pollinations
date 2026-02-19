@@ -1,0 +1,34 @@
+{
+  "pr_number": 8421,
+  "title": "[PATCH] Updated npm account for packages/",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/8421",
+  "merged_at": "2026-02-19T18:20:23Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh Labels, Lighter Packs",
+    "blurb": "We've renamed our npm packages to @pollinations_ai and put the SDK on a diet. No more heavy React dependencies—just pure, sweet API access.",
+    "summary": "Renamed the SDK and MCP packages to the @pollinations_ai scope and removed React dependencies for a framework-agnostic build.",
+    "impact": "Developers need to update installs to @pollinations_ai/sdk and @pollinations_ai/model-context-protocol.",
+    "keywords": [
+      "npm",
+      "sdk",
+      "mcp",
+      "breaking change",
+      "javascript"
+    ],
+    "visual_concept": "Polly the Bee applying new shipping labels to boxes. The boxes represent the software packages. A robot is recycling old materials (the removed dependencies).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot applying a new label to a brown shipping box. The label has a lime green (#ecf874) border. A chunky robot companion is tidying up a stack of old papers nearby. Soft pastel mint and cream gradient background. Warm lighting, lo-fi warehouse vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-19T18:21:25.165253+00:00"
+}

@@ -2,41 +2,41 @@
 
 export const HELLO_PAGE = {
     // Section 1 — Hero
-    heroTitle: "Build AI apps. For free.",
+    heroTitle: "Drop AI into your app. For free.",
     heroBody:
-        "One API. 40+ models. Text, image, audio, video. You get free compute every day — enough to build, test, and ship a real app. No credit card, no backend, no catch.",
+        "One API. 40+ models. Text, image, audio, video. Free compute every day — enough to build, test, and ship. You bring the app. We bring the AI and the payments. No credit card. No catch.",
     heroStat1: "500+",
     heroStat1Label: "live apps",
     heroStat2: "3M",
     heroStat2Label: "monthly users",
     heroStat3: "200",
     heroStat3Label: "countries",
-    startBuildingButton: "Start Building",
+    startBuildingButton: "Get Your API Key",
     joinDiscordButton: "Join the Discord",
 
     // Section 2 — What Your App Gets
-    appGetsTitle: "Everything your app needs. Nothing it doesn't.",
+    appGetsTitle: "All the building blocks. None of the headaches.",
     appGetsCard1Title: "One API, every model",
     appGetsCard1Body:
         "40+ models from 15+ providers. Text, image, audio, video. One integration.",
     appGetsCard2Title: "Free compute every day",
     appGetsCard2Body:
         "Pollen grants land in your account daily. Build, test, iterate, ship.",
-    appGetsCard3Title: "No backend needed",
+    appGetsCard3Title: "We handle the infra",
     appGetsCard3Body:
-        "Call the API straight from the browser. We handle routing, reliability, and scale.",
+        "Routing, reliability, scale — all handled. You just call the API.",
     appGetsFooter:
-        "We give you the intelligence layer. The UI, the design, the product — that's yours.",
+        "We give you the AI layer and the money layer. The app, the design, the product — that's all you.",
     readTheDocsButton: "Read the Docs",
 
     // Section 3 — How It Works
-    howItWorksTitle: "From zero to live app. Here's the path.",
+    howItWorksTitle: "From idea to paying users. Here's the path.",
     howItWorksStep1Title: "Sign up",
     howItWorksStep1Body:
         "Create an account. Verify. You start getting free compute daily.",
-    howItWorksStep2Title: "Build",
+    howItWorksStep2Title: "Plug in",
     howItWorksStep2Body:
-        "Use the API to build whatever you want. Chatbot, image gen, game, research tool — your call.",
+        "Add AI to whatever you're building. Chatbot, image gen, game, creative tool — your call.",
     howItWorksStep3Title: "Get users",
     howItWorksStep3Body:
         "Ship your app. Your users spend their own Pollen. Your API costs drop to zero.",
@@ -48,7 +48,7 @@ export const HELLO_PAGE = {
     // Section 4 — Pollen
     pollenTitle: "Pollen — one credit, every model.",
     pollenBody:
-        "Pollen is what powers every AI generation on the platform. Users buy it once and spend it across any app — no subscriptions, no per-app billing. As a creator, you get Pollen for free through daily grants. That's your runway.",
+        "Pollen is what runs every AI generation on the platform. Users buy it once and spend it across any app — no subscriptions, no per-app billing. As a creator, you get Pollen for free through daily grants. That's your runway.",
     buyCardTitle: "Buy Pollen",
     buyCardBody:
         "Simple packs. No subscriptions. Use it across every app on the platform.",
@@ -89,12 +89,49 @@ export const HELLO_PAGE = {
     // Section 7 — What People Are Building
     buildingTitle: "Already happening.",
     buildingBody:
-        "500+ apps live on the platform — chatbots, image generators, research tools, games, creative media. All built on free compute grants, all with real users.",
+        "500+ apps live on the platform — chatbots, image generators, research tools, games, creative media. All running on free compute grants, all with real users.",
     browseAppsButton: "Browse the Apps",
 
     // Section 8 — We Build in the Open
     openTitle: "We build in the open.",
     recentUpdatesTitle: "What's New",
+    newsItems: [
+        {
+            date: "2026-02-18",
+            emoji: "📅",
+            title: "Build Diary",
+            description:
+                "The Community page now features an interactive timeline of the project's history. Navigate daily changes and digests with keyboard controls.",
+        },
+        {
+            date: "2026-02-18",
+            emoji: "🐛",
+            title: "Readable Errors",
+            description:
+                "The API now extracts actual human-readable messages from upstream JSON errors. No more raw dumps when providers fail.",
+        },
+        {
+            date: "2026-02-18",
+            emoji: "🌱",
+            title: "Seed Tier Logic",
+            description:
+                "GitHub activity qualification now uses a rolling 90-day window instead of resetting yearly. Your status is safe in January.",
+        },
+        {
+            date: "2026-02-17",
+            emoji: "📊",
+            title: "SlidePainter",
+            description:
+                "Generate illustrated slide decks and export to PDF with this new community app.",
+        },
+        {
+            date: "2026-02-17",
+            emoji: "👾",
+            title: "Pixel Art & Markdown",
+            description:
+                "A cozy new retro theme is available, plus app descriptions are now auto-formatted via the Text API.",
+        },
+    ],
     comingSoonLabel: "Shipping Soon",
     comingSoonItem1Title: "Secure Frontend Auth",
     comingSoonItem1Description:
@@ -124,9 +161,9 @@ export const HELLO_PAGE = {
         "Right now, the platform gives you runway — free compute that grows as you grow. We're building the rest together, in the open.",
 
     // Section 10 — CTA
-    ctaTitle: "Come build with us.",
+    ctaTitle: "Your app. Our tools. Let's go.",
     ctaBody:
-        "Free compute. One API. No gatekeeping. A community that actually shows up. Everything's open — the code, the roadmap, the conversations. Jump in.",
+        "Free compute. One API. All the building blocks. A community that actually shows up. Everything's open — the code, the roadmap, the conversations.",
     browseAppsLink: "Browse Apps",
     communityLink: "Community",
 };

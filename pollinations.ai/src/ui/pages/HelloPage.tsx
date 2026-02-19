@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { HELLO_PAGE } from "../../copy/content/hello";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { NewsSection } from "../components/NewsSection";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
@@ -357,7 +356,34 @@ function HelloPage() {
                         <Badge variant="brand" className="mb-4">
                             {pageCopy.recentUpdatesTitle}
                         </Badge>
-                        <NewsSection limit={5} compact />
+                        <div className="space-y-2">
+                            {pageCopy.newsItems.map(
+                                (item: {
+                                    date: string;
+                                    emoji: string;
+                                    title: string;
+                                    description: string;
+                                }) => (
+                                    <div
+                                        key={`${item.date}-${item.title}`}
+                                        className="bg-input-background border-l-2 border-border-brand p-3 rounded-sub-card"
+                                    >
+                                        <p className="font-body text-sm text-text-body-secondary leading-relaxed">
+                                            <span className="shrink-0 bg-button-primary-bg text-text-on-color px-1.5 py-0.5 font-mono font-black text-[10px] rounded-tag mr-2">
+                                                {item.date}
+                                            </span>
+                                            <span className="mr-2">
+                                                {item.emoji}
+                                            </span>
+                                            <span className="font-headline font-black text-text-body-main mr-1">
+                                                {item.title}
+                                            </span>
+                                            {item.description}
+                                        </p>
+                                    </div>
+                                ),
+                            )}
+                        </div>
                     </div>
 
                     {/* Shipping Soon */}

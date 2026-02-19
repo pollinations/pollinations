@@ -5,12 +5,13 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 import {
+    DEFAULT_TIER,
     getTierPollen,
+    TIERS,
     type TierName,
     type TierStatus,
     tierNames,
 } from "@/tier-config.ts";
-import { capitalize } from "@/util.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
@@ -59,7 +60,7 @@ export const tiersRoutes = new Hono<Env>()
                 .where(eq(userTable.id, user.id))
                 .limit(1);
 
-            const userTier = (users[0]?.tier || "spore") as TierName;
+            const userTier = (users[0]?.tier || DEFAULT_TIER) as TierName;
             const dailyPollen = getTierPollen(userTier);
 
             log.debug(`User tier from D1: ${userTier}, email: ${user.email}`);
@@ -68,7 +69,7 @@ export const tiersRoutes = new Hono<Env>()
                 target: userTier,
                 active: {
                     tier: userTier as TierStatus,
-                    displayName: capitalize(userTier),
+                    displayName: TIERS[userTier].displayName as string,
                     dailyPollen,
                 },
             };

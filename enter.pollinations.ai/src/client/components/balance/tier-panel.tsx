@@ -1,8 +1,12 @@
 import type { FC } from "react";
 import {
     getTierEmoji,
+    TIER_COLORS,
     TIER_EMOJIS,
+    TIER_GAUGE_COLORS,
+    TIER_PROGRESSION,
     TIER_THRESHOLDS,
+    TIERS,
     type TierStatus,
 } from "@/tier-config.ts";
 import { Badge } from "../ui/badge.tsx";
@@ -10,19 +14,6 @@ import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
 import { BYOPCallout } from "./byop-callout.tsx";
 import { LevelUpCards } from "./level-up-cards.tsx";
-
-const TIER_BADGE_COLOR: Record<
-    TierStatus,
-    "gray" | "green" | "pink" | "amber" | "blue" | "yellow"
-> = {
-    none: "gray",
-    microbe: "gray",
-    seed: "green",
-    flower: "pink",
-    nectar: "amber",
-    router: "blue",
-    spore: "blue",
-};
 
 const APPEAL_URL =
     "https://github.com/pollinations/pollinations/issues/new?template=tier-appeal.yml";
@@ -32,12 +23,50 @@ const SCORING_URL =
 
 // --- Tier Gauge with threshold markers ---
 
-const GAUGE_TIERS = [
-    { key: "spore" as const, name: "Spore" },
-    { key: "seed" as const, name: "Seed" },
-    { key: "flower" as const, name: "Flower" },
-    { key: "nectar" as const, name: "Nectar" },
-];
+// Visible tiers on the gauge (excludes microbe and router)
+const GAUGE_TIERS = TIER_PROGRESSION.filter((t) => t !== "microbe").map(
+    (t) => ({
+        key: t,
+        name: TIERS[t].displayName,
+    }),
+);
+
+// Build gauge segments from tier config
+function buildGaugeSegments() {
+    const progression = TIER_PROGRESSION;
+    const segments: {
+        start: number;
+        end: number;
+        color: string;
+    }[] = [];
+
+    for (let i = 0; i < progression.length; i++) {
+        const tier = progression[i];
+        const nextTier = progression[i + 1];
+        segments.push({
+            start: TIER_THRESHOLDS[tier],
+            end: nextTier
+                ? TIER_THRESHOLDS[nextTier]
+                : Number.POSITIVE_INFINITY,
+            color: TIER_GAUGE_COLORS[tier],
+        });
+    }
+    return segments;
+}
+
+const TIER_SEGMENTS = buildGaugeSegments();
+
+// Dimmed version of a hex color (mix toward white)
+function dimColor(hex: string): string {
+    const r = Number.parseInt(hex.slice(1, 3), 16);
+    const g = Number.parseInt(hex.slice(3, 5), 16);
+    const b = Number.parseInt(hex.slice(5, 7), 16);
+    const mix = (c: number) =>
+        Math.round(c + (255 - c) * 0.5)
+            .toString(16)
+            .padStart(2, "0");
+    return `#${mix(r)}${mix(g)}${mix(b)}`;
+}
 
 const TierGauge: FC<{ creatorPoints: number }> = ({ creatorPoints }) => {
     // Open-ended gauge: scales with user's points, nectar is just a marker
@@ -46,40 +75,6 @@ const TierGauge: FC<{ creatorPoints: number }> = ({ creatorPoints }) => {
         creatorPoints * 1.2,
     );
     const fillPct = Math.min(100, (creatorPoints / gaugeMax) * 100);
-
-    // Tier segment colors and their dimmed versions for unreached areas
-    const TIER_SEGMENTS = [
-        {
-            start: 0,
-            end: TIER_THRESHOLDS.spore,
-            color: "#d1d5db",
-            dim: "#f3f4f6",
-        },
-        {
-            start: TIER_THRESHOLDS.spore,
-            end: TIER_THRESHOLDS.seed,
-            color: "#93c5fd",
-            dim: "#dbeafe",
-        },
-        {
-            start: TIER_THRESHOLDS.seed,
-            end: TIER_THRESHOLDS.flower,
-            color: "#86efac",
-            dim: "#dcfce7",
-        },
-        {
-            start: TIER_THRESHOLDS.flower,
-            end: TIER_THRESHOLDS.nectar,
-            color: "#f9a8d4",
-            dim: "#fce7f3",
-        },
-        {
-            start: TIER_THRESHOLDS.nectar,
-            end: Number.POSITIVE_INFINITY,
-            color: "#fcd34d",
-            dim: "#fef3c7",
-        },
-    ];
 
     // Fill gradient (reached portion)
     const fillStops: string[] = [];
@@ -98,14 +93,15 @@ const TierGauge: FC<{ creatorPoints: number }> = ({ creatorPoints }) => {
     const fillBg =
         fillStops.length > 0
             ? `linear-gradient(to right, ${fillStops.join(", ")})`
-            : "#d1d5db";
+            : TIER_GAUGE_COLORS.microbe;
 
     // Track gradient (full width, dimmed colors preview)
     const trackStops: string[] = [];
     for (const seg of TIER_SEGMENTS) {
+        const dim = dimColor(seg.color);
         const startPct = (seg.start / gaugeMax) * 100;
         const endPct = (Math.min(seg.end, gaugeMax) / gaugeMax) * 100;
-        trackStops.push(`${seg.dim} ${startPct}%`, `${seg.dim} ${endPct}%`);
+        trackStops.push(`${dim} ${startPct}%`, `${dim} ${endPct}%`);
     }
     const trackBg = `linear-gradient(to right, ${trackStops.join(", ")})`;
 
@@ -229,6 +225,9 @@ export const TierPanel: FC<TierPanelProps> = ({ active }) => {
         TIER_THRESHOLDS[tier as keyof typeof TIER_THRESHOLDS] ?? 0;
     const isMicrobe = tier === "microbe" || tier === "none";
     const emoji = getTierEmoji(tier);
+    const badgeColor = (
+        tier === "none" ? TIER_COLORS.microbe : TIER_COLORS[tier]
+    ) as "gray" | "green" | "pink" | "amber" | "blue" | "red";
 
     return (
         <Panel color="amber">
@@ -245,7 +244,7 @@ export const TierPanel: FC<TierPanelProps> = ({ active }) => {
                                 {emoji} {displayName}
                             </span>
                             <Badge
-                                color={TIER_BADGE_COLOR[tier]}
+                                color={badgeColor}
                                 size="lg"
                                 className="font-semibold"
                             >

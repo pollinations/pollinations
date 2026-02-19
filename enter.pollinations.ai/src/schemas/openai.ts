@@ -5,6 +5,7 @@ import {
     AUDIO_VOICES,
     DEFAULT_TEXT_MODEL,
 } from "../../../shared/registry/text.ts";
+import { tierNames } from "../tier-config.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
 
@@ -477,7 +478,7 @@ export const PromptFilterResultSchema = z.array(
     }),
 );
 
-const UserTierSchema = z.literal(["anonymous", "seed", "flower", "nectar"]);
+const UserTierSchema = z.literal(["anonymous", ...tierNames]);
 export type UserTier = z.infer<typeof UserTierSchema>;
 
 const CompletionChoiceSchema = z.object({

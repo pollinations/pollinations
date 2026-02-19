@@ -1,11 +1,60 @@
+// ─── Single source of truth for all tier properties ───
+// Change values here → everything updates everywhere.
+
 export const TIERS = {
-    microbe: { pollen: 0.1, emoji: "🦠" },
-    spore: { pollen: 1, emoji: "🍄" },
-    seed: { pollen: 3, emoji: "🌱" },
-    flower: { pollen: 10, emoji: "🌸" },
-    nectar: { pollen: 20, emoji: "🍯" },
-    router: { pollen: 500, emoji: "🐝" },
+    microbe: {
+        pollen: 0.1,
+        emoji: "🦠",
+        displayName: "Microbe",
+        threshold: 0,
+        color: "gray",
+    },
+    spore: {
+        pollen: 1,
+        emoji: "🍄",
+        displayName: "Spore",
+        threshold: 3,
+        color: "blue",
+    },
+    seed: {
+        pollen: 3,
+        emoji: "🌱",
+        displayName: "Seed",
+        threshold: 8,
+        color: "green",
+    },
+    flower: {
+        pollen: 10,
+        emoji: "🌸",
+        displayName: "Flower",
+        threshold: 20,
+        color: "pink",
+    },
+    nectar: {
+        pollen: 20,
+        emoji: "🍯",
+        displayName: "Nectar",
+        threshold: 50,
+        color: "amber",
+    },
+    router: {
+        pollen: 500,
+        emoji: "🐝",
+        displayName: "Router",
+        threshold: Infinity,
+        color: "red",
+    },
 } as const;
+
+// Tailwind color name → hex (300-level shade) for CSS gradients
+const COLOR_HEX: Record<string, string> = {
+    gray: "#d1d5db",
+    blue: "#93c5fd",
+    green: "#86efac",
+    pink: "#f9a8d4",
+    amber: "#fcd34d",
+    red: "#fca5a5",
+};
 
 export type TierName = keyof typeof TIERS;
 export type TierStatus = TierName | "none";
@@ -14,19 +63,37 @@ export const tierNames = Object.keys(TIERS) as TierName[];
 
 export const DEFAULT_TIER: TierName = "spore";
 
+// ─── Derived lookup maps ───
+
 export const TIER_POLLEN = Object.fromEntries(
-    Object.entries(TIERS).map(([tier, config]) => [tier, config.pollen]),
+    Object.entries(TIERS).map(([tier, c]) => [tier, c.pollen]),
 ) as Record<TierName, number>;
 
 export const TIER_EMOJIS = Object.fromEntries(
-    Object.entries(TIERS).map(([tier, config]) => [tier, config.emoji]),
+    Object.entries(TIERS).map(([tier, c]) => [tier, c.emoji]),
 ) as Record<TierName, string>;
+
+export const TIER_THRESHOLDS = Object.fromEntries(
+    Object.entries(TIERS).map(([tier, c]) => [tier, c.threshold]),
+) as Record<TierName, number>;
+
+export const TIER_COLORS = Object.fromEntries(
+    Object.entries(TIERS).map(([tier, c]) => [tier, c.color]),
+) as Record<TierName, string>;
+
+export const TIER_GAUGE_COLORS = Object.fromEntries(
+    Object.entries(TIERS).map(([tier, c]) => [
+        tier,
+        COLOR_HEX[c.color] ?? "#d1d5db",
+    ]),
+) as Record<TierName, string>;
+
+// ─── Helpers ───
 
 export function isValidTier(tier: string): tier is TierName {
     return tier in TIERS;
 }
 
-// Type-safe overloads: no fallback needed when TierName is guaranteed
 export function getTierPollen(tier: TierName): number;
 export function getTierPollen(tier: string): number;
 export function getTierPollen(tier: string): number {
@@ -39,17 +106,8 @@ export function getTierEmoji(tier: string): string {
     return isValidTier(tier) ? TIERS[tier].emoji : TIERS[DEFAULT_TIER].emoji;
 }
 
-// Points required to reach each tier
-export const TIER_THRESHOLDS = {
-    microbe: 0,
-    spore: 3,
-    seed: 8,
-    flower: 20,
-    nectar: 50,
-} as const;
-
 // Ordered progression (excludes router, which is admin-only)
-const TIER_PROGRESSION: TierName[] = [
+export const TIER_PROGRESSION: TierName[] = [
     "microbe",
     "spore",
     "seed",
@@ -66,6 +124,6 @@ export function getNextTier(
     const next = TIER_PROGRESSION[idx + 1];
     return {
         name: next,
-        threshold: TIER_THRESHOLDS[next as keyof typeof TIER_THRESHOLDS],
+        threshold: TIERS[next].threshold as number,
     };
 }

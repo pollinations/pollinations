@@ -2,11 +2,27 @@ import type { FC } from "react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import faqMarkdown from "../../../POLLEN_FAQ.md?raw";
+import { TIER_PROGRESSION, TIERS } from "@/tier-config.ts";
+import faqRaw from "../../../POLLEN_FAQ.md?raw";
 import { Button } from "./button.tsx";
 import { PollenExamples } from "./pricing/pollen-examples.tsx";
 import { Card } from "./ui/card.tsx";
 import { Panel } from "./ui/panel.tsx";
+
+// Generate tier table from config so the FAQ always reflects tier-config.ts
+const tierTableMd = [
+    "| Tier | Points | Daily Pollen |",
+    "|------|--------|-------------|",
+    ...TIER_PROGRESSION.filter((t) => t !== "microbe").map(
+        (t) =>
+            `| ${TIERS[t].emoji} ${TIERS[t].displayName} | ${TIERS[t].threshold}+ | ${TIERS[t].pollen} pollen/day |`,
+    ),
+].join("\n");
+
+const faqMarkdown = faqRaw.replace(
+    /\| Tier \| Points[\s\S]*?\n(?=\n)/,
+    tierTableMd,
+);
 
 type FAQItem = {
     question: string;

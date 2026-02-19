@@ -41,8 +41,8 @@ Tiers reflect how much you contribute to the Pollinations ecosystem. The higher 
 
 | Tier | Points | Daily Pollen |
 |------|--------|-------------|
-| 🌀 Spore | 3+ | 1 pollen/day |
-| 🌿 Seed | 8+ | 3 pollen/day |
+| 🍄 Spore | 3+ | 1 pollen/day |
+| 🌱 Seed | 8+ | 3 pollen/day |
 | 🌸 Flower | 20+ | 10 pollen/day |
 | 🍯 Nectar | 50+ | 20 pollen/day |
 

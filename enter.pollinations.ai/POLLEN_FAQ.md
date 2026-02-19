@@ -2,15 +2,19 @@
 
 ## 💎 What is Pollen?
 
-Pollen is our prepaid credit system. **$1 ≈ 1 Pollen** *(pricing may evolve)*. You spend it to make API calls.
+Pollen is our prepaid credit system. **$1 ≈ 1 Pollen** *(pricing may evolve)*. You spend it to make API calls — every generation costs Pollen based on the model you use.
 
 ## 🛒 How do I get Pollen?
 
-There are three ways to add Pollen to your balance:
+There are three ways:
 
 1.  **Buy It:** Purchase Pollen packs directly with a credit card. This Pollen goes into your wallet and *never expires*. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
-2.  **Get Daily Pollen:** Registered developers receive daily Pollen grants to support experimentation based on their tier *(spore, seed, flower, or nectar)*.
-3.  **Earn It:** Complete one-time community rewards, like helping solve a technical issue or contributing to the project.
+2.  **Daily Grants:** Every tier comes with free daily Pollen to support experimentation. The higher your tier, the more you get.
+3.  **Earn It:** Contribute to the ecosystem — code, docs, community support, publishing apps — and your score goes up, unlocking higher tiers with bigger daily grants.
+
+## 🆓 Can I try it for free?
+
+Yes. Register, grab an API key, and start building. You'll receive daily Pollen grants to experiment with — no credit card required. As you contribute and grow your score, you unlock higher tiers with bigger daily grants.
 
 ## 💳 What payment methods do you accept?
 
@@ -22,22 +26,64 @@ Currently, we accept *credit cards*. We're actively exploring other payment meth
 
 Not yet, but we're considering it based on community feedback. Check out the [voting issue](https://github.com/pollinations/pollinations/issues/2202) to share your thoughts or join our [Discord](https://discord.gg/pollinations-ai-885844321461485618) for updates.
 
-## 🔑 Can I try it without signing up?
+## 🔑 What do I get when I register?
 
-Not currently. You need to register and use an API key to access our models. *All API calls require authentication* and consume Pollen based on the model you use.
-
-## 🎉 What do I get when I register?
-
-Registration gives you access to the Pollinations API and the **Spore tier**, which includes *daily Pollen* to get you started. Once registered, you can **create API keys** to start making requests.
+Registration gives you access to the Pollinations API. You can create API keys to start making requests right away:
 
 - **🌐 Publishable Key (pk\_):** Designed for client-side apps *(bound to your domain)*. Rate limits: 1 pollen per IP per hour. Access to all models, which consume Pollen based on usage.
 - **🔒 Secret Key (sk\_):** For server-side apps only. *No rate limits.* Access to all models, which consume Pollen based on usage.
 
+Your tier — and daily Pollen grant — is determined by your score. New accounts start with no tier. Earn 3+ points to unlock Spore and your first daily grant.
+
+## 🏅 What are tiers?
+
+Tiers reflect how much you contribute to the Pollinations ecosystem. The higher your tier, the more daily Pollen you receive:
+
+| Tier | Points | Daily Pollen |
+|------|--------|-------------|
+| 🌀 Spore | 3+ | 1 pollen/day |
+| 🌿 Seed | 8+ | 3 pollen/day |
+| 🌸 Flower | 20+ | 10 pollen/day |
+| 🍯 Nectar | 50+ | 20 pollen/day |
+
+Below 3 points you still have full API access — you just won't receive a daily grant yet.
+
+## 📊 How is my score calculated?
+
+Your score reflects your overall contribution to the Pollinations ecosystem. It factors in things like:
+
+- Publishing and maintaining apps
+- Driving API usage and growing your audience
+- Contributing code, docs, or bug reports
+- Community participation (Discord, GitHub)
+- Integrating BYOP in your apps
+
+Scores update daily. The exact formula may evolve as we learn what works best. For the full breakdown, see [How Tier Scoring Works →](https://github.com/pollinations/pollinations/blob/main/SCORING.md).
+
+If you think your score is wrong, you can [appeal your tier →](https://github.com/pollinations/pollinations/issues/new?template=tier-appeal.yml).
+
+## 🔌 What is BYOP (Bring Your Own Pollen)?
+
+BYOP lets your app's users pay for their own AI generations with their Pollen — instead of it coming out of your balance.
+
+**Why it matters:** Without BYOP, every user of your app burns *your* Pollen. With BYOP, your compute cost drops to zero. Your users get a seamless experience, and you can scale without worrying about costs.
+
+BYOP is a key part of the Pollinations flywheel: build an app for free → integrate BYOP → your users fuel the app → your score grows → bigger daily grants → build bigger.
+
 ## 🌱 How do daily Pollen grants work?
 
-You receive a daily Pollen grant based on your tier. Daily Pollen is spent *before* your purchased Pollen. Unused Pollen expires each day.
+You receive a daily Pollen grant based on your tier. Daily Pollen is spent *before* your purchased Pollen. Unused daily Pollen expires each day — purchased Pollen never expires.
 
 💚 **Thanks to our supporters**, all tiers receive free daily Pollen during beta.
+
+## ⚡ How is my Pollen spent?
+
+Your daily tier Pollen is always used *first*, then your purchased Pollen:
+
+1. **Daily grants** — Used first for most models
+2. **Purchased Pollen** — Used after daily is depleted
+
+**Exception:** Some premium models are marked with a 💎 **Paid Only** badge. These require purchased Pollen and *cannot* use daily tier grants. This ensures sustainable access to high-cost models while keeping daily Pollen available for experimentation.
 
 ## 🎨 What can I create with Pollen?
 
@@ -45,25 +91,22 @@ Think of Pollen like buying in bulk — *the more efficient the model, the more 
 
 **Pro tip:** Mix efficient models for high-volume tasks with premium models when quality matters most.
 
-## ⚡ How is my pollen spent?
-
-Your daily tier pollen is always used *first*, then your purchased pollen:
-
-1. **Daily grants** — Used first for most models
-2. **Purchased pollen** — Used after daily is depleted
-
-**Exception:** Some premium models are marked with a 💎 **Paid Only** badge. These require purchased pollen and *cannot* use daily tier grants. This ensures sustainable access to high-cost models while keeping daily pollen available for experimentation.
-
 ## 👛 How does my Pollen wallet work?
 
 You get *one central Pollen wallet* for all your applications. Top it up anytime and use it across the entire Pollinations ecosystem.
 
 ## 🚀 What's coming?
 
-- **🔐 Secure front-end spending:** We are building a solution to allow client-side apps to spend Pollen securely, which will power features like in-app purchases.
-- **💰 In-app purchases** — let your users buy Pollen in your app, *you get a bonus*.
-- **📺 Ads plugin** — earn Pollen when users see ads.
-- **🎬 More models:** Expect video, real-time audio, and an ever-expanding catalog.
-- **🏆 Quests:** Earn Pollen by completing community bounties and contributing to projects.
+**Shipping soon:**
+- **🔐 Secure Frontend Auth:** Client-side apps that spend Pollen securely — no backend needed. Currently in beta, security hardening coming soon.
+- **🔑 Pollinations Login (OAuth):** Let your users sign in with their Pollinations account directly in your app.
+- **🏠 App Hosting:** Host your apps on Pollinations infrastructure.
+- **🎬 More Models:** Video, real-time audio, and an ever-expanding catalog.
+- **🧩 Pollen Widget SDK:** Drop-in components for Pollen-powered features in your app.
 
-*(Plans may change based on what the community needs)*
+**Later this year:**
+- **💰 Creator Revenue Share:** Earn from every Pollen transaction in your app. We're building toward this — not ready yet, but it's coming.
+- **📺 Monetization Tools:** Ads SDK and other ways to earn Pollen through your apps.
+- **🔍 App Discovery:** Help users find your app through the Pollinations ecosystem.
+
+*(Plans may evolve based on what the community needs)*

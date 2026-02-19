@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `@pollinations/sdk` will be documented in this file.
+All notable changes to `@pollinations_ai/sdk` will be documented in this file.
 
 ## [4.0.1] - 2026-01-10
 
@@ -15,10 +15,10 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ### Fixed 
 - Created a single sdk package with react + frontend + backend support.
-- Updated README.md to reflect new usage instructions for react hooks from '@pollinations/sdk'.
+- Updated README.md to reflect new usage instructions for react hooks from '@pollinations_ai/sdk'.
 
 ### Renamed 
-- Renamed package from `pollinations-react` to `@pollinations/sdk`.
+- Renamed package from `pollinations-react` to `@pollinations_ai/sdk`.
 
 ### Improved
 - Updated package.json with new name, version, description, and keywords and authors.

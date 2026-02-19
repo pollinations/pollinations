@@ -446,7 +446,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🛠️ AI Agent Portal](https://agent.makululinux.com/) | Orchestrate multi-agent workflows to build projects from a single prompt with specialized agents for architecture, coding, and QA plus TDD and Docker automation. | [@raymerjacque](https://github.com/raymerjacque) |  | 🐝 |
 | [🦞 Pollinations × OpenClaw](https://openclaw.pollinations.ai) | Use 25+ AI models as your OpenClaw agent brain via one setup script | [@pollinations](https://github.com/pollinations) | 4k | 🏵️ 🫧 |
 | [🛠 Herramientas IA ️](https://proyectodescartes.org/descartescms/herramientas-ia) | Publishes tools built with Pollinations.AI and the DescartesJS editor and links other community-created utilities. | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🏵️ |
-| [🔌 Pollinations MCP Server (Official)](https://www.npmjs.com/package/@pollinations/model-context-protocol) | Official MCP server for Pollinations: generate text, images, and audio. | [@pollinations](https://github.com/pollinations) | 4k |  |
+| [🔌 Pollinations MCP Server (Official)](https://www.npmjs.com/package/@pollinations_ai/model-context-protocol) | Official MCP server for Pollinations: generate text, images, and audio. | [@pollinations](https://github.com/pollinations) | 4k |  |
 | [🔌 MCP-B](https://mcp-b.ai) | Organize community projects emphasizing 'Vibe Coding' code-by-description environments and creative media generators. | [@MiguelsPizza](https://github.com/MiguelsPizza) | 985 |  |
 
 <details><summary>Show all 55 apps</summary>

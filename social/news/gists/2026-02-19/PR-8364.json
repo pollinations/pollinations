@@ -1,0 +1,35 @@
+{
+  "pr_number": 8364,
+  "title": "docs: add duration parameter for seedance video model",
+  "author": "sreerevanth",
+  "url": "https://github.com/pollinations/pollinations/pull/8364",
+  "merged_at": "2026-02-19T21:49:14Z",
+  "labels": [
+    "VIDEO",
+    ".DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Setting the tempo",
+    "blurb": "Added the missing manual for the `duration` parameter. Now you can tell the seedance model exactly how long to boogie.",
+    "summary": "Updated API documentation to include the supported `duration` parameter for the seedance video generation model.",
+    "impact": "Developers can now confidently control the length of generated videos using the documented parameter.",
+    "keywords": [
+      "documentation",
+      "video",
+      "api",
+      "seedance",
+      "parameters"
+    ],
+    "visual_concept": "Polly the Bee holding a stopwatch next to a dancing pixel robot (seedance model representation). The robot is mid-dance move. The stopwatch indicates time control.",
+    "image_prompt": "Cozy pixel art scene of Polly the Bee holding a tiny stopwatch while watching a cute chunky robot dance on a lime green (#ecf874) disco floor. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Pixel text: 'TIME'. Nostalgic and fun."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-19T21:49:58.154659+00:00"
+}

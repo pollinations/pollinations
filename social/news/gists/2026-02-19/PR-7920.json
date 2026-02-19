@@ -1,0 +1,34 @@
+{
+  "pr_number": 7920,
+  "title": "Auto polly",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/7920",
+  "merged_at": "2026-02-19T17:02:03Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polly grabs the keyboard",
+    "blurb": "Our favorite bee can now fix bugs herself. Tag an issue, and she'll write the code and open a PR automatically.",
+    "summary": "Implemented an automated workflow where issues labeled 'polly' trigger an AI agent to generate fixes and submit pull requests.",
+    "impact": "Streamlines maintenance by allowing the AI to autonomously handle simple bugs, documentation updates, and minor refactors.",
+    "keywords": [
+      "automation",
+      "github-actions",
+      "ai-coding",
+      "workflow",
+      "maintenance"
+    ],
+    "visual_concept": "Polly the bee taking on the role of a developer. She should be at a workstation, actively coding, representing the new ability to fix issues autonomously. The monitor robot represents the issue tracking system.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing thick coder glasses, typing on a glowing lime green (#ecf874) retro terminal. Code blocks float in the air like magic. A small monitor robot watches in awe holding a ticket. Soft pastel background, warm lighting, 8-bit aesthetic."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-19T17:02:51.969146+00:00"
+}

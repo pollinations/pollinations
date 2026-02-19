@@ -32,6 +32,7 @@ type Env = {
     POLAR_API: string;
     GITHUB_TOKEN?: string;
     GITHUB_REPO: string;
+    DASHBOARD_PASSWORD?: string;
     __STATIC_CONTENT: KVNamespace;
 };
 
@@ -129,6 +130,28 @@ async function fetchTinybird(
 const app = new Hono<{ Bindings: Env }>();
 
 app.use("*", cors());
+
+// Basic Auth middleware — password set via `wrangler secret put DASHBOARD_PASSWORD`
+// If no password is set, the dashboard is public (backward compatible)
+app.use("*", async (c, next) => {
+    const password = c.env.DASHBOARD_PASSWORD;
+    if (!password) return next();
+
+    const auth = c.req.header("Authorization");
+    if (auth) {
+        const [scheme, encoded] = auth.split(" ");
+        if (scheme === "Basic" && encoded) {
+            const decoded = atob(encoded);
+            const [, pwd] = decoded.split(":");
+            if (pwd === password) return next();
+        }
+    }
+
+    return new Response("Unauthorized", {
+        status: 401,
+        headers: { "WWW-Authenticate": 'Basic realm="KPI Dashboard"' },
+    });
+});
 
 // Health check
 app.get("/api/health", (c) => c.json({ status: "ok" }));

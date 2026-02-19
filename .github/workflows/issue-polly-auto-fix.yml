@@ -15,7 +15,6 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
-      id-token: write
       actions: read
     env:
       POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
@@ -35,8 +34,8 @@ jobs:
             const whitelist = ['voodoohop', 'ElliotEtag', 'eulervoid', 'Circuit-Overtime', 'Itachi-1824'];
             const labeledBy = context.payload.sender.login;
 
-            // Allow if labeled by whitelisted user or by pollinations-ai bot (project-manager workflow)
-            const isAuthorized = whitelist.includes(labeledBy) || labeledBy.includes('pollinations-ai');
+            // Allow if labeled by whitelisted user or by pollinations-ai[bot] (project-manager workflow)
+            const isAuthorized = whitelist.includes(labeledBy) || labeledBy === 'pollinations-ai[bot]';
 
             if (!isAuthorized) {
               await github.rest.issues.removeLabel({
@@ -70,7 +69,7 @@ jobs:
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
           mkdir -p $HOME/.claude-code-router
           echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"${POLLINATIONS_TOKEN}","models":["claude-large","claude","kimi-k2-thinking","perplexity-reasoning","openai-large","openai"]}],"Router":{"default":"pollinations,claude-large","background":"pollinations,claude","think":"pollinations,kimi-k2-thinking","longContext":"pollinations,claude-large","longContextThreshold":60000,"webSearch":"pollinations,perplexity-reasoning"}}' > $HOME/.claude-code-router/config.json
-          bunx @musistudio/claude-code-router start &
+          bunx @musistudio/claude-code-router@1.0.27 start &
           until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
@@ -97,7 +96,7 @@ jobs:
 
             Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
 
-            ${{ github.event.issue.body }}
+            Read the issue body from the GitHub API to get the full details, then fix it.
 
             Create a PR that fixes this issue and include "Fixes #${{ github.event.issue.number }}" in the PR description.
           additional_permissions: |

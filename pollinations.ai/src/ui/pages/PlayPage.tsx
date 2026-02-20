@@ -6,6 +6,7 @@ import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { ModelSelector } from "../components/play/ModelSelector";
 import { PlayGenerator } from "../components/play/PlayGenerator";
+import { UserMenu } from "../components/UserMenu";
 import { Button } from "../components/ui/button";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
@@ -51,7 +52,10 @@ function PlayPage() {
     return (
         <PageContainer>
             <PageCard isTranslating={isTranslating}>
-                <Title>{pageCopy.createTitle}</Title>
+                <div className="flex items-center justify-between mb-8">
+                    <Title spacing="none">{pageCopy.createTitle}</Title>
+                    <UserMenu />
+                </div>
 
                 <div className="mb-6">
                     <Body className="mb-3">
@@ -71,22 +75,6 @@ function PlayPage() {
                         <ExternalLinkIcon className="w-3 h-3 md:w-4 md:h-4 text-text-brand" />
                     </Button>
                 </div>
-
-                {/* Login CTA - only show when not logged in */}
-                {!isLoggedIn && (
-                    <div className="p-3 mb-6 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
-                        <p className="font-body text-sm text-text-body-secondary">
-                            <button
-                                type="button"
-                                onClick={login}
-                                className="text-text-brand font-medium underline cursor-pointer bg-transparent border-none p-0"
-                            >
-                                {pageCopy.loginCtaLogin}
-                            </button>{" "}
-                            {pageCopy.loginCtaSuffix}
-                        </p>
-                    </div>
-                )}
 
                 <ModelSelector
                     models={allModels}

@@ -10,7 +10,6 @@ import { useTheme } from "../contexts/ThemeContext";
 import { BackgroundRenderer } from "./BackgroundRenderer";
 import { Logo } from "./Logo";
 import { AIPromptInput } from "./theme/AIPromptInput";
-import { UserMenu } from "./UserMenu";
 import { Button } from "./ui/button";
 
 const tabKeys = [
@@ -107,10 +106,6 @@ function Layout() {
                                     </NavLink>
                                 ))}
                             </div>
-                            {/* Row 2: Login/Account */}
-                            <div className="flex flex-wrap gap-1.5 items-center justify-end pb-1">
-                                <UserMenu />
-                            </div>
                         </div>
                         {/* Mobile: Theme Creator (Easter egg — shown after logo click) */}
                         {showThemeCreator && (
@@ -131,7 +126,7 @@ function Layout() {
                             </div>
                         )}
 
-                        {/* Desktop: Single row — Logo + Nav + Social + UserMenu */}
+                        {/* Desktop: Single row — Logo + Nav + Social */}
                         <div className="hidden lg:flex items-center gap-4 overflow-visible">
                             {/* Logo */}
                             <div className="relative group flex-shrink-0">
@@ -190,8 +185,6 @@ function Layout() {
                                         ),
                                     )}
                             </div>
-                            {/* UserMenu (outside scroll container so dropdown isn't clipped) */}
-                            <UserMenu />
                         </div>
                         {/* Desktop: Theme Creator (Easter egg — shown after logo click) */}
                         {showThemeCreator && (

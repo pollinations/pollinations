@@ -52,15 +52,13 @@ function PlayPage() {
     return (
         <PageContainer>
             <PageCard isTranslating={isTranslating}>
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-8">
                     <Title spacing="none">{pageCopy.createTitle}</Title>
                     <UserMenu />
                 </div>
 
                 <div className="mb-6">
-                    <Body className="mb-3">
-                        {pageCopy.createDescription}
-                    </Body>
+                    <Body className="mb-3">{pageCopy.createDescription}</Body>
                     <Button
                         as="a"
                         href="https://enter.pollinations.ai"

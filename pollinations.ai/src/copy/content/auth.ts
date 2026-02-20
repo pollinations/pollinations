@@ -22,4 +22,10 @@ export const AUTH_COPY = {
     // Dropdown
     enterLink: "Dashboard",
     defaultUsername: "User",
+
+    // BYOP CTA
+    byopTitle: "Add Pollen to your app",
+    byopDescription:
+        "Let users pay with their own Pollen — your cost drops to zero.",
+    byopLink: "Learn about BYOP",
 };

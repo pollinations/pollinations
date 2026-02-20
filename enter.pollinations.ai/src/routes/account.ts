@@ -9,8 +9,10 @@ import {
     user as userTable,
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
-const publicTier = (t: string) =>
-    t === "microbe" || t === "spore" ? "free_weekly" : t;
+
+const CREATOR_TIERS = new Set(["seed", "flower", "nectar"]);
+const publicTier = (t: string): string | null =>
+    CREATOR_TIERS.has(t) ? t : null;
 
 // Calculate next tier refill time (midnight UTC) - cron runs daily at 00:00 UTC
 function getNextRefillAt(): string {
@@ -87,8 +89,9 @@ const profileResponseSchema = z.object({
         .nullable()
         .describe("Profile picture URL (e.g. GitHub avatar)"),
     tier: z
-        .enum(["anonymous", "free_weekly", "seed", "flower", "nectar", "router"])
-        .describe("User's tier. 'free_weekly' = registered user with weekly pollen grant"),
+        .enum(["seed", "flower", "nectar"])
+        .nullable()
+        .describe("Creator tier, or null for non-creator accounts"),
     createdAt: z.iso
         .datetime()
         .describe("Account creation timestamp (ISO 8601)"),

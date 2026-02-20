@@ -1,0 +1,10 @@
+transformers==4.57.1
+accelerate==1.11.0
+safetensors==0.6.2
+fastapi
+uvicorn
+Pillow
+git+https://github.com/huggingface/diffusers@main
+torch==2.5.1
+torchvision==0.20.1
+torchaudio==2.5.1

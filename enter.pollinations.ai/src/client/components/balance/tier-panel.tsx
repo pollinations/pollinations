@@ -2,6 +2,7 @@ import type { FC } from "react";
 import {
     getNextTier,
     getTierEmoji,
+    TIER_PROGRESSION,
     TIER_THRESHOLDS,
     TIERS,
     type TierName,
@@ -318,6 +319,23 @@ const CreatorRingGauge: FC<{
     );
 };
 
+// ─── Helpers ────────────────────────────────────────────────
+
+/** Given a point count, return the matching tier name + daily pollen. */
+function tierForPoints(points: number): {
+    tier: TierName;
+    dailyPollen: number;
+} {
+    // Walk progression in reverse to find the highest matching tier
+    for (let i = TIER_PROGRESSION.length - 1; i >= 0; i--) {
+        const name = TIER_PROGRESSION[i];
+        if (points >= TIERS[name].threshold) {
+            return { tier: name, dailyPollen: TIERS[name].pollen };
+        }
+    }
+    return { tier: "microbe", dailyPollen: TIERS.microbe.pollen };
+}
+
 // ─── TierPanel (main export) ────────────────────────────────
 
 export type TierPanelProps = {
@@ -326,11 +344,19 @@ export type TierPanelProps = {
         displayName: string;
         dailyPollen?: number;
     };
+    pointsOverride?: number | null;
 };
 
-export const TierPanel: FC<TierPanelProps> = ({ active }) => {
-    const tier = active.tier;
-    const dailyPollen = active.dailyPollen ?? 0;
+export const TierPanel: FC<TierPanelProps> = ({ active, pointsOverride }) => {
+    const isOverriding =
+        pointsOverride !== null && pointsOverride !== undefined;
+    const resolved = isOverriding ? tierForPoints(pointsOverride) : null;
+
+    const tier = resolved?.tier ?? active.tier;
+    const dailyPollen = resolved?.dailyPollen ?? active.dailyPollen ?? 0;
+    const creatorPoints = isOverriding
+        ? pointsOverride
+        : (TIER_THRESHOLDS[tier as keyof typeof TIER_THRESHOLDS] ?? 0);
 
     if (tier === "microbe") {
         return <MicrobeLimitedPanel />;
@@ -341,9 +367,6 @@ export const TierPanel: FC<TierPanelProps> = ({ active }) => {
     }
 
     // Creator tiers: seed, flower, nectar
-    const creatorPoints =
-        TIER_THRESHOLDS[tier as keyof typeof TIER_THRESHOLDS] ?? 0;
-
     return (
         <Panel color="amber">
             <div className="flex flex-col gap-3">

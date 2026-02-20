@@ -448,14 +448,7 @@ function RouteComponent() {
                         <UsageGraph tier={tierData?.active?.tier} />
                     )}
                 </div>
-                {tierData && (
-                    <div className="flex flex-col gap-2">
-                        <div className="flex flex-col sm:flex-row justify-between gap-3">
-                            <h2 className="font-bold flex-1">Tier</h2>
-                        </div>
-                        <TierPanel {...tierData} />
-                    </div>
-                )}
+                {tierData && <TierSection tierData={tierData} />}
                 <ApiKeyList
                     apiKeys={apiKeys}
                     onCreate={handleCreateApiKey}
@@ -466,6 +459,47 @@ function RouteComponent() {
                 <FAQ />
                 <Footer />
             </div>
+        </div>
+    );
+}
+
+// ─── Tier section with staging-only points slider ───────────
+
+const IS_STAGING =
+    typeof window !== "undefined" &&
+    (window.location.hostname.includes("staging") ||
+        window.location.hostname === "localhost");
+
+function TierSection({
+    tierData,
+}: {
+    tierData: Parameters<typeof TierPanel>[0];
+}) {
+    const [pointsOverride, setPointsOverride] = useState<number | null>(null);
+
+    return (
+        <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+                <h2 className="font-bold">Tier</h2>
+                {IS_STAGING && (
+                    <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={pointsOverride ?? 0}
+                        onChange={(e) =>
+                            setPointsOverride(Number(e.target.value))
+                        }
+                        className="w-32 h-1.5 accent-amber-500"
+                    />
+                )}
+                {IS_STAGING && pointsOverride !== null && (
+                    <span className="text-xs text-gray-400 font-mono">
+                        {pointsOverride} pts
+                    </span>
+                )}
+            </div>
+            <TierPanel {...tierData} pointsOverride={pointsOverride} />
         </div>
     );
 }

@@ -184,25 +184,33 @@ function HelloPage() {
                         {pageCopy.pollenTitle}
                     </Heading>
                     <Body spacing="comfortable">{pageCopy.pollenBody}</Body>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <SubCard>
                             <Heading variant="lime" as="h3" spacing="tight">
-                                {pageCopy.buyCardTitle}
+                                {pageCopy.pollenCard1Title}
                             </Heading>
-                            <Body size="sm" spacing="tight">
-                                {pageCopy.buyCardBody}
+                            <Body size="sm" spacing="none">
+                                {pageCopy.pollenCard1Body}
                             </Body>
-                            <p className="font-headline text-xs font-black text-text-highlight">
-                                {pageCopy.buyCardPromo}
-                            </p>
                         </SubCard>
                         <SubCard>
                             <Heading variant="lime" as="h3" spacing="tight">
-                                {pageCopy.earnCardTitle}
+                                {pageCopy.pollenCard2Title}
                             </Heading>
                             <Body size="sm" spacing="none">
-                                {pageCopy.earnCardBody}
+                                {pageCopy.pollenCard2Body}
                             </Body>
+                        </SubCard>
+                        <SubCard>
+                            <Heading variant="lime" as="h3" spacing="tight">
+                                {pageCopy.pollenCard3Title}
+                            </Heading>
+                            <Body size="sm" spacing="tight">
+                                {pageCopy.pollenCard3Body}
+                            </Body>
+                            <p className="font-headline text-xs font-black text-text-highlight">
+                                {pageCopy.pollenCard3Promo}
+                            </p>
                         </SubCard>
                     </div>
                     <Body
@@ -216,60 +224,58 @@ function HelloPage() {
 
                 <Divider />
 
-                {/* Section 5 — Tiers */}
+                {/* Section 5 — Creator Tiers */}
                 <div className="mb-12">
                     <Heading variant="section" spacing="comfortable">
                         {pageCopy.tiersTitle}
                     </Heading>
                     <Body spacing="comfortable">{pageCopy.tiersIntro}</Body>
 
-                    <div className="flex items-stretch gap-2 md:gap-3 mb-8 overflow-x-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                         {[
                             {
-                                emoji: "🍄",
-                                title: pageCopy.tierSporeTitle,
-                                desc: pageCopy.tierSporeDescription,
-                                border: "border-border-subtle",
-                            },
-                            {
-                                emoji: "🌱",
+                                emoji: pageCopy.tierSeedEmoji,
                                 title: pageCopy.tierSeedTitle,
                                 desc: pageCopy.tierSeedDescription,
+                                grant: pageCopy.tierSeedGrant,
+                                points: pageCopy.tierSeedPoints,
                                 border: "border-border-main",
                             },
                             {
-                                emoji: "🌸",
+                                emoji: pageCopy.tierFlowerEmoji,
                                 title: pageCopy.tierFlowerTitle,
                                 desc: pageCopy.tierFlowerDescription,
+                                grant: pageCopy.tierFlowerGrant,
+                                points: pageCopy.tierFlowerPoints,
                                 border: "border-border-brand",
                             },
                             {
-                                emoji: "🍯",
+                                emoji: pageCopy.tierNectarEmoji,
                                 title: pageCopy.tierNectarTitle,
                                 desc: pageCopy.tierNectarDescription,
+                                grant: pageCopy.tierNectarGrant,
+                                points: pageCopy.tierNectarPoints,
                                 border: "border-border-highlight",
                             },
-                        ].map((tier, i, arr) => (
-                            <div key={tier.title} className="contents">
-                                <div
-                                    className={`flex-1 min-w-0 bg-surface-card border-t-2 ${tier.border} p-3 rounded-sub-card text-center`}
-                                >
-                                    <p className="text-2xl mb-1">
-                                        {tier.emoji}
-                                    </p>
-                                    <p className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main mb-1">
-                                        {tier.title}
-                                    </p>
-                                    <p className="font-body text-xs text-text-body-secondary leading-snug">
-                                        {tier.desc}
-                                    </p>
-                                </div>
-                                {i < arr.length - 1 && (
-                                    <span className="shrink-0 self-center text-text-body-tertiary font-mono text-lg">
-                                        →
-                                    </span>
-                                )}
-                            </div>
+                        ].map((tier) => (
+                            <SubCard
+                                key={tier.title}
+                                className={`border-t-2 ${tier.border}`}
+                            >
+                                <p className="text-2xl mb-2">{tier.emoji}</p>
+                                <Heading variant="lime" as="h3" spacing="tight">
+                                    {tier.title}
+                                </Heading>
+                                <Body size="sm" spacing="tight">
+                                    {tier.desc}
+                                </Body>
+                                <p className="font-headline text-sm font-black text-text-highlight">
+                                    {tier.grant}
+                                </p>
+                                <p className="font-body text-xs text-text-body-tertiary">
+                                    {tier.points}
+                                </p>
+                            </SubCard>
                         ))}
                     </div>
 

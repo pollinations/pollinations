@@ -25,7 +25,7 @@ export const COMMUNITY_PAGE = {
     contributeCard3Body:
         "Answer a question, share what you built, help someone get unstuck.",
     contributeNote:
-        "All activity feeds your tier: Spore → Seed → Flower → Nectar. Higher tier, more daily compute.",
+        "All activity feeds your creator tier: Seed → Flower → Nectar. More you do, more daily compute you get.",
     learnAboutTiersButton: "Learn about tiers",
 
     // Section 3 — Jump In

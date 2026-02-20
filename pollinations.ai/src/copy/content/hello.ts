@@ -11,7 +11,7 @@ export const HELLO_PAGE = {
     heroStat2Label: "monthly users",
     heroStat3: "200",
     heroStat3Label: "countries",
-    startBuildingButton: "Get Your API Key",
+    startBuildingButton: "Start Building",
     joinDiscordButton: "Join the Discord",
 
     // Section 2 — What Your App Gets
@@ -39,7 +39,7 @@ export const HELLO_PAGE = {
         "Add AI to whatever you're building. Chatbot, image gen, game, creative tool — your call.",
     howItWorksStep3Title: "Get users",
     howItWorksStep3Body:
-        "Ship your app. Your users spend their own Pollen. Your API costs drop to zero.",
+        "Ship your app. Your users already have free Pollen — they spend it in your app. Your costs = zero.",
     howItWorksStep4Title: "Grow",
     howItWorksStep4Body:
         "More users = higher tier = bigger daily grants. The platform grows with you.",
@@ -48,32 +48,40 @@ export const HELLO_PAGE = {
     // Section 4 — Pollen
     pollenTitle: "Pollen — one credit, every model.",
     pollenBody:
-        "Pollen is what runs every AI generation on the platform. Users buy it once and spend it across any app — no subscriptions, no per-app billing. As a creator, you get Pollen for free through daily grants. That's your runway.",
-    buyCardTitle: "Buy Pollen",
-    buyCardBody:
-        "Simple packs. No subscriptions. Use it across every app on the platform.",
-    buyCardPromo: "Buy 1, get 1 free during beta!",
-    earnCardTitle: "Earn Pollen",
-    earnCardBody:
-        "Contribute — code, docs, community help — and the platform gives back.",
-    pollenFinePrint:
-        "Not all models accept daily Pollen. Look for the 💎 badge.",
+        "Pollen is what powers every AI generation on the platform. One credit system, every model, every app.",
+    pollenCard1Title: "For you (creator)",
+    pollenCard1Body:
+        "Daily Pollen grants based on your tier. Build, test, iterate — on us.",
+    pollenCard2Title: "For your users",
+    pollenCard2Body:
+        "Every user on the platform gets 1.5 free Pollen per week. They can start using your app without buying anything.",
+    pollenCard3Title: "Buy more",
+    pollenCard3Body: "Simple packs. No subscriptions. Use it across every app.",
+    pollenCard3Promo: "🎁 Buy 1, get 1 free during beta!",
+    pollenFinePrint: "Note: premium models require paid balance.",
 
-    // Section 5 — Tiers
+    // Section 5 — Creator Tiers
     tiersTitle: "Do more, get more.",
     tiersIntro:
-        "Your tier reflects how active you are. The more you build and contribute, the more free compute you get every day.",
-    tierSporeTitle: "Spore",
-    tierSporeDescription:
-        "Verified human. You're real — here's your first grant.",
+        "Your tier reflects how active you are as a creator. The more you build and contribute, the more free compute you get every day.",
+    tierSeedEmoji: "🌱",
     tierSeedTitle: "Seed",
-    tierSeedDescription: "Active creator. Contributing, shipping apps.",
+    tierSeedDescription:
+        "You're building. Contributing, shipping apps. Here are your first daily grants.",
+    tierSeedGrant: "3 pollen / day",
+    tierSeedPoints: "8+ points",
+    tierFlowerEmoji: "🌸",
     tierFlowerTitle: "Flower",
     tierFlowerDescription:
-        "Your app has real users. Scales with your app activity.",
+        "Your app has real users. Grants scale with your app activity.",
+    tierFlowerGrant: "10 pollen / day",
+    tierFlowerPoints: "20+ points",
+    tierNectarEmoji: "🍯",
     tierNectarTitle: "Nectar",
     tierNectarDescription:
-        "Top-tier creator. Biggest grants. First in line when revenue share goes live.",
+        "Top-tier creator. Biggest daily grants. First in line when revenue share goes live.",
+    tierNectarGrant: "20 pollen / day",
+    tierNectarPoints: "50+ points",
     tiersPath1Label: "Contribute",
     tiersPath1Body: "Code, docs, community help, GitHub activity.",
     tiersPath2Label: "Grow the economy",
@@ -84,13 +92,13 @@ export const HELLO_PAGE = {
     // Section 6 — BYOP Spotlight
     byopTitle: "Your users pay. Your costs disappear.",
     byopBody:
-        "Bring Your Own Pollen (BYOP) is one integration. Your users log in with their Pollen account and pay for what they use inside your app. You don't spend a thing. This is how you go from burning grants to running an app at zero compute cost.",
+        "Every user on the platform gets free Pollen weekly. With BYOP, they spend it inside your app — not yours. One integration. Your users log in with their Pollen account and pay for what they use. You don't spend a thing. This is how you go from burning grants to running an app at zero compute cost.",
     byopDocsButton: "BYOP Docs",
 
     // Section 7 — What People Are Building
     buildingTitle: "Already happening.",
     buildingBody:
-        "500+ apps live on the platform — chatbots, image generators, research tools, games, creative media. All running on free compute grants, all with real users.",
+        "500+ apps live on the platform — chatbots, image generators, research tools, games, creative media. All built on free compute grants, all with real users.",
     browseAppsButton: "Browse the Apps",
 
     // Section 8 — We Build in the Open
@@ -161,7 +169,7 @@ export const HELLO_PAGE = {
     comingFooter:
         "Right now, the platform gives you runway — free compute that grows as you grow. We're building the rest together, in the open.",
 
-    // Section 10 — CTA
+    // Section 9 — CTA
     ctaTitle: "Your app. Our tools. Let's go.",
     ctaBody:
         "Free compute. One API. All the building blocks. A community that actually shows up. Everything's open — the code, the roadmap, the conversations.",

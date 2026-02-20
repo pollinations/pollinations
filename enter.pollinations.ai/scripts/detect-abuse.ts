@@ -12,6 +12,7 @@
  *
  * OPTIONS:
  *   --limit N         Max users to analyze (default: 5000)
+ *   --offset N        Skip first N users (default: 0, for batch processing)
  *   --chunk-size N    Users per API call (default: 100)
  *   --model NAME      LLM model to use (default: gemini)
  *   --single-chunk    Only process first chunk (for testing)
@@ -47,6 +48,7 @@ interface ScoredUser extends User {
 
 interface ParsedArgs {
     userLimit: number;
+    offset: number;
     chunkSize: number;
     modelName: string;
     parallelism: number;
@@ -74,6 +76,7 @@ function parseArguments(): ParsedArgs {
 
     return {
         userLimit: getArgValue("--limit", 5000) as number,
+        offset: getArgValue("--offset", 0) as number,
         chunkSize: getArgValue("--chunk-size", 100) as number,
         modelName: getArgValue("--model", "gemini") as string,
         parallelism: getArgValue("--parallel", 1) as number,
@@ -107,14 +110,15 @@ function loadApiKey(): string {
 /**
  * Fetch users from D1 database
  */
-function fetchUsers(limit: number): User[] {
-    console.log(`📊 Fetching ${limit} most recent users...`);
+function fetchUsers(limit: number, offset: number): User[] {
+    const offsetMsg = offset > 0 ? ` (offset ${offset})` : "";
+    console.log(`📊 Fetching ${limit} most recent users${offsetMsg}...`);
 
     const query = `
         SELECT email, github_username, created_at, tier
         FROM user
         ORDER BY created_at DESC
-        LIMIT ${limit}
+        LIMIT ${limit} OFFSET ${offset}
     `.replace(/\n/g, " ");
 
     try {
@@ -517,7 +521,11 @@ async function main(): Promise<void> {
         `📋 Config: ${config.userLimit} users, chunks of ${config.chunkSize}, model: ${config.modelName}`,
     );
 
-    const users = fetchUsers(config.userLimit);
+    if (config.offset > 0) {
+        console.log(`⏭️  Skipping first ${config.offset} users`);
+    }
+
+    const users = fetchUsers(config.userLimit, config.offset);
     if (users.length === 0) {
         console.log("⚠️  No users found");
         return;

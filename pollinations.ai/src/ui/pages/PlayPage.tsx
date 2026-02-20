@@ -15,7 +15,7 @@ import { Body, Title } from "../components/ui/typography";
 function PlayPage() {
     const [selectedModel, setSelectedModel] = useState("flux");
     const [prompt, setPrompt] = useState("");
-    const { apiKey, isLoggedIn, login } = useAuth();
+    const { apiKey } = useAuth();
     const {
         imageModels,
         textModels,

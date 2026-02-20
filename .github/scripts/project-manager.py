@@ -518,9 +518,9 @@ def main():
     labels = normalize_labels(project_key, classification.get("labels", []))
     log_debug(f"Normalized labels: {labels}")
 
-    # Add "polly" label if AI determined issue is auto-fixable
+    # Add "polly" label if AI determined issue is auto-fixable (issues only, not PRs)
     # Safe because issue-polly-auto-fix.yml uses GitHub API to read issue body (not raw injection)
-    if classification.get("is_polly_fixable", False):
+    if classification.get("is_polly_fixable", False) and not IS_PULL_REQUEST:
         log_debug("AI determined issue is Polly-fixable, adding 'polly' label")
         labels.append("polly")
 

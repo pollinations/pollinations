@@ -431,7 +431,11 @@ async function callWanAlibabaAPI(
         logOps("Image downloaded and encoded, mimeType:", mimeType);
     }
 
-    const requestBody = buildDashScopeRequest(prompt, imageDataUri, videoParams);
+    const requestBody = buildDashScopeRequest(
+        prompt,
+        imageDataUri,
+        videoParams,
+    );
     logRequestSafely(requestBody);
 
     const taskId = await createDashScopeTask(

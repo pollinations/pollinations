@@ -1,4 +1,5 @@
 TOKEN polar_event_append APPEND
+TOKEN polar_event_read READ
 
 DESCRIPTION >
 Polar webhook events (payments, subscriptions, benefits) with full JSON payload

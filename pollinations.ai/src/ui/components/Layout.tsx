@@ -106,6 +106,19 @@ function Layout() {
                                     </NavLink>
                                 ))}
                             </div>
+                            {/* Enter link */}
+                            <Button
+                                as="a"
+                                href="https://enter.pollinations.ai"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="nav"
+                                size={null}
+                                className="text-text-brand"
+                            >
+                                {authCopy.enterButton}
+                                <ExternalLinkIcon className="w-3 h-3 text-text-brand" />
+                            </Button>
                         </div>
                         {/* Mobile: Theme Creator (Easter egg — shown after logo click) */}
                         {showThemeCreator && (
@@ -185,6 +198,19 @@ function Layout() {
                                         ),
                                     )}
                             </div>
+                            {/* Enter link */}
+                            <Button
+                                as="a"
+                                href="https://enter.pollinations.ai"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="nav"
+                                size={null}
+                                className="text-text-brand flex-shrink-0"
+                            >
+                                {authCopy.enterButton}
+                                <ExternalLinkIcon className="w-3 h-3 text-text-brand" />
+                            </Button>
                         </div>
                         {/* Desktop: Theme Creator (Easter egg — shown after logo click) */}
                         {showThemeCreator && (

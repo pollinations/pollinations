@@ -113,12 +113,6 @@ export const HELLO_PAGE = {
                 "Ship your app on our infra. No deploy setup, no separate hosting bill.",
         },
         {
-            emoji: "🧩",
-            title: "Pollen Widget SDK",
-            description:
-                "Drop-in component — login, balance, and in-app purchase in one embed.",
-        },
-        {
             emoji: "💸",
             title: "Creator Revenue Share",
             description: "Earn from Pollen spent in your app.",

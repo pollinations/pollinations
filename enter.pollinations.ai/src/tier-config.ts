@@ -3,14 +3,14 @@
 
 export const TIERS = {
     microbe: {
-        pollen: 0.1,
+        pollen: 0,
         emoji: "🦠",
         displayName: "Microbe",
         threshold: 0,
         color: "gray",
     },
     spore: {
-        pollen: 1,
+        pollen: 1.5,
         emoji: "🍄",
         displayName: "Spore",
         threshold: 3,

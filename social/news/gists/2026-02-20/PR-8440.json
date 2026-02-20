@@ -1,0 +1,34 @@
+{
+  "pr_number": 8440,
+  "title": "fix: align auto-polly with main polly setup",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/8440",
+  "merged_at": "2026-02-20T17:10:07Z",
+  "labels": [
+    "DEV-INFRA",
+    "polly"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polly gets her eyes",
+    "blurb": "Our favorite automated bee is now smarter, more observant, and aligned with her main directives.",
+    "summary": "Updated the auto-fix workflow to match the main Polly setup, enabling dynamic router versions, smart response behaviors, and automatic issue reactions.",
+    "impact": "Issue interactions will feel more natural with automatic 'eyes' reactions and context-aware responses.",
+    "keywords": [
+      "automation",
+      "github-actions",
+      "workflow",
+      "polly-bot"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot synchronizing. The robot is displaying 'eyes' on its screen to represent the new reaction feature. They are connecting a cable or looking at a shared clipboard.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and the monitor robot synchronizing data cables. The robot's screen shows a pair of pixelated eyes looking at a checklist. Lime green (#ecf874) and soft lavender background. Warm lighting, cozy atmosphere like Stardew Valley. Pixel text: 'SYNCED'. Chunky sprites, 8-bit aesthetic."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-20T17:10:51.695599+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 8437,
+  "title": "Delete GSOC 2026 information from README",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/8437",
+  "merged_at": "2026-02-20T18:56:47Z",
+  "labels": [
+    "DEV-DOCS",
+    "polly"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the notice board",
+    "blurb": "Doing a little housekeeping on the documentation to keep things fresh and accurate.",
+    "summary": "Removed references to Google Summer of Code 2026 from the main README and specific app documentation.",
+    "impact": "Ensures the documentation remains accurate and focused on current opportunities.",
+    "keywords": [
+      "docs",
+      "gsoc",
+      "cleanup",
+      "readme"
+    ],
+    "visual_concept": "Polly the bee tidying up a wooden community notice board in a garden, taking down an old pixelated flyer. The Nomnom creature is nearby, happily eating the removed paper.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot removing an old paper flyer from a wooden garden notice board. The round tan nomnom creature waits below with mouth open to eat the paper. Lime green (#ecf874) and soft peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, helpful vibes."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-20T18:57:30.105965+00:00"
+}

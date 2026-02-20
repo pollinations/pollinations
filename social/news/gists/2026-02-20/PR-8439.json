@@ -1,0 +1,33 @@
+{
+  "pr_number": 8439,
+  "title": "fix: disable airforce models (provider outage)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8439",
+  "merged_at": "2026-02-20T16:51:04Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Airforce grounded",
+    "blurb": "Temporarily pausing Airforce models to keep the error rates low. They'll be back when the weather clears.",
+    "summary": "Temporarily disabled api.airforce models (Wan, Imagen-4, Grok-Video) due to upstream provider instability.",
+    "impact": "Users will see fewer models available until the provider recovers.",
+    "keywords": [
+      "outage",
+      "maintenance",
+      "models",
+      "reliability"
+    ],
+    "visual_concept": "Bee mechanic. A pixel art plane or airforce motif being repaired. The bee looking at a 'Under Maintenance' sign.",
+    "image_prompt": "Cozy pixel art of the bee mascot wearing a tiny mechanic's cap, holding a wrench next to a sleeping pixel airplane. Lime green (#ecf874) accents. Soft pastel background. Chunky sprites, warm lighting, lo-fi aesthetic."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-20T16:52:20.644429+00:00"
+}

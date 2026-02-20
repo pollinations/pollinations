@@ -4,6 +4,7 @@ import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
 const logOps = debug("pollinations:wan:ops");
@@ -13,7 +14,7 @@ const logError = debug("pollinations:wan:error");
 const AIRFORCE_API_BASE = "https://api.airforce/v1";
 const AIRFORCE_WAN_MODEL = "wan-2.6";
 const DASHSCOPE_API_BASE = "https://dashscope-intl.aliyuncs.com/api/v1";
-const WAN_T2V_MODEL = "wan2.6-text-to-video";
+const WAN_T2V_MODEL = "wan2.6-t2v";
 const WAN_I2V_MODEL = "wan2.6-i2v-flash";
 
 // Video generation constraints
@@ -88,8 +89,11 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
 }
 
 /**
- * Generates a video using Airforce API (wan-2.6) with Alibaba DashScope fallback
+ * Generates a video using Alibaba DashScope API (wan-2.6)
  * Supports both text-to-video and image-to-video with optional audio
+ *
+ * NOTE: Airforce primary was disabled (2026-02-20) due to provider outage.
+ * Now routes directly to DashScope.
  */
 export async function callWanAPI(
     prompt: string,
@@ -97,42 +101,7 @@ export async function callWanAPI(
     progress: ProgressManager,
     requestId: string,
 ): Promise<VideoGenerationResult> {
-    // Try Airforce first (primary)
-    try {
-        return await callWanAirforceAPI(
-            prompt,
-            safeParams,
-            progress,
-            requestId,
-        );
-    } catch (error) {
-        logError(
-            "Airforce API failed:",
-            error instanceof Error ? error.message : String(error),
-        );
-
-        // Don't fall back on client errors (4xx) — bad prompts/params will fail on DashScope too
-        if (
-            error instanceof HttpError &&
-            error.status >= 400 &&
-            error.status < 500
-        ) {
-            throw error;
-        }
-
-        // Fall back to DashScope on 5xx / network errors
-        if (process.env.DASHSCOPE_API_KEY) {
-            logOps("Falling back to Alibaba DashScope API");
-            return await callWanAlibabaAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
-        }
-
-        throw error;
-    }
+    return await callWanAlibabaAPI(prompt, safeParams, progress, requestId);
 }
 
 /**
@@ -436,13 +405,13 @@ async function callWanAlibabaAPI(
     }
 
     const videoParams = prepareVideoParameters(safeParams);
-    const imageUrl = extractFirstImage(safeParams.image);
-    const mode = imageUrl ? "I2V" : "T2V";
+    const rawImageUrl = extractFirstImage(safeParams.image);
+    const mode = rawImageUrl ? "I2V" : "T2V";
 
     logOps(`Calling Wan 2.6 API (DashScope ${mode}) with params:`, {
         prompt,
         ...videoParams,
-        hasImage: !!imageUrl,
+        hasImage: !!rawImageUrl,
     });
 
     progress.updateBar(
@@ -452,7 +421,17 @@ async function callWanAlibabaAPI(
         `Starting video generation with Wan 2.6 (${mode})...`,
     );
 
-    const requestBody = buildDashScopeRequest(prompt, imageUrl, videoParams);
+    // Download image and convert to base64 data URI for reliability
+    // (DashScope can't fetch URLs that redirect or require special headers)
+    let imageDataUri: string | undefined;
+    if (rawImageUrl) {
+        logOps("Downloading image for base64 encoding:", rawImageUrl);
+        const { base64, mimeType } = await downloadImageAsBase64(rawImageUrl);
+        imageDataUri = `data:${mimeType};base64,${base64}`;
+        logOps("Image downloaded and encoded, mimeType:", mimeType);
+    }
+
+    const requestBody = buildDashScopeRequest(prompt, imageDataUri, videoParams);
     logRequestSafely(requestBody);
 
     const taskId = await createDashScopeTask(

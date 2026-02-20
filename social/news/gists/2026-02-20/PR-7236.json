@@ -1,0 +1,33 @@
+{
+  "pr_number": 7236,
+  "title": "Add GENEXUS AI to Dev_Tools",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7236",
+  "merged_at": "2026-02-20T20:17:33Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Another tool for the belt",
+    "blurb": "GENEXUS AI has been added to our Dev_Tools collection. A sturdy backend bridge connecting apps to the hive.",
+    "summary": "Added GENEXUS AI to the community apps directory under developer tools.",
+    "impact": "Expands the list of available developer resources and backend integrations in the ecosystem.",
+    "keywords": [
+      "community",
+      "dev-tools",
+      "backend",
+      "integration"
+    ],
+    "visual_concept": "A cozy workshop scene representing 'Dev Tools'. The Bee mascot is organizing a shelf, placing a new box or server unit labeled 'GENEXUS'. Warm, constructive atmosphere.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot in a warm garden shed workshop, placing a high-tech server unit labeled 'GENEXUS' on a wooden shelf. Soft lime green (#ecf874) glow from the server lights. Pastel gradient background. Chunky pixels, warm lighting, lo-fi vibes like Stardew Valley. Emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-20T20:18:17.827341+00:00"
+}

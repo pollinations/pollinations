@@ -18,7 +18,7 @@ body:
       label: Current Tier
       description: What tier are you currently at?
       options:
-        - "🌱 Spore"
+        - "🐝 Free weekly"
         - "🌿 Seed"
         - "🌸 Flower"
         - "🍯 Nectar"

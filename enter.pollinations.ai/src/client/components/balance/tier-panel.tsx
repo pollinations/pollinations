@@ -318,7 +318,7 @@ function tierForPoints(points: number): {
 export type TierPanelProps = {
     active: {
         tier: TierStatus;
-        displayName: string;
+        displayName: string | null;
         pollen?: number;
     };
     pointsOverride?: number | null;

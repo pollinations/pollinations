@@ -20,7 +20,7 @@ const TierStatusSchema = z.object({
     target: z.literal(tierNames),
     active: z.object({
         tier: z.literal([...tierNames, "none"]),
-        displayName: z.string(),
+        displayName: z.string().nullable(),
         pollen: z.number(),
         cadence: z.enum(["daily", "weekly"]),
     }),
@@ -74,7 +74,7 @@ export const tiersRoutes = new Hono<Env>()
                 target: userTier,
                 active: {
                     tier: userTier as TierStatus,
-                    displayName: TIERS[userTier].displayName as string,
+                    displayName: TIERS[userTier].displayName ?? null,
                     pollen,
                     cadence,
                 },

@@ -5,12 +5,13 @@ import { usePageCopy } from "../../hooks/usePageCopy";
 import { Button } from "./ui/button";
 
 const TIER_EMOJI: Record<string, string> = {
-    microbe: "🦠",
-    spore: "🦠",
+    free_weekly: "🐝",
     seed: "🌱",
     flower: "🌸",
     nectar: "🍯",
 };
+
+const CREATOR_TIERS = new Set(["seed", "flower", "nectar"]);
 
 export function UserMenu() {
     const { apiKey, isLoggedIn, profile, balance, login, logout } = useAuth();
@@ -79,9 +80,9 @@ export function UserMenu() {
                             <span className="font-headline text-sm font-black text-text-body-main">
                                 {displayName}
                             </span>
-                            {profile.tier && (
+                            {profile.tier && CREATOR_TIERS.has(profile.tier) && (
                                 <span className="ml-2 text-xs text-text-body-secondary">
-                                    {tierEmoji} {profile.tier}
+                                    {tierEmoji} {profile.tier.charAt(0).toUpperCase() + profile.tier.slice(1)}
                                 </span>
                             )}
                         </div>

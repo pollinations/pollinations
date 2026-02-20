@@ -9,7 +9,8 @@ import {
     user as userTable,
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
-import { tierNames } from "@/tier-config.ts";
+const publicTier = (t: string) =>
+    t === "microbe" || t === "spore" ? "free_weekly" : t;
 
 // Calculate next tier refill time (midnight UTC) - cron runs daily at 00:00 UTC
 function getNextRefillAt(): string {
@@ -86,8 +87,8 @@ const profileResponseSchema = z.object({
         .nullable()
         .describe("Profile picture URL (e.g. GitHub avatar)"),
     tier: z
-        .enum(["anonymous", ...tierNames])
-        .describe("User's current tier level"),
+        .enum(["anonymous", "free_weekly", "seed", "flower", "nectar", "router"])
+        .describe("User's tier. 'free_weekly' = registered user with weekly pollen grant"),
     createdAt: z.iso
         .datetime()
         .describe("Account creation timestamp (ISO 8601)"),
@@ -219,7 +220,7 @@ export const accountRoutes = new Hono<Env>()
                 email: profile.email,
                 githubUsername: profile.githubUsername ?? null,
                 image: profile.image ?? null,
-                tier: profile.tier,
+                tier: publicTier(profile.tier as string),
                 createdAt: profile.createdAt,
                 nextResetAt,
             });

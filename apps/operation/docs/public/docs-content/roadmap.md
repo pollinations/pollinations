@@ -9,7 +9,7 @@
 Focus: ship a solid core so developers can build confidently and we can observe real usage.
 
 - Pollen packs and wallet foundations  
-- Developer tiers (Spore, Seed, Flower, Nectar) wired into daily grant logic  
+- Developer tiers (Seed, Flower, Nectar) wired into grant logic; free weekly grants for all users
 - pollinations.ai Login (OAuth) beta across key surfaces  
 - Dev console for API keys, Pollen balance, and basic usage stats  
 - Telemetry MVP for Pollen events and app-level activity  

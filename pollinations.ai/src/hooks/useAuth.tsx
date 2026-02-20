@@ -16,7 +16,7 @@ interface UserProfile {
     name: string;
     email: string;
     githubUsername: string | null;
-    tier: "anonymous" | "microbe" | "spore" | "seed" | "flower" | "nectar";
+    tier: "anonymous" | "free_weekly" | "seed" | "flower" | "nectar";
 }
 
 interface UserBalance {

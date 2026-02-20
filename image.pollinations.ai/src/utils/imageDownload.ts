@@ -1,5 +1,10 @@
 import { fileTypeFromBuffer } from "file-type";
 
+export interface ImageBase64Result {
+    readonly base64: string;
+    readonly mimeType: string;
+}
+
 /**
  * Download image from URL and convert to base64 with correct MIME type detection
  * Uses magic bytes instead of trusting content-type header (fixes Telegram CDN issues)
@@ -7,7 +12,7 @@ import { fileTypeFromBuffer } from "file-type";
 export async function downloadImageAsBase64(
     imageUrl: string,
     signal?: AbortSignal,
-): Promise<{ base64: string; mimeType: string }> {
+): Promise<ImageBase64Result> {
     const imageResponse = await fetch(imageUrl, { signal });
 
     if (!imageResponse.ok) {

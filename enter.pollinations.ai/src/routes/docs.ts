@@ -4,7 +4,6 @@ import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { Hono } from "hono";
 import { openAPIRouteHandler } from "hono-openapi";
 import type { Env } from "@/env.ts";
-// @ts-expect-error - raw import
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 
 // Use markdown as-is (just trim whitespace)

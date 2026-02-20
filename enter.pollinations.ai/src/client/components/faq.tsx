@@ -13,7 +13,7 @@ import { Panel } from "./ui/panel.tsx";
 const tierTableMd = [
     "| Tier | Points | Daily Pollen |",
     "|------|--------|-------------|",
-    ...TIER_PROGRESSION.filter((t) => t !== "microbe").map(
+    ...TIER_PROGRESSION.filter((t) => t !== "microbe" && t !== "spore").map(
         (t) =>
             `| ${TIERS[t].emoji} ${TIERS[t].displayName} | ${TIERS[t].threshold}+ | ${TIERS[t].pollen} pollen/day |`,
     ),
@@ -69,6 +69,15 @@ const parseFAQFromMarkdown = (markdown: string): FAQItem[] => {
 
 const faqData = parseFAQFromMarkdown(faqMarkdown);
 
+// Derive a URL-friendly slug from a question, e.g. "🏅 What are tiers?" → "what-are-tiers"
+function slugify(text: string): string {
+    return text
+        .replace(/[^\w\s-]/g, "") // strip emoji and punctuation
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "-");
+}
+
 export const FAQ: FC = () => {
     const [openIndices, setOpenIndices] = useState<Set<number>>(new Set());
 
@@ -104,7 +113,7 @@ export const FAQ: FC = () => {
             <Panel color="violet" className="p-8">
                 <div className="flex flex-col gap-4">
                     {faqData.map((item, index) => (
-                        <div key={item.question} className="pb-4 last:pb-0">
+                        <div key={item.question} id={slugify(item.question)} className="pb-4 last:pb-0">
                             <button
                                 type="button"
                                 onClick={() => toggleQuestion(index)}

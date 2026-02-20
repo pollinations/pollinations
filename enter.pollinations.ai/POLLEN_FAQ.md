@@ -24,7 +24,7 @@ There are three ways:
 
 ## 🆓 Can I try it for free?
 
-Yes. Register, grab an API key, and start building. You'll receive daily Pollen grants to experiment with — no credit card required. As you contribute and grow your score, you unlock higher tiers with bigger daily grants.
+Yes. Register, grab an API key, and start building. Every account gets 1.5 free Pollen per week right away — no credit card required. As you contribute and grow your score, you unlock creator tiers with daily grants (up to 20 pollen/day at Nectar).
 
 ## 💳 What payment methods do you accept?
 
@@ -36,27 +36,36 @@ Currently, we accept *credit cards*. We're actively exploring other payment meth
 
 Not yet, but we're considering it based on community feedback. Check out the [voting issue](https://github.com/pollinations/pollinations/issues/2202) to share your thoughts or join our [Discord](https://discord.gg/pollinations-ai-885844321461485618) for updates.
 
-## 🔑 What do I get when I register?
+## 🎉 What do I get when I register?
 
 Registration gives you access to the Pollinations API. You can create API keys to start making requests right away:
 
 - **🌐 Publishable Key (pk\_):** Designed for client-side apps *(bound to your domain)*. Rate limits: 1 pollen per IP per hour. Access to all models, which consume Pollen based on usage.
 - **🔒 Secret Key (sk\_):** For server-side apps only. *No rate limits.* Access to all models, which consume Pollen based on usage.
 
-Your tier — and daily Pollen grant — is determined by your score. New accounts start with no tier. Earn 3+ points to unlock Spore and your first daily grant.
+All accounts start at the Spore tier with 1.5 free Pollen per week. As a creator, your score determines your creator tier — earn 8+ points to unlock Seed and start receiving daily grants.
 
 ## 🏅 What are tiers?
 
-Tiers reflect how much you contribute to the Pollinations ecosystem. The higher your tier, the more daily Pollen you receive:
+There are two kinds of tiers on Pollinations:
+
+**User tier — for everyone on the platform:**
+
+| Tier | How you get it | Pollen |
+|------|---------------|--------|
+| 🌱 Spore | Automatic for all registered users | 1.5 pollen/week |
+
+Every user on the platform gets Spore automatically. That's 1.5 free Pollen per week to spend across any app — no purchase required.
+
+**Creator tiers — for builders and contributors:**
 
 | Tier | Points | Daily Pollen |
 |------|--------|-------------|
-| 🍄 Spore | 3+ | 1 pollen/day |
-| 🌱 Seed | 8+ | 3 pollen/day |
+| 🌿 Seed | 8+ | 3 pollen/day |
 | 🌸 Flower | 20+ | 10 pollen/day |
 | 🍯 Nectar | 50+ | 20 pollen/day |
 
-Below 3 points you still have full API access — you just won't receive a daily grant yet.
+Creator tiers are earned through your score. The more you build, contribute, and grow, the bigger your daily grants.
 
 ## 📊 How is my score calculated?
 
@@ -68,7 +77,7 @@ Your score reflects your overall contribution to the Pollinations ecosystem. It 
 - Community participation (Discord, GitHub)
 - Integrating BYOP in your apps
 
-Scores update daily. The exact formula may evolve as we learn what works best. For the full breakdown, see [How Tier Scoring Works →](https://github.com/pollinations/pollinations/blob/main/SCORING.md).
+Scores update daily. The exact formula may evolve as we learn what works best. For the full breakdown, see [How Tier Scoring Works →](https://github.com/pollinations/pollinations/blob/main/TIER_SCORING.md).
 
 If you think your score is wrong, you can [appeal your tier →](https://github.com/pollinations/pollinations/issues/new?template=tier-appeal.yml).
 
@@ -78,11 +87,15 @@ BYOP lets your app's users pay for their own AI generations with their Pollen �
 
 **Why it matters:** Without BYOP, every user of your app burns *your* Pollen. With BYOP, your compute cost drops to zero. Your users get a seamless experience, and you can scale without worrying about costs.
 
-BYOP is a key part of the Pollinations flywheel: build an app for free → integrate BYOP → your users fuel the app → your score grows → bigger daily grants → build bigger.
+Every user on the platform gets 1.5 free Pollen per week (Spore tier). With BYOP, they spend that Pollen in *your* app. BYOP is the key to the Pollinations flywheel: build an app for free → integrate BYOP → your users arrive with Pollen → they fuel the app → your score grows → bigger daily grants → build bigger.
 
-## 🌱 How do daily Pollen grants work?
+## 🌱 How do Pollen grants work?
 
-You receive a daily Pollen grant based on your tier. Daily Pollen is spent *before* your purchased Pollen. Unused daily Pollen expires each day — purchased Pollen never expires.
+**Spore (user tier):** 1.5 Pollen per week, refreshed weekly. This is for all registered users.
+
+**Seed / Flower / Nectar (creator tiers):** Daily Pollen grants that scale with your tier. Unused daily Pollen expires each day.
+
+In both cases, grant Pollen is spent *before* your purchased Pollen. Purchased Pollen never expires.
 
 💚 **Thanks to our supporters**, all tiers receive free daily Pollen during beta.
 

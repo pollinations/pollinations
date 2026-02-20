@@ -1,15 +1,12 @@
 import type { FC } from "react";
 import {
+    getNextTier,
     getTierEmoji,
-    TIER_COLORS,
-    TIER_EMOJIS,
-    TIER_GAUGE_COLORS,
-    TIER_PROGRESSION,
     TIER_THRESHOLDS,
     TIERS,
+    type TierName,
     type TierStatus,
 } from "@/tier-config.ts";
-import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
 import { BYOPCallout } from "./byop-callout.tsx";
@@ -19,187 +16,174 @@ const APPEAL_URL =
     "https://github.com/pollinations/pollinations/issues/new?template=tier-appeal.yml";
 
 const SCORING_URL =
-    "https://github.com/pollinations/pollinations/blob/main/SCORING.md";
+    "https://github.com/pollinations/pollinations/blob/main/TIER_SCORING.md";
 
-// --- Tier Gauge with threshold markers ---
+// Ring gauge colors — more saturated than the Tailwind 300-shade gauge colors
+const TIER_RING_COLORS: Record<string, string> = {
+    microbe: "#9ca3af",
+    spore: "#3a7ca5",
+    seed: "#45a06e",
+    flower: "#d4749a",
+    nectar: "#f5a623",
+};
 
-// Visible tiers on the gauge (excludes microbe and router)
-const GAUGE_TIERS = TIER_PROGRESSION.filter((t) => t !== "microbe").map(
-    (t) => ({
-        key: t,
-        name: TIERS[t].displayName,
-    }),
-);
+// --- Ring Gauge ---
 
-// Build gauge segments from tier config
-function buildGaugeSegments() {
-    const progression = TIER_PROGRESSION;
-    const segments: {
-        start: number;
-        end: number;
-        color: string;
-    }[] = [];
+const RING_RADIUS = 54;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS; // ~339.29
 
-    for (let i = 0; i < progression.length; i++) {
-        const tier = progression[i];
-        const nextTier = progression[i + 1];
-        segments.push({
-            start: TIER_THRESHOLDS[tier],
-            end: nextTier
-                ? TIER_THRESHOLDS[nextTier]
-                : Number.POSITIVE_INFINITY,
-            color: TIER_GAUGE_COLORS[tier],
-        });
-    }
-    return segments;
-}
+const TierRingGauge: FC<{
+    tier: TierStatus;
+    creatorPoints: number;
+    dailyPollen: number;
+}> = ({ tier, creatorPoints, dailyPollen }) => {
+    const isPreSeed = tier === "microbe" || tier === "spore" || tier === "none";
+    const isNectar = tier === "nectar";
 
-const TIER_SEGMENTS = buildGaugeSegments();
+    let ringColor: string;
+    let progressPct: number;
+    let centerEmoji: string;
+    let tierLabel: string;
+    let grantLabel: string;
 
-// Dimmed version of a hex color (mix toward white)
-function dimColor(hex: string): string {
-    const r = Number.parseInt(hex.slice(1, 3), 16);
-    const g = Number.parseInt(hex.slice(3, 5), 16);
-    const b = Number.parseInt(hex.slice(5, 7), 16);
-    const mix = (c: number) =>
-        Math.round(c + (255 - c) * 0.5)
-            .toString(16)
-            .padStart(2, "0");
-    return `#${mix(r)}${mix(g)}${mix(b)}`;
-}
+    // Next-tier info split for styled rendering
+    let nextHighlight = "";
+    let nextRest = "";
+    let nextMilestone = "";
 
-const TierGauge: FC<{ creatorPoints: number }> = ({ creatorPoints }) => {
-    // Open-ended gauge: scales with user's points, nectar is just a marker
-    const gaugeMax = Math.max(
-        TIER_THRESHOLDS.nectar * 1.2,
-        creatorPoints * 1.2,
-    );
-    const fillPct = Math.min(100, (creatorPoints / gaugeMax) * 100);
+    if (isPreSeed) {
+        ringColor = TIER_RING_COLORS.spore;
+        progressPct = Math.min(1, creatorPoints / TIER_THRESHOLDS.seed);
+        centerEmoji = "🌱";
+        tierLabel = "Spore";
+        grantLabel = "1.5 pollen / week";
+        const remaining = Math.max(0, TIER_THRESHOLDS.seed - creatorPoints);
+        nextHighlight = `Earn ${remaining} more points`;
+        nextRest = "to unlock 🌿 Seed";
+        nextMilestone = "Start receiving daily grants";
+    } else if (isNectar) {
+        ringColor = TIER_RING_COLORS.nectar;
+        progressPct = 1;
+        centerEmoji = getTierEmoji(tier);
+        tierLabel = TIERS.nectar.displayName;
+        grantLabel = `${dailyPollen} pollen / day`;
+        nextRest =
+            "You're at the top. Biggest daily grants. First in line for revenue share.";
+    } else {
+        const tierKey = tier as TierName;
+        ringColor = TIER_RING_COLORS[tierKey] || "#9ca3af";
+        centerEmoji = getTierEmoji(tier);
+        tierLabel = TIERS[tierKey].displayName;
+        grantLabel = `${dailyPollen} pollen / day`;
 
-    // Fill gradient (reached portion)
-    const fillStops: string[] = [];
-    if (creatorPoints > 0) {
-        for (const seg of TIER_SEGMENTS) {
-            if (seg.start >= creatorPoints) break;
-            const startPct = (seg.start / creatorPoints) * 100;
-            const endPct =
-                (Math.min(seg.end, creatorPoints) / creatorPoints) * 100;
-            fillStops.push(
-                `${seg.color} ${startPct}%`,
-                `${seg.color} ${endPct}%`,
-            );
+        const next = getNextTier(tier);
+        if (next) {
+            const currentThreshold = TIERS[tierKey].threshold;
+            const range = next.threshold - currentThreshold;
+            progressPct =
+                range > 0
+                    ? Math.min(1, (creatorPoints - currentThreshold) / range)
+                    : 1;
+            const remaining = Math.max(0, next.threshold - creatorPoints);
+            const nextEmoji = getTierEmoji(next.name);
+            nextHighlight = `${remaining} more points`;
+            nextRest = `to reach ${nextEmoji} ${TIERS[next.name].displayName}`;
+            nextMilestone = `Next milestone: ${TIERS[next.name].pollen} pollen/day`;
+        } else {
+            progressPct = 1;
         }
     }
-    const fillBg =
-        fillStops.length > 0
-            ? `linear-gradient(to right, ${fillStops.join(", ")})`
-            : TIER_GAUGE_COLORS.microbe;
 
-    // Track gradient (full width, dimmed colors preview)
-    const trackStops: string[] = [];
-    for (const seg of TIER_SEGMENTS) {
-        const dim = dimColor(seg.color);
-        const startPct = (seg.start / gaugeMax) * 100;
-        const endPct = (Math.min(seg.end, gaugeMax) / gaugeMax) * 100;
-        trackStops.push(`${dim} ${startPct}%`, `${dim} ${endPct}%`);
-    }
-    const trackBg = `linear-gradient(to right, ${trackStops.join(", ")})`;
+    // Always show at least a small dot so the ring looks "started"
+    const visiblePct = Math.max(0.02, progressPct);
+    const strokeDashoffset = RING_CIRCUMFERENCE * (1 - visiblePct);
 
     return (
-        <div>
-            {/* Gauge bar — color changes at each tier boundary, scores inside */}
-            <div className="relative h-5 mt-7">
-                <div
-                    className="h-full rounded-full overflow-hidden"
-                    style={{ background: trackBg }}
+        <div className="flex items-center gap-8 flex-col sm:flex-row">
+            {/* Ring */}
+            <div className="relative w-[140px] h-[140px] flex-shrink-0">
+                <svg
+                    viewBox="0 0 120 120"
+                    className="w-full h-full"
+                    style={{ transform: "rotate(-90deg)" }}
+                    role="img"
+                    aria-label={`${tierLabel} tier progress`}
                 >
-                    <div
-                        className="h-full transition-all duration-500"
+                    <title>{tierLabel} tier progress</title>
+                    <circle
+                        cx="60"
+                        cy="60"
+                        r={RING_RADIUS}
+                        fill="none"
+                        stroke="#ffe4e6"
+                        strokeWidth="12"
+                    />
+                    <circle
+                        cx="60"
+                        cy="60"
+                        r={RING_RADIUS}
+                        fill="none"
+                        stroke={ringColor}
+                        strokeWidth="12"
+                        strokeLinecap="round"
+                        strokeDasharray={RING_CIRCUMFERENCE}
+                        strokeDashoffset={strokeDashoffset}
                         style={{
-                            width: `${fillPct}%`,
-                            background: fillBg,
+                            transition: "stroke-dashoffset 1s ease",
                         }}
                     />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-[28px] leading-none">
+                        {centerEmoji}
+                    </span>
+                    <span className="text-xl font-bold text-gray-900 mt-0.5">
+                        {creatorPoints}
+                    </span>
+                    <span className="text-[10px] text-gray-500 uppercase tracking-widest">
+                        points
+                    </span>
                 </div>
-                {GAUGE_TIERS.map((t) => {
-                    const pos = (TIER_THRESHOLDS[t.key] / gaugeMax) * 100;
-                    const isReached = creatorPoints >= TIER_THRESHOLDS[t.key];
-                    return (
-                        <span
-                            key={t.key}
-                            className={`absolute top-1/2 -translate-y-1/2 text-[10px] font-mono whitespace-nowrap ${isReached ? "text-gray-600" : "text-gray-400"}`}
-                            style={{
-                                left: `${pos + 1}%`,
-                            }}
-                        >
-                            {TIER_THRESHOLDS[t.key]}
-                        </span>
-                    );
-                })}
-                {/* Current position marker — droplet with score */}
-                {(() => {
-                    // Pick the color of the tier segment the user is in
-                    let dropletColor = TIER_SEGMENTS[0].color;
-                    for (let i = TIER_SEGMENTS.length - 1; i >= 0; i--) {
-                        if (creatorPoints >= TIER_SEGMENTS[i].start) {
-                            dropletColor = TIER_SEGMENTS[i].color;
-                            break;
-                        }
-                    }
-                    return (
-                        <div
-                            className="absolute transition-all duration-500 flex flex-col items-center"
-                            style={{
-                                left: `${fillPct}%`,
-                                bottom: "100%",
-                                transform: "translateX(-50%)",
-                            }}
-                        >
-                            <div
-                                className="flex items-center justify-center rounded-full text-xs font-bold"
-                                style={{
-                                    minWidth: "26px",
-                                    height: "26px",
-                                    padding: "0 6px",
-                                    backgroundColor: dropletColor,
-                                    color: "#1f2937",
-                                }}
-                            >
-                                {creatorPoints}
-                            </div>
-                            <div
-                                style={{
-                                    width: 0,
-                                    height: 0,
-                                    marginTop: "-2px",
-                                    borderLeft: "6px solid transparent",
-                                    borderRight: "6px solid transparent",
-                                    borderTop: `7px solid ${dropletColor}`,
-                                }}
-                            />
-                        </div>
-                    );
-                })()}
             </div>
 
-            {/* Tier names below the bar */}
-            <div className="relative h-6 mt-1">
-                {GAUGE_TIERS.map((t) => {
-                    const pos = (TIER_THRESHOLDS[t.key] / gaugeMax) * 100;
-                    const isReached = creatorPoints >= TIER_THRESHOLDS[t.key];
-                    return (
-                        <span
-                            key={t.key}
-                            className={`absolute top-0 text-xs whitespace-nowrap ${isReached ? "text-gray-700 font-semibold" : "text-gray-400"}`}
-                            style={{
-                                left: `${pos}%`,
-                                transform: "translateX(-50%)",
-                            }}
-                        >
-                            {TIER_EMOJIS[t.key]} {t.name}
-                        </span>
-                    );
-                })}
+            {/* Info */}
+            <div className="flex flex-col gap-1 text-center sm:text-left">
+                <div className="flex items-center gap-2">
+                    <p className="text-lg font-semibold text-gray-900">
+                        {tierLabel}
+                    </p>
+                    <span
+                        className="px-3 py-0.5 rounded-full text-xs font-semibold border"
+                        style={{
+                            backgroundColor: "#ffe4e6",
+                            borderColor: "#fecdd3",
+                            color: ringColor,
+                        }}
+                    >
+                        {grantLabel}
+                    </span>
+                </div>
+                <p className="text-xs text-gray-400">
+                    Refills daily at 00:00 UTC. Unused pollen does not carry
+                    over.
+                </p>
+                {(nextHighlight || nextRest) && (
+                    <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                        {nextHighlight && (
+                            <strong className="text-amber-600">
+                                {nextHighlight}
+                            </strong>
+                        )}
+                        {nextHighlight && nextRest && " "}
+                        {nextRest}
+                        {nextMilestone && (
+                            <>
+                                <br />
+                                {nextMilestone}
+                            </>
+                        )}
+                    </p>
+                )}
             </div>
         </div>
     );
@@ -217,48 +201,20 @@ export type TierPanelProps = {
 
 export const TierPanel: FC<TierPanelProps> = ({ active }) => {
     const tier = active.tier;
-    const displayName = active.displayName || "Unknown Tier";
     const dailyPollen = active.dailyPollen ?? 0;
     // FIXME: placeholder — derive real score from D1 once the scoring pipeline lands.
     // Currently fakes creatorPoints as the tier's own threshold so the gauge looks reasonable.
     const creatorPoints =
         TIER_THRESHOLDS[tier as keyof typeof TIER_THRESHOLDS] ?? 0;
-    const isMicrobe = tier === "microbe" || tier === "none";
-    const emoji = getTierEmoji(tier);
-    const badgeColor = (
-        tier === "none" ? TIER_COLORS.microbe : TIER_COLORS[tier]
-    ) as "gray" | "green" | "pink" | "amber" | "blue" | "red";
 
     return (
         <Panel color="amber">
             <div className="flex flex-col gap-3">
-                {isMicrobe ? (
-                    <p className="text-sm text-gray-700">
-                        Earn a builder score of {TIER_THRESHOLDS.spore} to
-                        unlock your first tier.
-                    </p>
-                ) : (
-                    <>
-                        <div className="flex items-center gap-3 flex-wrap">
-                            <span className="text-3xl font-bold text-gray-900">
-                                {emoji} {displayName}
-                            </span>
-                            <Badge
-                                color={badgeColor}
-                                size="lg"
-                                className="font-semibold"
-                            >
-                                {dailyPollen} pollen/day
-                            </Badge>
-                        </div>
-                        <p className="text-sm text-gray-500">
-                            Refills daily at 00:00 UTC. Unused pollen does not
-                            carry over.
-                        </p>
-                    </>
-                )}
-
-                <TierGauge creatorPoints={creatorPoints} />
+                <TierRingGauge
+                    tier={tier}
+                    creatorPoints={creatorPoints}
+                    dailyPollen={dailyPollen}
+                />
 
                 <Card color="amber">
                     <LevelUpCards />
@@ -281,6 +237,14 @@ export const TierPanel: FC<TierPanelProps> = ({ active }) => {
                         <p className="text-gray-400">
                             ✨ We're in beta! Scores and grants may evolve as we
                             learn what works best.
+                        </p>
+                        <p>
+                            <a
+                                href="#what-are-tiers"
+                                className="underline hover:text-gray-700"
+                            >
+                                How do tiers work? &rarr;
+                            </a>
                         </p>
                     </div>
                 </Card>

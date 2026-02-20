@@ -38,24 +38,25 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS; // ~326.73
 const MicrobeLimitedPanel: FC = () => (
     <Panel color="amber">
         <div className="flex flex-col gap-3">
-            <p className="text-lg font-semibold text-gray-900">Welcome!</p>
-            <div className="text-sm text-gray-600 leading-relaxed space-y-3">
+            <div className="text-sm text-gray-600 leading-relaxed">
                 <p>
-                    We're reviewing your account to determine your tier
-                    eligibility. Every account goes through this &mdash; it
-                    helps us keep things fair for everyone. This may take a
-                    while.
+                    Your tier is determined dynamically based on your activity
+                    and account history.
                 </p>
-                <p>Your API keys and purchased Pollen are not affected.</p>
+                <p>
+                    It can change at any time, initial review can take up to a
+                    week.
+                </p>
             </div>
             <p className="text-sm">
+                💬 Questions?{" "}
                 <a
                     href={APPEAL_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-900 underline hover:text-gray-700 font-medium"
                 >
-                    Need help? Contact us &rarr;
+                    Contact support &rarr;
                 </a>
             </p>
         </div>

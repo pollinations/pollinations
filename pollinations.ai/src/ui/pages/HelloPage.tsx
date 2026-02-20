@@ -64,127 +64,13 @@ function HelloPage() {
 
                 <Divider />
 
-                {/* Section 2 — What Your App Gets */}
-                <div className="mb-12">
-                    <Heading variant="section" spacing="comfortable">
-                        {pageCopy.appGetsTitle}
-                    </Heading>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <SubCard>
-                            <Heading variant="lime" as="h3" spacing="tight">
-                                {pageCopy.appGetsCard1Title}
-                            </Heading>
-                            <Body size="sm" spacing="none">
-                                {pageCopy.appGetsCard1Body}
-                            </Body>
-                        </SubCard>
-                        <SubCard>
-                            <Heading variant="lime" as="h3" spacing="tight">
-                                {pageCopy.appGetsCard2Title}
-                            </Heading>
-                            <Body size="sm" spacing="none">
-                                {pageCopy.appGetsCard2Body}
-                            </Body>
-                        </SubCard>
-                        <SubCard>
-                            <Heading variant="lime" as="h3" spacing="tight">
-                                {pageCopy.appGetsCard3Title}
-                            </Heading>
-                            <Body size="sm" spacing="none">
-                                {pageCopy.appGetsCard3Body}
-                            </Body>
-                        </SubCard>
-                    </div>
-                    <Body
-                        size="sm"
-                        spacing="comfortable"
-                        className="text-text-body-secondary"
-                    >
-                        {pageCopy.appGetsFooter}
-                    </Body>
-                    <Button
-                        as="a"
-                        href="https://enter.pollinations.ai/docs#api"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="secondary"
-                        size="default"
-                    >
-                        {pageCopy.readTheDocsButton}
-                    </Button>
-                </div>
-
-                <Divider />
-
-                {/* Section 3 — How It Works */}
-                <div className="mb-12">
-                    <Heading variant="section" spacing="comfortable">
-                        {pageCopy.howItWorksTitle}
-                    </Heading>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                        <SubCard size="compact">
-                            <p className="font-headline text-3xl font-black text-text-highlight mb-2">
-                                1
-                            </p>
-                            <Heading variant="lime" as="h3" spacing="tight">
-                                {pageCopy.howItWorksStep1Title}
-                            </Heading>
-                            <Body size="sm" spacing="none">
-                                {pageCopy.howItWorksStep1Body}
-                            </Body>
-                        </SubCard>
-                        <SubCard size="compact">
-                            <p className="font-headline text-3xl font-black text-text-highlight mb-2">
-                                2
-                            </p>
-                            <Heading variant="lime" as="h3" spacing="tight">
-                                {pageCopy.howItWorksStep2Title}
-                            </Heading>
-                            <Body size="sm" spacing="none">
-                                {pageCopy.howItWorksStep2Body}
-                            </Body>
-                        </SubCard>
-                        <SubCard size="compact">
-                            <p className="font-headline text-3xl font-black text-text-highlight mb-2">
-                                3
-                            </p>
-                            <Heading variant="lime" as="h3" spacing="tight">
-                                {pageCopy.howItWorksStep3Title}
-                            </Heading>
-                            <Body size="sm" spacing="none">
-                                {pageCopy.howItWorksStep3Body}
-                            </Body>
-                        </SubCard>
-                        <SubCard size="compact">
-                            <p className="font-headline text-3xl font-black text-text-highlight mb-2">
-                                4
-                            </p>
-                            <Heading variant="lime" as="h3" spacing="tight">
-                                {pageCopy.howItWorksStep4Title}
-                            </Heading>
-                            <Body size="sm" spacing="none">
-                                {pageCopy.howItWorksStep4Body}
-                            </Body>
-                        </SubCard>
-                    </div>
-                    <Body
-                        size="sm"
-                        spacing="none"
-                        className="text-text-body-secondary"
-                    >
-                        {pageCopy.howItWorksFooter}
-                    </Body>
-                </div>
-
-                <Divider />
-
-                {/* Section 4 — Pollen */}
+                {/* Section 4+5 — Pollen + Tiers */}
                 <div className="mb-12">
                     <Heading variant="section" spacing="comfortable">
                         {pageCopy.pollenTitle}
                     </Heading>
                     <Body spacing="comfortable">{pageCopy.pollenBody}</Body>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <SubCard>
                             <Heading variant="lime" as="h3" spacing="tight">
                                 {pageCopy.pollenCard1Title}
@@ -197,39 +83,14 @@ function HelloPage() {
                             <Heading variant="lime" as="h3" spacing="tight">
                                 {pageCopy.pollenCard2Title}
                             </Heading>
-                            <Body size="sm" spacing="none">
+                            <Body size="sm" spacing="tight">
                                 {pageCopy.pollenCard2Body}
                             </Body>
-                        </SubCard>
-                        <SubCard>
-                            <Heading variant="lime" as="h3" spacing="tight">
-                                {pageCopy.pollenCard3Title}
-                            </Heading>
-                            <Body size="sm" spacing="tight">
-                                {pageCopy.pollenCard3Body}
-                            </Body>
                             <p className="font-headline text-xs font-black text-text-highlight">
-                                {pageCopy.pollenCard3Promo}
+                                {pageCopy.pollenCard2Promo}
                             </p>
                         </SubCard>
                     </div>
-                    <Body
-                        size="xs"
-                        spacing="none"
-                        className="text-text-body-tertiary"
-                    >
-                        {pageCopy.pollenFinePrint}
-                    </Body>
-                </div>
-
-                <Divider />
-
-                {/* Section 5 — Creator Tiers */}
-                <div className="mb-12">
-                    <Heading variant="section" spacing="comfortable">
-                        {pageCopy.tiersTitle}
-                    </Heading>
-                    <Body spacing="comfortable">{pageCopy.tiersIntro}</Body>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                         {[
@@ -279,26 +140,6 @@ function HelloPage() {
                         ))}
                     </div>
 
-                    {/* Two paths */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <SubCard size="compact">
-                            <Heading variant="lime" as="h3" spacing="tight">
-                                {pageCopy.tiersPath1Label}
-                            </Heading>
-                            <Body size="sm" spacing="none">
-                                {pageCopy.tiersPath1Body}
-                            </Body>
-                        </SubCard>
-                        <SubCard size="compact">
-                            <Heading variant="rose" as="h3" spacing="tight">
-                                {pageCopy.tiersPath2Label}
-                            </Heading>
-                            <Body size="sm" spacing="none">
-                                {pageCopy.tiersPath2Body}
-                            </Body>
-                        </SubCard>
-                    </div>
-
                     <Body
                         size="xs"
                         spacing="none"
@@ -310,7 +151,7 @@ function HelloPage() {
 
                 <Divider />
 
-                {/* Section 6 — BYOP Spotlight */}
+                {/* Section 6 — BYOP */}
                 <div className="mb-12">
                     <SubCard className="border-l-4 border-border-highlight p-6 md:p-8">
                         <Heading variant="simple" as="h2" spacing="comfortable">
@@ -329,24 +170,6 @@ function HelloPage() {
                             <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
                         </Button>
                     </SubCard>
-                </div>
-
-                <Divider />
-
-                {/* Section 7 — What People Are Building */}
-                <div className="mb-12">
-                    <Heading variant="section" spacing="comfortable">
-                        {pageCopy.buildingTitle}
-                    </Heading>
-                    <Body spacing="comfortable">{pageCopy.buildingBody}</Body>
-                    <Button
-                        as={Link}
-                        to="/apps"
-                        variant="secondary"
-                        size="default"
-                    >
-                        {pageCopy.browseAppsButton}
-                    </Button>
                 </div>
 
                 <Divider />
@@ -392,93 +215,34 @@ function HelloPage() {
                         </div>
                     </div>
 
-                    {/* Shipping Soon */}
-                    <div className="mb-8">
-                        <Badge variant="highlight" className="mb-4">
-                            {pageCopy.comingSoonLabel}
-                        </Badge>
-                        <div className="space-y-2">
-                            <div className="bg-input-background border-l-2 border-border-highlight p-3 rounded-sub-card">
-                                <p className="font-body text-sm text-text-body-secondary leading-relaxed">
-                                    <span className="mr-2">🔐</span>
-                                    <span className="font-headline font-black text-text-body-main mr-1">
-                                        {pageCopy.comingSoonItem1Title}
-                                    </span>
-                                    {pageCopy.comingSoonItem1Description}
-                                </p>
-                            </div>
-                            <div className="bg-input-background border-l-2 border-border-highlight p-3 rounded-sub-card">
-                                <p className="font-body text-sm text-text-body-secondary leading-relaxed">
-                                    <span className="mr-2">🔑</span>
-                                    <span className="font-headline font-black text-text-body-main mr-1">
-                                        {pageCopy.comingSoonItem2Title}
-                                    </span>
-                                    {pageCopy.comingSoonItem2Description}
-                                </p>
-                            </div>
-                            <div className="bg-input-background border-l-2 border-border-highlight p-3 rounded-sub-card">
-                                <p className="font-body text-sm text-text-body-secondary leading-relaxed">
-                                    <span className="mr-2">🏠</span>
-                                    <span className="font-headline font-black text-text-body-main mr-1">
-                                        {pageCopy.comingSoonItem3Title}
-                                    </span>
-                                    {pageCopy.comingSoonItem3Description}
-                                </p>
-                            </div>
-                            <div className="bg-input-background border-l-2 border-border-highlight p-3 rounded-sub-card">
-                                <p className="font-body text-sm text-text-body-secondary leading-relaxed">
-                                    <span className="mr-2">🧠</span>
-                                    <span className="font-headline font-black text-text-body-main mr-1">
-                                        {pageCopy.comingSoonItem4Title}
-                                    </span>
-                                    {pageCopy.comingSoonItem4Description}
-                                </p>
-                            </div>
-                            <div className="bg-input-background border-l-2 border-border-highlight p-3 rounded-sub-card">
-                                <p className="font-body text-sm text-text-body-secondary leading-relaxed">
-                                    <span className="mr-2">🧩</span>
-                                    <span className="font-headline font-black text-text-body-main mr-1">
-                                        {pageCopy.comingSoonItem5Title}
-                                    </span>
-                                    {pageCopy.comingSoonItem5Description}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Later This Year */}
+                    {/* What's Next */}
                     <div className="mb-6">
-                        <Badge variant="muted" className="mb-4">
-                            {pageCopy.comingLaterLabel}
+                        <Badge variant="highlight" className="mb-4">
+                            {pageCopy.roadmapLabel}
                         </Badge>
                         <div className="space-y-2">
-                            <div className="bg-input-background border-l-2 border-border-subtle p-3 rounded-sub-card">
-                                <p className="font-body text-sm text-text-body-secondary leading-relaxed">
-                                    <span className="mr-2">💸</span>
-                                    <span className="font-headline font-black text-text-body-main mr-1">
-                                        {pageCopy.comingLaterItem1Title}
-                                    </span>
-                                    {pageCopy.comingLaterItem1Description}
-                                </p>
-                            </div>
-                            <div className="bg-input-background border-l-2 border-border-subtle p-3 rounded-sub-card">
-                                <p className="font-body text-sm text-text-body-secondary leading-relaxed">
-                                    <span className="mr-2">📢</span>
-                                    <span className="font-headline font-black text-text-body-main mr-1">
-                                        {pageCopy.comingLaterItem2Title}
-                                    </span>
-                                    {pageCopy.comingLaterItem2Description}
-                                </p>
-                            </div>
-                            <div className="bg-input-background border-l-2 border-border-subtle p-3 rounded-sub-card">
-                                <p className="font-body text-sm text-text-body-secondary leading-relaxed">
-                                    <span className="mr-2">🗺️</span>
-                                    <span className="font-headline font-black text-text-body-main mr-1">
-                                        {pageCopy.comingLaterItem3Title}
-                                    </span>
-                                    {pageCopy.comingLaterItem3Description}
-                                </p>
-                            </div>
+                            {pageCopy.roadmapItems.map(
+                                (item: {
+                                    emoji: string;
+                                    title: string;
+                                    description: string;
+                                }) => (
+                                    <div
+                                        key={item.title}
+                                        className="bg-input-background border-l-2 border-border-highlight p-3 rounded-sub-card"
+                                    >
+                                        <p className="font-body text-sm text-text-body-secondary leading-relaxed">
+                                            <span className="mr-2">
+                                                {item.emoji}
+                                            </span>
+                                            <span className="font-headline font-black text-text-body-main mr-1">
+                                                {item.title}
+                                            </span>
+                                            {item.description}
+                                        </p>
+                                    </div>
+                                ),
+                            )}
                         </div>
                     </div>
 

@@ -2,9 +2,9 @@
 
 export const HELLO_PAGE = {
     // Section 1 — Hero
-    heroTitle: "Drop AI into your app. For free.",
+    heroTitle: "The open platform for AI builders.",
     heroBody:
-        "One API. 40+ models. Text, image, audio, video. Free compute every week — enough to build, test, and ship. You bring the app. We bring the AI and the payments. No credit card. No catch.",
+        "One API. 40+ models. Text, image, audio, video. Daily compute grants. You bring the app — we handle the rest.",
     heroStat1: "500+",
     heroStat1Label: "live apps",
     heroStat2: "3M",
@@ -14,92 +14,44 @@ export const HELLO_PAGE = {
     startBuildingButton: "Start Building",
     joinDiscordButton: "Join the Discord",
 
-    // Section 2 — What Your App Gets
-    appGetsTitle: "All the building blocks. None of the headaches.",
-    appGetsCard1Title: "One API, every model",
-    appGetsCard1Body:
-        "40+ models from 15+ providers. Text, image, audio, video. One integration.",
-    appGetsCard2Title: "Free compute every day",
-    appGetsCard2Body:
-        "Pollen grants land in your account automatically. Build, test, iterate, ship.",
-    appGetsCard3Title: "We handle the infra",
-    appGetsCard3Body:
-        "Routing, reliability, scale — all handled. You just call the API.",
-    appGetsFooter:
-        "We give you the AI layer and the money layer. The app, the design, the product — that's all you.",
     readTheDocsButton: "Read the Docs",
 
-    // Section 3 — How It Works
-    howItWorksTitle: "From idea to paying users. Here's the path.",
-    howItWorksStep1Title: "Sign up",
-    howItWorksStep1Body:
-        "Create an account. Verify. You start getting free compute weekly.",
-    howItWorksStep2Title: "Plug in",
-    howItWorksStep2Body:
-        "Add AI to whatever you're building. Chatbot, image gen, game, creative tool — your call.",
-    howItWorksStep3Title: "Get users",
-    howItWorksStep3Body:
-        "Ship your app. Your users already have free Pollen — they spend it in your app. Your costs = zero.",
-    howItWorksStep4Title: "Grow",
-    howItWorksStep4Body:
-        "More users = higher tier = bigger daily grants. The platform grows with you.",
-    howItWorksFooter: "Each step feeds the next. You never stop moving.",
-
-    // Section 4 — Pollen
-    pollenTitle: "Pollen — one credit, every model.",
-    pollenBody:
-        "Pollen is what powers every AI generation on the platform. One credit system, every model, every app.",
-    pollenCard1Title: "For you (creator)",
+    // Section 4+5 — Pollen + Tiers (merged)
+    pollenTitle: "Pollen",
+    pollenBody: "One credit. Works across every model. You and your users both get daily grants — the more you build and contribute, the more you get.",
+    pollenCard1Title: "For builders",
     pollenCard1Body:
-        "Pollen grants based on your tier — daily for creators, weekly for everyone.",
+        "Pollen lands in your account daily. Build, test, ship.",
     pollenCard2Title: "For your users",
     pollenCard2Body:
-        "Every user on the platform gets 1.5 free Pollen per week. They can start using your app without buying anything.",
-    pollenCard3Title: "Buy more",
-    pollenCard3Body: "Simple packs. No subscriptions. Use it across every app.",
-    pollenCard3Promo: "🎁 Buy 1, get 1 free during beta!",
-    pollenFinePrint: "Note: premium models require paid balance.",
-
-    // Section 5 — Creator Tiers
-    tiersTitle: "Do more, get more.",
-    tiersIntro:
-        "Your tier reflects how active you are as a creator. The more you build and contribute, the more free compute you get every day.",
+        "Users get their own grants. Pay-as-you-go if they want more.",
+    pollenCard2Promo: "🎁 Buy 1, get 1 free during beta!",
     tierSeedEmoji: "🌱",
     tierSeedTitle: "Seed",
     tierSeedDescription:
-        "You're building. Contributing, shipping apps. Here are your first daily grants.",
+        "You're building. Contributing, shipping apps.",
     tierSeedGrant: "3 pollen / day",
     tierSeedPoints: "8+ points",
     tierFlowerEmoji: "🌸",
     tierFlowerTitle: "Flower",
     tierFlowerDescription:
-        "Your app has real users. Grants scale with your app activity.",
+        "Your app is live and getting used.",
     tierFlowerGrant: "10 pollen / day",
     tierFlowerPoints: "20+ points",
     tierNectarEmoji: "🍯",
     tierNectarTitle: "Nectar",
     tierNectarDescription:
-        "Top-tier creator. Biggest daily grants. First in line when revenue share goes live.",
+        "Most active builders.",
     tierNectarGrant: "20 pollen / day",
     tierNectarPoints: "50+ points",
-    tiersPath1Label: "Contribute",
-    tiersPath1Body: "Code, docs, community help, GitHub activity.",
-    tiersPath2Label: "Grow the economy",
-    tiersPath2Body: "Publish apps, integrate BYOP, drive real usage.",
     tiersBetaNote:
-        "We're in beta — tier thresholds and grant amounts may shift as we tune things together.",
+        "We're in beta — thresholds may shift as we tune things together.",
 
     // Section 6 — BYOP Spotlight
-    byopTitle: "Your users pay. Your costs disappear.",
+    byopTitle: "Users bring their own compute.",
     byopBody:
-        "Every user on the platform gets free Pollen weekly. With BYOP, they spend it inside your app — not yours. One integration. Your users log in with their Pollen account and pay for what they use. You don't spend a thing. This is how you go from burning grants to running an app at zero compute cost.",
+        "One integration. Your users spend their Pollen in your app — not yours. Revenue share is coming: you'll earn from what they spend.",
     byopDocsButton: "BYOP Docs",
-
-    // Section 7 — What People Are Building
-    buildingTitle: "Already happening.",
-    buildingBody:
-        "500+ apps live on the platform — chatbots, image generators, research tools, games, creative media. All built on free compute grants, all with real users.",
-    browseAppsButton: "Browse the Apps",
 
     // Section 8 — We Build in the Open
     openTitle: "We build in the open.",
@@ -141,38 +93,44 @@ export const HELLO_PAGE = {
                 "A cozy new retro theme is available, plus app descriptions are now auto-formatted via the Text API.",
         },
     ],
-    comingSoonLabel: "Shipping Soon",
-    comingSoonItem1Title: "Secure Frontend Auth",
-    comingSoonItem1Description:
-        "Frontend Auth is live in beta. Secure token handling and production-ready auth coming soon.",
-    comingSoonItem2Title: "Pollinations Login",
-    comingSoonItem2Description:
-        "One-click sign-in for your users. OAuth with any provider — simple for you, seamless for them.",
-    comingSoonItem3Title: "App Hosting",
-    comingSoonItem3Description:
-        "Ship your app on our infra. No deploy setup, no separate hosting bill.",
-    comingSoonItem4Title: "More Models, Better APIs",
-    comingSoonItem4Description:
-        "New models landing regularly. Video, audio, and whatever the community asks for next.",
-    comingSoonItem5Title: "Pollen Widget SDK",
-    comingSoonItem5Description:
-        "Drop-in component — login, balance, and in-app purchase in one embed.",
-    comingLaterLabel: "Later This Year",
-    comingLaterItem1Title: "Creator Revenue Share",
-    comingLaterItem1Description:
-        "Earn from Pollen spent in your app. Cash out or reinvest to grow.",
-    comingLaterItem2Title: "Monetization Tools",
-    comingLaterItem2Description:
-        "Content-relevant ads inside your app — an SDK you drop in. Another way to earn.",
-    comingLaterItem3Title: "App Discovery",
-    comingLaterItem3Description: "A marketplace where users find your app.",
+    roadmapLabel: "What's Next",
+    roadmapItems: [
+        {
+            emoji: "🔑",
+            title: "Pollinations Login",
+            description:
+                "OAuth sign-in for your users. Token handling and production-ready auth.",
+        },
+        {
+            emoji: "🏠",
+            title: "App Hosting",
+            description:
+                "Ship your app on our infra. No deploy setup, no separate hosting bill.",
+        },
+        {
+            emoji: "🧩",
+            title: "Pollen Widget SDK",
+            description:
+                "Drop-in component — login, balance, and in-app purchase in one embed.",
+        },
+        {
+            emoji: "💸",
+            title: "Creator Revenue Share",
+            description: "Earn from Pollen spent in your app.",
+        },
+        {
+            emoji: "🗺️",
+            title: "App Discovery",
+            description: "A marketplace where users find your app.",
+        },
+    ],
     comingFooter:
-        "Right now, the platform gives you runway — free compute that grows as you grow. We're building the rest together, in the open.",
+        "The platform gives you runway. We're building the rest together, in the open.",
 
     // Section 9 — CTA
-    ctaTitle: "Your app. Our tools. Let's go.",
+    ctaTitle: "Everything's open. Start building.",
     ctaBody:
-        "Free compute. One API. All the building blocks. A community that actually shows up. Everything's open — the code, the roadmap, the conversations.",
+        "One API. Open source. The code, the roadmap, the conversations — all in the open.",
     browseAppsLink: "Browse Apps",
     communityLink: "Community",
 };

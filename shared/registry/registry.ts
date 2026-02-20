@@ -72,6 +72,7 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
     provider: string;
     cost: CostDefinition[];
     // User-facing metadata
+    displayName?: string;
     description?: string;
     inputModalities?: string[];
     outputModalities?: string[];

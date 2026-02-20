@@ -118,7 +118,7 @@ export const ModelSelector = memo(function ModelSelector({
                                 }`}
                                 style={{ borderColor }}
                             >
-                                {m.name}
+                                {m.displayName || m.name}
                                 {isPaidOnly && (
                                     <span className="ml-1 text-[9px] font-black uppercase tracking-wider text-indicator-warning">
                                         💎

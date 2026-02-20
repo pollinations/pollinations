@@ -14,6 +14,7 @@ import {
 //         completionAudioTokens, completionImageTokens, completionVideoSeconds, completionVideoTokens
 export const ModelInfoSchema = z.object({
     name: z.string(),
+    displayName: z.string().optional(),
     aliases: z.array(z.string()),
     pricing: z
         .record(z.string(), z.union([z.number(), z.literal("pollen")]))
@@ -52,6 +53,7 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
 
     return {
         name: serviceId as string,
+        displayName: service.displayName,
         aliases: service.aliases,
         pricing,
         // User-facing metadata from service definition

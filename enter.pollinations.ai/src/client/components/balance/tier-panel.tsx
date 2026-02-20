@@ -69,7 +69,7 @@ const MicrobeLimitedPanel: FC = () => (
 const SporeGrantInfo: FC = () => (
     <div className="flex flex-col gap-1">
         <p className="text-2xl font-semibold text-gray-900">
-            🎁 1.5 free Pollen / week
+            🐝 Free Weekly : 1.5 pollen
         </p>
         <p className="text-xs text-gray-400">
             Refreshes every Monday at 00:00 UTC. Use it across any{" "}

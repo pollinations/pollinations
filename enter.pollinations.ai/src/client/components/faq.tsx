@@ -113,7 +113,11 @@ export const FAQ: FC = () => {
             <Panel color="violet" className="p-8">
                 <div className="flex flex-col gap-4">
                     {faqData.map((item, index) => (
-                        <div key={item.question} id={slugify(item.question)} className="pb-4 last:pb-0">
+                        <div
+                            key={item.question}
+                            id={slugify(item.question)}
+                            className="pb-4 last:pb-0"
+                        >
                             <button
                                 type="button"
                                 onClick={() => toggleQuestion(index)}

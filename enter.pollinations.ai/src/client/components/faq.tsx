@@ -137,7 +137,7 @@ export const FAQ: FC = () => {
                                 <Card
                                     color="violet"
                                     bg="bg-white/30"
-                                    className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 prose-p:mb-3 prose-a:text-purple-600 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800"
+                                    className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 prose-p:mb-3 prose-a:text-purple-600 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800 prose-td:whitespace-nowrap prose-th:whitespace-nowrap"
                                 >
                                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {item.answer}

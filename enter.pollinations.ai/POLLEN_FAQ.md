@@ -65,7 +65,7 @@ Every user on the platform gets Spore automatically. That's 1.5 free Pollen per 
 | 🌸 Flower | 20+ | 10 pollen/day |
 | 🍯 Nectar | 50+ | 20 pollen/day |
 
-Creator tiers are earned through your score. The more you build, contribute, and grow, the bigger your daily grants.
+Creator tiers are earned through your score. The more you build, contribute, and grow, the bigger your daily grants. For details on how scores are calculated, see [How Tier Scoring Works →](https://github.com/pollinations/pollinations/blob/main/TIER_SCORING.md).
 
 ## 📊 How is my score calculated?
 

@@ -33,41 +33,32 @@ const TIER_RING_COLORS: Record<
 const RING_RADIUS = 52;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS; // ~326.73
 
-// ─── Microbe: Limited Account ───────────────────────────────
+// ─── Microbe: Account Under Review ──────────────────────────
 
 const MicrobeLimitedPanel: FC = () => (
     <Panel color="amber">
-        <Card color="gray">
-            <div className="flex flex-col gap-3">
-                <p className="text-lg font-semibold text-gray-900">
-                    ⚠️ Your account is currently limited
+        <div className="flex flex-col gap-3">
+            <p className="text-lg font-semibold text-gray-900">Welcome!</p>
+            <div className="text-sm text-gray-600 leading-relaxed space-y-3">
+                <p>
+                    We're reviewing your account to determine your tier
+                    eligibility. Every account goes through this &mdash; it
+                    helps us keep things fair for everyone. This may take a
+                    while.
                 </p>
-                <div className="text-sm text-gray-600 leading-relaxed space-y-3">
-                    <p>
-                        You're not receiving Pollen grants right now. This
-                        usually means unusual activity was detected on your
-                        account.
-                    </p>
-                    <p>
-                        Your API keys and purchased Pollen still work as normal.
-                    </p>
-                    <p>
-                        If you think this is a mistake, let us know &mdash;
-                        we'll look into it.
-                    </p>
-                </div>
-                <p className="text-sm">
-                    <a
-                        href={APPEAL_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-900 underline hover:text-gray-700 font-medium"
-                    >
-                        Contact support &rarr;
-                    </a>
-                </p>
+                <p>Your API keys and purchased Pollen are not affected.</p>
             </div>
-        </Card>
+            <p className="text-sm">
+                <a
+                    href={APPEAL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-900 underline hover:text-gray-700 font-medium"
+                >
+                    Need help? Contact us &rarr;
+                </a>
+            </p>
+        </div>
     </Panel>
 );
 

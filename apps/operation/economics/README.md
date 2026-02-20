@@ -32,6 +32,20 @@ open http://localhost:3000
 - **Token:** `TINYBIRD_GENERATION_EVENT_READ`
 - **UID:** `PAD1A0A25CD30D456`
 
+### Tinybird Scoring (ClickHouse)
+- **Host:** `clickhouse.europe-west2.gcp.tinybird.co`
+- **Database:** `default`
+- **Token:** `TINYBIRD_SCORING_SNAPSHOT_READ`
+- **UID:** `PAD1A0A25CD30D459`
+- **Table:** `scoring_snapshot` — tier scoring snapshots (computed_tier, total_score, etc.)
+
+### Tinybird Legacy (ClickHouse)
+- **Host:** `clickhouse.europe-west2.gcp.tinybird.co`
+- **Database:** `default` (workspace: `pollinations_ai`)
+- **Token:** `TINYBIRD_TEXT_EVENT_READ`
+- **UID:** `PAD1A0A25CD30D458`
+- **Table:** `text_events` — legacy API (Flux Z image, gpt-oss text)
+
 ### Cloudflare D1
 - **Type:** Infinity plugin (REST API)
 - **Auth:** Bearer token via `CLOUDFLARE_API_TOKEN`
@@ -48,6 +62,7 @@ Secrets are stored in `.env` (gitignored) locally and on the production server.
 | `CLOUDFLARE_TUNNEL_TOKEN` | Cloudflare Tunnel token (prod) |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API token for D1 |
 | `TINYBIRD_GENERATION_EVENT_READ` | Read token for generation_event |
+| `TINYBIRD_SCORING_SNAPSHOT_READ` | Read token for scoring_snapshot |
 | `DISCORD_WEBHOOK_URL` | Discord webhook for alerts |
 
 **Security:** `.env` is gitignored. Share secrets securely via 1Password or similar.

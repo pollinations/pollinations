@@ -25,3 +25,6 @@ SCHEMA >
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
 ENGINE_SORTING_KEY "timestamp, current_tier, github_username"
+
+FORWARD_QUERY >
+  SELECT timestamp, user_id, github_username, current_tier, computed_tier, total_score, github_age_days, pollinations_age_days, spend_7d, trust_score, commits, repos, stars, apps_listed

@@ -21,7 +21,8 @@ const TierStatusSchema = z.object({
     active: z.object({
         tier: z.literal([...tierNames, "none"]),
         displayName: z.string(),
-        dailyPollen: z.number(),
+        pollen: z.number(),
+        cadence: z.enum(["daily", "weekly"]),
     }),
 });
 
@@ -34,7 +35,7 @@ export const tiersRoutes = new Hono<Env>()
         describeRoute({
             tags: ["Auth"],
             description:
-                "Get the current user's tier status and daily pollen information.",
+                "Get the current user's tier status and pollen grant information.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
             responses: {
                 200: {
@@ -61,7 +62,11 @@ export const tiersRoutes = new Hono<Env>()
                 .limit(1);
 
             const userTier = (users[0]?.tier || DEFAULT_TIER) as TierName;
-            const dailyPollen = getTierPollen(userTier);
+            const pollen = getTierPollen(userTier);
+            const cadence =
+                userTier === "spore" || userTier === "microbe"
+                    ? "weekly"
+                    : "daily";
 
             log.debug(`User tier from D1: ${userTier}, email: ${user.email}`);
 
@@ -70,7 +75,8 @@ export const tiersRoutes = new Hono<Env>()
                 active: {
                     tier: userTier as TierStatus,
                     displayName: TIERS[userTier].displayName as string,
-                    dailyPollen,
+                    pollen,
+                    cadence,
                 },
             };
 

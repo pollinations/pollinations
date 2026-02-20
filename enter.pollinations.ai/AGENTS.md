@@ -622,16 +622,19 @@ https://myapp.com/callback#api_key=pk_xxxxx
 
 > Claude skill available: `.claude/skills/tier-management/SKILL.md`
 
-### Tier Levels
+### Grant Pools
+
+**Registered users:** 1.5 pollen/week (refreshes Monday 00:00 UTC)
+
+**Creator tiers** (daily grants, refill 00:00 UTC):
 
 | Tier   | Emoji | Pollen/Day | Criteria                 |
 | ------ | ----- | ---------- | ------------------------ |
-| spore  | 🍄    | 1          | Verified account (automatic after sign-up) |
 | seed   | 🌱    | 3          | Active developer (auto-upgraded daily via GitHub score) |
 | flower | 🌸    | 10         | Active contributor (publish app or contribute code/docs) |
-| nectar | 🍯    | 20         | Coming soon              |
+| nectar | 🍯    | 20         | Top creator              |
 
-> **Internal:** All authenticated users get a baseline 0.1 pollen/day grant (stored as `microbe` tier in DB). Not surfaced in public docs/UI — public tiers start at spore.
+> **Internal:** DB stores `microbe` (0 pollen, under review) and `spore` (1.5/week). These names are never surfaced publicly — public tiers start at Seed.
 
 ### Quick Tier Update
 

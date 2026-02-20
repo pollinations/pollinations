@@ -19,7 +19,7 @@ You build the app your way — with any framework, any tool, any language. Then 
 There are three ways:
 
 1.  **Buy It:** Purchase Pollen packs directly with a credit card. This Pollen goes into your wallet and *never expires*. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
-2.  **Daily Grants:** Every tier comes with free daily Pollen to support experimentation. The higher your tier, the more you get.
+2.  **Grants:** Registered users get 1.5 free Pollen per week. Creator tiers get daily grants that scale with your level.
 3.  **Earn It:** Contribute to the ecosystem — code, docs, community support, publishing apps — and your score goes up, unlocking higher tiers with bigger daily grants.
 
 ## 🆓 Can I try it for free?
@@ -97,13 +97,13 @@ Every user on the platform gets 1.5 free Pollen per week (Spore tier). With BYOP
 
 In both cases, grant Pollen is spent *before* your purchased Pollen. Purchased Pollen never expires.
 
-💚 **Thanks to our supporters**, all tiers receive free daily Pollen during beta.
+💚 **Thanks to our supporters**, all registered users receive free Pollen during beta.
 
 ## ⚡ How is my Pollen spent?
 
 Your daily tier Pollen is always used *first*, then your purchased Pollen:
 
-1. **Daily grants** — Used first for most models
+1. **Free grants** — Used first for most models
 2. **Purchased Pollen** — Used after daily is depleted
 
 **Exception:** Some premium models are marked with a 💎 **Paid Only** badge. These require purchased Pollen and *cannot* use daily tier grants. This ensures sustainable access to high-cost models while keeping daily Pollen available for experimentation.

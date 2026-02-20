@@ -4,7 +4,7 @@ export const HELLO_PAGE = {
     // Section 1 — Hero
     heroTitle: "Drop AI into your app. For free.",
     heroBody:
-        "One API. 40+ models. Text, image, audio, video. Free compute every day — enough to build, test, and ship. You bring the app. We bring the AI and the payments. No credit card. No catch.",
+        "One API. 40+ models. Text, image, audio, video. Free compute every week — enough to build, test, and ship. You bring the app. We bring the AI and the payments. No credit card. No catch.",
     heroStat1: "500+",
     heroStat1Label: "live apps",
     heroStat2: "3M",
@@ -21,7 +21,7 @@ export const HELLO_PAGE = {
         "40+ models from 15+ providers. Text, image, audio, video. One integration.",
     appGetsCard2Title: "Free compute every day",
     appGetsCard2Body:
-        "Pollen grants land in your account daily. Build, test, iterate, ship.",
+        "Pollen grants land in your account automatically. Build, test, iterate, ship.",
     appGetsCard3Title: "We handle the infra",
     appGetsCard3Body:
         "Routing, reliability, scale — all handled. You just call the API.",
@@ -33,7 +33,7 @@ export const HELLO_PAGE = {
     howItWorksTitle: "From idea to paying users. Here's the path.",
     howItWorksStep1Title: "Sign up",
     howItWorksStep1Body:
-        "Create an account. Verify. You start getting free compute daily.",
+        "Create an account. Verify. You start getting free compute weekly.",
     howItWorksStep2Title: "Plug in",
     howItWorksStep2Body:
         "Add AI to whatever you're building. Chatbot, image gen, game, creative tool — your call.",
@@ -51,7 +51,7 @@ export const HELLO_PAGE = {
         "Pollen is what powers every AI generation on the platform. One credit system, every model, every app.",
     pollenCard1Title: "For you (creator)",
     pollenCard1Body:
-        "Daily Pollen grants based on your tier. Build, test, iterate — on us.",
+        "Pollen grants based on your tier — daily for creators, weekly for everyone.",
     pollenCard2Title: "For your users",
     pollenCard2Body:
         "Every user on the platform gets 1.5 free Pollen per week. They can start using your app without buying anything.",

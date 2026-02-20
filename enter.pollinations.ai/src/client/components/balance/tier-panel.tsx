@@ -142,15 +142,15 @@ const SporeTierPanel: FC = () => (
 const CreatorRingGauge: FC<{
     tier: TierStatus;
     creatorPoints: number;
-    dailyPollen: number;
-}> = ({ tier, creatorPoints, dailyPollen }) => {
+    pollen: number;
+}> = ({ tier, creatorPoints, pollen }) => {
     const isNectar = tier === "nectar";
     const tierKey = tier as TierName;
 
     const colors = TIER_RING_COLORS[tierKey] || TIER_RING_COLORS.microbe;
     const centerEmoji = getTierEmoji(tier);
     const tierLabel = TIERS[tierKey].displayName;
-    const grantLabel = `${dailyPollen} pollen / day`;
+    const grantLabel = `${pollen} pollen / day`;
 
     let progressPct: number;
     let nextHighlight = "";
@@ -298,19 +298,19 @@ const CreatorRingGauge: FC<{
 
 // ─── Helpers ────────────────────────────────────────────────
 
-/** Given a point count, return the matching tier name + daily pollen. */
+/** Given a point count, return the matching tier name + pollen grant. */
 function tierForPoints(points: number): {
     tier: TierName;
-    dailyPollen: number;
+    pollen: number;
 } {
     // Walk progression in reverse to find the highest matching tier
     for (let i = TIER_PROGRESSION.length - 1; i >= 0; i--) {
         const name = TIER_PROGRESSION[i];
         if (points >= TIERS[name].threshold) {
-            return { tier: name, dailyPollen: TIERS[name].pollen };
+            return { tier: name, pollen: TIERS[name].pollen };
         }
     }
-    return { tier: "microbe", dailyPollen: TIERS.microbe.pollen };
+    return { tier: "microbe", pollen: TIERS.microbe.pollen };
 }
 
 // ─── TierPanel (main export) ────────────────────────────────
@@ -319,7 +319,7 @@ export type TierPanelProps = {
     active: {
         tier: TierStatus;
         displayName: string;
-        dailyPollen?: number;
+        pollen?: number;
     };
     pointsOverride?: number | null;
 };
@@ -330,7 +330,7 @@ export const TierPanel: FC<TierPanelProps> = ({ active, pointsOverride }) => {
     const resolved = isOverriding ? tierForPoints(pointsOverride) : null;
 
     const tier = resolved?.tier ?? active.tier;
-    const dailyPollen = resolved?.dailyPollen ?? active.dailyPollen ?? 0;
+    const pollen = resolved?.pollen ?? active.pollen ?? 0;
     const creatorPoints = isOverriding
         ? pointsOverride
         : (TIER_THRESHOLDS[tier as keyof typeof TIER_THRESHOLDS] ?? 0);
@@ -350,7 +350,7 @@ export const TierPanel: FC<TierPanelProps> = ({ active, pointsOverride }) => {
                 <CreatorRingGauge
                     tier={tier}
                     creatorPoints={creatorPoints}
-                    dailyPollen={dailyPollen}
+                    pollen={pollen}
                 />
                 <div className="flex flex-col gap-3">
                     <Card color="amber">

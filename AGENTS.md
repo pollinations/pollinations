@@ -91,7 +91,7 @@ All API requests go through `gen.pollinations.ai`, which routes to the `enter.po
 - **Image**: Flux, Turbo, and other models on EC2/Vast.ai/io.net GPU instances
 - **Video**: Wan (via Airforce/Alibaba), Veo, LTX on GPU instances
 - **Audio**: ElevenLabs TTS/STT, text-to-music
-- **Tier system**: spore → seed → flower → nectar → router (see `enter.pollinations.ai/src/tier-config.ts`). All authenticated users also get a baseline 0.1 pollen/day grant internally (`microbe` tier) — not surfaced in public docs/UI.
+- **Tier system**: seed → flower → nectar → router (see `enter.pollinations.ai/src/tier-config.ts`). Internally, new accounts start at 'microbe' (0 pollen, under review). Once qualified, users get 1.5 pollen/week ('spore' in DB). Creator tiers (seed/flower/nectar) get daily grants. Only creator tier names are public.
 
 ### Local Development
 

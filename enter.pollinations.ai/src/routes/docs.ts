@@ -64,6 +64,11 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                 pageTitle: "pollinations.ai API Reference",
                 title: "pollinations.ai API Reference",
                 theme: "saturn",
+                customCss: `
+                    code {
+                         color: #ffffff !important;
+                         }
+                        `,
                 sources: [
                     { url: "/api/docs/open-api/generate-schema", title: "API" },
                     // Include better-auth docs only in development mode

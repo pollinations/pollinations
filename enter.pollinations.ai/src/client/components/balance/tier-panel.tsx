@@ -29,8 +29,8 @@ const TIER_RING_COLORS: Record<
 
 // --- Ring Gauge ---
 
-const RING_RADIUS = 54;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS; // ~339.29
+const RING_RADIUS = 52;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS; // ~326.73
 
 const TierRingGauge: FC<{
     tier: TierStatus;
@@ -110,12 +110,24 @@ const TierRingGauge: FC<{
                     aria-label={`${tierLabel} tier progress`}
                 >
                     <title>{tierLabel} tier progress</title>
+                    {/* Border ring */}
                     <circle
                         cx="60"
                         cy="60"
                         r={RING_RADIUS}
                         fill="none"
-                        stroke={colors.bg}
+                        stroke={colors.fill}
+                        strokeOpacity={0.25}
+                        strokeWidth="14"
+                    />
+                    {/* Track ring */}
+                    <circle
+                        cx="60"
+                        cy="60"
+                        r={RING_RADIUS}
+                        fill="none"
+                        stroke="#ffffff"
+                        strokeOpacity={0.5}
                         strokeWidth="12"
                     />
                     <circle

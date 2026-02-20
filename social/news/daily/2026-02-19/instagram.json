@@ -1,0 +1,43 @@
+{
+  "content_type": "cozy_scene",
+  "linked_images": true,
+  "strategy_reasoning": "Uses the 'spring cleaning' and 'self-repair' metaphors to make dry infrastructure updates (renaming packages, fixing bugs) feel tangible and cozy. The carousel format tells a mini-narrative of tidying up the codebase.",
+  "visual_style": "Chunky 8-bit pixel art with soft lighting, lime green (#ecf874) accents, and pastel gradients. Stardew Valley meets a server room.",
+  "image_count": 3,
+  "images": [
+    {
+      "prompt": "Cozy pixel art scene of Polly the bee (yellow/black stripes, pink blush, blue wings) pushing a small pixelated box labeled 'SDK' across a wooden floor. She is wearing a tiny red bandana. Lime green (#ecf874) and soft cream gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Minimal pixel text: 'MOVING DAY'. Cozy 8-bit aesthetic.",
+      "description": "Visualizing the SDK package rename and cleanup as a cozy moving day scene.",
+      "text_in_image": "MOVING DAY",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-19/images/instagram-1.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of the chunky Monitor Robot (CRT head) holding a glowing lime green (#ecf874) map, pointing the way for Polly the bee. Polly is wearing a tiny backpack. Soft lavender and mint gradient background. Warm lighting, chunky sprites. Represents better documentation and onboarding. Lo-fi aesthetic.",
+      "description": "The Robot guiding Polly with a map represents the streamlined onboarding and better documentation.",
+      "text_in_image": "",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-19/images/instagram-2.jpg"
+    },
+    {
+      "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a glitchy pixelated bug. Polly the bee watches with a wrench in her hand. Lime green (#ecf874) and peach gradient background. Speech bubble: 'NOMNOM'. Warm lighting, cozy atmosphere like A Short Hike. Represents the auto-fixer.",
+      "description": "Nomnom eating bugs visualizes the 'auto-polly AI bug fixer' update in a playful way.",
+      "text_in_image": "NOMNOM",
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-19/images/instagram-3.jpg"
+    }
+  ],
+  "caption": "Housekeeping week. 🧹 The SDK moved house and lost some weight (renamed & cleaned up). We also taught the platform to fix its own bugs—which is either brilliant or the beginning of the end. Plus, the documentation maps are actually readable now.\n\nShip list:\n- SDK/MCP package cleanup\n- Auto-polly AI bug fixer\n- Streamlined onboarding & API guides\n\nCheck the repo for the messy details.",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#aitools",
+    "#pixelart",
+    "#creativecoding",
+    "#indiedev",
+    "#refactoring",
+    "#softwareengineering"
+  ],
+  "alt_text": "Pixel art carousel: 1. A bee pushing a box labeled SDK. 2. A robot showing a glowing map to a bee. 3. A round creature eating a software bug.",
+  "date": "2026-02-19",
+  "generated_at": "2026-02-20T06:17:59.715281+00:00",
+  "platform": "instagram",
+  "post_type": "carousel"
+}

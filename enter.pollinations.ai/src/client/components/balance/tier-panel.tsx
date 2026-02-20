@@ -14,6 +14,9 @@ import { LevelUpCards } from "./level-up-cards.tsx";
 
 const APPEAL_URL =
     "https://github.com/pollinations/pollinations/issues/new?template=tier-appeal.yml";
+const APPS_URL = "https://pollinations.ai/apps";
+const APIDOCS_URL =
+    "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md";
 
 // Ring gauge colors — more saturated than the Tailwind 300-shade gauge colors
 const TIER_RING_COLORS: Record<
@@ -27,55 +30,168 @@ const TIER_RING_COLORS: Record<
     nectar: { fill: "#f5a623", bg: "#fef3c7", border: "#fcd34d" },
 };
 
-// --- Ring Gauge ---
-
 const RING_RADIUS = 52;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS; // ~326.73
 
-const TierRingGauge: FC<{
+// ─── Microbe: Limited Account ───────────────────────────────
+
+const MicrobeLimitedPanel: FC = () => (
+    <Panel color="amber">
+        <Card color="gray">
+            <div className="flex flex-col gap-3">
+                <p className="text-lg font-semibold text-gray-900">
+                    ⚠️ Your account is currently limited
+                </p>
+                <div className="text-sm text-gray-600 leading-relaxed space-y-3">
+                    <p>
+                        You're not receiving Pollen grants right now. This
+                        usually means unusual activity was detected on your
+                        account.
+                    </p>
+                    <p>
+                        Your API keys and purchased Pollen still work as normal.
+                    </p>
+                    <p>
+                        If you think this is a mistake, let us know &mdash;
+                        we'll look into it.
+                    </p>
+                </div>
+                <p className="text-sm">
+                    <a
+                        href={APPEAL_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-900 underline hover:text-gray-700 font-medium"
+                    >
+                        Contact support &rarr;
+                    </a>
+                </p>
+            </div>
+        </Card>
+    </Panel>
+);
+
+// ─── Spore: User tier (not yet a creator) ───────────────────
+
+const SporeInfoCard: FC = () => {
+    const colors = TIER_RING_COLORS.spore;
+    return (
+        <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+                <p className="text-2xl font-semibold text-gray-900">🌱 Spore</p>
+                <span
+                    className="px-3 py-0.5 rounded-full text-xs font-semibold border"
+                    style={{
+                        backgroundColor: colors.bg,
+                        borderColor: colors.border,
+                        color: colors.fill,
+                    }}
+                >
+                    1.5 pollen / week
+                </span>
+            </div>
+            <p className="text-xs text-gray-400">
+                Refreshes every week. Use it across any{" "}
+                <a
+                    href={APPS_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline hover:text-blue-800"
+                >
+                    app on the platform
+                </a>
+                .
+            </p>
+            <p className="text-[11px] text-gray-400 mt-1">
+                <a
+                    href={APPEAL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                >
+                    Something wrong? Appeal your tier &rarr;
+                </a>
+            </p>
+        </div>
+    );
+};
+
+const SporeCreatorNudge: FC = () => (
+    <div>
+        <p className="text-sm font-bold text-gray-900 mb-3">
+            🛠 Want to build your own app?
+        </p>
+        <div className="flex text-xs gap-3">
+            <div className="flex-1 text-sm text-gray-600 leading-relaxed">
+                <p>
+                    Creators get daily Pollen grants &mdash; up to 20/day
+                    &mdash; plus tools to monetize and grow. Start building and
+                    your score will unlock creator tiers automatically.
+                </p>
+                <div className="mt-3 space-y-1">
+                    <div>
+                        <a
+                            href={APIDOCS_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline hover:text-blue-800 font-medium"
+                        >
+                            Start creating &rarr;
+                        </a>
+                    </div>
+                    <div>
+                        <a
+                            href="#what-are-tiers"
+                            className="text-blue-600 underline hover:text-blue-800 font-medium"
+                        >
+                            How do tiers work? &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+const SporeTierPanel: FC = () => (
+    <Panel color="amber">
+        <div className="flex flex-col gap-3">
+            <SporeInfoCard />
+            <Card color="amber">
+                <SporeCreatorNudge />
+            </Card>
+            <div className="bg-amber-100 rounded-lg px-3 py-2 text-xs text-amber-700">
+                🧪 <strong>We're in Beta!</strong> Scores and grants may evolve.
+            </div>
+        </div>
+    </Panel>
+);
+
+// ─── Creator: Seed / Flower / Nectar ────────────────────────
+
+const CreatorRingGauge: FC<{
     tier: TierStatus;
     creatorPoints: number;
     dailyPollen: number;
 }> = ({ tier, creatorPoints, dailyPollen }) => {
-    const isPreSeed = tier === "microbe" || tier === "spore" || tier === "none";
     const isNectar = tier === "nectar";
+    const tierKey = tier as TierName;
 
-    let colors = TIER_RING_COLORS.microbe;
+    const colors = TIER_RING_COLORS[tierKey] || TIER_RING_COLORS.microbe;
+    const centerEmoji = getTierEmoji(tier);
+    const tierLabel = TIERS[tierKey].displayName;
+    const grantLabel = `${dailyPollen} pollen / day`;
+
     let progressPct: number;
-    let centerEmoji: string;
-    let tierLabel: string;
-    let grantLabel: string;
-
-    // Next-tier info split for styled rendering
     let nextHighlight = "";
     let nextRest = "";
     let nextMilestone = "";
 
-    if (isPreSeed) {
-        colors = TIER_RING_COLORS.spore;
-        progressPct = Math.min(1, creatorPoints / TIER_THRESHOLDS.seed);
-        centerEmoji = "🌱";
-        tierLabel = "Spore";
-        grantLabel = "1.5 pollen / week";
-        const remaining = Math.max(0, TIER_THRESHOLDS.seed - creatorPoints);
-        nextHighlight = `Earn ${remaining} more points`;
-        nextRest = "to unlock 🌿 Seed";
-        nextMilestone = "Start receiving daily grants";
-    } else if (isNectar) {
-        colors = TIER_RING_COLORS.nectar;
+    if (isNectar) {
         progressPct = 1;
-        centerEmoji = getTierEmoji(tier);
-        tierLabel = TIERS.nectar.displayName;
-        grantLabel = `${dailyPollen} pollen / day`;
         nextRest =
             "You're at the top. Biggest daily grants. First in line for revenue share.";
     } else {
-        const tierKey = tier as TierName;
-        colors = TIER_RING_COLORS[tierKey] || TIER_RING_COLORS.microbe;
-        centerEmoji = getTierEmoji(tier);
-        tierLabel = TIERS[tierKey].displayName;
-        grantLabel = `${dailyPollen} pollen / day`;
-
         const next = getNextTier(tier);
         if (next) {
             const currentThreshold = TIERS[tierKey].threshold;
@@ -94,7 +210,6 @@ const TierRingGauge: FC<{
         }
     }
 
-    // Always show at least a small dot so the ring looks "started"
     const visiblePct = Math.max(0.02, progressPct);
     const strokeDashoffset = RING_CIRCUMFERENCE * (1 - visiblePct);
 
@@ -211,7 +326,7 @@ const TierRingGauge: FC<{
     );
 };
 
-// --- TierPanel (main export) ---
+// ─── TierPanel (main export) ────────────────────────────────
 
 export type TierPanelProps = {
     active: {
@@ -224,25 +339,31 @@ export type TierPanelProps = {
 export const TierPanel: FC<TierPanelProps> = ({ active }) => {
     const tier = active.tier;
     const dailyPollen = active.dailyPollen ?? 0;
-    // FIXME: placeholder — derive real score from D1 once the scoring pipeline lands.
-    // Currently fakes creatorPoints as the tier's own threshold so the gauge looks reasonable.
+
+    if (tier === "microbe") {
+        return <MicrobeLimitedPanel />;
+    }
+
+    if (tier === "spore" || tier === "none") {
+        return <SporeTierPanel />;
+    }
+
+    // Creator tiers: seed, flower, nectar
     const creatorPoints =
         TIER_THRESHOLDS[tier as keyof typeof TIER_THRESHOLDS] ?? 0;
 
     return (
         <Panel color="amber">
             <div className="flex flex-col gap-3">
-                <TierRingGauge
+                <CreatorRingGauge
                     tier={tier}
                     creatorPoints={creatorPoints}
                     dailyPollen={dailyPollen}
                 />
-
                 <div className="flex flex-col gap-3">
                     <Card color="amber">
                         <LevelUpCards />
                     </Card>
-
                     <Card color="amber">
                         <BYOPCallout />
                     </Card>

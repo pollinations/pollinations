@@ -23,9 +23,11 @@ import { boolean, command, run, string } from "@drizzle-team/brocli";
 import {
     bestTierForMetrics,
     computeScore,
+    groupedCriteriaForTier,
     SCORING_CRITERIA,
     scoreCriterion,
     TIER_THRESHOLDS,
+    TIERS,
     type TierName,
     tierIndex,
 } from "../src/tier-config.ts";
@@ -33,7 +35,7 @@ import { scoreUsers as runLLMScorer } from "./llm-scorer.ts";
 
 const GITHUB_GRAPHQL = "https://api.github.com/graphql";
 const TINYBIRD_BASE = "https://api.europe-west2.gcp.tinybird.co";
-const BATCH_SIZE = 50;
+const BATCH_SIZE = 30;
 const MAX_USERS_PER_RUN = 8000;
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -75,6 +77,7 @@ interface D1User {
     id: string;
     github_username: string;
     tier: string;
+    created_at: number;
 }
 
 function queryD1(
@@ -88,7 +91,7 @@ function queryD1(
             {
                 encoding: "utf-8",
                 maxBuffer: 100 * 1024 * 1024,
-                timeout: 60_000,
+                timeout: 300_000,
             },
         );
         const data = JSON.parse(result);
@@ -113,7 +116,7 @@ function fetchEligibleUsers(env: Environment): {
     const yesterday = Math.floor(Date.now() / 1000) - 86400;
 
     const newRows = queryD1(
-        `SELECT id, github_username, tier FROM user
+        `SELECT id, github_username, tier, created_at FROM user
      WHERE tier IN (${tierList})
      AND github_username IS NOT NULL
      AND created_at > ${yesterday}`,
@@ -133,7 +136,7 @@ function fetchEligibleUsers(env: Environment): {
     const offset = weekday * sliceSize;
 
     const sliceRows = queryD1(
-        `SELECT id, github_username, tier FROM user
+        `SELECT id, github_username, tier, created_at FROM user
      WHERE tier IN (${tierList})
      AND github_username IS NOT NULL
      AND created_at <= ${yesterday}
@@ -151,19 +154,22 @@ function fetchEligibleUsers(env: Environment): {
 
 // ── Tinybird spend ──────────────────────────────────────────────────────
 
-/** Fetch avg daily pollen spend over the last 7 days for ALL users in one query. */
+/** Fetch total PAID pollen spend over the last 7 days for ALL users in one query.
+ *  Only counts pack + crypto purchases (excludes free tier balance usage). */
 async function fetchSpendByUserId(): Promise<Map<string, number>> {
     const token = getTinybirdToken();
     const sql = `
     SELECT
       user_id,
-      sum(total_price) / 7 AS avg_daily_spend_7d
+      sum(total_price) AS spend_7d
     FROM generation_event
     WHERE start_time >= now() - INTERVAL 7 DAY
       AND environment = 'production'
       AND user_id != ''
       AND user_id != 'undefined'
+      AND selected_meter_slug IN ('v1:meter:pack', 'v1:meter:crypto')
     GROUP BY user_id
+    FORMAT JSON
   `
         .trim()
         .replace(/\n\s+/g, " ");
@@ -180,24 +186,54 @@ async function fetchSpendByUserId(): Promise<Map<string, number>> {
             return new Map();
         }
         const json = (await response.json()) as {
-            data: Array<{ user_id: string; avg_daily_spend_7d: number }>;
+            data: Array<{ user_id: string; spend_7d: number }>;
         };
-        return new Map(
-            json.data.map((row) => [row.user_id, row.avg_daily_spend_7d]),
-        );
+        return new Map(json.data.map((row) => [row.user_id, row.spend_7d]));
     } catch (err) {
         console.warn("Tinybird fetch error:", err);
         return new Map();
     }
 }
 
+/** Fetch weekly PAID spend for a single user by D1 user id.
+ *  Only counts pack + crypto purchases (excludes free tier balance usage). */
+async function fetchSpendForUser(userId: string): Promise<number> {
+    const token = getTinybirdToken();
+    const sql = `
+    SELECT sum(total_price) AS spend_7d
+    FROM generation_event
+    WHERE start_time >= now() - INTERVAL 7 DAY
+      AND environment = 'production'
+      AND user_id = '${userId}'
+      AND selected_meter_slug IN ('v1:meter:pack', 'v1:meter:crypto')
+    FORMAT JSON
+  `
+        .trim()
+        .replace(/\n\s+/g, " ");
+
+    const url = `${TINYBIRD_BASE}/v0/sql?q=${encodeURIComponent(sql)}`;
+    try {
+        const response = await fetch(url, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) return 0;
+        const json = (await response.json()) as {
+            data: Array<{ spend_7d: number }>;
+        };
+        return json.data[0]?.spend_7d ?? 0;
+    } catch {
+        return 0;
+    }
+}
+
 // ── GitHub GraphQL ──────────────────────────────────────────────────────
 
 interface GitHubMetrics {
-    age_days: number;
+    github_age_days: number;
     repos: number;
     commits: number;
     stars: number;
+    apps_listed: number;
 }
 
 interface GitHubGraphQLUser {
@@ -227,7 +263,7 @@ function buildGraphQLQuery(usernames: string[]): string {
 
 function parseGitHubUser(data: GitHubGraphQLUser | null): GitHubMetrics | null {
     if (!data) return null;
-    const age_days = Math.floor(
+    const github_age_days = Math.floor(
         (Date.now() - new Date(data.createdAt).getTime()) / 86400000,
     );
     const repos = data.repositories?.totalCount || 0;
@@ -236,7 +272,13 @@ function parseGitHubUser(data: GitHubGraphQLUser | null): GitHubMetrics | null {
         (sum, node) => sum + (node?.stargazerCount || 0),
         0,
     );
-    return { age_days, repos, commits, stars };
+    return {
+        github_age_days,
+        repos,
+        commits,
+        stars,
+        apps_listed: 0,
+    };
 }
 
 async function fetchGitHubBatch(
@@ -304,18 +346,82 @@ async function fetchGitHubMetrics(
     if (usernames.length === 0) return new Map();
     const token = getGithubToken();
     const result = new Map<string, GitHubMetrics>();
+    const PARALLEL = 3;
 
+    // Build all batch slices
+    const batches: string[][] = [];
     for (let i = 0; i < usernames.length; i += BATCH_SIZE) {
-        const batch = usernames.slice(i, i + BATCH_SIZE);
-        const batchResult = await fetchGitHubBatch(batch, token);
-        for (const [k, v] of batchResult) result.set(k, v);
+        batches.push(usernames.slice(i, i + BATCH_SIZE));
+    }
 
-        const progress = Math.min(i + BATCH_SIZE, usernames.length);
-        console.log(`  GitHub: ${progress}/${usernames.length} fetched`);
-
-        if (i + BATCH_SIZE < usernames.length) {
-            await new Promise((r) => setTimeout(r, 2000));
+    // Process in parallel chunks of PARALLEL batches
+    for (let i = 0; i < batches.length; i += PARALLEL) {
+        const chunk = batches.slice(i, i + PARALLEL);
+        const results = await Promise.all(
+            chunk.map((batch) => fetchGitHubBatch(batch, token)),
+        );
+        for (const batchResult of results) {
+            for (const [k, v] of batchResult) result.set(k, v);
         }
+
+        const progress = Math.min(
+            (i + PARALLEL) * BATCH_SIZE,
+            usernames.length,
+        );
+        console.log(
+            `  GitHub profiles: ${progress}/${usernames.length} fetched`,
+        );
+
+        // Small delay to stay well within rate limits
+        if (i + PARALLEL < batches.length) {
+            await new Promise((r) => setTimeout(r, 200));
+        }
+    }
+
+    // Count listed apps per user from apps/APPS.md
+    const appCounts = countListedApps(usernames);
+    for (const [username, count] of appCounts) {
+        const metrics = result.get(username);
+        if (metrics) {
+            metrics.apps_listed = count;
+        } else {
+            result.set(username, { ...EMPTY_GITHUB, apps_listed: count });
+        }
+    }
+
+    return result;
+}
+
+// ── Listed apps ────────────────────────────────────────────────────────
+
+const APPS_MD_PATH = new URL("../../apps/APPS.md", import.meta.url);
+
+/** Parse apps/APPS.md and count how many listed apps each username has. */
+function countListedApps(usernames: string[]): Map<string, number> {
+    const result = new Map<string, number>();
+    try {
+        const content = readFileSync(APPS_MD_PATH, "utf-8");
+        const lowerSet = new Set(usernames.map((u) => u.toLowerCase()));
+
+        for (const line of content.split("\n")) {
+            if (!line.startsWith("|") || line.startsWith("| ---")) continue;
+            const cols = line.split("|").map((c) => c.trim());
+            // Column 7 is GitHub_Username (1-indexed after leading empty from split)
+            const raw = cols[7]?.replace(/^@/, "") ?? "";
+            if (!raw || !lowerSet.has(raw.toLowerCase())) continue;
+            // Find original-case username
+            const original = usernames.find(
+                (u) => u.toLowerCase() === raw.toLowerCase(),
+            );
+            if (original) {
+                result.set(original, (result.get(original) ?? 0) + 1);
+            }
+        }
+    } catch {
+        // APPS.md not found (e.g. running in CI without full checkout)
+    }
+    if (result.size > 0) {
+        console.log(`  Listed apps: ${result.size} users with apps`);
     }
     return result;
 }
@@ -333,21 +439,26 @@ interface ScoreResult {
 }
 
 const EMPTY_GITHUB: GitHubMetrics = {
-    age_days: 0,
+    github_age_days: 0,
     repos: 0,
     commits: 0,
     stars: 0,
+    apps_listed: 0,
 };
 
 function scoreUser(
     user: D1User,
     githubMetrics: GitHubMetrics | null,
-    avgDailySpend: number,
+    weeklySpend: number,
     trustScore: number,
 ): ScoreResult {
+    const pollinationsAgeDays = user.created_at
+        ? Math.floor((Date.now() / 1000 - user.created_at) / 86400)
+        : 0;
     const rawMetrics: Record<string, number> = {
         ...(githubMetrics ?? EMPTY_GITHUB),
-        avg_daily_spend_7d: avgDailySpend,
+        pollinations_age_days: pollinationsAgeDays,
+        spend_7d: weeklySpend,
         trust_score: trustScore,
     };
 
@@ -437,24 +548,38 @@ ${csvRows.join("\n")}`;
 /**
  * Run LLM scorer and return legitimacy scores per github username.
  * Legitimate accounts get ~ 100, suspicious ones get low/zero.
+ * Chunks the D1 query to avoid SQL length limits.
  */
 async function fetchLLMTrustScores(
     users: D1User[],
 ): Promise<Map<string, number>> {
-    const usernameList = users.map((u) => `'${u.github_username}'`).join(", ");
-    const userQuery = `SELECT email, github_username, created_at, tier FROM user WHERE github_username IN (${usernameList})`;
+    const D1_CHUNK = 500;
+    const allScored: Array<{ github_username: string | null; score: number }> =
+        [];
 
-    const scored = await runLLMScorer({
-        name: "upgrade-trust",
-        userQuery,
-        buildPrompt: buildAbusePrompt,
-        chunkSize: 100,
-        model: "gemini",
-        parallelism: 2,
-    });
+    for (let i = 0; i < users.length; i += D1_CHUNK) {
+        const chunk = users.slice(i, i + D1_CHUNK);
+        const usernameList = chunk
+            .map((u) => `'${u.github_username}'`)
+            .join(", ");
+        const userQuery = `SELECT email, github_username, created_at, tier FROM user WHERE github_username IN (${usernameList})`;
+
+        const scored = await runLLMScorer({
+            name: `upgrade-trust-${i}`,
+            userQuery,
+            buildPrompt: buildAbusePrompt,
+            chunkSize: 100,
+            model: "openai",
+            parallelism: 2,
+        });
+        allScored.push(...scored);
+        console.log(
+            `  LLM trust: ${Math.min(i + D1_CHUNK, users.length)}/${users.length}`,
+        );
+    }
 
     const trustScores = new Map<string, number>();
-    for (const u of scored) {
+    for (const u of allScored) {
         if (u.github_username) {
             trustScores.set(u.github_username, 100 - u.score);
         }
@@ -590,4 +715,262 @@ const upgradeCommand = command({
     },
 });
 
-run([upgradeCommand]);
+const scoreCommand = command({
+    name: "score",
+    desc: "Score a single user and show full breakdown",
+    options: {
+        username: string().required().desc("GitHub username"),
+        env: string().enum("staging", "production").default("production"),
+    },
+    handler: async (opts) => {
+        const env = opts.env as Environment;
+        const username = opts.username;
+
+        // Look up user in D1
+        const rows = queryD1(
+            `SELECT id, github_username, tier, created_at FROM user WHERE github_username = '${username}'`,
+            env,
+        );
+        if (rows.length === 0) {
+            console.error(`User "${username}" not found in ${env}`);
+            process.exit(1);
+        }
+        const user = rows[0] as D1User;
+
+        // Fetch all data in parallel
+        const [githubMap, weeklySpend] = await Promise.all([
+            fetchGitHubMetrics([username]),
+            fetchSpendForUser(user.id),
+        ]);
+        const gh = githubMap.get(username) ?? EMPTY_GITHUB;
+
+        const pollinationsAgeDays = user.created_at
+            ? Math.floor((Date.now() / 1000 - user.created_at) / 86400)
+            : 0;
+        const rawMetrics: Record<string, number> = {
+            ...gh,
+            pollinations_age_days: pollinationsAgeDays,
+            spend_7d: weeklySpend,
+            trust_score: 100, // skip LLM for single-user check
+        };
+
+        const tier = bestTierForMetrics(rawMetrics);
+        const total = computeScore(rawMetrics, tier);
+
+        // Print header
+        console.log(`\n  User:    ${username}`);
+        console.log(`  Current: ${user.tier}`);
+        console.log(`  Score:   ${total.toFixed(1)} pts → ${tier}`);
+        console.log(`  Pollen:  ${TIERS[tier].pollen}/day\n`);
+
+        // Per-criterion breakdown
+        console.log(
+            `  ${"Criterion".padEnd(22)} ${"Raw".padStart(8)} ${"Pts".padStart(8)} ${"Cap".padStart(8)}  Group`,
+        );
+        console.log(`  ${"-".repeat(70)}`);
+
+        for (const c of SCORING_CRITERIA) {
+            const raw = rawMetrics[c.field] ?? 0;
+            const pts = scoreCriterion(c, raw);
+            const active = tierIndex(c.unlocksAt) <= tierIndex(tier);
+            const marker = active ? " " : "░";
+            console.log(
+                `${marker} ${c.label.padEnd(22)} ${raw.toFixed(1).padStart(8)} ${pts.toFixed(1).padStart(8)} ${`/${c.max}`.padStart(8)}  ${c.group}`,
+            );
+        }
+
+        // Grouped summary (always show all groups)
+        const allGroups = groupedCriteriaForTier("nectar" as TierName);
+        console.log(`\n  ${"Group".padEnd(22)} ${"Pts".padStart(8)}`);
+        console.log(`  ${"-".repeat(32)}`);
+        for (const g of allGroups) {
+            const groupPts = SCORING_CRITERIA.filter(
+                (c) => c.group === g.group,
+            ).reduce(
+                (sum, c) => sum + scoreCriterion(c, rawMetrics[c.field] ?? 0),
+                0,
+            );
+            console.log(
+                `  ${g.group.padEnd(22)} ${groupPts.toFixed(1).padStart(5)}/${g.max}`,
+            );
+        }
+        const maxThreshold = Math.max(...Object.values(TIER_THRESHOLDS));
+        console.log(
+            `  ${"TOTAL".padEnd(22)} ${total.toFixed(1).padStart(5)}/${maxThreshold}\n`,
+        );
+
+        // Tier thresholds
+        for (const [t, threshold] of Object.entries(TIER_THRESHOLDS)) {
+            const s = computeScore(rawMetrics, t as TierName);
+            const pass = s >= threshold ? "✓" : " ";
+            console.log(
+                `  ${pass} ${t.padEnd(8)} ${s.toFixed(1).padStart(5)} / ${threshold} pts`,
+            );
+        }
+        console.log();
+    },
+});
+
+const dumpCommand = command({
+    name: "dump",
+    desc: "Dump raw metrics for a sample of users as JSON (for the scoring playground)",
+    options: {
+        env: string().enum("staging", "production").default("production"),
+        limit: string().default("50").desc("Max users per tier to sample"),
+        output: string().default("").desc("Output file path (default: stdout)"),
+        llm: boolean().default(false).desc("Run LLM trust scoring (slower)"),
+    },
+    handler: async (opts) => {
+        const env = opts.env as Environment;
+        const perTier = Number.parseInt(opts.limit, 10);
+
+        const tiers = ["microbe", "spore", "seed", "flower", "nectar"];
+        const allUsers: D1User[] = [];
+
+        for (const tier of tiers) {
+            // Skip ORDER BY RANDOM() when fetching all users (limit >= 50000)
+            const orderClause = perTier >= 50000 ? "" : "ORDER BY RANDOM()";
+            const rows = queryD1(
+                `SELECT id, github_username, tier, created_at FROM user WHERE tier = '${tier}' AND github_username IS NOT NULL ${orderClause} LIMIT ${perTier}`,
+                env,
+            );
+            allUsers.push(...(rows as D1User[]));
+            console.error(`  ${tier}: ${rows.length} users`);
+        }
+
+        console.error(`\nFetching data for ${allUsers.length} users...`);
+        const usernames = allUsers.map((u) => u.github_username);
+
+        const fetches: [
+            Promise<Map<string, number>>,
+            Promise<Map<string, GitHubMetrics>>,
+            Promise<Map<string, number>>,
+        ] = [
+            fetchSpendByUserId(),
+            fetchGitHubMetrics(usernames),
+            opts.llm
+                ? fetchLLMTrustScores(allUsers)
+                : Promise.resolve(new Map<string, number>()),
+        ];
+
+        const [spendByUserId, githubMetrics, llmTrustScores] =
+            await Promise.all(fetches);
+
+        console.error(
+            `  GitHub: ${githubMetrics.size} | LLM: ${llmTrustScores.size}`,
+        );
+
+        const dump = allUsers.map((user) => {
+            const gh = githubMetrics.get(user.github_username) ?? EMPTY_GITHUB;
+            const pollinationsAgeDays = user.created_at
+                ? Math.floor((Date.now() / 1000 - user.created_at) / 86400)
+                : 0;
+            return {
+                username: user.github_username,
+                currentTier: user.tier,
+                userId: user.id,
+                metrics: {
+                    ...gh,
+                    pollinations_age_days: pollinationsAgeDays,
+                    spend_7d: spendByUserId.get(user.id) ?? 0,
+                    trust_score:
+                        llmTrustScores.get(user.github_username) ?? 100,
+                },
+            };
+        });
+
+        const json = JSON.stringify(dump, null, 2);
+        if (opts.output) {
+            const { writeFileSync } = await import("node:fs");
+            writeFileSync(opts.output, json);
+            console.error(`Written to ${opts.output}`);
+        } else {
+            console.log(json);
+        }
+    },
+});
+
+// ── Push scoring snapshots to Tinybird ────────────────────────────────
+
+const TINYBIRD_SCORING_URL = `${TINYBIRD_BASE}/v0/events?name=scoring_snapshot`;
+const TINYBIRD_PUSH_BATCH = 500;
+
+async function pushScoringToTinybird(
+    dumpData: Array<{
+        username: string;
+        currentTier: string;
+        userId: string;
+        metrics: Record<string, number>;
+    }>,
+): Promise<number> {
+    const token = getTinybirdToken();
+    const timestamp = new Date().toISOString().replace("T", " ").slice(0, 19);
+    let pushed = 0;
+
+    for (let i = 0; i < dumpData.length; i += TINYBIRD_PUSH_BATCH) {
+        const batch = dumpData.slice(i, i + TINYBIRD_PUSH_BATCH);
+        const ndjson = batch
+            .map((u) => {
+                const m = u.metrics;
+                const rawMetrics: Record<string, number> = { ...m };
+                const computedTier = bestTierForMetrics(rawMetrics);
+                const total = computeScore(rawMetrics, computedTier);
+                return JSON.stringify({
+                    timestamp,
+                    user_id: u.userId,
+                    github_username: u.username,
+                    current_tier: u.currentTier,
+                    computed_tier: computedTier,
+                    total_score: Math.round(total * 100) / 100,
+                    github_age_days: m.github_age_days ?? 0,
+                    pollinations_age_days: m.pollinations_age_days ?? 0,
+                    spend_7d: m.spend_7d ?? 0,
+                    trust_score: m.trust_score ?? 100,
+                    commits: m.commits ?? 0,
+                    repos: m.repos ?? 0,
+                    stars: m.stars ?? 0,
+                    apps_listed: m.apps_listed ?? 0,
+                });
+            })
+            .join("\n");
+
+        const response = await fetch(TINYBIRD_SCORING_URL, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/x-ndjson",
+            },
+            body: ndjson,
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            console.error(
+                `Tinybird push failed at batch ${i}: ${response.status} ${text}`,
+            );
+            break;
+        }
+        pushed += batch.length;
+        if ((i / TINYBIRD_PUSH_BATCH) % 10 === 0) {
+            console.error(`  Pushed ${pushed}/${dumpData.length} to Tinybird`);
+        }
+    }
+    return pushed;
+}
+
+const pushScoringCommand = command({
+    name: "push-scoring",
+    desc: "Push a scoring dump JSON to Tinybird scoring_snapshot datasource",
+    options: {
+        input: string().required().desc("Path to scoring-data JSON file"),
+    },
+    handler: async (opts) => {
+        const { readFileSync } = await import("node:fs");
+        const data = JSON.parse(readFileSync(opts.input, "utf-8"));
+        console.error(`Loaded ${data.length} users from ${opts.input}`);
+        const pushed = await pushScoringToTinybird(data);
+        console.error(`Done: pushed ${pushed} rows to Tinybird`);
+    },
+});
+
+run([upgradeCommand, scoreCommand, dumpCommand, pushScoringCommand]);

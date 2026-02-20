@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tier Scoring Playground</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #f8f9fa; color: #1a1a1a; padding: 20px; }
+  h1 { font-size: 1.3em; margin-bottom: 12px; }
+  .layout { display: flex; gap: 20px; }
+  .panel { background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .config { width: 340px; flex-shrink: 0; position: sticky; top: 20px; align-self: flex-start; max-height: calc(100vh - 40px); overflow-y: auto; }
+  .results { flex: 1; min-width: 0; overflow-x: auto; }
+  h2 { font-size: 1em; margin-bottom: 8px; color: #555; }
+  .criterion { margin-bottom: 8px; padding: 6px 8px; background: #f8f9fa; border-radius: 4px; }
+  .criterion label { display: block; font-size: 0.8em; font-weight: 600; color: #333; margin-bottom: 2px; }
+  .criterion .row { display: flex; gap: 8px; align-items: center; font-size: 0.75em; }
+  .criterion input { width: 70px; padding: 2px 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.85em; }
+  .threshold { margin-bottom: 4px; display: flex; gap: 8px; align-items: center; font-size: 0.8em; }
+  .threshold label { width: 60px; font-weight: 600; }
+  .threshold input { width: 60px; padding: 2px 4px; border: 1px solid #ddd; border-radius: 3px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.78em; }
+  th, td { padding: 4px 8px; text-align: right; border-bottom: 1px solid #eee; white-space: nowrap; }
+  th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+  th { background: #f0f0f0; position: sticky; top: 0; font-weight: 600; z-index: 1; }
+  .upgrade { color: #16a34a; font-weight: 700; }
+  .downgrade { color: #dc2626; font-weight: 700; }
+  .same { color: #666; }
+  .summary { margin-bottom: 12px; font-size: 0.85em; padding: 8px; background: #f0fdf4; border-radius: 6px; }
+  .summary span { font-weight: 700; }
+  .tier-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 0.75em; font-weight: 600; }
+  .tier-microbe { background: #f3f4f6; }
+  .tier-spore { background: #ccfbf1; }
+  .tier-seed { background: #fef3c7; }
+  .tier-flower { background: #fce7f3; }
+  .tier-nectar { background: #f3e8ff; }
+  .filter-row { margin-bottom: 10px; font-size: 0.8em; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .filter-row select, .filter-row label { padding: 2px 6px; border-radius: 3px; border: 1px solid #ddd; }
+  #load-info { font-size: 0.75em; color: #888; margin-bottom: 8px; }
+  a { color: #2563eb; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .raw-val { color: #999; font-size: 0.85em; }
+  td.capped { background: #fef3c7; }
+</style>
+</head>
+<body>
+<h1>🌸 Tier Scoring Playground</h1>
+<div id="load-info">Drop a scoring-data.json file here, or <input type="file" id="fileInput" accept=".json"> </div>
+
+<div class="layout">
+  <div class="panel config" id="configPanel">
+    <h2>Criteria</h2>
+    <div id="criteriaInputs"></div>
+    <h2 style="margin-top:12px">Thresholds</h2>
+    <div id="thresholdInputs"></div>
+  </div>
+  <div class="panel results">
+    <div class="filter-row">
+      Filter: <select id="filterTier"><option value="">All tiers</option></select>
+      Show: <select id="filterChange"><option value="">All</option><option value="upgrade">Upgrades only</option><option value="downgrade">Downgrades only</option><option value="same">Same only</option></select>
+      <label><input type="checkbox" id="showRaw"> Show raw values</label>
+    </div>
+    <div class="summary" id="summary"></div>
+    <table><thead id="thead"></thead><tbody id="tbody"></tbody></table>
+  </div>
+</div>
+
+<script>
+const DEFAULT_CRITERIA = [
+  { field: "github_age_days", label: "GitHub age", multiplier: 0.5/30, max: 3, unlocksAt: "spore", group: "GitHub Profile" },
+  { field: "pollinations_age_days", label: "Pollinations age", multiplier: 0.5/30, max: 3, unlocksAt: "spore", group: "Account" },
+  { field: "spend_7d", label: "Weekly paid spend", multiplier: 5, max: 1000, unlocksAt: "spore", group: "Pollen Purchase" },
+  { field: "trust_score", label: "Trust score", multiplier: 0.05, max: 3, unlocksAt: "spore", group: "Human" },
+  { field: "commits", label: "Commits", multiplier: 0.1, max: 3, unlocksAt: "seed", group: "GitHub Profile" },
+  { field: "repos", label: "Public repos", multiplier: 0.5, max: 1, unlocksAt: "seed", group: "GitHub Profile" },
+  { field: "stars", label: "GitHub stars", multiplier: 0.1, max: 5, unlocksAt: "seed", group: "GitHub Profile" },
+  { field: "apps_listed", label: "Listed apps", multiplier: 3, max: 5, unlocksAt: "flower", group: "Contributions" },
+];
+
+const TIER_ORDER = ["microbe", "spore", "seed", "flower", "nectar", "router"];
+const DEFAULT_THRESHOLDS = { spore: 4, seed: 8, flower: 15, nectar: 25 };
+
+const criteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA));
+const thresholds = { ...DEFAULT_THRESHOLDS };
+let users = [];
+
+function tierIdx(t) { return TIER_ORDER.indexOf(t); }
+function scoreCriterion(c, val) { return Math.min(val * c.multiplier, c.max); }
+function criteriaForTier(tier) {
+  return criteria.filter(c => tierIdx(c.unlocksAt) <= tierIdx(tier));
+}
+function computeScore(metrics, tier) {
+  return criteriaForTier(tier).reduce((s, c) => s + scoreCriterion(c, metrics[c.field] ?? 0), 0);
+}
+function bestTier(metrics) {
+  const scored = Object.keys(thresholds).sort((a, b) => tierIdx(b) - tierIdx(a));
+  for (const t of scored) {
+    if (computeScore(metrics, t) >= thresholds[t]) return t;
+  }
+  return "microbe";
+}
+
+function buildUI() {
+  const div = document.getElementById("criteriaInputs");
+  div.innerHTML = criteria.map((c, i) => `
+    <div class="criterion">
+      <label>${c.label} <small>(${c.field}, ${c.unlocksAt}+)</small></label>
+      <div class="row">
+        <span>×</span><input type="number" step="any" value="${c.multiplier}" data-ci="${i}" data-key="multiplier">
+        <span>cap</span><input type="number" step="any" value="${c.max}" data-ci="${i}" data-key="max">
+      </div>
+    </div>
+  `).join("");
+  div.querySelectorAll("input").forEach(el => el.addEventListener("input", () => {
+    criteria[el.dataset.ci][el.dataset.key] = parseFloat(el.value) || 0;
+    render();
+  }));
+
+  const tdiv = document.getElementById("thresholdInputs");
+  tdiv.innerHTML = Object.entries(thresholds).map(([t, v]) => `
+    <div class="threshold">
+      <label>${t}</label>
+      <input type="number" step="0.5" value="${v}" data-tier="${t}"> pts
+    </div>
+  `).join("");
+  tdiv.querySelectorAll("input").forEach(el => el.addEventListener("input", () => {
+    thresholds[el.dataset.tier] = parseFloat(el.value) || 0;
+    render();
+  }));
+
+  const sel = document.getElementById("filterTier");
+  for (const t of TIER_ORDER.slice(0, 5)) {
+    const o = document.createElement("option"); o.value = t; o.textContent = t; sel.appendChild(o);
+  }
+  sel.addEventListener("change", render);
+  document.getElementById("filterChange").addEventListener("change", render);
+  document.getElementById("showRaw").addEventListener("change", render);
+}
+
+function fmt(n) { return n >= 100 ? Math.round(n).toString() : n.toFixed(1); }
+
+function render() {
+  if (!users.length) return;
+  const filterTier = document.getElementById("filterTier").value;
+  const filterChange = document.getElementById("filterChange").value;
+  const showRaw = document.getElementById("showRaw").checked;
+
+  const fields = criteria.map(c => c.field);
+
+  const thead = document.getElementById("thead");
+  thead.innerHTML = `<tr><th>User</th><th>Current</th>${fields.map(f => `<th>${f.replace(/_/g,' ').slice(0,10)}</th>`).join("")}<th>Score</th><th>New</th><th>Δ</th></tr>`;
+
+  const scored = users.map(u => {
+    const m = u.metrics;
+    const newTier = bestTier(m);
+    const total = computeScore(m, newTier);
+    const curIdx = tierIdx(u.currentTier);
+    const newIdx = tierIdx(newTier);
+    const change = newIdx > curIdx ? "upgrade" : newIdx < curIdx ? "downgrade" : "same";
+    const perField = {};
+    const rawField = {};
+    for (const c of criteria) {
+      const raw = m[c.field] ?? 0;
+      rawField[c.field] = raw;
+      perField[c.field] = scoreCriterion(c, raw);
+    }
+    return { ...u, newTier, total, change, perField, rawField };
+  });
+
+  let filtered = scored;
+  if (filterTier) filtered = filtered.filter(u => u.currentTier === filterTier);
+  if (filterChange) filtered = filtered.filter(u => u.change === filterChange);
+
+  const ups = scored.filter(u => u.change === "upgrade").length;
+  const downs = scored.filter(u => u.change === "downgrade").length;
+  const same = scored.filter(u => u.change === "same").length;
+  document.getElementById("summary").innerHTML =
+    `<span>${scored.length}</span> users: <span class="upgrade">${ups} upgrades</span> · <span class="downgrade">${downs} downgrades</span> · <span class="same">${same} same</span>` +
+    (filtered.length !== scored.length ? ` · showing ${filtered.length}` : "");
+
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = filtered.map(u => {
+    return `<tr>
+      <td><a href="https://github.com/${u.username}" target="_blank">${u.username}</a></td>
+      <td><span class="tier-badge tier-${u.currentTier}">${u.currentTier}</span></td>
+      ${fields.map(f => {
+        const pts = u.perField[f];
+        const raw = u.rawField[f];
+        const c = criteria.find(x => x.field === f);
+        const capped = c && pts >= c.max && raw * c.multiplier > c.max;
+        const cls = capped ? ' class="capped"' : '';
+        if (showRaw) {
+          return `<td${cls}>${fmt(raw)} <span class="raw-val">(${fmt(pts)})</span></td>`;
+        }
+        return `<td${cls}>${fmt(pts)}</td>`;
+      }).join("")}
+      <td><b>${u.total.toFixed(1)}</b></td>
+      <td><span class="tier-badge tier-${u.newTier}">${u.newTier}</span></td>
+      <td class="${u.change}">${u.change === "upgrade" ? "↑" : u.change === "downgrade" ? "↓" : "="}</td>
+    </tr>`;
+  }).join("");
+}
+
+function loadData(data) {
+  users = data;
+  document.getElementById("load-info").textContent = `Loaded ${data.length} users`;
+  render();
+}
+
+document.getElementById("fileInput").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (file) file.text().then(t => loadData(JSON.parse(t)));
+});
+document.addEventListener("dragover", e => e.preventDefault());
+document.addEventListener("drop", e => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) file.text().then(t => loadData(JSON.parse(t)));
+});
+
+fetch("scoring-data.json").then(r => r.ok ? r.json() : null).then(d => { if (d) loadData(d); }).catch(() => {});
+buildUI();
+</script>
+</body>
+</html>

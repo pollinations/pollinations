@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import {
-    criteriaForTier,
     DISPLAY_TIERS,
+    groupedCriteriaForTier,
     TIER_COLORS,
     TIER_EMOJIS,
     TIER_POLLEN,
@@ -14,28 +14,28 @@ import { Tooltip } from "../pricing/Tooltip.tsx";
 const tierBoxBase = "rounded-lg p-3 flex flex-col";
 
 const ScoringTooltip: FC<{ tier: TierName }> = ({ tier }) => {
-    const criteria = criteriaForTier(tier);
+    const groups = groupedCriteriaForTier(tier);
     const threshold = TIER_THRESHOLDS[tier];
 
     return (
-        <div className="w-56">
+        <div className="w-48">
             <p className="font-semibold text-gray-900 mb-2">
                 Need {threshold}+ pts
             </p>
             <table className="w-full text-left text-[11px]">
                 <tbody>
-                    {criteria.map((c, i) => (
+                    {groups.map((g, i) => (
                         <tr
-                            key={c.field}
+                            key={g.group}
                             className={
-                                i < criteria.length - 1
+                                i < groups.length - 1
                                     ? "border-b border-gray-100"
                                     : ""
                             }
                         >
-                            <td className="py-1 text-gray-600">{c.label}</td>
+                            <td className="py-1 text-gray-600">{g.group}</td>
                             <td className="py-1 text-right text-gray-800">
-                                up to {c.max} pts
+                                {g.max} pts
                             </td>
                         </tr>
                     ))}

@@ -15,3 +15,6 @@ scripts/abuse-detection/flagged-users*.md
 scripts/flagged-users*.csv
 scripts/flagged-users*.md
 abuse-report*.csv
+
+# Scoring data dumps (large, generated)
+scripts/scoring-data*.json

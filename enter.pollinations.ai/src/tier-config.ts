@@ -40,7 +40,7 @@ export function getTierEmoji(tier: string): string {
 //   for all criteria where unlocksAt <= target tier.
 //
 // Data sources:
-//   "github"   - GitHub GraphQL API (age, commits, repos, stars)
+//   "github"   - GitHub GraphQL API (age, commits, repos, stars, listed apps)
 //   "tinybird" - Tinybird /v0/sql (avg daily pollen spend)
 //   "llm"      - LLM scorer (trust_score = 100 - abuse_score)
 
@@ -52,6 +52,8 @@ export interface ScoringCriterion {
     max: number;
     /** The tier at which this criterion starts contributing to the score */
     unlocksAt: TierName;
+    /** Display group label (criteria with the same group are summed in the UI) */
+    group: string;
 }
 
 export function tierIndex(tier: TierName): number {
@@ -59,32 +61,44 @@ export function tierIndex(tier: TierName): number {
 }
 
 export const SCORING_CRITERIA: ScoringCriterion[] = [
-    // Base criteria (unlock at spore)
+    // Base signals (unlock at spore)
     {
-        field: "age_days",
-        label: "Account age",
+        field: "github_age_days",
+        label: "GitHub age",
         source: "github",
         multiplier: 0.5 / 30,
-        max: 6,
+        max: 3,
         unlocksAt: "spore",
+        group: "GitHub Profile",
     },
     {
-        field: "avg_daily_spend_7d",
-        label: "Pollen spend",
+        field: "pollinations_age_days",
+        label: "Pollinations age",
         source: "tinybird",
-        multiplier: 1.0,
-        max: 15,
+        multiplier: 0.5 / 30,
+        max: 3,
         unlocksAt: "spore",
+        group: "Account",
+    },
+    {
+        field: "spend_7d",
+        label: "Weekly paid spend",
+        source: "tinybird",
+        multiplier: 5,
+        max: 1000,
+        unlocksAt: "spore",
+        group: "Pollen Purchase",
     },
     {
         field: "trust_score",
-        label: "Human check",
+        label: "Trust score",
         source: "llm",
         multiplier: 0.05,
         max: 3,
         unlocksAt: "spore",
+        group: "Human",
     },
-    // Developer criteria (unlock at seed)
+    // Developer signals (unlock at seed)
     {
         field: "commits",
         label: "Commits",
@@ -92,6 +106,7 @@ export const SCORING_CRITERIA: ScoringCriterion[] = [
         multiplier: 0.1,
         max: 3,
         unlocksAt: "seed",
+        group: "GitHub Profile",
     },
     {
         field: "repos",
@@ -100,6 +115,7 @@ export const SCORING_CRITERIA: ScoringCriterion[] = [
         multiplier: 0.5,
         max: 1,
         unlocksAt: "seed",
+        group: "GitHub Profile",
     },
     {
         field: "stars",
@@ -108,20 +124,42 @@ export const SCORING_CRITERIA: ScoringCriterion[] = [
         multiplier: 0.1,
         max: 5,
         unlocksAt: "seed",
+        group: "GitHub Profile",
+    },
+    // Contributor signals (unlock at flower)
+    {
+        field: "apps_listed",
+        label: "Listed apps",
+        source: "github",
+        multiplier: 3,
+        max: 5,
+        unlocksAt: "flower",
+        group: "Contributions",
     },
 ];
 
 export const TIER_THRESHOLDS: Record<string, number> = {
-    spore: 3.5,
+    spore: 4,
     seed: 8,
-    flower: 14,
-    nectar: 22,
+    flower: 15,
+    nectar: 25,
 };
 
 /** Get criteria active for a given tier */
 export function criteriaForTier(tier: TierName): ScoringCriterion[] {
     const idx = tierIndex(tier);
     return SCORING_CRITERIA.filter((c) => tierIndex(c.unlocksAt) <= idx);
+}
+
+/** Group criteria for a tier, summing max points per group (for display) */
+export function groupedCriteriaForTier(
+    tier: TierName,
+): Array<{ group: string; max: number }> {
+    const groups = new Map<string, number>();
+    for (const c of criteriaForTier(tier)) {
+        groups.set(c.group, (groups.get(c.group) ?? 0) + c.max);
+    }
+    return [...groups.entries()].map(([group, max]) => ({ group, max }));
 }
 
 /** Compute score for a single criterion */

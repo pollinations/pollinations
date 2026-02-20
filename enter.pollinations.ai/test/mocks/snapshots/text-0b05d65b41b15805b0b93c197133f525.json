@@ -1,0 +1,95 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "qwen-safety",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Wed, 18 Feb 2026 03:38:33 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"chatcmpl-95ba15b7a5c5c598\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"}}],\"created\":1771385913,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\ndata: {\"id\":\"chatcmpl-95ba15b7a5c5c598\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Safety\",\"name\":\"assistant\"}}],\"created\":1771385913,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\ndata: {\"id\":\"chatcmpl-95ba15b7a5c5c598\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\":\",\"name\":\"assistant\"}}],\"created\":1771385913,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-95ba15b7a5c5c598\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" Safe\",\"name\":\"assistant\"}}],\"created\":1771385913,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-95ba15",
+          "delay": 12
+        },
+        {
+          "data": "b7a5c5c598\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\\n\",\"name\":\"assistant\"}}],\"created\":1771385913,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-95ba15",
+          "delay": 19
+        },
+        {
+          "data": "b7a5c5c598\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Categories\",\"name\":\"assistant\"}}],\"created\":1771385913,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-95ba15",
+          "delay": 27
+        },
+        {
+          "data": "b7a5c5c598\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\":\",\"name\":\"assistant\"}}],\"created\":1771385913,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-95ba15",
+          "delay": 12
+        },
+        {
+          "data": "b7a5c5c598\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" None\",\"name\":\"assistant\"}}],\"created\":1771385913,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-95ba15",
+          "delay": 22
+        },
+        {
+          "data": "b7a5c5c598\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"name\":\"assistant\"},\"finish_reason\":\"stop\"}],\"created\":1771385913,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\"}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-95ba",
+          "delay": 0
+        },
+        {
+          "data": "15b7a5c5c598\",\"choices\":[],\"created\":1771385913,\"model\":\"Qwen3Guard-Gen-8B\",\"object\":\"chat.completion.chunk\",\"usage\":{\"prompt_tokens\":308,\"completion_tokens\":8,\"total_tokens\":316}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

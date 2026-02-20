@@ -64,50 +64,27 @@ const MicrobeLimitedPanel: FC = () => (
     </Panel>
 );
 
-// ─── Spore: User tier (not yet a creator) ───────────────────
+// ─── Spore: Free weekly grant (no tier branding) ────────────
 
-const SporeInfoCard: FC = () => {
-    const colors = TIER_RING_COLORS.spore;
-    return (
-        <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-                <p className="text-2xl font-semibold text-gray-900">🌱 Spore</p>
-                <span
-                    className="px-3 py-0.5 rounded-full text-xs font-semibold border"
-                    style={{
-                        backgroundColor: colors.bg,
-                        borderColor: colors.border,
-                        color: colors.fill,
-                    }}
-                >
-                    1.5 pollen / week
-                </span>
-            </div>
-            <p className="text-xs text-gray-400">
-                Refreshes every week. Use it across any{" "}
-                <a
-                    href={APPS_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline hover:text-blue-800"
-                >
-                    app on the platform
-                </a>
-                .
-            </p>
-            <p className="text-[11px] text-gray-400 mt-1">
-                <a
-                    href={APPEAL_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:underline"
-                >
-                    Something wrong? Appeal your tier &rarr;
-                </a>
-            </p>
-        </div>
-    );
-};
+const SporeGrantInfo: FC = () => (
+    <div className="flex flex-col gap-1">
+        <p className="text-2xl font-semibold text-gray-900">
+            🎁 1.5 free Pollen / week
+        </p>
+        <p className="text-xs text-gray-400">
+            Refreshes every Monday at 00:00 UTC. Use it across any{" "}
+            <a
+                href={APPS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline hover:text-blue-800"
+            >
+                app on the platform
+            </a>
+            .
+        </p>
+    </div>
+);
 
 const SporeCreatorNudge: FC = () => (
     <div>
@@ -149,7 +126,7 @@ const SporeCreatorNudge: FC = () => (
 const SporeTierPanel: FC = () => (
     <Panel color="amber">
         <div className="flex flex-col gap-3">
-            <SporeInfoCard />
+            <SporeGrantInfo />
             <Card color="amber">
                 <SporeCreatorNudge />
             </Card>

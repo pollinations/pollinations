@@ -19,12 +19,12 @@ const SCORING_URL =
     "https://github.com/pollinations/pollinations/blob/main/TIER_SCORING.md";
 
 // Ring gauge colors — more saturated than the Tailwind 300-shade gauge colors
-const TIER_RING_COLORS: Record<string, string> = {
-    microbe: "#9ca3af",
-    spore: "#3a7ca5",
-    seed: "#45a06e",
-    flower: "#d4749a",
-    nectar: "#f5a623",
+const TIER_RING_COLORS: Record<string, { fill: string; bg: string; border: string }> = {
+    microbe: { fill: "#9ca3af", bg: "#f3f4f6", border: "#e5e7eb" },
+    spore:   { fill: "#3a7ca5", bg: "#dbeafe", border: "#93c5fd" },
+    seed:    { fill: "#45a06e", bg: "#dcfce7", border: "#86efac" },
+    flower:  { fill: "#d4749a", bg: "#fce7f3", border: "#f9a8d4" },
+    nectar:  { fill: "#f5a623", bg: "#fef3c7", border: "#fcd34d" },
 };
 
 // --- Ring Gauge ---
@@ -40,7 +40,7 @@ const TierRingGauge: FC<{
     const isPreSeed = tier === "microbe" || tier === "spore" || tier === "none";
     const isNectar = tier === "nectar";
 
-    let ringColor: string;
+    let colors = TIER_RING_COLORS.microbe;
     let progressPct: number;
     let centerEmoji: string;
     let tierLabel: string;
@@ -52,7 +52,7 @@ const TierRingGauge: FC<{
     let nextMilestone = "";
 
     if (isPreSeed) {
-        ringColor = TIER_RING_COLORS.spore;
+        colors = TIER_RING_COLORS.spore;
         progressPct = Math.min(1, creatorPoints / TIER_THRESHOLDS.seed);
         centerEmoji = "🌱";
         tierLabel = "Spore";
@@ -62,7 +62,7 @@ const TierRingGauge: FC<{
         nextRest = "to unlock 🌿 Seed";
         nextMilestone = "Start receiving daily grants";
     } else if (isNectar) {
-        ringColor = TIER_RING_COLORS.nectar;
+        colors = TIER_RING_COLORS.nectar;
         progressPct = 1;
         centerEmoji = getTierEmoji(tier);
         tierLabel = TIERS.nectar.displayName;
@@ -71,7 +71,7 @@ const TierRingGauge: FC<{
             "You're at the top. Biggest daily grants. First in line for revenue share.";
     } else {
         const tierKey = tier as TierName;
-        ringColor = TIER_RING_COLORS[tierKey] || "#9ca3af";
+        colors = TIER_RING_COLORS[tierKey] || TIER_RING_COLORS.microbe;
         centerEmoji = getTierEmoji(tier);
         tierLabel = TIERS[tierKey].displayName;
         grantLabel = `${dailyPollen} pollen / day`;
@@ -115,7 +115,7 @@ const TierRingGauge: FC<{
                         cy="60"
                         r={RING_RADIUS}
                         fill="none"
-                        stroke="#ffe4e6"
+                        stroke={colors.bg}
                         strokeWidth="12"
                     />
                     <circle
@@ -123,7 +123,7 @@ const TierRingGauge: FC<{
                         cy="60"
                         r={RING_RADIUS}
                         fill="none"
-                        stroke={ringColor}
+                        stroke={colors.fill}
                         strokeWidth="12"
                         strokeLinecap="round"
                         strokeDasharray={RING_CIRCUMFERENCE}
@@ -155,9 +155,9 @@ const TierRingGauge: FC<{
                     <span
                         className="px-3 py-0.5 rounded-full text-xs font-semibold border"
                         style={{
-                            backgroundColor: "#ffe4e6",
-                            borderColor: "#fecdd3",
-                            color: ringColor,
+                            backgroundColor: colors.bg,
+                            borderColor: colors.border,
+                            color: colors.fill,
                         }}
                     >
                         {grantLabel}

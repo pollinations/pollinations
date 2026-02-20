@@ -64,33 +64,18 @@ function HelloPage() {
 
                 <Divider />
 
-                {/* Section 4+5 — Pollen + Tiers */}
+                {/* Section — For builders */}
                 <div className="mb-12">
                     <Heading variant="section" spacing="comfortable">
-                        {pageCopy.pollenTitle}
+                        {pageCopy.buildersTitle}
                     </Heading>
-                    <Body spacing="comfortable">{pageCopy.pollenBody}</Body>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <SubCard>
-                            <Heading variant="lime" as="h3" spacing="tight">
-                                {pageCopy.pollenCard1Title}
-                            </Heading>
-                            <Body size="sm" spacing="none">
-                                {pageCopy.pollenCard1Body}
-                            </Body>
-                        </SubCard>
-                        <SubCard>
-                            <Heading variant="lime" as="h3" spacing="tight">
-                                {pageCopy.pollenCard2Title}
-                            </Heading>
-                            <Body size="sm" spacing="tight">
-                                {pageCopy.pollenCard2Body}
-                            </Body>
-                            <p className="font-headline text-xs font-black text-text-highlight">
-                                {pageCopy.pollenCard2Promo}
-                            </p>
-                        </SubCard>
-                    </div>
+                    <Body spacing="comfortable">{pageCopy.buildersBody}</Body>
+
+                    <pre className="mb-6 font-mono text-sm leading-relaxed text-text-body-secondary">
+{`${pageCopy.loopBuild}  →  ${pageCopy.loopShip}  →  ${pageCopy.loopGrow}
+ ↑                       ↓
+ └──── `}<span className="text-text-highlight">{pageCopy.loopEarn}</span>{` ◄────┘`}
+                    </pre>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                         {[
@@ -151,25 +136,30 @@ function HelloPage() {
 
                 <Divider />
 
-                {/* Section 6 — BYOP */}
+                {/* Section — For your users */}
                 <div className="mb-12">
-                    <SubCard className="border-l-4 border-border-highlight p-6 md:p-8">
-                        <Heading variant="simple" as="h2" spacing="comfortable">
-                            {pageCopy.byopTitle}
-                        </Heading>
-                        <Body spacing="comfortable">{pageCopy.byopBody}</Body>
-                        <Button
-                            as="a"
-                            href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="primary"
-                            size="default"
-                        >
-                            {pageCopy.byopDocsButton}
-                            <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
-                        </Button>
-                    </SubCard>
+                    <Heading variant="section" spacing="comfortable">
+                        {pageCopy.usersTitle}
+                    </Heading>
+                    <Body spacing="comfortable">{pageCopy.usersBody}</Body>
+                    <Body size="sm" spacing="comfortable">
+                        {pageCopy.usersPayAsYouGo}{" "}
+                        {pageCopy.byopBody}
+                    </Body>
+                    <p className="font-headline text-xs font-black text-text-highlight mb-6">
+                        {pageCopy.usersPromo}
+                    </p>
+                    <Button
+                        as="a"
+                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="secondary"
+                        size="default"
+                    >
+                        {pageCopy.byopDocsButton}
+                        <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
+                    </Button>
                 </div>
 
                 <Divider />

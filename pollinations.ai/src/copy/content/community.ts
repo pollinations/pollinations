@@ -12,8 +12,8 @@ export const COMMUNITY_PAGE = {
     heroStat3: "600",
     heroStat3Label: "new creators daily",
 
-    // Section 2 — Contributing Earns Pollen
-    contributeTitle: "Contributing earns Pollen",
+    // Section 2 — Earn Pollen
+    contributeTitle: "Earn Pollen",
     contributeBody:
         "Activity on the platform earns points toward your next tier. Higher tier means bigger daily Pollen grants and more free compute.",
     contributeCard1Title: "Ship an app",

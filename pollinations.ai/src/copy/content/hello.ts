@@ -16,16 +16,16 @@ export const HELLO_PAGE = {
 
     readTheDocsButton: "Read the Docs",
 
-    // Section 4+5 — Pollen + Tiers (merged)
-    pollenTitle: "Pollen",
-    pollenBody: "One credit. Works across every model. You and your users both get daily grants — the more you build and contribute, the more you get.",
-    pollenCard1Title: "For builders",
-    pollenCard1Body:
-        "Pollen lands in your account daily. Build, test, ship.",
-    pollenCard2Title: "For your users",
-    pollenCard2Body:
-        "Users get their own grants. Pay-as-you-go if they want more.",
-    pollenCard2Promo: "🎁 Buy 1, get 1 free during beta!",
+    // Loop diagram
+    loopBuild: "build",
+    loopShip: "ship",
+    loopGrow: "grow",
+    loopEarn: "earn (soon)",
+
+    // Section — For builders
+    buildersTitle: "For builders",
+    buildersBody:
+        "One credit, every model. Pollen lands in your account daily — the more you build and contribute, the more you get.",
     tierSeedEmoji: "🌱",
     tierSeedTitle: "Seed",
     tierSeedDescription:
@@ -47,10 +47,15 @@ export const HELLO_PAGE = {
     tiersBetaNote:
         "We're in beta — thresholds may shift as we tune things together.",
 
-    // Section 6 — BYOP Spotlight
-    byopTitle: "Users bring their own compute.",
+    // Section — For your users
+    usersTitle: "For users",
+    usersBody:
+        "One Pollen balance, works across every app. Your users spend their own credits in your app — not yours.",
+    usersPromo: "🎁 Buy 1, get 1 free during beta!",
+    usersPayAsYouGo: "Pay-as-you-go if they want more.",
+    byopTitle: "Bring your own compute",
     byopBody:
-        "One integration. Your users spend their Pollen in your app — not yours. Revenue share is coming: you'll earn from what they spend.",
+        "One integration. Revenue share is coming: you'll earn from what they spend.",
     byopDocsButton: "BYOP Docs",
 
     // Section 8 — We Build in the Open

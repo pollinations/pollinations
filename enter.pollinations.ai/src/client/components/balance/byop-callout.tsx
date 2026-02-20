@@ -5,18 +5,20 @@ const BYOP_DOCS =
 
 export const BYOPCallout: FC = () => (
     <div>
-        <p className="text-sm font-medium text-gray-900">
-            🔌 <strong>Bring Your Own Pollen:</strong> Your users can pay for
-            their own compute. Your grants stay untouched.
+        <p className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">
+            🔌 Bring Your Own Pollen
         </p>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-xs text-gray-500 leading-relaxed">
+            Your users pay for their own compute. Your grants stay untouched.
+        </p>
+        <p className="text-xs text-gray-500 mt-3">
             <a
                 href={BYOP_DOCS}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline hover:text-gray-700"
             >
-                Learn how to set up BYOP &rarr;
+                Set up BYOP &rarr;
             </a>
         </p>
     </div>

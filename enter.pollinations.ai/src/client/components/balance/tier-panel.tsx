@@ -15,16 +15,16 @@ import { LevelUpCards } from "./level-up-cards.tsx";
 const APPEAL_URL =
     "https://github.com/pollinations/pollinations/issues/new?template=tier-appeal.yml";
 
-const SCORING_URL =
-    "https://github.com/pollinations/pollinations/blob/main/TIER_SCORING.md";
-
 // Ring gauge colors — more saturated than the Tailwind 300-shade gauge colors
-const TIER_RING_COLORS: Record<string, { fill: string; bg: string; border: string }> = {
+const TIER_RING_COLORS: Record<
+    string,
+    { fill: string; bg: string; border: string }
+> = {
     microbe: { fill: "#9ca3af", bg: "#f3f4f6", border: "#e5e7eb" },
-    spore:   { fill: "#3a7ca5", bg: "#dbeafe", border: "#93c5fd" },
-    seed:    { fill: "#45a06e", bg: "#dcfce7", border: "#86efac" },
-    flower:  { fill: "#d4749a", bg: "#fce7f3", border: "#f9a8d4" },
-    nectar:  { fill: "#f5a623", bg: "#fef3c7", border: "#fcd34d" },
+    spore: { fill: "#3a7ca5", bg: "#dbeafe", border: "#93c5fd" },
+    seed: { fill: "#45a06e", bg: "#dcfce7", border: "#86efac" },
+    flower: { fill: "#d4749a", bg: "#fce7f3", border: "#f9a8d4" },
+    nectar: { fill: "#f5a623", bg: "#fef3c7", border: "#fcd34d" },
 };
 
 // --- Ring Gauge ---
@@ -149,7 +149,7 @@ const TierRingGauge: FC<{
             {/* Info */}
             <div className="flex flex-col gap-1 text-center sm:text-left">
                 <div className="flex items-center gap-2">
-                    <p className="text-lg font-semibold text-gray-900">
+                    <p className="text-2xl font-semibold text-gray-900">
                         {tierLabel}
                     </p>
                     <span
@@ -184,6 +184,16 @@ const TierRingGauge: FC<{
                         )}
                     </p>
                 )}
+                <p className="text-[11px] text-gray-400 mt-2">
+                    <a
+                        href={APPEAL_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                    >
+                        Something wrong? Appeal your tier &rarr;
+                    </a>
+                </p>
             </div>
         </div>
     );
@@ -216,49 +226,15 @@ export const TierPanel: FC<TierPanelProps> = ({ active }) => {
                     dailyPollen={dailyPollen}
                 />
 
-                <Card color="amber">
-                    <LevelUpCards />
+                <div className="flex flex-col gap-3">
+                    <Card color="amber">
+                        <LevelUpCards />
+                    </Card>
 
-                    <div className="mt-3 pt-3 border-t border-gray-200">
+                    <Card color="amber">
                         <BYOPCallout />
-                    </div>
-
-                    <div className="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500 space-y-1">
-                        <p>
-                            <a
-                                href={SCORING_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="underline hover:text-gray-700"
-                            >
-                                See full scoring rules &rarr;
-                            </a>
-                        </p>
-                        <p className="text-gray-400">
-                            ✨ We're in beta! Scores and grants may evolve as we
-                            learn what works best.
-                        </p>
-                        <p>
-                            <a
-                                href="#what-are-tiers"
-                                className="underline hover:text-gray-700"
-                            >
-                                How do tiers work? &rarr;
-                            </a>
-                        </p>
-                    </div>
-                </Card>
-
-                <p className="text-[11px] text-gray-400">
-                    <a
-                        href={APPEAL_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:underline"
-                    >
-                        Something wrong? Appeal your tier &rarr;
-                    </a>
-                </p>
+                    </Card>
+                </div>
             </div>
         </Panel>
     );

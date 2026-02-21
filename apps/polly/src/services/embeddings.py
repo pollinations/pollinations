@@ -185,13 +185,15 @@ def _chunk_code(content: str, file_path: str, max_lines: int = 100) -> list[dict
             parts = list(range(0, len(tokens), MAX_TOKENS_PER_INPUT))
             for part_idx, pos in enumerate(parts):
                 sub_tokens = tokens[pos : pos + MAX_TOKENS_PER_INPUT]
-                final_chunks.append({
-                    "content": _enc.decode(sub_tokens),
-                    "file_path": chunk["file_path"],
-                    "start_line": chunk["start_line"],
-                    "end_line": chunk["end_line"],
-                    "part": part_idx,
-                })
+                final_chunks.append(
+                    {
+                        "content": _enc.decode(sub_tokens),
+                        "file_path": chunk["file_path"],
+                        "start_line": chunk["start_line"],
+                        "end_line": chunk["end_line"],
+                        "part": part_idx,
+                    }
+                )
 
     return final_chunks
 
@@ -332,7 +334,6 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
 
     embedded_count = 0
     all_ids = []
-    all_embeddings = []
     all_documents = []
     all_metadatas = []
     ids_to_delete = []
@@ -368,7 +369,9 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
                 if not chunk["content"].strip():
                     continue
                 part = chunk.get("part")
-                chunk_id = f"{rel_path}:{chunk['start_line']}-{chunk['end_line']}" + (f"p{part}" if part is not None else "")
+                chunk_id = f"{rel_path}:{chunk['start_line']}-{chunk['end_line']}" + (
+                    f"p{part}" if part is not None else ""
+                )
                 content_hash = _file_hash(chunk["content"])
 
                 all_ids.append(chunk_id)
@@ -439,7 +442,9 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
                 )
                 embedded_count += len(batch_ids)
                 batch_num += 1
-                logger.info(f"Embedded+saved batch {batch_num} ({len(batch_docs)} chunks, ~{batch_tokens} tokens, {i}/{len(all_documents)} total)")
+                logger.info(
+                    f"Embedded+saved batch {batch_num} ({len(batch_docs)} chunks, ~{batch_tokens} tokens, {i}/{len(all_documents)} total)"
+                )
                 batch_start = i
 
             unique_files = len(set(m["file_path"] for m in all_metadatas))
@@ -573,7 +578,7 @@ async def initialize():
         else:
             logger.info(f"Found {collection.count()} existing embeddings, checking for updates...")
 
-        count = await embed_repository(config.embeddings_repo, force_full=force_full)
+        await embed_repository(config.embeddings_repo, force_full=force_full)
 
         _initialized.set()
         logger.info("✅ Code embeddings initialization complete — %d chunks ready", collection.count())

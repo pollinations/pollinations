@@ -92,14 +92,14 @@ function HelloPage() {
                             <Body spacing="comfortable">
                                 {pageCopy.tierBody}
                             </Body>
-                            <div className="bg-surface-card border-l-2 border-border-highlight p-4 rounded-sub-card mb-4">
-                                <span className="font-headline text-sm font-black text-text-highlight">
+                            <div className="bg-surface-card/60 border border-border-subtle p-4 rounded-sub-card mb-4">
+                                <span className="font-headline text-sm font-black text-text-body-secondary">
                                     {pageCopy.usersTitle}
                                 </span>
                                 <Body
                                     size="sm"
                                     spacing="tight"
-                                    className="mt-2"
+                                    className="mt-2 text-text-body-tertiary"
                                 >
                                     {pageCopy.usersBody}
                                 </Body>
@@ -107,22 +107,14 @@ function HelloPage() {
                                     href="https://enter.pollinations.ai/docs#payments"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="font-headline text-sm font-black text-text-highlight hover:underline mt-2 inline-block"
+                                    className="font-headline text-sm font-black text-text-body-secondary hover:underline mt-2 inline-block"
                                 >
                                     {pageCopy.usersPaymentsLink}
                                 </a>
                             </div>
                             <div className="flex flex-col gap-1 mt-6">
                                 <a
-                                    href="https://github.com/pollinations/pollinations/blob/main/POINTS_AND_TIERS.md"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-headline text-sm font-black text-text-highlight hover:underline"
-                                >
-                                    {pageCopy.tierScoringLink}
-                                </a>
-                                <a
-                                    href="https://enter.pollinations.ai/docs#tiers"
+                                    href="https://enter.pollinations.ai"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="font-headline text-sm font-black text-text-highlight hover:underline"
@@ -235,7 +227,7 @@ function HelloPage() {
                                 }) => (
                                     <div
                                         key={`${item.date}-${item.title}`}
-                                        className="bg-input-background border-l-2 border-border-brand p-3 rounded-sub-card"
+                                        className="py-1"
                                     >
                                         <p className="font-body text-sm text-text-body-secondary leading-relaxed">
                                             <span className="shrink-0 bg-button-primary-bg text-text-on-color px-1.5 py-0.5 font-mono font-black text-[10px] rounded-tag mr-2">
@@ -267,10 +259,7 @@ function HelloPage() {
                                     title: string;
                                     description: string;
                                 }) => (
-                                    <div
-                                        key={item.title}
-                                        className="bg-input-background border-l-2 border-border-highlight p-3 rounded-sub-card"
-                                    >
+                                    <div key={item.title} className="py-1">
                                         <p className="font-body text-sm text-text-body-secondary leading-relaxed">
                                             <span className="mr-2">
                                                 {item.emoji}
@@ -286,13 +275,20 @@ function HelloPage() {
                         </div>
                     </div>
 
-                    <Body
-                        size="sm"
-                        spacing="none"
-                        className="text-text-body-secondary"
-                    >
-                        {pageCopy.comingFooter}
-                    </Body>
+                    <div className="flex justify-center mt-16">
+                        <span className="inline-flex items-start gap-2.5 bg-border-highlight/10 border border-border-highlight/20 rounded-sub-card px-4 py-3">
+                            <span className="text-lg leading-none mt-0.5">
+                                {pageCopy.comingFooterEmoji}
+                            </span>
+                            <Body
+                                size="sm"
+                                spacing="none"
+                                className="text-text-highlight"
+                            >
+                                {pageCopy.comingFooter}
+                            </Body>
+                        </span>
+                    </div>
                 </div>
 
                 <Divider />

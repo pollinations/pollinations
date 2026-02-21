@@ -41,8 +41,7 @@ export const HELLO_PAGE = {
     tierTitle: "Grow your tier",
     tierBody:
         "Your activity earns points — building, shipping, growing your user base. Hit a threshold and your tier upgrades, unlocking more free daily Pollen.",
-    tierScoringLink: "📊 See full scoring rules →",
-    tierHowLink: "🎓 How do tiers work? →",
+    tierHowLink: "❓ Want to know more? Check our FAQ →",
 
     tierSeedEmoji: "🌿",
     tierSeedTitle: "Seed",
@@ -135,6 +134,7 @@ export const HELLO_PAGE = {
             description: "A marketplace where users find your app.",
         },
     ],
+    comingFooterEmoji: "🌱",
     comingFooter:
         "The platform gives you runway. We're building the rest together, in the open.",
 

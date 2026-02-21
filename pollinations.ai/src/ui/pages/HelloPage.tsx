@@ -78,8 +78,7 @@ function HelloPage() {
                             <Body spacing="comfortable">
                                 {pageCopy.flywheelBody}
                             </Body>
-                            <p className="font-body text-sm text-text-body-tertiary italic">
-                                <span className="not-italic mr-1">🧪</span>
+                            <p className="font-body text-xs text-text-body-tertiary italic mt-2">
                                 {pageCopy.tiersBetaNote}
                             </p>
                         </div>

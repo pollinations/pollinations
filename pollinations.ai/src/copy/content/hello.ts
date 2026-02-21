@@ -30,44 +30,40 @@ export const HELLO_PAGE = {
     // Section — For builders
     buildersTitle: "For builders",
     buildersBody:
-        "One credit, every model. Build with text, image, audio, and video — all on a single Pollen balance.",
+        "One API. Text, image, audio, video — all on one Pollen balance.",
 
     // Flywheel explanation (right column)
     flywheelTitle: "The flywheel",
     flywheelBody:
-        "Build an app, ship it, grow your audience, and earn points. Each step fuels the next — the more your apps get used, the more Pollen you receive every day.",
+        "The more people use your apps, the more free Pollen you get every day.",
+    tiersBetaNote: "🧪 Beta — thresholds may shift as we tune things together.",
 
     // Tier explanation (left column)
     tierTitle: "Grow your tier",
     tierBody:
-        "Your activity earns points — building, shipping, growing your user base. Hit a threshold and your tier upgrades, unlocking more free daily Pollen.",
+        "Your activity earns points. Hit a threshold, your tier goes up, you get more free daily Pollen.",
     tierHowLink: "❓ Want to know more? Check our FAQ →",
 
     tierSeedEmoji: "🌿",
     tierSeedTitle: "Seed",
-    tierSeedDescription:
-        "You're shipping apps and contributing to the ecosystem.",
+    tierSeedDescription: "Shipping apps and contributing.",
     tierSeedGrant: "3 pollen / day",
     tierSeedPoints: "score ≥ 8",
     tierFlowerEmoji: "🌸",
     tierFlowerTitle: "Flower",
-    tierFlowerDescription: "Your app has traction — real users, real usage.",
+    tierFlowerDescription: "Real users, real traction.",
     tierFlowerGrant: "10 pollen / day",
     tierFlowerPoints: "score ≥ 20",
     tierNectarEmoji: "🍯",
     tierNectarTitle: "Nectar",
-    tierNectarDescription:
-        "Your apps are thriving. You're shaping the platform.",
+    tierNectarDescription: "Your apps are thriving.",
     tierNectarGrant: "20 pollen / day",
     tierNectarPoints: "score ≥ 50",
-    tiersBetaNote:
-        "We're in beta — thresholds may shift as we tune things together.",
 
     // Section — For your users / BYOP
-    usersTitle: "Let users pay within your app",
-    usersBody:
-        "Users spend their own Pollen in your app — it costs you zero compute. No paywall on day one, scales freely as you grow.",
-    usersPaymentsLink: "💳 Learn how to set up user payments →",
+    usersTitle: "Your users pay for themselves",
+    usersBody: "They spend their own Pollen in your app — costs you nothing.",
+    usersPaymentsLink: "💳 Set up user payments →",
 
     // Section 8 — We Build in the Open
     openTitle: "We build in the open",

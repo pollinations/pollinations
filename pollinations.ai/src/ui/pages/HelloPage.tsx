@@ -87,17 +87,17 @@ function HelloPage() {
 
                     {/* Row 2: Tier cards (left) + explanation (right) */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-8">
-                        {/* Tier ladder: Seed → Flower → Nectar */}
+                        {/* Tier ladder: Nectar (top) → Flower → Seed (bottom) */}
                         <div className="flex flex-col items-center gap-2">
                             {[
                                 {
-                                    emoji: pageCopy.tierSeedEmoji,
-                                    title: pageCopy.tierSeedTitle,
-                                    desc: pageCopy.tierSeedDescription,
-                                    grant: pageCopy.tierSeedGrant,
-                                    points: pageCopy.tierSeedPoints,
-                                    border: "border-border-main",
-                                    glow: "bg-border-main",
+                                    emoji: pageCopy.tierNectarEmoji,
+                                    title: pageCopy.tierNectarTitle,
+                                    desc: pageCopy.tierNectarDescription,
+                                    grant: pageCopy.tierNectarGrant,
+                                    points: pageCopy.tierNectarPoints,
+                                    border: "border-border-highlight",
+                                    glow: "bg-border-highlight",
                                 },
                                 {
                                     emoji: pageCopy.tierFlowerEmoji,
@@ -109,13 +109,13 @@ function HelloPage() {
                                     glow: "bg-border-brand",
                                 },
                                 {
-                                    emoji: pageCopy.tierNectarEmoji,
-                                    title: pageCopy.tierNectarTitle,
-                                    desc: pageCopy.tierNectarDescription,
-                                    grant: pageCopy.tierNectarGrant,
-                                    points: pageCopy.tierNectarPoints,
-                                    border: "border-border-highlight",
-                                    glow: "bg-border-highlight",
+                                    emoji: pageCopy.tierSeedEmoji,
+                                    title: pageCopy.tierSeedTitle,
+                                    desc: pageCopy.tierSeedDescription,
+                                    grant: pageCopy.tierSeedGrant,
+                                    points: pageCopy.tierSeedPoints,
+                                    border: "border-border-main",
+                                    glow: "bg-border-main",
                                 },
                             ].map((tier, i) => (
                                 <div

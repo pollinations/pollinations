@@ -89,7 +89,7 @@ flowchart TB
             RANDOM_SEED["Random seed<br/>per request"]
         end
 
-        WEB_SEARCH_HANDLER["web_search_handler()<br/>Perplexity/Gemini models"]
+        WEB_SEARCH_HANDLER["web_search_handler()<br/>Web search models"]
     end
 
     subgraph GITHUB_LAYER["**GITHUB LAYER**"]

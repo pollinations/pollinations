@@ -17,7 +17,8 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [GENEXUS AI](https://github.com/aymantaha3345/GENEXUS-AI) | Private backend server that intermediates between apps and Pollinations.ai. | @aymantaha3345 |
+| [BrainrotMaker](http://host.lualearnings.com:2256) | Generate brainrot images in seconds with BrainrotMaker Image Generator. | @lualearnings |
+| [GENEXUS AI](Not a public website – backend server project) | Private backend server that intermediates between apps and Pollinations.ai. | @aymantaha3345 |
 | [AIImageEditor](https://github.com/mikemartemianov/ImageGenerator) | AI image editor with brush editing, outpainting, upscaling, and multi-model support. | @MikeMartemianov |
 | [Sticker Garden](https://sticker-garden.vercel.app/) | Turn text prompts into sticker-ready images with style presets and batch variants. | @GekkeTovie |
 | [P2S](https://github.com/Rakesh-ada/P2S) | Image consistency engine for AI filmmaking with scene memory and auto-repair. | @Rakesh-ada |
@@ -26,7 +27,6 @@
 | [PolliBench](https://pollibench.netlify.app/) | Benchmark all Pollinations models automatically with frontend HTML questions. | @notlousybook |
 | [AI Quiz Simulator](https://mrlearner1606.github.io/quiz/) | Free AI-powered quiz simulator for competitive exams with timer, scoring, and explanations. | @mrlearner1606 |
 | [Personic](https://github.com/AlanSynn/personic) | Generate structured AI personas and matching images from brief action prompts. | @AlanSynn |
-| [TaleCrafter AI](https://www.talecrafter.tech/) | Interactive storytelling platform turning prompts into digital storybooks with AI illustrations. | @adityashriwas |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

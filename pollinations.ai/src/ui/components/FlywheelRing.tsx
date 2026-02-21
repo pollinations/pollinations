@@ -97,7 +97,7 @@ export function FlywheelRing({ pageCopy }: FlywheelRingProps) {
     const copy = pageCopy as Record<string, string>;
 
     return (
-        <div className="flex justify-center">
+        <div className="flex lg:justify-center">
             <div className="relative w-[340px] h-[340px]">
                 {/* SVG ring */}
                 <svg

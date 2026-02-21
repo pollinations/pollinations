@@ -86,7 +86,7 @@ function HelloPage() {
                     </div>
 
                     {/* Row 2: Explanation (left) + Tier cards (right) */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                         {/* Tier explanation */}
                         <div>
                             <Body spacing="comfortable">
@@ -112,20 +112,10 @@ function HelloPage() {
                                     {pageCopy.usersPaymentsLink}
                                 </a>
                             </div>
-                            <div className="flex flex-col gap-1 mt-6">
-                                <a
-                                    href="https://enter.pollinations.ai"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-headline text-sm font-black text-text-highlight hover:underline"
-                                >
-                                    {pageCopy.tierHowLink}
-                                </a>
-                            </div>
                         </div>
 
                         {/* Tier ladder: Nectar (top) → Flower → Seed (bottom) */}
-                        <div className="relative flex flex-col gap-4 pl-6 max-w-[300px] mx-auto">
+                        <div className="relative flex flex-col gap-4 pl-6 max-w-[300px] lg:mx-auto">
                             {/* Gradient progression line */}
                             <div
                                 className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full"
@@ -202,6 +192,14 @@ function HelloPage() {
                             ))}
                         </div>
                     </div>
+                    <a
+                        href="https://enter.pollinations.ai"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-headline text-sm font-black text-text-highlight hover:underline mt-4 inline-block"
+                    >
+                        {pageCopy.tierHowLink}
+                    </a>
                 </div>
 
                 <Divider />

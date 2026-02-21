@@ -115,6 +115,16 @@
     }
 }
 
+/* Tier Eligible badge glow animation (teal) */
+@keyframes glow-teal {
+    0%, 100% {
+        box-shadow: 0 0 4px rgba(45, 212, 191, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 12px rgba(45, 212, 191, 0.8), 0 0 20px rgba(45, 212, 191, 0.4);
+    }
+}
+
 /* Diamond shimmer animation for payment buttons */
 @keyframes shimmer {
     0% {

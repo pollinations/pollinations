@@ -1,0 +1,34 @@
+{
+  "pr_number": 8474,
+  "title": "fix: overhaul Polly embeddings, perf, and docs",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/8474",
+  "merged_at": "2026-02-21T21:58:04Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polly's brain upgrade",
+    "blurb": "Our resident bee bot just got a cortex update. She reads documentation faster, ignores noise better, and finally stopped trying to memorize empty pages.",
+    "summary": "Overhauled the embedding system with token-aware batching and optimized message handling to reduce latency and improve context retrieval.",
+    "impact": "Users will notice faster replies and much more accurate answers when asking about documentation or code.",
+    "keywords": [
+      "discord",
+      "embeddings",
+      "performance",
+      "rag",
+      "bot"
+    ],
+    "visual_concept": "Polly the bee in a cozy study or library, upgrading her knowledge base. She is reading data efficiently. The robot helper is organizing the information.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing oversized smart glasses, reading a glowing lime green (#ecf874) holographic book. A small robot companion stacks data-tapes nearby. Soft lavender and cream background. Warm lighting, lo-fi study vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-21T21:58:52.243678+00:00"
+}

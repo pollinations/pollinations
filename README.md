@@ -44,6 +44,9 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-02-20** – **🛠️ GENEXUS AI** Added to the developer tools showcase. Another backend integration for the ecosystem.
+- **2026-02-19** – **📦 Package Migration** The SDK and MCP packages have moved to the `@pollinations_ai` scope on NPM. We dropped the React dependencies, so they're lighter and framework-agnostic now.
+- **2026-02-19** – **🎥 Video Duration** The `seedance` video model now accepts a `duration` parameter. Control your clip length via the [API](https://gen.pollinations.ai).
 - **2026-02-18** – **📅 Build Diary** The [Community page](https://hello.pollinations.ai) now features an interactive timeline of the project's history. Navigate daily changes and digests with keyboard controls.
 - **2026-02-18** – **🐛 Readable Errors** The [API](https://gen.pollinations.ai) now extracts actual human-readable messages from upstream JSON errors. No more raw dumps when providers fail.
 - **2026-02-18** – **🌱 Seed Tier Logic** GitHub activity qualification now uses a rolling 90-day window instead of resetting yearly. Your status is safe in January.
@@ -51,9 +54,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-02-17** – **👾 Pixel Art & Markdown** A cozy new retro theme is available, plus app descriptions are now auto-formatted via the [Text API](https://gen.pollinations.ai).
 - **2026-02-17** – **🎨 UI Theme Cycling** Click the [pollinations.ai](https://hello.pollinations.ai) logo to instantly cycle through visual themes.
 - **2026-02-16** – **🌸 Badges in Bloom** Navigate the ecosystem with our new organic badge system (Fresh, Pollen, Buzz) to find the best [community apps](https://hello.pollinations.ai).
-- **2026-02-16** – **🎥 Consistent AI Video** Try **P2S**, a new tool for maintaining character and scene consistency across frames in AI filmmaking.
-- **2026-02-16** – **🎨 Sticker Garden** Generate custom sticker packs with style presets and batch variants in this new [creative app](https://hello.pollinations.ai).
-- **2026-02-16** – **💻 OpenCode Plugin** Developers can now access Pollinations models directly within the OpenCode environment.
 ---
 
 ## 🌱 Introduction

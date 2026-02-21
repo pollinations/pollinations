@@ -21,7 +21,7 @@ MAX_ERROR_LENGTH = 200
 DEFAULT_REPO = "pollinations/pollinations"
 
 # Load repo info for AI context
-_repo_info_path = os.path.join(os.path.dirname(__file__), "..", "data", "repo_info.txt")
+_repo_info_path = os.path.join(os.path.dirname(__file__), "context", "repo_info.txt")
 try:
     with open(_repo_info_path, encoding="utf-8") as f:
         REPO_INFO = f.read()

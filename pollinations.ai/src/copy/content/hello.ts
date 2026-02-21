@@ -11,7 +11,7 @@ export const HELLO_PAGE = {
     heroStat2Label: "monthly users",
     heroStat3: "200",
     heroStat3Label: "countries",
-    startBuildingButton: "Start Building",
+    startBuildingButton: "Register",
     joinDiscordButton: "Join the Discord",
 
     readTheDocsButton: "Read the Docs",
@@ -132,10 +132,10 @@ export const HELLO_PAGE = {
     ],
     comingFooterEmoji: "🌱",
     comingFooter:
-        "The platform gives you runway. We're building the rest together, in the open.",
+        "The platform gives you runway. We're shaping the rest together, in the open.",
 
     // Section 9 — CTA
-    ctaTitle: "Start building",
+    ctaTitle: "Get started",
     ctaBody:
         "One API. Open source. The code, the roadmap, the conversations — all in the open.",
     browseAppsLink: "Browse Apps",

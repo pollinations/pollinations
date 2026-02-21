@@ -1,0 +1,33 @@
+{
+  "pr_number": 8457,
+  "title": "Update README news — 2026-02-20",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8457",
+  "merged_at": "2026-02-21T11:59:26Z",
+  "labels": [
+    "NEWS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Fresh Ink",
+    "blurb": "The daily news has been printed and delivered to the front page.",
+    "summary": "Automated update to the README.md latest news section.",
+    "impact": "Ensures the repository landing page reflects the most recent project updates.",
+    "keywords": [
+      "documentation",
+      "readme",
+      "news",
+      "automation"
+    ],
+    "visual_concept": "The bee mascot reading a freshly printed newspaper with a robot. Represents the documentation update.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot reading a newspaper held by a small robot. Lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Pixel text: 'NEWS'. Nostalgic and calm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-21T12:00:15.222351+00:00"
+}

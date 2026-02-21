@@ -700,32 +700,38 @@ async def on_message(message: discord.Message):
         await handle_dm_message(message)
         return
 
-    # Check reply status ONCE (reuse result throughout)
-    is_reply_to_bot, ref_msg = await _check_reply_to_bot(message)
-    logger.info(
-        f"MSG: '{message.content[:50]}' | is_reply_to_bot={is_reply_to_bot} | has_polly={'polly' in message.content.lower()} | is_@mention={bot.user and bot.user.mentioned_in(message) if bot.user else False} | in_thread={isinstance(message.channel, discord.Thread)}"
-    )
+    # Fast path: check if this message is relevant before doing any expensive work.
+    # bot.user.mentioned_in() is a cheap local check on message.mentions list.
+    is_mentioned = bot.user is not None and bot.user.mentioned_in(message) and not message.mention_everyone
+    is_thread = isinstance(message.channel, discord.Thread)
+    is_reply = bool(message.reference and message.reference.message_id)
 
-    # Check if in a thread
-    if isinstance(message.channel, discord.Thread):
-        logger.info("PATH: In thread (line 923)")
+    # Non-thread messages: only respond to @mentions
+    if not is_thread:
+        if not is_mentioned:
+            return
+        # Fall through to handle @mention below
+
+    # Thread messages: respond to @mentions OR replies to bot
+    if is_thread:
+        # If @mentioned, we know we should respond — no need to check reply target
+        # Only call _check_reply_to_bot if not @mentioned AND it's a reply
+        is_reply_to_bot = False
+        ref_msg = None
+        if not is_mentioned:
+            if is_reply:
+                is_reply_to_bot, ref_msg = await _check_reply_to_bot(message)
+            if not is_reply_to_bot:
+                return
+
+        logger.debug(
+            f"Thread msg: '{message.content[:50]}' | @mentioned={is_mentioned} | reply_to_bot={is_reply_to_bot}"
+        )
+
         session = session_manager.get_session(message.channel.id)
 
-        # ONLY respond if: @mentioned OR replying to bot's message
-        # Having a session is NOT enough - user must explicitly engage
-        should_respond = (
-            bot.user is not None and bot.user.mentioned_in(message) and not message.mention_everyone
-        ) or is_reply_to_bot
-
-        if not should_respond:
-            # In thread but not mentioned and not replying to bot - ignore
-            return
-
-        # Check if this is an auto-created thread from inline reply (no session exists)
-        # If so, treat it as inline and don't persist the thread
-        if not session and is_reply_to_bot and not bot.user.mentioned_in(message):
-            # This is a reply to inline polly in an auto-created thread
-            # Respond inline-style without creating session
+        # Auto-created thread from inline reply (no session) — respond inline
+        if not session and is_reply_to_bot and not is_mentioned:
             await handle_inline_polly_mention(message)
             return
 
@@ -736,7 +742,9 @@ async def on_message(message: discord.Message):
         text = text.strip()
 
         # Handle reply context in threads too
-        if message.reference and message.reference.message_id:
+        if is_reply:
+            if ref_msg is None:
+                _, ref_msg = await _check_reply_to_bot(message)
             text = await handle_reply_context(message, text, ref_msg)
 
         image_urls = extract_image_urls(message)
@@ -761,21 +769,6 @@ async def on_message(message: discord.Message):
             )
 
         await handle_thread_message(message, session)
-        return
-
-    # Check for casual "polly" mention OR reply to bot (case-insensitive)
-    # This triggers inline reply WITHOUT creating a thread
-    # if "polly" in message.content.lower():
-    #     await handle_inline_polly_mention(message)
-    #     return
-
-    # ONLY respond if @mentioned (not just replying)
-    # Thread creation is ONLY for @polly, not replies
-    if bot.user is None or not bot.user.mentioned_in(message):
-        logger.info(f"Ignoring message (not @mentioned): {message.content[:50]}")
-        return
-
-    if message.mention_everyone:
         return
 
     # Extract message text

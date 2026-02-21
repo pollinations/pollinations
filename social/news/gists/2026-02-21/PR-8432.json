@@ -1,0 +1,34 @@
+{
+  "pr_number": 8432,
+  "title": "Add BrainrotMaker to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8432",
+  "merged_at": "2026-02-21T14:35:38Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Maximum Brainrot",
+    "blurb": "The hive is embracing the chaos. BrainrotMaker has landed in the Creative showcase for all your high-speed meme generation needs.",
+    "summary": "Added BrainrotMaker to the community apps list, offering rapid generation of internet-culture imagery.",
+    "impact": "Users can now access a dedicated tool for generating 'brainrot' style images directly from the apps showcase.",
+    "keywords": [
+      "community",
+      "apps",
+      "creative",
+      "memes",
+      "image-generation"
+    ],
+    "visual_concept": "The concept of 'brainrot' (chaotic internet memes/overstimulation) represented in a cozy way. Polly the bee watching a screen that is exploding with colorful, glitchy pixel confetti.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot wearing cool sunglasses, looking at a retro monitor displaying colorful chaotic glitch art. A small robot companion looks mesmerized. Lime green (#ecf874) and pastel purple gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'BRAINROT'. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-21T14:36:21.569011+00:00"
+}

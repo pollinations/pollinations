@@ -67,9 +67,9 @@ export const ModelRow: FC<ModelRowProps> = ({
                         </span>
                         {showNew && (
                             <Badge
-                                color="green"
+                                color="purple"
                                 size="sm"
-                                className="font-semibold shadow-[0_0_6px_rgba(34,197,94,0.5)] animate-[glow_2s_ease-in-out_infinite]"
+                                className="font-semibold shadow-[0_0_6px_rgba(192,132,252,0.5)] animate-[glow-purple_2s_ease-in-out_infinite]"
                             >
                                 NEW
                             </Badge>
@@ -81,16 +81,10 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 </span>
                             </Tooltip>
                         )}
-                        {showPaidOnly && (
-                            <Tooltip
-                                content={
-                                    isDisabled
-                                        ? "Top up your 💎 pollen balance to unlock this model."
-                                        : "This model uses your purchased pollen 💎 only."
-                                }
-                            >
-                                <span className="text-[10px] text-purple-700 bg-transparent px-1.5 py-0.5 rounded-full font-semibold border border-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.5)] animate-[glow-purple_2s_ease-in-out_infinite] whitespace-nowrap">
-                                    💎 PAID ONLY
+                        {!showPaidOnly && (
+                            <Tooltip content="Covered by your daily tier grant.">
+                                <span className="text-[10px] text-teal-700 bg-transparent px-1.5 py-0.5 rounded-full font-semibold border border-teal-400 shadow-[0_0_6px_rgba(45,212,191,0.5)] animate-[glow-teal_2s_ease-in-out_infinite] whitespace-nowrap">
+                                    🌱 TIER ELIGIBLE
                                 </span>
                             </Tooltip>
                         )}

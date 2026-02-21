@@ -161,7 +161,7 @@ flowchart TB
         direction TB
 
         subgraph CODE_EMB["Code - embeddings.py"]
-            EMB_MODEL["Jina Embeddings v2"]
+            EMB_MODEL["OpenAI text-embedding-3-small"]
             CHROMADB["ChromaDB<br/>PersistentClient"]
             SEARCH_CODE_FN["search_code()<br/>Semantic search"]
             CLONE_PULL["clone_or_pull_repo()"]
@@ -333,8 +333,8 @@ flowchart TB
 - **github_pr.py** - PR operations (review, merge, inline comments)
 
 #### Supporting Services
-- **embeddings.py** - Jina v2 + ChromaDB for semantic code search
-- **doc_embeddings.py** - Documentation crawler + embeddings (enter.pollinations.ai, OpenAPI schema, kpi.myceli.ai)
+- **embeddings.py** - OpenAI text-embedding-3-small + ChromaDB for semantic code search
+- **doc_embeddings.py** - Documentation crawler + embeddings (OpenAPI schema)
 - **subscriptions.py** - SQLite-backed issue subscriptions with polling
 - **webhook_server.py** - aiohttp server for GitHub webhooks
 - **web_scraper.py** - Crawl4AI for web content extraction

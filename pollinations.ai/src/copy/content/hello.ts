@@ -25,7 +25,7 @@ export const HELLO_PAGE = {
     loopShipEmoji: "🚀",
     loopGrowEmoji: "📈",
     loopEarnEmoji: "💰",
-    flywheelCenter: "My Apps",
+    flywheelCenter: "Your Apps",
 
     // Section — For builders
     buildersTitle: "For builders",

@@ -1,0 +1,34 @@
+{
+  "pr_number": 7328,
+  "title": "Add ppo to Chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7328",
+  "merged_at": "2026-02-21T14:42:41Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "New bot on the block",
+    "blurb": "Say hello to ppo, a powerful new AI assistant by AnesNT, now powered by Pollinations.",
+    "summary": "Added ppo to the community apps directory, expanding the ecosystem of tools built on our infrastructure.",
+    "impact": "Users can now access this powerful AI assistant directly from the apps list.",
+    "keywords": [
+      "community",
+      "apps",
+      "chat",
+      "assistant",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee welcoming a new robot friend (ppo) to the garden. ppo represents the new app - a helpful assistant.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot shaking hands with a sleek new pixel robot assistant in a lime green (#ecf874) garden. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'NEW FRIEND'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-21T14:43:36.258120+00:00"
+}

@@ -46,19 +46,21 @@ export const HELLO_PAGE = {
 
     tierSeedEmoji: "🌿",
     tierSeedTitle: "Seed",
-    tierSeedDescription: "You're building. Contributing, shipping apps.",
+    tierSeedDescription:
+        "You're shipping apps and contributing to the ecosystem.",
     tierSeedGrant: "3 pollen / day",
-    tierSeedPoints: "8+ points",
+    tierSeedPoints: "score ≥ 8",
     tierFlowerEmoji: "🌸",
     tierFlowerTitle: "Flower",
-    tierFlowerDescription: "Your app is live and getting used.",
+    tierFlowerDescription: "Your app has traction — real users, real usage.",
     tierFlowerGrant: "10 pollen / day",
-    tierFlowerPoints: "20+ points",
+    tierFlowerPoints: "score ≥ 20",
     tierNectarEmoji: "🍯",
     tierNectarTitle: "Nectar",
-    tierNectarDescription: "Most active builders.",
+    tierNectarDescription:
+        "Your apps are thriving. You're shaping the platform.",
     tierNectarGrant: "20 pollen / day",
-    tierNectarPoints: "50+ points",
+    tierNectarPoints: "score ≥ 50",
     tiersBetaNote:
         "We're in beta — thresholds may shift as we tune things together.",
 

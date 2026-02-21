@@ -8,7 +8,6 @@ import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
-import { SubCard } from "../components/ui/sub-card";
 import { Body, Heading, Title } from "../components/ui/typography";
 
 function HelloPage() {
@@ -134,7 +133,14 @@ function HelloPage() {
                         </div>
 
                         {/* Tier ladder: Nectar (top) → Flower → Seed (bottom) */}
-                        <div className="flex flex-col items-center gap-2">
+                        <div className="relative flex flex-col gap-4 pl-6 max-w-[300px] mx-auto">
+                            {/* Gradient progression line */}
+                            <div
+                                className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full"
+                                style={{
+                                    background: `linear-gradient(to bottom, rgb(var(--border-highlight)), rgb(var(--border-brand)), rgb(var(--border-main)))`,
+                                }}
+                            />
                             {[
                                 {
                                     emoji: pageCopy.tierNectarEmoji,
@@ -142,8 +148,8 @@ function HelloPage() {
                                     desc: pageCopy.tierNectarDescription,
                                     grant: pageCopy.tierNectarGrant,
                                     points: pageCopy.tierNectarPoints,
-                                    border: "border-border-highlight",
-                                    glow: "bg-border-highlight",
+                                    descBg: "bg-border-highlight/10",
+                                    descBorder: "border-border-highlight/30",
                                 },
                                 {
                                     emoji: pageCopy.tierFlowerEmoji,
@@ -151,8 +157,8 @@ function HelloPage() {
                                     desc: pageCopy.tierFlowerDescription,
                                     grant: pageCopy.tierFlowerGrant,
                                     points: pageCopy.tierFlowerPoints,
-                                    border: "border-border-brand",
-                                    glow: "bg-border-brand",
+                                    descBg: "bg-border-brand/10",
+                                    descBorder: "border-border-brand/30",
                                 },
                                 {
                                     emoji: pageCopy.tierSeedEmoji,
@@ -160,36 +166,38 @@ function HelloPage() {
                                     desc: pageCopy.tierSeedDescription,
                                     grant: pageCopy.tierSeedGrant,
                                     points: pageCopy.tierSeedPoints,
-                                    border: "border-border-main",
-                                    glow: "bg-border-main",
+                                    descBg: "bg-border-main/10",
+                                    descBorder: "border-border-main/30",
                                 },
-                            ].map((tier, i) => (
+                            ].map((tier) => (
                                 <div
                                     key={tier.title}
-                                    className="flex flex-col items-center gap-2 w-full max-w-[280px]"
+                                    className="flex flex-col gap-1.5"
                                 >
-                                    <SubCard
-                                        size="compact"
-                                        className={`relative overflow-hidden w-full border-t-2 ${tier.border}`}
+                                    {/* Emoji + title + grant — floating, no background */}
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xl">
+                                            {tier.emoji}
+                                        </span>
+                                        <span className="font-headline text-base font-black text-text-highlight">
+                                            {tier.title}
+                                        </span>
+                                        <span className="ml-auto font-headline text-sm font-black text-text-highlight">
+                                            {tier.grant}
+                                        </span>
+                                    </div>
+                                    {/* Description — highlighted callout */}
+                                    <div
+                                        className={`${tier.descBg} border ${tier.descBorder} rounded-sub-card px-3 py-2`}
                                     >
-                                        <div
-                                            className={`absolute top-0 left-0 right-0 h-[3px] ${tier.glow} opacity-60`}
-                                        />
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <span className="text-xl">
-                                                {tier.emoji}
-                                            </span>
-                                            <span className="font-headline text-base font-black text-text-highlight">
-                                                {tier.title}
-                                            </span>
-                                        </div>
-                                        <Body size="sm" spacing="tight">
+                                        <Body
+                                            size="sm"
+                                            spacing="none"
+                                            className="text-text-body-secondary"
+                                        >
                                             {tier.desc}
                                         </Body>
-                                        <div className="flex items-baseline gap-3 mt-1">
-                                            <span className="font-headline text-sm font-black text-text-highlight">
-                                                {tier.grant}
-                                            </span>
+                                        <div className="flex justify-end mt-1">
                                             <Badge
                                                 variant="muted"
                                                 className="text-xs px-2 py-0.5"
@@ -197,12 +205,7 @@ function HelloPage() {
                                                 {tier.points}
                                             </Badge>
                                         </div>
-                                    </SubCard>
-                                    {i < 2 && (
-                                        <span className="text-border-highlight/40 text-xl font-bold">
-                                            ↑
-                                        </span>
-                                    )}
+                                    </div>
                                 </div>
                             ))}
                         </div>

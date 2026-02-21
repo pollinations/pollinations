@@ -151,20 +151,27 @@ export function FlywheelRing({ pageCopy }: FlywheelRingProps) {
                             width: `${NODE_SIZE}px`,
                             height: `${NODE_SIZE}px`,
                             background: "rgb(var(--surface-page) / 0.3)",
+                            border: node.soon
+                                ? "1.5px dashed rgb(var(--border-subtle))"
+                                : undefined,
                         }}
                     >
-                        <span className="text-[32px] leading-none">
+                        <span
+                            className={`text-[32px] leading-none ${node.soon ? "opacity-40" : ""}`}
+                        >
                             {copy[node.emojiKey]}
                         </span>
-                        <span className="font-headline text-[13px] font-bold text-text-body-main tracking-wider whitespace-nowrap mt-0.5">
+                        <span
+                            className={`font-headline text-[13px] font-bold text-text-body-main tracking-wider whitespace-nowrap mt-0.5 ${node.soon ? "opacity-40" : ""}`}
+                        >
                             <span className="text-text-highlight opacity-50 mr-0.5">
                                 {node.num}
                             </span>{" "}
                             {copy[node.labelKey]?.toUpperCase()}
                         </span>
                         {node.soon && (
-                            <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 font-headline text-[10px] text-text-body-tertiary italic whitespace-nowrap">
-                                (soon)
+                            <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 font-headline text-[10px] font-black text-text-body-tertiary uppercase tracking-wider whitespace-nowrap bg-surface-card/80 border border-border-subtle rounded-tag px-1.5 py-0.5">
+                                coming soon
                             </span>
                         )}
                     </div>

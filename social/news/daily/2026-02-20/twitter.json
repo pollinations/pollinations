@@ -1,0 +1,20 @@
+{
+  "tweet_type": "shipped",
+  "tweet": "added Genexus AI to the dev tools. just another sharp object for the drawer. go build something weird with it.",
+  "alt_tweet": "Genexus AI is now in the dev toolkit. more options, same simple http calls. live now.",
+  "hashtags": [
+    "#OpenSource",
+    "#AI",
+    "#DevTools"
+  ],
+  "image_prompt": "Cozy pixel art scene of the cute robot character placing a glowing lime green (#ecf874) cartridge labeled 'GX' into a retro open toolbox. The bee mascot hovers nearby holding a tiny wrench. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'UPGRADE'. Cozy pixel art, 8-bit aesthetic, chunky sprites.",
+  "reasoning": "Short, direct, treats the update as a practical utility rather than a revolutionary breakthrough. Fits the 'builder to builder' voice.",
+  "char_count": 108,
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-20/images/twitter.jpg",
+    "prompt": "Cozy pixel art scene of the cute robot character placing a glowing lime green (#ecf874) cartridge labeled 'GX' into a retro open toolbox. The bee mascot hovers nearby holding a tiny wrench. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'UPGRADE'. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "date": "2026-02-20",
+  "generated_at": "2026-02-21T06:11:43.579784+00:00",
+  "platform": "twitter"
+}

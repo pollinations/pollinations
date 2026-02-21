@@ -1,9 +1,8 @@
-import time
 import logging
-from typing import Optional
+import time
 
-import jwt
 import aiohttp
+import jwt
 
 logger = logging.getLogger(__name__)
 
@@ -11,27 +10,18 @@ TOKEN_REFRESH_BUFFER = 300
 
 
 class GitHubAppAuth:
-    def __init__(
-        self,
-        app_id: str,
-        private_key: str,
-        installation_id: str
-    ):
+    def __init__(self, app_id: str, private_key: str, installation_id: str):
         self.app_id = app_id
         self.private_key = private_key
         self.installation_id = installation_id
-        self._token: Optional[str] = None
+        self._token: str | None = None
         self._token_expires_at: float = 0
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._session: aiohttp.ClientSession | None = None
 
     def _generate_jwt(self) -> str:
         now = int(time.time())
         logger.debug(f"Generating JWT at timestamp: {now}")
-        payload = {
-            "iat": now - 30,
-            "exp": now + 60,
-            "iss": self.app_id
-        }
+        payload = {"iat": now - 30, "exp": now + 60, "iss": self.app_id}
         return jwt.encode(payload, self.private_key, algorithm="RS256")
 
     async def _get_session(self) -> aiohttp.ClientSession:
@@ -44,7 +34,7 @@ class GitHubAppAuth:
             await self._session.close()
             self._session = None
 
-    async def get_token(self) -> Optional[str]:
+    async def get_token(self) -> str | None:
         if self._token and time.time() < (self._token_expires_at - TOKEN_REFRESH_BUFFER):
             return self._token
 
@@ -58,7 +48,7 @@ class GitHubAppAuth:
             headers = {
                 "Authorization": f"Bearer {jwt_token}",
                 "Accept": "application/vnd.github+json",
-                "X-GitHub-Api-Version": "2022-11-28"
+                "X-GitHub-Api-Version": "2022-11-28",
             }
 
             async with session.post(url, headers=headers) as response:
@@ -78,7 +68,7 @@ class GitHubAppAuth:
             return None
 
 
-github_app_auth: Optional[GitHubAppAuth] = None
+github_app_auth: GitHubAppAuth | None = None
 
 
 def init_github_app(app_id: str, private_key: str, installation_id: str):
@@ -87,7 +77,7 @@ def init_github_app(app_id: str, private_key: str, installation_id: str):
     logger.info(f"GitHub App auth initialized (App ID: {app_id}, Installation: {installation_id})")
 
 
-async def get_github_token() -> Optional[str]:
+async def get_github_token() -> str | None:
     if github_app_auth:
         return await github_app_auth.get_token()
     return None

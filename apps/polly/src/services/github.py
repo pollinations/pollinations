@@ -1,21 +1,21 @@
 import asyncio
 import logging
-import aiohttp
-from typing import Optional
 from urllib.parse import quote
+
+import aiohttp
 
 from ..config import config
 from ..constants import API_TIMEOUT, MAX_ERROR_LENGTH
-from .github_graphql import github_graphql
 from . import github_auth
+from .github_graphql import github_graphql
 
 logger = logging.getLogger(__name__)
 
 
 class GitHubManager:
     def __init__(self):
-        self._session: Optional[aiohttp.ClientSession] = None
-        self._connector: Optional[aiohttp.TCPConnector] = None
+        self._session: aiohttp.ClientSession | None = None
+        self._connector: aiohttp.TCPConnector | None = None
 
     @property
     def repo(self) -> str:
@@ -49,7 +49,7 @@ class GitHubManager:
             await self._connector.close()
             self._connector = None
 
-    async def _get_token(self) -> Optional[str]:
+    async def _get_token(self) -> str | None:
         """Get GitHub token (from App or PAT)."""
         if github_auth.github_app_auth:
             token = await github_auth.github_app_auth.get_token()
@@ -65,7 +65,7 @@ class GitHubManager:
         logger.debug(f"_has_auth check: app={has_app}, pat={has_pat}")
         return has_app or has_pat
 
-    async def _get_headers(self) -> Optional[dict]:
+    async def _get_headers(self) -> dict | None:
         """Get standard GitHub API headers."""
         token = await self._get_token()
         if not token:
@@ -80,8 +80,8 @@ class GitHubManager:
         self,
         keywords: str,
         state: str = "open",
-        author: Optional[str] = None,
-        labels: Optional[list[str]] = None,
+        author: str | None = None,
+        labels: list[str] | None = None,
         limit: int = 10,
     ) -> list[dict]:
 
@@ -129,11 +129,11 @@ class GitHubManager:
 
     async def search_discord_issues(
         self,
-        discord_username: Optional[str] = None,
+        discord_username: str | None = None,
         state: str = "open",
         limit: int = 10,
     ) -> list[dict]:
-    
+
         keywords = '"**Author:**"'
         if discord_username:
             keywords += f' "{discord_username}"'
@@ -147,9 +147,7 @@ class GitHubManager:
         """
         return await self.search_issues(keywords=keywords, state="open", limit=limit)
 
-   
-
-    async def get_issue(self, issue_number: int) -> Optional[dict]:
+    async def get_issue(self, issue_number: int) -> dict | None:
         """
         Get full details of a single issue.
 
@@ -184,7 +182,7 @@ class GitHubManager:
         return None
 
     async def get_issue_comments(self, issue_number: int, limit: int = 5) -> list[dict]:
-       
+
         if not self._has_auth():
             return []
 
@@ -203,11 +201,7 @@ class GitHubManager:
                         {
                             "id": c["id"],  # Comment ID for edit_comment/delete_comment
                             "author": c["user"]["login"],
-                            "body": (
-                                c["body"][:500] + "..."
-                                if len(c["body"]) > 500
-                                else c["body"]
-                            ),
+                            "body": (c["body"][:500] + "..." if len(c["body"]) > 500 else c["body"]),
                             "created_at": c["created_at"][:10],
                         }
                         for c in data
@@ -217,19 +211,17 @@ class GitHubManager:
 
         return []
 
-
     async def create_issue(
         self,
         title: str,
         description: str,
         reporter: str,
-        participants: Optional[list[str]] = None,
-        image_urls: Optional[list[str]] = None,
-        user_role_ids: Optional[list[int]] = None,
-        reporter_id: Optional[int] = None,
-        message_url: Optional[str] = None,
+        participants: list[str] | None = None,
+        image_urls: list[str] | None = None,
+        user_role_ids: list[int] | None = None,
+        reporter_id: int | None = None,
+        message_url: str | None = None,
     ) -> dict:
-       
 
         if not self._has_auth():
             return {"success": False, "error": "GitHub token not configured"}
@@ -271,9 +263,7 @@ class GitHubManager:
                     }
                 else:
                     error_text = await response.text()
-                    logger.error(
-                        f"GitHub API error: {response.status} - {error_text[:MAX_ERROR_LENGTH]}"
-                    )
+                    logger.error(f"GitHub API error: {response.status} - {error_text[:MAX_ERROR_LENGTH]}")
                     return {
                         "success": False,
                         "error": f"GitHub API error: {response.status}",
@@ -287,7 +277,7 @@ class GitHubManager:
             return {"success": False, "error": str(e)}
 
     async def add_comment(self, issue_number: int, comment: str, author: str) -> dict:
-        
+
         if not self._has_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
@@ -323,9 +313,7 @@ class GitHubManager:
                     }
                 else:
                     error_text = await response.text()
-                    logger.error(
-                        f"Error adding comment: {response.status} - {error_text[:200]}"
-                    )
+                    logger.error(f"Error adding comment: {response.status} - {error_text[:200]}")
                     return {
                         "success": False,
                         "error": f"GitHub API error: {response.status}",
@@ -351,7 +339,7 @@ class GitHubManager:
             return None
 
     def _verify_comment_ownership(self, comment_body: str, requester: str) -> bool:
-        
+
         # Comments created via Discord have format: **From:** `username`
         # Check if the requester's name appears in the attribution
         if not comment_body or not requester:
@@ -359,10 +347,8 @@ class GitHubManager:
         # Match the exact format used in add_comment()
         return f"**From:** `{requester}`" in comment_body
 
-    async def edit_comment(
-        self, comment_id: int, new_body: str, requester: str = None
-    ) -> dict:
-        
+    async def edit_comment(self, comment_id: int, new_body: str, requester: str = None) -> dict:
+
         if not self._has_auth():
             return {"success": False, "error": "GitHub token not configured"}
 
@@ -402,9 +388,7 @@ class GitHubManager:
                     }
                 else:
                     error_text = await response.text()
-                    logger.error(
-                        f"Error editing comment: {response.status} - {error_text[:200]}"
-                    )
+                    logger.error(f"Error editing comment: {response.status} - {error_text[:200]}")
                     return {
                         "success": False,
                         "error": f"GitHub API error: {response.status}",
@@ -453,9 +437,7 @@ class GitHubManager:
                     }
                 else:
                     error_text = await response.text()
-                    logger.error(
-                        f"Error deleting comment: {response.status} - {error_text[:200]}"
-                    )
+                    logger.error(f"Error deleting comment: {response.status} - {error_text[:200]}")
                     return {
                         "success": False,
                         "error": f"GitHub API error: {response.status}",
@@ -464,13 +446,11 @@ class GitHubManager:
             logger.error(f"Error deleting comment: {e}")
             return {"success": False, "error": str(e)}
 
-   
-
     async def close_issue(
         self,
         issue_number: int,
         reason: str = "completed",
-        comment: Optional[str] = None,
+        comment: str | None = None,
     ) -> dict:
         """Close an issue with optional comment."""
         if not self._has_auth():
@@ -511,9 +491,7 @@ class GitHubManager:
             logger.error(f"Error closing issue: {e}")
             return {"success": False, "error": str(e)}
 
-    async def reopen_issue(
-        self, issue_number: int, comment: Optional[str] = None
-    ) -> dict:
+    async def reopen_issue(self, issue_number: int, comment: str | None = None) -> dict:
         """Reopen a closed issue."""
         if not self._has_auth():
             return {"success": False, "error": "GitHub token not configured"}
@@ -550,9 +528,7 @@ class GitHubManager:
             logger.error(f"Error reopening issue: {e}")
             return {"success": False, "error": str(e)}
 
-    async def edit_issue(
-        self, issue_number: int, title: Optional[str] = None, body: Optional[str] = None
-    ) -> dict:
+    async def edit_issue(self, issue_number: int, title: str | None = None, body: str | None = None) -> dict:
         """Edit an issue's title and/or body."""
         if not self._has_auth():
             return {"success": False, "error": "GitHub token not configured"}
@@ -652,9 +628,7 @@ class GitHubManager:
 
         try:
             # Execute all label removals in parallel
-            results = await asyncio.gather(
-                *[remove_single_label(label) for label in labels]
-            )
+            results = await asyncio.gather(*[remove_single_label(label) for label in labels])
 
             removed = [r[0] for r in results if r[1]]
             errors = [f"{r[0]}: {r[2]}" for r in results if not r[1]]
@@ -748,9 +722,7 @@ class GitHubManager:
             logger.error(f"Error unassigning issue: {e}")
             return {"success": False, "error": str(e)}
 
-    async def link_issues(
-        self, issue_number: int, related_issues: list[int], relationship: str
-    ) -> dict:
+    async def link_issues(self, issue_number: int, related_issues: list[int], relationship: str) -> dict:
         """Link issues by adding a comment with references."""
         if not self._has_auth():
             return {"success": False, "error": "GitHub token not configured"}
@@ -817,7 +789,7 @@ class GitHubManager:
             logger.error(f"Error setting milestone: {e}")
             return {"success": False, "error": str(e)}
 
-    async def _get_milestone_number(self, milestone_name: str) -> Optional[int]:
+    async def _get_milestone_number(self, milestone_name: str) -> int | None:
         """Get milestone number from name."""
         url = f"https://api.github.com/repos/{config.github_repo}/milestones"
 
@@ -865,9 +837,7 @@ class GitHubManager:
             logger.error(f"Error fetching milestones: {e}")
             return []
 
-    async def lock_issue(
-        self, issue_number: int, lock: bool, reason: Optional[str] = None
-    ) -> dict:
+    async def lock_issue(self, issue_number: int, lock: bool, reason: str | None = None) -> dict:
         """Lock or unlock an issue."""
         if not self._has_auth():
             return {"success": False, "error": "GitHub token not configured"}
@@ -930,7 +900,7 @@ class GitHubManager:
     # HELPER METHODS
     # ============================================================
 
-    async def _get_latest_issue_number(self) -> Optional[int]:
+    async def _get_latest_issue_number(self) -> int | None:
         """Get the latest issue number (for estimating new issue number)."""
         # Use GraphQL for speed
         return await github_graphql.get_latest_issue_number()
@@ -975,10 +945,10 @@ class GitHubManager:
         self,
         description: str,
         reporter: str,
-        participants: Optional[list[str]] = None,
-        image_urls: Optional[list[str]] = None,
-        reporter_id: Optional[int] = None,
-        message_url: Optional[str] = None,
+        participants: list[str] | None = None,
+        image_urls: list[str] | None = None,
+        reporter_id: int | None = None,
+        message_url: str | None = None,
     ) -> str:
         """Build the formatted issue body."""
         body = description
@@ -1090,13 +1060,9 @@ async def tool_github_issue(
             logger.warning(
                 f"SECURITY: Blocked admin action '{action}' for non-admin user {context_user_name} (id={context_user_id})"
             )
-            return {
-                "error": f"The '{action}' action requires admin permissions. Ask a team member with admin access!"
-            }
+            return {"error": f"The '{action}' action requires admin permissions. Ask a team member with admin access!"}
         else:
-            logger.info(
-                f"Admin action '{action}' authorized for {context_user_name} (id={context_user_id})"
-            )
+            logger.info(f"Admin action '{action}' authorized for {context_user_name} (id={context_user_id})")
 
     # READ ACTIONS
     if action == "get":
@@ -1127,9 +1093,7 @@ async def tool_github_issue(
     elif action == "search":
         if not keywords:
             return {"error": "keywords required for 'search' action"}
-        issues = await github_graphql.search_issues_full(
-            keywords=keywords, state=state, limit=limit
-        )
+        issues = await github_graphql.search_issues_full(keywords=keywords, state=state, limit=limit)
         return {
             "issues": issues,
             "count": len(issues),
@@ -1140,9 +1104,7 @@ async def tool_github_issue(
     elif action == "search_user":
         if not discord_username:
             return {"error": "discord_username required for 'search_user' action"}
-        issues = await github_graphql.search_user_issues(
-            discord_username=discord_username, state=state, limit=limit
-        )
+        issues = await github_graphql.search_user_issues(discord_username=discord_username, state=state, limit=limit)
         return {
             "issues": issues,
             "count": len(issues),
@@ -1152,9 +1114,7 @@ async def tool_github_issue(
     elif action == "find_similar":
         if not keywords:
             return {"error": "keywords required for 'find_similar' action"}
-        issues = await github_graphql.find_similar_issues(
-            keywords=keywords, limit=limit or 5
-        )
+        issues = await github_graphql.find_similar_issues(keywords=keywords, limit=limit or 5)
         return {
             "similar_issues": issues,
             "count": len(issues),
@@ -1180,17 +1140,13 @@ async def tool_github_issue(
             reporter=reporter,
             user_role_ids=user_role_ids,
             reporter_id=user_id,  # Discord UID from context
-            message_url=(
-                _context.get("message_url") if _context else None
-            ),  # Link back to Discord
+            message_url=(_context.get("message_url") if _context else None),  # Link back to Discord
         )
 
     elif action == "comment":
         if not issue_number or not comment:
             return {"error": "issue_number and comment required for 'comment' action"}
-        return await github_manager.add_comment(
-            issue_number=issue_number, comment=comment, author=reporter
-        )
+        return await github_manager.add_comment(issue_number=issue_number, comment=comment, author=reporter)
 
     elif action == "edit_comment":
         if not comment_id or not body:
@@ -1213,23 +1169,17 @@ async def tool_github_issue(
     elif action == "close":
         if not issue_number:
             return {"error": "issue_number required for 'close' action"}
-        return await github_manager.close_issue(
-            issue_number=issue_number, reason=reason, comment=comment
-        )
+        return await github_manager.close_issue(issue_number=issue_number, reason=reason, comment=comment)
 
     elif action == "reopen":
         if not issue_number:
             return {"error": "issue_number required for 'reopen' action"}
-        return await github_manager.reopen_issue(
-            issue_number=issue_number, comment=comment
-        )
+        return await github_manager.reopen_issue(issue_number=issue_number, comment=comment)
 
     elif action == "edit":
         if not issue_number:
             return {"error": "issue_number required for 'edit' action"}
-        return await github_manager.edit_issue(
-            issue_number=issue_number, title=title, body=body
-        )
+        return await github_manager.edit_issue(issue_number=issue_number, title=title, body=body)
 
     elif action == "label":
         if not issue_number or not labels:
@@ -1239,49 +1189,31 @@ async def tool_github_issue(
     elif action == "unlabel":
         if not issue_number or not labels:
             return {"error": "issue_number and labels required for 'unlabel' action"}
-        return await github_manager.remove_labels(
-            issue_number=issue_number, labels=labels
-        )
+        return await github_manager.remove_labels(issue_number=issue_number, labels=labels)
 
     elif action == "assign":
         if not issue_number or not assignees:
             return {"error": "issue_number and assignees required for 'assign' action"}
-        return await github_manager.assign_issue(
-            issue_number=issue_number, assignees=assignees
-        )
+        return await github_manager.assign_issue(issue_number=issue_number, assignees=assignees)
 
     elif action == "unassign":
         if not issue_number or not assignees:
-            return {
-                "error": "issue_number and assignees required for 'unassign' action"
-            }
-        return await github_manager.unassign_issue(
-            issue_number=issue_number, assignees=assignees
-        )
+            return {"error": "issue_number and assignees required for 'unassign' action"}
+        return await github_manager.unassign_issue(issue_number=issue_number, assignees=assignees)
 
     elif action == "milestone":
         if not issue_number or not milestone:
-            return {
-                "error": "issue_number and milestone required for 'milestone' action"
-            }
-        return await github_manager.set_milestone(
-            issue_number=issue_number, milestone=milestone
-        )
+            return {"error": "issue_number and milestone required for 'milestone' action"}
+        return await github_manager.set_milestone(issue_number=issue_number, milestone=milestone)
 
     elif action == "lock":
         if not issue_number or lock is None:
-            return {
-                "error": "issue_number and lock (true/false) required for 'lock' action"
-            }
-        return await github_manager.lock_issue(
-            issue_number=issue_number, lock=lock, reason=reason if lock else None
-        )
+            return {"error": "issue_number and lock (true/false) required for 'lock' action"}
+        return await github_manager.lock_issue(issue_number=issue_number, lock=lock, reason=reason if lock else None)
 
     elif action == "link":
         if not issue_number or not related_issues or not relationship:
-            return {
-                "error": "issue_number, related_issues, and relationship required for 'link' action"
-            }
+            return {"error": "issue_number, related_issues, and relationship required for 'link' action"}
         return await github_manager.link_issues(
             issue_number=issue_number,
             related_issues=related_issues,
@@ -1343,10 +1275,7 @@ async def tool_github_issue(
 
         subs = await subscription_manager.get_user_subscriptions(user_id)
         return {
-            "subscriptions": [
-                {"issue_number": s["issue_number"], "state": s["last_state"]}
-                for s in subs
-            ],
+            "subscriptions": [{"issue_number": s["issue_number"], "state": s["last_state"]} for s in subs],
             "count": len(subs),
         }
 
@@ -1355,9 +1284,7 @@ async def tool_github_issue(
         if not issue_number:
             return {"error": "issue_number required for 'get_sub_issues' action"}
         # get_issue_full already includes sub_issues, so just call it
-        issue = await github_graphql.get_issue_full(
-            issue_number=issue_number, comments_count=0
-        )
+        issue = await github_graphql.get_issue_full(issue_number=issue_number, comments_count=0)
         if not issue or issue.get("error"):
             return issue or {"error": f"Issue #{issue_number} not found"}
         sub_issues = issue.get("sub_issues", [])
@@ -1366,18 +1293,14 @@ async def tool_github_issue(
             "sub_issues": sub_issues,
             "count": len(sub_issues),
             "hint": (
-                "Each sub-issue can be fetched with action='get'"
-                if sub_issues
-                else "This issue has no sub-issues"
+                "Each sub-issue can be fetched with action='get'" if sub_issues else "This issue has no sub-issues"
             ),
         }
 
     elif action == "get_parent":
         if not issue_number:
             return {"error": "issue_number required for 'get_parent' action"}
-        issue = await github_graphql.get_issue_full(
-            issue_number=issue_number, comments_count=0
-        )
+        issue = await github_graphql.get_issue_full(issue_number=issue_number, comments_count=0)
         if not issue or issue.get("error"):
             return issue or {"error": f"Issue #{issue_number} not found"}
         parent = issue.get("parent_issue")
@@ -1396,9 +1319,7 @@ async def tool_github_issue(
     elif action == "create_sub_issue":
         # Create a new issue and immediately link it as a sub-issue of the parent
         if not issue_number or not title or not description:
-            return {
-                "error": "issue_number (parent), title, and description required for 'create_sub_issue' action"
-            }
+            return {"error": "issue_number (parent), title, and description required for 'create_sub_issue' action"}
         # Step 1: Create the new issue
         create_result = await github_manager.create_issue(
             title=title,
@@ -1436,18 +1357,14 @@ async def tool_github_issue(
 
     elif action == "add_sub_issue":
         if not issue_number or not child_issue_number:
-            return {
-                "error": "issue_number (parent) and child_issue_number required for 'add_sub_issue' action"
-            }
+            return {"error": "issue_number (parent) and child_issue_number required for 'add_sub_issue' action"}
         return await github_graphql.add_sub_issue(
             parent_issue_number=issue_number, child_issue_number=child_issue_number
         )
 
     elif action == "remove_sub_issue":
         if not issue_number or not child_issue_number:
-            return {
-                "error": "issue_number (parent) and child_issue_number required for 'remove_sub_issue' action"
-            }
+            return {"error": "issue_number (parent) and child_issue_number required for 'remove_sub_issue' action"}
         return await github_graphql.remove_sub_issue(
             parent_issue_number=issue_number, child_issue_number=child_issue_number
         )
@@ -1491,13 +1408,9 @@ async def tool_github_project(
             logger.warning(
                 f"SECURITY: Blocked project admin action '{action}' for non-admin user {context_user_name} (id={context_user_id})"
             )
-            return {
-                "error": f"The '{action}' action requires admin permissions. Ask a team member with admin access!"
-            }
+            return {"error": f"The '{action}' action requires admin permissions. Ask a team member with admin access!"}
         else:
-            logger.info(
-                f"Project admin action '{action}' authorized for {context_user_name} (id={context_user_id})"
-            )
+            logger.info(f"Project admin action '{action}' authorized for {context_user_name} (id={context_user_id})")
 
     # LIST ALL PROJECTS (no project_number required)
     if action == "list":
@@ -1505,9 +1418,7 @@ async def tool_github_project(
 
     # All other actions require project_number
     if not project_number:
-        return {
-            "error": f"project_number required for '{action}' action. Use action='list' to see all projects."
-        }
+        return {"error": f"project_number required for '{action}' action. Use action='list' to see all projects."}
 
     # READ ACTIONS
     if action == "view":
@@ -1521,9 +1432,7 @@ async def tool_github_project(
         return result
 
     elif action == "list_items":
-        result = await github_graphql.list_project_items(
-            project_number=project_number, status=status, limit=limit
-        )
+        result = await github_graphql.list_project_items(project_number=project_number, status=status, limit=limit)
         if result.get("error"):
             return {
                 "error": result["error"],
@@ -1535,25 +1444,19 @@ async def tool_github_project(
     elif action == "get_item":
         if not issue_number:
             return {"error": "issue_number required for 'get_item' action"}
-        return await github_graphql.get_project_item(
-            project_number=project_number, issue_number=issue_number
-        )
+        return await github_graphql.get_project_item(project_number=project_number, issue_number=issue_number)
 
     # WRITE ACTIONS (admin only)
     elif action == "add":
         if not issue_number:
             return {"error": "issue_number (or PR number) required for 'add' action"}
         # Use the new add_to_project that works for both issues AND PRs
-        return await github_graphql.add_to_project(
-            number=issue_number, project_number=project_number
-        )
+        return await github_graphql.add_to_project(number=issue_number, project_number=project_number)
 
     elif action == "remove":
         if not issue_number:
             return {"error": "issue_number required for 'remove' action"}
-        return await github_graphql.remove_from_project(
-            project_number=project_number, issue_number=issue_number
-        )
+        return await github_graphql.remove_from_project(project_number=project_number, issue_number=issue_number)
 
     elif action == "set_status":
         if not issue_number or not status:
@@ -1564,9 +1467,7 @@ async def tool_github_project(
 
     elif action == "set_field":
         if not issue_number or not field_name or not field_value:
-            return {
-                "error": "issue_number, field_name, and field_value required for 'set_field' action"
-            }
+            return {"error": "issue_number, field_name, and field_value required for 'set_field' action"}
         return await github_graphql.set_project_item_field(
             project_number=project_number,
             issue_number=issue_number,
@@ -1618,9 +1519,7 @@ async def tool_github_overview(
     Combined overview query - gets issues, labels, milestones, projects in ONE call.
     Much faster than making separate calls!
     """
-    return await github_graphql.get_repo_overview(
-        issues_limit=min(issues_limit, 50), include_projects=include_projects
-    )
+    return await github_graphql.get_repo_overview(issues_limit=min(issues_limit, 50), include_projects=include_projects)
 
 
 # Singleton instance
@@ -1631,7 +1530,6 @@ from .github_pr import tool_github_pr
 
 # Import subscription manager
 from .subscriptions import subscription_manager
-
 
 # =============================================================================
 # SUBSCRIPTION TOOL HANDLERS

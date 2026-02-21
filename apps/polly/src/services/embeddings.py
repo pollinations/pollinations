@@ -4,7 +4,6 @@ import logging
 import os
 import subprocess
 from pathlib import Path
-from typing import Optional
 
 from .embeddings_utils import validate_and_get_openai_client
 
@@ -80,7 +79,7 @@ SKIP_DIRS = {
 MAX_FILE_SIZE = 500 * 1024
 
 UPDATE_DEBOUNCE_SECONDS = 30
-_pending_update_task: Optional[asyncio.Task] = None
+_pending_update_task: asyncio.Task | None = None
 _update_lock = asyncio.Lock()
 
 _initialized = asyncio.Event()
@@ -103,9 +102,7 @@ def _get_collection():
 
         EMBEDDINGS_DIR.mkdir(parents=True, exist_ok=True)
         _chroma_client = chromadb.PersistentClient(path=str(EMBEDDINGS_DIR))
-        _collection = _chroma_client.get_or_create_collection(
-            name="code_embeddings", metadata={"hnsw:space": "cosine"}
-        )
+        _collection = _chroma_client.get_or_create_collection(name="code_embeddings", metadata={"hnsw:space": "cosine"})
         logger.info(f"ChromaDB collection loaded with {_collection.count()} embeddings")
     return _collection
 
@@ -122,7 +119,7 @@ async def wait_for_initialization(timeout: float = 300.0) -> bool:
         await asyncio.wait_for(_initialized.wait(), timeout=timeout)
         logger.debug("Embeddings initialized and ready")
         return True
-    except asyncio.TimeoutError:
+    except TimeoutError:
         logger.warning(f"Embeddings initialization timeout after {timeout}s - proceeding anyway")
         return False
 
@@ -147,9 +144,7 @@ def _chunk_code(content: str, file_path: str, max_lines: int = 100) -> list[dict
     for i, line in enumerate(lines, 1):
         current_chunk.append(line)
 
-        is_break = len(current_chunk) >= max_lines or (
-            len(current_chunk) >= 20 and _is_definition_start(line)
-        )
+        is_break = len(current_chunk) >= max_lines or (len(current_chunk) >= 20 and _is_definition_start(line))
 
         if is_break and current_chunk:
             chunks.append(
@@ -201,7 +196,7 @@ async def clone_or_pull_repo(repo: str) -> bool:
 
     try:
         if repo_path.exists():
-            result = await asyncio.to_thread(
+            await asyncio.to_thread(
                 subprocess.run,
                 ["git", "-C", str(repo_path), "fetch", "origin", "main"],
                 capture_output=True,
@@ -319,7 +314,7 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
     files_skipped = 0
     files_processed = 0
 
-    for file_idx, file_path in enumerate(files, 1):
+    for _file_idx, file_path in enumerate(files, 1):
         try:
             content = file_path.read_text(encoding="utf-8", errors="ignore")
             rel_path = str(file_path.relative_to(repo_path))
@@ -328,11 +323,11 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
             # Check if file has changed (file-level TTL)
             if not force_full and collection.count() > 0:
                 existing = collection.get(where={"file_path": rel_path})
-                
+
                 if existing["ids"] and existing["metadatas"]:
                     # Check if file hash matches any existing chunk from this file
                     existing_file_hash = existing["metadatas"][0].get("file_hash")
-                    
+
                     if existing_file_hash == file_hash:
                         logger.debug(f"TTL: Skipping {rel_path} (unchanged, hash={file_hash[:8]})...")
                         files_skipped += 1
@@ -363,33 +358,32 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
         except Exception as e:
             logger.warning(f"Failed to process {file_path}: {e}")
             continue
-        
+
         files_processed += 1
         progress_pct = (files_processed / total_files) * 100
         chunks_in_queue = len(all_ids)
-        
+
         # Log progress every 10% or every 10 files
         if files_processed % max(1, total_files // 10) == 0 or files_processed == total_files:
-            logger.info(f"📊 Code embedding progress: {files_processed}/{total_files} files ({progress_pct:.1f}%), {chunks_in_queue} chunks queued for embedding")
+            logger.info(
+                f"📊 Code embedding progress: {files_processed}/{total_files} files ({progress_pct:.1f}%), {chunks_in_queue} chunks queued for embedding"
+            )
 
     # Delete old chunks from files that were modified
     if ids_to_delete:
         collection.delete(ids=ids_to_delete)
-        unique_files_deleted = len(set(metadata.get('file_path') for metadata in all_metadatas))
+        unique_files_deleted = len(set(metadata.get("file_path") for metadata in all_metadatas))
         logger.info(f"Deleted {len(ids_to_delete)} old chunks from {unique_files_deleted} changed files")
 
     # Batch embed all collected chunks
     if all_ids:
         try:
             embedding_response = await asyncio.to_thread(
-                lambda: model.embeddings.create(
-                    model="text-embedding-3-small",
-                    input=all_documents
-                )
+                lambda: model.embeddings.create(model="text-embedding-3-small", input=all_documents)
             )
             all_embeddings = [item.embedding for item in embedding_response.data]
             embedded_count = len(all_ids)
-            
+
             collection.upsert(
                 ids=all_ids,
                 embeddings=all_embeddings,
@@ -397,7 +391,9 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
                 metadatas=all_metadatas,
             )
             unique_files = len(set(m["file_path"] for m in all_metadatas))
-            logger.info(f"Embedded {embedded_count} chunks from {unique_files} files (TTL: skipped {files_skipped} unchanged files)")
+            logger.info(
+                f"Embedded {embedded_count} chunks from {unique_files} files (TTL: skipped {files_skipped} unchanged files)"
+            )
         except Exception as e:
             error_msg = str(e)
             if "401" in error_msg or "permission" in error_msg.lower() or "scope" in error_msg.lower():
@@ -426,7 +422,7 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
 
 async def search_code(query: str, top_k: int = 5) -> list[dict]:
     await wait_for_initialization()
-    
+
     model = _get_model()
     collection = _get_collection()
 
@@ -434,11 +430,7 @@ async def search_code(query: str, top_k: int = 5) -> list[dict]:
         return []
 
     embedding_response = await asyncio.to_thread(
-        lambda: model.embeddings.create(
-            model="text-embedding-3-small",
-            input=query,
-            dimensions=1536
-        )
+        lambda: model.embeddings.create(model="text-embedding-3-small", input=query, dimensions=1536)
     )
     query_embedding = embedding_response.data[0].embedding
 
@@ -503,6 +495,7 @@ async def schedule_update():
 
 async def initialize():
     from ..config import config
+
     global _initialization_started
 
     if not config.local_embeddings_enabled:
@@ -527,11 +520,13 @@ async def initialize():
             logger.info(f"Full initialization complete: embedded {count} chunks")
         else:
             logger.info(f"Found {collection.count()} existing embeddings from previous session")
-            logger.info("📌 TTL: On restart, embeddings persist in ChromaDB. Only changed portions will be re-embedded on next repo update")
-        
+            logger.info(
+                "📌 TTL: On restart, embeddings persist in ChromaDB. Only changed portions will be re-embedded on next repo update"
+            )
+
         _initialized.set()
         logger.info("Embeddings initialization complete")
-    
+
     except Exception as e:
         logger.error(f"Embeddings initialization failed: {e}", exc_info=True)
         _initialized.set()

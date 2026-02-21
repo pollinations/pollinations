@@ -73,20 +73,66 @@ function HelloPage() {
                     <Body spacing="comfortable">{pageCopy.buildersBody}</Body>
 
                     {/* Row 1: Flywheel (left) + explanation (right) */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-16">
                         <FlywheelRing pageCopy={pageCopy} />
                         <div>
-                            <Heading variant="simple" spacing="comfortable">
-                                {pageCopy.flywheelTitle}
-                            </Heading>
-                            <Body size="sm" spacing="comfortable">
+                            <Body spacing="comfortable">
                                 {pageCopy.flywheelBody}
                             </Body>
+                            <p className="font-body text-sm text-text-body-tertiary italic">
+                                <span className="not-italic mr-1">🧪</span>
+                                {pageCopy.tiersBetaNote}
+                            </p>
                         </div>
                     </div>
 
-                    {/* Row 2: Tier cards (left) + explanation (right) */}
+                    {/* Row 2: Explanation (left) + Tier cards (right) */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-8">
+                        {/* Tier explanation */}
+                        <div>
+                            <Body spacing="comfortable">
+                                {pageCopy.tierBody}
+                            </Body>
+                            <div className="bg-surface-card border-l-2 border-border-highlight p-4 rounded-sub-card mb-4">
+                                <span className="font-headline text-sm font-black text-text-highlight">
+                                    {pageCopy.usersTitle}
+                                </span>
+                                <Body
+                                    size="sm"
+                                    spacing="tight"
+                                    className="mt-2"
+                                >
+                                    {pageCopy.usersBody}
+                                </Body>
+                                <a
+                                    href="https://enter.pollinations.ai/docs#payments"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-headline text-sm font-black text-text-highlight hover:underline mt-2 inline-block"
+                                >
+                                    {pageCopy.usersPaymentsLink}
+                                </a>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <a
+                                    href="https://github.com/pollinations/pollinations/blob/main/POINTS_AND_TIERS.md"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-headline text-sm font-black text-text-highlight hover:underline"
+                                >
+                                    {pageCopy.tierScoringLink}
+                                </a>
+                                <a
+                                    href="https://enter.pollinations.ai/docs#tiers"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-headline text-sm font-black text-text-highlight hover:underline"
+                                >
+                                    {pageCopy.tierHowLink}
+                                </a>
+                            </div>
+                        </div>
+
                         {/* Tier ladder: Nectar (top) → Flower → Seed (bottom) */}
                         <div className="flex flex-col items-center gap-2">
                             {[
@@ -160,60 +206,7 @@ function HelloPage() {
                                 </div>
                             ))}
                         </div>
-
-                        {/* Tier explanation */}
-                        <div>
-                            <Heading variant="simple" spacing="comfortable">
-                                {pageCopy.tierTitle}
-                            </Heading>
-                            <Body size="sm" spacing="comfortable">
-                                {pageCopy.tierBody}
-                            </Body>
-                            <div className="flex flex-col gap-1 mb-4">
-                                <a
-                                    href="https://github.com/pollinations/pollinations/blob/main/POINTS_AND_TIERS.md"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-headline text-sm font-black text-text-highlight hover:underline"
-                                >
-                                    {pageCopy.tierScoringLink}
-                                </a>
-                                <a
-                                    href="https://enter.pollinations.ai/docs#tiers"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-headline text-sm font-black text-text-highlight hover:underline"
-                                >
-                                    {pageCopy.tierHowLink}
-                                </a>
-                            </div>
-                            <p className="mt-6 font-body text-sm text-text-body-tertiary italic">
-                                <span className="not-italic mr-1">🧪</span>
-                                {pageCopy.tiersBetaNote}
-                            </p>
-                        </div>
                     </div>
-                </div>
-
-                <Divider />
-
-                {/* Section — For your users / BYOP */}
-                <div className="mb-12">
-                    <Heading variant="section" spacing="comfortable">
-                        {pageCopy.usersTitle}
-                    </Heading>
-                    <Body spacing="comfortable">{pageCopy.usersBody}</Body>
-                    <Body size="sm" spacing="comfortable">
-                        {pageCopy.usersBody2}
-                    </Body>
-                    <a
-                        href="https://enter.pollinations.ai/docs#payments"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-headline text-sm font-black text-text-highlight hover:underline"
-                    >
-                        {pageCopy.usersPaymentsLink}
-                    </a>
                 </div>
 
                 <Divider />

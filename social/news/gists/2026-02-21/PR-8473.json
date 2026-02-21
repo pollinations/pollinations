@@ -1,0 +1,34 @@
+{
+  "pr_number": 8473,
+  "title": "fix: batch embeddings, remove kpi, update on restart",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/8473",
+  "merged_at": "2026-02-21T20:50:55Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Polly learns portion control",
+    "blurb": "Our bot was trying to ingest the entire codebase in a single gulp. We've introduced batching so she can digest data without getting a token-overflow tummy ache.",
+    "summary": "Implemented request batching for code embeddings to prevent API token limits and fixed logic to ensure knowledge updates on restart.",
+    "impact": "The Polly bot is now more reliable at indexing documentation and code, resulting in fewer errors and fresher answers.",
+    "keywords": [
+      "polly",
+      "embeddings",
+      "bot",
+      "stability",
+      "fix"
+    ],
+    "visual_concept": "Polly the bee as a librarian or student, dealing with too many books/scrolls. The fix is 'batching', so she is organizing a messy pile into neat, manageable stacks. The setting should be a cozy study or library.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot sitting at a wooden desk, sorting a large messy pile of code scrolls into small neat stacks. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The bee wears tiny reading glasses. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-21T20:51:43.206445+00:00"
+}

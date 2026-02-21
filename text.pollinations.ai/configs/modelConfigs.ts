@@ -269,10 +269,11 @@ export const portkeyConfig: PortkeyConfigMap = {
     //     }),
 
     // ============================================================================
+    // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)
     // api.airforce - qwen-character (RP/character model)
     // ============================================================================
-    "qwen-character": () =>
-        createAirforceModelConfig({
-            model: "qwen-character",
-        }),
+    // "qwen-character": () =>
+    //     createAirforceModelConfig({
+    //         model: "qwen-character",
+    //     }),
 };

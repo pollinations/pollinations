@@ -2,11 +2,27 @@ import type { FC } from "react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import faqMarkdown from "../../../POLLEN_FAQ.md?raw";
+import { TIER_PROGRESSION, TIERS } from "@/tier-config.ts";
+import faqRaw from "../../../POLLEN_FAQ.md?raw";
 import { Button } from "./button.tsx";
 import { PollenExamples } from "./pricing/pollen-examples.tsx";
 import { Card } from "./ui/card.tsx";
 import { Panel } from "./ui/panel.tsx";
+
+// Generate tier table from config so the FAQ always reflects tier-config.ts
+const tierTableMd = [
+    "| Tier | Points | Daily Pollen |",
+    "|------|--------|-------------|",
+    ...TIER_PROGRESSION.filter((t) => t !== "microbe" && t !== "spore").map(
+        (t) =>
+            `| ${TIERS[t].emoji} ${TIERS[t].displayName} | ${TIERS[t].threshold}+ | ${TIERS[t].pollen} pollen/day |`,
+    ),
+].join("\n");
+
+const faqMarkdown = faqRaw.replace(
+    /\| Tier \| Points[\s\S]*?\n(?=\n)/,
+    tierTableMd,
+);
 
 type FAQItem = {
     question: string;
@@ -53,6 +69,15 @@ const parseFAQFromMarkdown = (markdown: string): FAQItem[] => {
 
 const faqData = parseFAQFromMarkdown(faqMarkdown);
 
+// Derive a URL-friendly slug from a question, e.g. "🏅 What are tiers?" → "what-are-tiers"
+function slugify(text: string): string {
+    return text
+        .replace(/[^\w\s-]/g, "") // strip emoji and punctuation
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "-");
+}
+
 export const FAQ: FC = () => {
     const [openIndices, setOpenIndices] = useState<Set<number>>(new Set());
 
@@ -81,14 +106,18 @@ export const FAQ: FC = () => {
                         color="violet"
                         weight="light"
                     >
-                        View on GitHub
+                        📖 View on GitHub
                     </Button>
                 </div>
             </div>
             <Panel color="violet" className="p-8">
                 <div className="flex flex-col gap-4">
                     {faqData.map((item, index) => (
-                        <div key={item.question} className="pb-4 last:pb-0">
+                        <div
+                            key={item.question}
+                            id={slugify(item.question)}
+                            className="pb-4 last:pb-0"
+                        >
                             <button
                                 type="button"
                                 onClick={() => toggleQuestion(index)}
@@ -108,7 +137,7 @@ export const FAQ: FC = () => {
                                 <Card
                                     color="violet"
                                     bg="bg-white/30"
-                                    className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 prose-p:mb-3 prose-a:text-purple-600 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800"
+                                    className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 prose-p:mb-3 prose-a:text-purple-600 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800 prose-td:whitespace-nowrap prose-th:whitespace-nowrap"
                                 >
                                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {item.answer}

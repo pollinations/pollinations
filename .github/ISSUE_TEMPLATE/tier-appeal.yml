@@ -1,0 +1,61 @@
+name: Tier Appeal
+description: Think your tier or score is wrong? Let us know.
+title: "Tier Appeal: "
+labels: ["TIER"]
+body:
+  - type: input
+    id: email
+    attributes:
+      label: Email
+      description: The email you used to sign up at enter.pollinations.ai
+      placeholder: "your@email.com"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: current-tier
+    attributes:
+      label: Current Tier
+      description: What tier are you currently at?
+      options:
+        - "🐝 Free weekly"
+        - "🌿 Seed"
+        - "🌸 Flower"
+        - "🍯 Nectar"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: expected-tier
+    attributes:
+      label: Expected Tier
+      description: What tier do you think you should be at?
+      options:
+        - "🌿 Seed"
+        - "🌸 Flower"
+        - "🍯 Nectar"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: Why do you think your tier is wrong?
+      description: Tell us about your contributions — apps, code, docs, community activity, etc.
+      placeholder: "e.g., I published 2 apps, contributed 5 PRs, and have 500+ monthly users..."
+    validations:
+      required: true
+
+  - type: input
+    id: github-username
+    attributes:
+      label: GitHub Username
+      description: Your GitHub username (so we can look up your activity)
+      placeholder: "e.g., octocat"
+
+  - type: input
+    id: discord-username
+    attributes:
+      label: Discord Username
+      description: Your Discord username (optional)
+      placeholder: "e.g., username"

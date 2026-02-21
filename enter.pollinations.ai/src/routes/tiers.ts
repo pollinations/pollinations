@@ -5,12 +5,13 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 import {
+    DEFAULT_TIER,
     getTierPollen,
+    TIERS,
     type TierName,
     type TierStatus,
     tierNames,
 } from "@/tier-config.ts";
-import { capitalize } from "@/util.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
@@ -19,8 +20,9 @@ const TierStatusSchema = z.object({
     target: z.literal(tierNames),
     active: z.object({
         tier: z.literal([...tierNames, "none"]),
-        displayName: z.string(),
-        dailyPollen: z.number(),
+        displayName: z.string().nullable(),
+        pollen: z.number(),
+        cadence: z.enum(["daily", "weekly"]),
     }),
 });
 
@@ -33,7 +35,7 @@ export const tiersRoutes = new Hono<Env>()
         describeRoute({
             tags: ["Auth"],
             description:
-                "Get the current user's tier status and daily pollen information.",
+                "Get the current user's tier status and pollen grant information.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
             responses: {
                 200: {
@@ -59,8 +61,12 @@ export const tiersRoutes = new Hono<Env>()
                 .where(eq(userTable.id, user.id))
                 .limit(1);
 
-            const userTier = (users[0]?.tier || "spore") as TierName;
-            const dailyPollen = getTierPollen(userTier);
+            const userTier = (users[0]?.tier || DEFAULT_TIER) as TierName;
+            const pollen = getTierPollen(userTier);
+            const cadence =
+                userTier === "spore" || userTier === "microbe"
+                    ? "weekly"
+                    : "daily";
 
             log.debug(`User tier from D1: ${userTier}, email: ${user.email}`);
 
@@ -68,8 +74,9 @@ export const tiersRoutes = new Hono<Env>()
                 target: userTier,
                 active: {
                     tier: userTier as TierStatus,
-                    displayName: capitalize(userTier),
-                    dailyPollen,
+                    displayName: TIERS[userTier].displayName ?? null,
+                    pollen,
+                    cadence,
                 },
             };
 

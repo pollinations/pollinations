@@ -243,7 +243,11 @@ export const adminRoutes = new Hono<Env>()
             });
         }
 
+        // Spore gets a weekly refill (every Monday UTC), all other tiers refill daily
+        const isMonday = new Date().getUTCDay() === 1;
+
         // Get users before update (for Tinybird events)
+        // Only include spore users on Mondays (their weekly refill day)
         const usersToRefill = await db
             .select({
                 id: userTable.id,
@@ -251,26 +255,42 @@ export const adminRoutes = new Hono<Env>()
                 tierBalance: userTable.tierBalance,
             })
             .from(userTable)
-            .where(sql`tier IS NOT NULL`);
+            .where(
+                isMonday
+                    ? sql`tier IS NOT NULL`
+                    : sql`tier IS NOT NULL AND tier != 'spore'`,
+            );
 
-        // Bulk update all tier balances
-        const result = await db.run(sql`
+        // Daily refill: microbe→0, seed/flower/nectar/router→daily grant
+        // Spore is excluded (weekly only)
+        const dailyResult = await db.run(sql`
             UPDATE user
             SET
                 tier_balance = CASE tier
-                    WHEN 'microbe' THEN ${TIER_POLLEN.microbe}
-                    WHEN 'spore' THEN ${TIER_POLLEN.spore}
+                    WHEN 'microbe' THEN 0
                     WHEN 'seed' THEN ${TIER_POLLEN.seed}
                     WHEN 'flower' THEN ${TIER_POLLEN.flower}
                     WHEN 'nectar' THEN ${TIER_POLLEN.nectar}
                     WHEN 'router' THEN ${TIER_POLLEN.router}
-                    ELSE ${TIER_POLLEN.spore}
+                    ELSE tier_balance
                 END,
                 last_tier_grant = ${Date.now()}
-            WHERE tier IS NOT NULL
+            WHERE tier IS NOT NULL AND tier != 'spore'
         `);
 
-        const refillCount = result.meta.changes ?? 0;
+        let refillCount = dailyResult.meta.changes ?? 0;
+
+        // Weekly refill: spore users get 1.5 pollen (every Monday)
+        if (isMonday) {
+            const sporeResult = await db.run(sql`
+                UPDATE user
+                SET tier_balance = ${TIER_POLLEN.spore},
+                    last_tier_grant = ${Date.now()}
+                WHERE tier = 'spore'
+            `);
+            refillCount += sporeResult.meta.changes ?? 0;
+        }
+
         const refillTimestamp = Date.now();
         const timestamp = new Date(refillTimestamp).toISOString();
 
@@ -292,16 +312,22 @@ export const adminRoutes = new Hono<Env>()
             ),
         );
 
-        log.info("TIER_REFILL_COMPLETE: usersUpdated={usersUpdated}", {
-            eventType: "tier_refill_complete",
-            usersUpdated: refillCount,
-            tierBreakdown,
-        });
+        log.info(
+            "TIER_REFILL_COMPLETE: usersUpdated={usersUpdated}, isMonday={isMonday}",
+            {
+                eventType: "tier_refill_complete",
+                usersUpdated: refillCount,
+                isMonday,
+                tierBreakdown,
+            },
+        );
 
         return c.json({
             success: true,
             skipped: false,
             usersRefilled: refillCount,
+            isMonday,
+            sporeRefilled: isMonday,
             tierBreakdown,
             timestamp,
         });

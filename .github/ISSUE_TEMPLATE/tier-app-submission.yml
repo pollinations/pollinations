@@ -12,6 +12,7 @@ body:
         ---
         ## Requirements
         - Have an account at [enter.pollinations.ai](https://enter.pollinations.ai) (sign up with GitHub)
+        - Your account must be past the initial review period (free weekly tier or above)
         - Your app must use the pollinations.ai API
 
         ## Credit pollinations.ai *(optional but appreciated)*

@@ -16,15 +16,19 @@ Must run from the `pollinations` repo root with access to `enter.pollinations.ai
 
 ---
 
-# Tier Levels
+# Grant Pools
+
+**Registered users:** 1.5 pollen/week (refreshes Monday 00:00 UTC)
+
+**Creator tiers** (daily grants, refill 00:00 UTC):
 
 | Tier | Emoji | Pollen/Day | Criteria |
 |------|-------|------------|----------|
-| microbe | 🦠 | 0.1 | Entry tier (auto-upgrades once verified) |
-| spore | 🍄 | 1 | Verified accounts |
-| seed | 🌱 | 3 | GitHub engagement |
-| flower | 🌸 | 10 | Contributor |
-| nectar | 🍯 | 20 | Coming soon |
+| seed | 🌱 | 3 | Active developer (auto-upgraded daily via GitHub score) |
+| flower | 🌸 | 10 | Active contributor (publish app or contribute code/docs) |
+| nectar | 🍯 | 20 | Top creator |
+
+> **Internal:** DB stores `microbe` (0 pollen, under review) and `spore` (1.5/week). Never surfaced publicly — public tiers start at Seed.
 
 ---
 

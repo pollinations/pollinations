@@ -20,7 +20,7 @@ interface NewsSectionProps {
 export function NewsSection({
     limit,
     compact = false,
-    title = "What's New",
+    title,
 }: NewsSectionProps) {
     const { news, loading } = useNews(COPY_CONSTANTS.newsFilePath);
 
@@ -32,38 +32,32 @@ export function NewsSection({
 
     return (
         <div className={compact ? "mb-8" : "mb-12"}>
-            <Heading variant="section" spacing={compact ? "tight" : "default"}>
-                {title}
-            </Heading>
+            {title && (
+                <Heading
+                    variant="section"
+                    spacing={compact ? "tight" : "default"}
+                >
+                    {title}
+                </Heading>
+            )}
             <div className={compact ? "space-y-2" : "space-y-3"}>
                 {displayNews.map((item) => {
-                    // Remove date from content for display
-                    const contentWithoutDate = item.content.replace(
-                        /\*\*\d{4}-\d{2}-\d{2}\*\*:?\s*/,
-                        "",
-                    );
+                    // Remove date and leading separator (– or -) from content for display
+                    const contentWithoutDate = item.content
+                        .replace(/\*\*\d{4}-\d{2}-\d{2}\*\*:?\s*/, "")
+                        .replace(/^[–—-]\s*/, "");
 
                     return (
                         <div
                             key={item.id}
-                            className={`bg-input-background border-l-2 border-border-highlight ${
-                                compact ? "p-2" : "p-3"
-                            }`}
+                            className="flex items-center gap-3 py-1"
                         >
-                            <div
-                                className={`font-body text-text-body-secondary leading-relaxed ${
-                                    compact ? "text-xs" : "text-sm"
-                                }`}
-                            >
-                                {item.date && (
-                                    <span
-                                        className={`inline-block bg-button-primary-bg text-text-on-color px-2 py-0.5 font-mono font-black mr-2 ${
-                                            compact ? "text-[10px]" : "text-xs"
-                                        }`}
-                                    >
-                                        {item.date}
-                                    </span>
-                                )}
+                            {item.date && (
+                                <span className="shrink-0 bg-button-primary-bg text-text-on-color px-2 py-0.5 font-mono font-black text-xs rounded-tag">
+                                    {item.date}
+                                </span>
+                            )}
+                            <div className="font-body text-sm text-text-body-secondary leading-relaxed">
                                 <ReactMarkdown
                                     components={{
                                         a: ({ node, ...props }) => (

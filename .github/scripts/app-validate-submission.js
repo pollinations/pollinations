@@ -68,14 +68,14 @@ async function main() {
             result.errors.push(
                 `User @${ISSUE_AUTHOR} has no tier set. This is a system error - please contact support.`,
             );
-        } else if (tier.toLowerCase() === "spore") {
+        } else if (tier.toLowerCase() === "microbe") {
             result.valid = false;
-            result.checks.registration.error_code = "SPORE_TIER";
+            result.checks.registration.error_code = "MICROBE_TIER";
             result.errors.push(
-                `User @${ISSUE_AUTHOR} has SPORE tier. To submit an app, you need at least SEED tier. SEED tier is automatically granted based on GitHub activity.`,
+                `User @${ISSUE_AUTHOR} account is still under review. Please try again later or contact support.`,
             );
         }
-        // SEED, FLOWER, NECTAR, ROUTER - all allowed to proceed
+        // SPORE, SEED, FLOWER, NECTAR, ROUTER - all allowed to proceed
     } catch (err) {
         result.checks.registration = {
             error: err.message,

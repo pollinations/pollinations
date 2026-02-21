@@ -5,8 +5,6 @@ import { usePageCopy } from "../../hooks/usePageCopy";
 import { Button } from "./ui/button";
 
 const TIER_EMOJI: Record<string, string> = {
-    microbe: "🦠",
-    spore: "🦠",
     seed: "🌱",
     flower: "🌸",
     nectar: "🍯",
@@ -46,9 +44,9 @@ export function UserMenu() {
         );
     }
 
-    const tierEmoji = TIER_EMOJI[profile?.tier || ""] || "🌱";
+    const tierEmoji = profile?.tier ? TIER_EMOJI[profile.tier] : null;
     const displayName = profile?.githubUsername
-        ? `@${profile.githubUsername}`
+        ? profile.githubUsername
         : profile?.name || copy.defaultUsername;
 
     return (
@@ -58,14 +56,19 @@ export function UserMenu() {
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center gap-1.5 px-3 py-1.5 font-headline text-xs font-black uppercase tracking-wider text-text-body-main bg-surface-page backdrop-blur-md border-r-4 border-b-4 border-border-brand rounded-button transition-all hover:bg-button-secondary-bg hover:shadow-shadow-brand-md whitespace-nowrap"
             >
-                <span>{tierEmoji}</span>
+                {profile?.image && (
+                    <img
+                        src={profile.image}
+                        alt=""
+                        className="w-5 h-5 rounded-full"
+                    />
+                )}
                 <span className="max-w-[140px] truncate">{displayName}</span>
                 {balance !== null && (
                     <span className="text-text-brand">
                         {balance.balance.toFixed(1)} {copy.pollenUnit}
                     </span>
                 )}
-                <span className="text-[8px]">▾</span>
             </button>
 
             {isOpen && (
@@ -73,17 +76,21 @@ export function UserMenu() {
                     {/* Profile */}
                     {profile && (
                         <div className="mb-3">
-                            <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium block">
+                            <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium block mb-1">
                                 {copy.accountLabel}
                             </span>
-                            <span className="font-headline text-sm font-black text-text-body-main">
-                                {displayName}
-                            </span>
-                            {profile.tier && (
-                                <span className="ml-2 text-xs text-text-body-secondary">
-                                    {tierEmoji} {profile.tier}
+                            <div className="flex items-center gap-1.5">
+                                {profile.image && (
+                                    <img
+                                        src={profile.image}
+                                        alt=""
+                                        className="w-5 h-5 rounded-full shrink-0"
+                                    />
+                                )}
+                                <span className="font-headline text-sm font-black text-text-body-main">
+                                    {displayName}
                                 </span>
-                            )}
+                            </div>
                         </div>
                     )}
 
@@ -99,6 +106,20 @@ export function UserMenu() {
                         </div>
                     )}
 
+                    {/* Tier (creator tiers only) */}
+                    {tierEmoji && profile?.tier && (
+                        <div className="mb-3">
+                            <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium block">
+                                Tier
+                            </span>
+                            <span className="font-headline text-sm font-black text-text-body-main">
+                                {tierEmoji}{" "}
+                                {profile.tier.charAt(0).toUpperCase() +
+                                    profile.tier.slice(1)}
+                            </span>
+                        </div>
+                    )}
+
                     {/* API Key */}
                     <div className="mb-4">
                         <span className="text-[10px] uppercase tracking-wider text-text-body-tertiary font-medium block">
@@ -108,6 +129,24 @@ export function UserMenu() {
                             {apiKey.slice(0, 4)}••••••••
                         </span>
                     </div>
+
+                    {/* BYOP CTA */}
+                    <a
+                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block mb-4 p-2 rounded-md bg-[rgb(var(--surface-page))] hover:opacity-80 transition-opacity"
+                    >
+                        <span className="text-[10px] uppercase tracking-wider text-text-brand font-bold block">
+                            🔌 {copy.byopTitle}
+                        </span>
+                        <span className="text-[10px] text-text-body-secondary block mt-0.5">
+                            {copy.byopDescription}
+                        </span>
+                        <span className="text-[10px] text-text-brand font-medium mt-1 block">
+                            {copy.byopLink} →
+                        </span>
+                    </a>
 
                     {/* Enter Dashboard */}
                     <Button

@@ -55,6 +55,29 @@ App submissions are now **fully automated** via the `app-review-submission.yml` 
 
 Use this guild ID when interacting with Discord MCP tools for announcements, community management, etc.
 
+## Model Monitor
+
+**Dashboard:** https://model-monitor.pollinations.ai/
+
+**API (Tinybird, public read-only token):**
+
+```
+# 5-minute window (live)
+curl -s 'https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICJmZTRjODM1Ni1iOTYwLTQ0ZTYtODE1Mi1kY2UwYjc0YzExNjQiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.Wc49vYoVYI_xd4JSsH_Fe8mJk7Oc9hx0IIldwc1a44g'
+
+# 60-minute window
+curl -s 'https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health_60m.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICJmZTRjODM1Ni1iOTYwLTQ0ZTYtODE1Mi1kY2UwYjc0YzExNjQiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.Wc49vYoVYI_xd4JSsH_Fe8mJk7Oc9hx0IIldwc1a44g'
+```
+
+**Key fields per model:** `model`, `status_2xx`, `errors_500`, `errors_502`, `errors_503`, `errors_504`, `total_requests`, `last_error_at`
+
+**Outage issue handling:**
+
+1. Match the model name from the issue to the `model` field in the API response
+2. If `errors_500 + errors_502 + errors_503 + errors_504 == 0` and `status_2xx > 0` → outage resolved — comment with current stats and close the issue
+3. If 5xx errors are still present → comment with status update, keep open
+4. Always cite specific numbers from the API response
+
 ## Repository Structure
 
 Key directories and their purposes:

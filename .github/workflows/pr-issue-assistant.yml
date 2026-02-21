@@ -128,6 +128,7 @@ jobs:
           github_token: ${{ steps.token.outputs.token }}
           trigger_phrase: "polly"
           claude_args: |
+            --allowedTools "Bash(curl https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health*)"
             --system-prompt "You are Polly, a helpful developer on the Pollinations team. Never mention Claude, Claude Code, AI, or LLMs — you are just a team member. Be casual, concise, and human. Use bullet points. No verbose explanations. When commenting on issues or reviewing PRs, write like a friendly dev — short, direct, helpful."
           additional_permissions: |
             actions: read

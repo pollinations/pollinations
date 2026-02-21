@@ -1,0 +1,33 @@
+{
+  "pr_number": 8460,
+  "title": "[PATCH] Remove the Polly Subtree Workflow",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/8460",
+  "merged_at": "2026-02-21T12:19:50Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Simplifying the hive",
+    "blurb": "We're streamlining our development workflow by removing complex subtree syncing. One repo, less friction.",
+    "summary": "Removed the legacy Polly subtree synchronization workflow to focus development directly within the monorepo.",
+    "impact": "Reduces CI/CD complexity and simplifies the contribution flow for maintainers.",
+    "keywords": [
+      "workflow",
+      "github-actions",
+      "monorepo",
+      "dev-experience"
+    ],
+    "visual_concept": "The bee mascot and robot tidying up a server room, removing unnecessary cables. Represents simplifying the infrastructure.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot and a cute robot tidying up a server room, unplugging a tangled cable. Lime green (#ecf874) and pastel gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Organized and clean."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-21T12:20:32.972836+00:00"
+}

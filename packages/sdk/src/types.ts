@@ -471,6 +471,7 @@ export type ModelTier = "anonymous" | "seed" | "flower" | "nectar";
 /** Model information */
 export interface ModelInfo {
     name: string;
+    displayName?: string;
     description?: string;
     aliases?: string[];
     tier?: ModelTier;

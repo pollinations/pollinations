@@ -61,6 +61,7 @@ export const AUDIO_SERVICES = {
                 completionAudioTokens: 0.18 / 1000,
             },
         ],
+        displayName: "ElevenLabs v3 TTS",
         description:
             "ElevenLabs v3 TTS - Expressive voices with emotions & audio tags",
         inputModalities: ["text"],
@@ -79,6 +80,7 @@ export const AUDIO_SERVICES = {
                 completionAudioSeconds: 0.005,
             },
         ],
+        displayName: "ElevenLabs Music",
         description:
             "ElevenLabs Music - Generate studio-grade music from text prompts",
         inputModalities: ["text"],
@@ -95,6 +97,7 @@ export const AUDIO_SERVICES = {
                 promptAudioSeconds: 0.0000445,
             },
         ],
+        displayName: "Whisper Large V3",
         description:
             "Whisper Large V3 - Speech to Text Transcription (OVHcloud)",
         inputModalities: ["audio"],
@@ -112,6 +115,7 @@ export const AUDIO_SERVICES = {
                 promptAudioSeconds: 0.0001111,
             },
         ],
+        displayName: "ElevenLabs Scribe v2",
         description:
             "ElevenLabs Scribe v2 - Speech to Text (90+ languages, diarization)",
         inputModalities: ["audio"],

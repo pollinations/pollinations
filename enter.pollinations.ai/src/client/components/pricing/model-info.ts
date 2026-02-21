@@ -27,9 +27,9 @@ export const getModelDescription = (modelName: string): string | undefined => {
  */
 export const getModelDisplayName = (modelName: string): string | undefined => {
     const service = getServiceDefinition(modelName as ServiceId);
+    if (service?.displayName) return service.displayName;
     const description = service?.description;
     if (!description) return undefined;
-    // Extract first part before " - " (e.g., "OpenAI GPT-5 Mini" from "OpenAI GPT-5 Mini - Fast & Balanced")
     return description.split(" - ")[0];
 };
 

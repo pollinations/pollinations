@@ -18,6 +18,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.04, // $0.04 per image (Azure pricing)
             },
         ],
+        displayName: "FLUX.1 Kontext",
         description: "FLUX.1 Kontext - In-context editing & generation",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
@@ -36,6 +37,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(30), // $30 per 1M tokens × 1290 tokens/image = $0.039 per image
             },
         ],
+        displayName: "NanoBanana",
         description: "NanoBanana - Gemini 2.5 Flash Image",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
@@ -56,6 +58,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(120), // $120 per 1M tokens = $0.134 per 1K image
             },
         ],
+        displayName: "NanoBanana Pro",
         description: "NanoBanana Pro - Gemini 3 Pro Image (4K, Thinking)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
@@ -72,6 +75,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.03, // $0.03 per image (3 cents)
             },
         ],
+        displayName: "Seedream 4.0",
         description: "Seedream 4.0 - ByteDance ARK (better quality)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
@@ -88,6 +92,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.04, // $0.04 per image (4 cents)
             },
         ],
+        displayName: "Seedream 4.5 Pro",
         description: "Seedream 4.5 Pro - ByteDance ARK (4K, Multi-Image)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
@@ -106,6 +111,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(8), // $8.00 per 1M output tokens
             },
         ],
+        displayName: "GPT Image 1 Mini",
         description: "GPT Image 1 Mini - OpenAI's image generation model",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
@@ -126,6 +132,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(32), // $32.00 per 1M output tokens (Azure)
             },
         ],
+        displayName: "GPT Image 1.5",
         description: "GPT Image 1.5 - OpenAI's advanced image generation model",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
@@ -141,6 +148,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
             },
         ],
+        displayName: "Flux Schnell",
         description: "Flux Schnell - Fast high-quality image generation",
         inputModalities: ["text"],
         outputModalities: ["image"],
@@ -157,6 +165,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
             },
         ],
+        displayName: "Z-Image Turbo",
         description: "Z-Image Turbo - Fast 6B Flux with 2x upscaling",
         inputModalities: ["text"],
         outputModalities: ["image"],
@@ -174,6 +183,7 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.15, // $0.15 per second of video
             },
         ],
+        displayName: "Veo 3.1 Fast",
         description: "Veo 3.1 Fast - Google's video generation model (preview)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
@@ -190,6 +200,7 @@ export const IMAGE_SERVICES = {
                 completionVideoTokens: perMillion(1.8), // $1.8 per 1M tokens
             },
         ],
+        displayName: "Seedance Lite",
         description:
             "Seedance Lite - BytePlus video generation (better quality)",
         inputModalities: ["text", "image"],
@@ -208,6 +219,7 @@ export const IMAGE_SERVICES = {
                 completionVideoTokens: perMillion(1.0), // $1.0 per 1M tokens
             },
         ],
+        displayName: "Seedance Pro",
         description:
             "Seedance Pro-Fast - BytePlus video generation (better prompt adherence)",
         inputModalities: ["text", "image"],
@@ -229,6 +241,7 @@ export const IMAGE_SERVICES = {
                 completionAudioSeconds: 0.05, // $0.05 per second (audio)
             },
         ],
+        displayName: "Wan 2.6",
         description:
             "Wan 2.6 - Alibaba text/image-to-video with audio (2-15s, up to 1080P) via DashScope",
         inputModalities: ["text", "image"],
@@ -246,6 +259,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.008, // ~$0.008 per image (L40S @ 15s avg)
             },
         ],
+        displayName: "FLUX.2 Klein 4B",
         description:
             "FLUX.2 Klein 4B - Fast image generation & editing on Modal",
         inputModalities: ["text", "image"],
@@ -262,6 +276,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.012,
             },
         ],
+        displayName: "FLUX.2 Klein 9B",
         description:
             "FLUX.2 Klein 9B - Higher quality image generation & editing on Modal",
         inputModalities: ["text", "image"],
@@ -312,6 +327,7 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.01, // $0.01/sec (Replicate's rate)
             },
         ],
+        displayName: "LTX-2",
         description:
             "LTX-2 - Fast text-to-video generation with audio on Modal",
         inputModalities: ["text"],

@@ -340,6 +340,8 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
             chunks = _chunk_code(content, rel_path)
 
             for chunk in chunks:
+                if not chunk["content"].strip():
+                    continue
                 chunk_id = f"{rel_path}:{chunk['start_line']}-{chunk['end_line']}"
                 content_hash = _file_hash(chunk["content"])
 

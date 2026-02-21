@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import fs from "fs";
-import path from "path";
-import os from "os";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 // Determine the Claude Desktop config file path based on the operating system
 const getConfigPath = () => {
@@ -42,7 +42,7 @@ try {
     const configData = fs.readFileSync(configPath, "utf8");
     config = JSON.parse(configData);
     console.log("Existing Claude Desktop config found");
-} catch (error) {
+} catch (_error) {
     console.log("Creating new Claude Desktop config");
 }
 
@@ -52,7 +52,7 @@ config.mcpServers = config.mcpServers || {};
 // Add or update the pollinations MCP server configuration
 config.mcpServers.pollinations = {
     command: "npx",
-    args: ["@pollinations/model-context-protocol"],
+    args: ["@pollinations_ai/model-context-protocol"],
     disabled: false,
     alwaysAllow: [],
 };

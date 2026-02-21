@@ -7,6 +7,7 @@ export type SemanticTokenId =
     | "text.inverse"
     | "text.brand"
     | "text.highlight"
+    | "text.accent"
 
     // Surfaces
     | "surface.page"
@@ -38,6 +39,7 @@ export type SemanticTokenId =
     // Borders
     | "border.brand"
     | "border.highlight"
+    | "border.accent"
     | "border.main"
     | "border.strong"
     | "border.subtle"
@@ -69,6 +71,7 @@ export type SemanticTokenId =
     | "radius.card"
     | "radius.input"
     | "radius.subcard"
+    | "radius.tag"
 
     // Fonts
     | "font.title"

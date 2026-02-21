@@ -1,0 +1,136 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "nomnom",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "required",
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 401,
+    "statusText": "Unauthorized",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "848",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 25 Jan 2026 03:06:56 GMT",
+      "etag": "W/\"350-ibvXNEHwmZMBvPO3LcyU5YhC2zc\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "error": "Unauthorized",
+        "message": "401 Unauthorized",
+        "requestId": "xs59xp",
+        "requestParameters": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "What is 5 + 3? You must use the calculator tool to compute this."
+            }
+          ],
+          "jsonMode": false,
+          "seed": 42,
+          "model": "nomnom",
+          "referrer": null,
+          "isPrivate": true,
+          "voice": "alloy",
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "calculator",
+                "description": "Perform basic arithmetic operations",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "operation": {
+                      "type": "string",
+                      "enum": [
+                        "add",
+                        "subtract",
+                        "multiply",
+                        "divide"
+                      ],
+                      "description": "The arithmetic operation to perform"
+                    },
+                    "a": {
+                      "type": "number",
+                      "description": "First operand"
+                    },
+                    "b": {
+                      "type": "number",
+                      "description": "Second operand"
+                    }
+                  },
+                  "required": [
+                    "operation",
+                    "a",
+                    "b"
+                  ]
+                }
+              }
+            }
+          ],
+          "tool_choice": "required",
+          "private": true
+        },
+        "details": {
+          "detail": "Invalid API key. Get your key at https://enter.pollinations.ai"
+        }
+      }
+    }
+  }
+}

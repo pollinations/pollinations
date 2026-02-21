@@ -1,5 +1,5 @@
 import { getLogger } from "@logtape/logtape";
-import type { TokenUsage } from "@shared/registry/registry.ts";
+import type { Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
     calculatePrice,
@@ -12,10 +12,9 @@ import {
     type UsagePrice,
 } from "@shared/registry/registry.ts";
 import {
-    openaiUsageToTokenUsage,
+    openaiUsageToUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
-import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { HonoRequest } from "hono";
@@ -23,10 +22,6 @@ import { createMiddleware } from "hono/factory";
 import { routePath } from "hono/route";
 import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
-import {
-    apikey as apikeyTable,
-    user as userTable,
-} from "@/db/schema/better-auth.ts";
 import type {
     ApiKeyType,
     EventType,
@@ -54,14 +49,15 @@ import {
     ContentFilterSeveritySchema,
 } from "@/schemas/openai.ts";
 import { generateRandomId, removeUnset } from "@/util.ts";
+import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
+import type { BalanceVariables } from "./balance.ts";
 import type { LoggerVariables } from "./logger.ts";
 import type { ModelVariables } from "./model.ts";
-import type { PolarVariables } from "./polar.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
 
 export type ModelUsage = {
     model: ModelId;
-    usage: TokenUsage;
+    usage: Usage;
 };
 
 type RequestTrackingData = {
@@ -79,7 +75,7 @@ type ResponseTrackingData = {
     cacheData: CacheData;
     isBilledUsage: boolean;
     modelUsed?: string;
-    usage?: TokenUsage;
+    usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
     contentFilterResults?: GenerationEventContentFilterParams;
@@ -99,7 +95,7 @@ export type TrackEnv = {
     Variables: ErrorVariables &
         LoggerVariables &
         AuthVariables &
-        PolarVariables &
+        BalanceVariables &
         FrontendKeyRateLimitVariables &
         TrackVariables &
         ModelVariables;
@@ -118,7 +114,9 @@ export const track = (eventType: EventType) =>
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
             userTier: c.var.auth.user?.tier,
-            userGithubId: `${c.var.auth.user?.githubId}`,
+            userGithubId: c.var.auth.user?.githubId
+                ? String(c.var.auth.user.githubId)
+                : undefined,
             userGithubUsername: c.var.auth.user?.githubUsername,
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyType: c.var.auth.apiKey?.metadata?.keyType as ApiKeyType,
@@ -157,15 +155,10 @@ export const track = (eventType: EventType) =>
                 // Capture balance tracking AFTER next() so balanceCheckResult is set
                 const balanceTracking = {
                     selectedMeterId:
-                        c.var.polar.balanceCheckResult?.selectedMeterId,
+                        c.var.balance.balanceCheckResult?.selectedMeterId,
                     selectedMeterSlug:
-                        c.var.polar.balanceCheckResult?.selectedMeterSlug,
-                    balances: Object.fromEntries(
-                        c.var.polar.balanceCheckResult?.meters.map((meter) => [
-                            meter.metadata.slug,
-                            meter.balance,
-                        ]) || [],
-                    ),
+                        c.var.balance.balanceCheckResult?.selectedMeterSlug,
+                    balances: c.var.balance.balanceCheckResult?.balances || {},
                 } satisfies BalanceData;
 
                 const finalEvent = createTrackingEvent({
@@ -203,118 +196,16 @@ export const track = (eventType: EventType) =>
                     log,
                 );
 
-                // Decrement per-key pollen budget after billable requests
-                // Only deduct if key has a budget set (pollenBalance is not null)
-                const apiKeyId = c.var.auth?.apiKey?.id;
-                const apiKeyPollenBalance = c.var.auth?.apiKey?.pollenBalance;
-                if (
-                    responseTracking.isBilledUsage &&
-                    responseTracking.price?.totalPrice &&
-                    apiKeyId &&
-                    apiKeyPollenBalance !== null &&
-                    apiKeyPollenBalance !== undefined
-                ) {
-                    const priceToDeduct = responseTracking.price.totalPrice;
-
-                    try {
-                        // Use D1 column for atomic decrement
-                        await db
-                            .update(apikeyTable)
-                            .set({
-                                pollenBalance: sql`${apikeyTable.pollenBalance} - ${priceToDeduct}`,
-                            })
-                            .where(eq(apikeyTable.id, apiKeyId));
-
-                        log.debug(
-                            "Decremented {price} pollen from API key {keyId} budget",
-                            {
-                                price: priceToDeduct,
-                                keyId: apiKeyId,
-                            },
-                        );
-                    } catch (error) {
-                        log.error(
-                            "Failed to decrement API key budget for {keyId}: {error}",
-                            {
-                                keyId: apiKeyId,
-                                error:
-                                    error instanceof Error
-                                        ? error.message
-                                        : error,
-                            },
-                        );
-                    }
-                }
-
-                // Decrement user pollen balance after billable requests
-                // Strategy: decrement from tier_balance first, then crypto_balance, then pack_balance
-                if (
-                    responseTracking.isBilledUsage &&
-                    responseTracking.price?.totalPrice &&
-                    userTracking.userId
-                ) {
-                    const priceToDeduct = responseTracking.price.totalPrice;
-
-                    try {
-                        // Get current balances to determine how to split the deduction
-                        const currentUser = await db
-                            .select({
-                                tierBalance: userTable.tierBalance,
-                                cryptoBalance: userTable.cryptoBalance,
-                                packBalance: userTable.packBalance,
-                            })
-                            .from(userTable)
-                            .where(eq(userTable.id, userTracking.userId))
-                            .limit(1);
-
-                        const tierBalance = currentUser[0]?.tierBalance ?? 0;
-                        const cryptoBalance =
-                            currentUser[0]?.cryptoBalance ?? 0;
-
-                        // Decrement in order: tier (free) → crypto → pack
-                        const fromTier = Math.min(
-                            priceToDeduct,
-                            Math.max(0, tierBalance),
-                        );
-                        const remainingAfterTier = priceToDeduct - fromTier;
-                        const fromCrypto = Math.min(
-                            remainingAfterTier,
-                            Math.max(0, cryptoBalance),
-                        );
-                        const fromPack = remainingAfterTier - fromCrypto;
-
-                        await db
-                            .update(userTable)
-                            .set({
-                                tierBalance: sql`${userTable.tierBalance} - ${fromTier}`,
-                                cryptoBalance: sql`${userTable.cryptoBalance} - ${fromCrypto}`,
-                                packBalance: sql`${userTable.packBalance} - ${fromPack}`,
-                            })
-                            .where(eq(userTable.id, userTracking.userId));
-
-                        log.debug(
-                            "Decremented {price} pollen from user {userId} (tier: -{fromTier}, crypto: -{fromCrypto}, pack: -{fromPack})",
-                            {
-                                price: priceToDeduct,
-                                userId: userTracking.userId,
-                                fromTier,
-                                fromCrypto,
-                                fromPack,
-                            },
-                        );
-                    } catch (error) {
-                        log.error(
-                            "Failed to decrement user balance for {userId}: {error}",
-                            {
-                                userId: userTracking.userId,
-                                error:
-                                    error instanceof Error
-                                        ? error.message
-                                        : error,
-                            },
-                        );
-                    }
-                }
+                // Handle balance deduction for both API keys and users
+                await handleBalanceDeduction({
+                    db,
+                    isBilledUsage: responseTracking.isBilledUsage,
+                    totalPrice: responseTracking.price?.totalPrice,
+                    userId: userTracking.userId,
+                    apiKeyId: c.var.auth?.apiKey?.id,
+                    apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
+                    modelResolved: c.var.model?.resolved,
+                });
             })(),
         );
     });
@@ -376,6 +267,28 @@ async function trackResponse(
         ) {
             log.warn(
                 "Image generation returned non-image content-type: {contentType}",
+                { contentType },
+            );
+            return {
+                responseOk: response.ok,
+                responseStatus: response.status,
+                cacheData: cacheInfo,
+                isBilledUsage: false,
+            };
+        }
+    }
+    // For audio generation, verify the response content-type is expected.
+    // TTS returns audio/*, STT (whisper) returns application/json — both are valid.
+    if (eventType === "generate.audio") {
+        const contentType = response.headers.get("content-type") || "";
+        const isAudio = contentType.startsWith("audio/");
+        const isSTT =
+            contentType.startsWith("application/json") &&
+            getServiceDefinition(resolvedModelRequested as ServiceId)
+                ?.outputModalities?.[0] === "text";
+        if (!isAudio && !isSTT) {
+            log.warn(
+                "Audio generation returned unexpected content-type: {contentType}",
                 { contentType },
             );
             return {
@@ -542,8 +455,17 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
         return z.safeParse(z.coerce.boolean(), stream).data || false;
     }
     if (request.method === "POST") {
-        const stream = (await request.json()).stream;
-        return z.safeParse(z.coerce.boolean(), stream).data || false;
+        const contentType = request.header("content-type") || "";
+        // Skip JSON parsing for multipart requests (e.g., audio transcription)
+        if (contentType.includes("multipart/form-data")) {
+            return false;
+        }
+        try {
+            const stream = (await request.json()).stream;
+            return z.safeParse(z.coerce.boolean(), stream).data || false;
+        } catch {
+            return false;
+        }
     }
     return false;
 }
@@ -656,7 +578,7 @@ async function extractUsageAndContentFilterResultsStream(
     return {
         modelUsage: {
             model: model as ModelId,
-            usage: openaiUsageToTokenUsage(usage),
+            usage: openaiUsageToUsage(usage),
         },
         contentFilterResults,
     };

@@ -182,10 +182,18 @@ export async function transcribeWithElevenLabs(opts: {
     file: File;
     language?: string;
     responseFormat?: string;
+    timestampGranularities?: string[];
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { file, language, responseFormat = "json", apiKey, log } = opts;
+    const {
+        file,
+        language,
+        responseFormat = "json",
+        timestampGranularities,
+        apiKey,
+        log,
+    } = opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -272,33 +280,61 @@ export async function transcribeWithElevenLabs(opts: {
 
     if (responseFormat === "verbose_json") {
         // OpenAI verbose format with word-level timestamps and segments
-        const verboseResponse = {
+        const hasGranularities =
+            timestampGranularities && timestampGranularities.length > 0;
+        const includeWords = !hasGranularities ||
+            timestampGranularities.includes("word");
+        const includeSegments = !hasGranularities ||
+            timestampGranularities.includes("segment");
+
+        const verboseResponse: Record<string, unknown> = {
             text: elevenLabsData.text,
             task: "transcribe",
             language: elevenLabsData.language_code || "unknown",
             duration,
-            words: elevenLabsData.words?.map((w) => ({
+        };
+        if (includeWords) {
+            verboseResponse.words = elevenLabsData.words?.map((w) => ({
                 word: w.text,
                 start: w.start,
                 end: w.end,
-            })),
-            segments: [
+            }));
+        }
+        if (includeSegments) {
+            verboseResponse.segments = [
                 {
                     id: 0,
                     start: 0,
                     end: duration,
                     text: elevenLabsData.text,
                 },
-            ],
-        };
+            ];
+        }
         return Response.json(verboseResponse, { headers: usageHeaders });
     }
 
     // Default: json format
-    return Response.json(
-        { text: elevenLabsData.text },
-        { headers: usageHeaders },
-    );
+    const jsonResponse: Record<string, unknown> = {
+        text: elevenLabsData.text,
+    };
+    if (timestampGranularities?.includes("word")) {
+        jsonResponse.words = elevenLabsData.words?.map((w) => ({
+            word: w.text,
+            start: w.start,
+            end: w.end,
+        }));
+    }
+    if (timestampGranularities?.includes("segment")) {
+        jsonResponse.segments = [
+            {
+                id: 0,
+                start: 0,
+                end: duration,
+                text: elevenLabsData.text,
+            },
+        ];
+    }
+    return Response.json(jsonResponse, { headers: usageHeaders });
 }
 
 export async function generateMusic(opts: {
@@ -534,6 +570,15 @@ export const audioRoutes = new Hono<Env>()
                                     description:
                                         "Sampling temperature between 0 and 1. Lower is more deterministic.",
                                 },
+                                "timestamp_granularities[]": {
+                                    type: "array",
+                                    items: {
+                                        type: "string",
+                                        enum: ["word", "segment"],
+                                    },
+                                    description:
+                                        "The timestamp granularities to populate. When set, word-level and/or segment-level timestamps are included in the response. Supported for scribe model only.",
+                                },
                             },
                         },
                     },
@@ -548,6 +593,33 @@ export const audioRoutes = new Hono<Env>()
                                 type: "object",
                                 properties: {
                                     text: { type: "string" },
+                                    words: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                word: { type: "string" },
+                                                start: { type: "number" },
+                                                end: { type: "number" },
+                                            },
+                                        },
+                                        description:
+                                            "Word-level timestamps. Present when timestamp_granularities includes 'word'.",
+                                    },
+                                    segments: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                id: { type: "integer" },
+                                                start: { type: "number" },
+                                                end: { type: "number" },
+                                                text: { type: "string" },
+                                            },
+                                        },
+                                        description:
+                                            "Segment-level timestamps. Present when timestamp_granularities includes 'segment'.",
+                                    },
                                 },
                             },
                         },
@@ -583,6 +655,23 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
+            // Extract timestamp_granularities from form data
+            // Handle both "timestamp_granularities[]" and "timestamp_granularities" keys
+            const timestampGranularities = [
+                ...formData.getAll("timestamp_granularities[]"),
+                ...formData.getAll("timestamp_granularities"),
+            ].filter((v): v is string => typeof v === "string");
+
+            // Validate values
+            const validGranularities = ["word", "segment"];
+            for (const g of timestampGranularities) {
+                if (!validGranularities.includes(g)) {
+                    throw new UpstreamError(400 as ContentfulStatusCode, {
+                        message: `Invalid timestamp_granularities value: ${g}. Supported: word, segment`,
+                    });
+                }
+            }
+
             // Route to ElevenLabs Scribe or Whisper based on model
             if (c.var.model.resolved === "scribe") {
                 const elevenLabsApiKey = (
@@ -592,6 +681,10 @@ export const audioRoutes = new Hono<Env>()
                     file,
                     language: language || undefined,
                     responseFormat: responseFormat || undefined,
+                    timestampGranularities:
+                        timestampGranularities.length > 0
+                            ? timestampGranularities
+                            : undefined,
                     apiKey: elevenLabsApiKey,
                     log,
                 });

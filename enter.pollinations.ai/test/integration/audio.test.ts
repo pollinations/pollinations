@@ -338,6 +338,109 @@ describe("ElevenLabs Transcription", () => {
             expect(body).toContain("srt");
         },
     );
+
+    test(
+        "POST /v1/audio/transcriptions with timestamp_granularities[]=word and verbose_json returns words only",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const audioResponse = await fetch(
+                "https://cdn.openai.com/API/docs/audio/alloy.wav",
+            );
+            const audioBuffer = await audioResponse.arrayBuffer();
+
+            const formData = new FormData();
+            formData.append(
+                "file",
+                new Blob([audioBuffer], { type: "audio/wav" }),
+                "test.wav",
+            );
+            formData.append("model", "scribe");
+            formData.append("response_format", "verbose_json");
+            formData.append("timestamp_granularities[]", "word");
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/v1/audio/transcriptions",
+                {
+                    method: "POST",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                    body: formData,
+                },
+            );
+            const body = await response.text();
+            expect(
+                response.status,
+                `Expected 200 but got ${response.status}: ${body}`,
+            ).toBe(200);
+
+            const data = JSON.parse(body) as {
+                text: string;
+                duration?: number;
+                words?: { word: string; start: number; end: number }[];
+                segments?: unknown[];
+            };
+            expect(data.text).toBeDefined();
+            expect(data.duration).toBeDefined();
+            expect(data.words).toBeDefined();
+            expect(Array.isArray(data.words)).toBe(true);
+            expect(data.segments).toBeUndefined();
+        },
+    );
+
+    test(
+        "POST /v1/audio/transcriptions with timestamp_granularities[]=word and json format returns words",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const audioResponse = await fetch(
+                "https://cdn.openai.com/API/docs/audio/alloy.wav",
+            );
+            const audioBuffer = await audioResponse.arrayBuffer();
+
+            const formData = new FormData();
+            formData.append(
+                "file",
+                new Blob([audioBuffer], { type: "audio/wav" }),
+                "test.wav",
+            );
+            formData.append("model", "scribe");
+            formData.append("timestamp_granularities[]", "word");
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/v1/audio/transcriptions",
+                {
+                    method: "POST",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                    body: formData,
+                },
+            );
+            const body = await response.text();
+            expect(
+                response.status,
+                `Expected 200 but got ${response.status}: ${body}`,
+            ).toBe(200);
+
+            const data = JSON.parse(body) as {
+                text: string;
+                words?: { word: string; start: number; end: number }[];
+            };
+            expect(data.text).toBeDefined();
+            expect(data.text.length).toBeGreaterThan(0);
+            expect(data.words).toBeDefined();
+            expect(Array.isArray(data.words)).toBe(true);
+            if (data.words && data.words.length > 0) {
+                expect(data.words[0].word).toBeDefined();
+                expect(data.words[0].start).toBeGreaterThanOrEqual(0);
+                expect(data.words[0].end).toBeGreaterThan(0);
+            }
+        },
+    );
 });
 
 describe("GET /text/:prompt (audio)", () => {

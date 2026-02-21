@@ -123,11 +123,11 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                     depleted
                                 </div>
                                 <div className="text-teal-700 mt-2">
-                                    ✅ <strong>Tier Eligible</strong> models can
+                                    🌱 <strong>Tier Eligible</strong> models can
                                     be used with your daily tier grant
                                 </div>
                                 <div className="text-gray-500 mt-1">
-                                    Other models require purchased pollen only
+                                    Other models require purchased pollen 💎
                                 </div>
                             </div>
                         </Card>

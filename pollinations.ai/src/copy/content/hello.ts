@@ -20,28 +20,30 @@ export const HELLO_PAGE = {
     loopBuild: "build",
     loopShip: "ship",
     loopGrow: "grow",
-    loopEarn: "earn (soon)",
+    loopEarn: "earn",
+    loopBuildEmoji: "🔨",
+    loopShipEmoji: "🚀",
+    loopGrowEmoji: "📈",
+    loopEarnEmoji: "💰",
+    flywheelCenter: "My Apps",
 
     // Section — For builders
     buildersTitle: "For builders",
     buildersBody:
         "One credit, every model. Pollen lands in your account daily — the more you build and contribute, the more you get.",
-    tierSeedEmoji: "🌱",
+    tierSeedEmoji: "🌿",
     tierSeedTitle: "Seed",
-    tierSeedDescription:
-        "You're building. Contributing, shipping apps.",
+    tierSeedDescription: "You're building. Contributing, shipping apps.",
     tierSeedGrant: "3 pollen / day",
     tierSeedPoints: "8+ points",
     tierFlowerEmoji: "🌸",
     tierFlowerTitle: "Flower",
-    tierFlowerDescription:
-        "Your app is live and getting used.",
+    tierFlowerDescription: "Your app is live and getting used.",
     tierFlowerGrant: "10 pollen / day",
     tierFlowerPoints: "20+ points",
     tierNectarEmoji: "🍯",
     tierNectarTitle: "Nectar",
-    tierNectarDescription:
-        "Most active builders.",
+    tierNectarDescription: "Most active builders.",
     tierNectarGrant: "20 pollen / day",
     tierNectarPoints: "50+ points",
     tiersBetaNote:

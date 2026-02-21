@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { HELLO_PAGE } from "../../copy/content/hello";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
+import { FlywheelRing } from "../components/FlywheelRing";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
@@ -71,13 +72,13 @@ function HelloPage() {
                     </Heading>
                     <Body spacing="comfortable">{pageCopy.buildersBody}</Body>
 
-                    <pre className="mb-6 font-mono text-sm leading-relaxed text-text-body-secondary">
-{`${pageCopy.loopBuild}  →  ${pageCopy.loopShip}  →  ${pageCopy.loopGrow}
- ↑                       ↓
- └──── `}<span className="text-text-highlight">{pageCopy.loopEarn}</span>{` ◄────┘`}
-                    </pre>
+                    {/* Flywheel — centered */}
+                    <div className="mb-8">
+                        <FlywheelRing pageCopy={pageCopy} />
+                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    {/* Tier cards — horizontal, Seed → Flower → Nectar */}
+                    <div className="flex flex-col sm:flex-row items-stretch justify-center gap-2 mb-8">
                         {[
                             {
                                 emoji: pageCopy.tierSeedEmoji,
@@ -86,6 +87,7 @@ function HelloPage() {
                                 grant: pageCopy.tierSeedGrant,
                                 points: pageCopy.tierSeedPoints,
                                 border: "border-border-main",
+                                glow: "bg-border-main",
                             },
                             {
                                 emoji: pageCopy.tierFlowerEmoji,
@@ -94,6 +96,7 @@ function HelloPage() {
                                 grant: pageCopy.tierFlowerGrant,
                                 points: pageCopy.tierFlowerPoints,
                                 border: "border-border-brand",
+                                glow: "bg-border-brand",
                             },
                             {
                                 emoji: pageCopy.tierNectarEmoji,
@@ -102,26 +105,49 @@ function HelloPage() {
                                 grant: pageCopy.tierNectarGrant,
                                 points: pageCopy.tierNectarPoints,
                                 border: "border-border-highlight",
+                                glow: "bg-border-highlight",
                             },
-                        ].map((tier) => (
-                            <SubCard
+                        ].map((tier, i) => (
+                            <div
                                 key={tier.title}
-                                className={`border-t-2 ${tier.border}`}
+                                className="flex items-center gap-2 self-stretch"
                             >
-                                <p className="text-2xl mb-2">{tier.emoji}</p>
-                                <Heading variant="lime" as="h3" spacing="tight">
-                                    {tier.title}
-                                </Heading>
-                                <Body size="sm" spacing="tight">
-                                    {tier.desc}
-                                </Body>
-                                <p className="font-headline text-sm font-black text-text-highlight">
-                                    {tier.grant}
-                                </p>
-                                <p className="font-body text-xs text-text-body-tertiary">
-                                    {tier.points}
-                                </p>
-                            </SubCard>
+                                <SubCard
+                                    size="compact"
+                                    className={`relative overflow-hidden w-[160px] h-full flex flex-col justify-between border-t-2 ${tier.border} text-center`}
+                                >
+                                    <div
+                                        className={`absolute top-0 left-0 right-0 h-[3px] ${tier.glow} opacity-60`}
+                                    />
+                                    <div className="flex items-center justify-center gap-2 mb-1">
+                                        <span className="text-lg">
+                                            {tier.emoji}
+                                        </span>
+                                        <span className="font-headline text-sm font-black text-text-highlight">
+                                            {tier.title}
+                                        </span>
+                                    </div>
+                                    <Body size="xs" spacing="tight">
+                                        {tier.desc}
+                                    </Body>
+                                    <div className="flex flex-col items-center gap-1">
+                                        <span className="font-headline text-xs font-black text-text-highlight">
+                                            {tier.grant}
+                                        </span>
+                                        <Badge
+                                            variant="muted"
+                                            className="text-[10px] px-2 py-0.5"
+                                        >
+                                            {tier.points}
+                                        </Badge>
+                                    </div>
+                                </SubCard>
+                                {i < 2 && (
+                                    <span className="text-border-highlight/40 text-2xl font-bold hidden sm:block">
+                                        →
+                                    </span>
+                                )}
+                            </div>
                         ))}
                     </div>
 
@@ -143,8 +169,7 @@ function HelloPage() {
                     </Heading>
                     <Body spacing="comfortable">{pageCopy.usersBody}</Body>
                     <Body size="sm" spacing="comfortable">
-                        {pageCopy.usersPayAsYouGo}{" "}
-                        {pageCopy.byopBody}
+                        {pageCopy.usersPayAsYouGo} {pageCopy.byopBody}
                     </Body>
                     <p className="font-headline text-xs font-black text-text-highlight mb-6">
                         {pageCopy.usersPromo}

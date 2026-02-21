@@ -101,7 +101,6 @@ class Config:
         self.doc_sites = features_cfg.get(
             "doc_sites",
             [
-                "https://enter.pollinations.ai",
                 "https://enter.pollinations.ai/api/docs/open-api/generate-schema",
             ],
         )

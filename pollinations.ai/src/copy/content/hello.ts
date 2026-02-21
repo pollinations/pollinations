@@ -71,7 +71,7 @@ export const HELLO_PAGE = {
     usersPaymentsLink: "Set up user payments →",
 
     // Section 8 — We Build in the Open
-    openTitle: "We build in the open.",
+    openTitle: "We build in the open",
     recentUpdatesTitle: "What's New",
     newsItems: [
         {
@@ -139,7 +139,7 @@ export const HELLO_PAGE = {
         "The platform gives you runway. We're building the rest together, in the open.",
 
     // Section 9 — CTA
-    ctaTitle: "Everything's open. Start building.",
+    ctaTitle: "Start building",
     ctaBody:
         "One API. Open source. The code, the roadmap, the conversations — all in the open.",
     browseAppsLink: "Browse Apps",

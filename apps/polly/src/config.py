@@ -103,7 +103,6 @@ class Config:
             [
                 "https://enter.pollinations.ai",
                 "https://enter.pollinations.ai/api/docs/open-api/generate-schema",
-                "https://kpi.myceli.ai",
             ],
         )
 

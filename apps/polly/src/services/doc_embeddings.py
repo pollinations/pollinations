@@ -22,7 +22,6 @@ DOC_CACHE_DIR = DATA_DIR / "doc_cache"
 DEFAULT_DOC_SITES = [
     "https://enter.pollinations.ai",
     "https://enter.pollinations.ai/api/docs/open-api/generate-schema",
-    "https://kpi.myceli.ai",
 ]
 
 MAX_PAGES_PER_SITE = 500
@@ -488,7 +487,8 @@ async def update_all_sites(sites: list[str] | None = None):
             except Exception as e:
                 logger.error(f"Failed to update {site}: {e}", exc_info=True)
 
-        logger.info(f"Documentation update complete: {total_chunks} total chunks embedded")
+        collection = _get_collection()
+        logger.info(f"✅ Doc embeddings update complete — {collection.count()} total chunks ready ({total_chunks} new/changed)")
 
 
 async def initialize():
@@ -504,10 +504,12 @@ async def initialize():
     collection = _get_collection()
     if collection.count() == 0:
         logger.info("No existing doc embeddings found, running full crawl (first initialization)...")
-        await update_all_sites(sites)
     else:
-        logger.info(f"Found {collection.count()} existing doc embeddings from previous session")
-        logger.info("📌 TTL: On restart, doc embeddings persist in ChromaDB with page-level hash tracking")
+        logger.info(f"Found {collection.count()} existing doc embeddings, checking for updates...")
+
+    await update_all_sites(sites)
+
+    logger.info("✅ Doc embeddings initialization complete — %d chunks ready", collection.count())
 
 
 def get_doc_stats() -> dict:

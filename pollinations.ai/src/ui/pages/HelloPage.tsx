@@ -72,119 +72,148 @@ function HelloPage() {
                     </Heading>
                     <Body spacing="comfortable">{pageCopy.buildersBody}</Body>
 
-                    {/* Flywheel — centered */}
-                    <div className="mb-8">
+                    {/* Row 1: Flywheel (left) + explanation (right) */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-10">
                         <FlywheelRing pageCopy={pageCopy} />
+                        <div>
+                            <Heading variant="simple" spacing="comfortable">
+                                {pageCopy.flywheelTitle}
+                            </Heading>
+                            <Body size="sm" spacing="comfortable">
+                                {pageCopy.flywheelBody}
+                            </Body>
+                        </div>
                     </div>
 
-                    {/* Tier cards — horizontal, Seed → Flower → Nectar */}
-                    <div className="flex flex-col sm:flex-row items-stretch justify-center gap-2 mb-8">
-                        {[
-                            {
-                                emoji: pageCopy.tierSeedEmoji,
-                                title: pageCopy.tierSeedTitle,
-                                desc: pageCopy.tierSeedDescription,
-                                grant: pageCopy.tierSeedGrant,
-                                points: pageCopy.tierSeedPoints,
-                                border: "border-border-main",
-                                glow: "bg-border-main",
-                            },
-                            {
-                                emoji: pageCopy.tierFlowerEmoji,
-                                title: pageCopy.tierFlowerTitle,
-                                desc: pageCopy.tierFlowerDescription,
-                                grant: pageCopy.tierFlowerGrant,
-                                points: pageCopy.tierFlowerPoints,
-                                border: "border-border-brand",
-                                glow: "bg-border-brand",
-                            },
-                            {
-                                emoji: pageCopy.tierNectarEmoji,
-                                title: pageCopy.tierNectarTitle,
-                                desc: pageCopy.tierNectarDescription,
-                                grant: pageCopy.tierNectarGrant,
-                                points: pageCopy.tierNectarPoints,
-                                border: "border-border-highlight",
-                                glow: "bg-border-highlight",
-                            },
-                        ].map((tier, i) => (
-                            <div
-                                key={tier.title}
-                                className="flex items-center gap-2 self-stretch"
-                            >
-                                <SubCard
-                                    size="compact"
-                                    className={`relative overflow-hidden w-[160px] h-full flex flex-col justify-between border-t-2 ${tier.border} text-center`}
+                    {/* Row 2: Tier cards (left) + explanation (right) */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-8">
+                        {/* Tier ladder: Seed → Flower → Nectar */}
+                        <div className="flex flex-col items-center gap-2">
+                            {[
+                                {
+                                    emoji: pageCopy.tierSeedEmoji,
+                                    title: pageCopy.tierSeedTitle,
+                                    desc: pageCopy.tierSeedDescription,
+                                    grant: pageCopy.tierSeedGrant,
+                                    points: pageCopy.tierSeedPoints,
+                                    border: "border-border-main",
+                                    glow: "bg-border-main",
+                                },
+                                {
+                                    emoji: pageCopy.tierFlowerEmoji,
+                                    title: pageCopy.tierFlowerTitle,
+                                    desc: pageCopy.tierFlowerDescription,
+                                    grant: pageCopy.tierFlowerGrant,
+                                    points: pageCopy.tierFlowerPoints,
+                                    border: "border-border-brand",
+                                    glow: "bg-border-brand",
+                                },
+                                {
+                                    emoji: pageCopy.tierNectarEmoji,
+                                    title: pageCopy.tierNectarTitle,
+                                    desc: pageCopy.tierNectarDescription,
+                                    grant: pageCopy.tierNectarGrant,
+                                    points: pageCopy.tierNectarPoints,
+                                    border: "border-border-highlight",
+                                    glow: "bg-border-highlight",
+                                },
+                            ].map((tier, i) => (
+                                <div
+                                    key={tier.title}
+                                    className="flex flex-col items-center gap-2 w-full max-w-[280px]"
                                 >
-                                    <div
-                                        className={`absolute top-0 left-0 right-0 h-[3px] ${tier.glow} opacity-60`}
-                                    />
-                                    <div className="flex items-center justify-center gap-2 mb-1">
-                                        <span className="text-lg">
-                                            {tier.emoji}
+                                    <SubCard
+                                        size="compact"
+                                        className={`relative overflow-hidden w-full border-t-2 ${tier.border}`}
+                                    >
+                                        <div
+                                            className={`absolute top-0 left-0 right-0 h-[3px] ${tier.glow} opacity-60`}
+                                        />
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <span className="text-xl">
+                                                {tier.emoji}
+                                            </span>
+                                            <span className="font-headline text-base font-black text-text-highlight">
+                                                {tier.title}
+                                            </span>
+                                        </div>
+                                        <Body size="sm" spacing="tight">
+                                            {tier.desc}
+                                        </Body>
+                                        <div className="flex items-baseline gap-3 mt-1">
+                                            <span className="font-headline text-sm font-black text-text-highlight">
+                                                {tier.grant}
+                                            </span>
+                                            <Badge
+                                                variant="muted"
+                                                className="text-xs px-2 py-0.5"
+                                            >
+                                                {tier.points}
+                                            </Badge>
+                                        </div>
+                                    </SubCard>
+                                    {i < 2 && (
+                                        <span className="text-border-highlight/40 text-xl font-bold">
+                                            ↑
                                         </span>
-                                        <span className="font-headline text-sm font-black text-text-highlight">
-                                            {tier.title}
-                                        </span>
-                                    </div>
-                                    <Body size="xs" spacing="tight">
-                                        {tier.desc}
-                                    </Body>
-                                    <div className="flex flex-col items-center gap-1">
-                                        <span className="font-headline text-xs font-black text-text-highlight">
-                                            {tier.grant}
-                                        </span>
-                                        <Badge
-                                            variant="muted"
-                                            className="text-[10px] px-2 py-0.5"
-                                        >
-                                            {tier.points}
-                                        </Badge>
-                                    </div>
-                                </SubCard>
-                                {i < 2 && (
-                                    <span className="text-border-highlight/40 text-2xl font-bold hidden sm:block">
-                                        →
-                                    </span>
-                                )}
-                            </div>
-                        ))}
-                    </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
 
-                    <Body
-                        size="xs"
-                        spacing="none"
-                        className="text-text-body-tertiary"
-                    >
-                        {pageCopy.tiersBetaNote}
-                    </Body>
+                        {/* Tier explanation */}
+                        <div>
+                            <Heading variant="simple" spacing="comfortable">
+                                {pageCopy.tierTitle}
+                            </Heading>
+                            <Body size="sm" spacing="comfortable">
+                                {pageCopy.tierBody}
+                            </Body>
+                            <div className="flex flex-col gap-1 mb-4">
+                                <a
+                                    href="https://github.com/pollinations/pollinations/blob/main/POINTS_AND_TIERS.md"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-headline text-sm font-black text-text-highlight hover:underline"
+                                >
+                                    {pageCopy.tierScoringLink}
+                                </a>
+                                <a
+                                    href="https://enter.pollinations.ai/docs#tiers"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-headline text-sm font-black text-text-highlight hover:underline"
+                                >
+                                    {pageCopy.tierHowLink}
+                                </a>
+                            </div>
+                            <p className="mt-6 font-body text-sm text-text-body-tertiary italic">
+                                <span className="not-italic mr-1">🧪</span>
+                                {pageCopy.tiersBetaNote}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 <Divider />
 
-                {/* Section — For your users */}
+                {/* Section — For your users / BYOP */}
                 <div className="mb-12">
                     <Heading variant="section" spacing="comfortable">
                         {pageCopy.usersTitle}
                     </Heading>
                     <Body spacing="comfortable">{pageCopy.usersBody}</Body>
                     <Body size="sm" spacing="comfortable">
-                        {pageCopy.usersPayAsYouGo} {pageCopy.byopBody}
+                        {pageCopy.usersBody2}
                     </Body>
-                    <p className="font-headline text-xs font-black text-text-highlight mb-6">
-                        {pageCopy.usersPromo}
-                    </p>
-                    <Button
-                        as="a"
-                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                    <a
+                        href="https://enter.pollinations.ai/docs#payments"
                         target="_blank"
                         rel="noopener noreferrer"
-                        variant="secondary"
-                        size="default"
+                        className="font-headline text-sm font-black text-text-highlight hover:underline"
                     >
-                        {pageCopy.byopDocsButton}
-                        <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
-                    </Button>
+                        {pageCopy.usersPaymentsLink}
+                    </a>
                 </div>
 
                 <Divider />

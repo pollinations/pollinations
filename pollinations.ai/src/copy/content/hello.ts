@@ -30,7 +30,20 @@ export const HELLO_PAGE = {
     // Section — For builders
     buildersTitle: "For builders",
     buildersBody:
-        "One credit, every model. Pollen lands in your account daily — the more you build and contribute, the more you get.",
+        "One credit, every model. Build apps, grow your audience, and earn more Pollen every day.",
+
+    // Flywheel explanation (right column)
+    flywheelTitle: "The flywheel",
+    flywheelBody:
+        "Pollen is the universal credit that works across every AI model on Pollinations. Build an app, ship it to the world, grow your user base, and earn points. Each step fuels the next — the more your apps get used, the more you receive.",
+
+    // Tier explanation (right column)
+    tierTitle: "Grow your tier",
+    tierBody:
+        "As you build, contribute, and your apps gain users, you earn points and climb tiers. Each tier unlocks more free daily Pollen — from 3 per day at Seed to 20 per day at Nectar. Your allocation grows with your impact.",
+    tierScoringLink: "See full scoring rules →",
+    tierHowLink: "How do tiers work? →",
+
     tierSeedEmoji: "🌿",
     tierSeedTitle: "Seed",
     tierSeedDescription: "You're building. Contributing, shipping apps.",
@@ -49,16 +62,13 @@ export const HELLO_PAGE = {
     tiersBetaNote:
         "We're in beta — thresholds may shift as we tune things together.",
 
-    // Section — For your users
-    usersTitle: "For users",
+    // Section — For your users / BYOP
+    usersTitle: "Let users pay within your app",
     usersBody:
-        "One Pollen balance, works across every app. Your users spend their own credits in your app — not yours.",
-    usersPromo: "🎁 Buy 1, get 1 free during beta!",
-    usersPayAsYouGo: "Pay-as-you-go if they want more.",
-    byopTitle: "Bring your own compute",
-    byopBody:
-        "One integration. Revenue share is coming: you'll earn from what they spend.",
-    byopDocsButton: "BYOP Docs",
+        "Every Pollinations user starts with free weekly Pollen — your app is ready to use from day one, no paywall, no friction.",
+    usersBody2:
+        "Users can spend their Pollen directly within your app. When they do, it costs you zero compute — your app scales freely no matter how popular it gets.",
+    usersPaymentsLink: "Set up user payments →",
 
     // Section 8 — We Build in the Open
     openTitle: "We build in the open.",

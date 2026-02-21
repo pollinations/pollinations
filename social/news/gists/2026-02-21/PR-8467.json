@@ -1,0 +1,34 @@
+{
+  "pr_number": 8467,
+  "title": "Add polly bot source + auto-deploy workflow",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/8467",
+  "merged_at": "2026-02-21T20:08:00Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Polly moves in",
+    "blurb": "Our Discord bot Polly has moved into the main monorepo. Her source code is now cozy in `apps/polly` with a shiny new auto-deploy pipeline.",
+    "summary": "Migrated the Polly Discord bot source code into the monorepo and established an automated deployment workflow via GitHub Actions.",
+    "impact": "Centralizes development and ensures faster, more reliable updates for the community Discord bot.",
+    "keywords": [
+      "discord",
+      "bot",
+      "python",
+      "automation",
+      "github-actions"
+    ],
+    "visual_concept": "Polly the bee moving into a new digital home (folder structure), unpacking code with the help of the monitor robot.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is unpacking digital boxes in a new room. A chunky robot helper sets up a retro terminal glowing lime green (#ecf874). Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The bee wears a tiny tool belt. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Pixel text: 'POLLY SOURCE'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-21T20:09:04.810100+00:00"
+}

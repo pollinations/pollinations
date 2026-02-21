@@ -104,7 +104,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
-            createGeminiThinkingTransform("v2.5"),
+            createGeminiThinkingTransform("none"),
         ),
     },
     {
@@ -113,7 +113,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["google_search"]),
-            createGeminiThinkingTransform("v2.5"),
+            createGeminiThinkingTransform("none"),
         ),
     },
     {

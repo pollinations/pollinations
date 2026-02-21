@@ -229,11 +229,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // OVHcloud AI Endpoints - qwen3-coder
+    // OVHcloud AI Endpoints - qwen3-coder, qwen3guard
     // ============================================================================
     "qwen3-coder-30b-a3b-instruct": () =>
         createOVHcloudModelConfig({
             model: "Qwen3-Coder-30B-A3B-Instruct",
+        }),
+    "Qwen3Guard-Gen-8B": () =>
+        createOVHcloudMistralConfig({
+            model: "Qwen3Guard-Gen-8B",
         }),
 
     // ============================================================================
@@ -265,10 +269,11 @@ export const portkeyConfig: PortkeyConfigMap = {
     //     }),
 
     // ============================================================================
+    // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)
     // api.airforce - qwen-character (RP/character model)
     // ============================================================================
-    "qwen-character": () =>
-        createAirforceModelConfig({
-            model: "qwen-character",
-        }),
+    // "qwen-character": () =>
+    //     createAirforceModelConfig({
+    //         model: "qwen-character",
+    //     }),
 };

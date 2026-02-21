@@ -168,7 +168,40 @@ def _chunk_code(content: str, file_path: str, max_lines: int = 100) -> list[dict
             }
         )
 
-    return chunks
+    # Sub-chunk any oversized chunks (text-embedding-3-small has 8192 token limit, ~4 chars/token)
+    MAX_CHUNK_CHARS = 24000
+    final_chunks = []
+    for chunk in chunks:
+        if len(chunk["content"]) <= MAX_CHUNK_CHARS:
+            final_chunks.append(chunk)
+        else:
+            # Split by lines to stay under limit without losing content
+            sub_lines = chunk["content"].split("\n")
+            sub_chunk_lines = []
+            sub_char_count = 0
+            sub_start = chunk["start_line"]
+            for j, sl in enumerate(sub_lines):
+                if sub_char_count + len(sl) > MAX_CHUNK_CHARS and sub_chunk_lines:
+                    final_chunks.append({
+                        "content": "\n".join(sub_chunk_lines),
+                        "file_path": chunk["file_path"],
+                        "start_line": sub_start,
+                        "end_line": sub_start + len(sub_chunk_lines) - 1,
+                    })
+                    sub_start = sub_start + len(sub_chunk_lines)
+                    sub_chunk_lines = []
+                    sub_char_count = 0
+                sub_chunk_lines.append(sl)
+                sub_char_count += len(sl) + 1
+            if sub_chunk_lines:
+                final_chunks.append({
+                    "content": "\n".join(sub_chunk_lines),
+                    "file_path": chunk["file_path"],
+                    "start_line": sub_start,
+                    "end_line": chunk["end_line"],
+                })
+
+    return final_chunks
 
 
 def _is_definition_start(line: str) -> bool:

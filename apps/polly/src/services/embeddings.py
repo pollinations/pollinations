@@ -5,9 +5,15 @@ import os
 import subprocess
 from pathlib import Path
 
+import tiktoken
+
 from .embeddings_utils import validate_and_get_openai_client
 
 logger = logging.getLogger(__name__)
+
+# tiktoken encoder for text-embedding-3-small (cl100k_base)
+_enc = tiktoken.get_encoding("cl100k_base")
+MAX_TOKENS_PER_INPUT = 8000  # hard limit is 8192, leave headroom
 
 _model = None
 _chroma_client = None
@@ -128,7 +134,7 @@ def _chunk_code(content: str, file_path: str, max_lines: int = 100) -> list[dict
     lines = content.split("\n")
 
     if len(lines) <= max_lines:
-        return [
+        chunks = [
             {
                 "content": content,
                 "file_path": file_path,
@@ -136,69 +142,55 @@ def _chunk_code(content: str, file_path: str, max_lines: int = 100) -> list[dict
                 "end_line": len(lines),
             }
         ]
+    else:
+        chunks = []
+        current_chunk = []
+        chunk_start = 1
 
-    chunks = []
-    current_chunk = []
-    chunk_start = 1
+        for i, line in enumerate(lines, 1):
+            current_chunk.append(line)
 
-    for i, line in enumerate(lines, 1):
-        current_chunk.append(line)
+            is_break = len(current_chunk) >= max_lines or (len(current_chunk) >= 20 and _is_definition_start(line))
 
-        is_break = len(current_chunk) >= max_lines or (len(current_chunk) >= 20 and _is_definition_start(line))
+            if is_break and current_chunk:
+                chunks.append(
+                    {
+                        "content": "\n".join(current_chunk),
+                        "file_path": file_path,
+                        "start_line": chunk_start,
+                        "end_line": i,
+                    }
+                )
+                current_chunk = []
+                chunk_start = i + 1
 
-        if is_break and current_chunk:
+        if current_chunk:
             chunks.append(
                 {
                     "content": "\n".join(current_chunk),
                     "file_path": file_path,
                     "start_line": chunk_start,
-                    "end_line": i,
+                    "end_line": len(lines),
                 }
             )
-            current_chunk = []
-            chunk_start = i + 1
 
-    if current_chunk:
-        chunks.append(
-            {
-                "content": "\n".join(current_chunk),
-                "file_path": file_path,
-                "start_line": chunk_start,
-                "end_line": len(lines),
-            }
-        )
-
-    # Sub-chunk any oversized chunks (text-embedding-3-small has 8192 token limit, ~4 chars/token)
-    MAX_CHUNK_CHARS = 24000
+    # Split any chunk exceeding token limit using tiktoken for exact counting
     final_chunks = []
     for chunk in chunks:
-        if len(chunk["content"]) <= MAX_CHUNK_CHARS:
+        tokens = _enc.encode(chunk["content"])
+        if len(tokens) <= MAX_TOKENS_PER_INPUT:
             final_chunks.append(chunk)
         else:
-            # Split by lines to stay under limit without losing content
-            sub_lines = chunk["content"].split("\n")
-            sub_chunk_lines = []
-            sub_char_count = 0
-            sub_start = chunk["start_line"]
-            for j, sl in enumerate(sub_lines):
-                if sub_char_count + len(sl) > MAX_CHUNK_CHARS and sub_chunk_lines:
-                    final_chunks.append({
-                        "content": "\n".join(sub_chunk_lines),
-                        "file_path": chunk["file_path"],
-                        "start_line": sub_start,
-                        "end_line": sub_start + len(sub_chunk_lines) - 1,
-                    })
-                    sub_start = sub_start + len(sub_chunk_lines)
-                    sub_chunk_lines = []
-                    sub_char_count = 0
-                sub_chunk_lines.append(sl)
-                sub_char_count += len(sl) + 1
-            if sub_chunk_lines:
+            # Split by token boundaries — exact, no guessing
+            parts = list(range(0, len(tokens), MAX_TOKENS_PER_INPUT))
+            for part_idx, pos in enumerate(parts):
+                sub_tokens = tokens[pos : pos + MAX_TOKENS_PER_INPUT]
                 final_chunks.append({
-                    "content": "\n".join(sub_chunk_lines),
+                    "content": _enc.decode(sub_tokens),
                     "file_path": chunk["file_path"],
-                    "start_line": sub_start,
+                    "start_line": chunk["start_line"],
                     "end_line": chunk["end_line"],
+                    "part": part_idx,
                 })
 
     return final_chunks
@@ -375,7 +367,8 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
             for chunk in chunks:
                 if not chunk["content"].strip():
                     continue
-                chunk_id = f"{rel_path}:{chunk['start_line']}-{chunk['end_line']}"
+                part = chunk.get("part")
+                chunk_id = f"{rel_path}:{chunk['start_line']}-{chunk['end_line']}" + (f"p{part}" if part is not None else "")
                 content_hash = _file_hash(chunk["content"])
 
                 all_ids.append(chunk_id)
@@ -410,27 +403,45 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
         unique_files_deleted = len(set(metadata.get("file_path") for metadata in all_metadatas))
         logger.info(f"Deleted {len(ids_to_delete)} old chunks from {unique_files_deleted} changed files")
 
-    # Batch embed all collected chunks (max 300K tokens per request, ~250 chunks per batch)
-    BATCH_SIZE = 250
+    # Batch embed with token-aware sizing, upsert each batch immediately to save progress
+    MAX_BATCH_TOKENS = 250_000  # stay well under 300K limit
     if all_ids:
         try:
-            all_embeddings = []
-            for i in range(0, len(all_documents), BATCH_SIZE):
-                batch_docs = all_documents[i : i + BATCH_SIZE]
+            batch_start = 0
+            batch_num = 0
+            embedded_count = 0
+            while batch_start < len(all_documents):
+                batch_docs = []
+                batch_ids = []
+                batch_metadatas = []
+                batch_tokens = 0
+                i = batch_start
+                while i < len(all_documents):
+                    doc_tokens = len(_enc.encode(all_documents[i]))
+                    if batch_tokens + doc_tokens > MAX_BATCH_TOKENS and batch_docs:
+                        break
+                    batch_docs.append(all_documents[i])
+                    batch_ids.append(all_ids[i])
+                    batch_metadatas.append(all_metadatas[i])
+                    batch_tokens += doc_tokens
+                    i += 1
                 embedding_response = await asyncio.to_thread(
                     lambda docs=batch_docs: model.embeddings.create(model="text-embedding-3-small", input=docs)
                 )
-                all_embeddings.extend(item.embedding for item in embedding_response.data)
-                if len(all_documents) > BATCH_SIZE:
-                    logger.info(f"Embedded batch {i // BATCH_SIZE + 1}/{(len(all_documents) + BATCH_SIZE - 1) // BATCH_SIZE}")
-            embedded_count = len(all_ids)
+                batch_embeddings = [item.embedding for item in embedding_response.data]
 
-            collection.upsert(
-                ids=all_ids,
-                embeddings=all_embeddings,
-                documents=all_documents,
-                metadatas=all_metadatas,
-            )
+                # Upsert immediately — saves progress even if later batches fail
+                collection.upsert(
+                    ids=batch_ids,
+                    embeddings=batch_embeddings,
+                    documents=batch_docs,
+                    metadatas=batch_metadatas,
+                )
+                embedded_count += len(batch_ids)
+                batch_num += 1
+                logger.info(f"Embedded+saved batch {batch_num} ({len(batch_docs)} chunks, ~{batch_tokens} tokens, {i}/{len(all_documents)} total)")
+                batch_start = i
+
             unique_files = len(set(m["file_path"] for m in all_metadatas))
             logger.info(
                 f"✅ Code embeddings update complete — {collection.count()} total chunks ready "

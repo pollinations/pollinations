@@ -122,7 +122,7 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                     2. Purchased pollen is used after daily is
                                     depleted
                                 </div>
-                                <div className="bg-gray-100 rounded-md px-2 py-1.5 mt-2 space-y-1 text-gray-600">
+                                <div className="bg-teal-50 rounded-md px-2 py-1.5 mt-2 space-y-1 text-teal-800">
                                     <div>
                                         🌱 <strong>Tier Eligible</strong> models
                                         can be used with your daily tier grant

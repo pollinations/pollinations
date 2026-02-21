@@ -201,13 +201,15 @@ def _chunk_content(content: str, url: str, page_title: str, max_chunk_size: int 
             parts = list(range(0, len(tokens), MAX_TOKENS_PER_INPUT))
             for part_idx, pos in enumerate(parts):
                 sub_tokens = tokens[pos : pos + MAX_TOKENS_PER_INPUT]
-                final_chunks.append({
-                    "content": _enc.decode(sub_tokens),
-                    "url": chunk["url"],
-                    "page_title": chunk["page_title"],
-                    "section": chunk["section"],
-                    "part": part_idx,
-                })
+                final_chunks.append(
+                    {
+                        "content": _enc.decode(sub_tokens),
+                        "url": chunk["url"],
+                        "page_title": chunk["page_title"],
+                        "section": chunk["section"],
+                        "part": part_idx,
+                    }
+                )
 
     return final_chunks
 
@@ -339,7 +341,6 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
 
     embedded_count = 0
     all_ids = []
-    all_embeddings = []
     all_documents = []
     all_metadatas = []
     ids_to_delete = []
@@ -429,7 +430,9 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
                     batch_tokens += doc_tokens
                     i += 1
                 embedding_response = await asyncio.to_thread(
-                    lambda docs=batch_docs: model.embeddings.create(model="text-embedding-3-small", input=docs, dimensions=1536)
+                    lambda docs=batch_docs: model.embeddings.create(
+                        model="text-embedding-3-small", input=docs, dimensions=1536
+                    )
                 )
                 batch_embeddings = [item.embedding for item in embedding_response.data]
                 collection.upsert(
@@ -440,7 +443,9 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
                 )
                 embedded_count += len(batch_ids)
                 batch_num += 1
-                logger.info(f"Embedded+saved doc batch {batch_num} ({len(batch_docs)} chunks, ~{batch_tokens} tokens, {i}/{len(all_documents)} total)")
+                logger.info(
+                    f"Embedded+saved doc batch {batch_num} ({len(batch_docs)} chunks, ~{batch_tokens} tokens, {i}/{len(all_documents)} total)"
+                )
                 batch_start = i
         except Exception as e:
             logger.error(f"Failed to embed doc chunks: {e}")
@@ -508,7 +513,9 @@ async def update_all_sites(sites: list[str] | None = None):
                 logger.error(f"Failed to update {site}: {e}", exc_info=True)
 
         collection = _get_collection()
-        logger.info(f"✅ Doc embeddings update complete — {collection.count()} total chunks ready ({total_chunks} new/changed)")
+        logger.info(
+            f"✅ Doc embeddings update complete — {collection.count()} total chunks ready ({total_chunks} new/changed)"
+        )
 
 
 async def initialize():

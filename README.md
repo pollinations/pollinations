@@ -17,6 +17,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [ppo](https://anesnt-dz.github.io/ppo/) | Powerful AI assistant built by AnesNT, powered by Pollinations. | @AnesNT-DZ |
 | [BrainrotMaker](http://host.lualearnings.com:2256) | Generate brainrot images in seconds with BrainrotMaker Image Generator. | @lualearnings |
 | [GENEXUS AI](Not a public website – backend server project) | Private backend server that intermediates between apps and Pollinations.ai. | @aymantaha3345 |
 | [AIImageEditor](https://github.com/mikemartemianov/ImageGenerator) | AI image editor with brush editing, outpainting, upscaling, and multi-model support. | @MikeMartemianov |
@@ -26,7 +27,6 @@
 | [Tenna AI](https://tennaai.com) | AI mental health companion with mood analysis, guided journal, and relaxation features. | @b1onix |
 | [PolliBench](https://pollibench.netlify.app/) | Benchmark all Pollinations models automatically with frontend HTML questions. | @notlousybook |
 | [AI Quiz Simulator](https://mrlearner1606.github.io/quiz/) | Free AI-powered quiz simulator for competitive exams with timer, scoring, and explanations. | @mrlearner1606 |
-| [Personic](https://github.com/AlanSynn/personic) | Generate structured AI personas and matching images from brief action prompts. | @AlanSynn |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

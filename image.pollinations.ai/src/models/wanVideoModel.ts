@@ -4,6 +4,7 @@ import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { ProviderError } from "../providerError.ts";
 import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
@@ -108,7 +109,8 @@ export async function callWanAPI(
  * Generates a video using Airforce API (wan-2.6)
  * Supports both text-to-video and image-to-video with optional audio
  */
-async function callWanAirforceAPI(
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function _callWanAirforceAPI(
     prompt: string,
     safeParams: ImageParams,
     progress: ProgressManager,
@@ -539,8 +541,11 @@ async function createDashScopeTask(
     if (!response.ok) {
         const errorText = await response.text();
         logError("DashScope API failed:", response.status, errorText);
-        throw new HttpError(
-            `DashScope API request failed: ${errorText}`,
+        // Sanitised upstream error — raw body already logged above
+        throw new ProviderError(
+            "Alibaba Wan",
+            `Video generation failed \u2014 the upstream provider (Alibaba Wan) returned an error (${response.status}). Please try again later.`,
+            response.status,
             response.status,
         );
     }
@@ -549,15 +554,22 @@ async function createDashScopeTask(
     logOps("Task creation response:", JSON.stringify(data, null, 2));
 
     if (data.code) {
-        throw new HttpError(
-            `DashScope API error: ${data.message || data.code}`,
+        logError("DashScope API application error:", data.code, data.message);
+        throw new ProviderError(
+            "Alibaba Wan",
+            `Video generation failed \u2014 the upstream provider (Alibaba Wan) returned an error. Please try again later.`,
             400,
         );
     }
 
     const taskId = data.output?.task_id;
     if (!taskId) {
-        throw new HttpError("DashScope API did not return task ID", 500);
+        logError("DashScope API did not return task ID");
+        throw new ProviderError(
+            "Alibaba Wan",
+            `Video generation failed \u2014 the upstream provider (Alibaba Wan) returned an invalid response.`,
+            500,
+        );
     }
 
     progress.updateBar(
@@ -591,6 +603,15 @@ async function pollWanTask(
         );
 
         if (pollResult.status === "completed") {
+            if (
+                !pollResult.videoUrl ||
+                typeof pollResult.videoDuration !== "number"
+            ) {
+                throw new HttpError(
+                    "Invalid completion data from Wan API poll",
+                    500,
+                );
+            }
             const buffer = await downloadVideo(
                 pollResult.videoUrl,
                 progress,
@@ -603,13 +624,21 @@ async function pollWanTask(
         }
 
         if (pollResult.status === "failed") {
-            throw new HttpError(pollResult.error, 500);
+            throw new ProviderError(
+                "Alibaba Wan",
+                `Video generation failed \u2014 the upstream provider (Alibaba Wan) reported an error: ${pollResult.error}. Please try again later.`,
+                500,
+            );
         }
 
         await sleep(POLL_DELAY_MS);
     }
 
-    throw new HttpError("Video generation timed out after 5 minutes", 504);
+    throw new ProviderError(
+        "Alibaba Wan",
+        `Video generation timed out \u2014 the upstream provider (Alibaba Wan) did not complete within 5 minutes.`,
+        504,
+    );
 }
 
 /**

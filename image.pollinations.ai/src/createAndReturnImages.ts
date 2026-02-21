@@ -14,6 +14,7 @@ import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
 import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
+import { ProviderError } from "./providerError.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";
 import {
     analyzeImageSafety,
@@ -802,13 +803,24 @@ const callAzureGPTImageWithEndpoint = async (
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new HttpError(errorText, response.status);
+        logError("Azure GPT Image API failed:", response.status, errorText);
+        throw new ProviderError(
+            "Azure GPT Image",
+            `Image generation failed \u2014 the upstream provider (Azure GPT Image) returned an error (${response.status}). Please try again later.`,
+            response.status,
+            response.status,
+        );
     }
 
     const data = await response.json();
 
     if (!data.data || !data.data[0] || !data.data[0].b64_json) {
-        throw new Error("Invalid response from Azure GPT Image API");
+        logError("Azure GPT Image API returned invalid response");
+        throw new ProviderError(
+            "Azure GPT Image",
+            `Image generation failed \u2014 the upstream provider (Azure GPT Image) returned an invalid response.`,
+            500,
+        );
     }
 
     // Convert base64 to buffer
@@ -1156,13 +1168,19 @@ const generateImage = async (
 
     // api.airforce image models
     if (safeParams.model === "imagen-4") {
-        return await callAirforceImageAPI(
-            prompt,
-            safeParams,
-            progress,
-            requestId,
-            safeParams.model,
-        );
+        try {
+            return await callAirforceImageAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+                safeParams.model,
+            );
+        } catch (error) {
+            logError("Imagen-4 generation failed:", error.message);
+            progress.updateBar(requestId, 100, "Error", error.message);
+            throw error;
+        }
     }
 
     if (safeParams.model === "flux") {

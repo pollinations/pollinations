@@ -3,8 +3,8 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import { calculateVideoResolution } from "../utils/videoResolution.ts";
 import { ProviderError } from "../providerError.ts";
+import { calculateVideoResolution } from "../utils/videoResolution.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:airforce:ops");

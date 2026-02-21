@@ -251,7 +251,7 @@ const imageGen = async ({
             wasPimped,
             nsfw: !!(maturity.isChild || maturity.isMature),
             private: !!safeParams.nofeed,
-            token: extractToken(req) && extractToken(req).slice(0, 2) + "...",
+            token: extractToken(req) && `${extractToken(req).slice(0, 2)}...`,
         };
 
         sendToFeedListeners(feedData, { saveAsLastState: true });

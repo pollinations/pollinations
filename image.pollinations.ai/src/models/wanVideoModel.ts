@@ -109,7 +109,8 @@ export async function callWanAPI(
  * Generates a video using Airforce API (wan-2.6)
  * Supports both text-to-video and image-to-video with optional audio
  */
-async function callWanAirforceAPI(
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function _callWanAirforceAPI(
     prompt: string,
     safeParams: ImageParams,
     progress: ProgressManager,
@@ -553,11 +554,7 @@ async function createDashScopeTask(
     logOps("Task creation response:", JSON.stringify(data, null, 2));
 
     if (data.code) {
-        logError(
-            "DashScope API application error:",
-            data.code,
-            data.message,
-        );
+        logError("DashScope API application error:", data.code, data.message);
         throw new ProviderError(
             "Alibaba Wan",
             `Video generation failed \u2014 the upstream provider (Alibaba Wan) returned an error. Please try again later.`,
@@ -606,14 +603,23 @@ async function pollWanTask(
         );
 
         if (pollResult.status === "completed") {
+            if (
+                !pollResult.videoUrl ||
+                typeof pollResult.videoDuration !== "number"
+            ) {
+                throw new HttpError(
+                    "Invalid completion data from Wan API poll",
+                    500,
+                );
+            }
             const buffer = await downloadVideo(
-                pollResult.videoUrl!,
+                pollResult.videoUrl,
                 progress,
                 requestId,
             );
             return {
                 buffer,
-                usage: { video_duration: pollResult.videoDuration! },
+                usage: { video_duration: pollResult.videoDuration },
             };
         }
 

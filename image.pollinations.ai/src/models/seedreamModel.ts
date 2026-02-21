@@ -180,7 +180,7 @@ async function generateWithSeedream(
     actualModelName: string = "seedream",
 ): Promise<ImageGenerationResult> {
     // Prepare request body
-    const requestBody: any = {
+    const requestBody: Record<string, unknown> = {
         model: modelVersion,
         prompt: prompt,
         sequential_image_generation: "disabled",

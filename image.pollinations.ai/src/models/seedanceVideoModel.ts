@@ -4,12 +4,12 @@ import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { ProviderError } from "../providerError.ts";
 import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import {
     calculateVideoResolution,
     resolutionToLowercase,
 } from "../utils/videoResolution.ts";
-import { ProviderError } from "../providerError.ts";
 
 // Logger
 const logOps = debug("pollinations:seedance:ops");

@@ -51,7 +51,7 @@ jobs:
 
             echo "Installing dependencies..."
             cd /root/polly
-            ./venv/bin/pip install -r requirements.txt -q
+            ./venv/bin/python -m pip install -r requirements.txt -q
 
             echo "Fixing systemd service path..."
             sed -i 's|/root/Polly|/root/polly|g' /etc/systemd/system/polly.service

@@ -1,6 +1,5 @@
 import time
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass
@@ -25,14 +24,10 @@ class ConversationSession:
     original_author_id: int = 0
     original_author_name: str = ""
 
-    def add_message(self, role: str, content: str, author: str, author_id: int, image_urls: Optional[list[str]] = None):
-        self.messages.append(Message(
-            role=role,
-            content=content,
-            author=author,
-            author_id=author_id,
-            image_urls=image_urls or []
-        ))
+    def add_message(self, role: str, content: str, author: str, author_id: int, image_urls: list[str] | None = None):
+        self.messages.append(
+            Message(role=role, content=content, author=author, author_id=author_id, image_urls=image_urls or [])
+        )
         self.participants.add(author_id)
         self.last_activity = time.time()
         if role == "user" and self.original_author_id == 0:
@@ -47,10 +42,7 @@ class ConversationSession:
                 text = f"[{msg.author}]: {msg.content}" if msg.content else f"[{msg.author}]:"
                 content.append({"type": "text", "text": text})
                 for url in msg.image_urls:
-                    content.append({
-                        "type": "image_url",
-                        "image_url": {"url": url}
-                    })
+                    content.append({"type": "image_url", "image_url": {"url": url}})
                 history.append({"role": "user", "content": content})
             else:
                 history.append({"role": "assistant", "content": msg.content})

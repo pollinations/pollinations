@@ -1,53 +1,59 @@
 import logging
-from typing import Optional, List
+from contextlib import asynccontextmanager
 
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import uvicorn
-from contextlib import asynccontextmanager
 
 from ..config import config
-from ..services.pollinations import pollinations_client
 from ..logging_config import setup_logging
 from ..services.github import TOOL_HANDLERS
+from ..services.pollinations import pollinations_client
 
 setup_logging(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Polly API starting...")
     config.validate()
-    
+
     handlers = dict(TOOL_HANDLERS)
 
     if config.local_embeddings_enabled:
         from ..bot import _code_search_handler
+
         handlers["code_search"] = _code_search_handler
 
     if config.doc_embeddings_enabled:
         from ..bot import _doc_search_handler
+
         handlers["doc_search"] = _doc_search_handler
 
-    from ..services.pollinations import web_search_handler, web_handler
+    from ..services.pollinations import web_handler, web_search_handler
+
     handlers["web_search"] = web_search_handler
     handlers["web"] = web_handler
-    
+
     from ..services.web_scraper import web_scrape_handler
+
     handlers["web_scrape"] = web_scrape_handler
-    
+
     from ..services.discord_search import tool_discord_search
+
     handlers["discord_search"] = tool_discord_search
-    
+
     for name, handler in handlers.items():
         pollinations_client.register_tool_handler(name, handler)
     logger.info(f"Registered {len(handlers)} tool handlers")
-    
+
     yield
-    
+
     logger.info("Polly API shutting down...")
     await pollinations_client.close()
+
 
 app = FastAPI(title="Polly API", description="OpenAI-compatible API for Polly bot", lifespan=lifespan)
 
@@ -62,31 +68,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class Message(BaseModel):
     role: str
     content: str
 
+
 class ChatRequest(BaseModel):
-    messages: List[Message]
-    user_name: Optional[str] = "http_user"
-    image_urls: Optional[List[str]] = None
-    video_urls: Optional[List[str]] = None
-    file_urls: Optional[List[str]] = None
-    is_admin: Optional[bool] = False
+    messages: list[Message]
+    user_name: str | None = "http_user"
+    image_urls: list[str] | None = None
+    video_urls: list[str] | None = None
+    file_urls: list[str] | None = None
+    is_admin: bool | None = False
+
 
 class ChatResponse(BaseModel):
     content: str
-    tool_calls: Optional[List] = None
+    tool_calls: list | None = None
+
 
 @app.post("/v1/chat/completions", response_model=ChatResponse)
 async def chat_completions(request: ChatRequest) -> ChatResponse:
     thread_history = None
-    
+
     if len(request.messages) > 1:
         thread_history = [{"role": m.role, "content": m.content} for m in request.messages[:-1]]
-    
+
     user_message = request.messages[-1].content if request.messages else ""
-    
+
     http_restriction = """
 
 ## ⚠️ HTTP API MODE - LIMITED TOOLS ONLY
@@ -106,12 +116,12 @@ You are running in HTTP API mode. You have LIMITED tool access:
 - Discord search
 
 If user requests restricted operations, politely explain they need to use the Discord bot directly."""
-    
+
     if thread_history:
         thread_history.insert(0, {"role": "system", "content": http_restriction})
     else:
         thread_history = [{"role": "system", "content": http_restriction}]
-    
+
     try:
         result = await pollinations_client.process_with_tools(
             user_message=user_message,
@@ -127,14 +137,12 @@ If user requests restricted operations, politely explain they need to use the Di
                 "is_http_api": True,
             },
         )
-        
-        return ChatResponse(
-            content=result.get("response", ""),
-            tool_calls=result.get("tool_calls", [])
-        )
+
+        return ChatResponse(content=result.get("response", ""), tool_calls=result.get("tool_calls", []))
     except Exception as e:
         logger.error(f"Error processing message: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
 
 @app.get("/health")
 async def health_check():
@@ -142,6 +150,7 @@ async def health_check():
         "status": "healthy",
         "bot_name": config.bot_name,
     }
+
 
 if __name__ == "__main__":
     logger.info("Starting Polly API...")

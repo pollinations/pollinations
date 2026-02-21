@@ -5,19 +5,18 @@ import base64
 import io
 import logging
 import re
-from typing import Optional, Union
 
 import discord
 from discord.ext import commands, tasks
 
 from .config import config
-from .context import session_manager, ConversationSession
-from .services.github import github_manager, TOOL_HANDLERS
+from .context import ConversationSession, session_manager
+from .services.github import TOOL_HANDLERS, github_manager
+from .services.github_auth import github_app_auth, init_github_app
 from .services.github_graphql import github_graphql
 from .services.github_pr import github_pr_manager
-from .services.github_auth import init_github_app, github_app_auth
 from .services.pollinations import pollinations_client
-from .services.subscriptions import subscription_manager, init_notifier
+from .services.subscriptions import init_notifier
 from .services.webhook_server import start_webhook_server, stop_webhook_server
 
 logger = logging.getLogger(__name__)
@@ -40,9 +39,7 @@ def is_admin(user: discord.User | discord.Member) -> bool:
         return False
     if isinstance(user, discord.Member):
         user_role_ids = [r.id for r in user.roles]
-        is_admin_user = any(
-            role_id in config.admin_role_ids for role_id in user_role_ids
-        )
+        is_admin_user = any(role_id in config.admin_role_ids for role_id in user_role_ids)
         logger.debug(
             f"Admin check for {user}: roles={user_role_ids}, admin_role_ids={config.admin_role_ids}, is_admin={is_admin_user}"
         )
@@ -292,7 +289,7 @@ extract_image_urls = extract_attachment_urls
 
 async def _code_search_handler(query: str, top_k: int = 10, **kwargs) -> dict:
     """Handler for code_search tool - semantic search across repository."""
-    from .services.embeddings import search_code, get_stats
+    from .services.embeddings import get_stats, search_code
 
     # Validate top_k
     top_k = min(max(1, top_k), 10)
@@ -326,7 +323,7 @@ async def _code_search_handler(query: str, top_k: int = 10, **kwargs) -> dict:
 
 async def _doc_search_handler(query: str, top_k: int = 5, **kwargs) -> dict:
     """Handler for doc_search tool - semantic search across documentation sites."""
-    from .services.doc_embeddings import search_docs, get_doc_stats
+    from .services.doc_embeddings import get_doc_stats, search_docs
 
     # Validate top_k
     top_k = min(max(1, top_k), 10)
@@ -360,9 +357,7 @@ async def _doc_search_handler(query: str, top_k: int = 5, **kwargs) -> dict:
         return {"error": str(e)}
 
 
-async def fetch_thread_history(
-    thread: discord.Thread, limit: int = THREAD_HISTORY_LIMIT
-) -> list[dict]:
+async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTORY_LIMIT) -> list[dict]:
     """
     Fetch message history from a thread and format for AI context.
     This is our "memory" - pulled fresh from Discord each time.
@@ -385,9 +380,7 @@ async def fetch_thread_history(
             # Thread ID == starter message ID, fetch from PARENT channel
             # Only TextChannel has fetch_message, ForumChannel does not
             if thread.parent and isinstance(thread.parent, discord.TextChannel):
-                logger.info(
-                    f"Fetching starter message: thread.id={thread.id}, parent={thread.parent}"
-                )
+                logger.info(f"Fetching starter message: thread.id={thread.id}, parent={thread.parent}")
                 starter = await thread.parent.fetch_message(thread.id)
                 logger.info(
                     f"Starter message fetched: author={starter.author if starter else None}, content={starter.content[:100] if starter and starter.content else 'EMPTY'}"
@@ -408,18 +401,14 @@ async def fetch_thread_history(
         # It will be added separately in process_with_tools to avoid duplication
         fetched = []
         is_first = True
-        async for msg in thread.history(
-            limit=limit + 1
-        ):  # +1 to account for skipping current
+        async for msg in thread.history(limit=limit + 1):  # +1 to account for skipping current
             if is_first:
                 is_first = False
                 continue  # Skip the current message (newest)
             if msg.author.bot:
                 fetched.append({"role": "assistant", "content": msg.content})
             else:
-                fetched.append(
-                    {"role": "user", "content": f"[{msg.author.name}]: {msg.content}"}
-                )
+                fetched.append({"role": "user", "content": f"[{msg.author.name}]: {msg.content}"})
         # Reverse to chronological order (oldest to newest)
         # Add starter message FIRST, then thread messages
         if starter_msg:
@@ -460,24 +449,18 @@ class PollyBot(commands.Bot):
 
         # Register code_search handler if embeddings enabled
         if config.local_embeddings_enabled:
-            from .services.embeddings import search_code
 
-            pollinations_client.register_tool_handler(
-                "code_search", _code_search_handler
-            )
+            pollinations_client.register_tool_handler("code_search", _code_search_handler)
             logger.info("Registered code_search tool handler (embeddings enabled)")
 
         # Register doc_search handler if doc embeddings enabled
         if config.doc_embeddings_enabled:
-            from .services.doc_embeddings import search_docs
 
-            pollinations_client.register_tool_handler(
-                "doc_search", _doc_search_handler
-            )
+            pollinations_client.register_tool_handler("doc_search", _doc_search_handler)
             logger.info("Registered doc_search tool handler (doc embeddings enabled)")
 
         # Register web_search handler (always available)
-        from .services.pollinations import web_search_handler, web_handler
+        from .services.pollinations import web_handler, web_search_handler
 
         pollinations_client.register_tool_handler("web_search", web_search_handler)
         logger.info("Registered web_search tool handler")
@@ -580,9 +563,7 @@ bot = PollyBot()
 
 
 @bot.tree.context_menu(name="Assist")
-async def assist_context_menu(
-    interaction: discord.Interaction, message: discord.Message
-):
+async def assist_context_menu(interaction: discord.Interaction, message: discord.Message):
     """Context menu command - right-click message → Apps → Assist. Treats message as if user @mentioned bot."""
     # Silently acknowledge
     await interaction.response.defer(ephemeral=True, thinking=False)
@@ -608,8 +589,7 @@ async def assist_context_menu(
                 user_name=str(message.author),
                 initial_message=text,
                 topic_summary=pollinations_client.get_topic_summary_fast(text),
-                image_urls=image_urls
-                + video_urls,  # Combined for session storage (not files)
+                image_urls=image_urls + video_urls,  # Combined for session storage (not files)
             )
 
         # Add to session and process like a normal thread message
@@ -619,8 +599,7 @@ async def assist_context_menu(
             content=text,
             author=str(message.author),
             author_id=message.author.id,
-            image_urls=image_urls
-            + video_urls,  # Combined for session storage (not files)
+            image_urls=image_urls + video_urls,  # Combined for session storage (not files)
         )
 
         async with message.channel.typing():
@@ -723,11 +702,13 @@ async def on_message(message: discord.Message):
 
     # Check reply status ONCE (reuse result throughout)
     is_reply_to_bot, ref_msg = await _check_reply_to_bot(message)
-    logger.info(f"MSG: '{message.content[:50]}' | is_reply_to_bot={is_reply_to_bot} | has_polly={'polly' in message.content.lower()} | is_@mention={bot.user and bot.user.mentioned_in(message) if bot.user else False} | in_thread={isinstance(message.channel, discord.Thread)}")
+    logger.info(
+        f"MSG: '{message.content[:50]}' | is_reply_to_bot={is_reply_to_bot} | has_polly={'polly' in message.content.lower()} | is_@mention={bot.user and bot.user.mentioned_in(message) if bot.user else False} | in_thread={isinstance(message.channel, discord.Thread)}"
+    )
 
     # Check if in a thread
     if isinstance(message.channel, discord.Thread):
-        logger.info(f"PATH: In thread (line 923)")
+        logger.info("PATH: In thread (line 923)")
         session = session_manager.get_session(message.channel.id)
 
         # ONLY respond if: @mentioned OR replying to bot's message
@@ -817,7 +798,7 @@ async def on_message(message: discord.Message):
         text = "[User attached media/files]"
 
     # Create thread and start new conversation
-    logger.info(f"PATH: CREATING THREAD (line 1020) - This should ONLY happen for @polly!")
+    logger.info("PATH: CREATING THREAD (line 1020) - This should ONLY happen for @polly!")
     await start_conversation(message, text, image_urls, video_urls, file_urls)
 
 
@@ -832,6 +813,7 @@ async def handle_dm_message(message: discord.Message):
     - list subscriptions / my subscriptions
     """
     import re
+
     from .services.github import TOOL_HANDLERS
 
     text = message.content.strip().lower()
@@ -861,9 +843,7 @@ async def handle_dm_message(message: discord.Message):
         unsubscribe_match = re.search(r"unsubscribe\s+(?:from\s+)?#?(\d+)", text)
         if unsubscribe_match:
             issue_number = int(unsubscribe_match.group(1))
-            result = await TOOL_HANDLERS["unsubscribe_issue"](
-                issue_number=issue_number, user_id=user_id
-            )
+            result = await TOOL_HANDLERS["unsubscribe_issue"](issue_number=issue_number, user_id=user_id)
             await message.reply(result.get("message", "Done!"))
             return
 
@@ -885,9 +865,7 @@ async def handle_dm_message(message: discord.Message):
         await message.reply(help_text)
 
 
-async def handle_reply_context(
-    message: discord.Message, text: str, ref_msg: Optional[discord.Message] = None
-) -> str:
+async def handle_reply_context(message: discord.Message, text: str, ref_msg: discord.Message | None = None) -> str:
     """Handle when message is a reply to another message. Uses cached ref_msg if provided."""
     try:
         # Use provided ref_msg to avoid duplicate fetch
@@ -919,8 +897,8 @@ async def start_conversation(
     message: discord.Message,
     text: str,
     image_urls: list[str],
-    video_urls: Optional[list[str]] = None,
-    file_urls: Optional[list[str]] = None,
+    video_urls: list[str] | None = None,
+    file_urls: list[str] | None = None,
 ):
     """Start a new conversation in a thread."""
     video_urls = video_urls or []
@@ -930,9 +908,7 @@ async def start_conversation(
     thread_name = f"Issue: {topic}"[:100]
 
     try:
-        thread = await message.create_thread(
-            name=thread_name, auto_archive_duration=THREAD_AUTO_ARCHIVE_MINUTES
-        )
+        thread = await message.create_thread(name=thread_name, auto_archive_duration=THREAD_AUTO_ARCHIVE_MINUTES)
     except discord.Forbidden:
         await message.reply(
             "I don't have permission to create threads. Please grant me 'Create Public Threads' permission."
@@ -995,10 +971,7 @@ async def handle_inline_polly_mention(message: discord.Message):
             if msg.author.bot:
                 channel_history.append({"role": "assistant", "content": msg.content})
             else:
-                channel_history.append({
-                    "role": "user",
-                    "content": f"[{msg.author.name}]: {msg.content}"
-                })
+                channel_history.append({"role": "user", "content": f"[{msg.author.name}]: {msg.content}"})
 
         # Reverse to chronological order (oldest to newest)
         channel_history.reverse()
@@ -1017,9 +990,7 @@ async def handle_inline_polly_mention(message: discord.Message):
         "channel_id": message.channel.id,
         "thread_id": None,  # No thread for inline mentions
         "guild_id": message.guild.id if message.guild else None,
-        "user_role_ids": (
-            [r.id for r in message.author.roles] if isinstance(message.author, discord.Member) else []
-        ),
+        "user_role_ids": ([r.id for r in message.author.roles] if isinstance(message.author, discord.Member) else []),
         "message_url": message.jump_url,
         "discord_channel": message.channel,
         "discord_thread_id": None,
@@ -1041,7 +1012,7 @@ async def handle_inline_polly_mention(message: discord.Message):
                     "'It seems the doc search is running but empty...' (TOO LONG) "
                     "Talk like texting a friend - minimal words, maximum info. "
                     "For anything complex, say '@polly for details'."
-                )
+                ),
             }
 
             # Build history with system prompt
@@ -1066,12 +1037,12 @@ async def handle_inline_polly_mention(message: discord.Message):
             image_files = decode_base64_images(content_blocks, max_images=10)
             if image_files:
                 # Strip file paths from response
-                response_text = re.sub(r'\[([^\]]*)\]\(file:///[^)]+\)\n?', '', response_text)
-                response_text = re.sub(r'file:///[^\s\)]+', '', response_text)
+                response_text = re.sub(r"\[([^\]]*)\]\(file:///[^)]+\)\n?", "", response_text)
+                response_text = re.sub(r"file:///[^\s\)]+", "", response_text)
                 response_text = response_text.strip()
 
             # Fix double-wrapped URLs
-            response_text = re.sub(r'\[(https?://[^\]]+)\]\(<\1>\)', r'<\1>', response_text)
+            response_text = re.sub(r"\[(https?://[^\]]+)\]\(<\1>\)", r"<\1>", response_text)
 
             if response_text or image_files:
                 # Reply to the message WITHOUT ping (mention_author=False)
@@ -1126,16 +1097,16 @@ async def handle_thread_message(message: discord.Message, session: ConversationS
 
 
 async def process_message(
-    channel: Union[discord.Thread, discord.TextChannel],
-    user: Union[discord.User, discord.Member],
+    channel: discord.Thread | discord.TextChannel,
+    user: discord.User | discord.Member,
     text: str,
     image_urls: list[str],
     session: ConversationSession,
-    thread_history: Optional[list[dict]] = None,
-    reply_to: Optional[discord.Message] = None,
-    source_message: Optional[discord.Message] = None,
-    video_urls: Optional[list[str]] = None,
-    file_urls: Optional[list[str]] = None,
+    thread_history: list[dict] | None = None,
+    reply_to: discord.Message | None = None,
+    source_message: discord.Message | None = None,
+    video_urls: list[str] | None = None,
+    file_urls: list[str] | None = None,
 ):
     """
     Process a message using native tool calling.
@@ -1157,7 +1128,7 @@ async def process_message(
     # Determine channel/thread IDs based on channel type
     if isinstance(channel, discord.Thread) and channel.parent_id:
         context_channel_id = channel.parent_id
-        context_thread_id: Optional[int] = channel.id
+        context_thread_id: int | None = channel.id
     else:
         context_channel_id = channel.id
         context_thread_id = None
@@ -1169,12 +1140,8 @@ async def process_message(
         "reporter": session.original_author_name,
         "channel_id": context_channel_id,
         "thread_id": context_thread_id,
-        "guild_id": (
-            channel.guild.id if channel.guild else None
-        ),
-        "user_role_ids": (
-            [r.id for r in user.roles] if isinstance(user, discord.Member) else []
-        ),
+        "guild_id": (channel.guild.id if channel.guild else None),
+        "user_role_ids": ([r.id for r in user.roles] if isinstance(user, discord.Member) else []),
         # For github_issue create - link back to Discord message
         "message_url": source_message.jump_url if source_message else None,
         "discord_channel": channel,
@@ -1208,22 +1175,18 @@ async def process_message(
         if image_files:
             logger.info(f"Decoded {len(image_files)} image(s) from content_blocks")
             # Strip useless file:/// local paths from response (images are sent as attachments)
-            response_text = re.sub(r'\[([^\]]*)\]\(file:///[^)]+\)\n?', '', response_text)
-            response_text = re.sub(r'file:///[^\s\)]+', '', response_text)
+            response_text = re.sub(r"\[([^\]]*)\]\(file:///[^)]+\)\n?", "", response_text)
+            response_text = re.sub(r"file:///[^\s\)]+", "", response_text)
             response_text = response_text.strip()
 
         # Fix double-wrapped URLs: [https://example.com](<https://example.com>) -> <https://example.com>
-        response_text = re.sub(r'\[(https?://[^\]]+)\]\(<\1>\)', r'<\1>', response_text)
+        response_text = re.sub(r"\[(https?://[^\]]+)\]\(<\1>\)", r"<\1>", response_text)
 
         # Log tool usage for debugging
         if tool_calls:
             # Strip API prefix from tool names for cleaner logging
             tool_names = [
-                (
-                    tc["function"]["name"].split(":")[-1]
-                    if ":" in tc["function"]["name"]
-                    else tc["function"]["name"]
-                )
+                (tc["function"]["name"].split(":")[-1] if ":" in tc["function"]["name"] else tc["function"]["name"])
                 for tc in tool_calls
             ]
             logger.info(f"Tools called: {', '.join(tool_names)}")
@@ -1250,9 +1213,7 @@ async def process_message(
 
                     # Archive thread after issue creation
                     if response_text:
-                        await send_long_message(
-                            channel, response_text, reply_to=reply_to
-                        )
+                        await send_long_message(channel, response_text, reply_to=reply_to)
                     await archive_thread(channel)
                     return
 
@@ -1282,11 +1243,11 @@ async def process_message(
 
 
 async def send_long_message(
-    channel: Union[discord.Thread, discord.TextChannel],
+    channel: discord.Thread | discord.TextChannel,
     text: str,
     max_length: int = 2000,
-    reply_to: Optional[discord.Message] = None,
-    files: Optional[list[discord.File]] = None,
+    reply_to: discord.Message | None = None,
+    files: list[discord.File] | None = None,
     mention_author: bool = True,
 ):
     """
@@ -1348,7 +1309,7 @@ async def send_long_message(
                 await channel.send(chunk)
 
 
-async def archive_thread(channel: Union[discord.Thread, discord.TextChannel]):
+async def archive_thread(channel: discord.Thread | discord.TextChannel):
     """Archive thread if applicable."""
     if isinstance(channel, discord.Thread):
         try:

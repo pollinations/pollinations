@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from .session import ConversationSession
 
@@ -14,7 +13,7 @@ class SessionManager:
         self._sessions: dict[int, ConversationSession] = {}
         self._max_sessions = max_sessions
 
-    def get_session(self, thread_id: int) -> Optional[ConversationSession]:
+    def get_session(self, thread_id: int) -> ConversationSession | None:
         session = self._sessions.get(thread_id)
 
         if session and session.is_expired(SESSION_TIMEOUT):
@@ -31,16 +30,12 @@ class SessionManager:
         user_name: str,
         initial_message: str,
         topic_summary: str,
-        image_urls: Optional[list[str]] = None
+        image_urls: list[str] | None = None,
     ) -> ConversationSession:
         if len(self._sessions) >= self._max_sessions:
             self._evict_oldest()
 
-        session = ConversationSession(
-            channel_id=channel_id,
-            thread_id=thread_id,
-            topic_summary=topic_summary
-        )
+        session = ConversationSession(channel_id=channel_id, thread_id=thread_id, topic_summary=topic_summary)
         session.add_message("user", initial_message, user_name, user_id, image_urls)
 
         self._sessions[thread_id] = session
@@ -55,7 +50,7 @@ class SessionManager:
         content: str,
         author: str,
         author_id: int,
-        image_urls: Optional[list[str]] = None
+        image_urls: list[str] | None = None,
     ):
         session.add_message(role, content, author, author_id, image_urls)
 
@@ -71,10 +66,7 @@ class SessionManager:
         if not self._sessions:
             return
 
-        sorted_sessions = sorted(
-            self._sessions.items(),
-            key=lambda x: x[1].last_activity
-        )
+        sorted_sessions = sorted(self._sessions.items(), key=lambda x: x[1].last_activity)
 
         to_evict = min(count, len(sorted_sessions))
         for thread_id, _ in sorted_sessions[:to_evict]:
@@ -83,11 +75,7 @@ class SessionManager:
         logger.info(f"LRU evicted {to_evict} oldest sessions (capacity: {self._max_sessions})")
 
     def cleanup_expired(self) -> int:
-        expired = [
-            thread_id
-            for thread_id, session in self._sessions.items()
-            if session.is_expired(SESSION_TIMEOUT)
-        ]
+        expired = [thread_id for thread_id, session in self._sessions.items() if session.is_expired(SESSION_TIMEOUT)]
         for thread_id in expired:
             self._cleanup_session(thread_id)
 

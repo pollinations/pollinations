@@ -1,6 +1,5 @@
 import logging
 import sys
-from typing import Optional
 
 
 class CleanFormatter(logging.Formatter):
@@ -52,7 +51,7 @@ class SectionLogger:
             self.logger.info("─" * 50)
 
 
-def setup_logging(level: int = logging.INFO, debug_modules: Optional[list] = None):
+def setup_logging(level: int = logging.INFO, debug_modules: list | None = None):
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(CleanFormatter())
     root = logging.getLogger()

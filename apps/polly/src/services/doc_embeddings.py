@@ -5,7 +5,6 @@ import os
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urljoin, urlparse
 
 from .embeddings_utils import validate_and_get_openai_client
@@ -52,12 +51,8 @@ def _get_collection():
 
         DOC_EMBEDDINGS_DIR.mkdir(parents=True, exist_ok=True)
         _chroma_client = chromadb.PersistentClient(path=str(DOC_EMBEDDINGS_DIR))
-        _collection = _chroma_client.get_or_create_collection(
-            name="doc_embeddings", metadata={"hnsw:space": "cosine"}
-        )
-        logger.info(
-            f"ChromaDB doc collection loaded with {_collection.count()} embeddings"
-        )
+        _collection = _chroma_client.get_or_create_collection(name="doc_embeddings", metadata={"hnsw:space": "cosine"})
+        logger.info(f"ChromaDB doc collection loaded with {_collection.count()} embeddings")
     return _collection
 
 
@@ -99,9 +94,7 @@ def _should_skip_url(url: str) -> bool:
     return False
 
 
-def _chunk_content(
-    content: str, url: str, page_title: str, max_chunk_size: int = MAX_CHUNK_SIZE
-) -> list[dict]:
+def _chunk_content(content: str, url: str, page_title: str, max_chunk_size: int = MAX_CHUNK_SIZE) -> list[dict]:
     if not content or len(content) < MIN_CHUNK_SIZE:
         return []
 
@@ -112,9 +105,8 @@ def _chunk_content(
 
     current_chunk = []
     current_section = page_title
-    chunk_start_line = 0
 
-    for i, line in enumerate(lines):
+    for _i, line in enumerate(lines):
         header_match = re.match(header_pattern, line.strip())
 
         if header_match and current_chunk:
@@ -144,7 +136,6 @@ def _chunk_content(
 
             current_chunk = [line]
             current_section = header_match.group(2).strip()
-            chunk_start_line = i
 
         else:
             current_chunk.append(line)
@@ -223,7 +214,7 @@ def _split_large_chunk(text: str, max_size: int) -> list[str]:
     return chunks
 
 
-async def _scrape_page(url: str) -> Optional[dict]:
+async def _scrape_page(url: str) -> dict | None:
     try:
         from .web_scraper import scrape_url
 
@@ -334,7 +325,7 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
     pages_skipped = 0
     pages_processed = 0
 
-    for page_idx, page in enumerate(pages, 1):
+    for _page_idx, page in enumerate(pages, 1):
         url = page["url"]
         title = page["title"]
         content = page["content"]
@@ -347,11 +338,11 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
         # Check if page has changed (page-level TTL)
         if not force_full and collection.count() > 0:
             existing = collection.get(where={"url": url})
-            
+
             if existing["ids"] and existing["metadatas"]:
                 # Check if content hash matches any existing chunk from this page
                 existing_page_hash = existing["metadatas"][0].get("page_hash")
-                
+
                 if existing_page_hash == content_hash:
                     logger.debug(f"TTL: Skipping {url} (unchanged, hash={content_hash[:8]})...")
                     pages_skipped += 1
@@ -378,14 +369,16 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
                     "last_updated": datetime.utcnow().isoformat(),
                 }
             )
-        
+
         pages_processed += 1
         progress_pct = (pages_processed / total_pages) * 100
         chunks_in_queue = len(all_ids)
-        
+
         # Log progress every 10% or every 10 pages
         if pages_processed % max(1, total_pages // 10) == 0 or pages_processed == total_pages:
-            logger.info(f"📊 Doc embedding progress: {pages_processed}/{total_pages} pages ({progress_pct:.1f}%), {chunks_in_queue} chunks queued for embedding")
+            logger.info(
+                f"📊 Doc embedding progress: {pages_processed}/{total_pages} pages ({progress_pct:.1f}%), {chunks_in_queue} chunks queued for embedding"
+            )
 
     # Delete old chunks from pages that were modified
     if ids_to_delete:
@@ -396,15 +389,11 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
     if all_ids:
         try:
             embedding_response = await asyncio.to_thread(
-                lambda: model.embeddings.create(
-                    model="text-embedding-3-small",
-                    input=all_documents,
-                    dimensions=1536
-                )
+                lambda: model.embeddings.create(model="text-embedding-3-small", input=all_documents, dimensions=1536)
             )
             all_embeddings = [item.embedding for item in embedding_response.data]
             embedded_count = len(all_ids)
-            
+
             collection.upsert(
                 ids=all_ids,
                 embeddings=all_embeddings,
@@ -412,7 +401,9 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
                 metadatas=all_metadatas,
             )
             unique_urls = len(set(m["url"] for m in all_metadatas))
-            logger.info(f"Embedded {embedded_count} chunks from {unique_urls} pages (TTL: skipped {pages_skipped} unchanged pages)")
+            logger.info(
+                f"Embedded {embedded_count} chunks from {unique_urls} pages (TTL: skipped {pages_skipped} unchanged pages)"
+            )
         except Exception as e:
             error_msg = str(e)
             if "401" in error_msg or "permission" in error_msg.lower() or "scope" in error_msg.lower():
@@ -447,10 +438,7 @@ async def search_docs(query: str, top_k: int = 5) -> list[dict]:
         return []
 
     embedding_response = await asyncio.to_thread(
-        lambda: model.embeddings.create(
-            model="text-embedding-3-small",
-            input=query
-        )
+        lambda: model.embeddings.create(model="text-embedding-3-small", input=query)
     )
     query_embedding = embedding_response.data[0].embedding
 
@@ -479,7 +467,7 @@ async def search_docs(query: str, top_k: int = 5) -> list[dict]:
     return formatted
 
 
-async def update_all_sites(sites: Optional[list[str]] = None):
+async def update_all_sites(sites: list[str] | None = None):
     if sites is None:
         from ..config import config
 

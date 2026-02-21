@@ -1,15 +1,16 @@
-import aiohttp
 import logging
 import re
-from typing import Optional, List, Dict, Any, Tuple, Union
-from datetime import datetime, timezone
+from typing import Any
+
+import aiohttp
 import discord
 
 from ..config import config
 
 logger = logging.getLogger(__name__)
 
-def parse_discord_mentions(text: str) -> Dict[str, List[int]]:
+
+def parse_discord_mentions(text: str) -> dict[str, list[int]]:
     result = {"user_ids": [], "channel_ids": [], "role_ids": []}
     user_pattern = r"<@!?(\d+)>"
     for match in re.finditer(user_pattern, text):
@@ -28,11 +29,13 @@ def parse_discord_mentions(text: str) -> Dict[str, List[int]]:
             result["role_ids"].append(role_id)
     return result
 
+
 DISCORD_API_BASE = "https://discord.com/api/v10"
+
 
 class DiscordSearchClient:
     def __init__(self):
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._session: aiohttp.ClientSession | None = None
 
     @property
     def headers(self) -> dict:
@@ -54,23 +57,23 @@ class DiscordSearchClient:
         self,
         guild_id: int,
         query: str,
-        channel_id: Optional[int] = None,
-        author_id: Optional[int] = None,
-        author_type: Optional[str] = None,
-        mentions: Optional[int] = None,
-        mention_everyone: Optional[bool] = None,
-        has: Optional[str] = None,
-        pinned: Optional[bool] = None,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
+        channel_id: int | None = None,
+        author_id: int | None = None,
+        author_type: str | None = None,
+        mentions: int | None = None,
+        mention_everyone: bool | None = None,
+        has: str | None = None,
+        pinned: bool | None = None,
+        before: str | None = None,
+        after: str | None = None,
         sort_by: str = "timestamp",
         sort_order: str = "desc",
-        link_hostname: Optional[str] = None,
-        attachment_extension: Optional[str] = None,
+        link_hostname: str | None = None,
+        attachment_extension: str | None = None,
         limit: int = 25,
         offset: int = 0,
-        accessible_channel_ids: Optional[set] = None,
-    ) -> Dict[str, Any]:
+        accessible_channel_ids: set | None = None,
+    ) -> dict[str, Any]:
         import asyncio
 
         session = await self.get_session()
@@ -117,16 +120,10 @@ class DiscordSearchClient:
                         total_results = data.get("total_results", len(messages))
                         if accessible_channel_ids is not None:
                             original_count = len(messages)
-                            messages = [
-                                m
-                                for m in messages
-                                if int(m.get("channel_id", 0)) in accessible_channel_ids
-                            ]
+                            messages = [m for m in messages if int(m.get("channel_id", 0)) in accessible_channel_ids]
                             filtered_count = original_count - len(messages)
                             if filtered_count > 0:
-                                logger.info(
-                                    f"SECURITY: Filtered {filtered_count} messages from private channels"
-                                )
+                                logger.info(f"SECURITY: Filtered {filtered_count} messages from private channels")
                         return {
                             "success": True,
                             "total_results": total_results,
@@ -139,7 +136,7 @@ class DiscordSearchClient:
                         try:
                             data = await resp.json()
                             retry_after = data.get("retry_after", 2)
-                        except (Exception):
+                        except Exception:
                             pass
                         if attempt < max_retries - 1:
                             logger.info(f"Search index not ready, retrying in {retry_after}s...")
@@ -147,9 +144,7 @@ class DiscordSearchClient:
                             continue
                         return {"error": "Search index not ready. Try again in a few seconds."}
                     elif resp.status == 403:
-                        return {
-                            "error": "Bot doesn't have permission to search messages in this guild"
-                        }
+                        return {"error": "Bot doesn't have permission to search messages in this guild"}
                     elif resp.status == 429:
                         retry_after = resp.headers.get("Retry-After", "unknown")
                         return {"error": f"Rate limited. Retry after {retry_after} seconds"}
@@ -162,7 +157,7 @@ class DiscordSearchClient:
                 return {"error": str(e)}
         return {"error": "Search failed after retries"}
 
-    def _format_messages(self, messages: List[List[Dict]]) -> List[Dict]:
+    def _format_messages(self, messages: list[list[dict]]) -> list[dict]:
         formatted = []
         for msg_group in messages:
             for msg in msg_group:
@@ -184,11 +179,11 @@ class DiscordSearchClient:
     async def search_members(
         self,
         guild: discord.Guild,
-        query: Optional[str] = None,
-        user_id: Optional[int] = None,
-        role_id: Optional[int] = None,
+        query: str | None = None,
+        user_id: int | None = None,
+        role_id: int | None = None,
         limit: int = 100,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         try:
             members = []
             if user_id:
@@ -240,11 +235,11 @@ class DiscordSearchClient:
     async def search_channels(
         self,
         guild: discord.Guild,
-        query: Optional[str] = None,
-        channel_type: Optional[str] = None,
+        query: str | None = None,
+        channel_type: str | None = None,
         limit: int = 50,
         can_view_channel: callable = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         try:
             type_map = {
                 "text": discord.ChannelType.text,
@@ -288,11 +283,11 @@ class DiscordSearchClient:
     async def search_threads(
         self,
         guild: discord.Guild,
-        query: Optional[str] = None,
+        query: str | None = None,
         include_archived: bool = True,
         limit: int = 50,
         can_view_channel: callable = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         try:
             threads = []
             active_threads = guild.threads
@@ -328,9 +323,7 @@ class DiscordSearchClient:
                         "locked": t.locked,
                         "message_count": t.message_count,
                         "member_count": t.member_count,
-                        "created_at": (
-                            t.created_at.isoformat() if t.created_at else None
-                        ),
+                        "created_at": (t.created_at.isoformat() if t.created_at else None),
                         "jump_url": t.jump_url,
                     }
                 )
@@ -346,10 +339,10 @@ class DiscordSearchClient:
     async def search_roles(
         self,
         guild: discord.Guild,
-        query: Optional[str] = None,
+        query: str | None = None,
         include_members: bool = False,
         limit: int = 50,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         try:
             roles = list(guild.roles)
             if query:
@@ -369,10 +362,7 @@ class DiscordSearchClient:
                     "mention": r.mention,
                 }
                 if include_members:
-                    role_data["members"] = [
-                        {"id": str(m.id), "name": m.display_name}
-                        for m in r.members[:20]
-                    ]
+                    role_data["members"] = [{"id": str(m.id), "name": m.display_name} for m in r.members[:20]]
                 formatted.append(role_data)
             return {
                 "success": True,
@@ -387,9 +377,9 @@ class DiscordSearchClient:
         self,
         channel: discord.TextChannel,
         limit: int = 25,
-        before: Optional[int] = None,
-        after: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        before: int | None = None,
+        after: int | None = None,
+    ) -> dict[str, Any]:
         try:
             limit = min(limit, 100)
             messages = []
@@ -432,7 +422,7 @@ class DiscordSearchClient:
         message_id: int,
         before_count: int = 5,
         after_count: int = 5,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         try:
             try:
                 target_msg = await channel.fetch_message(message_id)
@@ -443,10 +433,9 @@ class DiscordSearchClient:
                 before_msgs.append(msg)
             before_msgs.reverse()
             after_msgs = []
-            async for msg in channel.history(
-                limit=after_count, after=target_msg, oldest_first=True
-            ):
+            async for msg in channel.history(limit=after_count, after=target_msg, oldest_first=True):
                 after_msgs.append(msg)
+
             def format_msg(msg):
                 return {
                     "id": str(msg.id),
@@ -456,6 +445,7 @@ class DiscordSearchClient:
                     "timestamp": msg.created_at.isoformat(),
                     "jump_url": msg.jump_url,
                 }
+
             return {
                 "success": True,
                 "channel": channel.name,
@@ -473,8 +463,8 @@ class DiscordSearchClient:
         self,
         thread: discord.Thread,
         limit: int = 50,
-        before: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        before: int | None = None,
+    ) -> dict[str, Any]:
         try:
             limit = min(limit, 100)
             messages = []
@@ -502,9 +492,7 @@ class DiscordSearchClient:
                 "thread_id": str(thread.id),
                 "parent_channel": thread.parent.name if thread.parent else None,
                 "owner_id": str(thread.owner_id) if thread.owner_id else None,
-                "created_at": (
-                    thread.created_at.isoformat() if thread.created_at else None
-                ),
+                "created_at": (thread.created_at.isoformat() if thread.created_at else None),
                 "archived": thread.archived,
                 "locked": thread.locked,
                 "total_messages": thread.message_count,
@@ -516,9 +504,7 @@ class DiscordSearchClient:
                 "oldest_id": messages[-1]["id"] if messages else None,
                 "note": (
                     f"Showing {len(messages)} of ~{thread.message_count} messages. Use before={messages[-1]['id']} to get older messages."
-                    if messages
-                    and thread.message_count
-                    and len(messages) < thread.message_count
+                    if messages and thread.message_count and len(messages) < thread.message_count
                     else None
                 ),
             }
@@ -528,41 +514,44 @@ class DiscordSearchClient:
             logger.error(f"Thread history error: {e}")
             return {"error": str(e)}
 
+
 discord_search_client = DiscordSearchClient()
+
 
 async def tool_discord_search(
     action: str,
-    query: Optional[str] = None,
-    channel_id: Optional[Union[int, str]] = None,
-    channel_name: Optional[str] = None,
-    user_id: Optional[Union[int, str]] = None,
-    role_id: Optional[Union[int, str]] = None,
-    role_name: Optional[str] = None,
-    channel_type: Optional[str] = None,
-    message_id: Optional[Union[int, str]] = None,
-    thread_id: Optional[Union[int, str]] = None,
+    query: str | None = None,
+    channel_id: int | str | None = None,
+    channel_name: str | None = None,
+    user_id: int | str | None = None,
+    role_id: int | str | None = None,
+    role_name: str | None = None,
+    channel_type: str | None = None,
+    message_id: int | str | None = None,
+    thread_id: int | str | None = None,
     include_archived: bool = True,
     include_members: bool = False,
-    has: Optional[str] = None,
-    before: Optional[str] = None,
-    after: Optional[str] = None,
+    has: str | None = None,
+    before: str | None = None,
+    after: str | None = None,
     limit: int = 50,
     sort_by: str = "timestamp",
     sort_order: str = "desc",
-    author_type: Optional[str] = None,
-    pinned: Optional[bool] = None,
-    link_hostname: Optional[str] = None,
-    attachment_extension: Optional[str] = None,
+    author_type: str | None = None,
+    pinned: bool | None = None,
+    link_hostname: str | None = None,
+    attachment_extension: str | None = None,
     offset: int = 0,
     _context: dict = None,
     **kwargs,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     if not _context:
         return {"error": "No context provided - cannot access Discord guild"}
     guild = _context.get("discord_guild")
     if not guild:
         return {"error": "Discord guild not available in context"}
-    def extract_id(value: Optional[Union[int, str]], pattern: str) -> Optional[int]:
+
+    def extract_id(value: int | str | None, pattern: str) -> int | None:
         if value is None:
             return None
         if isinstance(value, int):
@@ -575,6 +564,7 @@ async def tool_discord_search(
         if match:
             return int(match.group(1))
         return None
+
     channel_id = extract_id(channel_id, r"<#(\d+)>")
     user_id = extract_id(user_id, r"<@!?(\d+)>")
     role_id = extract_id(role_id, r"<@&(\d+)>")
@@ -583,9 +573,7 @@ async def tool_discord_search(
     bot = _context.get("discord_bot")
     bot_member = guild.me if guild else None
     requesting_user_id = _context.get("user_id")
-    requesting_member = (
-        guild.get_member(requesting_user_id) if requesting_user_id else None
-    )
+    requesting_member = guild.get_member(requesting_user_id) if requesting_user_id else None
     if not requesting_member and requesting_user_id:
         try:
             requesting_member = await guild.fetch_member(requesting_user_id)
@@ -598,11 +586,13 @@ async def tool_discord_search(
             logger.warning(
                 f"SECURITY: Failed to fetch member {requesting_user_id}: {e} - restricting to public channels only"
             )
+
     def bot_can_access(channel) -> bool:
         if not bot_member:
             return True
         perms = channel.permissions_for(bot_member)
         return perms.view_channel
+
     def user_can_view(channel) -> bool:
         if requesting_member:
             perms = channel.permissions_for(requesting_member)
@@ -613,8 +603,10 @@ async def tool_discord_search(
                 perms = channel.permissions_for(everyone_role)
                 return perms.view_channel
             return False
+
     def can_view_channel(channel) -> bool:
         return bot_can_access(channel) and user_can_view(channel)
+
     accessible_channel_ids = set()
     for ch in guild.channels:
         if hasattr(ch, "permissions_for"):
@@ -638,11 +630,9 @@ async def tool_discord_search(
         if ch_mentions["channel_ids"]:
             channel_id = ch_mentions["channel_ids"][0]
     if channel_name and not channel_id:
-        found_channel = None
         for ch in guild.channels:
             if channel_name.lower() in ch.name.lower():
                 if can_view_channel(ch):
-                    found_channel = ch
                     channel_id = ch.id
                     break
     if channel_id:

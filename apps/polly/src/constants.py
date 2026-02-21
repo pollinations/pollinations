@@ -2,6 +2,7 @@
 
 import os
 import re
+from datetime import UTC
 
 # API Configuration
 API_TIMEOUT = 60  # Keep generous for large repos
@@ -22,7 +23,7 @@ DEFAULT_REPO = "pollinations/pollinations"
 # Load repo info for AI context
 _repo_info_path = os.path.join(os.path.dirname(__file__), "data", "repo_info.txt")
 try:
-    with open(_repo_info_path, "r", encoding="utf-8") as f:
+    with open(_repo_info_path, encoding="utf-8") as f:
         REPO_INFO = f.read()
 except FileNotFoundError:
     REPO_INFO = "Pollinations.AI - AI media generation platform with image and text generation APIs."
@@ -497,7 +498,7 @@ Use gemini-search for quick factual lookups, perplexity-fast for general searche
                     "type": "string",
                     "enum": ["gemini-search", "perplexity-fast", "perplexity-reasoning"],
                     "description": "Search model to use. Default: perplexity-fast",
-                    "default": "perplexity-fast"
+                    "default": "perplexity-fast",
                 },
             },
             "required": ["query"],
@@ -959,9 +960,7 @@ def filter_admin_actions_from_tools(tools: list, is_admin: bool) -> list:
 
         if "enum" in action_prop:
             admin_actions = ADMIN_ACTIONS.get(tool_name, set())
-            action_prop["enum"] = [
-                a for a in action_prop["enum"] if a not in admin_actions
-            ]
+            action_prop["enum"] = [a for a in action_prop["enum"] if a not in admin_actions]
 
         filtered_tools.append(tool_copy)
 
@@ -1022,9 +1021,7 @@ TOOL_KEYWORDS = {
 }
 
 
-def filter_tools_by_intent(
-    user_message: str, all_tools: list[dict], is_admin: bool = False
-) -> list[dict]:
+def filter_tools_by_intent(user_message: str, all_tools: list[dict], is_admin: bool = False) -> list[dict]:
     """
     Filter tools based on user intent keywords.
     Fast regex matching - no API calls.
@@ -1253,9 +1250,9 @@ def get_tool_system_prompt(is_admin: bool = True) -> str:
     Returns:
         The formatted system prompt appropriate for the user's permission level.
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    current_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    current_utc = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     tools_section = ADMIN_TOOLS_SECTION if is_admin else NON_ADMIN_TOOLS_SECTION
 

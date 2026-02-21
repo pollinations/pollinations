@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import re
-from typing import Optional, Dict, Any, List
+from typing import Any
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
@@ -9,20 +9,20 @@ logger = logging.getLogger(__name__)
 
 async def scrape_url(
     url: str,
-    extraction_strategy: Optional[str] = None,
-    schema: Optional[Dict[str, Any]] = None,
-    instruction: Optional[str] = None,
-    semantic_filter: Optional[str] = None,
-    regex_patterns: Optional[List[str]] = None,
-    content_filter: Optional[str] = None,
-    filter_query: Optional[str] = None,
+    extraction_strategy: str | None = None,
+    schema: dict[str, Any] | None = None,
+    instruction: str | None = None,
+    semantic_filter: str | None = None,
+    regex_patterns: list[str] | None = None,
+    content_filter: str | None = None,
+    filter_query: str | None = None,
     include_links: bool = False,
     include_images: bool = False,
     include_raw_html: bool = False,
     include_tables: bool = False,
     output_format: str = "markdown",
-    js_code: Optional[str] = None,
-    wait_for: Optional[str] = None,
+    js_code: str | None = None,
+    wait_for: str | None = None,
     screenshot: bool = False,
     pdf: bool = False,
     stealth_mode: bool = False,
@@ -33,7 +33,7 @@ async def scrape_url(
     remove_overlays: bool = True,
     timeout: int = 30,
     headless: bool = True,
-    session_id: Optional[str] = None,
+    session_id: str | None = None,
 ) -> dict:
     try:
         parsed = urlparse(url)
@@ -47,7 +47,7 @@ async def scrape_url(
         return {"success": False, "url": url, "error": "Invalid URL format"}
 
     try:
-        from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
+        from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig
 
         ext_strategy = None
         if extraction_strategy:
@@ -91,9 +91,7 @@ async def scrape_url(
         )
 
         async with AsyncWebCrawler(config=browser_config) as crawler:
-            result = await asyncio.wait_for(
-                crawler.arun(url=url, config=crawl_config), timeout=timeout
-            )
+            result = await asyncio.wait_for(crawler.arun(url=url, config=crawl_config), timeout=timeout)
 
             if not result.success:
                 return {
@@ -136,9 +134,7 @@ async def scrape_url(
 
             if include_images and result.media:
                 images = result.media.get("images", [])
-                response["images"] = [
-                    img.get("src") for img in images[:20] if img.get("src")
-                ]
+                response["images"] = [img.get("src") for img in images[:20] if img.get("src")]
 
             if include_tables and hasattr(result, "media") and result.media:
                 tables = result.media.get("tables", [])
@@ -160,7 +156,7 @@ async def scrape_url(
 
             return response
 
-    except asyncio.TimeoutError:
+    except TimeoutError:
         return {
             "success": False,
             "url": url,
@@ -179,13 +175,13 @@ async def scrape_url(
 
 def _build_extraction_strategy(
     strategy_type: str,
-    schema: Optional[Dict] = None,
-    instruction: Optional[str] = None,
-    semantic_filter: Optional[str] = None,
-    regex_patterns: Optional[List[str]] = None,
+    schema: dict | None = None,
+    instruction: str | None = None,
+    semantic_filter: str | None = None,
+    regex_patterns: list[str] | None = None,
 ):
     if strategy_type == "llm":
-        from crawl4ai import LLMExtractionStrategy, LLMConfig
+        from crawl4ai import LLMConfig, LLMExtractionStrategy
 
         llm_config = LLMConfig(
             provider="openai/gpt-4o-mini",
@@ -258,23 +254,19 @@ def _build_extraction_strategy(
         raise ValueError(f"Unknown extraction strategy: {strategy_type}")
 
 
-def _build_content_filter(filter_type: str, query: Optional[str] = None):
+def _build_content_filter(filter_type: str, query: str | None = None):
     if filter_type == "bm25":
         from crawl4ai import BM25ContentFilter
 
-        return BM25ContentFilter(
-            user_query=query, bm25_threshold=1.0, language="english"
-        )
+        return BM25ContentFilter(user_query=query, bm25_threshold=1.0, language="english")
 
     elif filter_type == "pruning":
         from crawl4ai import PruningContentFilter
 
-        return PruningContentFilter(
-            user_query=query, threshold=0.48, threshold_type="fixed"
-        )
+        return PruningContentFilter(user_query=query, threshold=0.48, threshold_type="fixed")
 
     elif filter_type == "llm":
-        from crawl4ai import LLMContentFilter, LLMConfig
+        from crawl4ai import LLMConfig, LLMContentFilter
 
         return LLMContentFilter(
             llm_config=LLMConfig(provider="openai/gpt-4o-mini", api_token="dummy"),
@@ -287,9 +279,9 @@ def _build_content_filter(filter_type: str, query: Optional[str] = None):
 
 async def scrape_multiple(
     urls: list[str],
-    extraction_strategy: Optional[str] = None,
-    schema: Optional[Dict] = None,
-    instruction: Optional[str] = None,
+    extraction_strategy: str | None = None,
+    schema: dict | None = None,
+    instruction: str | None = None,
     max_concurrent: int = 5,
     timeout: int = 30,
 ) -> dict:
@@ -319,9 +311,7 @@ async def scrape_multiple(
 
     for url, result in zip(urls, results):
         if isinstance(result, Exception):
-            processed_results.append(
-                {"success": False, "url": url, "error": str(result)}
-            )
+            processed_results.append({"success": False, "url": url, "error": str(result)})
             failed += 1
         elif result.get("success"):
             processed_results.append(result)
@@ -342,8 +332,8 @@ async def scrape_multiple(
 async def parse_file_content(
     content: str,
     file_type: str = "text",
-    instruction: Optional[str] = None,
-    extract_patterns: Optional[List[str]] = None,
+    instruction: str | None = None,
+    extract_patterns: list[str] | None = None,
 ) -> dict:
     response = {
         "success": True,
@@ -398,9 +388,7 @@ async def parse_file_content(
                     combined |= pattern_map[p.lower()]
 
             if combined != RegexExtractionStrategy.Nothing:
-                strategy = RegexExtractionStrategy(
-                    pattern=combined, input_format="text"
-                )
+                strategy = RegexExtractionStrategy(pattern=combined, input_format="text")
                 extracted = strategy.extract("file", content)
                 response["extracted_patterns"] = extracted
         except ImportError:
@@ -419,16 +407,14 @@ async def parse_file_content(
 
 async def fetch_discord_attachment(
     attachment_url: str,
-    file_type: Optional[str] = None,
-    instruction: Optional[str] = None,
+    file_type: str | None = None,
+    instruction: str | None = None,
 ) -> dict:
     import aiohttp
 
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(
-                attachment_url, timeout=aiohttp.ClientTimeout(total=30)
-            ) as resp:
+            async with session.get(attachment_url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
                 if resp.status != 200:
                     return {"success": False, "error": f"HTTP {resp.status}"}
 
@@ -459,17 +445,15 @@ async def fetch_discord_attachment(
                     else:
                         file_type = "text"
 
-                return await parse_file_content(
-                    content=content, file_type=file_type, instruction=instruction
-                )
+                return await parse_file_content(content=content, file_type=file_type, instruction=instruction)
 
-    except asyncio.TimeoutError:
+    except TimeoutError:
         return {"success": False, "error": "Timeout fetching attachment"}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 
-async def _llm_extract(content: str, instruction: str) -> Optional[str]:
+async def _llm_extract(content: str, instruction: str) -> str | None:
     try:
         from .pollinations import pollinations_client
 
@@ -493,31 +477,31 @@ async def _llm_extract(content: str, instruction: str) -> Optional[str]:
 
 async def web_scrape_handler(
     action: str = "scrape",
-    url: Optional[str] = None,
-    urls: Optional[list[str]] = None,
-    strategy: Optional[str] = None,
-    schema: Optional[Dict] = None,
-    extract: Optional[str] = None,
-    semantic_filter: Optional[str] = None,
-    patterns: Optional[List[str]] = None,
-    content_filter: Optional[str] = None,
-    filter_query: Optional[str] = None,
+    url: str | None = None,
+    urls: list[str] | None = None,
+    strategy: str | None = None,
+    schema: dict | None = None,
+    extract: str | None = None,
+    semantic_filter: str | None = None,
+    patterns: list[str] | None = None,
+    content_filter: str | None = None,
+    filter_query: str | None = None,
     include_links: bool = False,
     include_images: bool = False,
     include_tables: bool = False,
     output_format: str = "markdown",
-    js_code: Optional[str] = None,
-    wait_for: Optional[str] = None,
+    js_code: str | None = None,
+    wait_for: str | None = None,
     screenshot: bool = False,
     stealth_mode: bool = False,
     simulate_user: bool = False,
     magic_mode: bool = False,
     scan_full_page: bool = False,
     process_iframes: bool = False,
-    session_id: Optional[str] = None,
-    file_url: Optional[str] = None,
-    file_content: Optional[str] = None,
-    file_type: Optional[str] = None,
+    session_id: str | None = None,
+    file_url: str | None = None,
+    file_content: str | None = None,
+    file_type: str | None = None,
     **kwargs,
 ) -> dict:
     if action == "parse_file":
@@ -533,9 +517,7 @@ async def web_scrape_handler(
     if action == "fetch_file":
         if not file_url:
             return {"error": "file_url required for fetch_file action"}
-        return await fetch_discord_attachment(
-            attachment_url=file_url, file_type=file_type, instruction=extract
-        )
+        return await fetch_discord_attachment(attachment_url=file_url, file_type=file_type, instruction=extract)
 
     if action == "scrape":
         if not url:
@@ -639,9 +621,7 @@ async def web_scrape_handler(
     elif action == "multi":
         if not urls:
             return {"error": "urls parameter required for multi action (list of URLs)"}
-        return await scrape_multiple(
-            urls=urls, extraction_strategy=strategy, schema=schema, instruction=extract
-        )
+        return await scrape_multiple(urls=urls, extraction_strategy=strategy, schema=schema, instruction=extract)
 
     else:
         return {

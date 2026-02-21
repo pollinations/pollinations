@@ -375,13 +375,19 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
         unique_files_deleted = len(set(metadata.get("file_path") for metadata in all_metadatas))
         logger.info(f"Deleted {len(ids_to_delete)} old chunks from {unique_files_deleted} changed files")
 
-    # Batch embed all collected chunks
+    # Batch embed all collected chunks (max 300K tokens per request, ~250 chunks per batch)
+    BATCH_SIZE = 250
     if all_ids:
         try:
-            embedding_response = await asyncio.to_thread(
-                lambda: model.embeddings.create(model="text-embedding-3-small", input=all_documents)
-            )
-            all_embeddings = [item.embedding for item in embedding_response.data]
+            all_embeddings = []
+            for i in range(0, len(all_documents), BATCH_SIZE):
+                batch_docs = all_documents[i : i + BATCH_SIZE]
+                embedding_response = await asyncio.to_thread(
+                    lambda docs=batch_docs: model.embeddings.create(model="text-embedding-3-small", input=docs)
+                )
+                all_embeddings.extend(item.embedding for item in embedding_response.data)
+                if len(all_documents) > BATCH_SIZE:
+                    logger.info(f"Embedded batch {i // BATCH_SIZE + 1}/{(len(all_documents) + BATCH_SIZE - 1) // BATCH_SIZE}")
             embedded_count = len(all_ids)
 
             collection.upsert(
@@ -392,7 +398,8 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
             )
             unique_files = len(set(m["file_path"] for m in all_metadatas))
             logger.info(
-                f"Embedded {embedded_count} chunks from {unique_files} files (TTL: skipped {files_skipped} unchanged files)"
+                f"✅ Code embeddings update complete — {collection.count()} total chunks ready "
+                f"({embedded_count} new/changed from {unique_files} files, skipped {files_skipped} unchanged)"
             )
         except Exception as e:
             error_msg = str(e)
@@ -514,18 +521,16 @@ async def initialize():
         await clone_or_pull_repo(config.embeddings_repo)
 
         collection = _get_collection()
-        if collection.count() == 0:
+        force_full = collection.count() == 0
+        if force_full:
             logger.info("No existing embeddings found, running full embed (first initialization)...")
-            count = await embed_repository(config.embeddings_repo, force_full=True)
-            logger.info(f"Full initialization complete: embedded {count} chunks")
         else:
-            logger.info(f"Found {collection.count()} existing embeddings from previous session")
-            logger.info(
-                "📌 TTL: On restart, embeddings persist in ChromaDB. Only changed portions will be re-embedded on next repo update"
-            )
+            logger.info(f"Found {collection.count()} existing embeddings, checking for updates...")
+
+        count = await embed_repository(config.embeddings_repo, force_full=force_full)
 
         _initialized.set()
-        logger.info("Embeddings initialization complete")
+        logger.info("✅ Code embeddings initialization complete — %d chunks ready", collection.count())
 
     except Exception as e:
         logger.error(f"Embeddings initialization failed: {e}", exc_info=True)

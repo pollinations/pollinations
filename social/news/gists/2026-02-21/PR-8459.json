@@ -1,0 +1,34 @@
+{
+  "pr_number": 8459,
+  "title": "feat(social): Add automatic crossposting for Discord real-time and weekly announcements",
+  "author": "MeatyChunks",
+  "url": "https://github.com/pollinations/pollinations/pull/8459",
+  "merged_at": "2026-02-21T11:50:34Z",
+  "labels": [
+    "WEB",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "The megaphone gets louder",
+    "blurb": "Updated our Discord bots to automatically crosspost announcements. Now the buzz reaches further, faster.",
+    "summary": "Modified Discord publishing scripts to automatically crosspost messages to follower channels using bot authentication.",
+    "impact": "Announcements will immediately appear in external servers that follow our channels, removing manual steps.",
+    "keywords": [
+      "discord",
+      "automation",
+      "bot",
+      "crossposting"
+    ],
+    "visual_concept": "The bee mascot operating a cozy retro radio station. Broadcasting vibes.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot speaking into a retro microphone at a tiny radio station desk. On Air sign glows lime green (#ecf874). Soft pastel gradient background. Chunky sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-21T11:51:21.759123+00:00"
+}

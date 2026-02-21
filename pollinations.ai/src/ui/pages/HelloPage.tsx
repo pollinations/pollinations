@@ -72,7 +72,7 @@ function HelloPage() {
                     <Body spacing="comfortable">{pageCopy.buildersBody}</Body>
 
                     {/* Row 1: Flywheel (left) + explanation (right) */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-16">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-10">
                         <FlywheelRing pageCopy={pageCopy} />
                         <div>
                             <Body spacing="comfortable">
@@ -112,7 +112,7 @@ function HelloPage() {
                                     {pageCopy.usersPaymentsLink}
                                 </a>
                             </div>
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1 mt-6">
                                 <a
                                     href="https://github.com/pollinations/pollinations/blob/main/POINTS_AND_TIERS.md"
                                     target="_blank"

@@ -85,6 +85,18 @@ function AuthorizeComponent() {
         accountPermissions: urlPermissions ?? ["profile"], // Default profile enabled
     });
 
+    // Hide page scrollbar behind the overlay
+    useEffect(() => {
+        const originalBody = document.body.style.overflow;
+        const originalHtml = document.documentElement.style.overflow;
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = originalBody;
+            document.documentElement.style.overflow = originalHtml;
+        };
+    }, []);
+
     // Parse and validate the redirect URL
     useEffect(() => {
         if (!redirect_url) {
@@ -183,23 +195,20 @@ function AuthorizeComponent() {
     };
 
     const handleCancel = () => {
-        // Go back to dashboard
-        navigate({ to: "/" });
+        if (isValidUrl) {
+            // Redirect back to the requesting app without a key
+            window.location.href = redirect_url;
+        } else {
+            navigate({ to: "/" });
+        }
     };
 
     // Show loading while checking session
     if (isPending) {
         return (
-            <div className="flex flex-col gap-6 max-w-lg mx-auto pt-8">
-                <div className="text-center">
-                    <img
-                        src="/logo_text_black.svg"
-                        alt="pollinations.ai"
-                        className="h-10 mx-auto invert"
-                    />
-                </div>
-                <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 shadow-lg text-center">
-                    <p className="text-gray-500">Loading...</p>
+            <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
+                <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg p-8 text-center max-w-lg w-full">
+                    <p className="text-green-950">Loading...</p>
                 </div>
             </div>
         );
@@ -208,50 +217,56 @@ function AuthorizeComponent() {
     // Not signed in - show simple sign-in screen
     if (!user) {
         return (
-            <div className="flex flex-col gap-6 max-w-lg mx-auto pt-8">
-                <div className="text-center">
-                    <img
-                        src="/logo_text_black.svg"
-                        alt="pollinations.ai"
-                        className="h-10 mx-auto invert"
-                    />
-                </div>
+            <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
+                <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg flex flex-col max-w-lg w-full">
+                    {/* Header with logo */}
+                    <div className="shrink-0 p-6 pb-4 flex items-center justify-between">
+                        <h2 className="text-lg font-semibold">
+                            Connect to pollinations.ai
+                        </h2>
+                        <img
+                            src="/logo_text_black.svg"
+                            alt="pollinations.ai"
+                            className="h-8 object-contain invert"
+                        />
+                    </div>
 
-                <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 shadow-lg text-center">
-                    <h2 className="font-bold mb-4 text-center">
-                        Connect to pollinations.ai
-                    </h2>
-
-                    {error ? (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                            <p className="text-red-800 text-sm">❌ {error}</p>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="bg-gray-50 rounded-xl p-4 mb-6">
-                                <p className="font-semibold text-gray-900">
-                                    {redirectHostname}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                    wants to connect to your account
+                    <div className="px-6 pb-6 space-y-4">
+                        {error ? (
+                            <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                                <p className="text-red-800 text-sm">
+                                    ❌ {error}
                                 </p>
                             </div>
+                        ) : (
+                            <>
+                                <div className="bg-green-200 rounded-lg p-4">
+                                    <p className="font-semibold text-green-950">
+                                        {redirectHostname}
+                                    </p>
+                                    <p className="text-xs text-green-800">
+                                        wants to connect to your account
+                                    </p>
+                                </div>
 
-                            <p className="text-gray-500 text-sm mb-6">
-                                Sign in to continue
-                            </p>
-                        </>
-                    )}
+                                <p className="text-green-800 text-sm">
+                                    Sign in to continue
+                                </p>
+                            </>
+                        )}
 
-                    <Button
-                        as="button"
-                        onClick={handleSignIn}
-                        disabled={isSigningIn || !!error}
-                        color="dark"
-                        className="w-full"
-                    >
-                        {isSigningIn ? "Signing in..." : "Sign in with GitHub"}
-                    </Button>
+                        <Button
+                            as="button"
+                            onClick={handleSignIn}
+                            disabled={isSigningIn || !!error}
+                            color="dark"
+                            className="w-full"
+                        >
+                            {isSigningIn
+                                ? "Signing in..."
+                                : "Sign in with GitHub"}
+                        </Button>
+                    </div>
                 </div>
             </div>
         );
@@ -259,121 +274,126 @@ function AuthorizeComponent() {
 
     // Signed in - show authorization details
     return (
-        <div className="flex flex-col gap-6 max-w-lg mx-auto pt-8">
-            <div className="text-center">
-                <img
-                    src="/logo_text_black.svg"
-                    alt="pollinations.ai"
-                    className="h-10 mx-auto invert"
-                />
-            </div>
-
-            <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 shadow-lg">
-                <h2 className="font-bold mb-4 text-center">
-                    Authorize Application
-                </h2>
-
-                {error ? (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                        <p className="text-red-800 text-sm">❌ {error}</p>
+        <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
+            <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg max-h-[85vh] max-w-lg w-full flex flex-col">
+                {/* Sticky header */}
+                <div className="shrink-0 p-6 pb-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold">
+                            Authorize Application
+                        </h2>
+                        <img
+                            src="/logo_text_black.svg"
+                            alt="pollinations.ai"
+                            className="h-8 object-contain invert"
+                        />
                     </div>
-                ) : (
-                    <>
-                        {/* Security info - short & sweet */}
-                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                            <p className="font-semibold text-blue-900 mb-1">
-                                🔑 Sharing my API key with{" "}
-                                <span className="font-mono bg-blue-100 rounded px-1.5 py-0.5 text-blue-800">
-                                    {redirectHostname}
-                                </span>
-                            </p>
-                            <p className="text-xs text-blue-600 mt-2">
-                                Same as copy-pasting your key into their app 💙
-                                Only you can use it
-                            </p>
+                    <p className="text-sm text-green-800 mt-1">
+                        Signed in as{" "}
+                        <strong>{user?.githubUsername || user?.email}</strong>
+                    </p>
+                </div>
+
+                {/* Scrollable content */}
+                <div
+                    className="flex-1 overflow-y-auto px-6 py-2 space-y-4 scrollbar-subtle"
+                    style={{
+                        scrollbarWidth: "thin",
+                        overscrollBehavior: "contain",
+                    }}
+                >
+                    {error ? (
+                        <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                            <p className="text-red-800 text-sm">❌ {error}</p>
                         </div>
+                    ) : (
+                        <>
+                            {/* Security info */}
+                            <div className="bg-green-200 rounded-lg p-4">
+                                <p className="font-semibold text-green-950 mb-1">
+                                    🔑 Create and share my API key with{" "}
+                                    <span className="font-mono bg-green-300 rounded px-1.5 py-0.5 text-green-950">
+                                        {redirectHostname}
+                                    </span>
+                                </p>
+                                <p className="text-xs text-green-800 mt-2">
+                                    Same as copy-pasting your key into their app
+                                    💚 Only you can use it
+                                </p>
+                            </div>
 
-                        {/* What this key allows */}
-                        <ul className="mb-6 text-sm text-gray-600 space-y-2">
-                            <li className="flex items-start gap-2">
-                                <span className="text-green-500">✓</span>
-                                <span>
-                                    Generate text, images, audio & video
-                                </span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <span className="text-green-500">✓</span>
-                                <span>Use your pollen balance</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <span className="text-gray-400">⏱</span>
-                                <span>
-                                    Revoke anytime from{" "}
-                                    <a
-                                        href="/"
-                                        className="text-blue-600 hover:underline"
-                                    >
-                                        dashboard
-                                    </a>
-                                </span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <span className="text-gray-400">🔧</span>
-                                <span>Model access:</span>
-                            </li>
-                        </ul>
+                            {/* What this key allows */}
+                            <ul className="text-sm text-green-900 space-y-2">
+                                <li className="flex items-start gap-2">
+                                    <span className="text-green-600">✓</span>
+                                    <span>
+                                        Generate text, images, audio & video
+                                    </span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="text-green-600">✓</span>
+                                    <span>Use your pollen balance</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="text-green-800">⏱</span>
+                                    <span>
+                                        Revoke anytime from{" "}
+                                        <a
+                                            href="https://enter.pollinations.ai"
+                                            className="text-green-950 font-medium underline"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            enter.pollinations.ai
+                                        </a>
+                                    </span>
+                                </li>
+                            </ul>
 
-                        {/* Key permissions inputs */}
-                        <div className="mb-6 -mt-2">
+                            {/* Key permissions inputs */}
                             <KeyPermissionsInputs
                                 value={keyPermissions}
-                                compact
+                                inline
                             />
-                        </div>
 
-                        {/* Redirect URL display */}
-                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-6">
-                            <p className="text-blue-800 text-xs mb-1 font-medium">
-                                You will be redirected to:
-                            </p>
-                            <p className="text-blue-900 text-sm font-mono break-all">
-                                {redirect_url}
-                            </p>
-                        </div>
-                    </>
-                )}
-
-                <div className="text-center text-sm text-gray-500 mb-4">
-                    Signed in as{" "}
-                    <strong>{user?.githubUsername || user?.email}</strong>
+                            {/* Redirect URL display */}
+                            <div className="bg-green-200 rounded-lg p-3">
+                                <p className="text-green-900 text-xs mb-1 font-medium">
+                                    You will be redirected to:
+                                </p>
+                                <p className="text-green-950 text-sm font-mono break-all">
+                                    {redirect_url}
+                                </p>
+                            </div>
+                        </>
+                    )}
                 </div>
-                <p className="text-center text-xs text-gray-400 mb-4">
-                    By authorizing, you agree to the{" "}
+
+                {/* Sticky footer */}
+                <div className="flex items-center justify-between p-6 pt-4 shrink-0">
                     <a
                         href="/terms"
-                        className="text-gray-500 hover:text-gray-700 hover:underline"
+                        className="text-xs text-green-700 hover:text-green-950 hover:underline"
                     >
                         Terms & Conditions
                     </a>
-                </p>
-                <div className="flex gap-3">
-                    <Button
-                        as="button"
-                        onClick={handleCancel}
-                        weight="outline"
-                        className="flex-1"
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        as="button"
-                        onClick={handleAuthorize}
-                        disabled={!isValidUrl || isAuthorizing || !!error}
-                        color="green"
-                        className="flex-1"
-                    >
-                        {isAuthorizing ? "Authorizing..." : "Authorize"}
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            as="button"
+                            onClick={handleCancel}
+                            weight="outline"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            as="button"
+                            onClick={handleAuthorize}
+                            disabled={!isValidUrl || isAuthorizing || !!error}
+                            color="green"
+                        >
+                            {isAuthorizing ? "Authorizing..." : "Authorize"}
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>

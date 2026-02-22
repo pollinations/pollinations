@@ -299,7 +299,7 @@ class PollinationsClient:
 
         for iteration in range(max_iterations):
             start_time = time.time()
-            response = await self._call_api_with_tools(messages, tools=tools)
+            response = await self._call_api_with_tools(messages, tools=tools, mode=mode)
             api_time = time.time() - start_time
             logger.info(f"AI API call took {api_time:.1f}s (iteration {iteration + 1})")
 
@@ -370,7 +370,7 @@ class PollinationsClient:
                 )
 
         # Max iterations reached, get final response
-        final_response = await self._call_api_with_tools(messages, tools=None)
+        final_response = await self._call_api_with_tools(messages, tools=None, mode=mode)
         # Collect any remaining content_blocks from final response
         if final_response:
             final_blocks = final_response.get("content_blocks", [])
@@ -470,6 +470,7 @@ class PollinationsClient:
         messages: list[dict],
         tools: list | None = None,
         timeout: int = API_TIMEOUT,
+        mode: str = "discord",
     ) -> dict | None:
         """Make API call to Pollinations with tool definitions.
 
@@ -478,10 +479,18 @@ class PollinationsClient:
         - 3 retry attempts with 5s delay between retries
         - New random seed for each retry attempt
         """
-        # Use per-request auth override if set (API key pass-through), else bot's token.
-        # Note: _auth_override stores the full "Bearer xxx" header, while
+        # API mode: MUST use the user's passed-through key, never the bot's internal token.
+        # Discord mode: uses the bot's own token (no override set).
+        # _auth_override stores the full "Bearer xxx" header, while
         # config.pollinations_token is the raw token — hence the f"Bearer ..." fallback.
-        auth_token = _auth_override.get() or f"Bearer {config.pollinations_token}"
+        override = _auth_override.get()
+        if mode == "api":
+            if not override:
+                logger.error("API mode request with no auth override — refusing to use bot token")
+                return None
+            auth_token = override
+        else:
+            auth_token = override or f"Bearer {config.pollinations_token}"
         headers = {
             "Content-Type": "application/json",
             "Authorization": auth_token,

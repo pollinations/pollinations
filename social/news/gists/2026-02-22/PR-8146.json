@@ -1,0 +1,34 @@
+{
+  "pr_number": 8146,
+  "title": "Add Pollinations Chat to Chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8146",
+  "merged_at": "2026-02-22T16:18:40Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The art bot speaks",
+    "blurb": "We taught the image generator how to make small talk. Now you can converse with the creative spirit in the machine via a new chat interface.",
+    "summary": "Added Pollinations Chat to the app showcase, providing a conversational UI for interacting with generative AI models.",
+    "impact": "Users can now generate art and converse with the AI through a dedicated chat experience.",
+    "keywords": [
+      "chat",
+      "app",
+      "showcase",
+      "generative art",
+      "interface"
+    ],
+    "visual_concept": "The Pollinations Bee having a conversation with the Monitor Robot. The robot is showing art on its screen, representing the 'chat to art' concept.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot chatting with a chunky robot who has a CRT monitor head. The monitor displays a colorful pixel landscape. Speech bubbles float between them. Lime green (#ecf874) and pastel lavender background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic and friendly."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:19:26.201702+00:00"
+}

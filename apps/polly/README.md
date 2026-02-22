@@ -81,11 +81,12 @@
 </table>
 
 ### 🔍 Smart Search
-- **`code_search`** - Semantic search across codebase (powered by local embeddings)
-- **`web_search`** - Real-time web search via Perplexity AI
+- **`code_search`** - Semantic search across codebase (OpenAI embeddings + ChromaDB)
+- **`doc_search`** - Semantic search across documentation (OpenAPI schema, etc.)
+- **`web_search`** - Real-time web search via Pollinations API
 
 ### 🧠 AI-Powered
-- Native tool calling (Gemini/GPT)
+- Native tool calling (Kimi k2.5 / GLM-5 / Gemini 3 Pro)
 - Parallel tool execution
 - Context-aware responses
 - Multi-language support
@@ -136,8 +137,7 @@ This error occurs when... [detailed explanation]
 ### 1️⃣ Clone & Install
 
 ```bash
-git clone https://github.com/Itachi-1824/Polly.git
-cd Polly
+cd apps/polly
 python -m venv venv
 source venv/bin/activate  # or `venv\Scripts\activate` on Windows
 pip install -r requirements.txt
@@ -155,13 +155,12 @@ Edit `.env` with your credentials:
 # Required
 DISCORD_TOKEN=your_discord_bot_token
 GITHUB_APP_ID=your_app_id
-GITHUB_PRIVATE_KEY_PATH=./polly.pem
+GITHUB_PRIVATE_KEY=./polly.pem  # file path or inline key
 GITHUB_INSTALLATION_ID=your_installation_id
 
 # Optional
-WEBHOOK_PORT=8002
-GITHUB_BOT_USERNAME=pollinations-ci
-LOCAL_EMBEDDINGS_ENABLED=true
+OPENAI_EMBEDDINGS_API=your_openai_key  # for code/doc embeddings
+POLLINATIONS_TOKEN=your_pollinations_token
 ```
 
 ### 3️⃣ Run
@@ -182,7 +181,9 @@ python main.py
 | `github_project` | Project board operations | Read: Everyone, Write: Admin |
 | `github_code` | Code agent (branches, edits, PRs) | Admin only |
 | `code_search` | Semantic code search | Everyone |
+| `doc_search` | Semantic doc search (OpenAPI schema) | Everyone |
 | `web_search` | Real-time web search | Everyone |
+| `discord_search` | Search Discord messages, members, channels | Everyone |
 
 ---
 
@@ -200,7 +201,7 @@ python main.py
 ┌─────────────────────────────────────────────────────────────────┐
 │                    POLLINATIONS AI ENGINE                       │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   Gemini    │  │   GPT-4     │  │   Perplexity (search)   │  │
+│  │  Kimi k2.5  │  │    GLM-5    │  │    Gemini 3 Pro         │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
 │                    Native Tool Calling                          │
 └─────────────────────────────────────────────────────────────────┘
@@ -209,7 +210,7 @@ python main.py
                     ▼               ▼               ▼
             ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
             │   GitHub    │ │    Code     │ │  Embeddings │
-            │    APIs     │ │   Agent     │ │   (Jina)    │
+            │    APIs     │ │   Agent     │ │  (OpenAI)   │
             │ GraphQL+REST│ │  Sandbox    │ │  ChromaDB   │
             └─────────────┘ └─────────────┘ └─────────────┘
 ```
@@ -227,16 +228,18 @@ Polly/
 │   ├── 📄 bot.py                 # Discord bot + webhook server
 │   ├── 📄 config.py              # Configuration
 │   ├── 📄 constants.py           # Tools, prompts, schemas
-│   ├── 📁 context/               # Session management
-│   ├── 📁 data/                  # Static data (repo_info.txt)
+│   ├── 📁 context/               # Session management + repo_info.txt
+│   ├── 📁 api/                   # OpenAI-compatible REST API
 │   └── 📁 services/
 │       ├── 📄 github.py          # GitHub REST API
 │       ├── 📄 github_graphql.py  # GitHub GraphQL API
 │       ├── 📄 github_pr.py       # PR operations
 │       ├── 📄 pollinations.py    # AI client
-│       ├── 📄 embeddings.py      # Code search
-│       ├── 📄 webhook_server.py  # GitHub webhooks
-│       └── 📁 code_agent/        # Autonomous coding
+│       ├── 📄 embeddings.py      # Code embeddings (OpenAI + ChromaDB)
+│       ├── 📄 doc_embeddings.py  # Doc embeddings (crawl + embed)
+│       ├── 📄 discord_search.py  # Discord guild search
+│       ├── 📄 web_scraper.py     # Crawl4AI web scraper
+│       └── 📄 webhook_server.py  # GitHub webhooks
 └── 📁 .github/workflows/
     └── 📄 deploy.yml             # Auto-deploy on push
 ```

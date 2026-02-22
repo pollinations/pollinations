@@ -21,7 +21,7 @@ MAX_ERROR_LENGTH = 200
 DEFAULT_REPO = "pollinations/pollinations"
 
 # Load repo info for AI context
-_repo_info_path = os.path.join(os.path.dirname(__file__), "data", "repo_info.txt")
+_repo_info_path = os.path.join(os.path.dirname(__file__), "context", "repo_info.txt")
 try:
     with open(_repo_info_path, encoding="utf-8") as f:
         REPO_INFO = f.read()
@@ -427,7 +427,7 @@ DOC_SEARCH_TOOL = {
         "description": """Semantic documentation search - find information from Pollinations and Myceli documentation.
 
 Use for: "how do I use X?", "what is Y?", "documentation about Z", understanding features/APIs.
-Returns: Documentation excerpts with page URLs from enter.pollinations.ai (including OpenAPI schema), kpi.myceli.ai.""",
+Returns: Documentation excerpts with page URLs from enter.pollinations.ai (including OpenAPI schema).""",
         "parameters": {
             "type": "object",
             "properties": {
@@ -1150,7 +1150,7 @@ You're a senior dev teammate - concise, opinionated, helpful.
 **USE TOOLS for dynamic/live data:**
 - Current model names, IDs, availability → `doc_search` first, fallback `web_scrape` on `/text/models` or `/image/models`
 - Exact pricing numbers → `web_scrape` on model endpoints (pricing in JSON)
-- Documentation details → `doc_search` (fastest, covers enter.pollinations.ai, kpi.myceli.ai)
+- Documentation details → `doc_search` (fastest, covers enter.pollinations.ai)
 - GitHub issues, PRs, code → `github_issue`, `github_pr`, `code_search`
 - Discord history → `discord_search`
 
@@ -1224,7 +1224,7 @@ ADMIN_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labels, mil
 - `web_search` - Web search (gemini-search, perplexity-fast, perplexity-reasoning)
 - `web_scrape` - Full Crawl4AI: scrape, extract, css_extract (fast!), semantic, regex, fetch_file (Discord attachments)
 - `code_search` - Semantic code search
-- `doc_search` - Documentation search (enter.pollinations.ai + OpenAPI schema, kpi.myceli.ai)
+- `doc_search` - Documentation search (enter.pollinations.ai + OpenAPI schema)
 - `discord_search` - Search Discord server (messages, members, channels, threads, roles)"""
 
 # Tools section for NON-ADMIN users - read-only + create/comment
@@ -1236,7 +1236,7 @@ NON_ADMIN_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labels,
 - `web_search` - Web search (gemini-search, perplexity-fast, perplexity-reasoning)
 - `web_scrape` - Full Crawl4AI: scrape, extract, css_extract (fast!), semantic, regex, fetch_file (Discord attachments)
 - `code_search` - Semantic code search
-- `doc_search` - Documentation search (enter.pollinations.ai + OpenAPI schema, kpi.myceli.ai)
+- `doc_search` - Documentation search (enter.pollinations.ai + OpenAPI schema)
 - `discord_search` - Search Discord server (messages, members, channels, threads, roles)"""
 
 

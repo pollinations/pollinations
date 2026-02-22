@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| 💬 | Xenchat | https://chat.xenai.tech | Fine-tuned AI chat powered by OpenWebUI and Pollinations for fast responses | en | Chat | @Screenmax1234 | 104010970 |  |  | chris_official | | 2026-01-26 | https://github.com/pollinations/pollinations/issues/7681 | 2026-02-22 |  |  |
 | 🗣️ | LinguaSpark | https://linguaspark2.netlify.app/ | Modern language learning with interactive games and AI-generated practice. | en | Learn | @GxAditya | 177012111 | https://github.com/GxAditya/LinguaSpark |  |  | | 2026-01-27 | https://github.com/pollinations/pollinations/issues/7694 | 2026-02-22 |  |  |
 | 🎬 | AI TikTok Video Generator | https://tiktok.pixpal.chat | AI tool that generates catchy hooks and applies trending effects in-browser. | en | Creative | @andreaspaps | 96740937 |  |  | andreas_11 | | 2026-01-27 | https://github.com/pollinations/pollinations/issues/7698 | 2026-02-22 |  |  |
 | 🎨 | Immage Generator | https://genimg.mummer.org/ | Web-based AI image generator for creating images from text prompts. | en | Creative | @mumblemummer | 127058889 |  |  |  | | 2026-01-30 | https://github.com/pollinations/pollinations/issues/7810 | 2026-02-22 |  |  |

@@ -1,0 +1,34 @@
+{
+  "pr_number": 7627,
+  "title": "Add AI Youtube Comment Summary Browser ExtensionAddon to Social_Bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7627",
+  "merged_at": "2026-02-22T16:46:24Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "TL;DR for the comments",
+    "blurb": "New in the showcase: a Firefox extension that reads the YouTube comments so you don't have to. Pure signal, no noise.",
+    "summary": "Added the 'AI Youtube Comment Summary' Firefox extension to the community apps registry.",
+    "impact": "Users can now discover a browser tool that automatically summarizes long YouTube comment threads.",
+    "keywords": [
+      "community",
+      "firefox",
+      "extension",
+      "youtube",
+      "summary"
+    ],
+    "visual_concept": "Polly the Bee and Nomnom the creature handling a stream of data. YouTube represents a video source (retro TV). Comments are a long scroll. Summarizing is Nomnom eating the long scroll and producing a short note.",
+    "image_prompt": "Cozy pixel art scene of Polly the Bee and the round Nomnom creature watching a retro TV screen glowing lime green (#ecf874). A long paper scroll of comments flows out of the TV, which Nomnom is happily eating. A small neat summary note sits nearby. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'TL;DR'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:47:08.383464+00:00"
+}

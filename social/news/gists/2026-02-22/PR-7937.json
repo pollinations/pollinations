@@ -1,0 +1,34 @@
+{
+  "pr_number": 7937,
+  "title": "Add Pollination App to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7937",
+  "merged_at": "2026-02-22T16:23:10Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Pollinations in your pocket",
+    "blurb": "A new Android client brings the hive to your phone. Generate images and chat on the go with the Pollination App.",
+    "summary": "Added 'Pollination App', a community-built Android client for image generation and chat, to the project showcase.",
+    "impact": "Android users can now access Pollinations features through a dedicated native application.",
+    "keywords": [
+      "android",
+      "mobile",
+      "community",
+      "app",
+      "client"
+    ],
+    "visual_concept": "A cute pixel art green android robot holding a smartphone, showing the app to the Pollinations bee.",
+    "image_prompt": "Cozy pixel art scene of a cute green android robot holding a smartphone with a glowing lime green (#ecf874) screen. The bee mascot hovers nearby, looking at the phone. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:23:52.690575+00:00"
+}

@@ -17,6 +17,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [Chamuka DrawIt](https://drawit.chamuka.ai) | Create designs by generating images powered by Pollinations. | @swiftugandan |
 | [Xenchat](https://chat.xenai.tech) | Fine-tuned AI chat powered by OpenWebUI and Pollinations for fast responses | @Screenmax1234 |
 | [LinguaSpark](https://linguaspark2.netlify.app/) | Modern language learning with interactive games and AI-generated practice. | @GxAditya |
 | [AI TikTok Video Generator](https://tiktok.pixpal.chat) | AI tool that generates catchy hooks and applies trending effects in-browser. | @andreaspaps |
@@ -26,7 +27,6 @@
 | [Coloring Me](https://coloringme.net/) | Free app that generates interactive coloring images for kids on mobile. | @buithehien1991 |
 | [Transport Document OCR](https://xfynder99-byte.github.io/OCR/) | Standalone web app extracting product data from images and PDFs via AI OCR. | @xfynder99-byte |
 | Pollination App | Android client for Pollinations.ai to generate images and chat with AI. | @aheadmujtaba |
-| [Postsiva](https://youtube.postsiva.com/) | SaaS platform to help YouTube creators manage and optimize their channels. | @Abdul-hannan-coder |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

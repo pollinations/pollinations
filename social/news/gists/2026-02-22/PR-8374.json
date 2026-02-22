@@ -1,0 +1,34 @@
+{
+  "pr_number": 8374,
+  "title": "Add Theta AI to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8374",
+  "merged_at": "2026-02-22T16:13:16Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Theta AI joins the gallery",
+    "blurb": "A new creative tool has been spotted in the wild. Theta AI is now listed in our apps collection for all your image generation needs.",
+    "summary": "Added Theta AI to the Creative apps list, enabling image generation in multiple styles and resolutions.",
+    "impact": "Users can now discover and access Theta AI directly from the community apps showcase.",
+    "keywords": [
+      "community",
+      "apps",
+      "image-generation",
+      "creative",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee visiting a digital art gallery. She is looking at a new framed artwork or monitor displaying the Greek letter Theta. The vibe is creative and welcoming.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot in a digital art gallery, admiring a new canvas displaying a glowing lime green (#ecf874) Theta symbol. Soft pastel gradient background. The bee wears a tiny artist beret. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'THETA'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:14:00.786927+00:00"
+}

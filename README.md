@@ -17,16 +17,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🛠️ LLM Client](https://github.com/SkalaSkalolaz/llmclient) | Provide LLM Client, a minimal stdlib-only Go client with a unified API for OpenAI-compatible LLM endpoints. | [@SkalaSkalolaz](https://github.com/SkalaSkalolaz) |
-| [🖌️ AIImageEditor](https://github.com/mikemartemianov/ImageGenerator) | AI image editor with brush editing, outpainting, upscaling, and multi-model support. | [@MikeMartemianov](https://github.com/MikeMartemianov) |
-| [🎨 Sticker Garden](https://sticker-garden.vercel.app/) | Turn text prompts into sticker-ready images with style presets and batch variants. | [@GekkeTovie](https://github.com/GekkeTovie) |
-| [🎬 P2S](https://github.com/Rakesh-ada/P2S) | Image consistency engine for AI filmmaking with scene memory and auto-repair. | [@Rakesh-ada](https://github.com/Rakesh-ada) |
-| [🔀 AI Router](https://twangymoney.pythonanywhere.com/docs/ai-router) | OpenRouter-style workstation with dark UI, branching chat history, and vision support. | [@TwangyMoney](https://github.com/TwangyMoney) |
-| [💬 Tenna AI](https://tennaai.com) | AI mental health companion with mood analysis, guided journal, and relaxation features. | [@b1onix](https://github.com/b1onix) |
-| [📊 PolliBench](https://pollibench.netlify.app/) | Benchmark all Pollinations models automatically with frontend HTML questions. | [@notlousybook](https://github.com/notlousybook) |
-| [📝 AI Quiz Simulator](https://mrlearner1606.github.io/quiz/) | Free AI-powered quiz simulator for competitive exams with timer, scoring, and explanations. | [@mrlearner1606](https://github.com/mrlearner1606) |
-| [🧠 Personic](https://github.com/AlanSynn/personic) | Generate structured AI personas and matching images from brief action prompts. | [@AlanSynn](https://github.com/AlanSynn) |
-| [📖 TaleCrafter AI](https://www.talecrafter.tech/) | Interactive storytelling platform turning prompts into digital storybooks with AI illustrations. | [@adityashriwas](https://github.com/adityashriwas) |
+| [LLM Client](https://github.com/SkalaSkalolaz/llmclient) | Minimal stdlib-only Go client with a unified API for OpenAI-compatible LLM endpoints. | @SkalaSkalolaz |
+| [ppo](https://anesnt-dz.github.io/ppo/) | Powerful AI assistant built by AnesNT, powered by Pollinations. | @AnesNT-DZ |
+| [BrainrotMaker](http://host.lualearnings.com:2256) | Generate brainrot images in seconds with BrainrotMaker Image Generator. | @lualearnings |
+| [GENEXUS AI](Not a public website – backend server project) | Private backend server that intermediates between apps and Pollinations.ai. | @aymantaha3345 |
+| [AIImageEditor](https://github.com/mikemartemianov/ImageGenerator) | AI image editor with brush editing, outpainting, upscaling, and multi-model support. | @MikeMartemianov |
+| [Sticker Garden](https://sticker-garden.vercel.app/) | Turn text prompts into sticker-ready images with style presets and batch variants. | @GekkeTovie |
+| [P2S](https://github.com/Rakesh-ada/P2S) | Image consistency engine for AI filmmaking with scene memory and auto-repair. | @Rakesh-ada |
+| [AI Router](https://twangymoney.pythonanywhere.com/docs/ai-router) | OpenRouter-style workstation with dark UI, branching chat history, and vision support. | @TwangyMoney |
+| [Tenna AI](https://tennaai.com) | AI mental health companion with mood analysis, guided journal, and relaxation features. | @b1onix |
+| [PolliBench](https://pollibench.netlify.app/) | Benchmark all Pollinations models automatically with frontend HTML questions. | @notlousybook |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
@@ -44,6 +44,9 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-02-20** – **🛠️ GENEXUS AI** Added to the developer tools showcase. Another backend integration for the ecosystem.
+- **2026-02-19** – **📦 Package Migration** The SDK and MCP packages have moved to the `@pollinations_ai` scope on NPM. We dropped the React dependencies, so they're lighter and framework-agnostic now.
+- **2026-02-19** – **🎥 Video Duration** The `seedance` video model now accepts a `duration` parameter. Control your clip length via the [API](https://gen.pollinations.ai).
 - **2026-02-18** – **📅 Build Diary** The [Community page](https://hello.pollinations.ai) now features an interactive timeline of the project's history. Navigate daily changes and digests with keyboard controls.
 - **2026-02-18** – **🐛 Readable Errors** The [API](https://gen.pollinations.ai) now extracts actual human-readable messages from upstream JSON errors. No more raw dumps when providers fail.
 - **2026-02-18** – **🌱 Seed Tier Logic** GitHub activity qualification now uses a rolling 90-day window instead of resetting yearly. Your status is safe in January.
@@ -51,27 +54,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-02-17** – **👾 Pixel Art & Markdown** A cozy new retro theme is available, plus app descriptions are now auto-formatted via the [Text API](https://gen.pollinations.ai).
 - **2026-02-17** – **🎨 UI Theme Cycling** Click the [pollinations.ai](https://hello.pollinations.ai) logo to instantly cycle through visual themes.
 - **2026-02-16** – **🌸 Badges in Bloom** Navigate the ecosystem with our new organic badge system (Fresh, Pollen, Buzz) to find the best [community apps](https://hello.pollinations.ai).
-- **2026-02-16** – **🎥 Consistent AI Video** Try **P2S**, a new tool for maintaining character and scene consistency across frames in AI filmmaking.
-- **2026-02-16** – **🎨 Sticker Garden** Generate custom sticker packs with style presets and batch variants in this new [creative app](https://hello.pollinations.ai).
-- **2026-02-16** – **💻 OpenCode Plugin** Developers can now access Pollinations models directly within the OpenCode environment.
 ---
-
-## 🌟 Google Summer of Code 2026 (GSOC)
-
-Hello folks! This year, `pollinations.ai` is participating in [Google Summer of Code 2026](https://summerofcode.withgoogle.com)! 
-We're looking for talented developers to contribute to our open-source AI platform. 
-
-**Website:** [Pollinations GSOC 2026](https://gsoc.pollinations.ai)
-
-**Mentors:** Thomas Haferlach, Ayushman Bhattacharya, Nihal Gazi.
-
-**Projects:** Check out our [Project Ideas](https://gsoc.pollinations.ai/projects).
-
-**Timeline:** Applications open **March 16th 2026** 
-Coding starts **May 25th 2026**
-
-> Please reach out to us about any queries on [Discord](https://discord.gg/pollinations-ai-885844321461485618) or via email at `gsoc@pollinations.ai`
-
 
 ## 🌱 Introduction
 

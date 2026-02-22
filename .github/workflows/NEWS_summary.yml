@@ -1,0 +1,106 @@
+name: Social Summary Generator
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Every day at 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: 'Date to summarize (YYYY-MM-DD). For daily: yesterday. For weekly: week start (Monday).'
+        required: false
+        type: string
+      mode:
+        description: 'Force daily or weekly mode (auto-detects by day-of-week if empty)'
+        required: false
+        type: choice
+        options:
+          - auto
+          - daily
+          - weekly
+
+jobs:
+  generate-summary:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests PyYAML Jinja2
+
+      - name: Overlay news branch data
+        run: git fetch origin news && git checkout origin/news -- social/news/ || echo "No news branch data yet"
+
+      - name: Determine mode (daily vs weekly)
+        id: mode
+        run: |
+          MODE="${{ github.event.inputs.mode || 'auto' }}"
+          if [ "$MODE" = "auto" ]; then
+            DOW=$(date -u +%u)  # 1=Monday, 7=Sunday
+            if [ "$DOW" = "7" ]; then
+              MODE="weekly"
+            else
+              MODE="daily"
+            fi
+          fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "Mode: $MODE"
+
+      # ── Daily: generate + stage to Buffer ──────────────────────────
+      - name: Generate daily summary
+        if: steps.mode.outputs.mode == 'daily'
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
+          PR_LABELS: 'NEWS'
+        run: python social/scripts/generate_daily.py
+
+      - name: Stage daily posts to Buffer
+        if: steps.mode.outputs.mode == 'daily'
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
+          PUBLISH_MODE: buffer
+          TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
+        run: python social/scripts/publish_daily.py
+
+      # ── Weekly: generate + stage to Buffer ─────────────────────────
+      - name: Generate weekly digest
+        if: steps.mode.outputs.mode == 'weekly'
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          WEEK_START_DATE: ${{ github.event.inputs.target_date || '' }}
+        run: python social/scripts/generate_weekly.py
+
+      - name: Stage weekly posts to Buffer
+        if: steps.mode.outputs.mode == 'weekly'
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
+          PUBLISH_MODE: buffer
+          WEEK_START_DATE: ${{ github.event.inputs.target_date || '' }}
+        run: python social/scripts/publish_weekly.py

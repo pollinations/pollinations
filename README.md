@@ -17,6 +17,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [KHMER TOOL BOT](https://t.me/khmer_downloader_bot) | Offers multiple utility commands and integrations, including image generation via pollinations.ai. | @Rithprohos |
 | [Theta AI](https://www.facebook.com/thetallm) | Generate images from user prompts using Theta AI, outputting images in multiple styles and resolutions. | @takrim1999 |
 | [Textify](https://letstypifythecontent.web.app/) | AI-powered content writer for generating articles, posts, and marketing copy. | @KanujanKing777 |
 | [Productivity Gears](http://productivitygears.com/) | Suite of 100+ free productivity tools: AI assistants, converters, PDF editors. | @hadi0096 |
@@ -26,7 +27,6 @@
 | [Pollenboard](https://pollenboard.vercel.app/) | Self-hostable image, audio, and text generation frontend using pollinations.ai. | @zhangshi0512 |
 | [langchain-pollinations](https://pypi.org/project/langchain-pollinations/) | LangChain integration for pollinations.ai — build agents, RAGs, and AI applications. | @onatrain |
 | LLM Client | Minimal stdlib-only Go client with a unified API for OpenAI-compatible LLM endpoints. | @SkalaSkalolaz |
-| [ppo](https://anesnt-dz.github.io/ppo/) | Powerful AI assistant built by AnesNT, powered by Pollinations. | @AnesNT-DZ |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

@@ -476,6 +476,12 @@ class PollyBot(commands.Bot):
         pollinations_client.register_tool_handler("web_scrape", web_scrape_handler)
         logger.info("Registered web_scrape tool handler (Crawl4AI)")
 
+        # Register chart generation handler (always available)
+        from .services.charts import generate_chart
+
+        pollinations_client.register_tool_handler("generate_chart", generate_chart)
+        logger.info("Registered generate_chart tool handler")
+
         # Register discord_search handler (full guild search capabilities)
         from .services.discord_search import tool_discord_search
 

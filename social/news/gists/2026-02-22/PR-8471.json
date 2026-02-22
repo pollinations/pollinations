@@ -1,0 +1,34 @@
+{
+  "pr_number": 8471,
+  "title": "Add Discord Chatbot Creator Platform with Suspicious H to Dev_Tools",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8471",
+  "merged_at": "2026-02-22T16:16:44Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Suspiciously good bots",
+    "blurb": "A new tool for crafting Discord bots has landed in the Dev Tools section. Design, test, and deploy with 'Suspicious H'.",
+    "summary": "Added the Discord Chatbot Creator Platform to the community apps showcase.",
+    "impact": "Developers can now access a dedicated tool for managing Discord bot intents, webhooks, and deployment.",
+    "keywords": [
+      "discord",
+      "bots",
+      "community",
+      "dev-tools",
+      "automation"
+    ],
+    "visual_concept": "Polly the Bee and the Monitor Robot working on a Discord bot interface. The interface features a pixelated letter 'H' with shifty eyes (the 'Suspicious H'). The scene is a cozy digital workshop.",
+    "image_prompt": "Cozy pixel art scene of Polly the Bee and the Monitor Robot tweaking a pixelated Discord bot interface on a retro screen. A suspicious-looking letter 'H' with eyes appears on a monitor. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley vibes. Pixel text: 'BOTS'. Emotionally warm and playful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:17:29.832265+00:00"
+}

@@ -1,1 +1,0 @@
-"""Polly API app package."""

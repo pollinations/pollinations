@@ -7,9 +7,14 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
+import tiktoken
+
 from .embeddings_utils import validate_and_get_openai_client
 
 logger = logging.getLogger(__name__)
+
+_enc = tiktoken.get_encoding("cl100k_base")
+MAX_TOKENS_PER_INPUT = 8000
 
 _model = None
 _chroma_client = None
@@ -20,9 +25,7 @@ DOC_EMBEDDINGS_DIR = DATA_DIR / "doc_embeddings"
 DOC_CACHE_DIR = DATA_DIR / "doc_cache"
 
 DEFAULT_DOC_SITES = [
-    "https://enter.pollinations.ai",
     "https://enter.pollinations.ai/api/docs/open-api/generate-schema",
-    "https://kpi.myceli.ai",
 ]
 
 MAX_PAGES_PER_SITE = 500
@@ -188,7 +191,27 @@ def _chunk_content(content: str, url: str, page_title: str, max_chunk_size: int 
                     }
                 )
 
-    return chunks
+    # Split any chunk exceeding token limit using tiktoken
+    final_chunks = []
+    for chunk in chunks:
+        tokens = _enc.encode(chunk["content"])
+        if len(tokens) <= MAX_TOKENS_PER_INPUT:
+            final_chunks.append(chunk)
+        else:
+            parts = list(range(0, len(tokens), MAX_TOKENS_PER_INPUT))
+            for part_idx, pos in enumerate(parts):
+                sub_tokens = tokens[pos : pos + MAX_TOKENS_PER_INPUT]
+                final_chunks.append(
+                    {
+                        "content": _enc.decode(sub_tokens),
+                        "url": chunk["url"],
+                        "page_title": chunk["page_title"],
+                        "section": chunk["section"],
+                        "part": part_idx,
+                    }
+                )
+
+    return final_chunks
 
 
 def _split_large_chunk(text: str, max_size: int) -> list[str]:
@@ -236,8 +259,8 @@ async def _scrape_page(url: str) -> dict | None:
 
         return {
             "url": url,
-            "title": result.get("title", ""),
-            "content": result.get("content", ""),
+            "title": result.get("title") or "",
+            "content": result.get("markdown") or result.get("content", ""),
             "links": result.get("links", []),
         }
 
@@ -318,7 +341,6 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
 
     embedded_count = 0
     all_ids = []
-    all_embeddings = []
     all_documents = []
     all_metadatas = []
     ids_to_delete = []
@@ -355,15 +377,16 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
         chunks = _chunk_content(content, url, title)
 
         for idx, chunk in enumerate(chunks):
-            chunk_id = f"{url}#chunk-{idx}"
+            part = chunk.get("part")
+            chunk_id = f"{url}#chunk-{idx}" + (f"p{part}" if part is not None else "")
 
             all_ids.append(chunk_id)
             all_documents.append(chunk["content"])
             all_metadatas.append(
                 {
                     "url": chunk["url"],
-                    "page_title": chunk["page_title"],
-                    "section": chunk["section"],
+                    "page_title": chunk["page_title"] or "",
+                    "section": chunk["section"] or "",
                     "site": urlparse(base_url).netloc,
                     "page_hash": content_hash,
                     "last_updated": datetime.utcnow().isoformat(),
@@ -385,47 +408,48 @@ async def embed_site(base_url: str, force_full: bool = False) -> int:
         collection.delete(ids=ids_to_delete)
         logger.info(f"Deleted {len(ids_to_delete)} old chunks from changed pages")
 
-    # Batch embed all collected chunks
+    # Batch embed with token-aware sizing, upsert each batch immediately
+    MAX_BATCH_TOKENS = 250_000
     if all_ids:
         try:
-            embedding_response = await asyncio.to_thread(
-                lambda: model.embeddings.create(model="text-embedding-3-small", input=all_documents, dimensions=1536)
-            )
-            all_embeddings = [item.embedding for item in embedding_response.data]
-            embedded_count = len(all_ids)
-
-            collection.upsert(
-                ids=all_ids,
-                embeddings=all_embeddings,
-                documents=all_documents,
-                metadatas=all_metadatas,
-            )
-            unique_urls = len(set(m["url"] for m in all_metadatas))
-            logger.info(
-                f"Embedded {embedded_count} chunks from {unique_urls} pages (TTL: skipped {pages_skipped} unchanged pages)"
-            )
-        except Exception as e:
-            error_msg = str(e)
-            if "401" in error_msg or "permission" in error_msg.lower() or "scope" in error_msg.lower():
-                logger.error(
-                    "❌ OpenAI API Error - Authentication Failed!\n"
-                    f"  Error: {error_msg}\n"
-                    "  \n"
-                    "  This likely means:\n"
-                    "  1. Your OPENAI_EMBEDDINGS_API key is invalid or expired\n"
-                    "  2. Your key doesn't have Embedding API access\n"
-                    "  3. You're using the wrong API key (not OpenAI)\n"
-                    "  \n"
-                    "  Fix:\n"
-                    "  1. Get a valid key from: https://platform.openai.com/api-keys\n"
-                    "  2. Make sure it has Embedding model access (text-embedding-3-small)\n"
-                    "  3. Update OPENAI_EMBEDDINGS_API in your .env file\n"
-                    "  4. Restart the bot"
+            batch_start = 0
+            batch_num = 0
+            while batch_start < len(all_documents):
+                batch_docs = []
+                batch_ids = []
+                batch_metadatas = []
+                batch_tokens = 0
+                i = batch_start
+                while i < len(all_documents):
+                    doc_tokens = len(_enc.encode(all_documents[i]))
+                    if batch_tokens + doc_tokens > MAX_BATCH_TOKENS and batch_docs:
+                        break
+                    batch_docs.append(all_documents[i])
+                    batch_ids.append(all_ids[i])
+                    batch_metadatas.append(all_metadatas[i])
+                    batch_tokens += doc_tokens
+                    i += 1
+                embedding_response = await asyncio.to_thread(
+                    lambda docs=batch_docs: model.embeddings.create(
+                        model="text-embedding-3-small", input=docs, dimensions=1536
+                    )
                 )
-                raise
-            else:
-                logger.error(f"Failed to embed chunks: {e}")
-                raise
+                batch_embeddings = [item.embedding for item in embedding_response.data]
+                collection.upsert(
+                    ids=batch_ids,
+                    embeddings=batch_embeddings,
+                    documents=batch_docs,
+                    metadatas=batch_metadatas,
+                )
+                embedded_count += len(batch_ids)
+                batch_num += 1
+                logger.info(
+                    f"Embedded+saved doc batch {batch_num} ({len(batch_docs)} chunks, ~{batch_tokens} tokens, {i}/{len(all_documents)} total)"
+                )
+                batch_start = i
+        except Exception as e:
+            logger.error(f"Failed to embed doc chunks: {e}")
+            raise
 
     return embedded_count
 
@@ -455,8 +479,8 @@ async def search_docs(query: str, top_k: int = 5) -> list[dict]:
 
         formatted.append(
             {
-                "url": metadata["url"],
-                "page_title": metadata["page_title"],
+                "url": metadata.get("url", ""),
+                "page_title": metadata.get("page_title", ""),
                 "section": metadata.get("section", ""),
                 "site": metadata.get("site", ""),
                 "content": doc,
@@ -488,7 +512,10 @@ async def update_all_sites(sites: list[str] | None = None):
             except Exception as e:
                 logger.error(f"Failed to update {site}: {e}", exc_info=True)
 
-        logger.info(f"Documentation update complete: {total_chunks} total chunks embedded")
+        collection = _get_collection()
+        logger.info(
+            f"✅ Doc embeddings update complete — {collection.count()} total chunks ready ({total_chunks} new/changed)"
+        )
 
 
 async def initialize():
@@ -504,10 +531,12 @@ async def initialize():
     collection = _get_collection()
     if collection.count() == 0:
         logger.info("No existing doc embeddings found, running full crawl (first initialization)...")
-        await update_all_sites(sites)
     else:
-        logger.info(f"Found {collection.count()} existing doc embeddings from previous session")
-        logger.info("📌 TTL: On restart, doc embeddings persist in ChromaDB with page-level hash tracking")
+        logger.info(f"Found {collection.count()} existing doc embeddings, checking for updates...")
+
+    await update_all_sites(sites)
+
+    logger.info("✅ Doc embeddings initialization complete — %d chunks ready", collection.count())
 
 
 def get_doc_stats() -> dict:

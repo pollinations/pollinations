@@ -1,29 +1,31 @@
 # Vast.ai GPU Instances - Flux & Z-Image Deployment
 
-Last updated: 2026-02-01
+Last updated: 2026-02-05
 
 ## Overview
 
 Vast.ai instances running RTX 5090 GPUs for image generation:
 - **Flux**: Uses nunchaku quantization (FP4 for Blackwell GPUs) to run Flux Schnell
-- **Z-Image**: Tongyi Z-Image-Turbo with SPAN 2x upscaler
+- **Z-Image**: Tongyi Z-Image-Turbo with SPAN 2x upscaler (generates at 512x512 + 2x neural upscale)
 
 ## Active Instances
 
-| Instance ID | Public IP | SSH Port | GPUs | GPU Type | Location | Services |
-|-------------|-----------|----------|------|----------|----------|----------|
-| 30822975 | 211.72.13.201 | 43062 | 4 | RTX 5090 | Taiwan | Flux (GPU 0,1), Z-Image (GPU 2,3) |
-| 30826995 | 76.69.188.175 | 21085 | 4 | RTX 5090 | Quebec, CA | Flux (GPU 0,1,2,3) |
+| Instance ID | Public IP | SSH Host | SSH Port | GPUs | GPU Type | Location | Services |
+|-------------|-----------|----------|----------|------|----------|----------|----------|
+| 30937024 | 211.72.13.202 | ssh3.vast.ai | 17024 | 4 | RTX 5090 | Taiwan | Flux (GPU 0), Z-Image (GPU 1,2,3) |
+| 30826995 | 76.69.188.175 | ssh2.vast.ai | 26994 | 4 | RTX 5090 | Quebec, CA | Flux (GPU 0,1,2,3) |
+| 30939919 | 108.255.76.60 | ssh1.vast.ai | 19918 | 2 | RTX 5090 | North Carolina, US | Flux (GPU 0,1) |
+| 30994805 | 108.255.76.60 | ssh7.vast.ai | 34804 | 1 | RTX 5090 | North Carolina, US | Z-Image |
 
 ### Port Mappings
 
-**Instance 30822975 (Taiwan)**
+**Instance 30937024 (Taiwan)**
 | Internal Port | External Port | Service |
 |---------------|---------------|---------|
-| 8765 | 43096 | Flux (GPU 0) |
-| 8766 | 43078 | Flux (GPU 1) |
-| 8767 | 43060 | Z-Image (GPU 2) |
-| 8768 | 43066 | Z-Image (GPU 3) |
+| 8765 | 47190 | Flux (GPU 0) |
+| 8766 | 47162 | Z-Image (GPU 1) |
+| 8767 | 47174 | Z-Image (GPU 2) |
+| 8768 | 47158 | Z-Image (GPU 3) |
 
 **Instance 30826995 (Quebec)**
 | Internal Port | External Port | Service |
@@ -33,15 +35,42 @@ Vast.ai instances running RTX 5090 GPUs for image generation:
 | 8767 | 21050 | Flux (GPU 2) |
 | 8768 | 21059 | Flux (GPU 3) |
 
+**Instance 30939919 (North Carolina)**
+| Internal Port | External Port | Service |
+|---------------|---------------|---------|
+| 10002 | 63218 | Flux (GPU 0) |
+| 10003 | 63511 | Flux (GPU 1) |
+
+**Instance 30994805 (North Carolina)**
+| Internal Port | External Port | Service |
+|---------------|---------------|---------|
+| 10002 | 53559 | Z-Image (GPU 0) |
+
 ## SSH Access
 
+Vast.ai uses **proxy SSH** through `sshN.vast.ai` hosts. The SSH host and port can change if an instance is recreated.
+
 ```bash
-# Instance 30822975 (Taiwan)
-ssh -p 43062 -i ~/.ssh/pollinations_services_2026 root@211.72.13.201
+# Instance 30937024 (Taiwan)
+ssh -o StrictHostKeyChecking=no -i ~/.ssh/pollinations_services_2026 -p 17024 root@ssh3.vast.ai
 
 # Instance 30826995 (Quebec)
-ssh -p 21085 -i ~/.ssh/pollinations_services_2026 root@76.69.188.175
+ssh -o StrictHostKeyChecking=no -i ~/.ssh/pollinations_services_2026 -p 26994 root@ssh2.vast.ai
+
+# Instance 30939919 (North Carolina - Flux)
+ssh -o StrictHostKeyChecking=no -i ~/.ssh/pollinations_services_2026 -p 19918 root@ssh1.vast.ai
+
+# Instance 30994805 (North Carolina - Z-Image)
+ssh -o StrictHostKeyChecking=no -i ~/.ssh/pollinations_services_2026 -p 34804 root@ssh7.vast.ai
 ```
+
+**Find current SSH details:**
+```bash
+vastai show instances --raw | python3 -c "
+import sys, json
+for i in json.load(sys.stdin):
+    print(f'ID={i[\"id\"]} ssh={i[\"ssh_host\"]}:{i[\"ssh_port\"]} ip={i[\"public_ipaddr\"]} status={i[\"cur_state\"]} geo={i.get(\"geolocation\",\"?\")}')
+"```
 
 ## Setup Instructions
 
@@ -422,19 +451,22 @@ screen -dmS zimage-gpu3 bash -c 'cd /workspace/zimage && source venv/bin/activat
 - Check that `x-backend-token` header matches `PLN_IMAGE_BACKEND_TOKEN`
 - Verify the token in `enter.pollinations.ai/.testingtokens`
 
-## Capacity Summary
+## Capacity Summary (2026-02-05)
 
-| Instance | GPU | Service | VRAM Used | External Port |
-|----------|-----|---------|-----------|---------------|
-| 30822975 | 0 | Flux | ~21 GB | 43096 |
-| 30822975 | 1 | Flux | ~21 GB | 43078 |
-| 30822975 | 2 | Z-Image | ~24 GB | 43060 |
-| 30822975 | 3 | Z-Image | ~23 GB | 43066 |
-| 30826995 | 0 | Flux | ~21 GB | 21011 |
-| 30826995 | 1 | Flux | ~21 GB | 21057 |
-| 30826995 | 2 | Flux | ~21 GB | 21050 |
-| 30826995 | 3 | Flux | ~21 GB | 21059 |
-| **Total** | **8** | | ~173 GB | |
+| Instance | GPU | Service | VRAM | Port | Location |
+|----------|-----|---------|------|------|----------|
+| 30937024 | 0 | Flux | ~27 GB | 47190 | Taiwan |
+| 30937024 | 1 | Z-Image | ~26 GB | 47162 | Taiwan |
+| 30937024 | 2 | Z-Image | ~25 GB | 47174 | Taiwan |
+| 30937024 | 3 | Z-Image | ~26 GB | 47158 | Taiwan |
+| 30826995 | 0 | Flux | ~21 GB | 21011 | Quebec |
+| 30826995 | 1 | Flux | ~21 GB | 21057 | Quebec |
+| 30826995 | 2 | Flux | ~21 GB | 21050 | Quebec |
+| 30826995 | 3 | Flux | ~21 GB | 21059 | Quebec |
+| 30939919 | 0 | Flux | ~21 GB | 63218 | N. Carolina |
+| 30939919 | 1 | Flux | ~21 GB | 63511 | N. Carolina |
+| 30994805 | 0 | Z-Image | ~25 GB | 53559 | N. Carolina |
+| **Total** | **11** | **7 Flux + 4 Z-Image** | | |
 
 ## Notes
 

@@ -6,17 +6,16 @@ import {
     ApiKeyList,
     type CreateApiKey,
     type CreateApiKeyResponse,
-} from "../components/api-key.tsx";
+} from "../components/api-keys";
+import { PollenBalance, TierPanel } from "../components/balance";
 import { Button } from "../components/button.tsx";
 import { FAQ } from "../components/faq.tsx";
-import { Footer } from "../components/footer.tsx";
-import { Header } from "../components/header.tsx";
-import { NewsBanner } from "../components/news-banner.tsx";
-import { PollenBalance } from "../components/pollen-balance.tsx";
-import { Pricing } from "../components/pricing/index.ts";
-import { TierPanel } from "../components/tier-panel.tsx";
+import { Footer } from "../components/layout/footer.tsx";
+import { Header } from "../components/layout/header.tsx";
+import { NewsBanner } from "../components/layout/news-banner.tsx";
+import { User } from "../components/layout/user.tsx";
+import { Pricing } from "../components/pricing";
 import { UsageGraph } from "../components/usage-analytics";
-import { User } from "../components/user.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -86,28 +85,28 @@ function RouteComponent() {
         }
     };
 
-    const handleCreateApiKey = async (formState: CreateApiKey) => {
+    async function handleCreateApiKey(
+        formState: CreateApiKey,
+    ): Promise<CreateApiKeyResponse> {
         const keyType = formState.keyType || "secret";
         const isPublishable = keyType === "publishable";
-        const prefix = isPublishable ? "pk" : "sk";
 
-        // Step 1: Create key via better-auth's native API
+        // Create key via better-auth's native API
         const SECONDS_PER_DAY = 24 * 60 * 60;
         const createResult = await authClient.apiKey.create({
             name: formState.name,
-            prefix,
-            ...(formState.expiryDays !== null &&
-                formState.expiryDays !== undefined && {
-                    expiresIn: formState.expiryDays * SECONDS_PER_DAY,
-                }),
+            prefix: isPublishable ? "pk" : "sk",
+            expiresIn: formState.expiryDays
+                ? formState.expiryDays * SECONDS_PER_DAY
+                : undefined,
             metadata: {
                 description: formState.description,
                 keyType,
+                ...(isPublishable && { plaintextKey: "" }), // Placeholder, updated below
             },
         });
 
         if (createResult.error || !createResult.data) {
-            console.error("Failed to create API key:", createResult.error);
             throw new Error(
                 createResult.error?.message || "Failed to create API key",
             );
@@ -115,7 +114,7 @@ function RouteComponent() {
 
         const apiKey = createResult.data;
 
-        // For publishable keys, store the plaintext key in metadata for easy retrieval
+        // Store plaintext key for publishable keys
         if (isPublishable) {
             await authClient.apiKey.update({
                 keyId: apiKey.id,
@@ -127,51 +126,29 @@ function RouteComponent() {
             });
         }
 
-        // Step 2: Set permissions and/or budget if provided
-        // allowedModels: null = unrestricted (all models), array = restricted to specific models
-        // pollenBudget: null = unlimited, number = budget cap
-        // accountPermissions: null = no permissions, array = enabled permissions
-        const hasAllowedModels =
-            formState.allowedModels !== null &&
-            formState.allowedModels !== undefined;
-        const hasPollenBudget =
-            formState.pollenBudget !== null &&
-            formState.pollenBudget !== undefined;
-        const hasAccountPermissions =
-            formState.accountPermissions !== null &&
-            formState.accountPermissions !== undefined &&
-            formState.accountPermissions.length > 0;
+        // Set permissions and budget if provided
+        const permissionUpdates = Object.fromEntries(
+            Object.entries({
+                allowedModels: formState.allowedModels,
+                pollenBudget: formState.pollenBudget,
+                accountPermissions: formState.accountPermissions?.length
+                    ? formState.accountPermissions
+                    : undefined,
+            }).filter(([_, v]) => v !== undefined),
+        );
 
-        if (hasAllowedModels || hasPollenBudget || hasAccountPermissions) {
-            const updateResponse = await fetch(
-                `/api/api-keys/${apiKey.id}/update`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        ...(hasAllowedModels && {
-                            allowedModels: formState.allowedModels,
-                        }),
-                        ...(hasPollenBudget && {
-                            pollenBudget: formState.pollenBudget,
-                        }),
-                        ...(hasAccountPermissions && {
-                            accountPermissions: formState.accountPermissions,
-                        }),
-                    }),
-                },
-            );
+        if (Object.keys(permissionUpdates).length > 0) {
+            const response = await fetch(`/api/api-keys/${apiKey.id}/update`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(permissionUpdates),
+            });
 
-            if (!updateResponse.ok) {
-                const errorData = await updateResponse.json();
-                console.error(
-                    "Failed to set API key permissions/budget:",
-                    errorData,
-                );
-                // Key was created but update failed - throw so user knows
+            if (!response.ok) {
+                const error = await response.json();
                 throw new Error(
-                    `Key created but failed to set budget/permissions: ${(errorData as { message?: string }).message || "Unknown error"}`,
+                    `Key created but failed to set permissions: ${(error as { message?: string }).message || "Unknown error"}`,
                 );
             }
         }
@@ -182,15 +159,40 @@ function RouteComponent() {
             key: apiKey.key,
             name: apiKey.name,
         } as CreateApiKeyResponse;
-    };
+    }
 
-    const handleDeleteApiKey = async (id: string) => {
+    async function handleDeleteApiKey(id: string): Promise<void> {
         const result = await authClient.apiKey.delete({ keyId: id });
         if (result.error) {
             console.error(result.error);
         }
         router.invalidate();
-    };
+    }
+
+    async function handleUpdateApiKey(
+        id: string,
+        updates: {
+            name?: string;
+            allowedModels?: string[] | null;
+            pollenBudget?: number | null;
+            accountPermissions?: string[] | null;
+            expiresAt?: Date | null;
+        },
+    ): Promise<void> {
+        const response = await fetch(`/api/api-keys/${id}/update`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(updates),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(
+                (error as { message?: string }).message || "Update failed",
+            );
+        }
+        router.invalidate();
+    }
 
     const handleBuyPollen = (amount: number) => {
         // Navigate to Stripe checkout endpoint with amount in USD
@@ -457,6 +459,7 @@ function RouteComponent() {
                 <ApiKeyList
                     apiKeys={apiKeys}
                     onCreate={handleCreateApiKey}
+                    onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
                 />
                 <Pricing packBalance={packBalance} />

@@ -61,63 +61,57 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "946",
+      "content-length": "738",
       "content-type": "application/json; charset=utf-8",
-      "date": "Tue, 13 Jan 2026 21:47:41 GMT",
-      "etag": "W/\"3b2-TDsopvfQPAQ64IH+lzFUUWixPQM\"",
+      "date": "Sat, 14 Feb 2026 18:20:13 GMT",
+      "etag": "W/\"2e2-7yOmbSSlZ3BkInMaCe34Noa4ai0\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "moonshotai/kimi-k2-thinking-maas",
+      "x-model-used": "accounts/fireworks/models/kimi-k2p5",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "85",
-      "x-usage-prompt-text-tokens": "354",
-      "x-usage-total-tokens": "439"
+      "x-usage-completion-text-tokens": "67",
+      "x-usage-prompt-cached-tokens": "15",
+      "x-usage-prompt-text-tokens": "332"
     },
     "body": {
       "type": "json",
       "data": {
+        "id": "pllns_0f48e43357857f4c92fe28444ec199e9",
+        "object": "chat.completion",
+        "created": 1771093213,
+        "model": "accounts/fireworks/models/kimi-k2p5",
         "choices": [
           {
-            "finish_reason": "tool_calls",
             "index": 0,
-            "logprobs": null,
-            "matched_stop": null,
             "message": {
-              "content": null,
-              "reasoning_content": "The user is asking me to calculate 5 + 3, and they specifically want me to use the calculator tool. This is a straightforward arithmetic operation. Let me call the calculator tool with the appropriate parameters.\n\nThe operation is \"add\", a is 5, and b is 3. ",
               "role": "assistant",
+              "content": "",
+              "reasoning_content": "The user wants me to calculate 5 + 3 using the calculator tool. I need to call the calculator function with operation \"add\", a=5, and b=3.",
               "tool_calls": [
                 {
-                  "function": {
-                    "arguments": "{\"a\": 5, \"b\": 3, \"operation\": \"add\"}",
-                    "name": "calculator"
-                  },
-                  "id": "functions.calculator:0",
                   "index": 0,
-                  "type": "function"
+                  "id": "functions.calculator:0",
+                  "type": "function",
+                  "function": {
+                    "name": "calculator",
+                    "arguments": "{\"operation\": \"add\", \"a\": 5, \"b\": 3}"
+                  },
+                  "name": null
                 }
               ]
-            }
+            },
+            "finish_reason": "tool_calls",
+            "token_ids": null
           }
         ],
-        "created": 1768340861,
-        "id": "pllns_7517ae65e13d808f36879955f039ba4f",
-        "metadata": {
-          "weight_version": "default"
-        },
-        "model": "moonshotai/kimi-k2-thinking-maas",
-        "object": "chat.completion",
         "usage": {
-          "completion_tokens": 85,
-          "extra_properties": {
-            "google": {
-              "traffic_type": "ON_DEMAND"
-            }
-          },
-          "prompt_tokens": 354,
-          "prompt_tokens_details": null,
-          "reasoning_tokens": 0,
-          "total_tokens": 439
-        }
+          "prompt_tokens": 347,
+          "total_tokens": 414,
+          "completion_tokens": 67,
+          "prompt_tokens_details": {
+            "cached_tokens": 15
+          }
+        },
+        "prompt_token_ids": null
       }
     }
   }

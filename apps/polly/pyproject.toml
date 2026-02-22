@@ -1,0 +1,24 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (black handles this)
+    "E402",  # import not at top (circular import workarounds)
+    "E741",  # ambiguous variable name (l in list comprehensions is fine)
+    "B905",  # zip() without strict= (not needed for paired iterables)
+    "B904",  # raise from in except (too noisy for HTTP handlers)
+]
+
+[tool.black]
+target-version = ["py311"]
+line-length = 120

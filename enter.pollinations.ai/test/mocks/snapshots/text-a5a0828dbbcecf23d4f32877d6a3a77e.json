@@ -1,0 +1,89 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "What is in this image? One word."
+              },
+              {
+                "type": "image_url",
+                "image_url": {
+                  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/320px-Camponotus_flavomarginatus_ant.jpg",
+                  "mime_type": "image/jpeg"
+                }
+              }
+            ]
+          }
+        ],
+        "max_tokens": 2048,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "494",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Mon, 09 Feb 2026 11:02:18 GMT",
+      "etag": "W/\"1ee-sgMSht8A2cKm2AOV+52YOvYrpJs\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-2.5-flash-lite",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "2",
+      "x-usage-prompt-text-tokens": "520"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_f17f4a5d29c45f0b4fd0baf23ac94781",
+        "object": "chat.completion",
+        "created": 1770634938,
+        "model": "gemini-2.5-flash-lite",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "Ant.",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "Ant."
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 520,
+          "completion_tokens": 2,
+          "total_tokens": 522,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

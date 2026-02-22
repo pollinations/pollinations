@@ -79,14 +79,23 @@ export const AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarkness
                 "hex": "#00f2ea",
                 "ids": [
                     "text.brand",
-                    "text.highlight",
                     "button.primary.bg",
                     "button.primary.border",
-                    "button.focus.ring",
                     "border.brand",
-                    "border.highlight",
                     "background.element1",
                 ],
+            },
+            "slot_22": {
+                "hex": "#7dffc0",
+                "ids": [
+                    "text.highlight",
+                    "button.focus.ring",
+                    "border.highlight",
+                ],
+            },
+            "slot_23": {
+                "hex": "#ffb74d",
+                "ids": ["text.accent", "border.accent"],
             },
             "slot_17": {
                 "hex": "#05131f",
@@ -108,6 +117,9 @@ export const AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarkness
         "borderRadius": {
             "radius.button": "24px",
             "radius.card": "20px",
+            "radius.input": "12px",
+            "radius.subcard": "12px",
+            "radius.tag": "6px",
         },
         "fonts": {
             "font.title": "Rajdhani",

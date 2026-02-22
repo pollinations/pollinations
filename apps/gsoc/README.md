@@ -1,16 +1,20 @@
-# React + Vite
+# Google Summer of Code - Pollinations.ai
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## ⚠️ GSoC 2026 Status
 
-Currently, two official plugins are available:
+Pollinations.ai is **not participating in Google Summer of Code (GSoC) 2026**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+If this changes in a future year, this page will be updated with official information.
 
-## React Compiler
+## Contribute to Pollinations.ai
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+You can still contribute to Pollinations.ai through our regular open-source workflow:
 
-## Expanding the ESLint configuration
+- **GitHub:** https://github.com/pollinations
+- **Main Site:** https://pollinations.ai
+- **Discord:** https://discord.gg/pollinations-ai-885844321461485618
+- **API Docs:** https://gen.pollinations.ai
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Questions
+
+For general community questions, please use GitHub Discussions/Issues or Discord.

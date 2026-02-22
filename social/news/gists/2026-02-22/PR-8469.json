@@ -1,0 +1,34 @@
+{
+  "pr_number": 8469,
+  "title": "Add KHMER TOOL BOT to Social_Bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8469",
+  "merged_at": "2026-02-22T16:14:52Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "KHMER TOOL BOT joins the hive",
+    "blurb": "A new multi-purpose assistant has landed in the showcase. KHMER TOOL BOT brings utilities and Pollinations image generation directly to Telegram.",
+    "summary": "Added KHMER TOOL BOT, a Telegram utility with Pollinations image generation integration, to the community apps showcase.",
+    "impact": "Users can now discover and use this multi-purpose bot for Telegram tasks and creative generation.",
+    "keywords": [
+      "community",
+      "telegram",
+      "bot",
+      "showcase",
+      "apps"
+    ],
+    "visual_concept": "The Pollinations bee interacting with a blue paper plane (Telegram symbol). The plane is delivering a payload of pixelated tools and images. The setting is a cozy digital garden.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot catching a large blue paper plane (Telegram style) that is carrying pixelated tools and photos. Soft lime green (#ecf874) and pastel blue gradient background. Warm lighting, lo-fi aesthetic like Stardew Valley. Chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:15:37.999068+00:00"
+}

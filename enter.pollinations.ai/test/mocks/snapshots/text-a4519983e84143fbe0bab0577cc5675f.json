@@ -1,0 +1,134 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-legacy",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          },
+          {
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "id": "portkey-517a1114-4c71-491f-8edc-8201ee4cbc9d",
+                "type": "function",
+                "function": {
+                  "name": "calculator",
+                  "arguments": "{\"b\":3,\"a\":5,\"operation\":\"add\"}",
+                  "thought_signature": "Cu8JAY89a1/Ab9gLrunKvG6jcCImmtL5KT/ct/3j5FRtpzafBtxKN3n+izG+al57vSmQQLZa7hd0NmE+SRTGZWIHwx3NUE/GPpyMVZrF9Y+nNvdOgswOnNz+E8wkPA5tnclgr+OjCftUTwAeXKfv/MjxrVOMb5oaW9KU+QBhETZqNsN+RGZ44/LKOLYFvqoKrbNRogY1UHZZTMr537Tvym1upSkn2rL6Bvcqqu39iK8lqWOl2V4PqR54MlRyP3KytHlIeiJA2U+oUkO31o6+UPCmtZ15AIVvqXLe3R6/8Aw4YCBkKQ1PUodSccMjwHMmUum3UFJCu0Y0JZnjM9gBLUDRJ45w+bD2YgeuWlxs9U7uOpomxwuE+tfxkQia8cb6VoKgIGqCYuKWWxnSAu6/8c38WL06epux5vxM8DkTf9BOgWDkRGc8w3rSezt0pN2md0pT1X2vsQS5hB6+4JljFZHSVMCluqzuf1h5hqNQ9h05nUgCjmqdRBzRYbwPq6eaEi2hbSFj0kI5rKRE3O2uJmz/LfCIv9FdnfJ87amg7ddWvCJF1+JfE47Ym075hhTJIXPmm9nBTjFResz0LaM6fcy4FwphGUdBx4hBCxtg127084gmCIdyhLFkoF5YOR+BD7U/CWmuOFNbDIQd0kTUE/4VnHXalnHuNw73kJM9PYERdwn7L0yag4KWf7V/T/50nVmJ4e2BsIaLrTI6e8ICCRJD3/7BPgXZCv8JX60xlf0w4nnV2dCgPWlwT6bzCy6E3SFKi29Z4cqE4KoGLVVEyx3C70ER5iEBkGdmkIG4tO5zHFvOYqlbkphyedusD6l2/gtHSup28ATA07sEMo6GXbv3P0yeoSem0azD/AGdygbWonbPc/hA6+dqb4LvWBxwldBrYznDyMCK5liExvlRY6EdpYgObxZHBWTXg45SDN9vSeJdeTW2spqhw1udIStQwdQJqqcDxnVgA0hnfxDuE+4zsZIiBEq/2QMgtEzTPasD16QY/Yx3LBVI2A0bBbFVq0HfH9xSNnX1XCr5Ej/I/XISI+75JVjMfG9lhKPTTmZvHrEIHY/YteONZBeS3tAhpcAd7jc7EpivsRicFw8b0JitzHpXqCwog7/MG0HYqc++xm8JjmjkfT8D+seto8XrMI0gYOXTXB3QCINjwAfu3KSZty4fGXc5rTGAWXrh/yCW9JlGs6UjFsTLm9j31/7O6x5tstFDGpbPBuQlk8o1AciSeehAiET3bW+M8PoA6Q2DUWoWdhhBn1rYJU69hDR08QiO09qqZfgh8MzUWRDDEd36+jmGMJQMXtCBjfjak6/GcI4twk6jXDXzV8rn8R2q/OFlKRjOBdrjz86UEslA+UUl4Tf0ZQacIyy2GbsTvkSEWlIB0Z2IbtGI7THWWLcRU4CVA8X8TdXsjdK7msLVKWcg43BFl0reuHazRqT6rGh2fzjEnq21gFACHkUQdz6EW7snXlKJfyz95fAB44QvXr72Gd5+ddeYZTZut8YcUD8+DjnwEelXVNvrNeq5Z5DSsZrDRD63si+4pQD3nQ5C3X60WstMHvQn6RaA9qC8WcFhlzd1RRvnsLMvcz3JZEypZCNTU3pSDN4CwPNubNwEwlQgeZPJG8Bud8LPE4Nd8XqpLZHekDAMrnmwUis4QGnU8a16iQqnHqBOhZsRi6kpjs3N"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "portkey-517a1114-4c71-491f-8edc-8201ee4cbc9d",
+            "content": "{\"result\":8}"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "seed": 42,
+        "max_tokens": 4096
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "513",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 25 Jan 2026 03:06:54 GMT",
+      "etag": "W/\"201-kR9ca3tIbQAMeL0gMcFi/E466Zs\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-2.5-pro",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "78",
+      "x-usage-completion-text-tokens": "6",
+      "x-usage-prompt-text-tokens": "659"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_3e8d1659b020f20b38196224739907ca",
+        "object": "chat.completion",
+        "created": 1769310414,
+        "model": "gemini-2.5-pro",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "The answer is 8.",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "The answer is 8."
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 659,
+          "completion_tokens": 84,
+          "total_tokens": 743,
+          "completion_tokens_details": {
+            "reasoning_tokens": 78,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

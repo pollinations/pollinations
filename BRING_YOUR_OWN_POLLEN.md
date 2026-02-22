@@ -26,6 +26,18 @@ Say your app is at `https://myapp.com`
 https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com
 ```
 
+**With preselected options:**
+```
+https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com&permissions=profile,balance&models=flux,openai&expiry=7&budget=10
+```
+
+| Param | Description | Example |
+|-------|-------------|---------|
+| `models` | Allowed models (comma-separated) | `flux,openai,gptimage` |
+| `budget` | Pollen budget limit | `10` |
+| `expiry` | Key expiry in days (default: 30) | `7` |
+| `permissions` | Account permissions | `profile,balance,usage` |
+
 **Redirect back:**
 ```
 https://myapp.com#api_key=sk_abc123xyz

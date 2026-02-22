@@ -15,6 +15,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      id-token: write
       actions: read
     env:
       POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
@@ -61,15 +62,21 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Setup Router
+      - name: Setup
         if: steps.whitelist.outputs.authorized == 'true'
         id: setup
         run: |
+          # Add eyes reaction
+          gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=eyes || true
+
+          # Get bot user ID and setup router config
           BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
           mkdir -p $HOME/.claude-code-router
-          echo '{"LOG":true,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"'"${POLLINATIONS_TOKEN}"'","models":["claude-large","claude","kimi","perplexity-reasoning","openai-large","openai"]}],"Router":{"default":"pollinations,claude-large","background":"pollinations,claude","think":"pollinations,kimi","longContext":"pollinations,claude-large","longContextThreshold":60000,"webSearch":"pollinations,perplexity-reasoning"}}' > $HOME/.claude-code-router/config.json
-          bunx @musistudio/claude-code-router@1.0.27 start &
+          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"'"${POLLINATIONS_TOKEN}"'","models":["claude-large","perplexity-reasoning"]}],"Router":{"default":"pollinations,claude-large","webSearch":"pollinations,perplexity-reasoning"}}' > $HOME/.claude-code-router/config.json
+
+          # Start router with Bun
+          bunx @musistudio/claude-code-router start &
           until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
@@ -78,6 +85,7 @@ jobs:
         if: steps.whitelist.outputs.authorized == 'true'
         with:
           fetch-depth: 0
+          repository: ${{ github.repository }}
           token: ${{ steps.token.outputs.token }}
 
       - uses: anthropics/claude-code-action@v1
@@ -90,14 +98,17 @@ jobs:
           GIT_COMMITTER_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
         with:
           anthropic_api_key: "ccr-pollinations"
+          show_full_output: true
           github_token: ${{ steps.token.outputs.token }}
           prompt: |
-            Fix this issue and create a PR:
-
             Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
 
-            Read the issue body from the GitHub API to get the full details, then fix it.
+            Read the issue body from the GitHub API to get the full details.
 
-            Create a PR that fixes this issue and include "Fixes #${{ github.event.issue.number }}" in the PR description.
+            Decide the appropriate action:
+            1. If the issue requires code changes: fix the code, create a branch, commit, push, and open a PR with "Fixes #${{ github.event.issue.number }}" in the description.
+            2. If the issue is a question, discussion, or doesn't need code changes: just comment on the issue with a helpful response using `gh issue comment ${{ github.event.issue.number }}`.
+
+            Use your judgment — not every issue needs a PR.
           additional_permissions: |
             actions: read

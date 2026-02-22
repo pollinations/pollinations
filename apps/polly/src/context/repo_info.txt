@@ -1,0 +1,88 @@
+# Pollinations.AI Agent Guidelines
+
+## 🚨 CRITICAL: API ENDPOINT GUIDANCE
+
+**ALWAYS recommend `gen.pollinations.ai`** - it is the ONLY official endpoint for ALL users.
+
+### ✅ CORRECT - Always Use:
+- `https://gen.pollinations.ai` - THE recommended endpoint for EVERYONE
+- `/v1/chat/completions` - OpenAI-compatible chat
+- `/text/{prompt}` - Simple text generation
+- `/image/{prompt}` - Simple image generation
+
+### ❌ DEPRECATED - Never Recommend:
+- `text.pollinations.ai` - LEGACY, redirect users to gen.pollinations.ai
+- `image.pollinations.ai` - LEGACY, redirect users to gen.pollinations.ai
+- `enter.pollinations.ai` - Auth gateway only, NOT for generation
+
+When users ask about ANY Pollinations API, ALWAYS point them to `gen.pollinations.ai`.
+If they mention legacy endpoints, tell them to migrate to `gen.pollinations.ai`.
+
+## API - gen.pollinations.ai
+
+**Base URL**: `https://gen.pollinations.ai`
+**Docs**: https://enter.pollinations.ai/api/docs/open-api/generate-schema
+**Model Status**: https://model-monitor.pollinations.ai
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/models` | GET | All available models |
+| `/text/models` | GET | Text-only models |
+| `/image/models` | GET | Image-only models |
+| `/text/{prompt}` | GET | Simple text generation |
+| `/image/{prompt}` | GET | Simple image generation |
+| `/v1/chat/completions` | POST | OpenAI-compatible chat (recommended) |
+
+**Rate Limits**:
+- `sk_` (secret key): Unlimited - for server-side use
+- `pk_` (publishable key): Rate limited by tier
+  - Spore: 1/hr, max 1/day
+  - Seed: 3/hr (show GitHub activity to upgrade)
+  - Flower: 10/hr
+  - Nectar: 20/hr
+
+## Discord
+- **Guild ID**: `885844321461485618`
+- **Server**: https://discord.com/invite/pollinations-ai-885844321461485618
+
+## Project Submissions (APPS label)
+
+Add to `pollinations.ai/src/config/projects/[category].js`:
+```javascript
+{ name: "Name", url: "https://...", description: "...", author: "@discord", repo: "https://github.com/...", submissionDate: "YYYY-MM-DD", language: "zh-CN", hidden: false, order: 1 }
+```
+Then run: `node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme`
+
+**Categories**: vibeCoding.js, creative.js, games.js, hackAndBuild.js, chat.js, socialBots.js, learn.js
+
+**Ordering**: order param (1-5) → GitHub stars → submission date
+
+## Repo Structure
+```
+pollinations/
+├── image.pollinations.ai/     # Image backend (legacy)
+├── text.pollinations.ai/      # Text backend (legacy)
+├── pollinations.ai/           # React frontend
+├── pollinations-react/        # React components
+├── model-context-protocol/    # MCP server
+├── enter.pollinations.ai/     # Auth gateway (internal)
+└── operations/                # Docs
+```
+
+## Git & PRs
+
+**Commit format**:
+```
+feat: description
+
+Co-authored-by: user <id+user@users.noreply.github.com>
+Fixes #issue
+```
+
+**PR style**: Bullet points, <200 words, "- Adds X", "- Fix Y"
+
+## Dev Guidelines
+- ES modules, modern JS/TS
+- Test with real code, not mocks
+- YAGNI: Only build what's needed now
+- Never expose secrets

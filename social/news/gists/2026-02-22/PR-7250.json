@@ -1,0 +1,34 @@
+{
+  "pr_number": 7250,
+  "title": "Add Coursify to Learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7250",
+  "merged_at": "2026-02-22T09:18:31Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "YouTube just got a syllabus",
+    "blurb": "Turn those endless video playlists into actual courses. Coursify joins the hive to help you learn with structure.",
+    "summary": "Added Coursify to the community showcase, a platform that converts YouTube playlists into structured courses with progress tracking.",
+    "impact": "Users can now discover a new tool for transforming unstructured video content into organized educational paths.",
+    "keywords": [
+      "community",
+      "education",
+      "youtube",
+      "learning",
+      "apps"
+    ],
+    "visual_concept": "Education theme. The bee mascot as a student or teacher. Transformation of video (TV/Play button) into knowledge (Books/Course).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny mortarboard hat, standing next to a retro TV monitor that is magically transforming into a stack of books. Lime green (#ecf874) magic sparkles around the transformation. Soft pastel library background. Chunky retro sprites, warm lighting, lo-fi vibes. Pixel text: 'LEARN'. Emotionally warm and clever."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T09:19:14.013621+00:00"
+}

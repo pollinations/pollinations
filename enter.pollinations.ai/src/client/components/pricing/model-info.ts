@@ -87,3 +87,19 @@ export const getImageModelId = (modelName: string): string | undefined => {
     const service = getServiceDefinition(modelName as ServiceId);
     return service?.modelId as string | undefined;
 };
+
+/**
+ * Check if a model requires paid balance only (no tier balance)
+ */
+export const isPaidOnly = (modelName: string): boolean => {
+    const service = getServiceDefinition(modelName as ServiceId);
+    return service?.paidOnly === true;
+};
+
+/**
+ * Check if a model is marked as alpha (experimental, potentially unstable)
+ */
+export const isAlpha = (modelName: string): boolean => {
+    const service = getServiceDefinition(modelName as ServiceId);
+    return service?.alpha === true;
+};

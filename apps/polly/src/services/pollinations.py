@@ -11,6 +11,16 @@ MAX_RETRIES = 3
 RETRY_DELAY = 5
 MAX_SEED = 2**31 - 1
 
+
+class UpstreamAuthError(Exception):
+    """Raised when gen.pollinations.ai returns 401/403 in API mode."""
+
+    def __init__(self, status_code: int, detail: str):
+        self.status_code = status_code
+        self.detail = detail
+        super().__init__(f"Upstream auth error {status_code}: {detail}")
+
+
 import aiohttp
 
 # Per-request auth override (used by API mode to pass through user's key)
@@ -543,6 +553,9 @@ class PollinationsClient:
                         error_text = await response.text()
                         last_error = f"HTTP {response.status}: {error_text[:100]}"
                         logger.warning(f"Pollinations API error (attempt {attempt + 1}): {last_error}")
+                        # In API mode, propagate auth errors immediately — don't retry
+                        if mode == "api" and response.status in (401, 403):
+                            raise UpstreamAuthError(response.status, error_text)
 
             except TimeoutError:
                 last_error = f"Timeout after {timeout}s"

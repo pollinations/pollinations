@@ -14,6 +14,7 @@ import { getWeeklyRegistrations } from "./api/enter";
 import { getGitHubStats } from "./api/github";
 import { getWeeklyRevenue } from "./api/polar";
 import {
+    getWeeklyActivations,
     getWeeklyActiveUsers,
     getWeeklyChurn,
     getWeeklyHealthStats,
@@ -44,27 +45,35 @@ export default function App() {
             setError(null);
 
             try {
-                // Fetch all data sources in parallel
+                // Fetch in two batches to avoid TinyBird query timeouts
+                // Batch 1: non-TinyBird + lighter TinyBird queries
                 const [
                     github,
                     d1Registrations,
-                    tinybirdWAU,
-                    tinybirdUsage,
-                    tinybirdRetention,
-                    tinybirdHealth,
                     polarRevenue,
-                    tinybirdSegments,
+                    tinybirdHealth,
                     tinybirdChurn,
                 ] = await Promise.all([
                     getGitHubStats(),
                     getWeeklyRegistrations(12),
+                    getWeeklyRevenue(12),
+                    getWeeklyHealthStats(12),
+                    getWeeklyChurn(12),
+                ]);
+
+                // Batch 2: heavier TinyBird queries (WAU, usage, segments, activations, retention)
+                const [
+                    tinybirdWAU,
+                    tinybirdUsage,
+                    tinybirdRetention,
+                    tinybirdSegments,
+                    tinybirdActivations,
+                ] = await Promise.all([
                     getWeeklyActiveUsers(12),
                     getWeeklyUsageStats(12),
                     getWeeklyRetention(8),
-                    getWeeklyHealthStats(12),
-                    getWeeklyRevenue(12),
                     getWeeklyUserSegments(12),
-                    getWeeklyChurn(12),
+                    getWeeklyActivations(12),
                 ]);
 
                 // Check for missing data
@@ -165,12 +174,12 @@ export default function App() {
                         };
                         weekMap.set(row.week, {
                             ...existing,
-                            developerUsers: row.developer_users,
-                            developerPollen: row.developer_pollen,
-                            enduserUsers: row.enduser_users,
-                            enduserPollen: row.enduser_pollen,
-                            enduserUserPct: row.enduser_user_pct,
-                            enduserPollenPct: row.enduser_pollen_pct,
+                            byopUsers: row.byop_users,
+                            byopPollen: row.byop_pollen,
+                            otherUsers: row.other_users,
+                            otherPollen: row.other_pollen,
+                            byopUserPct: row.byop_user_pct,
+                            byopPollenPct: row.byop_pollen_pct,
                         });
                     }
                 }
@@ -190,16 +199,20 @@ export default function App() {
                     }
                 }
 
+                // Merge real D7 activation data from worker (D1 + Tinybird join)
+                if (tinybirdActivations) {
+                    for (const row of tinybirdActivations) {
+                        const existing = weekMap.get(row.week);
+                        if (existing) {
+                            existing.activations = row.activations;
+                        }
+                    }
+                }
+
                 // Convert map to sorted array
                 const weeklyData = Array.from(weekMap.values())
                     .filter((w) => w.week)
                     .sort((a, b) => a.week.localeCompare(b.week));
-
-                // Add activations estimate (users who made requests within 7 days of registration)
-                // TODO: Get real activation data from cross-referencing D1 + Tinybird
-                for (const week of weeklyData) {
-                    week.activations = week.wau || 0; // Placeholder until we have real activation tracking
-                }
 
                 // Retention data from Tinybird - map field names
                 const retentionData = (tinybirdRetention || []).map((row) => ({

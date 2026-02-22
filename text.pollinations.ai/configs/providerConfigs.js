@@ -82,13 +82,25 @@ export function createPerplexityModelConfig(additionalConfig = {}) {
 }
 
 /**
- * Creates an OVHcloud AI Endpoints model configuration
+ * Creates an OVHcloud AI Endpoints model configuration (Qwen endpoint)
  */
 export function createOVHcloudModelConfig(additionalConfig = {}) {
     return {
         provider: "openai",
         "custom-host":
             "https://qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1",
+        authKey: process.env.OVHCLOUD_API_KEY,
+        ...additionalConfig,
+    };
+}
+
+/**
+ * Creates an OVHcloud AI Endpoints model configuration for Mistral
+ */
+export function createOVHcloudMistralConfig(additionalConfig = {}) {
+    return {
+        provider: "openai",
+        "custom-host": "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1",
         authKey: process.env.OVHCLOUD_API_KEY,
         ...additionalConfig,
     };
@@ -102,6 +114,18 @@ export function createFireworksModelConfig(additionalConfig = {}) {
         provider: "openai",
         "custom-host": "https://api.fireworks.ai/inference/v1",
         authKey: process.env.FIREWORKS_API_KEY,
+        ...additionalConfig,
+    };
+}
+
+/**
+ * Creates an api.airforce model configuration
+ */
+export function createAirforceModelConfig(additionalConfig = {}) {
+    return {
+        provider: "openai",
+        "custom-host": "https://api.airforce/v1",
+        authKey: process.env.AIRFORCE_API_KEY,
         ...additionalConfig,
     };
 }

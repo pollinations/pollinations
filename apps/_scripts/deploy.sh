@@ -71,7 +71,7 @@ echo ""
 echo "🚀 Deploying to Cloudflare Pages..."
 npx wrangler pages deploy "$APP_PATH/$OUTPUT_DIR" \
     --project-name="$PROJECT_NAME" \
-    --branch=main \
+    --branch=production \
     --commit-dirty=true
 
 echo ""

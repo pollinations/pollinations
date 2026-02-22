@@ -165,13 +165,13 @@ export function KPITrendTable({ weeklyData, title }) {
                 "Formula: (Revenue / Total Tokens) × 1,000,000. Unit economics — how much revenue per million tokens consumed.",
         },
         {
-            key: "conversionRate",
-            name: "Activation→Purchase",
+            key: "purchaseRate",
+            name: "Purchase Rate",
             category: "Efficiency",
             format: "percent",
-            calc: (w) => (w.packPurchases / w.activations) * 100,
+            calc: (w) => (w.packPurchases / w.wau) * 100,
             tooltip:
-                "Formula: (Pack Purchases / Activated Users) × 100. Funnel conversion from activation to paying customer.",
+                "Formula: (Pack Purchases / WAU) × 100. What % of active users bought a pollen pack this week.",
         },
         {
             key: "availability",
@@ -182,20 +182,20 @@ export function KPITrendTable({ weeklyData, title }) {
                 "% of requests without server errors (5xx). User errors (4xx) don't count as downtime. Formula: (total - 5xx) / total × 100",
         },
         {
-            key: "enduserUserPct",
-            name: "End-user %",
+            key: "byopUserPct",
+            name: "BYOP User %",
             category: "Segments",
             format: "percent",
             tooltip:
-                "% of active users using temporary keys (end-users via BYOP). Developer = secret/publishable keys.",
+                "% of active users from BYOP apps (secret keys with hostname names, e.g. myapp.com). Matches website BYOP detection.",
         },
         {
-            key: "enduserPollenPct",
-            name: "End-user Pollen %",
+            key: "byopPollenPct",
+            name: "BYOP Pollen %",
             category: "Segments",
             format: "percent",
             tooltip:
-                "% of pollen consumed by end-users (temporary keys). Shows B2C vs B2B revenue split.",
+                "% of pollen consumed by BYOP apps. Shows how much usage comes from apps that bring their own pollen.",
         },
         {
             key: "churnRate",

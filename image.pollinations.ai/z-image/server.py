@@ -83,7 +83,7 @@ async def periodic_heartbeat():
 
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 MODEL_CACHE = "model_cache"
-SPAN_MODEL_PATH = "model_cache/span/2x-NomosUni_span_multijpg.pth"
+SPAN_MODEL_PATH = "model_cache/span/2xNomosUni_span_multijpg.safetensors"
 SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
 UPSCALE_FACTOR = 2
 MAX_GEN_PIXELS = 768 * 768  # Generate natively up to this size

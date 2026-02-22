@@ -1,6 +1,6 @@
 # Refunds & Cancellations
 
-**Updated: 2025-11-10**
+**Updated: 2026-01-19**
 
 ## Refunds & Cancellations (digital API services & credits)
 

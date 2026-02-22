@@ -31,8 +31,11 @@ const simplifiedRows = last10.map((row) => {
     // Remove first and last empty strings from split (matches parseApps.ts pattern)
     cols.shift();
     cols.pop();
-    // cols: [emoji, name, desc, language, category, github, repo, stars, discord, other, submitted]
-    return "| " + cols[1] + " | " + cols[2] + " | " + cols[5] + " |";
+    // cols: [emoji, name, web_url, desc, language, category, github, github_id, repo, stars, discord, other, submitted_date, issue_url, approved_date]
+    const name = cols[1];
+    const url = cols[2];
+    const nameCell = url ? `[${name}](${url})` : name;
+    return "| " + nameCell + " | " + cols[3] + " | " + cols[6] + " |";
 });
 
 const recentAppsSection = `## 🆕 Recent Apps

@@ -1,0 +1,33 @@
+name = "myceli-kpi"
+# account_id is set via CLOUDFLARE_ACCOUNT_ID env var in CI
+main = "src/worker/index.ts"
+compatibility_date = "2024-01-01"
+workers_dev = true
+
+# Custom domain not yet configured in Cloudflare
+# routes = [
+#     { pattern = "kpi.myceli.ai", custom_domain = true }
+# ]
+
+[site]
+bucket = "./dist"
+
+[vars]
+# D1 database is on Thomash's account (different from worker account)
+D1_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
+D1_DATABASE_ID = "f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3"
+TINYBIRD_API = "https://api.europe-west2.gcp.tinybird.co"
+POLAR_API = "https://api.polar.sh"
+GITHUB_REPO = "pollinations/pollinations"
+
+# Secrets (set via: wrangler secret put <NAME>)
+# - TINYBIRD_TOKEN (read-only)
+# - CF_API_TOKEN (D1 read-only)
+# - POLAR_ACCESS_TOKEN (read-only)
+# - GITHUB_TOKEN (optional, for higher rate limits)
+
+# D1 is on Thomash's account - access via HTTP API with CF_API_TOKEN
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "enter-production"
+# database_id = "f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3"

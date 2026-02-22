@@ -15,13 +15,13 @@ A Model Context Protocol (MCP) server for pollinations.ai that enables AI assist
 
 ```bash
 # Run directly with npx (no installation required)
-npx @pollinations/model-context-protocol
+npx @pollinations_ai/model-context-protocol
 ```
 
 Or install globally:
 
 ```bash
-npm install -g @pollinations/model-context-protocol
+npm install -g @pollinations_ai/model-context-protocol
 pollinations-mcp
 ```
 
@@ -31,7 +31,7 @@ Get your API key at [pollinations.ai](https://pollinations.ai)
 
 **Key Types:**
 
-- `pk_` (Publishable): Client-safe, rate-limited (1 pollen/hour per IP+key)
+- `pk_` (Publishable): Client-safe, rate-limited (1 pollen per IP per hour)
 - `sk_` (Secret): Server-side only, no rate limits, can spend Pollen
 
 Set your key via environment variable or the `setApiKey` tool:
@@ -39,7 +39,7 @@ Set your key via environment variable or the `setApiKey` tool:
 ```bash
 # Environment variable
 export POLLINATIONS_API_KEY=pk_your_key_here
-npx @pollinations/model-context-protocol
+npx @pollinations_ai/model-context-protocol
 ```
 
 ## Available Tools
@@ -112,7 +112,7 @@ npx @pollinations/model-context-protocol
 ## Claude Desktop Integration
 
 ```bash
-npx @pollinations/model-context-protocol install-claude-mcp
+npx @pollinations_ai/model-context-protocol install-claude-mcp
 ```
 
 Or manually add to your Claude Desktop config:
@@ -122,7 +122,7 @@ Or manually add to your Claude Desktop config:
   "mcpServers": {
     "pollinations": {
       "command": "npx",
-      "args": ["@pollinations/model-context-protocol"],
+      "args": ["@pollinations_ai/model-context-protocol"],
       "env": {
         "POLLINATIONS_API_KEY": "pk_your_key_here"
       }
@@ -187,7 +187,7 @@ Full API docs: [enter.pollinations.ai/api/docs](https://enter.pollinations.ai/ap
 ### Upgrade Steps
 
 1. Get API key from [pollinations.ai](https://pollinations.ai)
-2. Update: `npm update @pollinations/model-context-protocol`
+2. Update: `npm update @pollinations_ai/model-context-protocol`
 3. Set your key: Use `setApiKey` tool or `POLLINATIONS_API_KEY` env var
 
 ## License

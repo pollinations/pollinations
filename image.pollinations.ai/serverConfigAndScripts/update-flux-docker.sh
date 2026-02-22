@@ -47,7 +47,7 @@ ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/thomashkey ubuntu@$HOST << 'EOF'
     docker rm -f flux-svdquant || true
     
     # Pull the new image
-    docker pull voodoohop/flux-svdquant:latest
+    docker pull pollinations/flux-svdquant:latest
     
     # Start the service
     sudo systemctl start pollinations-flux-docker.service

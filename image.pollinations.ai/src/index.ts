@@ -5,6 +5,7 @@ import { parse } from "node:url";
 import debug from "debug";
 import urldecode from "urldecode";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
+import { logIp } from "../../shared/ipLogger.js";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
 // IMAGE_CONFIG imported but used elsewhere
 // import { IMAGE_CONFIG } from "./models.js";
@@ -537,6 +538,11 @@ const server = http.createServer((req, res) => {
 
     const parsedUrl = parse(req.url, true);
     const pathname = parsedUrl.pathname;
+
+    // IP logging for security investigation
+    const ip = getIp(req);
+    const model = (parsedUrl.query?.model as string) || "unknown";
+    logIp(ip, "image", `path=${pathname} model=${model}`);
 
     // Handle deprecated /models endpoint BEFORE auth check
     if (pathname === "/models") {

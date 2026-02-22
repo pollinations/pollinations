@@ -1,8 +1,8 @@
 // Import transform functions
 
-import { type ModelId, resolveServiceId } from "../shared/registry/registry.js";
+import { type ModelId, resolveServiceId } from "../shared/registry/registry.ts";
 // Import registry for validation
-import type { TEXT_SERVICES } from "../shared/registry/text.js";
+import type { TEXT_SERVICES } from "../shared/registry/text.ts";
 // Import model configs
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import chickyTutorPrompt from "./personas/chickytutor.js";
@@ -30,7 +30,7 @@ interface ModelDefinition {
 const models: ModelDefinition[] = [
     {
         name: "openai",
-        config: portkeyConfig["gpt-5-mini-2025-08-07"],
+        config: portkeyConfig["gpt-5-mini"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -74,12 +74,17 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude",
-        config: portkeyConfig["claude-sonnet-4-5-fallback"],
+        config: portkeyConfig["claude-sonnet-4-5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "claude-large",
-        config: portkeyConfig["claude-opus-4-5-fallback"],
+        config: portkeyConfig["claude-opus-4-6"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "claude-legacy",
+        config: portkeyConfig["claude-opus-4-5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -113,7 +118,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "midijourney",
-        config: portkeyConfig["gpt-4.1-2025-04-14"],
+        config: portkeyConfig["gpt-5.2-2025-12-11"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
@@ -133,7 +138,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi",
-        config: portkeyConfig["kimi-k2-thinking-maas"],
+        config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -165,7 +170,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "glm",
-        config: portkeyConfig["accounts/fireworks/models/glm-4p7"],
+        config: portkeyConfig["accounts/fireworks/models/glm-5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -173,9 +178,18 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p1"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
+    // {
+    //     name: "nomnom",
+    //     config: portkeyConfig["nomnom"],
+    // },
     {
-        name: "nomnom",
-        config: portkeyConfig["nomnom"],
+        name: "qwen-safety",
+        config: portkeyConfig["Qwen3Guard-Gen-8B"],
+    },
+    {
+        name: "qwen-character",
+        config: portkeyConfig["qwen-character"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.character),
     },
 ];
 

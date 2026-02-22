@@ -1,0 +1,34 @@
+{
+  "pr_number": 7224,
+  "title": "Add Productivity Gears to Dev_Tools",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7224",
+  "merged_at": "2026-02-22T09:23:10Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Gearing up",
+    "blurb": "Productivity Gears just landed in the showcase. A suite of 100 tools—enough to keep even the busiest drone happy.",
+    "summary": "Added Productivity Gears, a comprehensive suite of free utilities and AI assistants, to the community apps list.",
+    "impact": "Users can now discover a massive collection of converters, editors, and productivity tools in the Dev_Tools section.",
+    "keywords": [
+      "community",
+      "apps",
+      "productivity",
+      "tools",
+      "showcase"
+    ],
+    "visual_concept": "A cozy workshop scene. The metaphor is 'gears' and 'tools'. Polly the bee and the Robot are inspecting a new delivery of equipment.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and the monitor robot in a warm workshop, sorting through a wooden crate filled with glowing lime green (#ecf874) gears and pixelated tools. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic and industrious."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T09:23:50.119581+00:00"
+}

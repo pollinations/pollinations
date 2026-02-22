@@ -5,21 +5,18 @@ import base64
 import io
 import logging
 import re
-from typing import Optional, Union
 
 import discord
 from discord.ext import commands, tasks
 
 from .config import config
-from .context import session_manager, ConversationSession
-from .services.github import github_manager, TOOL_HANDLERS
+from .context import ConversationSession, session_manager
+from .services.github import TOOL_HANDLERS, github_manager
+from .services.github_auth import github_app_auth, init_github_app
 from .services.github_graphql import github_graphql
 from .services.github_pr import github_pr_manager
-from .services.github_auth import init_github_app, github_app_auth
 from .services.pollinations import pollinations_client
-from .services.subscriptions import subscription_manager, init_notifier
-from .services.code_agent.tools import TOOL_HANDLERS as CODE_AGENT_HANDLERS
-from .services.code_agent.sandbox import get_persistent_sandbox
+from .services.subscriptions import init_notifier
 from .services.webhook_server import start_webhook_server, stop_webhook_server
 
 logger = logging.getLogger(__name__)
@@ -42,9 +39,7 @@ def is_admin(user: discord.User | discord.Member) -> bool:
         return False
     if isinstance(user, discord.Member):
         user_role_ids = [r.id for r in user.roles]
-        is_admin_user = any(
-            role_id in config.admin_role_ids for role_id in user_role_ids
-        )
+        is_admin_user = any(role_id in config.admin_role_ids for role_id in user_role_ids)
         logger.debug(
             f"Admin check for {user}: roles={user_role_ids}, admin_role_ids={config.admin_role_ids}, is_admin={is_admin_user}"
         )
@@ -294,7 +289,7 @@ extract_image_urls = extract_attachment_urls
 
 async def _code_search_handler(query: str, top_k: int = 10, **kwargs) -> dict:
     """Handler for code_search tool - semantic search across repository."""
-    from .services.embeddings import search_code, get_stats
+    from .services.embeddings import get_stats, search_code
 
     # Validate top_k
     top_k = min(max(1, top_k), 10)
@@ -328,7 +323,7 @@ async def _code_search_handler(query: str, top_k: int = 10, **kwargs) -> dict:
 
 async def _doc_search_handler(query: str, top_k: int = 5, **kwargs) -> dict:
     """Handler for doc_search tool - semantic search across documentation sites."""
-    from .services.doc_embeddings import search_docs, get_doc_stats
+    from .services.doc_embeddings import get_doc_stats, search_docs
 
     # Validate top_k
     top_k = min(max(1, top_k), 10)
@@ -362,9 +357,7 @@ async def _doc_search_handler(query: str, top_k: int = 5, **kwargs) -> dict:
         return {"error": str(e)}
 
 
-async def fetch_thread_history(
-    thread: discord.Thread, limit: int = THREAD_HISTORY_LIMIT
-) -> list[dict]:
+async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTORY_LIMIT) -> list[dict]:
     """
     Fetch message history from a thread and format for AI context.
     This is our "memory" - pulled fresh from Discord each time.
@@ -375,12 +368,6 @@ async def fetch_thread_history(
     current message being processed - it gets added separately in process_with_tools.
     """
     messages = []
-
-    # Check for existing task state - this is CRITICAL for follow-up commands
-    # Without this, the AI doesn't know what polly_agent already did in this thread
-    task_context = _get_task_context_for_thread(str(thread.id))
-    if task_context:
-        messages.append({"role": "system", "content": task_context})
 
     try:
         # Add thread name as context
@@ -393,9 +380,7 @@ async def fetch_thread_history(
             # Thread ID == starter message ID, fetch from PARENT channel
             # Only TextChannel has fetch_message, ForumChannel does not
             if thread.parent and isinstance(thread.parent, discord.TextChannel):
-                logger.info(
-                    f"Fetching starter message: thread.id={thread.id}, parent={thread.parent}"
-                )
+                logger.info(f"Fetching starter message: thread.id={thread.id}, parent={thread.parent}")
                 starter = await thread.parent.fetch_message(thread.id)
                 logger.info(
                     f"Starter message fetched: author={starter.author if starter else None}, content={starter.content[:100] if starter and starter.content else 'EMPTY'}"
@@ -416,18 +401,14 @@ async def fetch_thread_history(
         # It will be added separately in process_with_tools to avoid duplication
         fetched = []
         is_first = True
-        async for msg in thread.history(
-            limit=limit + 1
-        ):  # +1 to account for skipping current
+        async for msg in thread.history(limit=limit + 1):  # +1 to account for skipping current
             if is_first:
                 is_first = False
                 continue  # Skip the current message (newest)
             if msg.author.bot:
                 fetched.append({"role": "assistant", "content": msg.content})
             else:
-                fetched.append(
-                    {"role": "user", "content": f"[{msg.author.name}]: {msg.content}"}
-                )
+                fetched.append({"role": "user", "content": f"[{msg.author.name}]: {msg.content}"})
         # Reverse to chronological order (oldest to newest)
         # Add starter message FIRST, then thread messages
         if starter_msg:
@@ -436,161 +417,6 @@ async def fetch_thread_history(
     except Exception as e:
         logger.warning(f"Failed to fetch thread history: {e}")
     return messages
-
-
-def _get_task_context_for_thread(thread_id: str) -> str | None:
-    """
-    Get existing task context for a thread to help AI understand what's already been done.
-
-    This prevents the AI from calling polly_agent(action="task") again when the user
-    asks to "open a branch" or "push changes" - instead it knows to use push/open_pr.
-    """
-    from .services.code_agent.tools.polly_agent import _running_tasks
-
-    task = _running_tasks.get(thread_id)
-    if not task:
-        return None
-
-    branch_name = task.get("branch_name")
-    files_changed = task.get("files_changed", [])
-    phase = task.get("phase", "unknown")
-    original_task = task.get("task", "")
-    ccr_history = task.get("ccr_history", [])
-
-    if not branch_name:
-        return None
-
-    # Build context message for AI
-    context_parts = [
-        "## EXISTING TASK STATE (polly_agent already ran in this thread)",
-        f"- **Branch**: `{branch_name}` (changes on local branch)",
-        f"- **Phase**: {phase}",
-        f"- **Original task**: {original_task}",
-    ]
-
-    # Include ccr interaction history - this is the SHORT-TERM MEMORY
-    # Now with STRUCTURED summaries instead of raw truncated output
-    if ccr_history:
-        context_parts.append("")
-        context_parts.append("### CCR Interaction History (bot AI ↔ ccr)")
-        context_parts.append("*Showing last 5 interactions with structured summaries*")
-        context_parts.append("")
-
-        for i, interaction in enumerate(ccr_history[-5:], 1):  # Show last 5 (was 3)
-            timestamp = interaction.get("timestamp", "unknown time")
-            success = "✅" if interaction.get("success") else "❌"
-
-            context_parts.append(f"**[{i}] {success} Task:**")
-            context_parts.append(
-                f"> {interaction.get('prompt', '')[:800]}"
-            )  # Increased from 500
-
-            # Show structured summary (new format)
-            summary = interaction.get("summary", "")
-            if summary:
-                context_parts.append(f"**Summary:**")
-                context_parts.append(f"```\n{summary}\n```")
-
-            # Show actions taken
-            actions = interaction.get("actions", [])
-            if actions:
-                context_parts.append(f"**Actions:** {', '.join(actions)}")
-
-            # Show files changed
-            files = interaction.get("files_changed", [])
-            if files:
-                files_str = ", ".join(files[:8])
-                if len(files) > 8:
-                    files_str += f" (+{len(files) - 8} more)"
-                context_parts.append(f"**Files:** {files_str}")
-
-            # Show errors if any
-            errors = interaction.get("errors", [])
-            if errors:
-                context_parts.append(f"**Errors:** {errors[0][:200]}")
-
-            # Show todos if available
-            todos = interaction.get("todos", [])
-            if todos:
-                todo_summary = [
-                    f"{'✓' if t['status']=='completed' else '○'} {t['content'][:50]}"
-                    for t in todos[:5]
-                ]
-                context_parts.append(f"**Todos:** {', '.join(todo_summary)}")
-
-            context_parts.append("")  # Blank line between interactions
-
-    if files_changed:
-        files_list = ", ".join(files_changed[:10])
-        if len(files_changed) > 10:
-            files_list += f" (+{len(files_changed) - 10} more)"
-        context_parts.append(f"- **Files changed**: {files_list}")
-
-    # Include bot AI notes - persistent "notes to self"
-    bot_notes = task.get("bot_notes", [])
-    if bot_notes:
-        context_parts.append("")
-        context_parts.append("### Bot AI Notes (your notes to self)")
-        context_parts.append("*These are notes you saved in previous interactions*")
-        context_parts.append("")
-
-        # Group notes by category for readability
-        notes_by_category = {}
-        for note in bot_notes[-15:]:  # Show last 15 notes
-            cat = note.get("category", "context")
-            if cat not in notes_by_category:
-                notes_by_category[cat] = []
-            notes_by_category[cat].append(note)
-
-        # Display order: decision > warning > todo > preference > context
-        category_order = ["decision", "warning", "todo", "preference", "context"]
-        for cat in category_order:
-            if cat in notes_by_category:
-                cat_icon = {
-                    "decision": "🎯",
-                    "warning": "⚠️",
-                    "todo": "📋",
-                    "preference": "💡",
-                    "context": "📝",
-                }.get(cat, "📝")
-                context_parts.append(f"**{cat_icon} {cat.title()}:**")
-                for note in notes_by_category[cat]:
-                    context_parts.append(f"- {note['content']}")
-                context_parts.append("")
-
-    # Track original user for confirmation flow
-    original_user = task.get("user")
-    original_user_id = task.get("user_id")
-    pending_confirmation = task.get("pending_confirmation")
-
-    if original_user:
-        context_parts.append(
-            f"- **Task owner**: {original_user} (only they can confirm actions)"
-        )
-
-    # Show pending confirmation if any
-    if pending_confirmation:
-        context_parts.append("")
-        context_parts.append(
-            f"⏳ **WAITING FOR USER CONFIRMATION**: {pending_confirmation}"
-        )
-        context_parts.append("Wait for user response before proceeding.")
-
-    context_parts.extend(
-        [
-            "",
-            "⚠️ **FOLLOW-UP RULES**:",
-            "- push/open_pr: Use these for follow-ups, NOT task again!",
-            "- Only task owner can confirm destructive ops",
-            "",
-            "**Actions:**",
-            "- `action='push'` - Push branch to GitHub",
-            "- `action='open_pr'` - Create PR",
-            "- `action='task'` - More coding (same branch)",
-        ]
-    )
-
-    return "\n".join(context_parts)
 
 
 class PollyBot(commands.Bot):
@@ -621,31 +447,20 @@ class PollyBot(commands.Bot):
             pollinations_client.register_tool_handler(name, handler)
         logger.info(f"Registered {len(TOOL_HANDLERS)} GitHub tool handlers")
 
-        # Register code agent tool handlers
-        for name, handler in CODE_AGENT_HANDLERS.items():
-            pollinations_client.register_tool_handler(name, handler)
-        logger.info(f"Registered {len(CODE_AGENT_HANDLERS)} code agent tool handlers")
-
         # Register code_search handler if embeddings enabled
         if config.local_embeddings_enabled:
-            from .services.embeddings import search_code
 
-            pollinations_client.register_tool_handler(
-                "code_search", _code_search_handler
-            )
+            pollinations_client.register_tool_handler("code_search", _code_search_handler)
             logger.info("Registered code_search tool handler (embeddings enabled)")
 
         # Register doc_search handler if doc embeddings enabled
         if config.doc_embeddings_enabled:
-            from .services.doc_embeddings import search_docs
 
-            pollinations_client.register_tool_handler(
-                "doc_search", _doc_search_handler
-            )
+            pollinations_client.register_tool_handler("doc_search", _doc_search_handler)
             logger.info("Registered doc_search tool handler (doc embeddings enabled)")
 
         # Register web_search handler (always available)
-        from .services.pollinations import web_search_handler, web_handler
+        from .services.pollinations import web_handler, web_search_handler
 
         pollinations_client.register_tool_handler("web_search", web_search_handler)
         logger.info("Registered web_search tool handler")
@@ -676,7 +491,6 @@ class PollyBot(commands.Bot):
         logger.info("GitHub webhook server started")
 
         self.cleanup_sessions.start()
-        self.check_stale_terminals.start()
         if config.doc_embeddings_enabled:
             self.update_doc_embeddings.start()
         logger.info("Bot setup complete")
@@ -684,7 +498,6 @@ class PollyBot(commands.Bot):
     async def close(self):
         """Clean up resources when bot shuts down."""
         self.cleanup_sessions.cancel()
-        self.check_stale_terminals.cancel()
         if config.doc_embeddings_enabled:
             self.update_doc_embeddings.cancel()
         if self.issue_notifier:
@@ -697,10 +510,6 @@ class PollyBot(commands.Bot):
         await github_pr_manager.close()
         if github_app_auth:
             await github_app_auth.close()
-        # Clean up sandbox manager
-        from .services.code_agent import sandbox_manager
-
-        await sandbox_manager.stop()
         # Clean up embeddings if enabled
         if config.local_embeddings_enabled:
             from .services.embeddings import close as close_embeddings
@@ -725,33 +534,12 @@ class PollyBot(commands.Bot):
         """Wait until the bot is ready before starting cleanup task."""
         await self.wait_until_ready()
 
-    @tasks.loop(minutes=5)
-    async def check_stale_terminals(self):
-        """
-        Auto-close idle terminal sessions to save resources.
-
-        Runs every 5 minutes. Closes terminals idle for more than 5 minutes.
-        Users can resume anytime - ccr sessions and git branches persist.
-        """
-        try:
-            sandbox = get_persistent_sandbox()
-            closed = await sandbox.cleanup_idle_terminals(max_idle_seconds=300)
-            if closed > 0:
-                logger.info(f"Auto-closed {closed} idle terminal(s)")
-        except Exception as e:
-            logger.error(f"Error cleaning up idle terminals: {e}")
-
-    @check_stale_terminals.before_loop
-    async def before_stale_check(self):
-        """Wait until the bot is ready before starting terminal cleanup task."""
-        await self.wait_until_ready()
-
     @tasks.loop(hours=6)
     async def update_doc_embeddings(self):
         """
         Periodically update documentation embeddings.
 
-        Runs every 6 hours to keep documentation fresh for GSoC support.
+        Runs every 6 hours to keep documentation fresh.
         """
         if not config.doc_embeddings_enabled:
             return
@@ -775,9 +563,7 @@ bot = PollyBot()
 
 
 @bot.tree.context_menu(name="Assist")
-async def assist_context_menu(
-    interaction: discord.Interaction, message: discord.Message
-):
+async def assist_context_menu(interaction: discord.Interaction, message: discord.Message):
     """Context menu command - right-click message → Apps → Assist. Treats message as if user @mentioned bot."""
     # Silently acknowledge
     await interaction.response.defer(ephemeral=True, thinking=False)
@@ -803,8 +589,7 @@ async def assist_context_menu(
                 user_name=str(message.author),
                 initial_message=text,
                 topic_summary=pollinations_client.get_topic_summary_fast(text),
-                image_urls=image_urls
-                + video_urls,  # Combined for session storage (not files)
+                image_urls=image_urls + video_urls,  # Combined for session storage (not files)
             )
 
         # Add to session and process like a normal thread message
@@ -814,8 +599,7 @@ async def assist_context_menu(
             content=text,
             author=str(message.author),
             author_id=message.author.id,
-            image_urls=image_urls
-            + video_urls,  # Combined for session storage (not files)
+            image_urls=image_urls + video_urls,  # Combined for session storage (not files)
         )
 
         async with message.channel.typing():
@@ -916,30 +700,38 @@ async def on_message(message: discord.Message):
         await handle_dm_message(message)
         return
 
-    # Check reply status ONCE (reuse result throughout)
-    is_reply_to_bot, ref_msg = await _check_reply_to_bot(message)
-    logger.info(f"MSG: '{message.content[:50]}' | is_reply_to_bot={is_reply_to_bot} | has_polly={'polly' in message.content.lower()} | is_@mention={bot.user and bot.user.mentioned_in(message) if bot.user else False} | in_thread={isinstance(message.channel, discord.Thread)}")
+    # Fast path: check if this message is relevant before doing any expensive work.
+    # bot.user.mentioned_in() is a cheap local check on message.mentions list.
+    is_mentioned = bot.user is not None and bot.user.mentioned_in(message) and not message.mention_everyone
+    is_thread = isinstance(message.channel, discord.Thread)
+    is_reply = bool(message.reference and message.reference.message_id)
 
-    # Check if in a thread
-    if isinstance(message.channel, discord.Thread):
-        logger.info(f"PATH: In thread (line 923)")
+    # Non-thread messages: only respond to @mentions
+    if not is_thread:
+        if not is_mentioned:
+            return
+        # Fall through to handle @mention below
+
+    # Thread messages: respond to @mentions OR replies to bot
+    if is_thread:
+        # If @mentioned, we know we should respond — no need to check reply target
+        # Only call _check_reply_to_bot if not @mentioned AND it's a reply
+        is_reply_to_bot = False
+        ref_msg = None
+        if not is_mentioned:
+            if is_reply:
+                is_reply_to_bot, ref_msg = await _check_reply_to_bot(message)
+            if not is_reply_to_bot:
+                return
+
+        logger.debug(
+            f"Thread msg: '{message.content[:50]}' | @mentioned={is_mentioned} | reply_to_bot={is_reply_to_bot}"
+        )
+
         session = session_manager.get_session(message.channel.id)
 
-        # ONLY respond if: @mentioned OR replying to bot's message
-        # Having a session is NOT enough - user must explicitly engage
-        should_respond = (
-            bot.user is not None and bot.user.mentioned_in(message) and not message.mention_everyone
-        ) or is_reply_to_bot
-
-        if not should_respond:
-            # In thread but not mentioned and not replying to bot - ignore
-            return
-
-        # Check if this is an auto-created thread from inline reply (no session exists)
-        # If so, treat it as inline and don't persist the thread
-        if not session and is_reply_to_bot and not bot.user.mentioned_in(message):
-            # This is a reply to inline polly in an auto-created thread
-            # Respond inline-style without creating session
+        # Auto-created thread from inline reply (no session) — respond inline
+        if not session and is_reply_to_bot and not is_mentioned:
             await handle_inline_polly_mention(message)
             return
 
@@ -950,7 +742,9 @@ async def on_message(message: discord.Message):
         text = text.strip()
 
         # Handle reply context in threads too
-        if message.reference and message.reference.message_id:
+        if is_reply:
+            if ref_msg is None:
+                _, ref_msg = await _check_reply_to_bot(message)
             text = await handle_reply_context(message, text, ref_msg)
 
         image_urls = extract_image_urls(message)
@@ -977,21 +771,6 @@ async def on_message(message: discord.Message):
         await handle_thread_message(message, session)
         return
 
-    # Check for casual "polly" mention OR reply to bot (case-insensitive)
-    # This triggers inline reply WITHOUT creating a thread
-    # if "polly" in message.content.lower():
-    #     await handle_inline_polly_mention(message)
-    #     return
-
-    # ONLY respond if @mentioned (not just replying)
-    # Thread creation is ONLY for @polly, not replies
-    if bot.user is None or not bot.user.mentioned_in(message):
-        logger.info(f"Ignoring message (not @mentioned): {message.content[:50]}")
-        return
-
-    if message.mention_everyone:
-        return
-
     # Extract message text
     text = message.content
     for mention in message.mentions:
@@ -1012,7 +791,7 @@ async def on_message(message: discord.Message):
         text = "[User attached media/files]"
 
     # Create thread and start new conversation
-    logger.info(f"PATH: CREATING THREAD (line 1020) - This should ONLY happen for @polly!")
+    logger.info("PATH: CREATING THREAD (line 1020) - This should ONLY happen for @polly!")
     await start_conversation(message, text, image_urls, video_urls, file_urls)
 
 
@@ -1027,6 +806,7 @@ async def handle_dm_message(message: discord.Message):
     - list subscriptions / my subscriptions
     """
     import re
+
     from .services.github import TOOL_HANDLERS
 
     text = message.content.strip().lower()
@@ -1056,9 +836,7 @@ async def handle_dm_message(message: discord.Message):
         unsubscribe_match = re.search(r"unsubscribe\s+(?:from\s+)?#?(\d+)", text)
         if unsubscribe_match:
             issue_number = int(unsubscribe_match.group(1))
-            result = await TOOL_HANDLERS["unsubscribe_issue"](
-                issue_number=issue_number, user_id=user_id
-            )
+            result = await TOOL_HANDLERS["unsubscribe_issue"](issue_number=issue_number, user_id=user_id)
             await message.reply(result.get("message", "Done!"))
             return
 
@@ -1080,9 +858,7 @@ async def handle_dm_message(message: discord.Message):
         await message.reply(help_text)
 
 
-async def handle_reply_context(
-    message: discord.Message, text: str, ref_msg: Optional[discord.Message] = None
-) -> str:
+async def handle_reply_context(message: discord.Message, text: str, ref_msg: discord.Message | None = None) -> str:
     """Handle when message is a reply to another message. Uses cached ref_msg if provided."""
     try:
         # Use provided ref_msg to avoid duplicate fetch
@@ -1114,8 +890,8 @@ async def start_conversation(
     message: discord.Message,
     text: str,
     image_urls: list[str],
-    video_urls: Optional[list[str]] = None,
-    file_urls: Optional[list[str]] = None,
+    video_urls: list[str] | None = None,
+    file_urls: list[str] | None = None,
 ):
     """Start a new conversation in a thread."""
     video_urls = video_urls or []
@@ -1125,9 +901,7 @@ async def start_conversation(
     thread_name = f"Issue: {topic}"[:100]
 
     try:
-        thread = await message.create_thread(
-            name=thread_name, auto_archive_duration=THREAD_AUTO_ARCHIVE_MINUTES
-        )
+        thread = await message.create_thread(name=thread_name, auto_archive_duration=THREAD_AUTO_ARCHIVE_MINUTES)
     except discord.Forbidden:
         await message.reply(
             "I don't have permission to create threads. Please grant me 'Create Public Threads' permission."
@@ -1190,10 +964,7 @@ async def handle_inline_polly_mention(message: discord.Message):
             if msg.author.bot:
                 channel_history.append({"role": "assistant", "content": msg.content})
             else:
-                channel_history.append({
-                    "role": "user",
-                    "content": f"[{msg.author.name}]: {msg.content}"
-                })
+                channel_history.append({"role": "user", "content": f"[{msg.author.name}]: {msg.content}"})
 
         # Reverse to chronological order (oldest to newest)
         channel_history.reverse()
@@ -1212,9 +983,7 @@ async def handle_inline_polly_mention(message: discord.Message):
         "channel_id": message.channel.id,
         "thread_id": None,  # No thread for inline mentions
         "guild_id": message.guild.id if message.guild else None,
-        "user_role_ids": (
-            [r.id for r in message.author.roles] if isinstance(message.author, discord.Member) else []
-        ),
+        "user_role_ids": ([r.id for r in message.author.roles] if isinstance(message.author, discord.Member) else []),
         "message_url": message.jump_url,
         "discord_channel": message.channel,
         "discord_thread_id": None,
@@ -1236,7 +1005,7 @@ async def handle_inline_polly_mention(message: discord.Message):
                     "'It seems the doc search is running but empty...' (TOO LONG) "
                     "Talk like texting a friend - minimal words, maximum info. "
                     "For anything complex, say '@polly for details'."
-                )
+                ),
             }
 
             # Build history with system prompt
@@ -1261,12 +1030,12 @@ async def handle_inline_polly_mention(message: discord.Message):
             image_files = decode_base64_images(content_blocks, max_images=10)
             if image_files:
                 # Strip file paths from response
-                response_text = re.sub(r'\[([^\]]*)\]\(file:///[^)]+\)\n?', '', response_text)
-                response_text = re.sub(r'file:///[^\s\)]+', '', response_text)
+                response_text = re.sub(r"\[([^\]]*)\]\(file:///[^)]+\)\n?", "", response_text)
+                response_text = re.sub(r"file:///[^\s\)]+", "", response_text)
                 response_text = response_text.strip()
 
             # Fix double-wrapped URLs
-            response_text = re.sub(r'\[(https?://[^\]]+)\]\(<\1>\)', r'<\1>', response_text)
+            response_text = re.sub(r"\[(https?://[^\]]+)\]\(<\1>\)", r"<\1>", response_text)
 
             if response_text or image_files:
                 # Reply to the message WITHOUT ping (mention_author=False)
@@ -1291,30 +1060,6 @@ async def handle_thread_message(message: discord.Message, session: ConversationS
 
     channel = message.channel  # Now typed as discord.Thread
     image_urls, video_urls, file_urls = extract_media_urls(message)
-
-    # Check if there's a pending confirmation for this thread and validate user
-    thread_id = str(channel.id)
-    from .services.code_agent.tools.polly_agent import (
-        clear_pending_confirmation,
-        get_task_owner_id,
-        _running_tasks,
-    )
-
-    # Check if task has pending confirmation
-    task = _running_tasks.get(thread_id)
-    if task and task.get("pending_confirmation"):
-        owner_id = task.get("user_id")
-        if owner_id and message.author.id != owner_id:
-            # Not the task owner - ignore or inform
-            await message.reply(
-                f"⚠️ Only the task owner can respond to this confirmation. "
-                f"Please wait for <@{owner_id}> to respond.",
-                mention_author=False,
-            )
-            return
-        # Clear pending confirmation - user is responding
-        clear_pending_confirmation(thread_id)
-        logger.info(f"Cleared pending confirmation for thread {thread_id}")
 
     # Add to session
     session_manager.add_to_session(
@@ -1345,16 +1090,16 @@ async def handle_thread_message(message: discord.Message, session: ConversationS
 
 
 async def process_message(
-    channel: Union[discord.Thread, discord.TextChannel],
-    user: Union[discord.User, discord.Member],
+    channel: discord.Thread | discord.TextChannel,
+    user: discord.User | discord.Member,
     text: str,
     image_urls: list[str],
     session: ConversationSession,
-    thread_history: Optional[list[dict]] = None,
-    reply_to: Optional[discord.Message] = None,
-    source_message: Optional[discord.Message] = None,
-    video_urls: Optional[list[str]] = None,
-    file_urls: Optional[list[str]] = None,
+    thread_history: list[dict] | None = None,
+    reply_to: discord.Message | None = None,
+    source_message: discord.Message | None = None,
+    video_urls: list[str] | None = None,
+    file_urls: list[str] | None = None,
 ):
     """
     Process a message using native tool calling.
@@ -1376,7 +1121,7 @@ async def process_message(
     # Determine channel/thread IDs based on channel type
     if isinstance(channel, discord.Thread) and channel.parent_id:
         context_channel_id = channel.parent_id
-        context_thread_id: Optional[int] = channel.id
+        context_thread_id: int | None = channel.id
     else:
         context_channel_id = channel.id
         context_thread_id = None
@@ -1388,15 +1133,10 @@ async def process_message(
         "reporter": session.original_author_name,
         "channel_id": context_channel_id,
         "thread_id": context_thread_id,
-        "guild_id": (
-            channel.guild.id if channel.guild else None
-        ),
-        "user_role_ids": (
-            [r.id for r in user.roles] if isinstance(user, discord.Member) else []
-        ),
+        "guild_id": (channel.guild.id if channel.guild else None),
+        "user_role_ids": ([r.id for r in user.roles] if isinstance(user, discord.Member) else []),
         # For github_issue create - link back to Discord message
         "message_url": source_message.jump_url if source_message else None,
-        # For polly_agent
         "discord_channel": channel,
         "discord_thread_id": session.thread_id,
         "discord_bot": bot,
@@ -1406,7 +1146,6 @@ async def process_message(
 
     try:
         # Process with native tool calling
-        # Note: polly_agent handles task_id lookup via thread_id internally
         # tool_context is passed to handlers for per-request permission checks (thread-safe)
         result = await pollinations_client.process_with_tools(
             user_message=text,
@@ -1429,22 +1168,18 @@ async def process_message(
         if image_files:
             logger.info(f"Decoded {len(image_files)} image(s) from content_blocks")
             # Strip useless file:/// local paths from response (images are sent as attachments)
-            response_text = re.sub(r'\[([^\]]*)\]\(file:///[^)]+\)\n?', '', response_text)
-            response_text = re.sub(r'file:///[^\s\)]+', '', response_text)
+            response_text = re.sub(r"\[([^\]]*)\]\(file:///[^)]+\)\n?", "", response_text)
+            response_text = re.sub(r"file:///[^\s\)]+", "", response_text)
             response_text = response_text.strip()
 
         # Fix double-wrapped URLs: [https://example.com](<https://example.com>) -> <https://example.com>
-        response_text = re.sub(r'\[(https?://[^\]]+)\]\(<\1>\)', r'<\1>', response_text)
+        response_text = re.sub(r"\[(https?://[^\]]+)\]\(<\1>\)", r"<\1>", response_text)
 
         # Log tool usage for debugging
         if tool_calls:
             # Strip API prefix from tool names for cleaner logging
             tool_names = [
-                (
-                    tc["function"]["name"].split(":")[-1]
-                    if ":" in tc["function"]["name"]
-                    else tc["function"]["name"]
-                )
+                (tc["function"]["name"].split(":")[-1] if ":" in tc["function"]["name"] else tc["function"]["name"])
                 for tc in tool_calls
             ]
             logger.info(f"Tools called: {', '.join(tool_names)}")
@@ -1471,9 +1206,7 @@ async def process_message(
 
                     # Archive thread after issue creation
                     if response_text:
-                        await send_long_message(
-                            channel, response_text, reply_to=reply_to
-                        )
+                        await send_long_message(channel, response_text, reply_to=reply_to)
                     await archive_thread(channel)
                     return
 
@@ -1503,11 +1236,11 @@ async def process_message(
 
 
 async def send_long_message(
-    channel: Union[discord.Thread, discord.TextChannel],
+    channel: discord.Thread | discord.TextChannel,
     text: str,
     max_length: int = 2000,
-    reply_to: Optional[discord.Message] = None,
-    files: Optional[list[discord.File]] = None,
+    reply_to: discord.Message | None = None,
+    files: list[discord.File] | None = None,
     mention_author: bool = True,
 ):
     """
@@ -1569,7 +1302,7 @@ async def send_long_message(
                 await channel.send(chunk)
 
 
-async def archive_thread(channel: Union[discord.Thread, discord.TextChannel]):
+async def archive_thread(channel: discord.Thread | discord.TextChannel):
     """Archive thread if applicable."""
     if isinstance(channel, discord.Thread):
         try:

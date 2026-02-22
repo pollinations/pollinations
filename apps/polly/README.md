@@ -5,7 +5,7 @@
 <h1 align="center">🦜 Polly</h1>
 
 <p align="center">
-  <strong>Pollinations.AI Discord Bot - Your GitHub & Development Assistant</strong>
+  <strong>Bidirectional GitHub ↔ Discord Assistant</strong>
 </p>
 
 <p align="center">
@@ -81,15 +81,15 @@
 </table>
 
 ### 🔍 Smart Search
-- **`code_search`** - Semantic search across codebase (powered by OpenAI embeddings)
-- **`doc_search`** - Search documentation from pollinations.ai sites
-- **`web_search`** - Real-time web search for up-to-date information
+- **`code_search`** - Semantic search across codebase (OpenAI embeddings + ChromaDB)
+- **`doc_search`** - Semantic search across documentation (OpenAPI schema, etc.)
+- **`web_search`** - Real-time web search via Pollinations API
 
 ### 🧠 AI-Powered
-- Multiple AI models via Pollinations API (Gemini, GPT, Claude, etc.)
-- Native tool calling for intelligent task handling
-- Parallel tool execution for efficient workflows
-- Context-aware responses with conversation memory
+- Native tool calling (Kimi k2.5 / GLM-5 / Gemini 3 Pro)
+- Parallel tool execution
+- Context-aware responses
+- Multi-language support
 
 ---
 
@@ -131,15 +131,13 @@ This error occurs when... [detailed explanation]
 
 ### Prerequisites
 - Python 3.10+
-- Discord Bot Token ([create one](https://discord.com/developers/applications))
-- GitHub App (recommended) or Personal Access Token
-- Pollinations API Token ([get one](https://enter.pollinations.ai))
+- Discord Bot Token
+- GitHub App (recommended) or PAT
 
 ### 1️⃣ Clone & Install
 
 ```bash
-git clone https://github.com/pollinations/pollinations.git
-cd pollinations/apps/polly
+cd apps/polly
 python -m venv venv
 source venv/bin/activate  # or `venv\Scripts\activate` on Windows
 pip install -r requirements.txt
@@ -157,13 +155,12 @@ Edit `.env` with your credentials:
 # Required
 DISCORD_TOKEN=your_discord_bot_token
 GITHUB_APP_ID=your_app_id
-GITHUB_PRIVATE_KEY_PATH=./polly.pem
+GITHUB_PRIVATE_KEY=./polly.pem  # file path or inline key
 GITHUB_INSTALLATION_ID=your_installation_id
 
 # Optional
-WEBHOOK_PORT=8002
-GITHUB_BOT_USERNAME=pollinations-ci
-LOCAL_EMBEDDINGS_ENABLED=true
+OPENAI_EMBEDDINGS_API=your_openai_key  # for code/doc embeddings
+POLLINATIONS_TOKEN=your_pollinations_token
 ```
 
 ### 3️⃣ Run
@@ -183,45 +180,39 @@ python main.py
 | `github_pr` | All PR operations | Read: Everyone, Write: Admin |
 | `github_project` | Project board operations | Read: Everyone, Write: Admin |
 | `github_code` | Code agent (branches, edits, PRs) | Admin only |
-| `code_search` | Semantic code search across repository | Everyone |
-| `doc_search` | Search pollinations.ai documentation | Everyone |
+| `code_search` | Semantic code search | Everyone |
+| `doc_search` | Semantic doc search (OpenAPI schema) | Everyone |
 | `web_search` | Real-time web search | Everyone |
+| `discord_search` | Search Discord messages, members, channels | Everyone |
 
 ---
 
 ## 🏗️ Architecture
 
-```mermaid
-%%{init: {'theme':'dark'}}%%
-flowchart TB
-    subgraph entry["⚡ ENTRY POINTS"]
-        discord["💬 Discord<br/>@mention Polly<br/><i>Thread-based</i>"]
-        webhook["🔗 GitHub Webhook<br/>Port 8002<br/><i>Issues, PRs, Comments</i>"]
-    end
-
-    subgraph ai["🤖 POLLINATIONS AI ENGINE"]
-        direction LR
-        openai["OpenAI"]
-        gemini["Gemini"]
-        claude["Claude & More"]
-        tools["Native Tool Calling"]
-    end
-
-    subgraph services["🛠️ BACKEND SERVICES"]
-        github["🐙 GitHub APIs<br/><i>GraphQL + REST</i>"]
-        agent["⚙️ Code Agent<br/><i>Docker Sandbox</i>"]
-        embed["🔍 Embeddings<br/><i>OpenAI + ChromaDB</i>"]
-    end
-
-    discord --> ai
-    webhook --> ai
-    ai --> github
-    ai --> agent
-    ai --> embed
-
-    style entry fill:#1a1a2e,stroke:#16213e,stroke-width:2px,color:#eee
-    style ai fill:#0f3460,stroke:#16213e,stroke-width:2px,color:#eee
-    style services fill:#16213e,stroke:#0f3460,stroke-width:2px,color:#eee
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         ENTRY POINTS                            │
+├────────────────────────────┬────────────────────────────────────┤
+│     Discord (@mention)     │     GitHub Webhook (port 8002)     │
+│     └─ Thread-based        │     └─ Issues, PRs, Comments       │
+└────────────────────────────┴────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    POLLINATIONS AI ENGINE                       │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │  Kimi k2.5  │  │    GLM-5    │  │    Gemini 3 Pro         │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+│                    Native Tool Calling                          │
+└─────────────────────────────────────────────────────────────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    ▼               ▼               ▼
+            ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+            │   GitHub    │ │    Code     │ │  Embeddings │
+            │    APIs     │ │   Agent     │ │  (OpenAI)   │
+            │ GraphQL+REST│ │  Sandbox    │ │  ChromaDB   │
+            └─────────────┘ └─────────────┘ └─────────────┘
 ```
 
 ---
@@ -229,25 +220,28 @@ flowchart TB
 ## 📁 Project Structure
 
 ```
-apps/polly/
+Polly/
 ├── 📄 main.py                    # Entry point
 ├── 📄 requirements.txt           # Dependencies
 ├── 📄 .env.example               # Environment template
-├── 📄 config.json                # Bot configuration
 ├── 📁 src/
 │   ├── 📄 bot.py                 # Discord bot + webhook server
-│   ├── 📄 config.py              # Configuration loader
+│   ├── 📄 config.py              # Configuration
 │   ├── 📄 constants.py           # Tools, prompts, schemas
-│   ├── 📁 context/               # Session management
+│   ├── 📁 context/               # Session management + repo_info.txt
+│   ├── 📁 api/                   # OpenAI-compatible REST API
 │   └── 📁 services/
 │       ├── 📄 github.py          # GitHub REST API
 │       ├── 📄 github_graphql.py  # GitHub GraphQL API
 │       ├── 📄 github_pr.py       # PR operations
-│       ├── 📄 pollinations.py    # Pollinations AI client
-│       ├── 📄 embeddings.py      # Code & doc search
-│       ├── 📄 webhook_server.py  # GitHub webhooks
-│       └── 📁 code_agent/        # Autonomous coding
-└── 📁 docs/                      # Additional documentation
+│       ├── 📄 pollinations.py    # AI client
+│       ├── 📄 embeddings.py      # Code embeddings (OpenAI + ChromaDB)
+│       ├── 📄 doc_embeddings.py  # Doc embeddings (crawl + embed)
+│       ├── 📄 discord_search.py  # Discord guild search
+│       ├── 📄 web_scraper.py     # Crawl4AI web scraper
+│       └── 📄 webhook_server.py  # GitHub webhooks
+└── 📁 .github/workflows/
+    └── 📄 deploy.yml             # Auto-deploy on push
 ```
 
 ---
@@ -277,17 +271,7 @@ Admin = Users with configured Discord role(s)
 
 ## 🤝 Contributing
 
-Polly is the official Discord bot for [Pollinations.AI](https://pollinations.ai). Contributions are welcome!
-
-- Report issues or suggest features via [GitHub Issues](https://github.com/pollinations/pollinations/issues)
-- Join our [Discord community](https://discord.gg/pollinations-ai-885844321461485618) for discussions
-- Submit pull requests following the project's contribution guidelines
-
----
-
-## 👤 Author
-
-Created by [Itachi-1824](https://github.com/Itachi-1824) (itachi@myceli.ai)
+This is a private bot for Pollinations.AI. For issues or suggestions, reach out on Discord!
 
 ---
 

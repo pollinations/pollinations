@@ -13,6 +13,7 @@ export type ModelVariables = {
         /** The resolved canonical service ID */
         resolved: ServiceId;
     };
+    formData?: FormData;
 };
 
 /**
@@ -27,11 +28,23 @@ export function resolveModel(eventType: EventType) {
         if (c.req.method === "GET") {
             rawModel = c.req.query("model") || null;
         } else if (c.req.method === "POST") {
-            try {
-                const body = await c.req.json();
-                rawModel = body.model || null;
-            } catch {
-                // Body parsing failed, use default
+            const contentType = c.req.header("content-type") || "";
+            if (contentType.includes("multipart/form-data")) {
+                try {
+                    const formData = await c.req.formData();
+                    rawModel = (formData.get("model") as string) || null;
+                    // Store formData to avoid re-parsing in route handlers
+                    c.set("formData", formData);
+                } catch {
+                    // Form parsing failed, use default
+                }
+            } else {
+                try {
+                    const body = await c.req.json();
+                    rawModel = body.model || null;
+                } catch {
+                    // Body parsing failed, use default
+                }
             }
         }
 

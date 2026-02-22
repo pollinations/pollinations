@@ -73,8 +73,6 @@ export const PLAY_PAGE = {
 
     // Login CTA
     loginCtaLogin: "Login",
-    loginCtaOr: "or",
-    loginCtaRegister: "Register",
     loginCtaSuffix: "to unlock all models and get API keys",
     loggedInCtaText: "Selected models are now unlocked!",
 

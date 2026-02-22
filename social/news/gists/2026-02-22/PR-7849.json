@@ -1,0 +1,34 @@
+{
+  "pr_number": 7849,
+  "title": "Add Postsiva  AI Facebook Automation to Social_Bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7849",
+  "merged_at": "2026-02-22T16:27:40Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Facebook on autopilot",
+    "blurb": "Postsiva joins the garden! A new tool for generating and scheduling Facebook content at scale.",
+    "summary": "Added Postsiva AI Facebook Automation to the Social_Bots category in the app showcase.",
+    "impact": "Users can now discover a new tool for automating Facebook content creation and scheduling.",
+    "keywords": [
+      "community",
+      "app",
+      "social-media",
+      "automation",
+      "facebook"
+    ],
+    "visual_concept": "Polly the Bee and the Robot managing a stream of social media posts. Represents automation and scheduling.",
+    "image_prompt": "Cozy pixel art scene of Polly the Bee and the chunky robot organizing a stream of blue envelopes on a conveyor belt. Soft lime green (#ecf874) and pastel blue gradient background. The robot holds a checklist. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:28:21.169888+00:00"
+}

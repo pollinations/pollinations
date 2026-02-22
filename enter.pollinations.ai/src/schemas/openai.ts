@@ -562,8 +562,16 @@ const OpenAIModelSchema = z
         id: z.string(),
         object: z.literal("model"),
         created: z.number(),
+        input_modalities: z.array(z.string()).optional(),
+        output_modalities: z.array(z.string()).optional(),
+        supported_endpoints: z.array(z.string()).optional(),
+        tools: z.boolean().optional(),
+        reasoning: z.boolean().optional(),
+        context_window: z.number().optional(),
     })
-    .meta({ description: "OpenAI-compatible model object" });
+    .meta({
+        description: "OpenAI-compatible model object with capability metadata",
+    });
 
 export const GetModelsResponseSchema = z
     .object({
@@ -573,3 +581,108 @@ export const GetModelsResponseSchema = z
     .meta({
         description: "OpenAI-compatible list of available models.",
     });
+
+// OpenAI Images API Schemas
+
+export const CreateImageRequestSchema = z
+    .object({
+        prompt: z.string().min(1).max(32000).meta({
+            description: "A text description of the desired image(s)",
+        }),
+        model: z.string().optional().default("flux").meta({
+            description: "The model to use for image generation",
+        }),
+        n: z.number().int().min(1).max(1).optional().default(1).meta({
+            description: "Number of images to generate (currently max 1)",
+        }),
+        size: z.string().optional().default("1024x1024").meta({
+            description:
+                "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
+        }),
+        quality: z
+            .enum(["standard", "hd", "low", "medium", "high"])
+            .optional()
+            .default("medium")
+            .meta({
+                description:
+                    "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
+            }),
+        response_format: z
+            .enum(["b64_json"])
+            .optional()
+            .default("b64_json")
+            .meta({
+                description:
+                    "Return format. Currently only b64_json (base64-encoded image data) is supported",
+            }),
+        user: z.string().optional().meta({
+            description: "End-user identifier for abuse tracking",
+        }),
+    })
+    .passthrough() // Allow Pollinations extensions: seed, nologo, enhance, safe, etc.
+    .meta({ $id: "CreateImageRequest" });
+
+export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;
+
+const ImageDataSchema = z.object({
+    b64_json: z.string(),
+    revised_prompt: z.string().optional(),
+});
+
+export const CreateImageResponseSchema = z
+    .object({
+        created: z.number().int(),
+        data: z.array(ImageDataSchema),
+    })
+    .meta({ $id: "CreateImageResponse" });
+
+export type CreateImageResponse = z.infer<typeof CreateImageResponseSchema>;
+
+// Schema for JSON-based image edit requests
+// For multipart/form-data requests, parsing is done manually in the route handler
+export const CreateImageEditRequestSchema = z
+    .object({
+        prompt: z.string().min(1).max(32000).meta({
+            description: "A text description of the desired edit",
+        }),
+        image: z
+            .union([
+                z.string().meta({ description: "Image URL" }),
+                z.array(
+                    z.object({
+                        image_url: z.string().meta({
+                            description:
+                                "URL or base64 data URI of the source image",
+                        }),
+                    }),
+                ),
+            ])
+            .meta({
+                description:
+                    "Source image(s). A URL string, or an array of {image_url} objects (OpenAI format)",
+            }),
+        model: z.string().optional().default("flux").meta({
+            description: "The model to use for image editing",
+        }),
+        n: z.number().int().min(1).max(1).optional().default(1).meta({
+            description: "Number of images to generate (currently max 1)",
+        }),
+        size: z.string().optional().default("1024x1024").meta({
+            description:
+                "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
+        }),
+        quality: z
+            .enum(["standard", "hd", "low", "medium", "high"])
+            .optional()
+            .default("medium")
+            .meta({
+                description:
+                    "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
+            }),
+    })
+    .passthrough()
+    .meta({ $id: "CreateImageEditRequest" });
+
+export type CreateImageEditRequest = z.infer<
+    typeof CreateImageEditRequestSchema
+>;

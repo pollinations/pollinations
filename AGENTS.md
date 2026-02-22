@@ -67,8 +67,8 @@ pollinations/
 ├── text.pollinations.ai/      # Text generation backend (EC2)
 ├── pollinations.ai/           # Main React frontend
 ├── packages/
-│   ├── sdk/                   # @pollinations/sdk - Client library with React hooks
-│   └── mcp/                   # @pollinations/model-context-protocol - MCP server
+│   ├── sdk/                   # @pollinations_ai/sdk - Client library with React hooks
+│   └── mcp/                   # @pollinations_ai/model-context-protocol - MCP server
 ├── shared/                    # Shared utilities (auth, registry, IP queue)
 │   └── registry/              # Model registries (image.ts, text.ts, audio.ts, video.ts)
 ├── apps/                      # Community apps + APPS.md showcase

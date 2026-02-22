@@ -1,0 +1,34 @@
+{
+  "pr_number": 7232,
+  "title": "Add Pollination fashion bulk creator to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7232",
+  "merged_at": "2026-02-22T09:21:41Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Haute Couture Hive",
+    "blurb": "New in the showcase: a bulk fashion creator for the digitally stylish. Because even robots deserve a fresh look for the season.",
+    "summary": "Added 'Pollination fashion bulk creator' to the Creative apps directory, enabling bulk generation of AI fashion assets.",
+    "impact": "Users can now discover and launch this tool to generate atelier-ready fashion collections from prompts.",
+    "keywords": [
+      "fashion",
+      "generative art",
+      "community app",
+      "creative tools",
+      "showcase"
+    ],
+    "visual_concept": "A cozy pixel art tailor shop/atelier. Polly the bee is the designer (wearing a beret), and the Robot is the model trying on new digital clothes.",
+    "image_prompt": "Cozy pixel art scene of a fashion design studio. The cute bee mascot wears a tiny beret and adjusts a lime green (#ecf874) scarf on the chunky robot companion. The robot looks delighted. Background has hanging pixel clothes and soft pastel fabrics. Warm lighting, lo-fi 8-bit aesthetic. Cozy, wholesome vibes."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T09:22:25.626433+00:00"
+}

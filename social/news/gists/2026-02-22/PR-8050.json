@@ -1,0 +1,34 @@
+{
+  "pr_number": 8050,
+  "title": "Add hzliflow.ken520.top to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8050",
+  "merged_at": "2026-02-22T16:20:51Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh canvas detected",
+    "blurb": "A new creative tool has sprouted in the garden. Hzliflow joins the showcase, bringing more AI painting powers to the people.",
+    "summary": "Added 'hzliflow' to the Creative apps showcase, an online AI painting platform for image generation and editing.",
+    "impact": "Users can now discover and access this new AI art tool directly from our community apps list.",
+    "keywords": [
+      "community",
+      "showcase",
+      "creative",
+      "ai-art",
+      "app"
+    ],
+    "visual_concept": "An art-themed scene where the bee mascot welcomes a new tool. Since it's a painting platform, an easel or digital canvas fits perfectly.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, holding a pixel brush near a glowing lime green (#ecf874) digital canvas. A retro easel stands in a sunlit garden. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:21:38.503339+00:00"
+}

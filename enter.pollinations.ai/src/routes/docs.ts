@@ -1,10 +1,10 @@
-import { Hono } from "hono";
 import { Scalar } from "@scalar/hono-api-reference";
-import { openAPIRouteHandler } from "hono-openapi";
-import type { Env } from "@/env.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
-// @ts-ignore - raw import
+import { Hono } from "hono";
+import { openAPIRouteHandler } from "hono-openapi";
+import type { Env } from "@/env.ts";
+// @ts-expect-error - raw import
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 
 // Use markdown as-is (just trim whitespace)
@@ -44,8 +44,8 @@ function transformOpenAPISchema(
     if (!paths) return schema;
 
     const newPaths: Record<string, unknown> = {};
+
     for (const [path, value] of Object.entries(paths)) {
-        // Strip /generate prefix: /generate/v1/models → /v1/models
         const cleanPath = path.replace(/^\/generate/, "");
         newPaths[cleanPath] = value;
     }
@@ -149,13 +149,31 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "",
                             "## Authentication",
                             "",
-                            "**Two key types:**",
-                            "- **Publishable Keys (`pk_`):** Client-side safe, IP rate-limited (1 pollen/hour per IP+key)",
-                            "- **Secret Keys (`sk_`):** Server-side only, no rate limits, can spend Pollen",
+                            "**Two key types (both consume Pollen from your balance):**",
+                            "- **Publishable Keys (`pk_`):** ⚠️ **Beta - not yet ready for production use.** For client-side apps, IP rate-limited (1 pollen per IP per hour). **Warning:** Exposing in public code will consume your Pollen if your app gets traffic.",
+                            "- **Secret Keys (`sk_`):** Server-side only, no rate limits. Keep secret - never expose publicly.",
                             "",
                             "**Auth methods:**",
                             "1. Header: `Authorization: Bearer YOUR_API_KEY`",
                             "2. Query param: `?key=YOUR_API_KEY`",
+                            "",
+                            "## Account Management",
+                            "",
+                            "Check your balance and usage:",
+                            "",
+                            "```bash",
+                            "# Check pollen balance",
+                            "curl 'https://gen.pollinations.ai/account/balance' \\",
+                            "  -H 'Authorization: Bearer YOUR_API_KEY'",
+                            "",
+                            "# Get profile info",
+                            "curl 'https://gen.pollinations.ai/account/profile' \\",
+                            "  -H 'Authorization: Bearer YOUR_API_KEY'",
+                            "",
+                            "# View usage history",
+                            "curl 'https://gen.pollinations.ai/account/usage' \\",
+                            "  -H 'Authorization: Bearer YOUR_API_KEY'",
+                            "```",
                         ].join("\n"),
                     },
                     components: {

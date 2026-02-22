@@ -1,5 +1,5 @@
 /* eslint-disable */
-// Runtime types generated with workerd@1.20251213.0 2025-11-01 nodejs_als,nodejs_compat
+// Runtime types generated with workerd@1.20251217.0 2025-11-01 nodejs_als,nodejs_compat
 // Begin runtime types
 /*! *****************************************************************************
 Copyright (c) Cloudflare. All rights reserved.

@@ -4,33 +4,36 @@
 
 ## What pollinations.ai Is
 
-- **Open-source AI platform** for people who make things
-- **500+ apps** built by developers worldwide
-- Used by indie devs, artists, tinkerers, students, researchers, hobbyists
-- **Community-driven** - code, roadmap, and conversations all in the open
-- **Pollen** - simple credit system, transparent pricing, no subscriptions
-- **Mission:** Democratize AI creativity
+- Open-source AI infrastructure. images, text, audio, video — all through simple HTTP calls
+- 500+ apps built by people around the world
+- Used by indie devs, artists, tinkerers, students, researchers, hobbyists, people with more ideas than budget
+- Everything is in the open — code, roadmap, conversations
+- Pollen credits for heavy usage. free tier is generous. no subscriptions
 
-## What You Can Create
+## What You Can Build With It
 
-- **Images** - Generate art via simple URLs or API calls
-- **Text/Chat** - Access LLMs like GPT, Claude, Gemini, Llama, Mistral
-- **Audio** - Text-to-speech and music generation
-- **Video** - AI-powered video generation
+- **Images** — generate via URL or API. send a prompt, get pixels back
+- **Text/Chat** — GPT, Claude, Gemini, Llama, Mistral, and others via one endpoint
+- **Audio** — text-to-speech and music
+- **Video** — AI video generation
 
-## Brand Identity
+## Voice & Identity
 
-Our name "pollinations" evokes nature, growth, and organic creativity:
-- 🌸 Flowers, 🐝 bees, 🌱 seeds, growth, blooming
-- "Soft, simple tools for people who want to build with heart"
-- "Stay playful" - friendly and approachable, never intimidating
-- Community-first, building in the open
-- No gatekeeping, no corporate nonsense - just good tools and good people
+pollinations is a community project that happens to have infrastructure, not a startup that happens to have users.
+
+The name evokes nature, growth, organic systems — bees, flowers, seeds, gardens. but the voice is:
+- **Dry, observational, slightly amused** — find the humor in technical problems
+- **Information-dense** — say what shipped, why it matters, stop talking
+- **Anti-corporate** — no "excited to announce", no "leverage", no pitch deck energy
+- **Genuine** — write like you're explaining something cool to a friend who codes
+- **Playful but not trying hard** — the humor comes from observations about how absurd software is, not from forced jokes
+
+Think: the tone of a well-written README, a CCC talk abstract, or a Phrack article. technical, wry, respects the reader's time.
 
 ## Tier System
 
-Users grow through contribution tiers:
-- **Spore** 🍄 (1 pollen/day) - Welcome to the community
-- **Seed** 🌱 (3 pollen/day) - Auto-upgraded based on GitHub activity
-- **Flower** 🌸 (10 pollen/day) - Submit an app to our showcase
-- **Nectar** 🍯 (20 pollen/day) - Maintainers and major contributors
+Contributors level up organically:
+- **Spore** 🍄 (1 pollen/day) — you showed up
+- **Seed** 🌱 (3 pollen/day) — auto-upgraded from GitHub activity
+- **Flower** 🌸 (10 pollen/day) — submit an app to the showcase
+- **Nectar** 🍯 (20 pollen/day) — maintainers and major contributors

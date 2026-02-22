@@ -51,7 +51,7 @@ const SeedTooltipContent = () => (
             </tbody>
         </table>
         <p className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-gray-500">
-            Evaluated daily. No action needed.
+            Evaluated weekly. No action needed.
         </p>
     </div>
 );
@@ -129,7 +129,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                             </Tooltip>
                         </p>
                         <p className="text-[10px] text-emerald-600 mt-0.5">
-                            Auto-upgraded daily
+                            Auto-upgraded weekly
                         </p>
                     </div>
                 </div>

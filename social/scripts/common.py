@@ -38,6 +38,15 @@ GISTS_BRANCH = "news"  # Unprotected branch for gist data (avoids main branch pr
 
 # Image generation
 IMAGE_SIZE = 2048
+# Style suffix appended to every image prompt — ensures consistent pixel art style
+# regardless of what the text AI writes in image_prompt fields
+IMAGE_STYLE_SUFFIX = (
+    "Cozy pixel art, 8-bit aesthetic, large visible chunky pixels, "
+    "soft pastel gradients, warm ambient glow lighting, CRT glow effects. "
+    "Lime green #ecf874 used BOLDLY. "
+    "Tiny pixel sparkles and glowing particles floating in the air. Magical warm atmosphere. "
+    "Lo-fi retro gaming vibes like Stardew Valley or A Short Hike."
+)
 
 # Discord-specific
 DISCORD_CHAR_LIMIT = 2000
@@ -363,11 +372,14 @@ def call_pollinations_api(
 def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0) -> tuple[Optional[bytes], Optional[str]]:
     """Generate a single image via the pollinations.ai image API."""
 
-    # Append bee character description if not already present (loaded from prompt file)
+    # Append character descriptions if not already present (loaded from prompt file)
     if "bee mascot" not in prompt.lower():
         bee_desc = load_shared("bee")
         if bee_desc:
             prompt = f"{prompt} {bee_desc}"
+
+    # Always append style suffix — forces consistent pixel art rendering
+    prompt = f"{prompt} {IMAGE_STYLE_SUFFIX}"
 
     # Strip single quotes — they cause 400 errors from the image API even when URL-encoded
     sanitized = prompt.replace("'", "")

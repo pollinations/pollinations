@@ -176,9 +176,6 @@ def generate_discord_post(digest: Dict, token: str, week_end: str) -> Optional[D
         return None
 
     text = response.strip()
-    if text.upper().strip() == "SKIP":
-        return None
-
     result = parse_json_response(text)
     if result:
         result["date"] = week_end

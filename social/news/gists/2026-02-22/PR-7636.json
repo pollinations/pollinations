@@ -1,0 +1,34 @@
+{
+  "pr_number": 7636,
+  "title": "Add Pixoo64 Music AI Art to Vibes",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7636",
+  "merged_at": "2026-02-22T16:45:08Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Pixels that groove",
+    "blurb": "Turn your Pixoo64 into a music-reactive art gallery. This Home Assistant integration uses Pollinations to generate fresh visuals for every track.",
+    "summary": "Added 'Pixoo64 Music AI Art' to the app showcase, a Home Assistant integration for generating music-reactive visuals on Pixoo64 displays.",
+    "impact": "Home automation enthusiasts can now display dynamic, AI-generated pixel art that changes with their music.",
+    "keywords": [
+      "home assistant",
+      "iot",
+      "pixel art",
+      "music",
+      "community"
+    ],
+    "visual_concept": "A cozy desk setup featuring a Pixoo64 (square pixel display) showing colorful abstract art. Polly the Bee is wearing headphones and bobbing her head to music. Musical notes float in the air. Warm lighting, lime green accents.",
+    "image_prompt": "Cozy pixel art scene of a square Pixoo64 display on a desk showing colorful glowing art. The cute bee mascot wears headphones and dances nearby with floating musical notes. Lime green (#ecf874) and pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm and groovy."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:45:55.122614+00:00"
+}

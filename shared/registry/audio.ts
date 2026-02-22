@@ -118,3 +118,7 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
     },
 } satisfies Record<string, ServiceDefinition<string>>;
+
+export function resolveElevenLabsVoiceId(voice: string): string {
+    return VOICE_MAPPING[voice] ?? voice;
+}

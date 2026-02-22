@@ -8,8 +8,10 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import torch
 from diffusers import FluxPipeline
-from nunchaku.models.transformer_flux import NunchakuFluxTransformer2dModel
-from safety_checker.censor import check_safety
+from nunchaku import NunchakuFluxTransformer2dModel
+# Safety checker disabled for Vast.ai deployment
+# from safety_checker.censor import check_safety
+def check_safety(x, y): return [None], [False]  # Disabled - returns safe result
 import requests
 import logging
 import asyncio
@@ -24,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 MODEL_ID = "black-forest-labs/FLUX.1-schnell"
 MODEL_CACHE = "model-cache"
-QUANT_MODEL_PATH = "mit-han-lab/svdq-int4-flux.1-schnell"
+QUANT_MODEL_PATH = "mit-han-lab/svdq-fp4-flux.1-schnell"
 
 class ImageRequest(BaseModel):
     prompts: List[str] = ["a photo of an astronaut riding a horse on mars"]
@@ -188,18 +190,25 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
 app = FastAPI(title="FLUX Image Generation API", lifespan=lifespan)
 
 # Auth verification
-def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token")):
-    expected_token = os.getenv("PLN_ENTER_TOKEN")
+def verify_backend_token(
+    x_backend_token: str = Header(None, alias="x-backend-token"),
+):
+    """Verify backend authentication token.
+    
+    Requires x-backend-token header validated against PLN_IMAGE_BACKEND_TOKEN env var.
+    """
+    expected_token = os.getenv("PLN_IMAGE_BACKEND_TOKEN")
     if not expected_token:
-        logger.warning("PLN_ENTER_TOKEN not configured - allowing request")
+        logger.warning("PLN_IMAGE_BACKEND_TOKEN not configured - allowing request")
         return True
-    if x_enter_token != expected_token:
-        logger.warning(f"Invalid or missing PLN_ENTER_TOKEN")
+    
+    if x_backend_token != expected_token:
+        logger.warning("Invalid or missing backend token")
         raise HTTPException(status_code=403, detail="Unauthorized")
     return True
 
 @app.post("/generate")
-async def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
+async def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token)):
     print(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")

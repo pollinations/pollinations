@@ -30,7 +30,6 @@ type ServerInfo = {
 const SERVERS = {
     flux: [] as Server[],
     translate: [] as Server[],
-    turbo: [] as Server[],
     zimage: [] as Server[],
 };
 
@@ -169,7 +168,6 @@ export const getNextServerUrl = async (
 // Wrapper functions for backward compatibility
 export const getNextFluxServerUrl = () => getNextServerUrl("flux");
 export const getNextTranslationServerUrl = () => getNextServerUrl("translate");
-export const getNextTurboServerUrl = () => getNextServerUrl("turbo");
 
 /**
  * Handles the /register endpoint requests.

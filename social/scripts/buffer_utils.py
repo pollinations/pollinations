@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Buffer API Utilities - Shared utilities for posting to LinkedIn and Twitter via Buffer
-https://buffer.com/developers/api
+Uses Buffer's GraphQL API: https://api.buffer.com
 """
 
 import requests
@@ -10,45 +10,219 @@ from typing import Dict, List, Optional
 from common import get_env
 
 
-BUFFER_API_BASE = "https://api.bufferapp.com/1"
+BUFFER_GRAPHQL_URL = "https://api.buffer.com"
 
 
-def get_buffer_profiles(access_token: str) -> List[Dict]:
-    """Fetch all Buffer profiles for the authenticated user
+# --- GraphQL queries and mutations ---
 
-    Returns list of profiles with id, service, service_username, etc.
-    """
-    response = requests.get(
-        f"{BUFFER_API_BASE}/profiles.json",
-        params={"access_token": access_token},
-        timeout=30
+GET_ORGANIZATIONS_QUERY = """
+query GetOrganizations {
+  account {
+    organizations {
+      id
+    }
+  }
+}
+"""
+
+GET_CHANNELS_QUERY = """
+query GetChannels($input: ChannelsInput!) {
+  channels(input: $input) {
+    id
+    service
+    name
+    displayName
+    avatar
+    isDisconnected
+  }
+}
+"""
+
+CREATE_POST_MUTATION = """
+mutation CreatePost($input: CreatePostInput!) {
+  createPost(input: $input) {
+    ... on PostActionSuccess {
+      post {
+        id
+        status
+        text
+      }
+    }
+    ... on InvalidInputError { message }
+    ... on UnauthorizedError { message }
+    ... on LimitReachedError { message }
+    ... on UnexpectedError { message }
+  }
+}
+"""
+
+
+# --- Core helpers ---
+
+def _graphql_request(access_token: str, query: str, variables: Optional[Dict] = None) -> Dict:
+    """Execute a GraphQL request against the Buffer API."""
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+    payload: Dict = {"query": query}
+    if variables:
+        payload["variables"] = variables
+
+    response = requests.post(
+        BUFFER_GRAPHQL_URL,
+        headers=headers,
+        json=payload,
+        timeout=60,
     )
 
     if response.status_code != 200:
-        print(f"Error fetching profiles: {response.status_code} - {response.text[:500]}")
+        print(f"Buffer GraphQL HTTP error: {response.status_code} - {response.text[:500]}")
+        return {"errors": [{"message": f"HTTP {response.status_code}"}]}
+
+    result = response.json()
+    if "errors" in result:
+        print(f"Buffer GraphQL errors: {result['errors']}")
+    return result
+
+
+def get_organization_id(access_token: str) -> Optional[str]:
+    """Fetch the first organization ID for the authenticated user."""
+    result = _graphql_request(access_token, GET_ORGANIZATIONS_QUERY)
+    try:
+        orgs = result["data"]["account"]["organizations"]
+        if orgs:
+            return orgs[0]["id"]
+    except (KeyError, TypeError, IndexError):
+        pass
+    print("No organization found in Buffer account")
+    return None
+
+
+# --- Channel (profile) functions ---
+
+def get_buffer_channels(access_token: str) -> List[Dict]:
+    """Fetch all Buffer channels for the authenticated user.
+
+    Returns list of channels with id, service, name, displayName, etc.
+    """
+    org_id = get_organization_id(access_token)
+    if not org_id:
         return []
 
-    return response.json()
+    result = _graphql_request(
+        access_token,
+        GET_CHANNELS_QUERY,
+        variables={"input": {"organizationId": org_id}},
+    )
+
+    try:
+        channels = result["data"]["channels"]
+        return [ch for ch in channels if not ch.get("isDisconnected")]
+    except (KeyError, TypeError):
+        return []
 
 
-def get_profile_by_service(access_token: str, service: str) -> Optional[Dict]:
-    """Get a specific profile by service name (twitter, linkedin, etc.)
+# Backward-compatible alias
+get_buffer_profiles = get_buffer_channels
+
+
+def get_channel_by_service(access_token: str, service: str) -> Optional[Dict]:
+    """Get a specific channel by service name (twitter, linkedin, etc.)
 
     Args:
         access_token: Buffer API access token
         service: Service name ('twitter', 'linkedin', 'instagram', etc.)
 
     Returns:
-        Profile dict or None if not found
+        Channel dict or None if not found
     """
-    profiles = get_buffer_profiles(access_token)
+    channels = get_buffer_channels(access_token)
 
-    for profile in profiles:
-        if profile.get("service") == service:
-            return profile
+    for channel in channels:
+        if channel.get("service") == service:
+            return channel
 
-    print(f"No {service} profile found in Buffer account")
+    print(f"No {service} channel found in Buffer account")
     return None
+
+
+# Backward-compatible alias
+get_profile_by_service = get_channel_by_service
+
+
+# --- Post creation ---
+
+def create_buffer_post(
+    access_token: str,
+    channel_id: str,
+    text: str,
+    media: Optional[Dict] = None,
+    scheduled_at: Optional[str] = None,
+    now: bool = False,
+) -> Dict:
+    """Create a Buffer post for a single channel via GraphQL.
+
+    Args:
+        access_token: Buffer API access token
+        channel_id: Buffer channel ID to post to
+        text: The post text content
+        media: Optional media dict with key 'photo' or 'url' containing image URL
+        scheduled_at: Optional ISO 8601 timestamp for scheduling
+        now: If True, post immediately (shareNow mode)
+
+    Returns:
+        Dict with success status. On success: {"success": True, "post": {...}}.
+        On failure: {"success": False, "error": "..."}.
+    """
+    if scheduled_at:
+        mode = "customScheduled"
+    elif now:
+        mode = "shareNow"
+    else:
+        mode = "addToQueue"
+
+    post_input: Dict = {
+        "channelId": channel_id,
+        "text": text,
+        "schedulingType": "automatic",
+        "mode": mode,
+    }
+
+    if scheduled_at:
+        post_input["dueAt"] = scheduled_at
+
+    # Map media (REST used media[photo], GraphQL uses assets.images)
+    if media:
+        photos = media.get("photos")  # list of URLs (for carousel)
+        if photos:
+            post_input["assets"] = {
+                "images": [{"url": u} for u in photos]
+            }
+        else:
+            image_url = media.get("photo") or media.get("url")
+            if image_url:
+                post_input["assets"] = {
+                    "images": [{"url": image_url}]
+                }
+
+    result = _graphql_request(
+        access_token,
+        CREATE_POST_MUTATION,
+        variables={"input": post_input},
+    )
+
+    try:
+        create_result = result["data"]["createPost"]
+        if "post" in create_result:
+            return {"success": True, "post": create_result["post"]}
+        error_msg = create_result.get("message", "Unknown error from Buffer API")
+        print(f"Buffer createPost error: {error_msg}")
+        return {"success": False, "error": error_msg}
+    except (KeyError, TypeError) as e:
+        errors = result.get("errors", [{"message": str(e)}])
+        error_msg = errors[0].get("message", str(e)) if errors else str(e)
+        return {"success": False, "error": error_msg}
 
 
 def create_buffer_update(
@@ -57,49 +231,22 @@ def create_buffer_update(
     text: str,
     media: Optional[Dict] = None,
     scheduled_at: Optional[str] = None,
-    now: bool = False
+    now: bool = False,
 ) -> Dict:
-    """Create a Buffer update (post) for one or more profiles
-
-    Args:
-        access_token: Buffer API access token
-        profile_ids: List of Buffer profile IDs to post to
-        text: The post text content
-        media: Optional media dict with keys: link, title, description, picture, photo
-        scheduled_at: Optional ISO 8601 timestamp for scheduling (e.g., "2026-01-23T14:30:00Z")
-        now: If True, post immediately instead of adding to queue
-
-    Returns:
-        API response dict with success status and update details
-    """
-    data = {
-        "access_token": access_token,
-        "text": text,
-        "profile_ids[]": profile_ids,
-    }
-
-    if media:
-        for key, value in media.items():
-            if value:
-                data[f"media[{key}]"] = value
-
-    if scheduled_at:
-        data["scheduled_at"] = scheduled_at
-    elif now:
-        data["now"] = "true"
-
-    response = requests.post(
-        f"{BUFFER_API_BASE}/updates/create.json",
-        data=data,
-        timeout=60
+    """Backward-compatible wrapper. Posts to the first profile_id only."""
+    if not profile_ids:
+        return {"success": False, "error": "No profile IDs provided"}
+    return create_buffer_post(
+        access_token=access_token,
+        channel_id=profile_ids[0],
+        text=text,
+        media=media,
+        scheduled_at=scheduled_at,
+        now=now,
     )
 
-    if response.status_code != 200:
-        print(f"Error creating update: {response.status_code} - {response.text[:500]}")
-        return {"success": False, "error": response.text}
 
-    return response.json()
-
+# --- High-level publish ---
 
 def publish_to_buffer(
     access_token: str,
@@ -107,9 +254,9 @@ def publish_to_buffer(
     text: str,
     media: Optional[Dict] = None,
     scheduled_at: Optional[str] = None,
-    now: bool = False
+    now: bool = False,
 ) -> Dict:
-    """High-level function to publish to a specific service via Buffer
+    """High-level function to publish to a specific service via Buffer.
 
     Args:
         access_token: Buffer API access token
@@ -122,23 +269,25 @@ def publish_to_buffer(
     Returns:
         API response dict
     """
-    profile = get_profile_by_service(access_token, service)
+    channel = get_channel_by_service(access_token, service)
 
-    if not profile:
-        return {"success": False, "error": f"No {service} profile found"}
+    if not channel:
+        return {"success": False, "error": f"No {service} channel found"}
 
-    profile_id = profile["id"]
-    print(f"Publishing to {service} profile: {profile.get('service_username', profile_id)}")
+    channel_id = channel["id"]
+    print(f"Publishing to {service} channel: {channel.get('displayName', channel_id)}")
 
-    return create_buffer_update(
+    return create_buffer_post(
         access_token=access_token,
-        profile_ids=[profile_id],
+        channel_id=channel_id,
         text=text,
         media=media,
         scheduled_at=scheduled_at,
-        now=now
+        now=now,
     )
 
+
+# --- Text formatting helpers (unchanged) ---
 
 def format_linkedin_post(
     headline: str,
@@ -221,12 +370,12 @@ def format_twitter_post(
 
 
 if __name__ == "__main__":
-    # Quick test - list profiles
+    # Quick test - list channels
     token = get_env("BUFFER_ACCESS_TOKEN", required=False)
     if token:
-        print("Fetching Buffer profiles...")
-        profiles = get_buffer_profiles(token)
-        for p in profiles:
-            print(f"  - {p.get('service')}: {p.get('service_username')} (id: {p.get('id')})")
+        print("Fetching Buffer channels...")
+        channels = get_buffer_channels(token)
+        for ch in channels:
+            print(f"  - {ch.get('service')}: {ch.get('displayName')} (id: {ch.get('id')})")
     else:
         print("Set BUFFER_ACCESS_TOKEN to test")

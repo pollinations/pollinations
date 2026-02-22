@@ -428,6 +428,7 @@ class PollyBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
         self.issue_notifier = None
         self.webhook_server = None
+        self._api_server = None
 
     async def setup_hook(self):
         """Called when the bot is starting up."""
@@ -493,10 +494,31 @@ class PollyBot(commands.Bot):
         self.cleanup_sessions.start()
         if config.doc_embeddings_enabled:
             self.update_doc_embeddings.start()
+
+        # Start API server if enabled
+        if config.api_enabled:
+            import uvicorn
+
+            from .api.polly_api import create_api_app
+
+            api_app = create_api_app(pollinations_client, config)
+            uvi_config = uvicorn.Config(
+                api_app,
+                host="127.0.0.1",
+                port=config.api_port,
+                log_level="warning",
+            )
+            self._api_server = uvicorn.Server(uvi_config)
+            asyncio.create_task(self._api_server.serve())
+            logger.info(f"Polly API started on port {config.api_port}")
+
         logger.info("Bot setup complete")
 
     async def close(self):
         """Clean up resources when bot shuts down."""
+        if self._api_server:
+            self._api_server.should_exit = True
+            logger.info("Polly API stopped")
         self.cleanup_sessions.cancel()
         if config.doc_embeddings_enabled:
             self.update_doc_embeddings.cancel()

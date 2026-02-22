@@ -9,6 +9,7 @@ import {
     hasReasoning,
     hasSearch,
     hasVision,
+    isAlpha,
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
@@ -46,6 +47,7 @@ export const ModelRow: FC<ModelRowProps> = ({
     const showCodeExecution = hasCodeExecution(model.name);
     const showNew = isNewModel(model.name);
     const showPaidOnly = isPaidOnly(model.name);
+    const showAlpha = isAlpha(model.name);
     const isDisabled = showPaidOnly && packBalance <= 0;
 
     const borderClass = isLast ? "" : "border-b border-gray-200";
@@ -71,6 +73,13 @@ export const ModelRow: FC<ModelRowProps> = ({
                             >
                                 NEW
                             </Badge>
+                        )}
+                        {showAlpha && (
+                            <Tooltip content="Alpha model — experimental, may be unstable">
+                                <span className="text-[10px] text-amber-700 bg-transparent px-1.5 py-0.5 rounded-full font-semibold border border-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.5)] whitespace-nowrap">
+                                    ⚠️ ALPHA
+                                </span>
+                            </Tooltip>
                         )}
                         {showPaidOnly && (
                             <Tooltip
@@ -145,104 +154,96 @@ export const ModelRow: FC<ModelRowProps> = ({
                 </div>
             </td>
             <td className={`py-2 px-2 text-sm text-center ${borderClass}`}>
-                {genPerPollen === "—" ? (
-                    <span className="text-gray-400">—</span>
-                ) : (
-                    <div className="flex flex-col gap-1 items-center">
-                        <PriceBadge
-                            prices={[model.promptTextPrice]}
-                            emoji="💬"
-                            subEmojis={["💬"]}
-                            perToken={model.perToken}
-                            color={priceColor}
-                        />
-                        <PriceBadge
-                            prices={[model.promptCachedPrice]}
-                            emoji="�"
-                            subEmojis={["💾"]}
-                            perToken={model.perToken}
-                            color={priceColor}
-                        />
-                        <PriceBadge
-                            prices={[model.promptAudioPrice]}
-                            emoji="🔊"
-                            subEmojis={["🔊"]}
-                            perToken={model.perToken}
-                            color={priceColor}
-                        />
-                        <PriceBadge
-                            prices={[model.promptImagePrice]}
-                            emoji="🖼️"
-                            subEmojis={["🖼️"]}
-                            perToken={model.perToken}
-                            color={priceColor}
-                        />
-                    </div>
-                )}
+                <div className="flex flex-col gap-1 items-center">
+                    <PriceBadge
+                        prices={[model.promptTextPrice]}
+                        emoji="💬"
+                        subEmojis={["💬"]}
+                        perToken={model.perToken}
+                        color={priceColor}
+                    />
+                    <PriceBadge
+                        prices={[model.promptCachedPrice]}
+                        emoji="💾"
+                        subEmojis={["💾"]}
+                        perToken={model.perToken}
+                        color={priceColor}
+                    />
+                    <PriceBadge
+                        prices={[model.promptAudioPrice]}
+                        emoji="🔊"
+                        subEmojis={["🔊"]}
+                        perToken={model.perToken}
+                        color={priceColor}
+                    />
+                    <PriceBadge
+                        prices={[model.promptImagePrice]}
+                        emoji="🖼️"
+                        subEmojis={["🖼️"]}
+                        perToken={model.perToken}
+                        color={priceColor}
+                    />
+                </div>
             </td>
             <td className={`py-2 px-2 text-sm text-center ${borderClass}`}>
-                {genPerPollen === "—" ? (
-                    <span className="text-gray-400">—</span>
-                ) : (
-                    <div className="flex flex-col gap-1 items-center">
-                        <PriceBadge
-                            prices={[model.completionTextPrice]}
-                            emoji="💬"
-                            subEmojis={["💬"]}
-                            perToken={model.perToken}
-                            color={priceColor}
-                        />
-                        <PriceBadge
-                            prices={[model.completionAudioPrice]}
-                            emoji="🔊"
-                            subEmojis={["🔊"]}
-                            perToken={model.perToken}
-                            color={priceColor}
-                        />
-                        {model.perSecondPrice ? (
-                            <>
-                                <PriceBadge
-                                    prices={[model.perSecondPrice]}
-                                    emoji="🎬"
-                                    subEmojis={["🎬"]}
-                                    perSecond
-                                    color={priceColor}
-                                />
-                                <PriceBadge
-                                    prices={[model.perAudioSecondPrice]}
-                                    emoji="🔊"
-                                    subEmojis={["🔊"]}
-                                    perSecond
-                                    color={priceColor}
-                                />
-                            </>
-                        ) : model.perTokenPrice ? (
-                            <PriceBadge
-                                prices={[model.perTokenPrice]}
-                                emoji="🎬"
-                                subEmojis={["🎬"]}
-                                perToken
-                                color={priceColor}
-                            />
-                        ) : model.perImagePrice ? (
-                            <PriceBadge
-                                prices={[model.perImagePrice]}
-                                emoji="🖼️"
-                                subEmojis={["🖼️"]}
-                                perImage
-                                color={priceColor}
-                            />
-                        ) : (
-                            <PriceBadge
-                                prices={[model.completionImagePrice]}
-                                emoji="🖼️"
-                                subEmojis={["🖼️"]}
-                                perToken={model.perToken}
-                                color={priceColor}
-                            />
-                        )}
-                    </div>
-                )}
+                <div className="flex flex-col gap-1 items-center">
+                    <PriceBadge
+                        prices={[model.completionTextPrice]}
+                        emoji="💬"
+                        subEmojis={["💬"]}
+                        perToken={model.perToken}
+                        color={priceColor}
+                    />
+                    <PriceBadge
+                        prices={[model.completionAudioPrice]}
+                        emoji="🔊"
+                        subEmojis={["🔊"]}
+                        perToken={model.perToken}
+                        color={priceColor}
+                    />
+                    <PriceBadge
+                        prices={[model.perCharPrice]}
+                        emoji="🔊"
+                        subEmojis={["🔊"]}
+                        perKChar
+                        color={priceColor}
+                    />
+                    <PriceBadge
+                        prices={[model.perSecondPrice]}
+                        emoji="🎬"
+                        subEmojis={["🎬"]}
+                        perSecond
+                        color={priceColor}
+                    />
+                    <PriceBadge
+                        prices={[model.perAudioSecondPrice]}
+                        emoji="🔊"
+                        subEmojis={["🔊"]}
+                        perSecond
+                        color={priceColor}
+                    />
+                    <PriceBadge
+                        prices={[model.perTokenPrice]}
+                        emoji="🎬"
+                        subEmojis={["🎬"]}
+                        perToken
+                        color={priceColor}
+                    />
+                    <PriceBadge
+                        prices={[model.perImagePrice]}
+                        emoji="🖼️"
+                        subEmojis={["🖼️"]}
+                        perImage
+                        color={priceColor}
+                    />
+                    <PriceBadge
+                        prices={[model.completionImagePrice]}
+                        emoji="🖼️"
+                        subEmojis={["🖼️"]}
+                        perToken={model.perToken}
+                        color={priceColor}
+                    />
+                </div>
             </td>
         </tr>
     );

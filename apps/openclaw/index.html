@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pollinations.ai × OpenClaw — AI Models for Your Agent</title>
+
+    <meta property="og:title" content="pollinations.ai × OpenClaw — AI Models for Your Agent">
+    <meta property="og:description" content="Use 25+ AI models as your OpenClaw brain through a single API. Kimi K2.5, DeepSeek, Claude, Gemini and more — set up in 30 seconds.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://openclaw.pollinations.ai">
+    <meta property="og:image" content="https://pollinations.ai/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="description" content="Use 25+ AI models as your OpenClaw brain through a single API. Free credits included, set up in 30 seconds.">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="./public/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="./public/favicon-16x16.png" />
+    <link rel="icon" href="./public/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./public/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="./public/apple-touch-icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="./public/apple-touch-icon-167x167.png" />
+    <link rel="manifest" href="./public/manifest.json" />
+    <meta name="theme-color" content="#d1fae5" />
+
+    <style>
+        @font-face {
+            font-family: "LCT Mogi";
+            src: url("./fonts/lct-mogi-a.woff2") format("woff2"),
+                 url("./fonts/lct-mogi-a.woff") format("woff");
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "Fraunces";
+            src: url("./fonts/fraunces-soft-bold.woff2") format("woff2"),
+                 url("./fonts/fraunces-soft-bold.woff") format("woff");
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "Uncut Sans";
+            src: url("./fonts/uncut-sans-variable.woff2") format("woff2-variations");
+            font-weight: 300 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            /* enter.pollinations.ai palette */
+            --bg: #d1fae5;          /* emerald-100 */
+            --surface: #ffffff;
+            --border: #1f2937;      /* gray-800 */
+            --border-light: #d1d5db;/* gray-300 */
+            --text: #052e16;        /* green-950 */
+            --muted: #4b5563;       /* gray-600 */
+            --accent: #052e16;      /* green-950 */
+            --accent-bg: #bbf7d0;   /* green-200 */
+            --accent-strong: #052e16;/* green-950 */
+            --code-bg: #f0fdf4;     /* green-50 */
+        }
+
+        body {
+            font-family: "Uncut Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            font-weight: 400;
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+        a:hover { opacity: 0.7; }
+
+        code { font-family: 'SF Mono', 'Fira Code', monospace; }
+        .brand { font-weight: 600; color: var(--accent-strong); }
+        h1 .brand, h2 .brand, h3 .brand { font-weight: inherit; }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+        @media (min-width: 640px) { .container { padding: 0 24px; } }
+        @media (min-width: 768px) { .container { padding: 0 32px; } }
+
+        /* Header */
+        header {
+            padding: 16px 0;
+            border-bottom: 2px solid var(--border);
+        }
+        header .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            font-family: "LCT Mogi", ui-sans-serif, sans-serif;
+            font-size: 20px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        .logo .pollinations-logo {
+            height: 32px;
+            width: auto;
+            /* Invert white SVG to near-black, then shift hue to dark green #052e16 */
+            filter: brightness(0) saturate(100%) invert(10%) sepia(40%) saturate(2000%) hue-rotate(100deg) brightness(0.5);
+        }
+        .logo .openclaw-logo {
+            height: 24px;
+            width: auto;
+        }
+        .logo span { font-family: "Fraunces", ui-serif, serif; font-weight: normal; }
+        .header-links { display: flex; gap: 20px; font-size: 14px; }
+        .header-links a {
+            background: var(--accent-strong);
+            color: #bbf7d0;
+            text-decoration: none;
+            padding: 6px 16px 8px;
+            border-radius: 9999px;
+            font-weight: 500;
+            transition: filter 0.15s;
+        }
+        .header-links a:hover { filter: brightness(1.2); opacity: 1; }
+
+        @media (max-width: 640px) {
+            header .container {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+        }
+
+        /* Hero */
+        .hero {
+            padding: 64px 0 48px;
+            text-align: center;
+        }
+        .hero h1 {
+            font-family: "LCT Mogi", ui-sans-serif, sans-serif;
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: normal;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+        .hero p {
+            font-size: 18px;
+            color: var(--muted);
+            max-width: 540px;
+            margin: 0 auto 40px;
+        }
+
+        /* Setup box */
+        .setup-box {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: left;
+            margin-bottom: 48px;
+        }
+        .step { margin-bottom: 24px; }
+        .step:last-child { margin-bottom: 0; }
+        .step-label {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 14px;
+            font-weight: normal;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+        .step-text {
+            font-size: 15px;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+        .step-text a { font-weight: 600; color: var(--text); }
+
+        /* Code block */
+        .code-block {
+            position: relative;
+            background: var(--code-bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 48px 16px 16px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 13px;
+            color: var(--text);
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.5;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--accent-strong);
+            border: none;
+            border-radius: 9999px;
+            color: #bbf7d0;
+            padding: 4px 12px 6px;
+            font-size: 12px;
+            font-family: "Uncut Sans", sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: filter 0.15s;
+        }
+        .copy-btn:hover { filter: brightness(1.2); }
+
+        /* Sections */
+        .section { padding: 48px 0; }
+        .section-title {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 28px;
+            font-weight: normal;
+            letter-spacing: -0.01em;
+            margin-bottom: 8px;
+        }
+        .section-subtitle {
+            color: var(--muted);
+            margin-bottom: 28px;
+            font-size: 15px;
+        }
+
+        /* Models grid */
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .model-card {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            transition: transform 0.15s;
+        }
+        .model-card:hover { transform: translateY(-2px); }
+        .model-card.primary { background: var(--accent-bg); }
+        .model-name {
+            font-family: "Fraunces", ui-serif, serif;
+            font-weight: normal;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        .model-id {
+            font-family: 'SF Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+        .model-desc {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+        .model-badges {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            font-size: 11px;
+            padding: 2px 10px 4px;
+            border-radius: 9999px;
+            background: var(--accent-strong);
+            color: #bbf7d0;
+            font-weight: 500;
+        }
+
+        /* Features */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+        .feature {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .feature h3 {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 16px;
+            font-weight: normal;
+            margin-bottom: 6px;
+        }
+        .feature p {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        /* Skill section */
+        .skill-box {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-top: 24px;
+        }
+        .skill-box h3 {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 20px;
+            font-weight: normal;
+            margin-bottom: 8px;
+        }
+        .skill-box p {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .skill-caps {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 14px;
+        }
+        .skill-caps span { color: var(--muted); }
+
+        /* Footer */
+        footer {
+            border-top: 2px solid var(--border);
+            padding: 32px 0;
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+        }
+        footer .links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        footer .links a { color: var(--text); font-weight: 500; }
+
+        /* Manual config toggle */
+        .toggle-btn {
+            background: none;
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 6px 16px 8px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-family: "Uncut Sans", sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: all 0.15s;
+        }
+        .toggle-btn:hover { background: var(--accent-strong); color: #bbf7d0; }
+        .manual-config { display: none; margin-top: 16px; }
+        .manual-config.open { display: block; }
+
+        /* Event banner */
+        .event-banner {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 32px;
+            text-decoration: none;
+            color: var(--text);
+            transition: transform 0.15s;
+        }
+        .event-banner:hover { transform: translateY(-2px); opacity: 1; }
+        .event-banner img {
+            width: 140px;
+            height: 140px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .event-date {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 2px;
+        }
+        .event-title {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 18px;
+            font-weight: normal;
+            margin-bottom: 4px;
+        }
+        .event-desc {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+        @media (max-width: 480px) {
+            .event-banner { flex-direction: column; text-align: center; }
+            .event-banner img { width: 100%; height: auto; max-height: 160px; }
+        }
+
+        /* Model table */
+        .model-table {
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .model-row {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--surface);
+        }
+        .model-row:last-child { border-bottom: none; }
+        .model-row.recommended { background: var(--accent-bg); }
+        .model-row.dimmed { opacity: 0.6; }
+        .model-label {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 15px;
+            font-weight: normal;
+            width: 200px;
+            flex-shrink: 0;
+        }
+        .model-id {
+            font-family: 'SF Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+            width: 200px;
+            flex-shrink: 0;
+        }
+        .model-note {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.4;
+            flex: 1;
+        }
+        .model-tag {
+            font-size: 11px;
+            padding: 2px 8px 3px;
+            border-radius: 9999px;
+            background: var(--accent-strong);
+            color: #bbf7d0;
+            font-weight: 500;
+            white-space: nowrap;
+            display: inline-block;
+            margin-left: 6px;
+        }
+        .model-tag.paid {
+            background: var(--muted);
+            color: white;
+        }
+        @media (max-width: 768px) {
+            .model-row {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .model-label { width: auto; }
+            .model-id { width: auto; }
+        }
+
+        /* Connect button */
+        .connect-btn {
+            display: inline-block;
+            background: var(--accent-strong);
+            color: #bbf7d0;
+            border: none;
+            border-radius: 9999px;
+            padding: 12px 32px 14px;
+            font-family: "Uncut Sans", sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: filter 0.15s;
+        }
+        .connect-btn:hover { filter: brightness(1.2); }
+        .connect-btn.connected {
+            background: var(--accent-bg);
+            color: var(--text);
+            cursor: default;
+        }
+
+        /* Success banner */
+        .success-banner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--accent-bg);
+            border: 2px solid var(--accent-strong);
+            border-radius: 10px;
+            padding: 16px 20px;
+            animation: fadeSlideIn 0.4s ease-out;
+        }
+        .success-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent-strong);
+            color: #bbf7d0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .success-title {
+            font-family: "Fraunces", ui-serif, serif;
+            font-size: 16px;
+            font-weight: normal;
+            margin-bottom: 4px;
+        }
+        .key-display {
+            font-family: 'SF Mono', monospace;
+            font-size: 14px;
+            color: var(--text);
+            word-break: break-all;
+            font-weight: 600;
+        }
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Segmented control tabs */
+        .tab-bar {
+            display: flex;
+            background: var(--border);
+            border-radius: 8px;
+            padding: 3px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: rgba(255,255,255,0.85);
+            font-family: "Uncut Sans", sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--surface);
+            color: var(--text);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        .tab-btn:hover:not(.active) { color: #fff; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* Highlight injected key in commands */
+        .key-injected {
+            background: var(--accent-bg);
+            border-radius: 3px;
+            padding: 1px 4px;
+            font-weight: 600;
+            border-bottom: 2px solid var(--accent-strong);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container">
+        <div class="logo"><img class="pollinations-logo" src="./logo-text.svg" alt="pollinations.ai" /> <span>×</span> <img class="openclaw-logo" src="./openclaw-logo.svg" alt="OpenClaw" /> <span>OpenClaw</span></div>
+        <div class="header-links">
+            <a href="#" onclick="startAuthorize(); return false;">Get API Key</a>
+            <a href="https://github.com/pollinations/pollinations">GitHub</a>
+        </div>
+    </div>
+</header>
+
+<main>
+    <div class="container">
+
+        <section class="hero">
+            <h1><span class="brand">pollinations.ai</span> × <span class="accent">OpenClaw</span></h1>
+            <p>Use <strong>25+ AI models</strong> as your OpenClaw brain through a single API. Free models with <em>web search, vision & reasoning</em> — connect your account and start building in <strong>30 seconds</strong>.</p>
+        </section>
+
+        <a href="https://luma.com/8k58g33a" class="event-banner" target="_blank" rel="noopener noreferrer">
+            <img src="https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,dpr=2,background=white,quality=75,width=400,height=400/event-covers/cq/7f1f074d-d37e-4b21-a8dc-ab3bff38efd9.jpg" alt="OpenClaw Builders Night Berlin" />
+            <div class="event-info">
+                <div class="event-date">Feb 12, 2026 · Antler Berlin</div>
+                <div class="event-title">Where it started: OpenClaw Builders Night</div>
+                <div class="event-desc">This integration was born at the <strong>OpenClaw Builders Night hackathon</strong> in Berlin. See the event that kicked it off.</div>
+            </div>
+        </a>
+
+        <div class="setup-box">
+            <div class="step" id="step-connect">
+                <div class="step-label">Step 1</div>
+                <div class="step-text">Get your free API key (comes with free credits):</div>
+                <button class="connect-btn" id="connect-btn" onclick="startAuthorize()">Connect with pollinations.ai</button>
+                <div class="step-text" style="margin-top:8px; font-size:13px;">or paste your key manually: <a href="https://enter.pollinations.ai">enter.pollinations.ai</a></div>
+            </div>
+            <div class="step" id="step-connected" style="display:none">
+                <div class="success-banner">
+                    <div class="success-icon">&#10003;</div>
+                    <div>
+                        <div class="success-title">Connected! Your API key:</div>
+                        <div class="key-display" id="key-display"></div>
+                    </div>
+                </div>
+                <div class="step-text" style="font-size:13px; margin-top:8px; color:var(--muted)">Your key has been inserted into the commands below. Just copy and run.</div>
+            </div>
+
+            <div class="step">
+                <div class="step-label">Step 2</div>
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab('install', this)">🧑‍💻 Fresh Install</button>
+                    <button class="tab-btn" onclick="switchTab('agent', this)">🦞 For Your Agent</button>
+                </div>
+
+                <div class="tab-panel active" id="tab-install">
+                    <div class="step-text">Install OpenClaw, then run the setup script:</div>
+                    <div class="code-block" id="install-cmd">curl -fsSL https://openclaw.ai/install.sh | bash<button class="copy-btn" onclick="copyCode('install-cmd')">Copy</button></div>
+                    <div class="step-text" style="margin-top:16px">Run the <a href="https://github.com/pollinations/pollinations/blob/main/apps/openclaw/setup-pollinations.sh" target="_blank" style="font-weight:600; color:var(--text)">setup script</a>:</div>
+                    <div class="code-block" id="setup-cmd">curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh \
+  | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
+                    <ul style="margin:8px 0 12px 20px; font-size:14px; line-height:1.5; color:var(--muted)">
+                        <li>🔑 Saves API key to <code style="color:var(--accent); font-size:13px">~/.openclaw/openclaw.json</code></li>
+                        <li>🤖 Adds 7 models: Kimi K2.5, DeepSeek, GLM, Gemini + Search, Claude Haiku + 2 paid</li>
+                        <li>🔍 Configures <code style="color:var(--accent); font-size:13px">web_search</code> tool with Perplexity <em>via pollinations.ai</em> (preserves existing if already set)</li>
+                    </ul>
+
+                    <button class="toggle-btn" onclick="toggleManual()">Manual JSON config ▾</button>
+                    <div class="manual-config" id="manual-config">
+                        <div class="step-text">Or paste this into <code style="color:var(--accent)">~/.openclaw/openclaw.json</code>:</div>
+                        <div class="code-block" id="json-config" style="white-space:pre; font-size:12px;">{
+  "env": { "POLLINATIONS_API_KEY": "<span class="key-in-json">YOUR_API_KEY</span>" },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "pollinations/kimi",
+        "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
+      },
+      "models": {
+        "pollinations/kimi": { "alias": "Kimi K2.5" },
+        "pollinations/deepseek": { "alias": "DeepSeek V3.2" },
+        "pollinations/glm": { "alias": "GLM-4.7" },
+        "pollinations/gemini-search": { "alias": "Gemini + Search" },
+        "pollinations/claude-fast": { "alias": "Claude Haiku 4.5" },
+        "pollinations/claude-large": { "alias": "Claude Opus 4.6" },
+        "pollinations/gemini-large": { "alias": "Gemini 3 Pro" }
+      }
+    }
+  },
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "pollinations": {
+        "baseUrl": "https://gen.pollinations.ai/v1",
+        "apiKey": "${POLLINATIONS_API_KEY}",
+        "api": "openai-completions",
+        "models": [
+          { "id": "kimi", "name": "Kimi K2.5", "reasoning": true,
+            "input": ["text","image"], "contextWindow": 256000 },
+          { "id": "deepseek", "name": "DeepSeek V3.2",
+            "input": ["text"], "contextWindow": 128000 },
+          { "id": "glm", "name": "GLM-4.7",
+            "input": ["text"], "contextWindow": 128000 },
+          { "id": "gemini-search", "name": "Gemini + Search",
+            "input": ["text","image"], "contextWindow": 128000 },
+          { "id": "claude-fast", "name": "Claude Haiku 4.5",
+            "input": ["text","image"], "contextWindow": 200000 },
+          { "id": "claude-large", "name": "Claude Opus 4.6 (Paid)",
+            "input": ["text","image"], "contextWindow": 200000 },
+          { "id": "gemini-large", "name": "Gemini 3 Pro (Paid)", "reasoning": true,
+            "input": ["text","image"], "contextWindow": 1000000 }
+        ]
+      }
+    }
+  },
+  "tools": {
+    "web": {
+      "search": {
+        "provider": "perplexity",
+        "perplexity": {
+          "baseUrl": "https://gen.pollinations.ai/v1",
+          "apiKey": "${POLLINATIONS_API_KEY}",
+          "model": "perplexity-fast"
+        }
+      }
+    }
+  },
+  "gateway": { "mode": "local" }
+}<button class="copy-btn" onclick="copyCode('json-config')">Copy</button></div>
+                    </div>
+                </div>
+
+                <div class="tab-panel" id="tab-agent">
+                    <div class="step-text">Paste this into your agent chat — it will configure Pollinations as a provider:</div>
+                    <div class="code-block" id="agent-msg" style="white-space:pre-wrap; font-size:12px; line-height:1.6">Add pollinations.ai as a model provider. Run this command:
+
+curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- <span class="key-in-json">YOUR_API_KEY</span>
+
+The script will restart the gateway automatically. After that, switch to the new provider with: /model pollinations/gemini-search<button class="copy-btn" onclick="copyCode('agent-msg')">Copy</button></div>
+                </div>
+            </div>
+        </div>
+
+        <section class="section" style="padding-top:0">
+            <h2 class="section-title">Which model should I use?</h2>
+
+            <div class="model-table">
+                <div class="model-row recommended">
+                    <div class="model-label">Kimi K2.5 <span class="model-tag">default</span></div>
+                    <div class="model-id">pollinations/kimi</div>
+                    <div class="model-note"><strong>Best open model</strong> for agentic coding. <em>256K context</em>, vision, tools, reasoning. 77% SWE-Bench.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Gemini + Search <span class="model-tag">web search</span></div>
+                    <div class="model-id">pollinations/gemini-search</div>
+                    <div class="model-note">Google Gemini with <strong>always-on web search</strong>. Vision support. Look up docs, APIs, recent changes.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">DeepSeek V3.2</div>
+                    <div class="model-id">pollinations/deepseek</div>
+                    <div class="model-note"><strong>Strong reasoning</strong> & tool calling. Good alternative to Kimi for hard problems.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">GLM-4.7</div>
+                    <div class="model-id">pollinations/glm</div>
+                    <div class="model-note">Z.ai — <em>coding, reasoning, agentic workflows</em>. Competitive with Kimi.</div>
+                </div>
+                <div class="model-row">
+                    <div class="model-label">Claude Haiku 4.5</div>
+                    <div class="model-id">pollinations/claude-fast</div>
+                    <div class="model-note">Anthropic — <strong>fast</strong> with good reasoning. Claude quality, lower cost.</div>
+                </div>
+                <div class="model-row dimmed">
+                    <div class="model-label">Claude Opus 4.6 <span class="model-tag paid">paid</span></div>
+                    <div class="model-id">pollinations/claude-large</div>
+                    <div class="model-note">Anthropic's most capable model. Vision, tools, deep reasoning.</div>
+                </div>
+                <div class="model-row dimmed">
+                    <div class="model-label">Gemini 3 Pro <span class="model-tag paid">paid</span></div>
+                    <div class="model-id">pollinations/gemini-large</div>
+                    <div class="model-note">Google's flagship with vision, audio & video understanding.</div>
+                </div>
+            </div>
+
+            <p style="margin-top:24px; font-size:14px; color:var(--muted)">Switch models anytime: <code style="color:var(--text)">/model pollinations/gemini-search</code></p>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">Image, video & audio</h2>
+            <p class="section-subtitle">Community-built <span class="brand">pollinations.ai</span> skill by <a href="https://github.com/isaacgounton" target="_blank">@isaacgounton</a> — gives your agent multi-modal generation.</p>
+            <div class="skill-box">
+                <div class="code-block" id="skill-cmd">/skill install isaacgounton/pollinations<button class="copy-btn" onclick="copyCode('skill-cmd')">Copy</button></div>
+                <p style="margin-top:16px">This adds image generation (Flux, GPT Image, Imagen 4), video (Veo 3.1, Seedance), text-to-speech (13 voices), and vision analysis to your agent. Separate from the LLM provider setup above.</p>
+            </div>
+        </section>
+
+    </div>
+</main>
+
+<footer>
+    <div class="container">
+        <div class="links">
+            <a href="https://enter.pollinations.ai">API Keys</a>
+            <a href="https://gen.pollinations.ai/v1/models">All Models</a>
+            <a href="https://github.com/pollinations/pollinations">GitHub</a>
+            <a href="https://discord.gg/pollinations-ai-885844321461485618">Discord</a>
+        </div>
+        <p>pollinations.ai — open-source AI platform · Born at <a href="https://luma.com/8k58g33a" target="_blank" style="color:var(--muted); text-decoration:underline">OpenClaw Builders Night Berlin</a></p>
+    </div>
+</footer>
+
+<script>
+function copyCode(id) {
+    const el = document.getElementById(id);
+    const text = el.textContent.replace(/Copy|Copied!/g, '').trim();
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = el.querySelector('.copy-btn');
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+    });
+}
+
+function toggleManual() {
+    const el = document.getElementById('manual-config');
+    el.classList.toggle('open');
+    el.previousElementSibling.textContent = el.classList.contains('open') ? 'Manual JSON config ▴' : 'Manual JSON config ▾';
+}
+
+function startAuthorize() {
+    var redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
+    var models = encodeURIComponent('kimi,deepseek,glm,gemini-search,perplexity-fast,claude-fast,claude-large,gemini-large');
+    window.location.href = `https://enter.pollinations.ai/authorize?redirect_url=${redirectUrl}&models=${models}`;
+}
+
+function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(p => { p.classList.remove('active'); });
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    btn.classList.add('active');
+}
+
+function injectApiKey(apiKey) {
+    // Show connected state
+    document.getElementById('step-connect').style.display = 'none';
+    document.getElementById('step-connected').style.display = 'block';
+    document.getElementById('key-display').textContent = apiKey;
+
+    // Update setup command placeholder
+    var placeholder = document.getElementById('key-placeholder');
+    placeholder.textContent = apiKey;
+    placeholder.classList.add('key-injected');
+
+    // Update JSON config and agent message placeholders
+    document.querySelectorAll('.key-in-json').forEach(span => {
+        span.textContent = apiKey;
+        span.classList.add('key-injected');
+    });
+}
+
+// Check for API key in URL fragment on page load
+(() => {
+    const match = window.location.hash.match(/api_key=([^&]+)/);
+    if (match) {
+        const apiKey = decodeURIComponent(match[1]);
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        injectApiKey(apiKey);
+    }
+})();
+</script>
+
+</body>
+</html>

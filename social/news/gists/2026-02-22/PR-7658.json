@@ -1,0 +1,34 @@
+{
+  "pr_number": 7658,
+  "title": "Add Polli AI Client to Dev_Tools",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7658",
+  "merged_at": "2026-02-22T16:42:27Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli meets Polly",
+    "blurb": "A new privacy-focused client joins the hive. Serverless, secure, and sharing our name—what's not to love?",
+    "summary": "Added Polli AI Client to the ecosystem, offering a privacy-focused, serverless interface for interacting with Pollinations models.",
+    "impact": "Developers and users get a secure, ready-to-use client for testing and deploying AI workflows without managing backend infrastructure.",
+    "keywords": [
+      "community",
+      "app",
+      "client",
+      "privacy",
+      "serverless"
+    ],
+    "visual_concept": "Polly the bee meeting a 'digital twin' or a robot assistant named Polli. A mirror image or a cute interaction between the organic bee and a digital interface.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee looking curiously at a small, friendly floating robot screen labeled 'POLLI'. The screen displays a secure lock icon. Soft lime green (#ecf874) and pastel violet gradient background. Warm lighting, lo-fi 8-bit aesthetic, emotionally warm vibes like Stardew Valley."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:43:10.013613+00:00"
+}

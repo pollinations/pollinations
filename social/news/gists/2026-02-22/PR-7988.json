@@ -1,0 +1,34 @@
+{
+  "pr_number": 7988,
+  "title": "Add Postsiva to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7988",
+  "merged_at": "2026-02-22T16:22:08Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Channel Surfing",
+    "blurb": "Postsiva joins the ecosystem! A new tool for YouTube creators to manage and optimize their channels is now in the showcase.",
+    "summary": "Added Postsiva, a SaaS platform for YouTube channel management and optimization, to the community apps list.",
+    "impact": "Creators looking for channel optimization tools can now discover Postsiva through our community showcase.",
+    "keywords": [
+      "community",
+      "youtube",
+      "creators",
+      "showcase",
+      "video"
+    ],
+    "visual_concept": "Polly the bee as a content creator. She's in a cozy studio setup with a retro monitor showing video analytics (bar charts) and a pixelated 'Play' button. The vibe is 'streamer setup' but lo-fi and cozy.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny headset, sitting at a creator's desk. A retro monitor displays a pixelated 'Play' button and rising graph lines. Lime green (#ecf874) and soft peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'ON AIR'. Nostalgic but beautiful."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:22:49.753873+00:00"
+}

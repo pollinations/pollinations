@@ -1,0 +1,34 @@
+{
+  "pr_number": 7699,
+  "title": "Add AI TikTok Video Generator to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7699",
+  "merged_at": "2026-02-22T16:35:16Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Viral spirals",
+    "blurb": "Polly is practicing her dance moves. We've added a new tool to generate catchy hooks and trending effects right in the browser.",
+    "summary": "Added 'AI TikTok Video Generator' to the Creative apps list, a tool for creating hooks and effects in-browser.",
+    "impact": "Users can now access a specialized tool for generating short-form video content directly from the apps showcase.",
+    "keywords": [
+      "tiktok",
+      "video",
+      "creative",
+      "community",
+      "app"
+    ],
+    "visual_concept": "Polly the bee and the chunky robot creating content. The robot holds a large smartphone recording Polly, who is striking a pose. The phone screen shows a UI with hearts and a 'REC' indicator.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee dancing while the chunky robot films her with a large smartphone. The phone screen glows with lime green (#ecf874) hearts and a recording icon. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:35:55.943876+00:00"
+}

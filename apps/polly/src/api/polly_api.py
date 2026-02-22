@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from ..services.pollinations import _auth_override
+from ..services.pollinations import UpstreamAuthError, _auth_override
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
+    model: str = "polly"
     content: str
     tool_calls: list | None = None
 
@@ -85,6 +86,8 @@ def create_api_app(pollinations_client, config):
             )
 
             return ChatResponse(content=result.get("response", ""), tool_calls=result.get("tool_calls", []))
+        except UpstreamAuthError as e:
+            raise HTTPException(status_code=e.status_code, detail=e.detail)
         except Exception as e:
             logger.error(f"Error processing message: {e}", exc_info=True)
             raise HTTPException(status_code=500, detail=f"Error: {str(e)}")

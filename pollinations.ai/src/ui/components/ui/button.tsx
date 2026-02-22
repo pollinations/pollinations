@@ -13,8 +13,11 @@ const buttonVariants = cva(
                 // Secondary CTA: Yellow bg + Black border (used in HelloPage, PlayPage)
                 secondary:
                     "gap-2 font-headline uppercase tracking-wider font-black bg-button-secondary-bg border-r-4 border-b-4 border-border-strong shadow-shadow-dark-md text-text-body-main hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-shadow-dark-sm",
-                // Toggle buttons (PlayPage prompts/parameters) - uses data-active attribute
-                toggle: "px-3 py-1.5 font-mono text-xs border-2 transition-all text-text-body-main data-[active=true]:bg-button-secondary-bg data-[active=true]:border-border-brand data-[active=true]:font-black data-[active=true]:shadow-shadow-brand-sm data-[active=false]:bg-input-background data-[active=false]:border-border-main data-[active=false]:hover:bg-input-background data-[active=false]:hover:border-border-brand data-[active=true]:hover:shadow-shadow-brand-md",
+                // Toggle buttons (genre filters) - neutral white-ish style
+                toggle: "px-3 py-1.5 font-mono text-xs border-2 transition-all data-[active=true]:bg-[rgb(var(--text-primary)_/_0.08)] data-[active=true]:border-[rgb(var(--text-primary)_/_0.3)] data-[active=true]:text-text-body-main data-[active=true]:font-black data-[active=false]:bg-input-background data-[active=false]:border-border-faint data-[active=false]:text-text-caption data-[active=false]:hover:border-border-subtle data-[active=false]:hover:text-text-body-secondary",
+                // Toggle-glow variant (badge filters) - reads color from --glow CSS variable (RGB triplet)
+                "toggle-glow":
+                    "px-3 py-1.5 font-headline uppercase tracking-wider text-xs border-2 transition-all data-[active=true]:bg-[rgb(var(--glow)_/_0.15)] data-[active=true]:border-[rgb(var(--glow))] data-[active=true]:text-[rgb(var(--glow))] data-[active=true]:font-black data-[active=true]:shadow-[0_0_10px_rgb(var(--glow)_/_0.4)] data-[active=false]:bg-input-background data-[active=false]:border-border-subtle data-[active=false]:text-[rgb(var(--glow)_/_0.6)] data-[active=false]:hover:border-[rgb(var(--glow)_/_0.6)] data-[active=false]:hover:text-[rgb(var(--glow))] data-[active=false]:hover:shadow-[0_0_6px_rgb(var(--glow)_/_0.25)]",
                 // Copy button (small, lime bg, rose border) - used for Copy URL actions
                 copy: "px-4 py-2 font-headline uppercase text-xs font-black text-text-body-main bg-button-secondary-bg border-2 border-border-brand hover:shadow-shadow-brand-md transition-all",
                 // Model selector (tiny, 4-state logic) - PlayPage model buttons
@@ -53,6 +56,7 @@ export interface ButtonProps
         VariantProps<typeof buttonVariants> {
     as?: React.ElementType;
     href?: string;
+    to?: string;
     target?: string;
     rel?: string;
 }

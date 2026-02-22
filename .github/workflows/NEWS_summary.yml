@@ -72,7 +72,7 @@ jobs:
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
-          PR_LABELS: 'social,readme-news'
+          PR_LABELS: 'NEWS'
         run: python social/scripts/generate_daily.py
 
       - name: Stage daily posts to Buffer
@@ -82,6 +82,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
           PUBLISH_MODE: buffer
+          TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
         run: python social/scripts/publish_daily.py
 
       # ── Weekly: generate + stage to Buffer ─────────────────────────
@@ -101,4 +102,5 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
           PUBLISH_MODE: buffer
+          WEEK_START_DATE: ${{ github.event.inputs.target_date || '' }}
         run: python social/scripts/publish_weekly.py

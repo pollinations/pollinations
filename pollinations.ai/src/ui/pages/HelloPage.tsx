@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { HELLO_PAGE } from "../../copy/content/hello";
 import { LINKS } from "../../copy/content/socialLinks";
 import { usePageCopy } from "../../hooks/usePageCopy";
@@ -162,7 +163,7 @@ function HelloPage() {
                             >
                                 {pageCopy.tiersSubtitle}
                             </Heading>
-                            <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                                 {[
                                     {
                                         emoji: "🦠",
@@ -197,20 +198,20 @@ function HelloPage() {
                                 ].map((tier) => (
                                     <div
                                         key={tier.name}
-                                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-card border border-border-subtle"
+                                        className="flex flex-col items-center text-center px-3 py-4 rounded-lg bg-surface-card border border-border-subtle"
                                     >
-                                        <span className="text-xl">
+                                        <span className="text-3xl mb-2">
                                             {tier.emoji}
                                         </span>
-                                        <div className="text-left">
-                                            <p className="text-sm font-semibold text-text-body-main">
-                                                {tier.name}
-                                            </p>
-                                            <p className="text-xs text-text-body-secondary">
-                                                {tier.pollen} pollen/day ·{" "}
-                                                {tier.desc}
-                                            </p>
-                                        </div>
+                                        <p className="text-sm font-semibold text-text-body-main">
+                                            {tier.name}
+                                        </p>
+                                        <p className="text-xs text-text-body-secondary mt-1">
+                                            {tier.pollen} pollen/day
+                                        </p>
+                                        <p className="text-[10px] text-text-body-tertiary mt-0.5">
+                                            {tier.desc}
+                                        </p>
                                     </div>
                                 ))}
                             </div>
@@ -285,8 +286,8 @@ function HelloPage() {
                     </ul>
                     <div className="mt-6">
                         <Button
-                            as="a"
-                            href="/apps"
+                            as={Link}
+                            to="/apps"
                             variant="secondary"
                             size="default"
                         >
@@ -306,8 +307,8 @@ function HelloPage() {
                         {pageCopy.communityDescription}
                     </Body>
                     <Button
-                        as="a"
-                        href="/community"
+                        as={Link}
+                        to="/community"
                         variant="secondary"
                         size="default"
                     >

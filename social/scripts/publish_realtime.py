@@ -8,33 +8,32 @@ a Discord announcement using shared format + platform voice.
 See social/PIPELINE.md for full architecture.
 """
 
-import os
-import sys
-import json
 import base64
-import requests
+import json
 from datetime import datetime
-from typing import Dict, Optional
 from pathlib import Path
+from typing import Dict, Optional
 
+import requests
 from common import (
-    load_prompt,
-    load_format,
+    DISCORD_CHAR_LIMIT,
+    GISTS_BRANCH,
+    GITHUB_API_BASE,
+    call_pollinations_api,
     get_env,
     get_repo_root,
-    call_pollinations_api,
-    github_api_request,
     gist_path_for_pr,
-    GITHUB_API_BASE,
-    GISTS_BRANCH,
-    DISCORD_CHAR_LIMIT,
+    github_api_request,
+    load_format,
+    load_prompt,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
-def fetch_gist(pr_number: int, merged_at: str, github_token: str,
-               owner: str, repo: str) -> Optional[Dict]:
+
+def fetch_gist(
+    pr_number: int, merged_at: str, github_token: str, owner: str, repo: str
+) -> Optional[Dict]:
     """Read gist JSON from local checkout or GitHub API."""
     # Try local first
     repo_root = get_repo_root()
@@ -86,13 +85,14 @@ def fetch_pr_merged_at(repo_full: str, pr_number: str, github_token: str) -> str
 
 # ── Main ─────────────────────────────────────────────────────────────
 
+
 def main():
     print("=== Discord Real-Time Post ===")
 
     # Environment
     github_token = get_env("GITHUB_TOKEN")
     pollinations_token = get_env("POLLINATIONS_TOKEN")
-    discord_webhook = get_env("DISCORD_WEBHOOK_URL")
+    discord_webhook = get_env("DISCORD_REALTIME_WEBHOOK_URL")
     pr_number = get_env("PR_NUMBER")
     repo_full_name = get_env("REPO_FULL_NAME")
 
@@ -114,7 +114,7 @@ def main():
     print(f"  Gist loaded: {gist['title']}")
 
     # ── Generate Discord message ──────────────────────────────────────
-    print(f"\n[2/2] Generating Discord message...")
+    print("\n[2/2] Generating Discord message...")
 
     ai = gist.get("gist", {})
     summary = ai.get("summary", gist["title"])
@@ -123,13 +123,15 @@ def main():
 
     # Voice = platform tone (system prompt), Task = format with data (user prompt)
     voice = load_prompt("tone/discord")
-    task = load_format("realtime").replace(
-        "{summary}", summary
-    ).replace("{impact}", impact).replace("{keywords}", keywords)
+    task = (
+        load_format("realtime")
+        .replace("{summary}", summary)
+        .replace("{impact}", impact)
+        .replace("{keywords}", keywords)
+    )
 
     snippet = call_pollinations_api(
-        voice, task, pollinations_token,
-        temperature=0.7, exit_on_failure=False
+        voice, task, pollinations_token, temperature=0.7, exit_on_failure=False
     )
 
     if not snippet:
@@ -167,24 +169,52 @@ def main():
     if image_url:
         try:
             resp = requests.get(image_url, timeout=30)
-            if resp.status_code == 200 and "image" in resp.headers.get("content-type", ""):
+            if resp.status_code == 200 and "image" in resp.headers.get(
+                "content-type", ""
+            ):
                 image_bytes = resp.content
         except Exception as e:
             print(f"  Could not download image for Discord: {e}")
 
     # Post to Discord
+    if "?" not in discord_webhook:
+        discord_webhook += "?wait=true"
+    else:
+        discord_webhook += "&wait=true"
+
     try:
         if image_bytes:
             files = {
-                "payload_json": (None, json.dumps({"content": message}), "application/json"),
+                "payload_json": (
+                    None,
+                    json.dumps({"content": message}),
+                    "application/json",
+                ),
                 "files[0]": ("image.jpg", image_bytes, "image/jpeg"),
             }
             resp = requests.post(discord_webhook, files=files, timeout=30)
         else:
             resp = requests.post(discord_webhook, json={"content": message}, timeout=30)
 
-        if resp.status_code in [200, 204]:
+        if resp.status_code in [200, 201, 204]:
             print("  Discord post sent")
+            try:
+                data = resp.json()
+                channel_id, msg_id = data.get("channel_id"), data.get("id")
+                import os
+
+                token = os.environ.get("DISCORD_TOKEN")
+                if token and channel_id and msg_id:
+                    requests.post(
+                        f"https://discord.com/api/v10/channels/{channel_id}/messages/{msg_id}/crosspost",
+                        headers={
+                            "Authorization": f"Bot {token}",
+                            "Content-Type": "application/json",
+                        },
+                        timeout=10,
+                    )
+            except Exception:
+                pass
         else:
             print(f"  Discord webhook error: {resp.status_code} {resp.text[:200]}")
     except Exception as e:

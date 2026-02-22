@@ -1,0 +1,34 @@
+{
+  "pr_number": 7257,
+  "title": "Add Pollenboard to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7257",
+  "merged_at": "2026-02-22T09:16:54Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Welcome, Pollenboard",
+    "blurb": "A new self-hostable frontend has entered the garden. Pollenboard brings images, audio, and text generation together in one cozy interface.",
+    "summary": "Added Pollenboard, a self-hostable all-in-one frontend for image, audio, and text generation, to the community showcase.",
+    "impact": "Users can now deploy their own private interface for interacting with all Pollinations APIs.",
+    "keywords": [
+      "community",
+      "frontend",
+      "self-hosted",
+      "showcase",
+      "ui"
+    ],
+    "visual_concept": "Pollenboard represents a unified control center. Depict a cozy dashboard setup where the bee and robot are managing different creative streams (art, music, text).",
+    "image_prompt": "Cozy pixel art scene of Polly the Bee and the chunky robot admiring a sleek dashboard monitor labeled 'POLLENBOARD'. The screen displays pixel icons for images, text, and audio. Lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Robot has a happy expression. Wholesome and organized vibes."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T09:17:33.984116+00:00"
+}

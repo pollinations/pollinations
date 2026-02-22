@@ -1,0 +1,35 @@
+{
+  "pr_number": 7909,
+  "title": "Add Coloring Me to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7909",
+  "merged_at": "2026-02-22T16:25:18Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh crayons",
+    "blurb": "Coloring Me has joined the showcase. It's a free mobile app for generating interactive coloring pages, because sometimes you just need to stay inside the lines.",
+    "summary": "Added 'Coloring Me', a mobile-friendly app for generating interactive coloring pages, to the Creative showcase.",
+    "impact": "Users can now discover a new free tool for generating custom coloring activities directly from the apps list.",
+    "keywords": [
+      "community",
+      "showcase",
+      "creative",
+      "coloring",
+      "mobile",
+      "apps"
+    ],
+    "visual_concept": "The concept focuses on the act of coloring and creativity. The key symbols are a digital tablet/coloring book and a large pixel crayon. The scene depicts Polly the Bee actively coloring in a line-art flower, bridging the gap between AI generation and human creativity.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a large pixel crayon, coloring in a line-art flower on a tablet screen. Soft lime green (#ecf874) and pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Playful and creative vibes."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:26:16.652684+00:00"
+}

@@ -1,0 +1,76 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "kimi",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1294",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Tue, 13 Jan 2026 21:47:28 GMT",
+      "etag": "W/\"50e-1x+0CZyGFlQxcn71NAFJGlUpXWg\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "moonshotai/kimi-k2-thinking-maas",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "186",
+      "x-usage-prompt-text-tokens": "262",
+      "x-usage-total-tokens": "448"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "matched_stop": 163586,
+            "message": {
+              "content": "yes",
+              "reasoning_content": "The user asks: \"Is Berlin the capital of Germany? Reply yes or no.\"\n\nThis is a straightforward factual question. They want a simple yes/no answer. I should not add fluff or explanations. Just \"yes\" or \"no\". The correct answer is yes. I must not include any extra text like \"Yes, it is\" or \"Yes.\" with a period? The instruction says \"Reply yes or no.\" So the literal words \"yes\" or \"no\". I think \"yes\" is sufficient. It doesn't say \"only yes or no\", but \"Reply yes or no.\" The safest is to just say \"yes\". I should not add any moralizing or extra fluff. The user wants a direct answer. I'll comply.\n\nFinal check: Is Berlin the capital of Germany? Yes. So answer: yes. I will not add punctuation or extra words. Just the word \"yes\". ",
+              "role": "assistant",
+              "tool_calls": null
+            }
+          }
+        ],
+        "created": 1768340848,
+        "id": "pllns_dd97b4c651d7d895ce79b99a14d61c0c",
+        "metadata": {
+          "weight_version": "default"
+        },
+        "model": "moonshotai/kimi-k2-thinking-maas",
+        "object": "chat.completion",
+        "usage": {
+          "completion_tokens": 186,
+          "extra_properties": {
+            "google": {
+              "traffic_type": "ON_DEMAND"
+            }
+          },
+          "prompt_tokens": 262,
+          "prompt_tokens_details": null,
+          "reasoning_tokens": 0,
+          "total_tokens": 448
+        }
+      }
+    }
+  }
+}

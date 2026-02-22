@@ -1,0 +1,118 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "kimi",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "required",
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "738",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 14 Feb 2026 18:20:13 GMT",
+      "etag": "W/\"2e2-7yOmbSSlZ3BkInMaCe34Noa4ai0\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "accounts/fireworks/models/kimi-k2p5",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "67",
+      "x-usage-prompt-cached-tokens": "15",
+      "x-usage-prompt-text-tokens": "332"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_0f48e43357857f4c92fe28444ec199e9",
+        "object": "chat.completion",
+        "created": 1771093213,
+        "model": "accounts/fireworks/models/kimi-k2p5",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "",
+              "reasoning_content": "The user wants me to calculate 5 + 3 using the calculator tool. I need to call the calculator function with operation \"add\", a=5, and b=3.",
+              "tool_calls": [
+                {
+                  "index": 0,
+                  "id": "functions.calculator:0",
+                  "type": "function",
+                  "function": {
+                    "name": "calculator",
+                    "arguments": "{\"operation\": \"add\", \"a\": 5, \"b\": 3}"
+                  },
+                  "name": null
+                }
+              ]
+            },
+            "finish_reason": "tool_calls",
+            "token_ids": null
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 347,
+          "total_tokens": 414,
+          "completion_tokens": 67,
+          "prompt_tokens_details": {
+            "cached_tokens": 15
+          }
+        },
+        "prompt_token_ids": null
+      }
+    }
+  }
+}

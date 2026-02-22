@@ -1,0 +1,23 @@
+DESCRIPTION >
+    Weekly service availability metrics.
+    Only counts 5xx server errors as downtime (user errors like 4xx don't affect availability).
+
+TOKEN model_usage READ
+
+NODE weekly_health_stats_node
+SQL >
+    %
+    SELECT
+        formatDateTime(toStartOfWeek(start_time, 1), '%Y-%m-%d') AS week,
+        count() AS total_requests,
+        countIf(response_status >= 500) AS server_errors_5xx,
+        round((count() - countIf(response_status >= 500)) * 100.0 / count(), 2) AS availability,
+        round(quantileIf(0.50)(response_time, response_status >= 200 AND response_status < 300), 0) AS latency_p50_ms,
+        round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) AS latency_p95_ms
+    FROM generation_event
+    WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
+    AND environment = 'production'
+    GROUP BY week
+    ORDER BY week ASC
+
+TYPE endpoint

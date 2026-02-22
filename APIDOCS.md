@@ -36,7 +36,7 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
   -d '{"model": "openai", "messages": [{"role": "user", "content": [{"type": "text", "text": "Describe this image"}, {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}]}]}'
 ```
 
-**Gemini Tools:** `gemini`, `gemini-fast`, `gemini-large` have `code_execution` enabled by default. `gemini-search` has `google_search` enabled. Pass your own `tools` array to override (e.g., `[{"type": "function", "function": {"name": "google_search"}}]`).
+**Gemini Tools:** `gemini`, `gemini-large` have `code_execution` enabled (can generate images/plots). `gemini-search` has `google_search` enabled. Responses may include `content_blocks` with `image_url`, `text`, or `thinking` types.
 
 ### Simple Text Endpoint
 
@@ -63,21 +63,572 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 
 ## Authentication
 
-**Two key types:**
+**Two key types (both consume Pollen from your balance):**
 
-- **Publishable Keys (`pk_`):** Client-side safe, IP rate-limited (1 pollen/hour per IP+key)
-- **Secret Keys (`sk_`):** Server-side only, no rate limits, can spend Pollen
+- **Publishable Keys (`pk_`):** ⚠️ **Beta - not yet ready for production use.** For client-side apps, IP rate-limited (1 pollen per IP per hour). **Warning:** Exposing in public code will consume your Pollen if your app gets traffic.
+- **Secret Keys (`sk_`):** Server-side only, no rate limits. Keep secret - never expose publicly.
 
 **Auth methods:**
 
 1. Header: `Authorization: Bearer YOUR_API_KEY`
 2. Query param: `?key=YOUR_API_KEY`
 
+## Account Management
+
+Check your balance and usage:
+
+```bash
+# Check pollen balance
+curl 'https://gen.pollinations.ai/account/balance' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+
+# Get profile info
+curl 'https://gen.pollinations.ai/account/profile' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+
+# View usage history
+curl 'https://gen.pollinations.ai/account/usage' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+
 ## Servers
 
 - **URL:** `https://gen.pollinations.ai`
 
 ## Operations
+
+### GET /customer/balance
+
+- **Method:** `GET`
+- **Path:** `/customer/balance`
+- **Tags:** Customer
+
+Get detailed balance breakdown for the current user (tier, pack, crypto).
+
+#### Responses
+
+### GET /tiers/view
+
+- **Method:** `GET`
+- **Path:** `/tiers/view`
+- **Tags:** Auth
+
+Get the current user's tier status and daily pollen information.
+
+#### Responses
+
+##### Status: 200 Success
+
+###### Content-Type: application/json
+
+- **`active` (required)**
+
+  `object`
+
+  - **`dailyPollen` (required)**
+
+    `number`
+
+  - **`displayName` (required)**
+
+    `string`
+
+  - **`tier` (required)**
+
+    `string`, possible values: `"microbe", "spore", "seed", "flower", "nectar", "router", "none"`
+
+- **`target` (required)**
+
+  `string`, possible values: `"microbe", "spore", "seed", "flower", "nectar", "router"`
+
+**Example:**
+
+```json
+{
+  "target": "microbe",
+  "active": {
+    "tier": "microbe",
+    "displayName": "",
+    "dailyPollen": 1
+  }
+}
+```
+
+##### Status: 500 Oh snap, something went wrong on our end. We're on it!
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 500,
+  "success": false,
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Oh snap, something went wrong on our end. We're on it!",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+### GET /api-keys
+
+- **Method:** `GET`
+- **Path:** `/api-keys`
+- **Tags:** Account
+
+List all API keys for the current user with pollenBalance.
+
+#### Responses
+
+### POST /api-keys/{id}/update
+
+- **Method:** `POST`
+- **Path:** `/api-keys/{id}/update`
+- **Tags:** Account
+
+Update an API key's permissions and budget.
+
+#### Request Body
+
+##### Content-Type: application/json
+
+- **`accountPermissions`**
+
+  `object` — Account permissions: \["balance", "usage"]. null = none
+
+- **`allowedModels`**
+
+  `object` — Model IDs this key can access. null = all models allowed
+
+- **`expiresAt`**
+
+  `object` — Expiration date for the key. null = no expiry
+
+- **`name`**
+
+  `string` — Name for the API key
+
+- **`pollenBudget`**
+
+  `object` — Pollen budget cap for this key. null = unlimited
+
+**Example:**
+
+```json
+{
+  "name": "",
+  "allowedModels": [
+    ""
+  ],
+  "pollenBudget": 1,
+  "accountPermissions": [
+    ""
+  ],
+  "expiresAt": ""
+}
+```
+
+#### Responses
+
+### GET /account/profile
+
+- **Method:** `GET`
+- **Path:** `/account/profile`
+- **Tags:** gen.pollinations.ai
+
+Get user profile info (name, email, GitHub username, tier, createdAt, nextResetAt). Requires `account:profile` permission for API keys.
+
+#### Responses
+
+##### Status: 200 User profile with name, email, githubUsername, tier, createdAt, nextResetAt
+
+###### Content-Type: application/json
+
+- **`createdAt` (required)**
+
+  `string`, format: `date-time` — Account creation timestamp (ISO 8601)
+
+- **`email` (required)**
+
+  `object` — User's email address
+
+- **`githubUsername` (required)**
+
+  `object` — GitHub username if linked
+
+- **`name` (required)**
+
+  `object` — User's display name
+
+- **`nextResetAt` (required)**
+
+  `object` — Next daily pollen reset timestamp (ISO 8601)
+
+- **`tier` (required)**
+
+  `string`, possible values: `"anonymous", "microbe", "spore", "seed", "flower", "nectar", "router"` — User's current tier level
+
+**Example:**
+
+```json
+{
+  "name": "",
+  "email": "",
+  "githubUsername": "",
+  "tier": "anonymous",
+  "createdAt": "",
+  "nextResetAt": ""
+}
+```
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied - API key missing \`account:profile\` permission
+
+### GET /account/balance
+
+- **Method:** `GET`
+- **Path:** `/account/balance`
+- **Tags:** gen.pollinations.ai
+
+Get pollen balance. Returns the key's remaining budget if set, otherwise the user's total balance. Requires `account:balance` permission for API keys.
+
+#### Responses
+
+##### Status: 200 Balance (remaining pollen)
+
+###### Content-Type: application/json
+
+- **`balance` (required)**
+
+  `number` — Remaining pollen balance (combines tier, pack, and crypto balances)
+
+**Example:**
+
+```json
+{
+  "balance": 1
+}
+```
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied - API key missing \`account:balance\` permission
+
+### GET /account/usage
+
+- **Method:** `GET`
+- **Path:** `/account/usage`
+- **Tags:** gen.pollinations.ai
+
+Get request history and spending data. Supports JSON and CSV formats. Requires `account:usage` permission for API keys.
+
+#### Responses
+
+##### Status: 200 Usage records with timestamp, model, tokens, cost\_usd, etc.
+
+###### Content-Type: application/json
+
+- **`count` (required)**
+
+  `number` — Number of records returned
+
+- **`usage` (required)**
+
+  `array` — Array of usage records
+
+  **Items:**
+
+  - **`api_key` (required)**
+
+    `object` — API key identifier used (masked)
+
+  - **`api_key_type` (required)**
+
+    `object` — Type of API key ('secret', 'publishable')
+
+  - **`cost_usd` (required)**
+
+    `number` — Cost in USD for this request
+
+  - **`input_audio_tokens` (required)**
+
+    `number` — Number of input audio tokens
+
+  - **`input_cached_tokens` (required)**
+
+    `number` — Number of cached input tokens
+
+  - **`input_image_tokens` (required)**
+
+    `number` — Number of input image tokens
+
+  - **`input_text_tokens` (required)**
+
+    `number` — Number of input text tokens
+
+  - **`meter_source` (required)**
+
+    `object` — Billing source ('tier', 'pack', 'crypto')
+
+  - **`model` (required)**
+
+    `object` — Model used for generation
+
+  - **`output_audio_tokens` (required)**
+
+    `number` — Number of output audio tokens
+
+  - **`output_image_tokens` (required)**
+
+    `number` — Number of output image tokens (1 per image)
+
+  - **`output_reasoning_tokens` (required)**
+
+    `number` — Number of reasoning tokens (for models with chain-of-thought)
+
+  - **`output_text_tokens` (required)**
+
+    `number` — Number of output text tokens
+
+  - **`response_time_ms` (required)**
+
+    `object` — Response time in milliseconds
+
+  - **`timestamp` (required)**
+
+    `string` — Request timestamp (YYYY-MM-DD HH:mm:ss format)
+
+  - **`type` (required)**
+
+    `string` — Request type (e.g., 'generate.image', 'generate.text')
+
+**Example:**
+
+```json
+{
+  "usage": [
+    {
+      "timestamp": "",
+      "type": "",
+      "model": "",
+      "api_key": "",
+      "api_key_type": "",
+      "meter_source": "",
+      "input_text_tokens": 1,
+      "input_cached_tokens": 1,
+      "input_audio_tokens": 1,
+      "input_image_tokens": 1,
+      "output_text_tokens": 1,
+      "output_reasoning_tokens": 1,
+      "output_audio_tokens": 1,
+      "output_image_tokens": 1,
+      "cost_usd": 1,
+      "response_time_ms": 1
+    }
+  ],
+  "count": 1
+}
+```
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied - API key missing \`account:usage\` permission
+
+### GET /account/usage/daily
+
+- **Method:** `GET`
+- **Path:** `/account/usage/daily`
+- **Tags:** gen.pollinations.ai
+
+Get daily aggregated usage data (last 90 days). Supports JSON and CSV formats. Requires `account:usage` permission for API keys. Results are cached for 1 hour.
+
+#### Responses
+
+##### Status: 200 Daily usage records aggregated by date/model
+
+###### Content-Type: application/json
+
+- **`count` (required)**
+
+  `number` — Number of records returned
+
+- **`usage` (required)**
+
+  `array` — Array of daily usage records
+
+  **Items:**
+
+  - **`cost_usd` (required)**
+
+    `number` — Total cost in USD
+
+  - **`date` (required)**
+
+    `string` — Date (YYYY-MM-DD format)
+
+  - **`meter_source` (required)**
+
+    `object` — Billing source ('tier', 'pack', 'crypto')
+
+  - **`model` (required)**
+
+    `object` — Model used
+
+  - **`requests` (required)**
+
+    `number` — Number of requests
+
+**Example:**
+
+```json
+{
+  "usage": [
+    {
+      "date": "",
+      "model": "",
+      "meter_source": "",
+      "requests": 1,
+      "cost_usd": 1
+    }
+  ],
+  "count": 1
+}
+```
+
+##### Status: 401 Unauthorized
+
+##### Status: 403 Permission denied - API key missing \`account:usage\` permission
+
+### GET /account/key
+
+- **Method:** `GET`
+- **Path:** `/account/key`
+- **Tags:** gen.pollinations.ai
+
+Get API key status and information. Returns key validity, type, expiry, permissions, and remaining budget. This endpoint allows validating keys without making expensive generation requests. Requires API key authentication.
+
+#### Responses
+
+##### Status: 200 API key status and information
+
+###### Content-Type: application/json
+
+- **`expiresAt` (required)**
+
+  `object` — Expiry timestamp in ISO 8601 format, null if never expires
+
+- **`expiresIn` (required)**
+
+  `object` — Seconds until expiry, null if never expires
+
+- **`name` (required)**
+
+  `object` — Display name of the API key
+
+- **`permissions` (required)**
+
+  `object` — API key permissions
+
+  - **`account` (required)**
+
+    `object` — List of account permissions, null = no account access
+
+  - **`models` (required)**
+
+    `object` — List of allowed model IDs, null = all models allowed
+
+- **`pollenBudget` (required)**
+
+  `object` — Remaining pollen budget for this key, null = unlimited (uses user balance)
+
+- **`rateLimitEnabled` (required)**
+
+  `boolean` — Whether rate limiting is enabled for this key
+
+- **`type` (required)**
+
+  `string`, possible values: `"publishable", "secret"` — Type of API key
+
+- **`valid` (required)**
+
+  `boolean` — Whether the API key is valid and active
+
+**Example:**
+
+```json
+{
+  "valid": true,
+  "type": "publishable",
+  "name": "",
+  "expiresAt": "",
+  "expiresIn": 1,
+  "permissions": {
+    "models": [
+      ""
+    ],
+    "account": [
+      ""
+    ]
+  },
+  "pollenBudget": 1,
+  "rateLimitEnabled": true
+}
+```
+
+##### Status: 401 Invalid or missing API key
 
 ### GET /v1/models
 
@@ -214,95 +765,10 @@ Get a list of available image generation models with pricing, capabilities, and 
 
 **Array of:**
 
-- **`aliases` (required)**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-- **`name` (required)**
-
-  `string`
-
-- **`pricing` (required)**
-
-  `object`
-
-- **`context_window`**
-
-  `number`
-
-- **`description`**
-
-  `string`
-
-- **`input_modalities`**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-- **`is_specialized`**
-
-  `boolean`
-
-- **`output_modalities`**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-- **`reasoning`**
-
-  `boolean`
-
-- **`tools`**
-
-  `boolean`
-
-- **`voices`**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
 **Example:**
 
 ```json
-[
-  {
-    "name": "",
-    "aliases": [
-      ""
-    ],
-    "pricing": {
-      "propertyName*": 1,
-      "currency": "pollen"
-    },
-    "description": "",
-    "input_modalities": [
-      ""
-    ],
-    "output_modalities": [
-      ""
-    ],
-    "tools": true,
-    "reasoning": true,
-    "context_window": 1,
-    "voices": [
-      ""
-    ],
-    "is_specialized": true
-  }
-]
+[]
 ```
 
 ##### Status: 500 Oh snap, something went wrong on our end. We're on it!
@@ -389,95 +855,10 @@ Get a list of available text generation models with pricing, capabilities, and m
 
 **Array of:**
 
-- **`aliases` (required)**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-- **`name` (required)**
-
-  `string`
-
-- **`pricing` (required)**
-
-  `object`
-
-- **`context_window`**
-
-  `number`
-
-- **`description`**
-
-  `string`
-
-- **`input_modalities`**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-- **`is_specialized`**
-
-  `boolean`
-
-- **`output_modalities`**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-- **`reasoning`**
-
-  `boolean`
-
-- **`tools`**
-
-  `boolean`
-
-- **`voices`**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
 **Example:**
 
 ```json
-[
-  {
-    "name": "",
-    "aliases": [
-      ""
-    ],
-    "pricing": {
-      "propertyName*": 1,
-      "currency": "pollen"
-    },
-    "description": "",
-    "input_modalities": [
-      ""
-    ],
-    "output_modalities": [
-      ""
-    ],
-    "tools": true,
-    "reasoning": true,
-    "context_window": 1,
-    "voices": [
-      ""
-    ],
-    "is_specialized": true
-  }
-]
+[]
 ```
 
 ##### Status: 500 Oh snap, something went wrong on our end. We're on it!
@@ -564,7 +945,7 @@ Include your API key in the `Authorization` header as a Bearer token:
 
 `Authorization: Bearer YOUR_API_KEY`
 
-API keys can be created from your dashboard at enter.pollinations.ai. Secret keys provide the best rate limits and can spend Pollen.
+API keys can be created from your dashboard at enter.pollinations.ai. Both key types consume Pollen. Secret keys have no rate limits.
 
 #### Request Body
 
@@ -722,7 +1103,7 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
 
   - **`voice` (required)**
 
-    `string`, possible values: `"alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "dan"`
+    `string`, possible values: `"alloy", "echo", "fable", "onyx", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "dan"`
 
 - **`frequency_penalty`**
 
@@ -772,7 +1153,7 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
 
 - **`model`**
 
-  `string`, default: `"openai"`
+  `string`, possible values: `"openai", "openai-fast", "openai-large", "qwen-coder", "mistral", "openai-audio", "gemini", "gemini-fast", "deepseek", "grok", "gemini-search", "chickytutor", "midijourney", "claude-fast", "claude", "claude-large", "perplexity-fast", "perplexity-reasoning", "kimi", "gemini-large", "gemini-legacy", "nova-fast", "glm", "minimax", "nomnom"`, default: `"openai"` — AI model for text generation. See /v1/models for full list.
 
 - **`parallel_tool_calls`**
 
@@ -1311,7 +1692,7 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
 }
 ```
 
-##### Status: 401 You need to authenticate by providing a session cookie or Authorization header (Bearer token).
+##### Status: 401 Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.
 
 ###### Content-Type: application/json
 
@@ -1367,7 +1748,143 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
   "success": false,
   "error": {
     "code": "UNAUTHORIZED",
-    "message": "You need to authenticate by providing a session cookie or Authorization header (Bearer token).",
+    "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 402 Insufficient pollen balance or API key budget exhausted.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 402,
+  "success": false,
+  "error": {
+    "code": "PAYMENT_REQUIRED",
+    "message": "Insufficient pollen balance or API key budget exhausted.",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 403 Access denied! You don't have the required permissions for this resource or model.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 403,
+  "success": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Access denied! You don't have the required permissions for this resource or model.",
     "timestamp": "",
     "details": {
       "name": "",
@@ -1566,7 +2083,7 @@ true
 }
 ```
 
-##### Status: 401 You need to authenticate by providing a session cookie or Authorization header (Bearer token).
+##### Status: 401 Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.
 
 ###### Content-Type: application/json
 
@@ -1622,7 +2139,143 @@ true
   "success": false,
   "error": {
     "code": "UNAUTHORIZED",
-    "message": "You need to authenticate by providing a session cookie or Authorization header (Bearer token).",
+    "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 402 Insufficient pollen balance or API key budget exhausted.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 402,
+  "success": false,
+  "error": {
+    "code": "PAYMENT_REQUIRED",
+    "message": "Insufficient pollen balance or API key budget exhausted.",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 403 Access denied! You don't have the required permissions for this resource or model.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 403,
+  "success": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Access denied! You don't have the required permissions for this resource or model.",
     "timestamp": "",
     "details": {
       "name": "",
@@ -1714,8 +2367,11 @@ Generate an image or video from a text prompt.
 
 **Video Models:** `veo`, `seedance`
 
-- `veo`: Text-to-video only (4-8 seconds)
-- `seedance`: Text-to-video and image-to-video (2-10 seconds)
+- `veo`: Text-to-video only (4-8 seconds). Supports `duration` parameter (default: 4 seconds).
+- `seedance`: Text-to-video and image-to-video (2-10 seconds). Supports `duration` parameter (default: 2 seconds).
+
+
+
 
 **Authentication:**
 
@@ -1848,7 +2504,7 @@ API keys can be created from your dashboard at enter.pollinations.ai.
 }
 ```
 
-##### Status: 401 You need to authenticate by providing a session cookie or Authorization header (Bearer token).
+##### Status: 401 Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.
 
 ###### Content-Type: application/json
 
@@ -1904,7 +2560,1170 @@ API keys can be created from your dashboard at enter.pollinations.ai.
   "success": false,
   "error": {
     "code": "UNAUTHORIZED",
-    "message": "You need to authenticate by providing a session cookie or Authorization header (Bearer token).",
+    "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 402 Insufficient pollen balance or API key budget exhausted.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 402,
+  "success": false,
+  "error": {
+    "code": "PAYMENT_REQUIRED",
+    "message": "Insufficient pollen balance or API key budget exhausted.",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 403 Access denied! You don't have the required permissions for this resource or model.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 403,
+  "success": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Access denied! You don't have the required permissions for this resource or model.",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 500 Oh snap, something went wrong on our end. We're on it!
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 500,
+  "success": false,
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Oh snap, something went wrong on our end. We're on it!",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+### GET /audio/{text}
+
+- **Method:** `GET`
+- **Path:** `/audio/{text}`
+- **Tags:** gen.pollinations.ai
+
+Generate audio from text — speech (TTS) or music.
+
+**Models:** Use `model` query param to select:
+
+- TTS (default): `elevenlabs`, `tts-1`, etc.
+- Music: `elevenmusic` (or `music`)
+
+**TTS Voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
+
+**Output Formats (TTS only):** mp3, opus, aac, flac, wav, pcm
+
+**Music options:** `duration` in seconds (3-300), `instrumental=true`
+
+**Authentication:**
+
+Include your API key either:
+
+- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`
+- As a query parameter: `?key=YOUR_API_KEY`
+
+API keys can be created from your dashboard at enter.pollinations.ai.
+
+#### Responses
+
+##### Status: 200 Success - Returns audio data
+
+###### Content-Type: audio/mpeg
+
+`string`, format: `binary`
+
+**Example:**
+
+```json
+{}
+```
+
+##### Status: 400 Something was wrong with the input data, check the details for more info.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`fieldErrors` (required)**
+
+      `object`
+
+    - **`formErrors` (required)**
+
+      `array`
+
+      **Items:**
+
+      `string`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 400,
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Something was wrong with the input data, check the details for more info.",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": "",
+      "formErrors": [
+        ""
+      ],
+      "fieldErrors": {
+        "propertyName*": [
+          ""
+        ]
+      }
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 401 Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 401,
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 402 Insufficient pollen balance or API key budget exhausted.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 402,
+  "success": false,
+  "error": {
+    "code": "PAYMENT_REQUIRED",
+    "message": "Insufficient pollen balance or API key budget exhausted.",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 403 Access denied! You don't have the required permissions for this resource or model.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 403,
+  "success": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Access denied! You don't have the required permissions for this resource or model.",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 500 Oh snap, something went wrong on our end. We're on it!
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 500,
+  "success": false,
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Oh snap, something went wrong on our end. We're on it!",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+### POST /v1/audio/speech
+
+- **Method:** `POST`
+- **Path:** `/v1/audio/speech`
+- **Tags:** gen.pollinations.ai
+
+Generate audio from text — speech (TTS) or music.
+
+This endpoint is OpenAI TTS API compatible. Set `model` to `elevenmusic` (or alias `music`) to generate music instead of speech.
+
+**TTS Voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
+
+**Output Formats (TTS only):** mp3, opus, aac, flac, wav, pcm
+
+#### Request Body
+
+##### Content-Type: application/json
+
+- **`input` (required)**
+
+  `string` — The text to generate audio for. Maximum 4096 characters.
+
+- **`model`**
+
+  `string`
+
+- **`response_format`**
+
+  `string`, possible values: `"mp3", "opus", "aac", "flac", "wav", "pcm"`, default: `"mp3"` — The audio format for the output.
+
+- **`speed`**
+
+  `number`, default: `1` — The speed of the generated audio. 0.25 to 4.0, default 1.0.
+
+- **`voice`**
+
+  `string`, possible values: `"alloy", "echo", "fable", "onyx", "shimmer", "ash", "ballad", "coral", "sage", "verse", "rachel", "domi", "bella", "elli", "charlotte", "dorothy", "sarah", "emily", "lily", "matilda", "adam", "antoni", "arnold", "josh", "sam", "daniel", "charlie", "james", "fin", "callum", "liam", "george", "brian", "bill"`, default: `"alloy"` — The voice to use. Available voices: alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill.
+
+**Example:**
+
+```json
+{
+  "model": "",
+  "input": "Hello, welcome to Pollinations!",
+  "voice": "rachel",
+  "response_format": "mp3",
+  "speed": 1
+}
+```
+
+#### Responses
+
+##### Status: 200 Success - Returns audio data
+
+###### Content-Type: audio/mpeg
+
+`string`, format: `binary`
+
+**Example:**
+
+```json
+{}
+```
+
+###### Content-Type: audio/opus
+
+`string`, format: `binary`
+
+**Example:**
+
+```json
+{}
+```
+
+###### Content-Type: audio/aac
+
+`string`, format: `binary`
+
+**Example:**
+
+```json
+{}
+```
+
+###### Content-Type: audio/flac
+
+`string`, format: `binary`
+
+**Example:**
+
+```json
+{}
+```
+
+###### Content-Type: audio/wav
+
+`string`, format: `binary`
+
+**Example:**
+
+```json
+{}
+```
+
+##### Status: 400 Something was wrong with the input data, check the details for more info.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`fieldErrors` (required)**
+
+      `object`
+
+    - **`formErrors` (required)**
+
+      `array`
+
+      **Items:**
+
+      `string`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 400,
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Something was wrong with the input data, check the details for more info.",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": "",
+      "formErrors": [
+        ""
+      ],
+      "fieldErrors": {
+        "propertyName*": [
+          ""
+        ]
+      }
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 401 Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 401,
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 500 Oh snap, something went wrong on our end. We're on it!
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 500,
+  "success": false,
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Oh snap, something went wrong on our end. We're on it!",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+### POST /v1/audio/transcriptions
+
+- **Method:** `POST`
+- **Path:** `/v1/audio/transcriptions`
+- **Tags:** gen.pollinations.ai
+
+Transcribe audio to text using Whisper or ElevenLabs Scribe.
+
+This endpoint is OpenAI Whisper API compatible.
+
+**Supported formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm
+
+**Models:** `whisper-large-v3` (default), `whisper-1`, `scribe`
+
+#### Request Body
+
+##### Content-Type: multipart/form-data
+
+- **`file` (required)**
+
+  `string`, format: `binary` — The audio file to transcribe. Supported formats: mp3, mp4, mpeg, mpga, m4a, wav, webm.
+
+- **`language`**
+
+  `string` — Language of the audio in ISO-639-1 format (e.g. \`en\`, \`fr\`). Improves accuracy.
+
+- **`model`**
+
+  `string`, default: `"whisper-large-v3"` — The model to use. Options: \`whisper-large-v3\`, \`whisper-1\`, \`scribe\`.
+
+- **`prompt`**
+
+  `string` — Optional text to guide the model's style or continue a previous segment.
+
+- **`response_format`**
+
+  `string`, possible values: `"json", "text", "srt", "verbose_json", "vtt"`, default: `"json"` — The format of the transcript output.
+
+- **`temperature`**
+
+  `number` — Sampling temperature between 0 and 1. Lower is more deterministic.
+
+**Example:**
+
+```json
+{
+  "file": {},
+  "model": "whisper-large-v3",
+  "language": "",
+  "prompt": "",
+  "response_format": "json",
+  "temperature": 1
+}
+```
+
+#### Responses
+
+##### Status: 200 Success - Returns transcription
+
+###### Content-Type: application/json
+
+- **`text`**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "text": ""
+}
+```
+
+##### Status: 400 Something was wrong with the input data, check the details for more info.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`fieldErrors` (required)**
+
+      `object`
+
+    - **`formErrors` (required)**
+
+      `array`
+
+      **Items:**
+
+      `string`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 400,
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Something was wrong with the input data, check the details for more info.",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": "",
+      "formErrors": [
+        ""
+      ],
+      "fieldErrors": {
+        "propertyName*": [
+          ""
+        ]
+      }
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 401 Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 401,
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
     "timestamp": "",
     "details": {
       "name": "",
@@ -2242,3 +4061,72 @@ API keys can be created from your dashboard at enter.pollinations.ai.
 - **Type:**
 
 **Example:**
+
+### CreateSpeechRequest
+
+- **Type:**`object`
+
+* **`input` (required)**
+
+  `string` — The text to generate audio for. Maximum 4096 characters.
+
+* **`model`**
+
+  `string`
+
+* **`response_format`**
+
+  `string`, possible values: `"mp3", "opus", "aac", "flac", "wav", "pcm"`, default: `"mp3"` — The audio format for the output.
+
+* **`speed`**
+
+  `number`, default: `1` — The speed of the generated audio. 0.25 to 4.0, default 1.0.
+
+* **`voice`**
+
+  `string`, possible values: `"alloy", "echo", "fable", "onyx", "shimmer", "ash", "ballad", "coral", "sage", "verse", "rachel", "domi", "bella", "elli", "charlotte", "dorothy", "sarah", "emily", "lily", "matilda", "adam", "antoni", "arnold", "josh", "sam", "daniel", "charlie", "james", "fin", "callum", "liam", "george", "brian", "bill"`, default: `"alloy"` — The voice to use. Available voices: alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill.
+
+**Example:**
+
+```json
+{
+  "model": "",
+  "input": "Hello, welcome to Pollinations!",
+  "voice": "rachel",
+  "response_format": "mp3",
+  "speed": 1
+}
+```
+## ❗ Common Error Responses
+
+### 401 — Invalid API Key
+Occurs when the API key is missing or incorrect.
+
+```json
+{
+  "error": "Invalid API key",
+  "status": 401
+}
+
+
+#### 403 — Model Not Allowed
+Occurs when the API key does not have permission to access the requested model.
+
+```json
+{
+  "error": "Model not allowed for this key",
+  "status": 403
+}
+
+
+
+{
+  "error": "Rate limit exceeded",
+  "status": 429
+}
+
+
+{
+  "error": "Bad request",
+  "status": 400
+}

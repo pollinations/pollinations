@@ -1,5 +1,3 @@
-import type { UsageConversionDefinition } from "./registry.ts";
-
 /**
  * The start date when pricing was introduced.
  * All services use this date for their initial cost definitions.

@@ -1,0 +1,120 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "nova-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          },
+          {
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "id": "tooluse_4lKPuVwV1N0VKW2vbIYevB",
+                "type": "function",
+                "function": {
+                  "name": "calculator",
+                  "arguments": "{\"a\": 5, \"b\": 3, \"operation\": \"add\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "tooluse_4lKPuVwV1N0VKW2vbIYevB",
+            "content": "{\"result\":8}"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "seed": 42,
+        "max_tokens": 4096
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "375",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Tue, 13 Jan 2026 21:47:48 GMT",
+      "etag": "W/\"177-cnayo7QtwZZ9fYPzv7J9DCtmyNc\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "amazon.nova-micro-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "16",
+      "x-usage-prompt-text-tokens": "773",
+      "x-usage-total-tokens": "789"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_cfa509ba77c361efde94bf94187c680d",
+        "created": 1768340868,
+        "model": "amazon.nova-micro-v1:0",
+        "system_fingerprint": "fp",
+        "choices": [
+          {
+            "index": 0,
+            "finish_reason": "stop",
+            "logprobs": null,
+            "message": {
+              "role": "assistant",
+              "content": "The result of 5 plus 3 is 8. There you go!"
+            }
+          }
+        ],
+        "object": "chat.completion",
+        "usage": {
+          "prompt_tokens": 773,
+          "completion_tokens": 16,
+          "total_tokens": 789
+        }
+      }
+    }
+  }
+}

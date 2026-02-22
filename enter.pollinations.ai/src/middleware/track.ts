@@ -1,67 +1,63 @@
-import { processEvents, storeEvents, updateEvent } from "@/events.ts";
-import { getModelStats, getEstimatedPrice } from "@/utils/model-stats.ts";
+import { getLogger } from "@logtape/logtape";
+import type { Usage } from "@shared/registry/registry.ts";
 import {
-    getActivePriceDefinition,
     calculateCost,
     calculatePrice,
-    ServiceId,
-    ModelId,
-    UsageCost,
-    UsagePrice,
-    PriceDefinition,
+    getActivePriceDefinition,
     getServiceDefinition,
+    type ModelId,
+    type PriceDefinition,
+    type ServiceId,
+    type UsageCost,
+    type UsagePrice,
 } from "@shared/registry/registry.ts";
-import type { ModelVariables } from "./model.ts";
 import {
-    openaiUsageToTokenUsage,
+    openaiUsageToUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
-import { routePath } from "hono/route";
-import {
-    CompletionUsage,
-    CompletionUsageSchema,
-    ContentFilterResult,
-    ContentFilterResultSchema,
-    ContentFilterSeveritySchema,
-} from "@/schemas/openai.ts";
-import { generateRandomId } from "@/util.ts";
+import { drizzle } from "drizzle-orm/d1";
+import { EventSourceParserStream } from "eventsource-parser/stream";
+import type { HonoRequest } from "hono";
 import { createMiddleware } from "hono/factory";
+import { routePath } from "hono/route";
+import { z } from "zod";
+import { mergeContentFilterResults } from "@/content-filter.ts";
+import type {
+    ApiKeyType,
+    EventType,
+    GenerationEventContentFilterParams,
+    InsertGenerationEvent,
+} from "@/db/schema/event.ts";
 import {
     contentFilterResultsToEventParams,
     priceToEventParams,
     usageToEventParams,
 } from "@/db/schema/event.ts";
-import { drizzle } from "drizzle-orm/d1";
-import { eq, sql } from "drizzle-orm";
-import { user as userTable } from "@/db/schema/better-auth.ts";
-import { HonoRequest } from "hono";
-import type {
-    ApiKeyType,
-    EstimateGenerationEvent,
-    EventType,
-    GenerationEventContentFilterParams,
-    InsertGenerationEvent,
-} from "@/db/schema/event.ts";
-import type { AuthVariables } from "@/middleware/auth.ts";
-import { PolarVariables } from "./polar.ts";
-import { z } from "zod";
-import { TokenUsage } from "../../../shared/registry/registry.js";
-import { removeUnset } from "@/util.ts";
-import { EventSourceParserStream } from "eventsource-parser/stream";
-import { mergeContentFilterResults } from "@/content-filter.ts";
+import type { ErrorVariables } from "@/env.ts";
 import {
     getDefaultErrorMessage,
     getErrorCode,
     UpstreamError,
 } from "@/error.ts";
+import { sendToTinybird } from "@/events.ts";
+import type { AuthVariables } from "@/middleware/auth.ts";
+import {
+    type CompletionUsage,
+    CompletionUsageSchema,
+    type ContentFilterResult,
+    ContentFilterResultSchema,
+    ContentFilterSeveritySchema,
+} from "@/schemas/openai.ts";
+import { generateRandomId, removeUnset } from "@/util.ts";
+import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
+import type { BalanceVariables } from "./balance.ts";
 import type { LoggerVariables } from "./logger.ts";
-import type { ErrorVariables } from "@/env.ts";
+import type { ModelVariables } from "./model.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
-import { getLogger } from "@logtape/logtape";
 
 export type ModelUsage = {
     model: ModelId;
-    usage: TokenUsage;
+    usage: Usage;
 };
 
 type RequestTrackingData = {
@@ -79,7 +75,7 @@ type ResponseTrackingData = {
     cacheData: CacheData;
     isBilledUsage: boolean;
     modelUsed?: string;
-    usage?: TokenUsage;
+    usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
     contentFilterResults?: GenerationEventContentFilterParams;
@@ -99,7 +95,7 @@ export type TrackEnv = {
     Variables: ErrorVariables &
         LoggerVariables &
         AuthVariables &
-        PolarVariables &
+        BalanceVariables &
         FrontendKeyRateLimitVariables &
         TrackVariables &
         ModelVariables;
@@ -118,7 +114,9 @@ export const track = (eventType: EventType) =>
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
             userTier: c.var.auth.user?.tier,
-            userGithubId: `${c.var.auth.user?.githubId}`,
+            userGithubId: c.var.auth.user?.githubId
+                ? String(c.var.auth.user.githubId)
+                : undefined,
             userGithubUsername: c.var.auth.user?.githubUsername,
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyType: c.var.auth.apiKey?.metadata?.keyType as ApiKeyType,
@@ -135,42 +133,6 @@ export const track = (eventType: EventType) =>
                 responseOverride = response;
             },
         });
-
-        let estimateEventId: string | undefined = generateRandomId();
-
-        if (userTracking.userId) {
-            try {
-                const modelStats = await getModelStats(c.env.KV, log);
-                const estimatedPrice = getEstimatedPrice(
-                    modelStats,
-                    requestTracking.resolvedModelRequested,
-                );
-
-                const estimateEvent = createEstimateEvent({
-                    id: estimateEventId,
-                    requestId: c.get("requestId"),
-                    requestPath: `${routePath(c)}`,
-                    startTime,
-                    environment: c.env.ENVIRONMENT,
-                    eventType,
-                    userTracking,
-                    requestTracking,
-                    estimatedPrice,
-                });
-
-                await storeEvents(db, log, [estimateEvent]);
-                log.debug(
-                    "Inserted estimate event: {estimateEventId} with estimatedPrice={estimatedPrice}",
-                    { estimateEventId, estimatedPrice },
-                );
-            } catch (error) {
-                log.error("Failed to insert estimate event: {error}", {
-                    error,
-                });
-                // Insertion failed, reset estimate event
-                estimateEventId = undefined;
-            }
-        }
 
         await next();
 
@@ -193,19 +155,14 @@ export const track = (eventType: EventType) =>
                 // Capture balance tracking AFTER next() so balanceCheckResult is set
                 const balanceTracking = {
                     selectedMeterId:
-                        c.var.polar.balanceCheckResult?.selectedMeterId,
+                        c.var.balance.balanceCheckResult?.selectedMeterId,
                     selectedMeterSlug:
-                        c.var.polar.balanceCheckResult?.selectedMeterSlug,
-                    balances: Object.fromEntries(
-                        c.var.polar.balanceCheckResult?.meters.map((meter) => [
-                            meter.metadata.slug,
-                            meter.balance,
-                        ]) || [],
-                    ),
+                        c.var.balance.balanceCheckResult?.selectedMeterSlug,
+                    balances: c.var.balance.balanceCheckResult?.balances || {},
                 } satisfies BalanceData;
 
                 const finalEvent = createTrackingEvent({
-                    id: estimateEventId || generateRandomId(),
+                    id: generateRandomId(),
                     requestId: c.get("requestId"),
                     requestPath: `${routePath(c)}`,
                     startTime,
@@ -232,84 +189,23 @@ export const track = (eventType: EventType) =>
                     { event: finalEvent },
                 );
 
-                if (estimateEventId) {
-                    // Update the estimate event with all final data
-                    await updateEvent(db, log, estimateEventId, finalEvent);
-                    log.debug(
-                        "Updated estimate event {eventId} with actual data",
-                        { eventId: estimateEventId },
-                    );
-                } else {
-                    // No pending event was inserted, store a new event
-                    await storeEvents(db, c.var.log, [finalEvent]);
-                }
+                await sendToTinybird(
+                    finalEvent,
+                    c.env.TINYBIRD_INGEST_URL,
+                    c.env.TINYBIRD_INGEST_TOKEN,
+                    log,
+                );
 
-                // Decrement local pollen balance after billable requests
-                // Strategy: decrement from tier_balance first, then pack_balance
-                if (
-                    responseTracking.isBilledUsage &&
-                    responseTracking.price?.totalPrice &&
-                    userTracking.userId
-                ) {
-                    const priceToDeduct = responseTracking.price.totalPrice;
-
-                    // Get current balances to determine how to split the deduction
-                    const currentUser = await db
-                        .select({
-                            tierBalance: userTable.tierBalance,
-                            packBalance: userTable.packBalance,
-                        })
-                        .from(userTable)
-                        .where(eq(userTable.id, userTracking.userId))
-                        .limit(1);
-
-                    const tierBalance = currentUser[0]?.tierBalance ?? 0;
-                    const packBalance = currentUser[0]?.packBalance ?? 0;
-
-                    // Decrement tier first, then pack
-                    const fromTier = Math.min(
-                        priceToDeduct,
-                        Math.max(0, tierBalance),
-                    );
-                    const fromPack = priceToDeduct - fromTier;
-
-                    await db
-                        .update(userTable)
-                        .set({
-                            tierBalance: sql`${userTable.tierBalance} - ${fromTier}`,
-                            packBalance: sql`${userTable.packBalance} - ${fromPack}`,
-                        })
-                        .where(eq(userTable.id, userTracking.userId));
-
-                    log.debug(
-                        "Decremented {price} pollen from user {userId} (tier: -{fromTier}, pack: -{fromPack})",
-                        {
-                            price: priceToDeduct,
-                            userId: userTracking.userId,
-                            fromTier,
-                            fromPack,
-                        },
-                    );
-                }
-
-                // process events immediately in development/testing
-                if (
-                    ["test", "development", "local"].includes(c.env.ENVIRONMENT)
-                ) {
-                    log.trace(
-                        "Processing events immediately (ENVIRONMENT={environment})",
-                        { environment: c.env.ENVIRONMENT },
-                    );
-                    await processEvents(db, log.getChild("events"), {
-                        polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
-                        polarServer: c.env.POLAR_SERVER,
-                        tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
-                        tinybirdIngestToken: c.env.TINYBIRD_INGEST_TOKEN,
-                        minBatchSize: 0, // process all events immediately
-                        minRetryDelay: 0, // don't wait between retries
-                        maxRetryDelay: 0, // don't wait between retries
-                    });
-                }
+                // Handle balance deduction for both API keys and users
+                await handleBalanceDeduction({
+                    db,
+                    isBilledUsage: responseTracking.isBilledUsage,
+                    totalPrice: responseTracking.price?.totalPrice,
+                    userId: userTracking.userId,
+                    apiKeyId: c.var.auth?.apiKey?.id,
+                    apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
+                    modelResolved: c.var.model?.resolved,
+                });
             })(),
         );
     });
@@ -371,6 +267,28 @@ async function trackResponse(
         ) {
             log.warn(
                 "Image generation returned non-image content-type: {contentType}",
+                { contentType },
+            );
+            return {
+                responseOk: response.ok,
+                responseStatus: response.status,
+                cacheData: cacheInfo,
+                isBilledUsage: false,
+            };
+        }
+    }
+    // For audio generation, verify the response content-type is expected.
+    // TTS returns audio/*, STT (whisper) returns application/json — both are valid.
+    if (eventType === "generate.audio") {
+        const contentType = response.headers.get("content-type") || "";
+        const isAudio = contentType.startsWith("audio/");
+        const isSTT =
+            contentType.startsWith("application/json") &&
+            getServiceDefinition(resolvedModelRequested as ServiceId)
+                ?.outputModalities?.[0] === "text";
+        if (!isAudio && !isSTT) {
+            log.warn(
+                "Audio generation returned unexpected content-type: {contentType}",
                 { contentType },
             );
             return {
@@ -467,52 +385,6 @@ type BalanceData = {
     balances: Record<string, number>;
 };
 
-type EstimateEventInput = {
-    id: string;
-    requestId: string;
-    requestPath: string;
-    startTime: Date;
-    environment: string;
-    eventType: EventType;
-    userTracking: UserData;
-    requestTracking: RequestTrackingData;
-    estimatedPrice: number;
-};
-
-function createEstimateEvent({
-    id,
-    requestId,
-    requestPath,
-    startTime,
-    environment,
-    eventType,
-    userTracking,
-    requestTracking,
-    estimatedPrice,
-}: EstimateEventInput): InsertGenerationEvent {
-    return {
-        id,
-        eventStatus: "estimate",
-        requestId,
-        requestPath,
-        startTime,
-        environment,
-        eventType,
-
-        ...userTracking,
-        ...requestTracking.referrerData,
-
-        modelRequested: requestTracking.modelRequested,
-        resolvedModelRequested: requestTracking.resolvedModelRequested,
-        modelProviderUsed: requestTracking.modelProvider,
-
-        isBilledUsage: false,
-        estimatedPrice,
-
-        ...priceToEventParams(requestTracking.modelPriceDefinition),
-    };
-}
-
 type TrackingEventInput = {
     id: string;
     requestId: string;
@@ -544,7 +416,6 @@ function createTrackingEvent({
 }: TrackingEventInput): InsertGenerationEvent {
     return {
         id,
-        eventStatus: "pending",
         requestId,
         requestPath,
         startTime,
@@ -584,8 +455,17 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
         return z.safeParse(z.coerce.boolean(), stream).data || false;
     }
     if (request.method === "POST") {
-        const stream = (await request.json()).stream;
-        return z.safeParse(z.coerce.boolean(), stream).data || false;
+        const contentType = request.header("content-type") || "";
+        // Skip JSON parsing for multipart requests (e.g., audio transcription)
+        if (contentType.includes("multipart/form-data")) {
+            return false;
+        }
+        try {
+            const stream = (await request.json()).stream;
+            return z.safeParse(z.coerce.boolean(), stream).data || false;
+        } catch {
+            return false;
+        }
     }
     return false;
 }
@@ -647,8 +527,8 @@ async function extractUsageAndContentFilterResultsStream(
             .nullish(),
     });
 
-    let model = undefined;
-    let usage: CompletionUsage | undefined = undefined;
+    let model: string | undefined;
+    let usage: CompletionUsage | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
 
@@ -698,7 +578,7 @@ async function extractUsageAndContentFilterResultsStream(
     return {
         modelUsage: {
             model: model as ModelId,
-            usage: openaiUsageToTokenUsage(usage),
+            usage: openaiUsageToUsage(usage),
         },
         contentFilterResults,
     };

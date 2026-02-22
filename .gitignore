@@ -348,3 +348,7 @@ debugsession_*/
 *.swp
 *.swo
 *~
+
+# Agent communication file (temporary)
+agent-communication.md
+.claude/settings.local.json

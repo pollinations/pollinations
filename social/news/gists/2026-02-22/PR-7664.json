@@ -1,0 +1,34 @@
+{
+  "pr_number": 7664,
+  "title": "Add FumajimeMura Z-Image Turbo to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7664",
+  "merged_at": "2026-02-22T16:41:27Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Turbo mode engaged",
+    "blurb": "FumajimeMura Z-Image Turbo joins the showcase. It's a high-speed batch generator, because sometimes you need all the pixels at once.",
+    "summary": "Added FumajimeMura Z-Image Turbo to the community apps list, enabling high-speed batch image generation via Flux Z-Image.",
+    "impact": "Users can now access a dedicated tool for rapid, bulk image creation using the latest models.",
+    "keywords": [
+      "community",
+      "showcase",
+      "batch-generation",
+      "images",
+      "flux"
+    ],
+    "visual_concept": "A retro 'turbo' machine or conveyor belt producing images rapidly. Polly the Bee and the Robot managing the flow.",
+    "image_prompt": "Cozy pixel art scene of a retro machine labeled 'TURBO' ejecting a rapid stream of polaroid photos. The cute robot mascot catches them in a neat stack while Polly the bee hovers nearby with a clipboard checking the speed. Lime green (#ecf874) machine lights and pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:42:16.536020+00:00"
+}

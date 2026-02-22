@@ -4,6 +4,7 @@ import {
     useCallback,
     useContext,
     useEffect,
+    useRef,
     useState,
 } from "react";
 import { PRESETS } from "../../theme/presets";
@@ -15,7 +16,8 @@ import {
 } from "../../theme/style/theme-processor";
 
 // Randomly select a preset for initial theme (visual only - no copy)
-const initialPreset = PRESETS[Math.floor(Math.random() * PRESETS.length)];
+const initialPresetIndex = Math.floor(Math.random() * PRESETS.length);
+const initialPreset = PRESETS[initialPresetIndex];
 
 const DefaultThemeDefinition = themeToDictionary(initialPreset.theme);
 const DefaultBackgroundHtml = initialPreset.backgroundHtml || null;
@@ -24,12 +26,15 @@ interface ThemeContextValue {
     themeDefinition: ThemeDictionary;
     themePrompt: string | null;
     backgroundHtml: string | null;
+    showThemeCreator: boolean;
+    setShowThemeCreator: (show: boolean) => void;
     setTheme: (
         newTheme: ThemeDictionary,
         prompt?: string,
         backgroundHtml?: string,
     ) => void;
     resetTheme: () => void;
+    cyclePreset: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
@@ -44,6 +49,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const [backgroundHtml, setBackgroundHtml] = useState<string | null>(
         DefaultBackgroundHtml,
     );
+    const [showThemeCreator, setShowThemeCreator] = useState(false);
+    const presetIndexRef = useRef(initialPresetIndex);
 
     // Apply initial theme CSS variables on mount
     useEffect(() => {
@@ -78,6 +85,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         [],
     );
 
+    const cyclePreset = useCallback(() => {
+        const nextIndex = (presetIndexRef.current + 1) % PRESETS.length;
+        presetIndexRef.current = nextIndex;
+        const preset = PRESETS[nextIndex];
+        setTheme(
+            themeToDictionary(preset.theme),
+            preset.id,
+            preset.backgroundHtml || "",
+        );
+        setShowThemeCreator(true);
+    }, [setTheme]);
+
     const resetTheme = useCallback(() => {
         setTheme(DefaultThemeDefinition, initialPreset.id, "");
     }, [setTheme]);
@@ -88,8 +107,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 themeDefinition,
                 themePrompt,
                 backgroundHtml,
+                showThemeCreator,
+                setShowThemeCreator,
                 setTheme,
                 resetTheme,
+                cyclePreset,
             }}
         >
             {children}

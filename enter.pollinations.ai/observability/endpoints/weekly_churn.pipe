@@ -1,0 +1,50 @@
+DESCRIPTION >
+    Weekly churn metrics using retention data
+
+TOKEN model_usage READ
+
+NODE weekly_churn_node
+SQL >
+    %
+    SELECT
+        week,
+        active_users,
+        retained_from_4w AS users_4w_ago,
+        if(users_4w_ago > 0, users_4w_ago - retained_from_4w_still_active, 0) AS churned_users,
+        if(users_4w_ago > 0, round((users_4w_ago - retained_from_4w_still_active) * 100.0 / users_4w_ago, 1), 0) AS churn_rate
+    FROM (
+        SELECT
+            toStartOfWeek(start_time, 1) AS week,
+            uniqExact(user_id) AS active_users,
+            -- Count users who were also active 4 weeks ago
+            uniqExactIf(user_id, 
+                user_id GLOBAL IN (
+                    SELECT user_id FROM generation_event 
+                    WHERE environment = 'production' 
+                        AND response_status >= 200 AND response_status < 300
+                        AND start_time >= toStartOfWeek(now(), 1) - INTERVAL {{ Int32(weeks_back, 12) + 4 }} WEEK
+                        AND start_time < toStartOfWeek(now(), 1) - INTERVAL {{ Int32(weeks_back, 12) + 3 }} WEEK
+                )
+            ) AS retained_from_4w,
+            -- Users from 4w ago who are still active in recent 2 weeks
+            uniqExactIf(user_id,
+                user_id GLOBAL IN (
+                    SELECT user_id FROM generation_event 
+                    WHERE environment = 'production' 
+                        AND response_status >= 200 AND response_status < 300
+                        AND start_time >= toStartOfWeek(now(), 1) - INTERVAL {{ Int32(weeks_back, 12) + 4 }} WEEK
+                        AND start_time < toStartOfWeek(now(), 1) - INTERVAL {{ Int32(weeks_back, 12) + 3 }} WEEK
+                )
+                AND start_time >= toStartOfWeek(now(), 1) - INTERVAL 2 WEEK
+            ) AS retained_from_4w_still_active
+        FROM generation_event
+        WHERE
+            environment = 'production'
+            AND response_status >= 200 AND response_status < 300
+            AND user_id != 'undefined'
+            AND start_time >= toStartOfWeek(now(), 1) - INTERVAL {{ Int32(weeks_back, 12) }} WEEK
+        GROUP BY week
+    )
+    ORDER BY week ASC
+
+TYPE endpoint

@@ -11,6 +11,7 @@ interface ModelSelectorProps {
     showLegend?: boolean;
     allowedImageModelIds: Set<string>;
     allowedTextModelIds: Set<string>;
+    allowedAudioModelIds: Set<string>;
 }
 
 /**
@@ -26,6 +27,7 @@ export const ModelSelector = memo(function ModelSelector({
     showLegend = true,
     allowedImageModelIds,
     allowedTextModelIds,
+    allowedAudioModelIds,
 }: ModelSelectorProps) {
     // Get translated copy
     const { copy } = usePageCopy(PLAY_PAGE);
@@ -70,29 +72,33 @@ export const ModelSelector = memo(function ModelSelector({
                     const hasVideoOutput = m.hasVideoOutput;
                     const hasAudioOutput = m.hasAudioOutput;
                     const isImage = m.type === "image";
+                    const isPaidOnly = m.paid_only;
 
-                    // Priority: video > audio > image > text
+                    const isAudio = m.type === "audio";
+
+                    // Priority: video > audio (by output or type) > image > text
                     const modelType = hasVideoOutput
                         ? "video"
-                        : hasAudioOutput
+                        : hasAudioOutput || isAudio
                           ? "audio"
                           : isImage
                             ? "image"
                             : "text";
                     const isActive = selectedModel === m.id;
-                    const allowedSet =
-                        m.type === "image"
-                            ? allowedImageModelIds
-                            : allowedTextModelIds;
+                    const allowedSet = isImage
+                        ? allowedImageModelIds
+                        : isAudio
+                          ? allowedAudioModelIds
+                          : allowedTextModelIds;
                     const isAllowed = allowedSet.has(m.id);
 
-                    const borderColorClass = hasVideoOutput
-                        ? "border-indicator-video"
-                        : hasAudioOutput
-                          ? "border-indicator-audio"
+                    const borderColor = hasVideoOutput
+                        ? "rgb(var(--indicator-video))"
+                        : hasAudioOutput || isAudio
+                          ? "rgb(var(--indicator-audio))"
                           : isImage
-                            ? "border-indicator-image"
-                            : "border-indicator-text";
+                            ? "rgb(var(--indicator-image))"
+                            : "rgb(var(--indicator-text))";
 
                     return (
                         <div key={m.id} className="relative group">
@@ -105,18 +111,24 @@ export const ModelSelector = memo(function ModelSelector({
                                 data-type={modelType}
                                 disabled={!isAllowed}
                                 title={m.description || m.id}
-                                className={`border-2 ${borderColorClass} ${
+                                className={`border-2 ${
                                     !isAllowed
                                         ? "opacity-40 cursor-not-allowed grayscale"
                                         : ""
                                 }`}
+                                style={{ borderColor }}
                             >
                                 {m.name}
+                                {isPaidOnly && (
+                                    <span className="ml-1 text-[9px] font-black uppercase tracking-wider text-indicator-warning">
+                                        💎
+                                    </span>
+                                )}
                             </Button>
                             {!isAllowed && (
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-surface-card text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                     {copy.gatedModelTooltip}
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-surface-card" />
                                 </div>
                             )}
                         </div>

@@ -17,6 +17,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [Gen Layers](http://genlayers.com/) | AI tool to generate high-CTR YouTube thumbnails from titles and visuals | @Mustafiz82 |
 | [ImageGenAI Pro](https://imgimg-two.vercel.app/) | Generate images in any aspect ratio with ImageGenAI Pro. | @prabhatkashyap902 |
 | [nails-generator](https://nails-generator.netlify.app/) | Generate AI nail art designs with nails-generator, producing style, color, and pattern variations for manicure mockups. | @rodriguetg |
 | [FeedHire](https://feedhire.me/) | AI job aggregator that filters postings from Telegram, Reddit and other sources | @rafipatel |
@@ -26,7 +27,6 @@
 | [FumajimeMura Z-Image Turbo](https://urea.github.io/FumajimeMura-Z-Image-Turbo/) | High-speed batch image generator using Pollinations AI Flux Z-Image | @urea |
 | [Chamuka DrawIt](https://drawit.chamuka.ai) | Create designs by generating images powered by Pollinations. | @swiftugandan |
 | [Xenchat](https://chat.xenai.tech) | Fine-tuned AI chat powered by OpenWebUI and Pollinations for fast responses | @Screenmax1234 |
-| [LinguaSpark](https://linguaspark2.netlify.app/) | Modern language learning with interactive games and AI-generated practice. | @GxAditya |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

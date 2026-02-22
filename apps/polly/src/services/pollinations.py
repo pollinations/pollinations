@@ -4,6 +4,7 @@ import logging
 import random
 import time
 from collections.abc import Callable
+from contextvars import ContextVar
 from typing import Any
 
 MAX_RETRIES = 3
@@ -12,12 +13,16 @@ MAX_SEED = 2**31 - 1
 
 import aiohttp
 
+# Per-request auth override (used by API mode to pass through user's key)
+_auth_override: ContextVar[str] = ContextVar("auth_override", default="")
+
 from ..config import config
 from ..constants import (
     API_TIMEOUT,
     GITHUB_TOOLS,
     POLLINATIONS_API_BASE,
     filter_admin_actions_from_tools,
+    filter_api_tools,
     filter_tools_by_intent,
     get_tool_system_prompt,
 )
@@ -141,8 +146,9 @@ class PollinationsClient:
         file_urls: list[str] | None = None,
         is_admin: bool = False,
         tool_context: dict | None = None,
+        mode: str = "discord",
     ) -> dict:
-        system_content = get_tool_system_prompt(is_admin=is_admin)
+        system_content = get_tool_system_prompt(is_admin=is_admin, mode=mode)
         if is_admin:
             system_content += "\n\n## ADMIN MODE\nUser is admin. All tools available. Confirm before destructive ops (merge, delete, lock, close PR, bulk edits, etc.) - use judgment."
         else:
@@ -249,6 +255,7 @@ class PollinationsClient:
             is_admin=is_admin,
             user_message=user_message,
             tool_context=tool_context,
+            mode=mode,
         )
         return result
 
@@ -260,6 +267,7 @@ class PollinationsClient:
         is_admin: bool = False,
         user_message: str = "",
         tool_context: dict | None = None,
+        mode: str = "discord",
     ) -> dict:
         """Make API call with tool support and handle tool calls."""
 
@@ -274,7 +282,10 @@ class PollinationsClient:
             GITHUB_TOOLS.copy(), config.local_embeddings_enabled, config.doc_embeddings_enabled
         )
 
-        all_tools = filter_admin_actions_from_tools(all_tools, is_admin)
+        if mode == "api":
+            all_tools = filter_api_tools(all_tools)
+        else:
+            all_tools = filter_admin_actions_from_tools(all_tools, is_admin)
         tools = filter_tools_by_intent(user_message, all_tools, is_admin) if user_message else all_tools
 
         # Log available tools for debugging
@@ -467,9 +478,11 @@ class PollinationsClient:
         - 3 retry attempts with 5s delay between retries
         - New random seed for each retry attempt
         """
+        # Use per-request auth override if set (API key pass-through), else bot's token
+        auth_token = _auth_override.get() or f"Bearer {config.pollinations_token}"
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {config.pollinations_token}",
+            "Authorization": auth_token,
         }
 
         url = f"{POLLINATIONS_API_BASE}/v1/chat/completions"

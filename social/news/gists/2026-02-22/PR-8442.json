@@ -1,0 +1,35 @@
+{
+  "pr_number": 8442,
+  "title": "Add LLM Client to Dev_Tools",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8442",
+  "merged_at": "2026-02-22T09:04:23Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Go fetch the LLMs",
+    "blurb": "A new minimal Go client joins the hive. Standard library only, no heavy dependencies, just pure connectivity.",
+    "summary": "Added LLM Client, a lightweight standard-library-only Go client for OpenAI-compatible endpoints, to the Dev Tools collection.",
+    "impact": "Go developers gain a unified, dependency-free interface for integrating LLM capabilities into their applications.",
+    "keywords": [
+      "go",
+      "golang",
+      "client",
+      "dev-tools",
+      "openai-compatible",
+      "library"
+    ],
+    "visual_concept": "Polly the bee meeting a cute pixel art gopher (representing the Go language). The gopher is holding a very small, lightweight package (representing the minimal client).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot greeting a small, cute pixelated gopher character. The gopher holds a tiny, glowing lime green (#ecf874) data packet. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T09:05:07.123429+00:00"
+}

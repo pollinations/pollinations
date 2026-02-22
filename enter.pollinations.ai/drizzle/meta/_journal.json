@@ -1,7 +1,8 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "entries": [{
+  "entries": [
+    {
       "idx": 0,
       "version": "6",
       "when": 1758838821183,
@@ -111,6 +112,13 @@
       "version": "6",
       "when": 1767370640413,
       "tag": "0015_great_wonder_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1769255535655,
+      "tag": "0016_migrate-temporary-keytype-to-secret",
       "breakpoints": true
     }
   ]

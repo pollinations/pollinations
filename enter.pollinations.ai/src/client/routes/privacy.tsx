@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import privacyMarkdown from "../../../legal/PRIVACY_POLICY.md?raw";
-import { LegalPageLayout } from "../components/LegalPageLayout";
+import { LegalPageLayout } from "../components/layout/legal-page-layout";
 
 export const Route = createFileRoute("/privacy")({
     component: PrivacyComponent,

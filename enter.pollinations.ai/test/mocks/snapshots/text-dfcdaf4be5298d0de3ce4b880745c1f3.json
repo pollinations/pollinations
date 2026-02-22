@@ -1,0 +1,82 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "claude-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Describe this image in one word."
+              },
+              {
+                "type": "image_url",
+                "image_url": {
+                  "url": "https://picsum.photos/id/237/200/300"
+                }
+              }
+            ]
+          }
+        ],
+        "max_tokens": 50
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "441",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Mon, 09 Feb 2026 11:02:16 GMT",
+      "etag": "W/\"1b9-UKbp7LdvOqzHbsr6gSqhmyRA1wc\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "8",
+      "x-usage-prompt-text-tokens": "376"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_b2a60aadcad18a71a94088369814b4c6",
+        "object": "chat.completion",
+        "created": 1770634936,
+        "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        "provider": "bedrock",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Soulful.",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "Soulful."
+                }
+              ]
+            },
+            "finish_reason": "end_turn"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 376,
+          "completion_tokens": 8,
+          "total_tokens": 384,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

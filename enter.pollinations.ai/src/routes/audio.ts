@@ -1,5 +1,5 @@
 import type { Logger } from "@logtape/logtape";
-import { ELEVENLABS_VOICES, VOICE_MAPPING } from "@shared/registry/audio.ts";
+import { ELEVENLABS_VOICES, resolveElevenLabsVoiceId } from "@shared/registry/audio.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
@@ -35,11 +35,11 @@ const CreateSpeechRequestSchema = z
             example: "Hello, welcome to Pollinations!",
         }),
         voice: z
-            .enum(ELEVENLABS_VOICES as [string, ...string[]])
+            .string()
             .default("alloy")
             .meta({
-                description: `The voice to use. Available voices: ${ELEVENLABS_VOICES.join(", ")}.`,
-                example: "rachel",
+                description: `The voice to use. Can be any preset name (${ELEVENLABS_VOICES.join(", ")}) OR a custom ElevenLabs voice ID (UUID from your dashboard).`,
+                example: "rachel OR your-custom-voice-uuid-1234567890abcdef",
             }),
         response_format: z
             .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
@@ -100,11 +100,13 @@ export async function generateSpeech(opts: {
         });
     }
 
-    const voiceId = VOICE_MAPPING[voice];
-    if (!voiceId) {
+    const voiceId = resolveElevenLabsVoiceId(voice);
+
+    // Basic sanity check (custom voice IDs are long strings/UUIDs)
+    if (!voiceId || voiceId.length < 8) {
         log.warn("Invalid voice requested: {voice}", { voice });
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice: ${voice}. Available voices: ${Object.keys(VOICE_MAPPING).join(", ")}.`,
+            message: `Invalid voice: ${voice}. Use a preset name or valid ElevenLabs voice ID.`,
         });
     }
 

@@ -15,7 +15,7 @@ jobs:
           # Call the tier refill endpoint
           response=$(curl -s -w "\n%{http_code}" -X POST \
             "https://enter.pollinations.ai/api/admin/trigger-refill" \
-            -H "Authorization: Bearer ${{ secrets.PLN_ENTER_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.REFILL_TOKEN }}" \
             -H "Content-Type: application/json")
 
           # Parse response and status code

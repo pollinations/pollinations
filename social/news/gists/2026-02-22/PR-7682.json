@@ -1,0 +1,34 @@
+{
+  "pr_number": 7682,
+  "title": "Add Xenchat to Chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7682",
+  "merged_at": "2026-02-22T16:39:20Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Xenchat enters the chat",
+    "blurb": "A new fine-tuned chat experience powered by OpenWebUI has bloomed in our ecosystem. Fast responses, fresh vibes.",
+    "summary": "Added Xenchat, a fine-tuned AI chat interface powered by OpenWebUI and Pollinations, to the community apps showcase.",
+    "impact": "Users can now discover and access Xenchat directly from our community application list.",
+    "keywords": [
+      "community",
+      "chat",
+      "openwebui",
+      "showcase",
+      "apps"
+    ],
+    "visual_concept": "Polly the bee discovering a new retro terminal in the garden representing the new chat app. The terminal is cozy and overgrown with vines.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot hovering curiously near a retro computer terminal labeled 'XEN' nestled in a garden. The terminal screen glows lime green (#ecf874) with chat bubbles. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:40:04.908193+00:00"
+}

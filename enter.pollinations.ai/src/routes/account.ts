@@ -4,8 +4,22 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
-import { user as userTable } from "@/db/schema/better-auth.ts";
-import { calculateNextPeriodStart, tierNames } from "@/utils/polar.ts";
+import {
+    apikey as apikeyTable,
+    user as userTable,
+} from "@/db/schema/better-auth.ts";
+import type { ApiKeyType } from "@/db/schema/event.ts";
+import { tierNames } from "@/tier-config.ts";
+
+// Calculate next tier refill time (midnight UTC) - cron runs daily at 00:00 UTC
+function getNextRefillAt(): string {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    tomorrow.setUTCHours(0, 0, 0, 0);
+    return tomorrow.toISOString();
+}
+
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
@@ -41,7 +55,6 @@ type DailyUsageRecord = {
     meter_source: string | null;
     requests: number;
     cost_usd: number;
-    api_key_names: string[];
 };
 
 // Response schema for daily usage OpenAPI documentation
@@ -54,9 +67,6 @@ const dailyUsageRecordSchema = z.object({
         .describe("Billing source ('tier', 'pack', 'crypto')"),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
-    api_key_names: z
-        .array(z.string())
-        .describe("List of API key names used for this date/model"),
 });
 
 const dailyUsageResponseSchema = z.object({
@@ -71,6 +81,10 @@ const profileResponseSchema = z.object({
     name: z.string().nullable().describe("User's display name"),
     email: z.email().nullable().describe("User's email address"),
     githubUsername: z.string().nullable().describe("GitHub username if linked"),
+    image: z
+        .string()
+        .nullable()
+        .describe("Profile picture URL (e.g. GitHub avatar)"),
     tier: z
         .enum(["anonymous", ...tierNames])
         .describe("User's current tier level"),
@@ -103,7 +117,7 @@ const usageRecordSchema = z.object({
     api_key_type: z
         .string()
         .nullable()
-        .describe("Type of API key ('secret', 'publishable', 'temporary')"),
+        .describe("Type of API key ('secret', 'publishable')"),
     meter_source: z
         .string()
         .nullable()
@@ -183,6 +197,7 @@ export const accountRoutes = new Hono<Env>()
                     name: userTable.name,
                     email: userTable.email,
                     githubUsername: userTable.githubUsername,
+                    image: userTable.image,
                     tier: userTable.tier,
                     createdAt: userTable.createdAt,
                     lastTierGrant: userTable.lastTierGrant,
@@ -196,17 +211,14 @@ export const accountRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "User not found" });
             }
 
-            // Convert Unix seconds from DB to JS milliseconds
-            const nextResetAt = profile.lastTierGrant
-                ? calculateNextPeriodStart(
-                      new Date(profile.lastTierGrant * 1000),
-                  ).toISOString()
-                : null;
+            // Next reset is always midnight UTC (cron runs daily)
+            const nextResetAt = getNextRefillAt();
 
             return c.json({
                 name: profile.name,
                 email: profile.email,
                 githubUsername: profile.githubUsername ?? null,
+                image: profile.image ?? null,
                 tier: profile.tier,
                 createdAt: profile.createdAt,
                 nextResetAt,
@@ -249,10 +261,7 @@ export const accountRoutes = new Hono<Env>()
             }
 
             // If API key has a budget, return that
-            if (
-                apiKey?.pollenBalance !== null &&
-                apiKey?.pollenBalance !== undefined
-            ) {
+            if (apiKey?.pollenBalance != null) {
                 return c.json({ balance: apiKey.pollenBalance });
             }
 
@@ -272,8 +281,13 @@ export const accountRoutes = new Hono<Env>()
             const packBalance = users[0]?.packBalance ?? 0;
             const cryptoBalance = users[0]?.cryptoBalance ?? 0;
 
+            // Clamp each bucket at 0 before summing — individual buckets can go negative
+            // from overage but shouldn't reduce the visible total
             return c.json({
-                balance: tierBalance + packBalance + cryptoBalance,
+                balance:
+                    Math.max(0, tierBalance) +
+                    Math.max(0, packBalance) +
+                    Math.max(0, cryptoBalance),
             });
         },
     )
@@ -559,6 +573,152 @@ export const accountRoutes = new Hono<Env>()
                 log.error("Error fetching daily usage: {error}", { error });
                 return c.json({ error: "Failed to fetch usage data" }, 500);
             }
+        },
+    )
+    .get(
+        "/key",
+        describeRoute({
+            tags: ["gen.pollinations.ai"],
+            description:
+                "Get API key status and information. Returns key validity, type, expiry, permissions, and remaining budget. This endpoint allows validating keys without making expensive generation requests. Requires API key authentication.",
+            responses: {
+                200: {
+                    description: "API key status and information",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.object({
+                                    valid: z
+                                        .boolean()
+                                        .describe(
+                                            "Whether the API key is valid and active",
+                                        ),
+                                    type: z
+                                        .enum(["publishable", "secret"])
+                                        .describe("Type of API key"),
+                                    name: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Display name of the API key",
+                                        ),
+                                    expiresAt: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Expiry timestamp in ISO 8601 format, null if never expires",
+                                        ),
+                                    expiresIn: z
+                                        .number()
+                                        .nullable()
+                                        .describe(
+                                            "Seconds until expiry, null if never expires",
+                                        ),
+                                    permissions: z
+                                        .object({
+                                            models: z
+                                                .array(z.string())
+                                                .nullable()
+                                                .describe(
+                                                    "List of allowed model IDs, null = all models allowed",
+                                                ),
+                                            account: z
+                                                .array(z.string())
+                                                .nullable()
+                                                .describe(
+                                                    "List of account permissions, null = no account access",
+                                                ),
+                                        })
+                                        .describe("API key permissions"),
+                                    pollenBudget: z
+                                        .number()
+                                        .nullable()
+                                        .describe(
+                                            "Remaining pollen budget for this key, null = unlimited (uses user balance)",
+                                        ),
+                                    rateLimitEnabled: z
+                                        .boolean()
+                                        .describe(
+                                            "Whether rate limiting is enabled for this key",
+                                        ),
+                                }),
+                            ),
+                        },
+                    },
+                },
+                401: {
+                    description: "Invalid or missing API key",
+                },
+            },
+        }),
+        async (c) => {
+            const log = c.get("log").getChild("account-key");
+
+            // This endpoint requires API key authentication
+            const apiKey = c.var.auth.apiKey;
+            if (!apiKey) {
+                log.debug("No API key provided");
+                throw new HTTPException(401, {
+                    message:
+                        "API key required. This endpoint validates API keys.",
+                });
+            }
+
+            log.debug("Returning status for API key: {keyId}", {
+                keyId: apiKey.id,
+            });
+
+            // Get key type from metadata (set at key creation time)
+            const keyType: ApiKeyType =
+                (apiKey.metadata?.keyType as ApiKeyType) || "secret";
+
+            // Fetch additional key details from DB
+            const db = drizzle(c.env.DB);
+            const keyDetails = await db
+                .select({
+                    expiresAt: apikeyTable.expiresAt,
+                })
+                .from(apikeyTable)
+                .where(eq(apikeyTable.id, apiKey.id))
+                .get();
+
+            let expiresAt: string | null = null;
+            let expiresIn: number | null = null;
+
+            if (keyDetails?.expiresAt) {
+                // Convert timestamp to ISO string
+                const expiryDate = new Date(keyDetails.expiresAt);
+                expiresAt = expiryDate.toISOString();
+
+                // Calculate seconds until expiry
+                const now = Date.now();
+                const msUntilExpiry = expiryDate.getTime() - now;
+
+                if (msUntilExpiry > 0) {
+                    expiresIn = Math.floor(msUntilExpiry / 1000);
+                } else {
+                    // Key is already expired
+                    expiresIn = 0;
+                }
+            }
+
+            // Format permissions for response
+            const permissions = {
+                models: apiKey.permissions?.models || null,
+                account: apiKey.permissions?.account || null,
+            };
+
+            return c.json({
+                valid: true, // If we got here, the key is valid
+                type: keyType,
+                name: apiKey.name || null,
+                expiresAt,
+                expiresIn,
+                permissions,
+                pollenBudget: apiKey.pollenBalance ?? null,
+                // Rate limiting applies to publishable keys only (see rate-limit-durable.ts)
+                rateLimitEnabled: keyType === "publishable",
+            });
         },
     );
 

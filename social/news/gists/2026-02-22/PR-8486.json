@@ -1,0 +1,34 @@
+{
+  "pr_number": 8486,
+  "title": "Add ImageGenAI Pro to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8486",
+  "merged_at": "2026-02-22T16:51:37Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "New bloom: ImageGenAI Pro",
+    "blurb": "A new flower has opened in the Creative garden. ImageGenAI Pro is here to help you stretch your imagination (and your aspect ratios).",
+    "summary": "Added ImageGenAI Pro to the community showcase, offering image generation with flexible aspect ratio support.",
+    "impact": "Users can now discover and access ImageGenAI Pro directly from the apps list for more versatile image creation.",
+    "keywords": [
+      "community",
+      "showcase",
+      "image-generation",
+      "creative-tools",
+      "apps"
+    ],
+    "visual_concept": "An art studio in the garden. Polly the bee is the artist, emphasizing the 'Creative' category. The focus is on 'aspect ratios', so we depict a canvas or frame being stretched or resized.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, working on a glowing digital canvas in a garden studio. A chunky robot companion holds a golden frame that stretches wide. Lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:52:24.701445+00:00"
+}

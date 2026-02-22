@@ -20,11 +20,11 @@ Must run from the `pollinations` repo root with access to `enter.pollinations.ai
 
 | Tier | Emoji | Pollen/Day | Criteria |
 |------|-------|------------|----------|
-| spore | 🍄 | 1 | Default (new signups) |
+| microbe | 🦠 | 0.1 | Entry tier (auto-upgrades once verified) |
+| spore | 🍄 | 1 | Verified accounts |
 | seed | 🌱 | 3 | GitHub engagement |
-| flower | 🌸 | 10 | Contributed code/project |
-| nectar | 🍯 | 20 | Strategic partners |
-| router | 🔌 | 100 | Infrastructure partners |
+| flower | 🌸 | 10 | Contributor |
+| nectar | 🍯 | 20 | Coming soon |
 
 ---
 

@@ -35,17 +35,21 @@ export const HELLO_PAGE = {
     tiersSubtitle: "Grow Through Our Tier System",
     tiersBetaNote:
         "⚠️ We're in beta — tiers, rewards, and values may change as we fine-tune the ecosystem.",
-    tierSporeTitle: "Spore — 1 pollen/day",
-    tierSporeDescription: "You just signed up. Welcome to the community!",
-    tierSeedTitle: "Seed — 3 pollen/day",
-    tierSeedDescription:
-        "Auto-upgraded daily based on your GitHub activity (account age, commits, repos, stars).",
-    tierFlowerTitle: "Flower — 10 pollen/day",
-    tierFlowerDescription:
-        "Submit an app to our showcase. Requires Seed tier first.",
-    tierNectarTitle: "Nectar — 20 pollen/day",
-    tierNectarDescription:
-        "Reserved for maintainers and major contributors. Coming soon.",
+    tierMicrobeTitle: "Microbe",
+    tierMicrobeDescription: "Entry tier",
+    tierMicrobePollen: "0.1",
+    tierSporeTitle: "Spore",
+    tierSporeDescription: "Verified",
+    tierSporePollen: "1",
+    tierSeedTitle: "Seed",
+    tierSeedDescription: "GitHub activity",
+    tierSeedPollen: "3",
+    tierFlowerTitle: "Flower",
+    tierFlowerDescription: "Contributor",
+    tierFlowerPollen: "10",
+    tierNectarTitle: "Nectar",
+    tierNectarDescription: "Soon",
+    tierNectarPollen: "20",
 
     // Earn Pollen: Quests
     questsSubtitle: "Ways to Contribute",

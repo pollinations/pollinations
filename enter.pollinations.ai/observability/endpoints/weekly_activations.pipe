@@ -1,0 +1,29 @@
+DESCRIPTION >
+    Weekly D7 activations - users grouped by their first activity week.
+    Returns user_id and first_activity_date for joining with D1 registration data.
+
+TOKEN model_usage READ
+
+NODE first_activity_per_user
+SQL >
+    %
+    SELECT
+        user_id,
+        min(start_time) AS first_activity
+    FROM generation_event
+    WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
+    AND environment = 'production'
+    AND user_id != 'undefined'
+    AND user_id != ''
+    GROUP BY user_id
+
+NODE weekly_first_activity
+SQL >
+    SELECT
+        user_id,
+        formatDateTime(first_activity, '%Y-%m-%d') AS first_activity_date,
+        formatDateTime(toStartOfWeek(first_activity, 1), '%Y-%m-%d') AS first_activity_week
+    FROM first_activity_per_user
+    ORDER BY first_activity_week DESC
+
+TYPE endpoint

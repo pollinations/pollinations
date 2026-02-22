@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import { AUTH_COPY } from "../../copy/content/auth";
 import { LAYOUT } from "../../copy/content/layout";
 import { SOCIAL_LINKS } from "../../copy/content/socialLinks";
@@ -290,8 +290,8 @@ function Layout() {
                             {/* 2. Terms, Privacy, Email, Enter */}
                             <div className="flex items-center justify-center">
                                 <Button
-                                    as="a"
-                                    href="/terms"
+                                    as={Link}
+                                    to="/terms"
                                     variant="iconText"
                                     size={null}
                                     className="h-10"
@@ -301,8 +301,8 @@ function Layout() {
                                     </span>
                                 </Button>
                                 <Button
-                                    as="a"
-                                    href="/privacy"
+                                    as={Link}
+                                    to="/privacy"
                                     variant="iconText"
                                     size={null}
                                     className="h-10"
@@ -374,8 +374,8 @@ function Layout() {
                             {/* Center: Links as Buttons */}
                             <div className="flex items-center flex-shrink-0">
                                 <Button
-                                    as="a"
-                                    href="/terms"
+                                    as={Link}
+                                    to="/terms"
                                     variant="iconText"
                                     size={null}
                                     className="h-10"
@@ -385,8 +385,8 @@ function Layout() {
                                     </span>
                                 </Button>
                                 <Button
-                                    as="a"
-                                    href="/privacy"
+                                    as={Link}
+                                    to="/privacy"
                                     variant="iconText"
                                     size={null}
                                     className="h-10"

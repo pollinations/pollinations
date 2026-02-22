@@ -17,18 +17,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🎨 Theta AI](https://www.facebook.com/thetallm) | Generate images from user prompts using Theta AI, outputting images in multiple styles and resolutions. | [@takrim1999](https://github.com/takrim1999) |
-| [🖌️ AIImageEditor](https://github.com/mikemartemianov/ImageGenerator) | AI image editor with brush editing, outpainting, upscaling, and multi-model support. | [@MikeMartemianov](https://github.com/MikeMartemianov) |
-| [🎨 Sticker Garden](https://sticker-garden.vercel.app/) | Turn text prompts into sticker-ready images with style presets and batch variants. | [@GekkeTovie](https://github.com/GekkeTovie) |
-| [🎬 P2S](https://github.com/Rakesh-ada/P2S) | Image consistency engine for AI filmmaking with scene memory and auto-repair. | [@Rakesh-ada](https://github.com/Rakesh-ada) |
-| [🔀 AI Router](https://twangymoney.pythonanywhere.com/docs/ai-router) | OpenRouter-style workstation with dark UI, branching chat history, and vision support. | [@TwangyMoney](https://github.com/TwangyMoney) |
-| [💬 Tenna AI](https://tennaai.com) | AI mental health companion with mood analysis, guided journal, and relaxation features. | [@b1onix](https://github.com/b1onix) |
-| [📊 PolliBench](https://pollibench.netlify.app/) | Benchmark all Pollinations models automatically with frontend HTML questions. | [@notlousybook](https://github.com/notlousybook) |
-| [📝 AI Quiz Simulator](https://mrlearner1606.github.io/quiz/) | Free AI-powered quiz simulator for competitive exams with timer, scoring, and explanations. | [@mrlearner1606](https://github.com/mrlearner1606) |
-| [🧠 Personic](https://github.com/AlanSynn/personic) | Generate structured AI personas and matching images from brief action prompts. | [@AlanSynn](https://github.com/AlanSynn) |
-| [📖 TaleCrafter AI](https://www.talecrafter.tech/) | Interactive storytelling platform turning prompts into digital storybooks with AI illustrations. | [@adityashriwas](https://github.com/adityashriwas) |
+| [Theta AI](https://www.facebook.com/thetallm) | Generate images from user prompts using Theta AI, outputting images in multiple styles and resolutions. | @takrim1999 |
+| [Textify](https://letstypifythecontent.web.app/) | AI-powered content writer for generating articles, posts, and marketing copy. | @KanujanKing777 |
+| [Productivity Gears](http://productivitygears.com/) | Suite of 100+ free productivity tools: AI assistants, converters, PDF editors. | @hadi0096 |
+| [Pollination fashion bulk creator](https://hautecouture.today/) | Generate AI fashion collections from prompts to atelier-ready assets. | @LaurentVoanh |
+| SnapSell | Generate AI-powered product listings for Facebook, Shopify, eBay, and more. | @marifaceless |
+| [Coursify](https://coursify-website.vercel.app/) | AI platform converting YouTube playlists into structured courses with progress. | @hasanraiyan |
+| [Pollenboard](https://pollenboard.vercel.app/) | Self-hostable image, audio, and text generation frontend using pollinations.ai. | @zhangshi0512 |
+| [langchain-pollinations](https://pypi.org/project/langchain-pollinations/) | LangChain integration for pollinations.ai — build agents, RAGs, and AI applications. | @onatrain |
+| LLM Client | Minimal stdlib-only Go client with a unified API for OpenAI-compatible LLM endpoints. | @SkalaSkalolaz |
+| [ppo](https://anesnt-dz.github.io/ppo/) | Powerful AI assistant built by AnesNT, powered by Pollinations. | @AnesNT-DZ |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -44,34 +44,17 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-02-15** – **🚀 Polly API** Access Polly's web research and coding skills via a new OpenAI-compatible endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs).
-- **2026-02-15** – **🛡️ New Safety Model** Qwen3Guard-8B is now available via the API for fast content moderation and safety classification.
-- **2026-02-15** – **✨ Showcase Upgrade** Explore the redesigned [App Showcase](https://hello.pollinations.ai) with AI-enhanced descriptions and real-time usage metrics.
-- **2026-02-15** – **🎮 Community Apps** New additions include the "Nova Defense" Discord bot and the AI-powered Roblox game "Convince the CRAZY Idol".
-- **2026-02-14** – **🦞 pollinations.ai × OpenClaw** Power your [OpenClaw](https://openclaw.ai) agent with 25+ AI models — Kimi K2.5, DeepSeek, Claude, Gemini & more. One script, free credits, 30 seconds. [Get started →](https://openclaw.pollinations.ai)
-- **2026-02-11** – **🤖 OpenClaw Integration** Set up AI coding agents in one command with the new OpenClaw landing page and auto-install script.
-- **2026-02-10** – **📚 Docs Meet Play** Documentation merged directly into the Play page—configure models visually and copy generated API code instantly.
-- **2026-02-09** – **🚀 Massive Model Drop** Added `imagen-4`, `flux-2-dev`, `grok-video`, and `LTX-2` for next-level image and video generation.
-- **2026-02-09** – **🎵 Audio Studio** Generate music with `elevenmusic`, transcribe with `whisper`, and use emotive TTS with `eleven_v3`.
-- **2026-02-09** – **🧠 Smarter Claude** Upgraded `claude-large` to the latest Claude 3 Opus 4.6 for enhanced reasoning.
+- **2026-02-20** – **🛠️ GENEXUS AI** Added to the developer tools showcase. Another backend integration for the ecosystem.
+- **2026-02-19** – **📦 Package Migration** The SDK and MCP packages have moved to the `@pollinations_ai` scope on NPM. We dropped the React dependencies, so they're lighter and framework-agnostic now.
+- **2026-02-19** – **🎥 Video Duration** The `seedance` video model now accepts a `duration` parameter. Control your clip length via the [API](https://gen.pollinations.ai).
+- **2026-02-18** – **📅 Build Diary** The [Community page](https://hello.pollinations.ai) now features an interactive timeline of the project's history. Navigate daily changes and digests with keyboard controls.
+- **2026-02-18** – **🐛 Readable Errors** The [API](https://gen.pollinations.ai) now extracts actual human-readable messages from upstream JSON errors. No more raw dumps when providers fail.
+- **2026-02-18** – **🌱 Seed Tier Logic** GitHub activity qualification now uses a rolling 90-day window instead of resetting yearly. Your status is safe in January.
+- **2026-02-17** – **📊 SlidePainter** Generate illustrated slide decks and export to PDF with this new community app.
+- **2026-02-17** – **👾 Pixel Art & Markdown** A cozy new retro theme is available, plus app descriptions are now auto-formatted via the [Text API](https://gen.pollinations.ai).
+- **2026-02-17** – **🎨 UI Theme Cycling** Click the [pollinations.ai](https://hello.pollinations.ai) logo to instantly cycle through visual themes.
+- **2026-02-16** – **🌸 Badges in Bloom** Navigate the ecosystem with our new organic badge system (Fresh, Pollen, Buzz) to find the best [community apps](https://hello.pollinations.ai).
 ---
-
-## 🌟 Google Summer of Code 2026 (GSOC)
-
-Hello folks! This year, `pollinations.ai` is participating in [Google Summer of Code 2026](https://summerofcode.withgoogle.com)! 
-We're looking for talented developers to contribute to our open-source AI platform. 
-
-**Website:** [Pollinations GSOC 2026](https://gsoc.pollinations.ai)
-
-**Mentors:** Thomas Haferlach, Ayushman Bhattacharya, Nihal Gazi.
-
-**Projects:** Check out our [Project Ideas](https://gsoc.pollinations.ai/projects).
-
-**Timeline:** Applications open **March 16th 2026** 
-Coding starts **May 25th 2026**
-
-> Please reach out to us about any queries on [Discord](https://discord.gg/pollinations-ai-885844321461485618) or via email at `gsoc@pollinations.ai`
-
 
 ## 🌱 Introduction
 
@@ -94,6 +77,21 @@ Coding starts **May 25th 2026**
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date" width="600" />
  </picture>
 </a>
+### Quick Start (3 Steps)
+
+1️⃣ **Get your API key**  
+Sign up at [enter.pollinations.ai](https://enter.pollinations.ai) to generate your key.
+
+2️⃣ **Choose what you want to generate**  
+Pollinations supports:
+- 🖼 Images  
+- 📝 Text  
+- 🔊 Audio  
+- 🎬 Video  
+
+3️⃣ **Make your first request**  
+Use one of the examples below to generate your first AI output in seconds.
+
 
 ## 🚀 Getting Started
 
@@ -146,7 +144,7 @@ Add this to your MCP client configuration:
   "mcpServers": {
     "pollinations": {
       "command": "npx",
-      "args": ["@pollinations/model-context-protocol"]
+      "args": ["@pollinations_ai/model-context-protocol"]
     }
   }
 }
@@ -155,7 +153,7 @@ Add this to your MCP client configuration:
 ### Run with npx (no installation required)
 
 ```bash
-npx @pollinations/model-context-protocol
+npx @pollinations_ai/model-context-protocol
 ```
 
 Community alternatives like [MCPollinations](https://github.com/pinkpixel-dev/MCPollinations) and [Sequa MCP Server](https://mcp.sequa.ai/v1/pollinations/contribute) are also available.

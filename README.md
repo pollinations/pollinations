@@ -17,6 +17,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [Phantaz Studio](https://www.xuziqiu.site/phantaz-studio/) | AI image generator on Pollinations.ai; each image gets a stable direct URL. | @xuziqiu |
 | [Pollinations Chat](https://pollinations-chat.vercel.app/) | Chat interface for Pollinations — converse with generative AI art bot | @Abishekganesh-BS |
 | [polli-dungeon](https://polli-game.netlify.app/) | Add AI-driven NPC behavior, encounter generation, and narrative assistance to Dungeons & Dragons sessions. | @robosiddharth |
 | [Discord Chatbot Creator Platform with Suspicious H](https://discord-chatbot-creator.vercel.app/ https://discord.com/oauth2/authorize?client_id=1455468647744012433 https://vibe-check-engine.vercel.app/) | Build chatbots with Discord Chatbot Creator Platform with Suspicious H to design, test, and deploy bots on Discord while managing intents, message handling, webhooks, permissions, and logs. | @blueplaysgames3921 |
@@ -26,7 +27,6 @@
 | [Textify](https://letstypifythecontent.web.app/) | AI-powered content writer for generating articles, posts, and marketing copy. | @KanujanKing777 |
 | [Productivity Gears](http://productivitygears.com/) | Suite of 100+ free productivity tools: AI assistants, converters, PDF editors. | @hadi0096 |
 | [Pollination fashion bulk creator](https://hautecouture.today/) | Generate AI fashion collections from prompts to atelier-ready assets. | @LaurentVoanh |
-| SnapSell | Generate AI-powered product listings for Facebook, Shopify, eBay, and more. | @marifaceless |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

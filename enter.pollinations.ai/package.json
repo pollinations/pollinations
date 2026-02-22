@@ -60,7 +60,14 @@
         "tailwind-merge": "^3.4.0",
         "tailwindcss": "^4.1.12",
         "unique-names-generator": "^4.7.1",
-        "zod": "^4.1.13"
+        "zod": "^4.1.13",
+        "@x402/hono": "^0.1.0",
+        "@x402/core": "^0.1.0",
+        "@x402/evm": "^0.1.0",
+        "viem": "^2.7.1",
+        "@web3modal/wagmi": "^4.0.0",
+        "wagmi": "^2.5.7",
+        "@tanstack/react-query": "^5.0.0"
     },
     "devDependencies": {
         "@better-auth/cli": "^1.4.1",

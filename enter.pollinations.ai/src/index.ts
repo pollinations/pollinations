@@ -21,6 +21,7 @@ import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
 import { webhooksRoutes } from "./routes/webhooks.ts";
 import { webhooksCryptoRoutes } from "./routes/webhooks-crypto.ts";
+import { cryptoRoutes } from "./routes/crypto.ts";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
     return await createAuth(c.env, c.executionCtx).handler(c.req.raw);
@@ -37,6 +38,7 @@ export const api = new Hono<Env>()
     .route("/webhooks", webhooksRoutes)
     .route("/webhooks", webhooksCryptoRoutes)
     .route("/webhooks", stripeWebhooksRoutes)
+    .route("/crypto", cryptoRoutes)
     .route("/admin", adminRoutes)
     .route("/model-stats", modelStatsRoutes)
     .route("/generate", proxyRoutes)

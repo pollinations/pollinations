@@ -42,26 +42,10 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 SUBREDDIT="pollinations_ai"
-timeout=120
-elapsed=0
-interval=2
 
 echo "🚀 Starting Pollinations deployment pipeline..."
-echo "📝 Step 1: Generating image prompt and updating link.ts..."
-$NPX tsx src/pipeline.ts 2>&1
-PIPELINE_EXIT_CODE=$?
-if [ $PIPELINE_EXIT_CODE -eq 0 ]; then
-  echo "✓ Pipeline completed successfully"
-  if ! [ -f src/link.ts ] || [ -z "$(grep -o 'const LINK' src/link.ts)" ]; then
-    echo "ℹ️  No merged PRs found. Exiting with success."
-    exit 0
-  fi
-else
-  echo "❌ Pipeline failed"
-  exit 1
-fi
-
-echo "✓ Pipeline completed, waiting 5 seconds for link.ts to update..."
+echo "✓ link.ts is already configured"
+echo "✓ Waiting 5 seconds for file sync..."
 sleep 5
 
 pkill -f "devvit playtest" 2>/dev/null || true
@@ -79,9 +63,9 @@ echo "" >> src/main.ts
 echo "📊 Step 4: Watching for successful image post..."
 echo ""
 
-echo "⏱️  Keeping process alive for 2 minutes..."
-sleep 120
+echo "⏱️  Keeping process alive for 1 minute ..."
+sleep 60
 
 echo ""
-echo "✅ 2 minutes elapsed. Shutting down..."
+echo "✅ 1 minute elapsed. Shutting down..."
 exit 0

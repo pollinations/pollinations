@@ -18,6 +18,9 @@ export interface App {
     language: string;
     stars: number | null;
     date: string;
+    approvedDate: string;
+    byop: boolean;
+    requests24h: number;
 }
 
 interface UseAppsReturn {
@@ -45,8 +48,8 @@ function parseAppsMarkdown(markdown: string): App[] {
         cols.shift();
         cols.pop();
 
-        // Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted |
-        if (cols.length < 13) continue;
+        // Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date |
+        if (cols.length < 15) continue;
 
         const name = cols[1];
         let url = cols[2];
@@ -60,6 +63,9 @@ function parseAppsMarkdown(markdown: string): App[] {
         const discord = cols[10];
         const other = cols[11];
         const date = cols[12];
+        const approvedDate = cols[14] || "";
+        const byop = cols.length > 15 ? cols[15] === "true" : false;
+        const requests24h = cols.length > 16 ? parseInt(cols[16], 10) || 0 : 0;
 
         // If no web URL but there's a repo, use repo as URL (fallback for repo-only apps)
         if (!url && repo) {
@@ -88,6 +94,9 @@ function parseAppsMarkdown(markdown: string): App[] {
             discord,
             other,
             date,
+            approvedDate,
+            byop,
+            requests24h,
         });
     }
 

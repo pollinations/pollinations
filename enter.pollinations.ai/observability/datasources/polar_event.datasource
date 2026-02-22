@@ -1,4 +1,5 @@
 TOKEN polar_event_append APPEND
+TOKEN polar_event_read READ
 
 DESCRIPTION >
 Polar webhook events (payments, subscriptions, benefits) with full JSON payload
@@ -7,6 +8,9 @@ SCHEMA >
 `timestamp` DateTime `json:$.timestamp` DEFAULT now(),
 `event_type` LowCardinality(String) `json:$.event_type` DEFAULT '',
 `user_id` String `json:$.user_id` DEFAULT '',
+`customer_id` String `json:$.customer_id` DEFAULT '',
+`product_id` String `json:$.product_id` DEFAULT '',
+`data_id` String `json:$.data_id` DEFAULT '',
 `payload` String `json:$.payload`
 
 ENGINE "MergeTree"

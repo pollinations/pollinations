@@ -19,9 +19,3 @@ export const LAYOUT = {
     footerBranding: "pollinations.ai - 2026",
     footerTagline: "Open source AI innovation from Berlin",
 };
-
-// Beta banner
-export const BETA_BANNER = {
-    message: "Welcome to our new platform! Still in beta —",
-    linkText: "visit the old one",
-};

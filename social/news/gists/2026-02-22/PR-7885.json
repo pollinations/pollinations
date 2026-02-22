@@ -1,0 +1,34 @@
+{
+  "pr_number": 7885,
+  "title": "Add THISX to Dev_Tools",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7885",
+  "merged_at": "2026-02-22T16:26:28Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Digital storefront polish",
+    "blurb": "THISX joins the garden—an AI companion for e-commerce that handles store fixes and ad campaigns so you can focus on the product.",
+    "summary": "Added THISX, an AI platform for e-commerce optimization and Meta ads, to the developer tools showcase.",
+    "impact": "Developers and merchants can now discover THISX in the community apps list for help with store maintenance and advertising.",
+    "keywords": [
+      "e-commerce",
+      "community",
+      "showcase",
+      "ads",
+      "tools"
+    ],
+    "visual_concept": "A cozy pixel art market stall representing e-commerce. The bee mascot is arranging items on a shelf or looking at a digital catalog. Warm, inviting commerce vibe.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot arranging pixelated items at a tiny wooden market stall labeled 'THISX'. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:27:15.534656+00:00"
+}

@@ -9,7 +9,17 @@ import {
     user as userTable,
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
-import { calculateNextPeriodStart, tierNames } from "@/utils/polar.ts";
+import { tierNames } from "@/tier-config.ts";
+
+// Calculate next tier refill time (midnight UTC) - cron runs daily at 00:00 UTC
+function getNextRefillAt(): string {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    tomorrow.setUTCHours(0, 0, 0, 0);
+    return tomorrow.toISOString();
+}
+
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
@@ -45,7 +55,6 @@ type DailyUsageRecord = {
     meter_source: string | null;
     requests: number;
     cost_usd: number;
-    api_key_names: string[];
 };
 
 // Response schema for daily usage OpenAPI documentation
@@ -58,9 +67,6 @@ const dailyUsageRecordSchema = z.object({
         .describe("Billing source ('tier', 'pack', 'crypto')"),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
-    api_key_names: z
-        .array(z.string())
-        .describe("List of API key names used for this date/model"),
 });
 
 const dailyUsageResponseSchema = z.object({
@@ -75,6 +81,10 @@ const profileResponseSchema = z.object({
     name: z.string().nullable().describe("User's display name"),
     email: z.email().nullable().describe("User's email address"),
     githubUsername: z.string().nullable().describe("GitHub username if linked"),
+    image: z
+        .string()
+        .nullable()
+        .describe("Profile picture URL (e.g. GitHub avatar)"),
     tier: z
         .enum(["anonymous", ...tierNames])
         .describe("User's current tier level"),
@@ -187,6 +197,7 @@ export const accountRoutes = new Hono<Env>()
                     name: userTable.name,
                     email: userTable.email,
                     githubUsername: userTable.githubUsername,
+                    image: userTable.image,
                     tier: userTable.tier,
                     createdAt: userTable.createdAt,
                     lastTierGrant: userTable.lastTierGrant,
@@ -200,17 +211,14 @@ export const accountRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "User not found" });
             }
 
-            // Convert Unix seconds from DB to JS milliseconds
-            const nextResetAt = profile.lastTierGrant
-                ? calculateNextPeriodStart(
-                      new Date(profile.lastTierGrant * 1000),
-                  ).toISOString()
-                : null;
+            // Next reset is always midnight UTC (cron runs daily)
+            const nextResetAt = getNextRefillAt();
 
             return c.json({
                 name: profile.name,
                 email: profile.email,
                 githubUsername: profile.githubUsername ?? null,
+                image: profile.image ?? null,
                 tier: profile.tier,
                 createdAt: profile.createdAt,
                 nextResetAt,
@@ -253,10 +261,7 @@ export const accountRoutes = new Hono<Env>()
             }
 
             // If API key has a budget, return that
-            if (
-                apiKey?.pollenBalance !== null &&
-                apiKey?.pollenBalance !== undefined
-            ) {
+            if (apiKey?.pollenBalance != null) {
                 return c.json({ balance: apiKey.pollenBalance });
             }
 
@@ -276,8 +281,13 @@ export const accountRoutes = new Hono<Env>()
             const packBalance = users[0]?.packBalance ?? 0;
             const cryptoBalance = users[0]?.cryptoBalance ?? 0;
 
+            // Clamp each bucket at 0 before summing — individual buckets can go negative
+            // from overage but shouldn't reduce the visible total
             return c.json({
-                balance: tierBalance + packBalance + cryptoBalance,
+                balance:
+                    Math.max(0, tierBalance) +
+                    Math.max(0, packBalance) +
+                    Math.max(0, cryptoBalance),
             });
         },
     )
@@ -667,7 +677,6 @@ export const accountRoutes = new Hono<Env>()
             const keyDetails = await db
                 .select({
                     expiresAt: apikeyTable.expiresAt,
-                    rateLimitEnabled: apikeyTable.rateLimitEnabled,
                 })
                 .from(apikeyTable)
                 .where(eq(apikeyTable.id, apiKey.id))
@@ -707,7 +716,8 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
-                rateLimitEnabled: keyDetails?.rateLimitEnabled ?? true,
+                // Rate limiting applies to publishable keys only (see rate-limit-durable.ts)
+                rateLimitEnabled: keyType === "publishable",
             });
         },
     );

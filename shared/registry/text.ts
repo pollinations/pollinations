@@ -27,8 +27,8 @@ export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
 export const TEXT_SERVICES = {
     "openai": {
         aliases: [],
-        modelId: "gpt-5-mini-2025-08-07",
-        provider: "azure",
+        modelId: "gpt-5-mini",
+        provider: "azure-2",
         cost: [
             {
                 date: COST_START_DATE,
@@ -103,13 +103,13 @@ export const TEXT_SERVICES = {
             "mistral-small-3.2",
             "mistral-small-3.2-24b-instruct-2506",
         ],
-        modelId: "mistral-small-3.2-24b-instruct-2506",
-        provider: "scaleway",
+        modelId: "Mistral-Small-3.2-24B-Instruct-2506",
+        provider: "ovhcloud",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.15),
-                completionTextTokens: perMillion(0.35),
+                promptTextTokens: perMillion(0.1), // OVH: 0.09€ ≈ $0.10
+                completionTextTokens: perMillion(0.3), // OVH: 0.28€ ≈ $0.30
             },
         ],
         description: "Mistral Small 3.2 24B - Efficient & Cost-Effective",
@@ -145,6 +145,7 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-3-flash", "gemini-3-flash-preview"],
         modelId: "gemini-3-flash-preview",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -208,6 +209,7 @@ export const TEXT_SERVICES = {
         aliases: ["grok-fast", "grok-4", "grok-4-fast"],
         modelId: "grok-4-fast-non-reasoning",
         provider: "azure",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -223,19 +225,19 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemini-search": {
-        aliases: ["gemini-3-flash-search"],
-        modelId: "gemini-3-flash-preview",
+        aliases: ["gemini-2.5-flash-search", "gemini-2.5-flash-lite-search"],
+        modelId: "gemini-2.5-flash-lite",
         provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.5),
-                promptCachedTokens: perMillion(0.05),
-                promptAudioTokens: perMillion(0.5), // Audio billed at same rate as text
-                completionTextTokens: perMillion(3.0),
+                promptTextTokens: perMillion(0.1),
+                promptCachedTokens: perMillion(0.01),
+                promptAudioTokens: perMillion(0.1), // Audio billed at same rate as text
+                completionTextTokens: perMillion(0.4),
             },
         ],
-        description: "Google Gemini 3 Flash - With Google Search",
+        description: "Google Gemini 2.5 Flash Lite - With Google Search",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: false,
@@ -262,8 +264,8 @@ export const TEXT_SERVICES = {
     },
     "midijourney": {
         aliases: [],
-        modelId: "gpt-4.1-2025-04-14",
-        provider: "azure-2",
+        modelId: "gpt-5.2-2025-12-11",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
@@ -299,6 +301,7 @@ export const TEXT_SERVICES = {
         aliases: ["claude-sonnet-4.5", "claude-sonnet"],
         modelId: "claude-sonnet-4-5-20250929",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -313,9 +316,10 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-large": {
-        aliases: ["claude-opus-4.5", "claude-opus"],
-        modelId: "claude-opus-4-5-20251101",
+        aliases: ["claude-opus-4.6", "claude-opus"],
+        modelId: "claude-opus-4-6-20260205",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -323,7 +327,26 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(25.0),
             },
         ],
-        description: "Anthropic Claude Opus 4.5 - Most Intelligent Model",
+        description: "Anthropic Claude Opus 4.6 - Most Intelligent Model",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "claude-legacy": {
+        aliases: ["claude-opus-4.5", "claude-large-legacy"],
+        modelId: "claude-opus-4-5-20251101",
+        provider: "google",
+        paidOnly: true,
+        hidden: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(5.0),
+                completionTextTokens: perMillion(25.0),
+            },
+        ],
+        description: "Anthropic Claude Opus 4.5 - Legacy",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -368,28 +391,31 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "kimi": {
-        aliases: ["kimi-k2", "kimi-reasoning", "kimi-k2-thinking"],
-        modelId: "moonshotai/kimi-k2-thinking-maas",
-        provider: "google",
+        aliases: ["kimi-k2.5", "kimi-k2p5", "kimi-reasoning", "kimi-large"],
+        modelId: "accounts/fireworks/models/kimi-k2p5",
+        provider: "fireworks",
         cost: [
             {
-                date: COST_START_DATE,
+                date: new Date("2026-01-28").getTime(),
                 promptTextTokens: perMillion(0.6),
-                completionTextTokens: perMillion(2.5),
+                promptCachedTokens: perMillion(0.1),
+                completionTextTokens: perMillion(3.0),
             },
         ],
         description:
-            "Moonshot Kimi K2 Thinking - Deep Reasoning & Tool Orchestration",
-        inputModalities: ["text"],
+            "Moonshot Kimi K2.5 - Flagship Agentic Model with Vision & Multi-Agent",
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
+        contextWindow: 256000,
         isSpecialized: false,
     },
     "gemini-large": {
         aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
         modelId: "gemini-3-pro-preview",
         provider: "google",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -412,6 +438,8 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-2.5-pro"],
         modelId: "gemini-2.5-pro",
         provider: "google",
+        paidOnly: true,
+        hidden: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -448,18 +476,19 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "glm": {
-        aliases: ["glm-4.7", "glm-4p7"],
-        modelId: "accounts/fireworks/models/glm-4p7",
+        aliases: ["glm-5", "glm-4.7", "glm-4p7"],
+        modelId: "accounts/fireworks/models/glm-5",
         provider: "fireworks",
         cost: [
             {
-                date: new Date("2026-01-05").getTime(),
+                date: new Date("2026-02-13").getTime(),
                 promptTextTokens: perMillion(0.6),
                 promptCachedTokens: perMillion(0.3),
                 completionTextTokens: perMillion(2.2),
             },
         ],
-        description: "Z.ai GLM-4.7 - Coding, Reasoning & Agentic Workflows",
+        description:
+            "Z.ai GLM-5 - 744B MoE, Long Context Reasoning & Agentic Workflows",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -487,23 +516,59 @@ export const TEXT_SERVICES = {
         contextWindow: 200000,
         isSpecialized: false,
     },
-    "nomnom": {
-        aliases: ["gemini-scrape", "web-research"],
-        modelId: "nomnom",
-        provider: "community",
+    // "nomnom": {
+    //     aliases: ["gemini-scrape", "web-research"],
+    //     modelId: "nomnom",
+    //     provider: "community",
+    //     cost: [
+    //         {
+    //             date: new Date("2026-01-17").getTime(),
+    //             promptTextTokens: perMillion(0.0), // Free - uses Pollinations under the hood
+    //             completionTextTokens: perMillion(0.0),
+    //         },
+    //     ],
+    //     description:
+    //         "NomNom by @Itachi-1824 - Web Research with Search, Scrape & Crawl (Alpha)",
+    //     inputModalities: ["text"],
+    //     outputModalities: ["text"],
+    //     tools: true,
+    //     search: true,
+    //     isSpecialized: false,
+    //     alpha: true,
+    // },
+    "qwen-safety": {
+        aliases: ["qwen3guard-gen-8b"],
+        modelId: "Qwen3Guard-Gen-8B",
+        provider: "ovhcloud",
         cost: [
             {
-                date: new Date("2026-01-17").getTime(),
-                promptTextTokens: perMillion(0.0), // Free - uses Pollinations under the hood
-                completionTextTokens: perMillion(0.0),
+                date: new Date("2026-02-15").getTime(),
+                promptTextTokens: perMillion(0.01),
+                completionTextTokens: perMillion(0.01),
             },
         ],
-        description:
-            "NomNom by @Itachi-1824 - Web Research with Search, Scrape & Crawl (Alpha)",
+        description: "Qwen3Guard 8B - Content Safety & Moderation (OVH)",
         inputModalities: ["text"],
         outputModalities: ["text"],
-        tools: true,
-        search: true,
-        isSpecialized: false,
+        isSpecialized: true,
     },
+    // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)
+    // "qwen-character": {
+    //     aliases: [],
+    //     modelId: "qwen-character",
+    //     provider: "airforce",
+    //     cost: [
+    //         {
+    //             date: new Date("2026-02-09").getTime(),
+    //             promptTextTokens: perMillion(0.01), // $0.01/M via api.airforce
+    //             completionTextTokens: perMillion(0.01),
+    //         },
+    //     ],
+    //     description:
+    //         "Qwen Character (api.airforce) - roleplay & character chat",
+    //     inputModalities: ["text"],
+    //     outputModalities: ["text"],
+    //     isSpecialized: true,
+    //     alpha: true,
+    // },
 } as const satisfies Record<string, ServiceDefinition<string>>;

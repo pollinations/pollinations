@@ -33,6 +33,6 @@ export async function generateSupporterLogo(
         width,
         height,
         seed,
-        model: "nanobanana",
+        model: "zimage",
     });
 }

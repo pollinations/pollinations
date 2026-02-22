@@ -1,130 +1,47 @@
-# Social Media Automation
+# Social Media Pipeline
 
-## LinkedIn Flow (Weekly)
+Automated social media posting for pollinations.ai — 3-tier event-centric architecture.
 
-```mermaid
-flowchart TD
-    subgraph TRIGGER["1️⃣ TRIGGER - Every Monday 14:00 UTC"]
-        CRON["⏰ Cron schedule"]
-        MANUAL["🔘 Or: Manual trigger"]
-    end
+See [PIPELINE.md](PIPELINE.md) for the full design document (architecture, data flow, error handling, schemas, cost estimates, migration plan).
 
-    subgraph GENERATE["2️⃣ GENERATE"]
-        FETCH["Fetch PRs merged in last 7 days"]
-        AI["AI writes professional post"]
-        IMAGE["AI generates infographic"]
-        PR["Create PR with JSON + image"]
-    end
+## Platform Overview
 
-    subgraph REVIEW["3️⃣ REVIEW (Manual)"]
-        CHECK["Review PR content"]
-        MERGE["✅ Merge to main"]
-    end
+| | Twitter/X | LinkedIn | Instagram | Reddit | Discord |
+|---|---|---|---|---|---|
+| **Daily** | Buffer (scheduled) | — | Buffer (scheduled) | VPS deploy | Per-PR (realtime) |
+| **Weekly** | Buffer (scheduled) | Buffer (scheduled) | Buffer (scheduled) | VPS deploy | Webhook |
+| **Review** | Yes (daily PR) | Yes (weekly PR) | Yes (daily PR) | Yes (daily PR) | No (automatic) |
+| **Images** | 1 per post | 1 per post | up to 3 carousel | 1 per post | 1 per PR |
+| **Model** | `nanobanana-pro` | `nanobanana-pro` | `nanobanana-pro` | `nanobanana-pro` | `nanobanana-pro` |
 
-    subgraph PUBLISH["4️⃣ PUBLISH"]
-        BUFFER["Buffer API schedules post"]
-    end
+## Delivery Schedule
 
-    CRON --> FETCH
-    MANUAL --> FETCH
-    FETCH --> AI --> IMAGE --> PR
-    PR --> CHECK --> MERGE
-    MERGE --> BUFFER
-```
+Defined in [`buffer-schedule.yml`](buffer-schedule.yml).
 
-**Prompts:** `prompts/linkedin/system.md`, `user_with_prs.md`, `user_thought_leadership.md`
+| Platform | Daily | Weekly | Notes |
+|---|---|---|---|
+| **Twitter/X** | Yes | Yes | Buffer scheduled delivery |
+| **LinkedIn** | — | Yes | Weekly only |
+| **Instagram** | Yes | Yes | Buffer scheduled delivery |
+| **Reddit** | Yes | Yes | VPS deploy on merge |
+| **Discord** | Per PR (realtime) | Yes | Webhook on merge / Sun 18:00 UTC |
 
-## Twitter/X Flow (Daily)
+## Secrets
 
-```mermaid
-flowchart TD
-    subgraph TRIGGER["1️⃣ TRIGGER - Every day 15:00 UTC"]
-        CRON["⏰ Cron schedule"]
-        MANUAL["🔘 Or: Manual trigger"]
-    end
+| Secret | Used by |
+|---|---|
+| `BUFFER_ACCESS_TOKEN` | Buffer staging (X, LI, IG) |
+| `POLLINATIONS_TOKEN` | All AI generation |
+| `DISCORD_WEBHOOK_URL` | Tier 1 + Tier 3 Discord posts |
+| `GITHUB_TOKEN` | PR creation, file commits |
+| `POLLY_BOT_APP_ID` | PR creation (GitHub App) |
+| `POLLY_BOT_PRIVATE_KEY` | PR creation (GitHub App) |
+| `REDDIT_VPS_HOST` | Reddit VPS deployment |
+| `REDDIT_VPS_USER` | Reddit VPS deployment |
+| `REDDIT_VPS_SSH_KEY` | Reddit VPS SSH key (base64) |
 
-    subgraph GENERATE["2️⃣ GENERATE"]
-        FETCH["Fetch PRs merged in last 24 hours"]
-        AI["AI writes casual tweet"]
-        IMAGE["AI generates meme image"]
-        PR["Create PR with JSON + image"]
-    end
+## Legacy
 
-    subgraph REVIEW["3️⃣ REVIEW (Manual)"]
-        CHECK["Review PR content"]
-        MERGE["✅ Merge to main"]
-    end
+The old per-platform standalone scripts and workflows have been removed. The 3-tier pipeline above replaces all of them.
 
-    subgraph PUBLISH["4️⃣ PUBLISH"]
-        BUFFER["Buffer API schedules post"]
-    end
-
-    CRON --> FETCH
-    MANUAL --> FETCH
-    FETCH --> AI --> IMAGE --> PR
-    PR --> CHECK --> MERGE
-    MERGE --> BUFFER
-```
-
-**Prompts:** `prompts/twitter/system.md`, `user_with_prs.md`, `user_engagement.md`
-
-**Constraint:** 280 character limit, 1-2 hashtags max
-
-## What Triggers Buffer Publishing?
-
-| PR Type | Triggers Buffer? |
-|---------|------------------|
-| Regular code PR | ❌ No |
-| Documentation PR | ❌ No |
-| PR with `social/news/transformed/**/posts/*.json` | ✅ Yes |
-
-## Reddit
-
-Self-hosted [Devvit](https://developers.reddit.com/docs/) app for **r/pollinations_ai**.
-
-**Location:** `social/reddit/`
-
-```bash
-cd social/reddit && npm install && devvit upload
-```
-
-## Configuration
-
-| Env Variable | Purpose |
-|-------------|---------|
-| `POLLINATIONS_TOKEN` | AI generation API |
-| `BUFFER_ACCESS_TOKEN` | Buffer publishing |
-| `DAYS_BACK` | Days to scan for PRs (7 LinkedIn, 1 Twitter) |
-| `FORCE_THOUGHT_LEADERSHIP` | LinkedIn: skip PRs, generate thought leadership |
-| `FORCE_ENGAGEMENT` | Twitter: skip PRs, generate engagement content |
-
-## Directory Structure
-
-```
-social/
-├── buffer-schedule.yml # Buffer posting times
-├── prompts/           # AI prompts for post generation
-│   ├── linkedin/
-│   └── twitter/
-├── scripts/           # Python automation
-│   ├── common.py      # Shared utilities
-│   ├── linkedin_generate_post.py
-│   ├── twitter_generate_post.py
-│   └── buffer_publish_post.py
-├── news/transformed/  # Generated post JSONs
-│   ├── linkedin/posts/
-│   └── twitter/posts/
-└── reddit/            # Devvit app
-```
-
-## Editing Prompts
-
-1. Edit file in `prompts/{platform}/`
-2. Test via manual workflow trigger
-3. Review generated PR
-
-| Variable | Description |
-|----------|-------------|
-| `{pr_summary}` | Formatted list of merged PRs |
-| `{pr_titles}` | PR title list |
-| `{pr_count}` | Number of PRs |
+The old Devvit-based Reddit pipeline (`social/reddit/`) is also superseded — Reddit now posts via SSH deployment to a VPS in `publish_daily.py` and `publish_weekly.py`.

@@ -1,0 +1,34 @@
+{
+  "pr_number": 7248,
+  "title": "Add Gen Layers to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7248",
+  "merged_at": "2026-02-22T16:53:06Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Thumbnails that pop",
+    "blurb": "Gen Layers joins the creative showcase. Generate high-CTR YouTube thumbnails without the design headache.",
+    "summary": "Added Gen Layers, an AI tool for creating YouTube thumbnails, to the community apps list.",
+    "impact": "Creators can now easily discover and access Gen Layers for their video production workflows.",
+    "keywords": [
+      "community",
+      "apps",
+      "youtube",
+      "thumbnails",
+      "creative"
+    ],
+    "visual_concept": "Polly the bee as a digital artist working on a video thumbnail. Represents the new Gen Layers app for YouTube creators.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny artist beret, painting a colorful video thumbnail on a digital canvas. Lime green (#ecf874) and soft pastel gradient background. A retro monitor shows a play button. Chunky pixels, warm lighting, lo-fi Stardew Valley vibes. Pixel text: 'CLICK ME'. Nostalgic and creative."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:53:48.455277+00:00"
+}

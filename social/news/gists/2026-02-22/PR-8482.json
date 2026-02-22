@@ -1,0 +1,34 @@
+{
+  "pr_number": 8482,
+  "title": "Add Textify to Creative",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8482",
+  "merged_at": "2026-02-22T09:24:07Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A new scribe in the garden",
+    "blurb": "Textify has joined the ecosystem. It's an AI-powered companion for crafting articles, posts, and marketing copy.",
+    "summary": "Added Textify, an AI content generation tool, to the community apps showcase.",
+    "impact": "Users can now discover and launch Textify directly from the Creative apps list.",
+    "keywords": [
+      "community",
+      "app",
+      "writing",
+      "content",
+      "showcase"
+    ],
+    "visual_concept": "Textify represents writing and content creation. Visual symbols: Typewriters, quills, scrolls, floating letters. Scene: Polly the Bee acting as a writer/editor.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot wearing a tiny writer's beret and glasses, sitting at a vintage desk with a cute pixel typewriter. Lime green (#ecf874) paper flows from the machine. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T09:24:54.170820+00:00"
+}

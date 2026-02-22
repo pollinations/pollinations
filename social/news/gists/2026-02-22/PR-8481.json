@@ -1,0 +1,33 @@
+{
+  "pr_number": 8481,
+  "title": "Add 6 pending app submissions",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8481",
+  "merged_at": "2026-02-22T09:09:27Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Six new flowers in the garden",
+    "blurb": "The community garden just got bigger! We've added six fresh apps to the showcase, from productivity tools to fashion generators.",
+    "summary": "Added six new community applications to the showcase including Textify, Pollenboard, and SnapSell, updating the registry schema.",
+    "impact": "Users can now discover and use six new tools built by the community for text, productivity, and image generation.",
+    "keywords": [
+      "community",
+      "showcase",
+      "apps",
+      "ecosystem",
+      "tools",
+      "growth"
+    ],
+    "visual_concept": "Polly the Bee tending to a garden patch where 6 new, distinct pixel flowers have just sprouted. Represents the 6 new apps added to the ecosystem.",
+    "image_prompt": "Cozy pixel art scene of Polly the Bee watering a garden row where 6 distinct, colorful pixel flowers have just bloomed. Each flower looks unique. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'NEW APPS'. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T09:10:14.585460+00:00"
+}

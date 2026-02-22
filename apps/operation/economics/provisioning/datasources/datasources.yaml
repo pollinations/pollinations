@@ -32,3 +32,39 @@ datasources:
     secureJsonData:
       password: "$__env{TINYBIRD_GENERATION_EVENT_READ}"
     editable: true
+
+  - name: Tinybird Stripe
+    type: grafana-clickhouse-datasource
+    uid: PAD1A0A25CD30D457
+    access: proxy
+    isDefault: false
+    jsonData:
+      host: clickhouse.europe-west2.gcp.tinybird.co
+      port: 443
+      protocol: http
+      secure: true
+      username: pollinations_enter
+      defaultDatabase: default
+      dialTimeout: "10"
+      queryTimeout: "60"
+    secureJsonData:
+      password: "$__env{TINYBIRD_STRIPE_EVENT_READ}"
+    editable: true
+
+  - name: Tinybird Legacy
+    type: grafana-clickhouse-datasource
+    uid: PAD1A0A25CD30D458
+    access: proxy
+    isDefault: false
+    jsonData:
+      host: clickhouse.europe-west2.gcp.tinybird.co
+      port: 443
+      protocol: http
+      secure: true
+      username: pollinations_ai
+      defaultDatabase: default
+      dialTimeout: "10"
+      queryTimeout: "60"
+    secureJsonData:
+      password: "$__env{TINYBIRD_TEXT_EVENT_READ}"
+    editable: true

@@ -9,8 +9,6 @@ from ..services.pollinations import _auth_override
 
 logger = logging.getLogger(__name__)
 
-_start_time = None
-
 
 class Message(BaseModel):
     role: str
@@ -37,10 +35,8 @@ def create_api_app(pollinations_client, config):
     No tool registration — uses bot's pollinations_client directly.
     Key pass-through — user's Authorization header is forwarded to gen.pollinations.ai.
     """
-    global _start_time
-    _start_time = time.time()
-
     app = FastAPI(title="Polly API", description="OpenAI-compatible API for Polly")
+    app.state.start_time = time.time()
 
     app.add_middleware(
         CORSMiddleware,
@@ -98,7 +94,7 @@ def create_api_app(pollinations_client, config):
 
     @app.get("/health")
     async def health_check():
-        uptime = time.time() - _start_time if _start_time else 0
+        uptime = time.time() - app.state.start_time
         return {
             "status": "healthy",
             "bot_name": config.bot_name,

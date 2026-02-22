@@ -913,25 +913,24 @@ ADMIN_ACTIONS = {
 }
 
 
-def filter_admin_actions_from_tools(tools: list, is_admin: bool) -> list:
+def _filter_tool_actions(
+    tools: list,
+    restricted_actions: dict[str, set],
+    excluded_tools: set | None = None,
+) -> list:
     """
-    Filter admin actions from tool descriptions for non-admin users.
+    Shared helper — strips restricted actions from tool descriptions and enums.
 
-    This prevents the AI from even knowing about admin actions, so:
-    1. It won't try to call them
-    2. It won't suggest them to users
-    3. Users can't jailbreak to access them
+    Removes:
+    1. Tools in excluded_tools entirely
+    2. Description lines mentioning any restricted action name
+    3. Restricted actions from the action enum
 
     Args:
         tools: List of tool definitions
-        is_admin: Whether user is admin
-
-    Returns:
-        Tools with admin actions removed from descriptions for non-admins
+        restricted_actions: {tool_name: {action1, action2, ...}} to block
+        excluded_tools: Tool names to remove entirely (optional)
     """
-    if is_admin:
-        return tools  # Admins see everything
-
     import copy
 
     filtered_tools = []
@@ -939,32 +938,45 @@ def filter_admin_actions_from_tools(tools: list, is_admin: bool) -> list:
     for tool in tools:
         tool_name = tool.get("function", {}).get("name", "")
 
-        # Check if this tool has admin actions to filter
-        if tool_name not in ADMIN_ACTIONS:
+        if excluded_tools and tool_name in excluded_tools:
+            continue
+
+        if tool_name not in restricted_actions:
             filtered_tools.append(tool)
             continue
 
-        # Deep copy to avoid modifying original
+        blocked = restricted_actions[tool_name]
         tool_copy = copy.deepcopy(tool)
         description = tool_copy["function"]["description"]
 
-        # Remove lines containing [admin] marker
+        # Remove description lines that mention any blocked action
         lines = description.split("\n")
-        filtered_lines = [line for line in lines if "[admin]" not in line.lower()]
+        filtered_lines = [
+            line
+            for line in lines
+            if not any(f"- {action}" in line.lower() or f" {action}:" in line.lower() for action in blocked)
+            and "[admin]" not in line.lower()
+        ]
         tool_copy["function"]["description"] = "\n".join(filtered_lines)
 
-        # Also filter the action enum if present
+        # Filter the action enum
         params = tool_copy["function"].get("parameters", {})
         props = params.get("properties", {})
         action_prop = props.get("action", {})
 
         if "enum" in action_prop:
-            admin_actions = ADMIN_ACTIONS.get(tool_name, set())
-            action_prop["enum"] = [a for a in action_prop["enum"] if a not in admin_actions]
+            action_prop["enum"] = [a for a in action_prop["enum"] if a not in blocked]
 
         filtered_tools.append(tool_copy)
 
     return filtered_tools
+
+
+def filter_admin_actions_from_tools(tools: list, is_admin: bool) -> list:
+    """Filter admin actions from tool descriptions for non-admin Discord users."""
+    if is_admin:
+        return tools
+    return _filter_tool_actions(tools, ADMIN_ACTIONS)
 
 
 # =============================================================================
@@ -1023,52 +1035,8 @@ API_EXCLUDED_TOOLS = {
 
 
 def filter_api_tools(tools: list) -> list:
-    """
-    Filter tools for API mode — stricter than Discord non-admin.
-
-    Removes:
-    1. Subscription tools entirely (Discord-only)
-    2. Admin + write actions from tool descriptions and enums
-
-    Same pattern as filter_admin_actions_from_tools() but uses API_RESTRICTED_ACTIONS.
-    """
-    import copy
-
-    filtered_tools = []
-
-    for tool in tools:
-        tool_name = tool.get("function", {}).get("name", "")
-
-        # Skip excluded tools entirely
-        if tool_name in API_EXCLUDED_TOOLS:
-            continue
-
-        # Check if this tool has API-restricted actions to filter
-        if tool_name not in API_RESTRICTED_ACTIONS:
-            filtered_tools.append(tool)
-            continue
-
-        # Deep copy to avoid modifying original
-        tool_copy = copy.deepcopy(tool)
-        description = tool_copy["function"]["description"]
-
-        # Remove lines containing [admin] marker
-        lines = description.split("\n")
-        filtered_lines = [line for line in lines if "[admin]" not in line.lower()]
-        tool_copy["function"]["description"] = "\n".join(filtered_lines)
-
-        # Also filter the action enum if present
-        params = tool_copy["function"].get("parameters", {})
-        props = params.get("properties", {})
-        action_prop = props.get("action", {})
-
-        if "enum" in action_prop:
-            api_restricted = API_RESTRICTED_ACTIONS.get(tool_name, set())
-            action_prop["enum"] = [a for a in action_prop["enum"] if a not in api_restricted]
-
-        filtered_tools.append(tool_copy)
-
-    return filtered_tools
+    """Filter tools for API mode — stricter than Discord non-admin."""
+    return _filter_tool_actions(tools, API_RESTRICTED_ACTIONS, API_EXCLUDED_TOOLS)
 
 
 # Risky actions - AI uses judgment but these are hints for high-risk ops

@@ -478,7 +478,9 @@ class PollinationsClient:
         - 3 retry attempts with 5s delay between retries
         - New random seed for each retry attempt
         """
-        # Use per-request auth override if set (API key pass-through), else bot's token
+        # Use per-request auth override if set (API key pass-through), else bot's token.
+        # Note: _auth_override stores the full "Bearer xxx" header, while
+        # config.pollinations_token is the raw token — hence the f"Bearer ..." fallback.
         auth_token = _auth_override.get() or f"Bearer {config.pollinations_token}"
         headers = {
             "Content-Type": "application/json",

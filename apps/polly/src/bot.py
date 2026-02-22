@@ -509,7 +509,12 @@ class PollyBot(commands.Bot):
                 log_level="warning",
             )
             self._api_server = uvicorn.Server(uvi_config)
-            asyncio.create_task(self._api_server.serve())
+            task = asyncio.create_task(self._api_server.serve())
+            task.add_done_callback(
+                lambda t: logger.error(f"API server crashed: {t.exception()}")
+                if not t.cancelled() and t.exception()
+                else None
+            )
             logger.info(f"Polly API started on port {config.api_port}")
 
         logger.info("Bot setup complete")

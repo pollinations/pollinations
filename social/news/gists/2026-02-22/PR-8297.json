@@ -1,0 +1,34 @@
+{
+  "pr_number": 8297,
+  "title": "Add polli-dungeon to Games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8297",
+  "merged_at": "2026-02-22T16:17:42Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Rolling for Initiative",
+    "blurb": "polli-dungeon joins the party! Your tabletop campaigns just got an AI dungeon master to spice up the narrative.",
+    "summary": "Added polli-dungeon to the Games showcase, an AI-powered tool for D&D encounter generation and NPC behavior.",
+    "impact": "Players and DMs can now access AI-driven narrative assistance for their tabletop sessions directly from the showcase.",
+    "keywords": [
+      "games",
+      "community",
+      "dnd",
+      "tabletop",
+      "ai-storytelling"
+    ],
+    "visual_concept": "Dungeons & Dragons theme. Polly the Bee as a Dungeon Master wearing a wizard hat, rolling a d20 die. A map or tavern table setting.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, rolling a glowing lime green (#ecf874) twenty-sided die on a parchment map. Soft pastel gradient background. Chunky retro sprites. Warm lighting, lo-fi tabletop RPG vibes like Stardew Valley. Pixel text: 'CRITICAL HIT'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:18:24.024814+00:00"
+}

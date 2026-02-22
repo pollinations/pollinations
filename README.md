@@ -17,6 +17,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [FumajimeMura Z-Image Turbo](https://urea.github.io/FumajimeMura-Z-Image-Turbo/) | High-speed batch image generator using Pollinations AI Flux Z-Image | @urea |
 | [Chamuka DrawIt](https://drawit.chamuka.ai) | Create designs by generating images powered by Pollinations. | @swiftugandan |
 | [Xenchat](https://chat.xenai.tech) | Fine-tuned AI chat powered by OpenWebUI and Pollinations for fast responses | @Screenmax1234 |
 | [LinguaSpark](https://linguaspark2.netlify.app/) | Modern language learning with interactive games and AI-generated practice. | @GxAditya |
@@ -26,7 +27,6 @@
 | [THISX](https://www.thisx.ai/en) | AI platform for e-commerce: store fixes and Meta AI-driven ads. | @monyuan |
 | [Coloring Me](https://coloringme.net/) | Free app that generates interactive coloring images for kids on mobile. | @buithehien1991 |
 | [Transport Document OCR](https://xfynder99-byte.github.io/OCR/) | Standalone web app extracting product data from images and PDFs via AI OCR. | @xfynder99-byte |
-| Pollination App | Android client for Pollinations.ai to generate images and chat with AI. | @aheadmujtaba |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

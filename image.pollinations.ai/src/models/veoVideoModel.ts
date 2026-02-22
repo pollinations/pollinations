@@ -1,10 +1,14 @@
-import debug from "debug";
 import sleep from "await-sleep";
+import debug from "debug";
 import googleCloudAuth from "../../auth/googleCloudAuth.ts";
 import { HttpError } from "../httpError.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
+import {
+    calculateVideoResolution,
+    resolutionToLowercase,
+} from "../utils/videoResolution.ts";
 
 // Logger
 const logOps = debug("pollinations:veo:ops");
@@ -43,8 +47,9 @@ export interface VideoGenerationResult {
     trackingData: {
         actualModel: string;
         usage: {
-            completionVideoSeconds?: number; // For Veo (billed by seconds)
+            completionVideoSeconds?: number; // For Veo, Wan (billed by seconds)
             completionVideoTokens?: number; // For Seedance (billed by tokens)
+            completionAudioSeconds?: number; // For Wan audio (billed by seconds)
             totalTokenCount?: number;
         };
     };
@@ -108,12 +113,18 @@ export const callVeoAPI = async (
 
     // Determine video parameters - pass through to Veo API, let it validate
     const durationSeconds = safeParams.duration || 4;
-    const aspectRatio = safeParams.aspectRatio || "16:9";
     // Audio is disabled by default - user must explicitly pass audio=true to enable
     const generateAudio = safeParams.audio === true;
-    // Resolution: currently only 720p is enabled
-    // TODO: Enable 1080p later by adding resolution param and updating cost calculation
-    const resolution = "720p";
+
+    // Calculate resolution and aspect ratio from width/height or aspectRatio
+    const { aspectRatio, resolution: resolutionUpper } =
+        calculateVideoResolution({
+            width: safeParams.width,
+            height: safeParams.height,
+            aspectRatio: safeParams.aspectRatio,
+            defaultResolution: "720P",
+        });
+    const resolution = resolutionToLowercase(resolutionUpper);
 
     // Check for input image (image-to-video)
     const hasImage = safeParams.image && safeParams.image.length > 0;
@@ -287,7 +298,7 @@ async function pollVeoOperation(
     const PROJECT_ID = process.env.GOOGLE_PROJECT_ID;
 
     // Extract model from operation name
-    const modelMatch = operationName.match(/models\/([^\/]+)\/operations/);
+    const modelMatch = operationName.match(/models\/([^/]+)\/operations/);
     const model = modelMatch ? modelMatch[1] : MODEL_ID;
 
     const pollUrl = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${model}:fetchPredictOperation`;

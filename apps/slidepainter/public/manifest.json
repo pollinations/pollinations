@@ -1,0 +1,16 @@
+{
+  "name": "SlidePainter",
+  "short_name": "SlidePainter",
+  "description": "AI-powered slide image generator by Pollinations",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f13",
+  "theme_color": "#22c55e",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ]
+}

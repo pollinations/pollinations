@@ -1,5 +1,5 @@
 {
-  "name": "@pollinations/sdk",
+  "name": "@pollinations_ai/sdk",
   "version": "4.0.1",
   "description": "Official SDK for pollinations.ai - Generate images, videos, audio, and text with ease",
   "type": "module",
@@ -69,6 +69,9 @@
   "homepage": "https://pollinations.ai",
   "bugs": {
     "url": "https://github.com/pollinations/pollinations/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "engines": {
     "node": ">=18.0.0"

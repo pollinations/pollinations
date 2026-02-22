@@ -16,28 +16,42 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
 
     const imageModels = allModels.filter((m) => m.type === "image");
     const videoModels = allModels.filter((m) => m.type === "video");
+    const audioModels = allModels.filter((m) => m.type === "audio");
     const textModels = allModels.filter((m) => m.type === "text");
 
     return (
         <div className="flex flex-col gap-2">
             <div className="flex flex-col sm:flex-row justify-between gap-3">
                 <h2 className="font-bold flex-1">Pricing</h2>
-                <Button
-                    as="a"
-                    href="https://github.com/pollinations/pollinations/issues/5321"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    color="teal"
-                    weight="light"
-                >
-                    Vote on next models
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                    <Button
+                        as="a"
+                        href="https://model-monitor.pollinations.ai"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        color="teal"
+                        weight="light"
+                    >
+                        📊 Model Health
+                    </Button>
+                    <Button
+                        as="a"
+                        href="https://github.com/pollinations/pollinations/issues/5321"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        color="teal"
+                        weight="light"
+                    >
+                        🗳️ Vote on next models
+                    </Button>
+                </div>
             </div>
             <Panel color="teal" className="space-y-6">
                 <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <UnifiedModelTable
                         imageModels={imageModels}
                         videoModels={videoModels}
+                        audioModels={audioModels}
                         textModels={textModels}
                         packBalance={packBalance}
                     />
@@ -88,6 +102,10 @@ export const Pricing: FC<PricingProps> = ({ packBalance = 0 }) => {
                                     <div>
                                         <strong>/sec</strong> = per second of
                                         video
+                                    </div>
+                                    <div>
+                                        <strong>/1K chars</strong> = per 1000
+                                        characters
                                     </div>
                                 </div>
                             </div>

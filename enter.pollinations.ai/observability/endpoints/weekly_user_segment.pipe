@@ -1,5 +1,7 @@
 DESCRIPTION >
-    Weekly B2B (developer) vs B2C (end-user) usage metrics based on api_key_type
+    Weekly BYOP vs non-BYOP usage metrics.
+    BYOP = secret API keys with hostname-like names (contains a dot),
+    matching the detection logic used by app_byop_hostnames.pipe.
 
 TOKEN model_usage READ
 
@@ -8,21 +10,21 @@ SQL >
     %
     SELECT
         toStartOfWeek(start_time, 1) AS week,
-        -- Developer (B2B): secret or publishable keys
-        countIf(DISTINCT user_id, api_key_type IN ('secret', 'publishable')) AS developer_users,
-        sumIf(total_price, api_key_type IN ('secret', 'publishable')) AS developer_pollen,
-        countIf(api_key_type IN ('secret', 'publishable')) AS developer_requests,
-        -- End-user (B2C): temporary keys (BYOP)
-        countIf(DISTINCT user_id, api_key_type = 'temporary') AS enduser_users,
-        sumIf(total_price, api_key_type = 'temporary') AS enduser_pollen,
-        countIf(api_key_type = 'temporary') AS enduser_requests,
+        -- BYOP: secret keys with hostname-like names (e.g. myapp.com)
+        countIf(DISTINCT user_id, api_key_type = 'secret' AND api_key_name LIKE '%.%') AS byop_users,
+        sumIf(total_price, api_key_type = 'secret' AND api_key_name LIKE '%.%') AS byop_pollen,
+        countIf(api_key_type = 'secret' AND api_key_name LIKE '%.%') AS byop_requests,
+        -- Non-BYOP: everything else
+        countIf(DISTINCT user_id, NOT (api_key_type = 'secret' AND api_key_name LIKE '%.%')) AS other_users,
+        sumIf(total_price, NOT (api_key_type = 'secret' AND api_key_name LIKE '%.%')) AS other_pollen,
+        countIf(NOT (api_key_type = 'secret' AND api_key_name LIKE '%.%')) AS other_requests,
         -- Totals
-        developer_users + enduser_users AS total_users,
-        developer_pollen + enduser_pollen AS total_pollen,
-        developer_requests + enduser_requests AS total_requests,
+        byop_users + other_users AS total_users,
+        byop_pollen + other_pollen AS total_pollen,
+        byop_requests + other_requests AS total_requests,
         -- Percentages
-        if(total_users > 0, round(enduser_users / total_users * 100, 1), 0) AS enduser_user_pct,
-        if(total_pollen > 0, round(enduser_pollen / total_pollen * 100, 1), 0) AS enduser_pollen_pct
+        if(total_users > 0, round(byop_users / total_users * 100, 1), 0) AS byop_user_pct,
+        if(total_pollen > 0, round(byop_pollen / total_pollen * 100, 1), 0) AS byop_pollen_pct
     FROM generation_event
     WHERE
         environment = 'production'

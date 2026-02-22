@@ -1,0 +1,34 @@
+{
+  "pr_number": 8396,
+  "title": "Add Christmas Postcard Creator to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8396",
+  "merged_at": "2026-02-22T16:16:00Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Signed, sealed, delivered",
+    "blurb": "Spread some digital cheer! The Christmas Postcard Creator is now live in the showcase for all your festive AI needs.",
+    "summary": "Added the Christmas Postcard Creator to the community apps list, enabling users to generate personalized holiday cards.",
+    "impact": "Users can now create custom AI-generated Christmas postcards to share with friends and family.",
+    "keywords": [
+      "community",
+      "showcase",
+      "christmas",
+      "creative",
+      "holidays"
+    ],
+    "visual_concept": "Polly the bee in a snowy landscape mailing a holiday card. Festive atmosphere with subtle lime green lighting.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny red scarf, dropping a letter into a snow-covered mailbox. A festive pine tree glows with lime green (#ecf874) lights nearby. Soft pastel snowy background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:16:47.427071+00:00"
+}

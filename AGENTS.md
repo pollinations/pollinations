@@ -61,14 +61,18 @@ Key directories and their purposes:
 
 ```
 pollinations/
-├── image.pollinations.ai/     # Image generation backend service
-├── text.pollinations.ai/      # Text generation backend service
-├── pollinations.ai/           # Main React frontend application
-├── packages/                  # Publishable npm packages
-│   ├── sdk/                   # @pollinations/sdk - Client library with React hooks
-│   └── mcp/                   # @pollinations/model-context-protocol - MCP server
-├── enter.pollinations.ai/     # Centralized auth gateway (ACTIVE)
-└── operations/                # Documentation and operations
+├── enter.pollinations.ai/     # Auth gateway + billing (Cloudflare Worker)
+├── gen.pollinations.ai/       # Edge router → enter gateway
+├── image.pollinations.ai/     # Image generation backend (EC2 + Vast.ai)
+├── text.pollinations.ai/      # Text generation backend (EC2)
+├── pollinations.ai/           # Main React frontend
+├── packages/
+│   ├── sdk/                   # @pollinations_ai/sdk - Client library with React hooks
+│   └── mcp/                   # @pollinations_ai/model-context-protocol - MCP server
+├── shared/                    # Shared utilities (auth, registry, IP queue)
+│   └── registry/              # Model registries (image.ts, text.ts, audio.ts, video.ts)
+├── apps/                      # Community apps + APPS.md showcase
+└── social/                    # Social media automation (Discord, Reddit, GitHub)
 ```
 
 ## API Gateway
@@ -81,6 +85,13 @@ All API requests go through `gen.pollinations.ai`, which routes to the `enter.po
 - **Billing**: Pollen credits ($1 ≈ 1 Pollen)
 - **Get API keys**: [enter.pollinations.ai](https://enter.pollinations.ai)
 - **Full API docs**: [APIDOCS.md](./APIDOCS.md)
+
+**Services behind enter gateway:**
+- **Text**: OpenAI-compatible API via Portkey (multi-provider: OpenAI, Google, Anthropic, DeepSeek, etc.)
+- **Image**: Flux, Turbo, and other models on EC2/Vast.ai/io.net GPU instances
+- **Video**: Wan (via Airforce/Alibaba), Veo, LTX on GPU instances
+- **Audio**: ElevenLabs TTS/STT, text-to-music
+- **Tier system**: microbe → spore → seed → flower → nectar → router (see `enter.pollinations.ai/src/tier-config.ts`)
 
 ### Local Development
 
@@ -143,6 +154,12 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 ```
 
+### Audio (Text-to-Speech)
+
+```bash
+curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o speech.mp3
+```
+
 ### Model Discovery
 
 - **Image models**: `https://gen.pollinations.ai/image/models`
@@ -163,6 +180,7 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 - **No "just in case" helpers** - Don't create test utilities or wrappers preemptively
 - **Keep the codebase minimal** - Less code = fewer bugs = easier maintenance
 - **No fallbacks for backward compatibility** - Clean breaks are better than complexity bloat. When changing tokens, headers, or APIs, update all consumers at once rather than supporting both old and new patterns
+- **When user says "keep it simple" — they mean it** - Don't add layers, wrappers, or abstractions. One function, one price, one config. The simplest thing that works.
 
 ## Code Style
 
@@ -178,10 +196,13 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 - **Verify assumptions on the web** - APIs, libraries, and patterns change frequently
 - **Read related files into context** - Get the full picture before making changes
 - **Check existing implementations** - Don't reinvent what already exists in the codebase
+- **Check which branch you're on** - Run `git branch --show-current` before starting work
+- **Check related PRs and issues** - Use GitHub MCP tools to find context before implementing
+- **Look for existing utility functions** in `shared/` before writing new ones (auth, queue, registry)
 
 ## Common Mistakes to Avoid
 
-**IMPORTANT - Claude often makes these mistakes:**
+**IMPORTANT - Agents often make these mistakes (learned from session history):**
 
 - **Don't use `cd` in bash commands** - Use the `cwd` parameter instead
 - **Don't run `pytest`** - Use `npm run test` or `npx vitest run`
@@ -193,6 +214,8 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 - **Don't modify test files to make tests pass** - Fix the actual code instead
 - **Run `npm run decrypt-vars`** before running tests in enter.pollinations.ai
 - **Check `.testingtokens`** file for test API keys: `enter.pollinations.ai/.testingtokens`
+- **Confirm which branch you're on** before making changes — branch mix-ups are a recurring problem
+- **Don't reimplement existing logic** — search for existing functions before writing new ones (e.g. SSE parsing, retry wrappers, auth extraction)
 
 ## Development Guidelines
 
@@ -263,9 +286,10 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 
 1. Adding New Models:
 
-   - Update models list in respective service
-   - Add model configuration
-   - Update API documentation
+   - **Text models**: Add config in `text.pollinations.ai/configs/modelConfigs.ts`, add entry in `availableModels.ts`
+   - **Image models**: Add handler in `image.pollinations.ai/src/`, register in `shared/registry/image.ts`
+   - Provider configs (Portkey, Bedrock, OpenAI-compatible) go in `text.pollinations.ai/configs/providerConfigs.js`
+   - Update API documentation and model registry
 
 2. Frontend Updates:
 
@@ -303,10 +327,10 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 - One task per subagent for focused execution
 
 ### 3. Self-Improvement Loop
-- After ANY correction from the user: update `tasks/lessons.md` with the pattern
+- After ANY correction from the user: propose an update to this `AGENTS.md` with the learned pattern
 - Write rules for yourself that prevent the same mistake
 - Ruthlessly iterate on these lessons until mistake rate drops
-- Review lessons at session start for relevant project
+- Review AGENTS.md at session start for relevant project
 
 ### 4. Verification Before Done
 - Never mark a task complete without proving it works
@@ -328,12 +352,11 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 
 ## Task Management
 
-1. **Plan First**: Write plan to `tasks/todo.md` with checkable items
+1. **Plan First**: Outline steps before implementing (use todo tools or plan mode)
 2. **Verify Plan**: Check in before starting implementation
 3. **Track Progress**: Mark items complete as you go
 4. **Explain Changes**: High-level summary at each step
-5. **Document Results**: Add review section to `tasks/todo.md`
-6. **Capture Lessons**: Update `tasks/lessons.md` after corrections
+5. **Capture Lessons**: When corrected, update this AGENTS.md with the pattern to prevent recurrence
 
 ## Core Principles
 
@@ -345,8 +368,10 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 
 - If the user asks to send to git or something similar do all these steps:
 - Git status, diff, create branch, commit all, push and write a PR description
+- **Verify branch before committing**: Run `git branch --show-current` and confirm with user if unsure — branch mix-ups have caused wasted work multiple times
 - **Avoid force pushes**: Prefer follow-up commits over `git push --force` or `--force-with-lease`. Force pushes rewrite history and can cause issues for others working on the same branch.
 - **Run biome check before committing**: `npx biome check --write <file>` to fix formatting/linting issues
+- **If PR was already merged**: Open a new branch/PR for follow-up changes, don't try to push to merged branches
 
 ## Communication Style
 

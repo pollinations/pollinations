@@ -196,6 +196,9 @@ function buildRequestBody(
         if (imageUrl) {
             requestBody.image = imageUrl;
         }
+        if (airforceModel === "grok-imagine-video" && imageUrl) {
+            requestBody.image_urls = [imageUrl];
+        }
     } else if (airforceModel === "imagen-4") {
         const size = closestSupportedSize(safeParams.width, safeParams.height);
         if (size) requestBody.size = size;

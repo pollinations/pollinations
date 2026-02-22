@@ -1,0 +1,34 @@
+{
+  "pr_number": 7662,
+  "title": "Add FeedHire to Social_Bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7662",
+  "merged_at": "2026-02-22T16:47:46Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Job hunting made easier",
+    "blurb": "FeedHire joins the ecosystem! A new AI-powered tool to filter the noise and find the signal in job postings across the web.",
+    "summary": "Added FeedHire, an AI job aggregator for Telegram and Reddit, to the community apps directory.",
+    "impact": "Users can now discover FeedHire in the apps list to streamline their job search process.",
+    "keywords": [
+      "community",
+      "apps",
+      "jobs",
+      "aggregator",
+      "social-bots"
+    ],
+    "visual_concept": "Polly the Bee and the Robot companion reviewing a glowing digital bulletin board. The board represents the 'feed' of jobs. The scene should feel like a cozy, helpful employment center.",
+    "image_prompt": "Cozy pixel art scene of Polly the Bee and the chunky robot looking at a glowing digital bulletin board filled with job listings. The board glows lime green (#ecf874). Soft pastel gradient background. Warm lighting, lo-fi office vibes. Pixel text on board: 'JOBS'. Nostalgic and helpful atmosphere. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-22T16:48:27.284233+00:00"
+}

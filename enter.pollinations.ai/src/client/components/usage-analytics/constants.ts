@@ -1,6 +1,6 @@
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
-import { getModelDisplayName } from "../model-utils.ts";
+import { getModelDisplayName } from "../api-keys/model-utils.ts";
 
 export const ALL_MODELS = [
     ...Object.keys(TEXT_SERVICES).map((id) => ({

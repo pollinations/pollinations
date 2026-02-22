@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import termsMarkdown from "../../../legal/TERMS_OF_SERVICE.md?raw";
-import { LegalPageLayout } from "../components/LegalPageLayout";
+import { LegalPageLayout } from "../components/layout/legal-page-layout";
 
 export const Route = createFileRoute("/terms")({
     component: TermsComponent,

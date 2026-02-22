@@ -1,9 +1,9 @@
-import crypto from "node:crypto";
-import { createHonoMockHandler, MockAPI } from "./fetch";
 import { env } from "cloudflare:test";
+import crypto from "node:crypto";
+import { getLogger } from "@logtape/logtape";
 import { Hono } from "hono";
 import { expect, inject } from "vitest";
-import { getLogger } from "@logtape/logtape";
+import { createHonoMockHandler, type MockAPI } from "./fetch";
 
 const log = getLogger(["test", "mock", "vcr"]);
 const snapshotServerUrl = inject("snapshotServerUrl");
@@ -46,7 +46,8 @@ const hosts = [
 
 async function getSnapshotHash(request: Request): Promise<string> {
     const hash = crypto.createHash("md5");
-    hash.update(request.headers.get("authorization") || "");
+    // Exclude authorization header — it changes per test run and doesn't affect
+    // backend response content. This allows VCR snapshots to be reused across runs.
     hash.update(request.headers.get("content-type") || "");
     hash.update(`${request.method}:${request.url}`);
     try {
@@ -337,7 +338,7 @@ function replayChunks(
             yield encoder.encode(chunk.data);
         }
     }
-    // @ts-ignore - ReadableStream.from is supported
+    // @ts-expect-error - ReadableStream.from is supported
     return ReadableStream.from(streamGenerator());
 }
 

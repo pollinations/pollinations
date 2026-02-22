@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| 🛒 | THISX | https://www.thisx.ai/en | AI platform for e-commerce: store fixes and Meta AI-driven ads. | en | Dev_Tools | @monyuan | 56907515 |  |  |  | | 2026-02-03 | https://github.com/pollinations/pollinations/issues/7884 | 2026-02-22 |  |  |
 | 🎨 | Coloring Me | https://coloringme.net/ | Free app that generates interactive coloring images for kids on mobile. | vi | Creative | @buithehien1991 | 577666 |  |  |  | | 2026-02-04 | https://github.com/pollinations/pollinations/issues/7908 | 2026-02-22 |  |  |
 | 🧾 | Transport Document OCR | https://xfynder99-byte.github.io/OCR/ | Standalone web app extracting product data from images and PDFs via AI OCR. | en | Dev_Tools | @xfynder99-byte | 250524427 | https://github.com/xfynder99-byte/OCR | ⭐1 | chrisp.bacon2979 | | 2026-02-04 | https://github.com/pollinations/pollinations/issues/7918 | 2026-02-22 |  |  |
 | 🎨 | Pollination App |  | Android client for Pollinations.ai to generate images and chat with AI. | en | Creative | @aheadmujtaba | 42637803 | https://github.com/aheadmujtaba/PollinationsApp | ⭐0 |  | | 2026-02-04 | https://github.com/pollinations/pollinations/issues/7936 | 2026-02-22 |  |  |

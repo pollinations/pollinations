@@ -17,6 +17,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [THISX](https://www.thisx.ai/en) | AI platform for e-commerce: store fixes and Meta AI-driven ads. | @monyuan |
 | [Coloring Me](https://coloringme.net/) | Free app that generates interactive coloring images for kids on mobile. | @buithehien1991 |
 | [Transport Document OCR](https://xfynder99-byte.github.io/OCR/) | Standalone web app extracting product data from images and PDFs via AI OCR. | @xfynder99-byte |
 | Pollination App | Android client for Pollinations.ai to generate images and chat with AI. | @aheadmujtaba |
@@ -26,7 +27,6 @@
 | [Pollinations Chat](https://pollinations-chat.vercel.app/) | Chat interface for Pollinations — converse with generative AI art bot | @Abishekganesh-BS |
 | [polli-dungeon](https://polli-game.netlify.app/) | Add AI-driven NPC behavior, encounter generation, and narrative assistance to Dungeons & Dragons sessions. | @robosiddharth |
 | [Discord Chatbot Creator Platform with Suspicious H](https://discord-chatbot-creator.vercel.app/ https://discord.com/oauth2/authorize?client_id=1455468647744012433 https://vibe-check-engine.vercel.app/) | Build chatbots with Discord Chatbot Creator Platform with Suspicious H to design, test, and deploy bots on Discord while managing intents, message handling, webhooks, permissions, and logs. | @blueplaysgames3921 |
-| [Christmas Postcard Creator](https://christmas-card-creator.up.railway.app/) | Create personalized holiday postcards with Christmas Postcard Creator using AI to generate custom images and messages from your inputs. | @Chonrasieo |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

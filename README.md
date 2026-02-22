@@ -17,6 +17,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [Immage Generator](https://genimg.mummer.org/) | Web-based AI image generator for creating images from text prompts. | @mumblemummer |
 | [Postsiva  AI Facebook Automation](https://facebook.postsiva.com/) | AI platform to generate, schedule and publish Facebook posts at scale. | @Uzair-DeVops |
 | [THISX](https://www.thisx.ai/en) | AI platform for e-commerce: store fixes and Meta AI-driven ads. | @monyuan |
 | [Coloring Me](https://coloringme.net/) | Free app that generates interactive coloring images for kids on mobile. | @buithehien1991 |
@@ -26,7 +27,6 @@
 | [hzliflow.ken520.top](https://hzliflow.ken520.top) | 在线 AI 绘画平台，基于 hzliflow 提供图像生成与编辑功能 | @Apollohzl |
 | [Phantaz Studio](https://www.xuziqiu.site/phantaz-studio/) | AI image generator on Pollinations.ai; each image gets a stable direct URL. | @xuziqiu |
 | [Pollinations Chat](https://pollinations-chat.vercel.app/) | Chat interface for Pollinations — converse with generative AI art bot | @Abishekganesh-BS |
-| [polli-dungeon](https://polli-game.netlify.app/) | Add AI-driven NPC behavior, encounter generation, and narrative assistance to Dungeons & Dragons sessions. | @robosiddharth |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

@@ -17,18 +17,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [Gen Layers](http://genlayers.com/) | AI tool to generate high-CTR YouTube thumbnails from titles and visuals | @Mustafiz82 |
-| [ImageGenAI Pro](https://imgimg-two.vercel.app/) | Generate images in any aspect ratio with ImageGenAI Pro. | @prabhatkashyap902 |
-| [nails-generator](https://nails-generator.netlify.app/) | Generate AI nail art designs with nails-generator, producing style, color, and pattern variations for manicure mockups. | @rodriguetg |
-| [FeedHire](https://feedhire.me/) | AI job aggregator that filters postings from Telegram, Reddit and other sources | @rafipatel |
-| [AI Youtube Comment Summary Browser ExtensionAddon](https://addons.mozilla.org/en-US/firefox/addon/ai-youtube-comment-summary/) | Summarizes YouTube comment threads directly in your browser. | @iFreaku |
-| Pixoo64 Music AI Art | Home Assistant integration: music-reactive Pixoo64 visuals via Pollinations.ai | @idodov |
-| [Polli AI Client](https://polli-plum.vercel.app/) | Privacy-focused serverless AI client for Pollinations API and advanced models. | @soyangelromero |
-| [FumajimeMura Z-Image Turbo](https://urea.github.io/FumajimeMura-Z-Image-Turbo/) | High-speed batch image generator using Pollinations AI Flux Z-Image | @urea |
-| [Chamuka DrawIt](https://drawit.chamuka.ai) | Create designs by generating images powered by Pollinations. | @swiftugandan |
-| [Xenchat](https://chat.xenai.tech) | Fine-tuned AI chat powered by OpenWebUI and Pollinations for fast responses | @Screenmax1234 |
+| [🤖 LinkedIn AI Automation](https://linkedin-ui-lemon.vercel.app/) | Capture LinkedIn engagement with LinkedIn AI Automation, qualifying and converting interactions into opportunities for creators and businesses. | [@mfahadjbr](https://github.com/mfahadjbr) |
+| [🖼️ Gen Layers](http://genlayers.com/) | AI tool to generate high-CTR YouTube thumbnails from titles and visuals | [@Mustafiz82](https://github.com/Mustafiz82) |
+| [🖼️ ImageGenAI Pro](https://imgimg-two.vercel.app/) | Generate images in any aspect ratio with ImageGenAI Pro. | [@prabhatkashyap902](https://github.com/prabhatkashyap902) |
+| [💅 nails-generator](https://nails-generator.netlify.app/) | Generate AI nail art designs with nails-generator, producing style, color, and pattern variations for manicure mockups. | [@rodriguetg](https://github.com/rodriguetg) |
+| [💼 FeedHire](https://feedhire.me/) | AI job aggregator that filters postings from Telegram, Reddit and other sources | [@rafipatel](https://github.com/rafipatel) |
+| [🧠 AI Youtube Comment Summary Browser ExtensionAddon](https://addons.mozilla.org/en-US/firefox/addon/ai-youtube-comment-summary/) | Summarizes YouTube comment threads directly in your browser. | [@iFreaku](https://github.com/iFreaku) |
+| [🎶 Pixoo64 Music AI Art](https://github.com/idodov/pixoo-music-ai-art) | Home Assistant integration: music-reactive Pixoo64 visuals via Pollinations.ai | [@idodov](https://github.com/idodov) |
+| [🔒 Polli AI Client](https://polli-plum.vercel.app/) | Privacy-focused serverless AI client for Pollinations API and advanced models. | [@soyangelromero](https://github.com/soyangelromero) |
+| [⚡ FumajimeMura Z-Image Turbo](https://urea.github.io/FumajimeMura-Z-Image-Turbo/) | High-speed batch image generator using Pollinations AI Flux Z-Image | [@urea](https://github.com/urea) |
+| [🎨 Chamuka DrawIt](https://drawit.chamuka.ai) | Create designs by generating images powered by Pollinations. | [@swiftugandan](https://github.com/swiftugandan) |
 
-[View all apps →](apps/APPS.md)
+[Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.

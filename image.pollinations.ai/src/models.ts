@@ -104,7 +104,7 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
-    // Alibaba Wan 2.6 - Video generation with audio
+    // Alibaba Wan 2.6 - Video generation with audio (DashScope only, airforce disabled)
     wan: {
         type: "alibaba-dashscope-video",
         enhance: false,
@@ -142,14 +142,14 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // Imagen 3 - Google's image generation via api.airforce (disabled - airforce provider unreliable)
-    // imagen: {
+    // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)
+    // "imagen-4": {
     //     type: "airforce",
     //     enhance: false,
     //     defaultSideLength: 1024,
     // },
 
-    // Grok Imagine Video - xAI video generation via api.airforce (disabled - upstream provider ~40% failure rate)
+    // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)
     // "grok-video": {
     //     type: "airforce-video",
     //     enhance: false,

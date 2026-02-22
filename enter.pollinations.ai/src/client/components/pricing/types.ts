@@ -1,6 +1,6 @@
 export type ModelPrice = {
     name: string;
-    type: "text" | "image" | "video";
+    type: "text" | "image" | "video" | "audio";
     perToken?: boolean;
     // Text pricing
     promptTextPrice?: string;
@@ -17,6 +17,8 @@ export type ModelPrice = {
     perSecondPrice?: string;
     perAudioSecondPrice?: string; // For video models with audio (e.g., wan)
     perTokenPrice?: string; // For token-based video models like seedance
+    // Audio/TTS pricing
+    perCharPrice?: string; // Per 1000 characters (e.g., ElevenLabs TTS)
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;
 };

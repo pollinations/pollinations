@@ -18,8 +18,8 @@ const TIER_BADGE_COLOR: Record<
     spore: "yellow",
 };
 
-const BetaNoticeText = () => (
-    <p className="text-sm font-medium text-gray-900 mt-3 pt-3 border-t border-amber-200">
+const BetaNoticeText: FC = () => (
+    <p className="text-sm font-medium text-gray-900 mt-3 pt-3 border-t border-gray-200">
         ✨ <strong>We're in beta!</strong> We're learning what works best for
         our community and may adjust pollen values and tier rules as we go.
         Thanks for being part of the journey!
@@ -84,7 +84,7 @@ const TierScreen: FC<{
                     over.
                 </p>
                 <Card color="amber">
-                    <TierExplanation />
+                    <TierExplanation currentTier={tier} />
                     <BetaNoticeText />
                 </Card>
             </div>

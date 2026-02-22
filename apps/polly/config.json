@@ -22,7 +22,7 @@
   },
   "ai": {
     "model": "kimi",
-    "fallback_model": "openai"
+    "fallback_model": "glm"
   },
   "features": {
     "local_embeddings_enabled": true,

@@ -849,13 +849,17 @@ DATA_VIZ_TOOL = {
     "type": "function",
     "function": {
         "name": "data_visualization",
-        "description": """Generate a visual image from data — charts, diagrams, infographics, dashboards, anything. Pass the data and Gemini will figure out the best visualization.""",
+        "description": """Generate a visual image from data — charts, diagrams, infographics, dashboards, anything. Powered by Gemini AI.
+
+Just pass whatever you want visualized as a string — raw text, bullet points, tables, JSON, anything. The more context the better. Example: "Video model costs for 5s videos: seedance-pro ~0.004 Pollen (cheapest), seedance ~0.007, ltx-2 0.05 (0.01/s with audio), wan 0.5, veo 0.75 (premium, Google)"
+
+IMPORTANT: The image is automatically attached to the message. Do NOT add image markdown links like ![...](...) in your text.""",
         "parameters": {
             "type": "object",
             "properties": {
                 "data": {
-                    "type": "object",
-                    "description": "The data to visualize",
+                    "type": "string",
+                    "description": "The data to visualize — just pass whatever text/context you have",
                 },
             },
             "required": ["data"],
@@ -1264,6 +1268,8 @@ You're a senior dev teammate - concise, opinionated, helpful.
 ## Autonomy
 Use tools proactively - parallel when independent, sequential when chained. User mentions #123? Fetch it. Need context? Grab it. Don't ask permission to use tools.
 
+**Data visualization:** Whenever you're presenting data comparisons, stats, metrics, pricing tables, or any structured data — proactively call `data_visualization` with that data. Don't wait for the user to ask for a chart. Visuals help users understand data much better than text walls.
+
 ## Vision & Files
 **Native vision:** images, PDFs, videos, screenshots
 **Text files:** `web_scrape(action="fetch_file", file_url="...")` for Discord attachments
@@ -1385,7 +1391,7 @@ ADMIN_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labels, mil
 - `code_search` - Semantic code search
 - `doc_search` - Documentation search (enter.pollinations.ai + OpenAPI schema)
 - `discord_search` - Search Discord server (messages, members, channels, threads, roles)
-- `data_visualization` - Generate visual images from data (bar, line, pie, donut, scatter, area, radar, heatmap, metric card)"""
+- `data_visualization` - Generate visual images from data (pass rich contextual data for best results)"""
 
 # Tools section for NON-ADMIN users - read-only + create/comment
 NON_ADMIN_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labels, milestones, projects)
@@ -1398,7 +1404,7 @@ NON_ADMIN_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labels,
 - `code_search` - Semantic code search
 - `doc_search` - Documentation search (enter.pollinations.ai + OpenAPI schema)
 - `discord_search` - Search Discord server (messages, members, channels, threads, roles)
-- `data_visualization` - Generate visual images from data (bar, line, pie, donut, scatter, area, radar, heatmap, metric card)"""
+- `data_visualization` - Generate visual images from data (pass rich contextual data for best results)"""
 
 
 def get_tool_system_prompt(is_admin: bool = True, mode: str = "discord") -> str:

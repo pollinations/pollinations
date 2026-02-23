@@ -242,12 +242,11 @@ class PollinationsClient:
                     "text": f"[{discord_username}]: {user_message}{file_notice}",
                 }
             ]
-            # Add images (Discord allows max 10 attachments per message)
+            # Add images and videos as image_url (model handles both)
             for url in (image_urls or [])[:10]:
                 content.append({"type": "image_url", "image_url": {"url": url}})
-            # Add videos - YouTube, GIFs, Discord video attachments
             for url in (video_urls or [])[:10]:
-                content.append({"type": "video_url", "video_url": {"url": url}})
+                content.append({"type": "image_url", "image_url": {"url": url}})
             messages.append({"role": "user", "content": content})
         else:
             messages.append(

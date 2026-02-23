@@ -3,7 +3,6 @@
 System prompt + data as user msg → Gemini with code_execution → image returned.
 """
 
-import json
 import logging
 
 import aiohttp
@@ -23,7 +22,7 @@ SYSTEM_PROMPT = (
 )
 
 
-async def data_visualization(data: dict, **kwargs) -> dict:
+async def data_visualization(data: str, **kwargs) -> dict:
     """Send data to Gemini with code_execution to produce a visualization."""
     try:
         async with aiohttp.ClientSession() as session:
@@ -33,7 +32,7 @@ async def data_visualization(data: dict, **kwargs) -> dict:
                     "model": "gemini",
                     "messages": [
                         {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": json.dumps(data, indent=2)},
+                        {"role": "user", "content": str(data)},
                     ],
                     "tools": [{"type": "function", "function": {"name": "code_execution"}}],
                 },

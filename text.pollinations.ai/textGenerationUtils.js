@@ -25,10 +25,6 @@ export function validateAndNormalizeMessages(messages) {
             content: msg.content || "",
         };
 
-        // For assistant messages with tool_calls content should remain null or undefined
-        // per the OpenAI spec Many proiders reject
-        // assistant messages that have both tool_calls and non null content
-        // For all other messages, default to empty string if content is missing
 
         if (msg.tool_calls) {
             if (msg.content != null) {

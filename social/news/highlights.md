@@ -1,3 +1,4 @@
+- **2026-02-24** – **🪙 Spore Rebalance** Free tier moves from 1 Pollen/day to 1.5€/week. Better aligned with rewarding active builders. Points-based dynamic tiers coming later this week.
 - **2026-02-22** – **🔗 LangChain Support** Python developers can now integrate Pollinations models directly into agents and RAG pipelines with the new `langchain-pollinations` package.
 - **2026-02-22** – **📱 Pollinations on Android** A dedicated community-built Android client is now available. Generate images and chat natively on mobile.
 - **2026-02-22** – **🎨 Pollenboard** A self-hostable, all-in-one frontend for those who want to run their own interface on top of our APIs.

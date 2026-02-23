@@ -1,0 +1,34 @@
+{
+  "pr_number": 8313,
+  "title": "Add M Assistant to Chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/8313",
+  "merged_at": "2026-02-23T11:41:55Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "M is for Manage",
+    "blurb": "M Assistant joins the chat. It handles the scheduling and task automation so you can get back to generating pixels.",
+    "summary": "Added M Assistant to the community apps list, offering conversational AI support for scheduling and task automation.",
+    "impact": "Users can now discover and integrate M Assistant for streamlined organization across apps and devices.",
+    "keywords": [
+      "community",
+      "assistant",
+      "automation",
+      "productivity",
+      "ios"
+    ],
+    "visual_concept": "The Pollinations Bee interacting with a new organizational tool. Since M Assistant is about scheduling/tasks, a clipboard or calendar metaphor works well. The 'M' identity can be represented by a helpful robot or a stylized letter block.",
+    "image_prompt": "Cozy pixel art scene of the bee mascot hovering next to a helpful pixel robot holding a glowing lime green (#ecf874) clipboard. The robot has a letter 'M' painted on its chest. Soft pastel gradient background with floating calendar icons. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Cute and organized."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-23T11:42:38.465773+00:00"
+}

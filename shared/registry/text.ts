@@ -517,7 +517,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "nomnom": {
-        aliases: ["gemini-scrape", "web-research"],
+        aliases: ["web-scrape", "web-research"],
         modelId: "nomnom",
         provider: "community",
         cost: [

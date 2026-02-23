@@ -233,9 +233,7 @@ Get your free API key at: https://enter.pollinations.ai\x1b[0m
     apiKey = apiKey.trim();
 
     if (!apiKey) {
-         error(
-            "API key is required. Get one at https://enter.pollinations.ai",
-        );
+        error("API key is required. Get one at https://enter.pollinations.ai");
         rl.close();
         process.exit(1);
     }

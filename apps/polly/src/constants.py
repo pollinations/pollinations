@@ -1013,44 +1013,9 @@ def filter_admin_actions_from_tools(tools: list, is_admin: bool) -> list:
 
 # Actions blocked for API users (superset of ADMIN_ACTIONS — also blocks PR comment/review)
 API_RESTRICTED_ACTIONS = {
-    "github_issue": {
-        "close",
-        "reopen",
-        "edit",
-        "label",
-        "unlabel",
-        "assign",
-        "unassign",
-        "milestone",
-        "lock",
-        "link",
-        "create_sub_issue",
-        "add_sub_issue",
-        "remove_sub_issue",
-    },
-    "github_pr": {
-        "request_review",
-        "remove_reviewer",
-        "approve",
-        "request_changes",
-        "merge",
-        "update",
-        "create",
-        "convert_to_draft",
-        "ready_for_review",
-        "update_branch",
-        "inline_comment",
-        "suggest",
-        "resolve_thread",
-        "unresolve_thread",
-        "enable_auto_merge",
-        "disable_auto_merge",
-        "close",
-        "reopen",
-        "comment",
-        "review",
-    },
-    "github_project": {"add", "remove", "set_status", "set_field"},
+    "github_issue": ADMIN_ACTIONS["github_issue"],
+    "github_pr": ADMIN_ACTIONS["github_pr"] | {"comment", "review"},
+    "github_project": ADMIN_ACTIONS["github_project"],
 }
 
 # Tools entirely excluded from API (Discord-only subscription tools)

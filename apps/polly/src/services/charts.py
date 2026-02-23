@@ -21,32 +21,41 @@ SYSTEM_PROMPT = (
     "Always execute your code and produce a PNG image."
 )
 
+# Shared session for connection pooling across visualization calls
+_session: aiohttp.ClientSession | None = None
+
+
+def _get_session() -> aiohttp.ClientSession:
+    global _session
+    if _session is None or _session.closed:
+        _session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=90))
+    return _session
+
 
 async def data_visualization(data: str, **kwargs) -> dict:
     """Send data to Gemini with code_execution to produce a visualization."""
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                f"{POLLINATIONS_API_BASE}/v1/chat/completions",
-                json={
-                    "model": "gemini",
-                    "messages": [
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": str(data)},
-                    ],
-                    "tools": [{"type": "function", "function": {"name": "code_execution"}}],
-                },
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {config.pollinations_token}",
-                },
-                timeout=aiohttp.ClientTimeout(total=90),
-            ) as resp:
-                if resp.status != 200:
-                    error = await resp.text()
-                    logger.error(f"Visualization API error: {resp.status} - {error[:200]}")
-                    return {"success": False, "error": f"API error: {resp.status}"}
-                resp_data = await resp.json()
+        session = _get_session()
+        async with session.post(
+            f"{POLLINATIONS_API_BASE}/v1/chat/completions",
+            json={
+                "model": "gemini",
+                "messages": [
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": str(data)},
+                ],
+                "tools": [{"type": "function", "function": {"name": "code_execution"}}],
+            },
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {config.pollinations_token}",
+            },
+        ) as resp:
+            if resp.status != 200:
+                error = await resp.text()
+                logger.error(f"Visualization API error: {resp.status} - {error[:200]}")
+                return {"success": False, "error": f"API error: {resp.status}"}
+            resp_data = await resp.json()
 
         message = resp_data.get("choices", [{}])[0].get("message", {})
         for block in message.get("content_blocks", []):

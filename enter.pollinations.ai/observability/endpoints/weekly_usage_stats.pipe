@@ -2,6 +2,7 @@ DESCRIPTION >
     Weekly usage statistics - tokens, requests, revenue breakdown by week.
     Includes per-user averages for depth metrics.
     Optimized: single-pass query with uniq() instead of uniqExact() for ~10x speed.
+    Supports start_date param for single-week queries to avoid Tinybird timeouts.
 
 TOKEN model_usage READ
 
@@ -22,7 +23,13 @@ SQL >
         if(active_users > 0, total_tokens / active_users, 0) AS tokens_per_user,
         if(active_users > 0, total_requests / active_users, 0) AS requests_per_user
     FROM generation_event
-    WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
+    WHERE
+        {% if defined(start_date) %}
+        start_time >= toDate({{ String(start_date) }})
+        AND start_time < toDate({{ String(start_date) }}) + INTERVAL 7 DAY
+        {% else %}
+        start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
+        {% end %}
     AND environment = 'production'
     GROUP BY week
     ORDER BY week ASC

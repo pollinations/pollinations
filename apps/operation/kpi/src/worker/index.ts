@@ -10,16 +10,7 @@ const DATA_START_DATE = "2025-10-01";
 const DATA_START_TIMESTAMP_MS = new Date(DATA_START_DATE).getTime();
 const DATA_START_TIMESTAMP_SEC = Math.floor(DATA_START_TIMESTAMP_MS / 1000); // D1 uses seconds
 
-// Calculate weeks since start date for Tinybird queries
-// Cap at 20 weeks - optimized Tinybird pipe handles this well now
 const MAX_WEEKS_BACK = 20;
-
-function getWeeksSinceStart(): number {
-    const now = Date.now();
-    const weeksMs = now - DATA_START_TIMESTAMP_MS;
-    const weeks = Math.ceil(weeksMs / (7 * 24 * 60 * 60 * 1000)) + 1;
-    return Math.min(weeks, MAX_WEEKS_BACK);
-}
 
 type Env = {
     DB?: D1Database;
@@ -65,7 +56,12 @@ async function fetchTinybird(
     env: Env,
     pipe: string,
     params: Record<string, string | number> = {},
-): Promise<{ data: unknown[]; error?: string }> {
+): Promise<{
+    data: unknown[];
+    error?: string;
+    status?: number;
+    pipe?: string;
+}> {
     const query = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
         query.set(k, String(v));
@@ -98,33 +94,87 @@ async function fetchTinybird(
                 return { data: json.data };
             }
             const body = await res.text();
+            const errorDetail = `pipe=${pipe} params=${JSON.stringify(params)} status=${res.status} body=${body.slice(0, 500)}`;
             console.error(
-                `Tinybird ${pipe} failed (attempt ${attempt + 1}): status=${res.status} body=${body}`,
+                `[Tinybird] FAILED attempt ${attempt + 1}/2: ${errorDetail}`,
             );
             // Retry on 408 (timeout), 429 (rate limit), or 5xx
             if (
                 attempt === 0 &&
                 (res.status === 408 || res.status === 429 || res.status >= 500)
             ) {
-                await new Promise((r) => setTimeout(r, 1000));
+                const delay = res.status === 429 ? 2000 : 1000;
+                console.error(
+                    `[Tinybird] Retrying ${pipe} in ${delay}ms (status=${res.status})`,
+                );
+                await new Promise((r) => setTimeout(r, delay));
                 continue;
             }
             return {
                 data: [],
-                error: `Tinybird ${res.status}: ${body.slice(0, 200)}`,
+                error: `Tinybird ${res.status}: ${body.slice(0, 300)}`,
+                status: res.status,
+                pipe,
             };
         } catch (e) {
             console.error(
-                `Tinybird ${pipe} network error (attempt ${attempt + 1}): ${e}`,
+                `[Tinybird] NETWORK ERROR attempt ${attempt + 1}/2: pipe=${pipe} error=${e}`,
             );
             if (attempt === 0) {
                 await new Promise((r) => setTimeout(r, 1000));
                 continue;
             }
-            return { data: [], error: `Network error: ${e}` };
+            return { data: [], error: `Network error: ${e}`, pipe };
         }
     }
-    return { data: [], error: "Exhausted retries" };
+    return { data: [], error: "Exhausted retries", pipe };
+}
+
+// Get ISO Monday dates for each week going back N weeks
+function getWeekMondays(weeksBack: number): string[] {
+    const mondays: string[] = [];
+    const now = new Date();
+    // Current week's Monday
+    const today = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
+    const dayOfWeek = today.getUTCDay();
+    const currentMonday = new Date(today);
+    currentMonday.setUTCDate(
+        today.getUTCDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1),
+    );
+
+    for (let i = weeksBack; i >= 0; i--) {
+        const monday = new Date(currentMonday);
+        monday.setUTCDate(currentMonday.getUTCDate() - i * 7);
+        mondays.push(monday.toISOString().split("T")[0]);
+    }
+    return mondays;
+}
+
+// Fetch a Tinybird pipe week-by-week (serial) and merge results.
+// Each call queries a single week via start_date, avoiding the 10s timeout.
+async function fetchTinybirdByWeek(
+    env: Env,
+    pipe: string,
+    weeksBack: number,
+): Promise<{ data: unknown[]; errors: string[] }> {
+    const mondays = getWeekMondays(weeksBack);
+    const allData: unknown[] = [];
+    const errors: string[] = [];
+
+    for (const monday of mondays) {
+        const result = await fetchTinybird(env, pipe, {
+            start_date: monday,
+        });
+        if (result.error) {
+            errors.push(`${monday}: ${result.error}`);
+        }
+        if (result.data.length > 0) {
+            allData.push(...result.data);
+        }
+    }
+    return { data: allData, errors };
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -217,7 +267,7 @@ app.get("/api/kpi/tiers", async (c) => {
 // A user is "activated" if they made their first API request within 7 days of registration
 app.get("/api/kpi/activations", async (c) => {
     try {
-        const weeksBack = getWeeksSinceStart();
+        const weeksBack = parseWeeksBack(c);
 
         // 1. Get all user registrations from D1 (id, created_at, week_start)
         const registrations = (await queryD1(
@@ -299,43 +349,52 @@ app.get("/api/kpi/activations", async (c) => {
     }
 });
 
-// Tinybird: WAU (from Oct 1, 2025)
+// Helper: parse weeks_back from query, capped at MAX_WEEKS_BACK
+function parseWeeksBack(
+    c: { req: { query: (k: string) => string | undefined } },
+    fallback = 12,
+): number {
+    const raw = c.req.query("weeks_back");
+    const parsed = raw ? parseInt(raw, 10) : fallback;
+    return Math.min(Number.isNaN(parsed) ? fallback : parsed, MAX_WEEKS_BACK);
+}
+
+// Tinybird: WAU — fetched week-by-week to avoid 10s timeout
 app.get("/api/kpi/wau", async (c) => {
-    const weeksBack = getWeeksSinceStart();
-    const result = await fetchTinybird(c.env, "weekly_active_users", {
-        weeks_back: weeksBack,
-    });
-    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    const result = await fetchTinybirdByWeek(
+        c.env,
+        "weekly_active_users",
+        parseWeeksBack(c),
+    );
     return c.json({ data: result.data });
 });
 
-// Tinybird: Usage stats (from Oct 1, 2025)
+// Tinybird: Usage stats — fetched week-by-week to avoid 10s timeout
 app.get("/api/kpi/usage", async (c) => {
-    const weeksBack = getWeeksSinceStart();
-    const result = await fetchTinybird(c.env, "weekly_usage_stats", {
-        weeks_back: weeksBack,
-    });
-    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    const result = await fetchTinybirdByWeek(
+        c.env,
+        "weekly_usage_stats",
+        parseWeeksBack(c),
+    );
     return c.json({ data: result.data });
 });
 
-// Tinybird: Retention (from Oct 1, 2025)
+// Tinybird: Retention — multi-week cohort query, cannot split by week
 app.get("/api/kpi/retention", async (c) => {
-    const weeksBack = getWeeksSinceStart();
     const result = await fetchTinybird(c.env, "weekly_retention", {
-        weeks_back: weeksBack,
+        weeks_back: parseWeeksBack(c, 8),
     });
     if (result.error) return c.json({ error: result.error, data: [] }, 500);
     return c.json({ data: result.data });
 });
 
-// Tinybird: Health stats - service availability (from Oct 1, 2025)
+// Tinybird: Health stats — fetched week-by-week to avoid 10s timeout
 app.get("/api/kpi/health", async (c) => {
-    const weeksBack = getWeeksSinceStart();
-    const result = await fetchTinybird(c.env, "weekly_health_stats", {
-        weeks_back: weeksBack,
-    });
-    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    const result = await fetchTinybirdByWeek(
+        c.env,
+        "weekly_health_stats",
+        parseWeeksBack(c),
+    );
     return c.json({ data: result.data });
 });
 
@@ -543,13 +602,13 @@ app.get("/api/kpi/churn", async (c) => {
     return c.json({ data: churnData });
 });
 
-// Tinybird: B2B/B2C User Segments (developer vs end-user)
+// Tinybird: B2B/B2C User Segments — fetched week-by-week to avoid 10s timeout
 app.get("/api/kpi/user-segments", async (c) => {
-    const weeksBack = 12;
-    const result = await fetchTinybird(c.env, "weekly_user_segment", {
-        weeks_back: weeksBack,
-    });
-    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    const result = await fetchTinybirdByWeek(
+        c.env,
+        "weekly_user_segment",
+        parseWeeksBack(c),
+    );
     return c.json({ data: result.data });
 });
 

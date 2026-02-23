@@ -1,11 +1,23 @@
 import asyncio
-import json
 import logging
 import random
 import time
 from collections.abc import Callable
 from contextvars import ContextVar
 from typing import Any
+
+import json
+
+try:
+    import orjson
+
+    def _json_dumps(obj, **kwargs):
+        return orjson.dumps(obj).decode()
+except ImportError:
+
+    def _json_dumps(obj, **kwargs):
+        return json.dumps(obj, ensure_ascii=False, **kwargs)
+
 
 MAX_RETRIES = 3
 RETRY_DELAY = 5
@@ -74,12 +86,13 @@ class PollinationsClient:
         if self._session is None or self._session.closed:
             # Connection pooling for faster subsequent requests
             self._connector = aiohttp.TCPConnector(
-                limit=50,  # Max connections (increased)
-                limit_per_host=20,  # Max per host (increased)
-                keepalive_timeout=60,  # Keep connections alive longer
+                limit=100,  # Max connections
+                limit_per_host=30,  # Max per host
+                keepalive_timeout=90,  # Just under Cloudflare's 100s idle timeout
                 enable_cleanup_closed=True,
-                ttl_dns_cache=300,  # Cache DNS for 5 mins
+                ttl_dns_cache=600,  # Cache DNS for 10 mins
                 use_dns_cache=True,
+                force_close=False,  # Reuse connections
             )
             self._session = aiohttp.ClientSession(
                 connector=self._connector,
@@ -384,7 +397,7 @@ class PollinationsClient:
                         "role": "tool",
                         "tool_call_id": tool_call.get("id", ""),
                         "name": tool_name,
-                        "content": json.dumps(result, ensure_ascii=False),
+                        "content": _json_dumps(result),
                     }
                 )
 
@@ -436,7 +449,7 @@ class PollinationsClient:
             # Check cache first - only for safe read operations
             action = args.get("action", "")
             is_cacheable = action in CACHEABLE_ACTIONS
-            cache_key = f"{func_name}:{json.dumps(args, sort_keys=True)}" if is_cacheable else None
+            cache_key = f"{func_name}:{_json_dumps(args)}" if is_cacheable else None
 
             if cache_key:
                 cached = self._cache.get(cache_key)
@@ -688,9 +701,7 @@ class PollinationsClient:
             Formatted Discord notification message with emojis
         """
         # Build context for AI
-        changes_text = "\n".join(
-            [f"- Type: {c['type']}, Data: {json.dumps(c.get('data', {}), ensure_ascii=False)}" for c in changes]
-        )
+        changes_text = "\n".join([f"- Type: {c['type']}, Data: {_json_dumps(c.get('data', {}))}" for c in changes])
 
         system_prompt = """You are a notification formatter for a Discord bot that watches GitHub issues.
 Format notifications beautifully for Discord with:

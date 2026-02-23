@@ -1485,6 +1485,7 @@ async def tool_github_custom(
     request: str = None,
     graphql_query: str = None,
     rest_endpoint: str = None,
+    rest_url: str = None,
     include_body: bool = False,
     limit: int = 50,
     _context: dict = None,
@@ -1493,12 +1494,11 @@ async def tool_github_custom(
     """
     Fully dynamic GitHub data fetching - AI has FULL read-only control!
 
-    3 modes:
-    1. request: Natural language description (legacy, keyword matching)
-    2. graphql_query: Raw GraphQL query - AI writes the query directly
-    3. rest_endpoint: REST API path (e.g., 'issues/123/timeline')
-
-    AI can use web_search/web_scrape first to find query structure from GitHub docs.
+    4 modes:
+    1. graphql_query: Raw GraphQL query - AI writes the query directly
+    2. rest_endpoint: REST API path relative to repo (e.g., 'actions/runs')
+    3. rest_url: Full GitHub API URL (e.g., 'https://api.github.com/users/octocat')
+    4. request: Natural language fallback (keyword matching)
     """
     return await github_graphql.execute_custom_request(
         request=request or "",
@@ -1506,6 +1506,7 @@ async def tool_github_custom(
         limit=limit,
         graphql_query=graphql_query,
         rest_endpoint=rest_endpoint,
+        rest_url=rest_url,
     )
 
 

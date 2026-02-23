@@ -233,26 +233,45 @@ Actions:
         "type": "function",
         "function": {
             "name": "github_custom",
-            "description": """Fetch raw GitHub data for custom analysis.
-Use for: commit history, contributor stats, activity metrics, stale issue detection, spam detection.
-NOT for: creating/editing issues (use github_issue), PRs (use github_pr).""",
+            "description": """Execute any GitHub API request — REST or GraphQL. Full read access to the entire GitHub API.
+
+Modes (use exactly one):
+- graphql_query: Write a raw GraphQL query. Variables $owner, $repo, $limit are auto-injected.
+- rest_endpoint: REST API path relative to /repos/{owner}/{repo}/ (e.g. "issues/123/timeline", "actions/runs")
+- rest_url: Full GitHub API URL for endpoints outside the repo scope (e.g. "https://api.github.com/users/octocat")
+- request: Plain English fallback — fetches issues/PRs/commits/stats by keyword matching
+
+Use web_search to look up GitHub API docs if unsure about query structure.
+Read-only — mutations are blocked.""",
             "parameters": {
                 "type": "object",
                 "properties": {
+                    "graphql_query": {
+                        "type": "string",
+                        "description": "Raw GraphQL query. Variables $owner: String!, $repo: String!, $limit: Int! are auto-provided.",
+                    },
+                    "rest_endpoint": {
+                        "type": "string",
+                        "description": "REST path relative to /repos/{owner}/{repo}/ (e.g. 'actions/runs', 'issues/123/comments')",
+                    },
+                    "rest_url": {
+                        "type": "string",
+                        "description": "Full GitHub API URL for non-repo endpoints (e.g. 'https://api.github.com/users/octocat')",
+                    },
                     "request": {
                         "type": "string",
-                        "description": "What data you need in plain English",
+                        "description": "Plain English fallback — describe what data you need",
                     },
                     "include_body": {
                         "type": "boolean",
-                        "description": "Include full body text? (for spam detection, etc.)",
+                        "description": "Include full body text in results (for request mode)",
                     },
                     "limit": {
                         "type": "integer",
                         "description": "Max items (default 50, max 100)",
                     },
                 },
-                "required": ["request"],
+                "required": [],
             },
         },
     },

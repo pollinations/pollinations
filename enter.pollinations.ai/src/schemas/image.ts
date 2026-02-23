@@ -100,7 +100,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
     // Video-specific params
     duration: z.coerce.number().int().min(1).max(10).optional().meta({
         description:
-            "Video duration in seconds (video models only). veo: 4, 6, or 8. seedance: 2-10",
+            "Video duration in seconds (video models only). veo: 4, 6, or 8 (default: 4). seedance: 2-10 (default: 2)",
     }),
     aspectRatio: z.string().optional().meta({
         description: "Video aspect ratio: 16:9 or 9:16 (veo, seedance)",

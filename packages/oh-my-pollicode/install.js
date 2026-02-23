@@ -226,14 +226,16 @@ async function main() {
     // Step 3: Ask for API key (required)
     console.log(`
 \x1b[33mA Pollinations API key is required.
-Get your free API key at: https://pollinations.ai/pricing\x1b[0m
+Get your free API key at: https://enter.pollinations.ai\x1b[0m
 `);
 
     let apiKey = await ask("Enter Pollinations API key: ");
     apiKey = apiKey.trim();
 
     if (!apiKey) {
-        error("API key is required. Get one at https://pollinations.ai/pricing");
+         error(
+            "API key is required. Get one at https://enter.pollinations.ai",
+        );
         rl.close();
         process.exit(1);
     }

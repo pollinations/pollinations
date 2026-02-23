@@ -272,4 +272,4 @@ console.log("   Use: npm test or node install.test.js");
 console.log("   Config validation: ✓");
 console.log("   Model registry: ✓");
 console.log("   Agent setup: ✓");
-console.log("   Error handling: ✓\n");
+console.log("   Error handling: ✓");

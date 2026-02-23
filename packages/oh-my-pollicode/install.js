@@ -48,7 +48,6 @@ const OPENCODE_CONFIG = {
                 "baseURL": "https://gen.pollinations.ai/v1/chat/completions",
             },
             "models": {
-                // Claude family
                 "claude-large": {
                     "name": "Claude Opus 4.5 - Most Intelligent (Sisyphus)",
                 },
@@ -56,19 +55,16 @@ const OPENCODE_CONFIG = {
                     "name": "Claude Sonnet 4.5 - Balanced (Librarian)",
                 },
                 "claude-fast": { "name": "Claude Haiku 4.5 - Fast" },
-                // OpenAI family
                 "openai-large": {
                     "name": "GPT-5.2 - Strategic Reasoning (Oracle)",
                 },
                 "openai": { "name": "GPT-5 Mini - Balanced" },
                 "openai-fast": { "name": "GPT-5 Nano - Ultra Fast" },
-                // Gemini family
                 "gemini-large": { "name": "Gemini 3 Pro - 1M Context" },
                 "gemini": { "name": "Gemini 3 Flash - UI/UX Expert" },
                 "gemini-fast": {
                     "name": "Gemini 2.5 Flash Lite - Exploration",
                 },
-                // Specialists
                 "deepseek": { "name": "DeepSeek V3.2 - Reasoning" },
                 "qwen-coder": { "name": "Qwen3 Coder 30B - Code" },
                 "perplexity-fast": { "name": "Perplexity Sonar - Web Search" },
@@ -80,38 +76,30 @@ const OPENCODE_CONFIG = {
     },
 };
 
-// oh-my-opencode agent mappings (following their recommended setup)
 const OH_MY_OPENCODE_CONFIG = {
     "$schema":
         "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json",
     "agents": {
-        // Main orchestrator - needs the most powerful model
         "Sisyphus": {
-            "model": "pollinations/claude-large", // Opus 4.5 - like their default
+            "model": "pollinations/claude-large",
         },
-        // Strategic reasoning and architecture
         "oracle": {
-            "model": "pollinations/openai-large", // GPT-5.2 for logical analysis
+            "model": "pollinations/openai-large",
         },
-        // Documentation and codebase research
         "librarian": {
-            "model": "pollinations/claude", // Sonnet for deep understanding
+            "model": "pollinations/claude",
         },
-        // Fast codebase exploration
         "explore": {
-            "model": "pollinations/gemini-fast", // Ultra fast for grep/search
+            "model": "pollinations/gemini-fast",
         },
-        // UI/UX development
         "frontend-ui-ux-engineer": {
-            "model": "pollinations/gemini", // Gemini excels at creative UI
+            "model": "pollinations/gemini",
         },
-        // Technical writing
         "document-writer": {
-            "model": "pollinations/gemini-fast", // Fast prose generation
+            "model": "pollinations/gemini-fast",
         },
-        // Visual content analysis
         "multimodal-looker": {
-            "model": "pollinations/gemini", // Gemini for vision tasks
+            "model": "pollinations/gemini",
         },
     },
 };

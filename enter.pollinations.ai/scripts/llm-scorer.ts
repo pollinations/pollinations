@@ -2,7 +2,6 @@
  * Reusable LLM Signal Scoring Pipeline
  *
  * Shared module for LLM-based user scoring. Used by:
- * - detect-abuse.ts (abuse detection)
  * - score-for-upgrade.ts (tier upgrade legitimacy)
  *
  * Pattern: Fetch users from D1 -> chunk -> send to LLM with caller-provided prompt -> parse CSV response
@@ -27,6 +26,7 @@ export interface ScoringConfig {
     name: string;
     userQuery: string;
     buildPrompt: (csvRows: string[]) => string;
+    systemPrompt: string;
     chunkSize?: number;
     model?: string;
     parallelism?: number;
@@ -126,10 +126,9 @@ export function prepareChunkData(chunk: User[]): {
     const csvRows = chunk.map((user, idx) => {
         const github = user.github_username || `user_${idx}`;
         const humanDate = formatDate(user.created_at);
-        const upgraded = user.tier !== "spore" && user.tier !== "microbe";
 
         githubToIndex.set(github, idx);
-        return `${github},${user.email},${humanDate},${upgraded}`;
+        return `${github},${user.email},${humanDate}`;
     });
 
     return { csvRows, githubToIndex };
@@ -151,6 +150,11 @@ export function parseLLMResponse(
 
     const lines = content.split("\n").filter((line) => line.trim());
 
+    let matched = 0;
+    let unmatched = 0;
+    const unmatchedNames: string[] = [];
+    const scoreDist: Record<number, number> = {};
+
     for (const line of lines) {
         if (line.startsWith("github,") || !line.includes(",")) continue;
 
@@ -171,8 +175,20 @@ export function parseLLMResponse(
                     score: Math.min(100, Math.max(0, score)),
                     signals,
                 };
+                matched++;
+                scoreDist[score] = (scoreDist[score] || 0) + 1;
+            } else {
+                unmatched++;
+                if (unmatchedNames.length < 5) unmatchedNames.push(github);
             }
         }
+    }
+
+    console.log(
+        `    parse: ${matched}/${chunkLength} matched, ${unmatched} unmatched, scores: ${JSON.stringify(scoreDist)}`,
+    );
+    if (unmatchedNames.length > 0) {
+        console.log(`    unmatched names: ${unmatchedNames.join(", ")}`);
     }
 
     return results;
@@ -186,9 +202,14 @@ async function callScoringAPI(
     apiKey: string,
     modelName: string,
     buildPrompt: (csvRows: string[]) => string,
+    systemPrompt: string,
 ): Promise<Array<{ score: number; signals: string[] }>> {
     const { csvRows, githubToIndex } = prepareChunkData(chunk);
-    const prompt = buildPrompt(csvRows);
+    const userContent = buildPrompt(csvRows);
+    const messages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent },
+    ];
 
     try {
         const response = await fetch(
@@ -201,7 +222,7 @@ async function callScoringAPI(
                 },
                 body: JSON.stringify({
                     model: modelName,
-                    messages: [{ role: "user", content: prompt }],
+                    messages,
                     temperature: 0.1,
                 }),
             },
@@ -282,6 +303,7 @@ export async function scoreUsers(config: ScoringConfig): Promise<ScoredUser[]> {
                 apiKey,
                 modelName,
                 config.buildPrompt,
+                config.systemPrompt,
             );
             return { chunk, scores };
         });

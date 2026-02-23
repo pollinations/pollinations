@@ -28,30 +28,6 @@
     font-display: swap;
 }
 
-@font-face {
-    font-family: "Maven Pro";
-    src: url("./fonts/maven-pro-v40-latin-regular.woff2") format("woff2");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "Mako";
-    src: url("./fonts/mako-v19-latin-regular.woff2") format("woff2");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "Duru Sans";
-    src: url("./fonts/duru-sans-v21-latin-regular.woff2") format("woff2");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
 *,
 ::before,
 ::after {
@@ -112,6 +88,10 @@
 
     .scrollbar-hide::-webkit-scrollbar {
         display: none;  /* Chrome, Safari and Opera */
+    }
+
+    .scrollbar-subtle {
+        scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
     }
 }
 

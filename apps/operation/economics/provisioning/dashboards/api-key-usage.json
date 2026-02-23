@@ -1,0 +1,555 @@
+{
+    "annotations": {
+        "list": [{
+            "builtIn": 1,
+            "datasource": {
+                "type": "grafana",
+                "uid": "-- Grafana --"
+            },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+        }]
+    },
+    "description": "API key usage — which users and apps consume the most pollen, split by tier vs pack",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [],
+    "panels": [
+        {
+            "collapsed": false,
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+            "id": 100,
+            "panels": [],
+            "title": "Overview",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Total pollen consumed through all API keys in the selected time range.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "fixedColor": "green", "mode": "fixed" },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+            "id": 1,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+                "format": 0,
+                "rawSql": "SELECT sum(total_price) as total_pollen FROM generation_event WHERE $__timeFilter(start_time) AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND length(api_key_name) > 0 AND api_key_name != 'undefined' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                "refId": "A"
+            }],
+            "title": "Total Pollen Consumed",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Pollen consumed from tier (free daily) balance.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "fixedColor": "orange", "mode": "fixed" },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "orange", "value": null }]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+            "id": 2,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+                "format": 0,
+                "rawSql": "SELECT sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen FROM generation_event WHERE $__timeFilter(start_time) AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND length(api_key_name) > 0 AND api_key_name != 'undefined' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                "refId": "A"
+            }],
+            "title": "Tier ρ (Free)",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Pollen consumed from pack (purchased) balance.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "fixedColor": "green", "mode": "fixed" },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+            "id": 3,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+                "format": 0,
+                "rawSql": "SELECT sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen FROM generation_event WHERE $__timeFilter(start_time) AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND length(api_key_name) > 0 AND api_key_name != 'undefined' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                "refId": "A"
+            }],
+            "title": "Pack ρ (Paid)",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Number of unique users consuming pollen through API keys.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "fixedColor": "blue", "mode": "fixed" },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "blue", "value": null }]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 4, "w": 3, "x": 18, "y": 1 },
+            "id": 4,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+                "format": 0,
+                "rawSql": "SELECT countDistinct(user_github_id) as unique_users FROM generation_event WHERE $__timeFilter(start_time) AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND length(api_key_name) > 0 AND api_key_name != 'undefined' AND user_github_id != '' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                "refId": "A"
+            }],
+            "title": "Unique Users",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Number of distinct API key names (apps/services) consuming pollen.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "fixedColor": "purple", "mode": "fixed" },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "purple", "value": null }]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": { "h": 4, "w": 3, "x": 21, "y": 1 },
+            "id": 5,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+                "format": 0,
+                "rawSql": "SELECT countDistinct(api_key_name) as unique_apps FROM generation_event WHERE $__timeFilter(start_time) AND environment = 'production' AND response_status >= 200 AND response_status < 300 AND total_price > 0 AND length(api_key_name) > 0 AND api_key_name != 'undefined' AND user_github_id != '241978997' AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))",
+                "refId": "A"
+            }],
+            "title": "Unique Apps",
+            "type": "stat"
+        },
+        {
+            "collapsed": false,
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+            "id": 101,
+            "panels": [],
+            "title": "User Leaderboard",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Users ranked by total pollen consumed through API keys. Shows tier (free) vs pack (paid) split per user with their app names.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": { "type": "auto" },
+                        "filterable": true,
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": { "id": "byName", "options": "user" },
+                        "properties": [
+                            { "id": "custom.width", "value": 180 },
+                            { "id": "displayName", "value": "User" }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "apps" },
+                        "properties": [
+                            { "id": "custom.width", "value": 300 },
+                            { "id": "displayName", "value": "App(s)" }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "tier_pollen" },
+                        "properties": [
+                            { "id": "displayName", "value": "Tier ρ" },
+                            { "id": "unit", "value": "currencyUSD" },
+                            { "id": "decimals", "value": 4 },
+                            { "id": "custom.width", "value": 120 }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "pack_pollen" },
+                        "properties": [
+                            { "id": "displayName", "value": "Pack ρ" },
+                            { "id": "unit", "value": "currencyUSD" },
+                            { "id": "decimals", "value": 4 },
+                            { "id": "custom.width", "value": 120 }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "total_pollen" },
+                        "properties": [
+                            { "id": "displayName", "value": "Total ρ" },
+                            { "id": "unit", "value": "currencyUSD" },
+                            { "id": "decimals", "value": 4 },
+                            { "id": "custom.width", "value": 120 },
+                            { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "gradient" } },
+                            { "id": "color", "value": { "mode": "continuous-GrYlRd" } }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "requests" },
+                        "properties": [
+                            { "id": "displayName", "value": "Requests" },
+                            { "id": "custom.width", "value": 100 }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": { "h": 14, "w": 24, "x": 0, "y": 6 },
+            "id": 10,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": true,
+                    "fields": "",
+                    "reducer": ["sum"],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [{ "desc": true, "displayName": "Total ρ" }]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+                "format": 1,
+                "rawSql": "SELECT\n  if(user_github_username != '' AND user_github_username != 'undefined', user_github_username, user_github_id) as user,\n  arrayStringConcat(groupUniqArray(api_key_name), ', ') as apps,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen,\n  sum(total_price) as total_pollen,\n  count() as requests\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND length(api_key_name) > 0\n  AND api_key_name != 'undefined'\n  AND user_github_id != ''\n  AND user_github_id != '241978997'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY user\nORDER BY total_pollen DESC\nLIMIT 100",
+                "refId": "A"
+            }],
+            "title": "User Ranking — Pollen Consumed via API Keys",
+            "type": "table"
+        },
+        {
+            "collapsed": false,
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+            "id": 102,
+            "panels": [],
+            "title": "Spending Over Time",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "Daily pollen consumption split by Tier (orange) and Pack (green). Shows how much pollen flows through API keys each day.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "palette-classic" },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "Pollen",
+                        "axisPlacement": "left",
+                        "barAlignment": 0,
+                        "drawStyle": "bars",
+                        "fillOpacity": 80,
+                        "gradientMode": "none",
+                        "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": { "type": "linear" },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": { "group": "A", "mode": "normal" },
+                        "thresholdsStyle": { "mode": "off" }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    },
+                    "unit": "currencyUSD"
+                },
+                "overrides": [
+                    {
+                        "matcher": { "id": "byName", "options": "pack_pollen" },
+                        "properties": [
+                            { "id": "displayName", "value": "Pack ρ" },
+                            { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "tier_pollen" },
+                        "properties": [
+                            { "id": "displayName", "value": "Tier ρ" },
+                            { "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "tier_pct" },
+                        "properties": [
+                            { "id": "displayName", "value": "Tier %" },
+                            { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } },
+                            { "id": "custom.axisPlacement", "value": "right" },
+                            { "id": "custom.axisLabel", "value": "Tier %" },
+                            { "id": "custom.drawStyle", "value": "line" },
+                            { "id": "custom.lineWidth", "value": 2 },
+                            { "id": "custom.fillOpacity", "value": 0 },
+                            { "id": "custom.stacking", "value": { "mode": "none" } },
+                            { "id": "unit", "value": "percentunit" },
+                            { "id": "min", "value": 0 },
+                            { "id": "max", "value": 1 }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": { "h": 10, "w": 24, "x": 0, "y": 21 },
+            "id": 20,
+            "options": {
+                "legend": {
+                    "calcs": ["sum", "mean"],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": { "mode": "multi", "sort": "desc" },
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 200
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+                "format": 0,
+                "range": true,
+                "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen,\n  if(pack_pollen + tier_pollen > 0, tier_pollen / (pack_pollen + tier_pollen), 0) as tier_pct\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND length(api_key_name) > 0\n  AND api_key_name != 'undefined'\n  AND user_github_id != '241978997'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY time\nORDER BY time",
+                "refId": "A"
+            }],
+            "title": "Daily Consumption — Pack vs Tier",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
+            "id": 103,
+            "panels": [],
+            "title": "Top Apps",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PAD1A0A25CD30D456"
+            },
+            "description": "API keys (apps) ranked by total pollen consumed. Shows how many users each app serves and the tier/pack split.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": { "type": "auto" },
+                        "filterable": true,
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": { "id": "byName", "options": "app" },
+                        "properties": [
+                            { "id": "custom.width", "value": 280 },
+                            { "id": "displayName", "value": "App (API Key Name)" }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "users" },
+                        "properties": [
+                            { "id": "displayName", "value": "Users" },
+                            { "id": "custom.width", "value": 80 }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "tier_pollen" },
+                        "properties": [
+                            { "id": "displayName", "value": "Tier ρ" },
+                            { "id": "unit", "value": "currencyUSD" },
+                            { "id": "decimals", "value": 4 },
+                            { "id": "custom.width", "value": 120 }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "pack_pollen" },
+                        "properties": [
+                            { "id": "displayName", "value": "Pack ρ" },
+                            { "id": "unit", "value": "currencyUSD" },
+                            { "id": "decimals", "value": 4 },
+                            { "id": "custom.width", "value": 120 }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "total_pollen" },
+                        "properties": [
+                            { "id": "displayName", "value": "Total ρ" },
+                            { "id": "unit", "value": "currencyUSD" },
+                            { "id": "decimals", "value": 4 },
+                            { "id": "custom.width", "value": 120 },
+                            { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "gradient" } },
+                            { "id": "color", "value": { "mode": "continuous-GrYlRd" } }
+                        ]
+                    },
+                    {
+                        "matcher": { "id": "byName", "options": "requests" },
+                        "properties": [
+                            { "id": "displayName", "value": "Requests" },
+                            { "id": "custom.width", "value": 100 }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": { "h": 12, "w": 24, "x": 0, "y": 32 },
+            "id": 30,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "enablePagination": true,
+                    "fields": "",
+                    "reducer": ["sum"],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [{ "desc": true, "displayName": "Total ρ" }]
+            },
+            "pluginVersion": "12.4.0",
+            "targets": [{
+                "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+                "format": 1,
+                "rawSql": "SELECT\n  api_key_name as app,\n  countDistinct(user_github_id) as users,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as tier_pollen,\n  sumIf(total_price, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_pollen,\n  sum(total_price) as total_pollen,\n  count() as requests\nFROM generation_event\nWHERE $__timeFilter(start_time)\n  AND environment = 'production'\n  AND response_status >= 200 AND response_status < 300\n  AND total_price > 0\n  AND length(api_key_name) > 0\n  AND api_key_name != 'undefined'\n  AND user_github_id != '241978997'\n  AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\nGROUP BY app\nORDER BY total_pollen DESC\nLIMIT 100",
+                "refId": "A"
+            }],
+            "title": "App Ranking — Pollen Consumed per API Key",
+            "type": "table"
+        }
+    ],
+    "schemaVersion": 40,
+    "tags": ["api-keys", "economics"],
+    "templating": { "list": [] },
+    "time": { "from": "now-30d", "to": "now" },
+    "timepicker": {},
+    "timezone": "utc",
+    "title": "API Key Usage",
+    "uid": "api-key-usage",
+    "version": 1
+}

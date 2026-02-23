@@ -85,10 +85,17 @@ export const CrazyDreamsTheme: LLMThemeResponse = {
             "hex": "#240B36",
             "ids": ["input.bg"],
         },
+        "slot_17": {
+            "hex": "#FFD700",
+            "ids": ["text.accent", "border.accent"],
+        },
     },
     "borderRadius": {
         "radius.button": "24px",
         "radius.card": "32px",
+        "radius.input": "16px",
+        "radius.subcard": "16px",
+        "radius.tag": "8px",
     },
     "fonts": {
         "font.title": "Syne",

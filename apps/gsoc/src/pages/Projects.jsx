@@ -170,8 +170,21 @@ const ProjectsPage = () => {
                             fontSize: "0.85rem",
                         }}
                     >
-                        <strong>Project sizes:</strong> Small ≈ 90h • Medium ≈
-                        175h • Large ≈ 350h
+                        <strong>Project sizes:</strong> Medium ≈ 175h • Large ≈
+                        350h
+                    </Typography>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: "rgba(255,255,255,0.5)",
+                            mt: 2,
+                            fontSize: "0.85rem",
+                        }}
+                    >
+                        <strong>
+                            We are looking forward for taking up 3 projects this
+                            season based on applications.
+                        </strong>
                     </Typography>
                 </Box>
 

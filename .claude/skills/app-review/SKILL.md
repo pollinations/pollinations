@@ -18,7 +18,7 @@ Pick the best fit: `Creative`, `Chat`, `Games`, `Dev_Tools`, `Vibes`, `Social_Bo
 ## APPS.md Row Format
 
 ```
-| EMOJI | Name | Web_URL | Description (~80 chars) | LANG | category | @author | github_id | repo_url | ⭐stars | discord | other | Submitted_Date | Issue_URL | Approved_Date |
+| EMOJI | Name | Web_URL | Description (~200 chars) | LANG | category | @author | github_id | repo_url | ⭐stars | discord | other | Submitted_Date | Issue_URL | Approved_Date |
 ```
 
 - **Submitted_Date**: Issue creation date (when user submitted)

@@ -1,7 +1,7 @@
-export { Chart } from "./components/Chart";
-export { FilterButton } from "./components/FilterButton";
-export { MultiSelect } from "./components/MultiSelect";
-export { Stat } from "./components/Stat";
+export { Chart } from "./chart";
+export { FilterButton } from "./filter-button";
+export { MultiSelect } from "./multi-select";
+export { Stat } from "./stat";
 export type {
     DailyUsageRecord,
     DataPoint,
@@ -10,4 +10,4 @@ export type {
     ModelBreakdown,
     TimeRange,
 } from "./types";
-export { UsageGraph } from "./UsageGraph";
+export { UsageGraph } from "./usage-graph";

@@ -4,13 +4,27 @@ import logging
 import random
 import time
 from collections.abc import Callable
+from contextvars import ContextVar
 from typing import Any
 
 MAX_RETRIES = 3
 RETRY_DELAY = 5
 MAX_SEED = 2**31 - 1
 
+
+class UpstreamAuthError(Exception):
+    """Raised when gen.pollinations.ai returns 401/403 in API mode."""
+
+    def __init__(self, status_code: int, detail: str):
+        self.status_code = status_code
+        self.detail = detail
+        super().__init__(f"Upstream auth error {status_code}: {detail}")
+
+
 import aiohttp
+
+# Per-request auth override (used by API mode to pass through user's key)
+_auth_override: ContextVar[str] = ContextVar("auth_override", default="")
 
 from ..config import config
 from ..constants import (
@@ -18,6 +32,7 @@ from ..constants import (
     GITHUB_TOOLS,
     POLLINATIONS_API_BASE,
     filter_admin_actions_from_tools,
+    filter_api_tools,
     filter_tools_by_intent,
     get_tool_system_prompt,
 )
@@ -141,8 +156,9 @@ class PollinationsClient:
         file_urls: list[str] | None = None,
         is_admin: bool = False,
         tool_context: dict | None = None,
+        mode: str = "discord",
     ) -> dict:
-        system_content = get_tool_system_prompt(is_admin=is_admin)
+        system_content = get_tool_system_prompt(is_admin=is_admin, mode=mode)
         if is_admin:
             system_content += "\n\n## ADMIN MODE\nUser is admin. All tools available. Confirm before destructive ops (merge, delete, lock, close PR, bulk edits, etc.) - use judgment."
         else:
@@ -226,12 +242,11 @@ class PollinationsClient:
                     "text": f"[{discord_username}]: {user_message}{file_notice}",
                 }
             ]
-            # Add images (Discord allows max 10 attachments per message)
+            # Add images and videos as image_url (model handles both)
             for url in (image_urls or [])[:10]:
                 content.append({"type": "image_url", "image_url": {"url": url}})
-            # Add videos - YouTube, GIFs, Discord video attachments
             for url in (video_urls or [])[:10]:
-                content.append({"type": "video_url", "video_url": {"url": url}})
+                content.append({"type": "image_url", "image_url": {"url": url}})
             messages.append({"role": "user", "content": content})
         else:
             messages.append(
@@ -249,6 +264,7 @@ class PollinationsClient:
             is_admin=is_admin,
             user_message=user_message,
             tool_context=tool_context,
+            mode=mode,
         )
         return result
 
@@ -260,6 +276,7 @@ class PollinationsClient:
         is_admin: bool = False,
         user_message: str = "",
         tool_context: dict | None = None,
+        mode: str = "discord",
     ) -> dict:
         """Make API call with tool support and handle tool calls."""
 
@@ -274,7 +291,10 @@ class PollinationsClient:
             GITHUB_TOOLS.copy(), config.local_embeddings_enabled, config.doc_embeddings_enabled
         )
 
-        all_tools = filter_admin_actions_from_tools(all_tools, is_admin)
+        if mode == "api":
+            all_tools = filter_api_tools(all_tools)
+        else:
+            all_tools = filter_admin_actions_from_tools(all_tools, is_admin)
         tools = filter_tools_by_intent(user_message, all_tools, is_admin) if user_message else all_tools
 
         # Log available tools for debugging
@@ -288,7 +308,7 @@ class PollinationsClient:
 
         for iteration in range(max_iterations):
             start_time = time.time()
-            response = await self._call_api_with_tools(messages, tools=tools)
+            response = await self._call_api_with_tools(messages, tools=tools, mode=mode)
             api_time = time.time() - start_time
             logger.info(f"AI API call took {api_time:.1f}s (iteration {iteration + 1})")
 
@@ -345,6 +365,16 @@ class PollinationsClient:
 
             # Add tool results
             for tool_call, result in zip(tool_calls, tool_results):
+                # Extract _image side-channel before serialization to AI
+                if isinstance(result, dict) and "_image" in result:
+                    image_data_url = result.pop("_image")
+                    all_content_blocks.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": image_data_url},
+                        }
+                    )
+
                 # Strip API prefix from tool name for consistency
                 tool_name = tool_call["function"]["name"]
                 if ":" in tool_name:
@@ -359,7 +389,7 @@ class PollinationsClient:
                 )
 
         # Max iterations reached, get final response
-        final_response = await self._call_api_with_tools(messages, tools=None)
+        final_response = await self._call_api_with_tools(messages, tools=None, mode=mode)
         # Collect any remaining content_blocks from final response
         if final_response:
             final_blocks = final_response.get("content_blocks", [])
@@ -459,6 +489,7 @@ class PollinationsClient:
         messages: list[dict],
         tools: list | None = None,
         timeout: int = API_TIMEOUT,
+        mode: str = "discord",
     ) -> dict | None:
         """Make API call to Pollinations with tool definitions.
 
@@ -467,9 +498,21 @@ class PollinationsClient:
         - 3 retry attempts with 5s delay between retries
         - New random seed for each retry attempt
         """
+        # API mode: MUST use the user's passed-through key, never the bot's internal token.
+        # Discord mode: uses the bot's own token (no override set).
+        # _auth_override stores the full "Bearer xxx" header, while
+        # config.pollinations_token is the raw token — hence the f"Bearer ..." fallback.
+        override = _auth_override.get()
+        if mode == "api":
+            if not override:
+                logger.error("API mode request with no auth override — refusing to use bot token")
+                return None
+            auth_token = override
+        else:
+            auth_token = override or f"Bearer {config.pollinations_token}"
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {config.pollinations_token}",
+            "Authorization": auth_token,
         }
 
         url = f"{POLLINATIONS_API_BASE}/v1/chat/completions"
@@ -519,6 +562,9 @@ class PollinationsClient:
                         error_text = await response.text()
                         last_error = f"HTTP {response.status}: {error_text[:100]}"
                         logger.warning(f"Pollinations API error (attempt {attempt + 1}): {last_error}")
+                        # In API mode, propagate auth errors immediately — don't retry
+                        if mode == "api" and response.status in (401, 403):
+                            raise UpstreamAuthError(response.status, error_text)
 
             except TimeoutError:
                 last_error = f"Timeout after {timeout}s"
@@ -658,9 +704,9 @@ Format notifications beautifully for Discord with:
 Output ONLY the formatted message, nothing else."""
 
         user_prompt = f"""Format this GitHub issue update notification:
-        Issue: #{issue['number']} - {issue['title']}
-        Current State: {issue['state']}
-        Labels: {', '.join(issue.get('labels', [])) or 'none'}
+        Issue: #{issue["number"]} - {issue["title"]}
+        Current State: {issue["state"]}
+        Labels: {", ".join(issue.get("labels", [])) or "none"}
         URL: {issue_url}
         Changes detected:
         {changes_text}
@@ -713,7 +759,7 @@ Output ONLY the formatted message, nothing else."""
 
         changes_str = "\n".join(parts) if parts else "Update detected"
 
-        return f"**[#{issue['number']}: {issue['title']}](<{issue_url}>)**\n" f"{changes_str}"
+        return f"**[#{issue['number']}: {issue['title']}](<{issue_url}>)**\n{changes_str}"
 
 
 # Singleton instance

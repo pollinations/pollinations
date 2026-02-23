@@ -316,7 +316,7 @@ class GitHubGraphQL:
         query = f"""
         query GetIssuesBatch($owner: String!, $repo: String!) {{
             repository(owner: $owner, name: $repo) {{
-                {' '.join(issue_queries)}
+                {" ".join(issue_queries)}
             }}
         }}
         """

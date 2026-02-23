@@ -523,8 +523,6 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: new Date("2026-01-17").getTime(),
-                promptTextTokens: perMillion(0.0), // Free - uses Pollinations under the hood
-                completionTextTokens: perMillion(0.0),
             },
         ],
         description:
@@ -544,8 +542,6 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: new Date("2026-02-23").getTime(),
-                promptTextTokens: perMillion(0.0), // Free - uses Pollinations under the hood
-                completionTextTokens: perMillion(0.0),
             },
         ],
         description:

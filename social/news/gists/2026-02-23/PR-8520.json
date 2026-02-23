@@ -1,0 +1,34 @@
+{
+  "pr_number": 8520,
+  "title": "feat: upgrade claude to Sonnet 4.6",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/8520",
+  "merged_at": "2026-02-23T22:17:53Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Claude gets a promotion",
+    "blurb": "The hive has upgraded its resident poet. Claude Sonnet 4.6 is now live, bringing sharper reasoning without extra pollen cost.",
+    "summary": "Upgraded the default `claude` model alias from Sonnet 4.5 to Sonnet 4.6 via Bedrock.",
+    "impact": "Users accessing the Claude endpoint will automatically experience improved reasoning and coding capabilities at the same price point.",
+    "keywords": [
+      "claude",
+      "sonnet",
+      "models",
+      "text-generation",
+      "bedrock"
+    ],
+    "visual_concept": "The Monitor Robot discovering a newer, shinier version of a poetry scroll, with Polly the Bee watching approvingly. Represents the model upgrade.",
+    "image_prompt": "Cozy pixel art scene of the monitor robot holding a glowing holographic scroll labeled '4.6' while the bee mascot hovers nearby with a tiny quill. Lime green (#ecf874) and soft lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-23T22:18:54.183805+00:00"
+}

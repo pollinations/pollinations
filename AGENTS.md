@@ -200,6 +200,19 @@ curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o s
 - **Check related PRs and issues** - Use GitHub MCP tools to find context before implementing
 - **Look for existing utility functions** in `shared/` before writing new ones (auth, queue, registry)
 
+## Tinybird Deployment Safety
+
+**CRITICAL — These rules apply whenever deploying to Tinybird:**
+
+- **Always validate first**: `tb --cloud deploy --check --wait` before any deploy
+- **Never use `--allow-destructive-operations`** without explicit user permission
+- **Never use `tb push`** — it's deprecated; use `tb --cloud deploy --wait`
+- **Always use `--cloud`** — without it, CLI tries Tinybird Local (Docker)
+- **Run from `enter.pollinations.ai/observability`** — not from repo root
+- **Pipes are shared** — multiple apps/dashboards may consume the same pipe. Verify all consumers before modifying any pipe
+- **Timeout mitigation**: Use `uniq()` over `uniqExact()`, avoid CTE+JOIN, prefer single-pass queries. For large time ranges, use `start_date` parameter pattern for week-by-week querying
+- Full deploy procedure: see `.claude/skills/tinybird-deploy/SKILL.md`
+
 ## Common Mistakes to Avoid
 
 **IMPORTANT - Agents often make these mistakes (learned from session history):**

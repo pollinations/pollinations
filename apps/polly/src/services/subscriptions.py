@@ -357,7 +357,8 @@ class IssueNotifier:
         new_comments_data = []
         if needs_comments:
             full_issue = await github_graphql.get_issue_full(
-                issue_number=issue_number, comments_count=min(max_new_comments + 1, 5)  # Fetch recent comments
+                issue_number=issue_number,
+                comments_count=min(max_new_comments + 1, 5),  # Fetch recent comments
             )
             if full_issue and "comments" in full_issue:
                 new_comments_data = full_issue["comments"]

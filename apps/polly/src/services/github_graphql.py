@@ -316,7 +316,7 @@ class GitHubGraphQL:
         query = f"""
         query GetIssuesBatch($owner: String!, $repo: String!) {{
             repository(owner: $owner, name: $repo) {{
-                {' '.join(issue_queries)}
+                {" ".join(issue_queries)}
             }}
         }}
         """
@@ -1351,6 +1351,24 @@ class GitHubGraphQL:
             "comments_count": issue.get("comments", {}).get("totalCount", 0),
         }
 
+    async def _rest_get(self, url: str) -> dict:
+        """GET-only REST request to GitHub API."""
+        try:
+            token = await self._get_token()
+            if not token:
+                return {"error": "GitHub token not configured"}
+            headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
+            session = await self.get_session()
+            async with session.get(url, headers=headers) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    return {"data": data}
+                else:
+                    text = await resp.text()
+                    return {"error": f"GitHub API returned {resp.status}: {text[:200]}"}
+        except Exception as e:
+            return {"error": str(e)}
+
     async def execute_custom_request(
         self,
         request: str,
@@ -1358,22 +1376,15 @@ class GitHubGraphQL:
         limit: int = 50,
         graphql_query: str | None = None,
         rest_endpoint: str | None = None,
+        rest_url: str | None = None,
     ) -> dict:
         if graphql_query:
-            query_lower = graphql_query.lower()
-            if any(
-                word in query_lower
-                for word in [
-                    "mutation",
-                    "delete",
-                    "update",
-                    "create",
-                    "add",
-                    "remove",
-                    "set",
-                ]
-            ):
-                return {"error": "Mutations not allowed via github_custom. Use specific tools for write operations."}
+            # Block mutations — only allow queries
+            # Strip comments (# ...) before checking to prevent bypass
+            lines = [l for l in graphql_query.strip().splitlines() if not l.strip().startswith("#")]
+            stripped = "\n".join(lines).strip().lower()
+            if stripped.startswith("mutation") or not stripped:
+                return {"error": "Mutations not allowed. github_custom is read-only."}
 
             result = await self._execute(
                 graphql_query,
@@ -1385,39 +1396,19 @@ class GitHubGraphQL:
                 "data": result.get("data", result),
             }
 
-        if rest_endpoint:
-            endpoint = rest_endpoint.strip("/")
-            allowed_prefixes = [
-                "issues",
-                "pulls",
-                "commits",
-                "releases",
-                "branches",
-                "tags",
-                "contributors",
-                "stats",
-                "contents",
-                "labels",
-                "milestones",
-            ]
-            if not any(endpoint.startswith(p) for p in allowed_prefixes):
-                return {"error": f"REST endpoint must start with one of: {allowed_prefixes}"}
+        if rest_url:
+            # Full URL mode — must be api.github.com, GET only
+            if not rest_url.startswith("https://api.github.com/"):
+                return {"error": "rest_url must start with https://api.github.com/"}
+            result = await self._rest_get(rest_url)
+            return {"mode": "rest", "url": rest_url, **result}
 
+        if rest_endpoint:
+            # Repo-relative endpoint — no whitelist, any GET path allowed
+            endpoint = rest_endpoint.strip("/")
             url = f"https://api.github.com/repos/{self.owner}/{self.repo}/{endpoint}"
-            try:
-                token = await self._get_token()
-                if not token:
-                    return {"error": "GitHub token not configured"}
-                headers = {"Authorization": f"Bearer {token}"}
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(url, headers=headers) as resp:
-                        if resp.status == 200:
-                            data = await resp.json()
-                            return {"mode": "rest", "endpoint": endpoint, "data": data}
-                        else:
-                            return {"error": f"REST API returned {resp.status}"}
-            except Exception as e:
-                return {"error": str(e)}
+            result = await self._rest_get(url)
+            return {"mode": "rest", "endpoint": endpoint, **result}
 
         request_lower = request.lower()
         limit = min(limit, 100)

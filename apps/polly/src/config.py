@@ -94,7 +94,7 @@ class Config:
         # =================================================================
         api_cfg = cfg.get("api", {})
         self.api_enabled = api_cfg.get("enabled", False)  # OFF by default — opt-in
-        self.api_port = api_cfg.get("port", 8003)
+        self.api_port = api_cfg.get("port", 55288)
 
         # =================================================================
         # FEATURES CONFIG

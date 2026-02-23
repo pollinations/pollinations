@@ -3,7 +3,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { tmpdir } from 'node:os';
-import { mkdirSync, readFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 // Test configurations
@@ -123,17 +123,16 @@ test('Write Configs - File System Operations', () => {
         const configPath = join(testDir, 'opencode.json');
         const ohMyPath = join(testDir, 'oh-my-opencode.json');
 
-        // Write files synchronously using already imported fs functions
-        const fs = { writeFileSync, readFileSync, existsSync };
-        fs.writeFileSync(configPath, opencodeConfig);
-        fs.writeFileSync(ohMyPath, ohMyConfig);
+        // Write files synchronously
+        writeFileSync(configPath, opencodeConfig);
+        writeFileSync(ohMyPath, ohMyConfig);
 
         // Verify files exist and have correct content
-        assert.ok(fs.existsSync(configPath), 'opencode.json not created');
-        assert.ok(fs.existsSync(ohMyPath), 'oh-my-opencode.json not created');
+        assert.ok(existsSync(configPath), 'opencode.json not created');
+        assert.ok(existsSync(ohMyPath), 'oh-my-opencode.json not created');
 
-        const readOpencode = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-        const readOhMy = JSON.parse(fs.readFileSync(ohMyPath, 'utf8'));
+        const readOpencode = JSON.parse(readFileSync(configPath, 'utf8'));
+        const readOhMy = JSON.parse(readFileSync(ohMyPath, 'utf8'));
 
         assert.deepEqual(readOpencode.model, EXPECTED_OPENCODE_CONFIG.model);
         assert.ok(readOhMy.agents.Sisyphus);

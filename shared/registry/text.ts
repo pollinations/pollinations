@@ -298,9 +298,9 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude": {
-        aliases: ["claude-sonnet-4.5", "claude-sonnet"],
-        modelId: "claude-sonnet-4-5-20250929",
-        provider: "google",
+        aliases: ["claude-sonnet-4.6", "claude-sonnet"],
+        modelId: "claude-sonnet-4-6",
+        provider: "aws-bedrock",
         paidOnly: true,
         cost: [
             {
@@ -309,7 +309,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(15.0),
             },
         ],
-        description: "Anthropic Claude Sonnet 4.5 - Most Capable & Balanced",
+        description: "Anthropic Claude Sonnet 4.6 - Most Capable & Balanced",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,

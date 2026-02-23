@@ -74,7 +74,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude",
-        config: portkeyConfig["claude-sonnet-4-5"],
+        config: portkeyConfig["claude-sonnet-4-6"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {

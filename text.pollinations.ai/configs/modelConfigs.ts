@@ -94,9 +94,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockNativeConfig({
             model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         }),
-    "us.anthropic.claude-sonnet-4-6-v1:0": () =>
+    "us.anthropic.claude-sonnet-4-6": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-sonnet-4-6-v1:0",
+            model: "us.anthropic.claude-sonnet-4-6",
         }),
     "global.anthropic.claude-opus-4-5-20251101-v1:0": () =>
         createBedrockNativeConfig({
@@ -132,7 +132,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     // ============================================================================
     "claude-sonnet-4-6": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-sonnet-4-6-v1:0",
+            model: "us.anthropic.claude-sonnet-4-6",
         }),
     "claude-opus-4-6": () =>
         createBedrockNativeConfig({

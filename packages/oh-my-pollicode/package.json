@@ -19,7 +19,17 @@
     "llm",
     "coding-assistant"
   ],
-  "author": "Pollinations.AI",
+  "author": "pollinations.ai <hello@pollinations.ai>",
+  "contributors": [
+    {
+      "name": "Circuit-Overtime",
+      "email": "ayushman@myceli.ai"
+    },
+    {
+      "name": "ElliotEtag",
+      "email": "elliot@myceli.ai"
+    }
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

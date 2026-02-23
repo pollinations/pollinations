@@ -516,26 +516,45 @@ export const TEXT_SERVICES = {
         contextWindow: 200000,
         isSpecialized: false,
     },
-    // "nomnom": {
-    //     aliases: ["gemini-scrape", "web-research"],
-    //     modelId: "nomnom",
-    //     provider: "community",
-    //     cost: [
-    //         {
-    //             date: new Date("2026-01-17").getTime(),
-    //             promptTextTokens: perMillion(0.0), // Free - uses Pollinations under the hood
-    //             completionTextTokens: perMillion(0.0),
-    //         },
-    //     ],
-    //     description:
-    //         "NomNom by @Itachi-1824 - Web Research with Search, Scrape & Crawl (Alpha)",
-    //     inputModalities: ["text"],
-    //     outputModalities: ["text"],
-    //     tools: true,
-    //     search: true,
-    //     isSpecialized: false,
-    //     alpha: true,
-    // },
+    "nomnom": {
+        aliases: ["web-scrape", "web-research"],
+        modelId: "nomnom",
+        provider: "community",
+        cost: [
+            {
+                date: new Date("2026-01-17").getTime(),
+            },
+        ],
+        description:
+            "NomNom by @Itachi-1824 - Web Research with Search, Scrape & Crawl (Alpha)",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        search: true,
+        isSpecialized: false,
+        alpha: true,
+    },
+    "polly": {
+        aliases: ["pollinations-ai", "polly-ai"],
+        modelId: "polly",
+        provider: "community",
+        cost: [
+            {
+                date: new Date("2026-02-23").getTime(),
+            },
+        ],
+        description:
+            "Polly by @Itachi-1824 - Pollinations AI Assistant with GitHub, Code Search & Web Tools (Alpha)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        codeExecution: true,
+        search: true,
+        isSpecialized: false,
+        alpha: true,
+    },
     "qwen-safety": {
         aliases: ["qwen3guard-gen-8b"],
         modelId: "Qwen3Guard-Gen-8B",

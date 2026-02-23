@@ -10,26 +10,26 @@ Publishes weekly content from the news branch. Two modes via PUBLISH_MODE env va
 See social/PIPELINE.md for full architecture.
 """
 
-import os
-import sys
-import json
-import time
-import requests
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Optional
 import base64
 import io
+import json
+import os
+import sys
+import time
+from datetime import datetime, timedelta, timezone
+from typing import Dict
+
+import requests
+from buffer_publish import (
+    publish_instagram_post,
+    publish_linkedin_post,
+    publish_twitter_post,
+)
 from common import (
+    DISCORD_CHUNK_SIZE,
+    deploy_reddit_post,
     get_env,
     read_news_file,
-    deploy_reddit_post,
-    DISCORD_CHAR_LIMIT,
-    DISCORD_CHUNK_SIZE,
-)
-from buffer_publish import (
-    publish_twitter_post,
-    publish_linkedin_post,
-    publish_instagram_post,
 )
 
 # ── Constants ────────────────────────────────────────────────────────
@@ -38,6 +38,7 @@ WEEKLY_REL_DIR = "social/news/weekly"
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
+
 
 def get_week_end() -> str:
     """Get the week_end date from env var or compute from WEEK_START_DATE.
@@ -91,32 +92,72 @@ def post_to_discord(webhook_url: str, message: str, image_url: str = None) -> bo
     if image_url:
         try:
             resp = requests.get(image_url, timeout=30)
-            if resp.status_code == 200 and "image" in resp.headers.get("content-type", ""):
+            if resp.status_code == 200 and "image" in resp.headers.get(
+                "content-type", ""
+            ):
                 image_bytes = resp.content
         except Exception as e:
             print(f"  Could not download image for Discord: {e}")
+
+    # Ensure webhook waits for message
+    if "?" not in webhook_url:
+        webhook_url += "?wait=true"
+    else:
+        webhook_url += "&wait=true"
 
     chunks = chunk_message(message)
     for i, chunk in enumerate(chunks):
         # Attach image to the first chunk only
         if i == 0 and image_bytes:
             files = {
-                "payload_json": (None, json.dumps({"content": chunk}), "application/json"),
+                "payload_json": (
+                    None,
+                    json.dumps({"content": chunk}),
+                    "application/json",
+                ),
                 "files[0]": ("image.jpg", image_bytes, "image/jpeg"),
             }
             resp = requests.post(webhook_url, files=files, timeout=30)
         else:
             resp = requests.post(webhook_url, json={"content": chunk}, timeout=30)
-        if resp.status_code not in [200, 204]:
-            print(f"  Discord error on chunk {i+1}: {resp.status_code} {resp.text[:200]}")
+
+        if resp.status_code in [200, 201, 204]:
+            try:
+                data = resp.json()
+                channel_id, msg_id = data.get("channel_id"), data.get("id")
+                import os
+
+                token = os.environ.get("DISCORD_TOKEN")
+                if token and channel_id and msg_id:
+                    requests.post(
+                        f"https://discord.com/api/v10/channels/{channel_id}/messages/{msg_id}/crosspost",
+                        headers={
+                            "Authorization": f"Bot {token}",
+                            "Content-Type": "application/json",
+                        },
+                        timeout=10,
+                    )
+            except Exception:
+                pass
+        else:
+            print(
+                f"  Discord error on chunk {i + 1}: {resp.status_code} {resp.text[:200]}"
+            )
             return False
+
         if i < len(chunks) - 1:
             time.sleep(1)
-    print(f"  Discord: posted {len(chunks)} chunk(s)" + (" with image" if image_bytes else ""))
+
+    print(
+        f"  Discord: posted {len(chunks)} chunk(s)"
+        + (" with image" if image_bytes else "")
+    )
     return True
 
 
-def stage_buffer_posts(weekly_dir: str, buffer_token: str, github_token: str, owner: str, repo: str) -> Dict[str, bool]:
+def stage_buffer_posts(
+    weekly_dir: str, buffer_token: str, github_token: str, owner: str, repo: str
+) -> Dict[str, bool]:
     """Stage Twitter + LinkedIn + Instagram to Buffer. Returns {platform: success}."""
     results = {}
 
@@ -144,6 +185,7 @@ def stage_buffer_posts(weekly_dir: str, buffer_token: str, github_token: str, ow
 
 # ── Main ─────────────────────────────────────────────────────────────
 
+
 def main():
     print("=== Tier 3: Weekly Publish ===")
 
@@ -163,8 +205,10 @@ def main():
     # ── Buffer staging (Twitter + LinkedIn + Instagram) ───────────
     if publish_mode in ("buffer", "all"):
         buffer_token = get_env("BUFFER_ACCESS_TOKEN")
-        print(f"\n[Buffer] Staging to Buffer...")
-        buffer_results = stage_buffer_posts(weekly_dir, buffer_token, github_token, owner, repo)
+        print("\n[Buffer] Staging to Buffer...")
+        buffer_results = stage_buffer_posts(
+            weekly_dir, buffer_token, github_token, owner, repo
+        )
         results.update(buffer_results)
         for platform, success in buffer_results.items():
             status = "OK" if success else "FAILED"
@@ -172,7 +216,7 @@ def main():
 
     # ── Direct channels (Reddit + Discord) ────────────────────────
     if publish_mode in ("direct", "all"):
-        print(f"\n[Direct] Publishing direct channels...")
+        print("\n[Direct] Publishing direct channels...")
 
         # Reddit (VPS/Devvit deployment)
         vps_host = get_env("REDDIT_VPS_HOST", required=False)
@@ -182,6 +226,7 @@ def main():
 
         if vps_host and vps_user and vps_ssh_key:
             import paramiko
+
             private_key_str = base64.b64decode(vps_ssh_key).decode("utf-8")
             key_file = io.StringIO(private_key_str)
             pkey = paramiko.Ed25519Key.from_private_key(key_file)
@@ -191,7 +236,9 @@ def main():
 
             if reddit_data:
                 print("  Reddit...")
-                results["reddit"] = deploy_reddit_post(reddit_data, vps_host, vps_user, pkey)
+                results["reddit"] = deploy_reddit_post(
+                    reddit_data, vps_host, vps_user, pkey
+                )
             else:
                 print("  No reddit.json — skipping")
         else:
@@ -206,7 +253,9 @@ def main():
             if discord_data and discord_data.get("message"):
                 print("  Discord...")
                 discord_image = discord_data.get("image", {}).get("url")
-                results["discord"] = post_to_discord(discord_webhook, discord_data["message"], discord_image)
+                results["discord"] = post_to_discord(
+                    discord_webhook, discord_data["message"], discord_image
+                )
             else:
                 print("  No discord.json — skipping")
         else:

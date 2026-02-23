@@ -45,7 +45,7 @@ const OPENCODE_CONFIG = {
             "npm": "@ai-sdk/openai-compatible",
             "name": "Pollinations AI (Free)",
             "options": {
-                "baseURL": "https://gen.pollinations.ai/v1",
+                "baseURL": "https://gen.pollinations.ai/v1/chat/completions",
             },
             "models": {
                 // Claude family

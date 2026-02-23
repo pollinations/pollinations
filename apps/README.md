@@ -105,7 +105,6 @@ To increase the chances of approval during app review, submitted apps should mee
 ### Strongly Recommended
 - Clean and usable UI
 - Focused scope (one clear purpose)
-- Non-duplicative idea (check existing apps before submitting)
 
 ### Common Reasons for Rejection
 - No clear Pollinations API usage
@@ -113,7 +112,6 @@ To increase the chances of approval during app review, submitted apps should mee
 - Missing or private repository
 - Spam, affiliate links, or misleading “money earning” claims
 - Very low-effort generators
-- Duplicate submissions of existing apps
 
 Following these guidelines helps maintain a high-quality app ecosystem and speeds up the review process.
 ## Community Showcase

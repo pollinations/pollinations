@@ -1,13 +1,15 @@
 {
   "name": "@pollinations_ai/oh-my-pollicode",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Pre-configured OpenCode + oh-my-opencode with Pollinations AI models",
   "type": "module",
   "bin": {
     "oh-my-pollicode": "./install.js"
   },
   "scripts": {
-    "start": "node install.js"
+    "start": "node install.js",
+    "test": "node install.test.js"
+
   },
   "keywords": [
     "pollinations",
@@ -17,7 +19,17 @@
     "llm",
     "coding-assistant"
   ],
-  "author": "Pollinations.AI",
+  "author": "pollinations.ai <hello@pollinations.ai>",
+  "contributors": [
+    {
+      "name": "Circuit-Overtime",
+      "email": "ayushman@myceli.ai"
+    },
+    {
+      "name": "ElliotEtag",
+      "email": "elliot@myceli.ai"
+    }
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

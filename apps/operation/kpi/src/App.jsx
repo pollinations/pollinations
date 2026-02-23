@@ -79,13 +79,27 @@ export default function App() {
                     ]);
 
                 // Serialize TinyBird calls to avoid rate limits (429)
-                const tinybirdHealth = await step("Health stats", () => getWeeklyHealthStats(12));
-                const tinybirdChurn = await step("Churn", () => getWeeklyChurn(12));
-                const tinybirdWAU = await step("WAU", () => getWeeklyActiveUsers(12));
-                const tinybirdUsage = await step("Usage stats", () => getWeeklyUsageStats(12));
-                const tinybirdRetention = await step("Retention", () => getWeeklyRetention(8));
-                const tinybirdSegments = await step("User segments", () => getWeeklyUserSegments(12));
-                const tinybirdActivations = await step("Activations", () => getWeeklyActivations(12));
+                const tinybirdHealth = await step("Health stats", () =>
+                    getWeeklyHealthStats(12),
+                );
+                const tinybirdChurn = await step("Churn", () =>
+                    getWeeklyChurn(12),
+                );
+                const tinybirdWAU = await step("WAU", () =>
+                    getWeeklyActiveUsers(12),
+                );
+                const tinybirdUsage = await step("Usage stats", () =>
+                    getWeeklyUsageStats(12),
+                );
+                const tinybirdRetention = await step("Retention", () =>
+                    getWeeklyRetention(8),
+                );
+                const tinybirdSegments = await step("User segments", () =>
+                    getWeeklyUserSegments(12),
+                );
+                const tinybirdActivations = await step("Activations", () =>
+                    getWeeklyActivations(12),
+                );
 
                 // Check for missing data
                 const missing = [];
@@ -371,25 +385,46 @@ export default function App() {
             <div className="min-h-screen flex items-center justify-center bg-gray-950">
                 <div className="w-72">
                     <div className="flex items-center gap-3 mb-6">
-                        <img src="/logo.svg" alt="pollinations.ai" className="h-8 w-8" />
-                        <span className="text-gray-400 text-sm">Loading KPIs from all data sources...</span>
+                        <img
+                            src="/logo.svg"
+                            alt="pollinations.ai"
+                            className="h-8 w-8"
+                        />
+                        <span className="text-gray-400 text-sm">
+                            Loading KPIs from all data sources...
+                        </span>
                     </div>
                     <div className="space-y-1.5">
                         {LOAD_STEPS.map((s) => {
                             const done = completedSteps.includes(s);
                             const active = !done && activeStep === s;
                             return (
-                                <div key={s} className="flex items-center gap-2 text-sm">
+                                <div
+                                    key={s}
+                                    className="flex items-center gap-2 text-sm"
+                                >
                                     {done ? (
-                                        <span className="text-emerald-500 w-4 text-center">&#10003;</span>
+                                        <span className="text-emerald-500 w-4 text-center">
+                                            &#10003;
+                                        </span>
                                     ) : active ? (
                                         <div className="w-4 flex justify-center">
                                             <div className="animate-spin w-3 h-3 border border-gray-600 border-t-white rounded-full" />
                                         </div>
                                     ) : (
-                                        <span className="text-gray-700 w-4 text-center">&#8226;</span>
+                                        <span className="text-gray-700 w-4 text-center">
+                                            &#8226;
+                                        </span>
                                     )}
-                                    <span className={done ? "text-gray-500" : active ? "text-white" : "text-gray-700"}>
+                                    <span
+                                        className={
+                                            done
+                                                ? "text-gray-500"
+                                                : active
+                                                  ? "text-white"
+                                                  : "text-gray-700"
+                                        }
+                                    >
                                         {s}
                                     </span>
                                 </div>

@@ -56,7 +56,12 @@ async function fetchTinybird(
     env: Env,
     pipe: string,
     params: Record<string, string | number> = {},
-): Promise<{ data: unknown[]; error?: string; status?: number; pipe?: string }> {
+): Promise<{
+    data: unknown[];
+    error?: string;
+    status?: number;
+    pipe?: string;
+}> {
     const query = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
         query.set(k, String(v));
@@ -99,7 +104,9 @@ async function fetchTinybird(
                 (res.status === 408 || res.status === 429 || res.status >= 500)
             ) {
                 const delay = res.status === 429 ? 2000 : 1000;
-                console.error(`[Tinybird] Retrying ${pipe} in ${delay}ms (status=${res.status})`);
+                console.error(
+                    `[Tinybird] Retrying ${pipe} in ${delay}ms (status=${res.status})`,
+                );
                 await new Promise((r) => setTimeout(r, delay));
                 continue;
             }
@@ -343,7 +350,10 @@ app.get("/api/kpi/activations", async (c) => {
 });
 
 // Helper: parse weeks_back from query, capped at MAX_WEEKS_BACK
-function parseWeeksBack(c: { req: { query: (k: string) => string | undefined } }, fallback = 12): number {
+function parseWeeksBack(
+    c: { req: { query: (k: string) => string | undefined } },
+    fallback = 12,
+): number {
     const raw = c.req.query("weeks_back");
     const parsed = raw ? parseInt(raw, 10) : fallback;
     return Math.min(Number.isNaN(parsed) ? fallback : parsed, MAX_WEEKS_BACK);

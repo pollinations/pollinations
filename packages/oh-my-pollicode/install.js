@@ -1,13 +1,4 @@
 #!/usr/bin/env node
-/**
- * Pollinations OpenCode Installer
- *
- * Cross-platform installer for OpenCode + oh-my-opencode pre-configured
- * with Pollinations AI models for optimal multi-agent workflows.
- *
- * Usage: npx @pollinations/opencode-installer
- *    or: node install.js
- */
 
 import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -23,7 +14,6 @@ const rl = createInterface({
 const ask = (question) =>
     new Promise((resolve) => rl.question(question, resolve));
 
-// Config directory based on OS
 function getConfigDir() {
     const home = homedir();
     if (platform() === "win32") {
@@ -34,11 +24,10 @@ function getConfigDir() {
     return join(home, ".config", "opencode");
 }
 
-// OpenCode provider + models config
 const OPENCODE_CONFIG = {
     "$schema": "https://opencode.ai/config.json",
     "plugin": ["oh-my-opencode"],
-    "model": "pollinations/claude-large", // Opus for main agent (Sisyphus)
+    "model": "pollinations/claude-large", 
     "small_model": "pollinations/gemini-fast",
     "provider": {
         "pollinations": {
@@ -137,20 +126,16 @@ async function installOpenCode() {
     log("Installing OpenCode CLI...");
 
     if (platform() === "win32") {
-        // Windows: use PowerShell
         runCommand(
             'powershell -Command "irm https://opencode.ai/install.ps1 | iex"',
         );
     } else {
-        // macOS/Linux: use curl
         runCommand("curl -fsSL https://opencode.ai/install | bash");
     }
 }
 
 async function installOhMyOpenCode() {
     log("Installing oh-my-opencode plugin...");
-
-    // Use npx for cross-platform compatibility
     runCommand(
         "npx oh-my-opencode install --no-tui --claude=no --chatgpt=no --gemini=no",
     );
@@ -169,13 +154,9 @@ async function writeConfigs(apiKey) {
     if (apiKey) {
         opencodeConfig.provider.pollinations.options.apiKey = apiKey;
     }
-
-    // Write opencode.json
     const opencodeConfigPath = join(configDir, "opencode.json");
     writeFileSync(opencodeConfigPath, JSON.stringify(opencodeConfig, null, 2));
     success(`Written: ${opencodeConfigPath}`);
-
-    // Write oh-my-opencode.json
     const ohMyConfigPath = join(configDir, "oh-my-opencode.json");
     writeFileSync(
         ohMyConfigPath,
@@ -198,7 +179,6 @@ async function main() {
 ╚═══════════════════════════════════════════════════════════╝\x1b[0m
 `);
 
-    // Step 1: Check/Install OpenCode
     log("Checking for OpenCode...");
     const hasOpenCode = await checkOpenCode();
 
@@ -215,15 +195,11 @@ async function main() {
     } else {
         success("OpenCode is installed");
     }
-
-    // Step 2: Install oh-my-opencode
     log("Setting up oh-my-opencode plugin...");
     await installOhMyOpenCode();
-
-    // Step 3: Ask for API key (required)
     console.log(`
 \x1b[33mA Pollinations API key is required.
-Get your free API key at: https://pollinations.ai/pricing\x1b[0m
+Get your free API key at: https://enter.pollinations.ai\x1b[0m
 `);
 
     let apiKey = await ask("Enter Pollinations API key: ");

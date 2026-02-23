@@ -6,13 +6,14 @@ from collections.abc import Callable
 from contextvars import ContextVar
 from typing import Any
 
+import json
+
 try:
     import orjson
 
     def _json_dumps(obj, **kwargs):
         return orjson.dumps(obj).decode()
 except ImportError:
-    import json
 
     def _json_dumps(obj, **kwargs):
         return json.dumps(obj, ensure_ascii=False, **kwargs)

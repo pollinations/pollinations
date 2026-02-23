@@ -207,6 +207,25 @@ def decode_base64_images(content_blocks: list[dict], max_images: int = 10) -> li
     return files
 
 
+def suppress_url_embeds(text: str) -> str:
+    """Wrap all URLs in angle brackets to suppress Discord embed previews.
+
+    Handles:
+    - Bare URLs: https://example.com -> <https://example.com>
+    - Markdown links: [text](url) -> [text](<url>)
+    - Already wrapped: <url> stays as <url>
+    """
+    # Fix markdown links: [text](url) -> [text](<url>)
+    # Don't double-wrap if already has angle brackets
+    text = re.sub(r"\[([^\]]+)\]\((https?://[^<\)]+)(?<!>)\)", r"[\1](<\2>)", text)
+
+    # Wrap bare URLs (not already in angle brackets, not in markdown links)
+    # Match URLs that aren't preceded by ]( or <
+    text = re.sub(r"(?<![<\(\]])\b(https?://[^\s<>\)]+)(?![>\)])", r"<\1>", text)
+
+    return text
+
+
 def extract_media_urls(
     message: discord.Message,
 ) -> tuple[list[str], list[str], list[str]]:
@@ -428,6 +447,7 @@ class PollyBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
         self.issue_notifier = None
         self.webhook_server = None
+        self._api_server = None
 
     async def setup_hook(self):
         """Called when the bot is starting up."""
@@ -449,13 +469,11 @@ class PollyBot(commands.Bot):
 
         # Register code_search handler if embeddings enabled
         if config.local_embeddings_enabled:
-
             pollinations_client.register_tool_handler("code_search", _code_search_handler)
             logger.info("Registered code_search tool handler (embeddings enabled)")
 
         # Register doc_search handler if doc embeddings enabled
         if config.doc_embeddings_enabled:
-
             pollinations_client.register_tool_handler("doc_search", _doc_search_handler)
             logger.info("Registered doc_search tool handler (doc embeddings enabled)")
 
@@ -475,6 +493,12 @@ class PollyBot(commands.Bot):
         pollinations_client.register_tool_handler("web_scrape", web_scrape_handler)
         logger.info("Registered web_scrape tool handler (Crawl4AI)")
 
+        # Register data visualization handler (always available)
+        from .services.charts import data_visualization
+
+        pollinations_client.register_tool_handler("data_visualization", data_visualization)
+        logger.info("Registered data_visualization tool handler")
+
         # Register discord_search handler (full guild search capabilities)
         from .services.discord_search import tool_discord_search
 
@@ -493,10 +517,38 @@ class PollyBot(commands.Bot):
         self.cleanup_sessions.start()
         if config.doc_embeddings_enabled:
             self.update_doc_embeddings.start()
+
+        # Start API server if enabled
+        if config.api_enabled:
+            import uvicorn
+
+            from .api.polly_api import create_api_app
+
+            api_app = create_api_app(pollinations_client, config)
+            uvi_config = uvicorn.Config(
+                api_app,
+                host="127.0.0.1",
+                port=config.api_port,
+                log_level="warning",
+            )
+            self._api_server = uvicorn.Server(uvi_config)
+            task = asyncio.create_task(self._api_server.serve())
+            task.add_done_callback(
+                lambda t: (
+                    logger.error(f"API server crashed: {t.exception()}")
+                    if not t.cancelled() and t.exception()
+                    else None
+                )
+            )
+            logger.info(f"Polly API started on port {config.api_port}")
+
         logger.info("Bot setup complete")
 
     async def close(self):
         """Clean up resources when bot shuts down."""
+        if self._api_server:
+            self._api_server.should_exit = True
+            logger.info("Polly API stopped")
         self.cleanup_sessions.cancel()
         if config.doc_embeddings_enabled:
             self.update_doc_embeddings.cancel()
@@ -705,6 +757,7 @@ async def on_message(message: discord.Message):
     is_mentioned = bot.user is not None and bot.user.mentioned_in(message) and not message.mention_everyone
     is_thread = isinstance(message.channel, discord.Thread)
     is_reply = bool(message.reference and message.reference.message_id)
+    ref_msg = None
 
     # Non-thread messages: only respond to @mentions
     if not is_thread:
@@ -727,6 +780,9 @@ async def on_message(message: discord.Message):
         logger.debug(
             f"Thread msg: '{message.content[:50]}' | @mentioned={is_mentioned} | reply_to_bot={is_reply_to_bot}"
         )
+
+        # Start typing immediately so user sees we're processing
+        await message.channel.trigger_typing()
 
         session = session_manager.get_session(message.channel.id)
 
@@ -770,6 +826,9 @@ async def on_message(message: discord.Message):
 
         await handle_thread_message(message, session)
         return
+
+    # Start typing immediately so user sees we're processing
+    await message.channel.trigger_typing()
 
     # Extract message text
     text = message.content
@@ -1029,13 +1088,13 @@ async def handle_inline_polly_mention(message: discord.Message):
             # Decode any base64 images
             image_files = decode_base64_images(content_blocks, max_images=10)
             if image_files:
-                # Strip file paths from response
-                response_text = re.sub(r"\[([^\]]*)\]\(file:///[^)]+\)\n?", "", response_text)
+                # Strip all image markdown — images are already attached as files
+                response_text = re.sub(r"!\[[^\]]*\]\([^)]+\)\n?", "", response_text)
                 response_text = re.sub(r"file:///[^\s\)]+", "", response_text)
                 response_text = response_text.strip()
 
-            # Fix double-wrapped URLs
-            response_text = re.sub(r"\[(https?://[^\]]+)\]\(<\1>\)", r"<\1>", response_text)
+            # Suppress URL embeds to prevent chat bloat
+            response_text = suppress_url_embeds(response_text)
 
             if response_text or image_files:
                 # Reply to the message WITHOUT ping (mention_author=False)
@@ -1167,13 +1226,13 @@ async def process_message(
         image_files = decode_base64_images(content_blocks, max_images=10)
         if image_files:
             logger.info(f"Decoded {len(image_files)} image(s) from content_blocks")
-            # Strip useless file:/// local paths from response (images are sent as attachments)
-            response_text = re.sub(r"\[([^\]]*)\]\(file:///[^)]+\)\n?", "", response_text)
+            # Strip all image markdown from text — images are already attached as files
+            response_text = re.sub(r"!\[[^\]]*\]\([^)]+\)\n?", "", response_text)
             response_text = re.sub(r"file:///[^\s\)]+", "", response_text)
             response_text = response_text.strip()
 
-        # Fix double-wrapped URLs: [https://example.com](<https://example.com>) -> <https://example.com>
-        response_text = re.sub(r"\[(https?://[^\]]+)\]\(<\1>\)", r"<\1>", response_text)
+        # Suppress URL embeds to prevent chat bloat
+        response_text = suppress_url_embeds(response_text)
 
         # Log tool usage for debugging
         if tool_calls:

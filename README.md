@@ -17,16 +17,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [Textify](https://letstypifythecontent.web.app/) | AI-powered content writer for generating articles, posts, and marketing copy. | @KanujanKing777 |
-| [Productivity Gears](http://productivitygears.com/) | Suite of 100+ free productivity tools: AI assistants, converters, PDF editors. | @hadi0096 |
-| [Pollination fashion bulk creator](https://hautecouture.today/) | Generate AI fashion collections from prompts to atelier-ready assets. | @LaurentVoanh |
-| SnapSell | Generate AI-powered product listings for Facebook, Shopify, eBay, and more. | @marifaceless |
-| [Coursify](https://coursify-website.vercel.app/) | AI platform converting YouTube playlists into structured courses with progress. | @hasanraiyan |
-| [Pollenboard](https://pollenboard.vercel.app/) | Self-hostable image, audio, and text generation frontend using pollinations.ai. | @zhangshi0512 |
-| [langchain-pollinations](https://pypi.org/project/langchain-pollinations/) | LangChain integration for pollinations.ai — build agents, RAGs, and AI applications. | @onatrain |
-| LLM Client | Minimal stdlib-only Go client with a unified API for OpenAI-compatible LLM endpoints. | @SkalaSkalolaz |
-| [ppo](https://anesnt-dz.github.io/ppo/) | Powerful AI assistant built by AnesNT, powered by Pollinations. | @AnesNT-DZ |
-| [BrainrotMaker](http://host.lualearnings.com:2256) | Generate brainrot images in seconds with BrainrotMaker Image Generator. | @lualearnings |
+| [M Assistant](https://routinehub.co/shortcut/18709/) | AI companion for Apple devices with conversational AI, image generation, and task automation. | @morriszdweck |
+| [AutoTutela](https://angelromero.co/autotutela) | AI legal assistant that drafts Acciones de Tutela for Colombian citizens. | @soyangelromero |
+| [ExplainMyBigO](https://explain-my-bigo.vercel.app/) | AI tool that estimates Big-O time and space complexity of your algorithms instantly. | @Michael-PFC |
+| [AI Clip Master](https://ai-clip-master-4f3tdvgjr3zcg3hmj8phy7.streamlit.app/) | AI-powered modular video processing tool for content creators. | @rodrigololr |
+| [Cortex Chat](https://cortexchat.vercel.app/) | AI chat platform powered by Pollinations for creative, efficient assistance. | @GamerC0der |
+| [Gen Layers](http://genlayers.com/) | AI tool to generate high-CTR YouTube thumbnails from titles and visuals | @Mustafiz82 |
+| [ImageGenAI Pro](https://imgimg-two.vercel.app/) | Generate images in any aspect ratio with ImageGenAI Pro. | @prabhatkashyap902 |
+| [nails-generator](https://nails-generator.netlify.app/) | Generate AI nail art designs with nails-generator, producing style, color, and pattern variations for manicure mockups. | @rodriguetg |
+| [FeedHire](https://feedhire.me/) | AI job aggregator that filters postings from Telegram, Reddit and other sources | @rafipatel |
+| [AI Youtube Comment Summary Browser ExtensionAddon](https://addons.mozilla.org/en-US/firefox/addon/ai-youtube-comment-summary/) | Summarizes YouTube comment threads directly in your browser. | @iFreaku |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

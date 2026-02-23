@@ -14,11 +14,15 @@
   },
   "webhook": {
     "port": 8002,
-    "enabled": true
+    "enabled": false
+  },
+  "api": {
+    "enabled": true,
+    "port": 55288
   },
   "ai": {
     "model": "kimi",
-    "fallback_model": "openai"
+    "fallback_model": "glm"
   },
   "features": {
     "local_embeddings_enabled": true,

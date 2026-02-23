@@ -118,7 +118,7 @@ test("Model Registry - Required Models Present", () => {
 });
 
 test("Write Configs - File System Operations", () => {
-    const testDir = join(tmpdir(), "opencode-test-" + Date.now());
+    const testDir = join(tmpdir(), `opencode-test-${Date.now()}`);
     mkdirSync(testDir, { recursive: true });
 
     try {
@@ -261,7 +261,9 @@ test("Installation Flow - Steps Sequence", () => {
     ];
 
     assert.equal(steps.length, 5);
-    steps.forEach((step) => assert.ok(step.length > 0));
+    steps.forEach((step) => {
+        assert.ok(step.length > 0);
+    });
 });
 
 // Summary

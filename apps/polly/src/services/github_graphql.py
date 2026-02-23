@@ -1380,8 +1380,10 @@ class GitHubGraphQL:
     ) -> dict:
         if graphql_query:
             # Block mutations — only allow queries
-            stripped = graphql_query.strip()
-            if stripped.lower().startswith("mutation"):
+            # Strip comments (# ...) before checking to prevent bypass
+            lines = [l for l in graphql_query.strip().splitlines() if not l.strip().startswith("#")]
+            stripped = "\n".join(lines).strip().lower()
+            if stripped.startswith("mutation") or not stripped:
                 return {"error": "Mutations not allowed. github_custom is read-only."}
 
             result = await self._execute(

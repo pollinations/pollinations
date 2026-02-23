@@ -243,7 +243,7 @@ Get your free API key at: https://pollinations.ai/pricing\x1b[0m
 
     if (!apiKey) {
         error(
-            "API key is required. Get one at https://pollinations.ai/pricing",
+            "API key is required. Get one at https://enter.pollinations.ai",
         );
         rl.close();
         process.exit(1);

@@ -9,9 +9,9 @@
 import { readFileSync, writeFileSync, appendFileSync, existsSync } from "node:fs";
 import { scoreUsers as runLLMScorer } from "./llm-scorer.js";
 
-const INPUT = "scripts/scoring-data-all.json";
-const OUTPUT = "scripts/scoring-data-all-gemini.json";
-const PROGRESS_FILE = "scripts/gemini-progress.ndjson";
+const INPUT = "scripts/results/scoring-data-all.json";
+const OUTPUT = "scripts/results/scoring-data-all-gemini.json";
+const PROGRESS_FILE = "scripts/results/gemini-progress.ndjson";
 
 // Same prompt as score-for-upgrade.ts
 function buildAbusePrompt(csvRows: string[]): string {

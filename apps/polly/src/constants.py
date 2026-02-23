@@ -842,52 +842,23 @@ This tool is SLOW but POWERFUL - combines search, scrape, crawl, and code execut
 
 
 # =============================================================================
-# CHART GENERATION TOOL - Local matplotlib rendering
+# DATA VISUALIZATION TOOL - Gemini native code_execution
 # =============================================================================
 
-CHART_TOOL = {
+DATA_VIZ_TOOL = {
     "type": "function",
     "function": {
-        "name": "generate_chart",
-        "description": """Generate data visualizations as images. The chart renders locally and appears as a Discord attachment.
-
-Chart types and data formats:
-
-bar/line/area:
-  data: {"labels": ["Jan","Feb","Mar"], "datasets": [{"name": "Revenue", "values": [100,150,200]}]}
-
-pie/donut:
-  data: {"labels": ["Bug","Feature","Docs"], "values": [45,30,25]}
-
-scatter:
-  data: {"datasets": [{"name": "Q1", "points": [{"x":1,"y":5,"size":30},{"x":2,"y":8}]}]}
-
-radar:
-  data: {"labels": ["Speed","Power","Range","Accuracy"], "datasets": [{"name": "Model A", "values": [8,6,4,9]}]}
-
-heatmap:
-  data: {"x_labels": ["Mon","Tue","Wed"], "y_labels": ["AM","PM"], "values": [[10,20,15],[30,25,18]]}
-
-metric:
-  data: {"value": "1,234", "label": "Total Users", "delta": "+12%", "delta_direction": "up"}""",
+        "name": "data_visualization",
+        "description": """Generate a visual image from data — charts, diagrams, infographics, dashboards, anything. Pass the data and Gemini will figure out the best visualization.""",
         "parameters": {
             "type": "object",
             "properties": {
-                "chart_type": {
-                    "type": "string",
-                    "enum": ["bar", "line", "pie", "donut", "scatter", "area", "radar", "heatmap", "metric"],
-                    "description": "Type of chart to generate",
-                },
                 "data": {
                     "type": "object",
-                    "description": "Chart data (labels, datasets, values — see format above)",
-                },
-                "options": {
-                    "type": "object",
-                    "description": "Display options: title, subtitle, x_label, y_label, horizontal (bar), stacked (bar/area), show_values, show_legend, show_grid, color_palette (neon/pastel/warm/cool/monochrome), max_items",
+                    "description": "The data to visualize",
                 },
             },
-            "required": ["chart_type", "data"],
+            "required": ["data"],
         },
     },
 }
@@ -908,7 +879,7 @@ def get_tools_with_embeddings(base_tools: list, embeddings_enabled: bool, doc_em
     tools.append(WEB_SCRAPE_TOOL)
     tools.append(DISCORD_SEARCH_TOOL)
     tools.append(WEB_TOOL)  # nomnom - deep research (use sparingly, slow but powerful)
-    tools.append(CHART_TOOL)
+    tools.append(DATA_VIZ_TOOL)
 
     # Conditionally include code_search if embeddings enabled
     if embeddings_enabled:
@@ -1141,9 +1112,9 @@ TOOL_KEYWORDS = {
         r"extract\s+(from|data)|whats?\s+(on|at)\s+(this\s+)?(url|page|site|link))\b",
         re.IGNORECASE,
     ),
-    "generate_chart": re.compile(
+    "data_visualization": re.compile(
         r"\b(charts?|graphs?|plots?|visualiz\w*|bar\s*chart|line\s*chart|pie\s*chart|"
-        r"donut|scatter|heatmap|radar|histogram|diagram|metric\s*card)\b",
+        r"donut|scatter|heatmap|radar|histogram|diagram|infographic|dashboard)\b",
         re.IGNORECASE,
     ),
     # NOTE: web_search and code_search are NOT filtered by keywords
@@ -1398,7 +1369,7 @@ API_TOOLS_SECTION = """- `github_overview` - Repo summary
 - `code_search` - Semantic code search
 - `doc_search` - Documentation search
 - `discord_search` - Search Discord server
-- `generate_chart` - Data visualization"""
+- `data_visualization` - Generate visual images from data"""
 
 # Keep TOOL_SYSTEM_PROMPT as backward-compatible alias (full Discord prompt)
 TOOL_SYSTEM_PROMPT = BASE_SYSTEM_PROMPT + DISCORD_PROMPT_ADDON
@@ -1414,7 +1385,7 @@ ADMIN_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labels, mil
 - `code_search` - Semantic code search
 - `doc_search` - Documentation search (enter.pollinations.ai + OpenAPI schema)
 - `discord_search` - Search Discord server (messages, members, channels, threads, roles)
-- `generate_chart` - Data visualization (bar, line, pie, donut, scatter, area, radar, heatmap, metric card)"""
+- `data_visualization` - Generate visual images from data (bar, line, pie, donut, scatter, area, radar, heatmap, metric card)"""
 
 # Tools section for NON-ADMIN users - read-only + create/comment
 NON_ADMIN_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labels, milestones, projects)
@@ -1427,7 +1398,7 @@ NON_ADMIN_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labels,
 - `code_search` - Semantic code search
 - `doc_search` - Documentation search (enter.pollinations.ai + OpenAPI schema)
 - `discord_search` - Search Discord server (messages, members, channels, threads, roles)
-- `generate_chart` - Data visualization (bar, line, pie, donut, scatter, area, radar, heatmap, metric card)"""
+- `data_visualization` - Generate visual images from data (bar, line, pie, donut, scatter, area, radar, heatmap, metric card)"""
 
 
 def get_tool_system_prompt(is_admin: bool = True, mode: str = "discord") -> str:

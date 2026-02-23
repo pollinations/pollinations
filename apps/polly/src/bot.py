@@ -207,6 +207,33 @@ def decode_base64_images(content_blocks: list[dict], max_images: int = 10) -> li
     return files
 
 
+def suppress_url_embeds(text: str) -> str:
+    """Wrap all URLs in angle brackets to suppress Discord embed previews.
+    
+    Handles:
+    - Bare URLs: https://example.com -> <https://example.com>
+    - Markdown links: [text](url) -> [text](<url>)
+    - Already wrapped: <url> stays as <url>
+    """
+    # Fix markdown links: [text](url) -> [text](<url>)
+    # Don't double-wrap if already has angle brackets
+    text = re.sub(
+        r'\[([^\]]+)\]\((https?://[^<\)]+)(?<!>)\)',
+        r'[\1](<\2>)',
+        text
+    )
+    
+    # Wrap bare URLs (not already in angle brackets, not in markdown links)
+    # Match URLs that aren't preceded by ]( or <
+    text = re.sub(
+        r'(?<![<\(\]])\b(https?://[^\s<>\)]+)(?![>\)])',
+        r'<\1>',
+        text
+    )
+    
+    return text
+
+
 def extract_media_urls(
     message: discord.Message,
 ) -> tuple[list[str], list[str], list[str]]:
@@ -476,11 +503,11 @@ class PollyBot(commands.Bot):
         pollinations_client.register_tool_handler("web_scrape", web_scrape_handler)
         logger.info("Registered web_scrape tool handler (Crawl4AI)")
 
-        # Register chart generation handler (always available)
-        from .services.charts import generate_chart
+        # Register data visualization handler (always available)
+        from .services.charts import data_visualization
 
-        pollinations_client.register_tool_handler("generate_chart", generate_chart)
-        logger.info("Registered generate_chart tool handler")
+        pollinations_client.register_tool_handler("data_visualization", data_visualization)
+        logger.info("Registered data_visualization tool handler")
 
         # Register discord_search handler (full guild search capabilities)
         from .services.discord_search import tool_discord_search
@@ -740,6 +767,7 @@ async def on_message(message: discord.Message):
     is_mentioned = bot.user is not None and bot.user.mentioned_in(message) and not message.mention_everyone
     is_thread = isinstance(message.channel, discord.Thread)
     is_reply = bool(message.reference and message.reference.message_id)
+    ref_msg = None
 
     # Non-thread messages: only respond to @mentions
     if not is_thread:
@@ -1069,8 +1097,8 @@ async def handle_inline_polly_mention(message: discord.Message):
                 response_text = re.sub(r"file:///[^\s\)]+", "", response_text)
                 response_text = response_text.strip()
 
-            # Fix double-wrapped URLs
-            response_text = re.sub(r"\[(https?://[^\]]+)\]\(<\1>\)", r"<\1>", response_text)
+            # Suppress URL embeds to prevent chat bloat
+            response_text = suppress_url_embeds(response_text)
 
             if response_text or image_files:
                 # Reply to the message WITHOUT ping (mention_author=False)
@@ -1207,8 +1235,8 @@ async def process_message(
             response_text = re.sub(r"file:///[^\s\)]+", "", response_text)
             response_text = response_text.strip()
 
-        # Fix double-wrapped URLs: [https://example.com](<https://example.com>) -> <https://example.com>
-        response_text = re.sub(r"\[(https?://[^\]]+)\]\(<\1>\)", r"<\1>", response_text)
+        # Suppress URL embeds to prevent chat bloat
+        response_text = suppress_url_embeds(response_text)
 
         # Log tool usage for debugging
         if tool_calls:

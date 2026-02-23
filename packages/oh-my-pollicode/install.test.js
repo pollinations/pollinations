@@ -6,7 +6,6 @@ import { tmpdir } from 'node:os';
 import { mkdirSync, readFileSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-// Test configurations
 const EXPECTED_OPENCODE_CONFIG = {
     "$schema": "https://opencode.ai/config.json",
     "plugin": ["oh-my-opencode"],
@@ -116,18 +115,15 @@ test('Write Configs - File System Operations', () => {
     mkdirSync(testDir, { recursive: true });
 
     try {
-        // Simulate writing config files
         const opencodeConfig = JSON.stringify(EXPECTED_OPENCODE_CONFIG, null, 2);
         const ohMyConfig = JSON.stringify(EXPECTED_OH_MY_OPENCODE_CONFIG, null, 2);
 
         const configPath = join(testDir, 'opencode.json');
         const ohMyPath = join(testDir, 'oh-my-opencode.json');
 
-        // Write files synchronously
         writeFileSync(configPath, opencodeConfig);
         writeFileSync(ohMyPath, ohMyConfig);
 
-        // Verify files exist and have correct content
         assert.ok(existsSync(configPath), 'opencode.json not created');
         assert.ok(existsSync(ohMyPath), 'oh-my-opencode.json not created');
 

@@ -89,6 +89,50 @@ test("OPTIONS preflight request works for /image/models", async () => {
     await response.text(); // consume response
 });
 
+test("GET /v1/models returns models with modalities and supported_endpoints", async () => {
+    const response = await SELF.fetch(
+        `http://localhost:3000/api/generate/v1/models`,
+        { method: "GET" },
+    );
+    expect(response.status).toBe(200);
+
+    const data = (await response.json()) as {
+        object: string;
+        data: {
+            id: string;
+            object: string;
+            supported_endpoints?: string[];
+            input_modalities?: string[];
+            output_modalities?: string[];
+        }[];
+    };
+    expect(data.object).toBe("list");
+
+    // Find a text model, image model, and audio model
+    const textModel = data.data.find((m) =>
+        m.supported_endpoints?.includes("/v1/chat/completions"),
+    );
+    const imageModel = data.data.find((m) =>
+        m.supported_endpoints?.includes("/v1/images/generations"),
+    );
+    const audioModel = data.data.find((m) =>
+        m.supported_endpoints?.includes("/audio/{text}"),
+    );
+
+    // Text models
+    expect(textModel).toBeDefined();
+    expect(textModel?.input_modalities).toBeDefined();
+    expect(textModel?.output_modalities).toBeDefined();
+    expect(textModel?.supported_endpoints).toContain("/text/{prompt}");
+
+    // Image models
+    expect(imageModel).toBeDefined();
+    expect(imageModel?.supported_endpoints).toContain("/image/{prompt}");
+
+    // Audio models
+    expect(audioModel).toBeDefined();
+});
+
 // Test model filtering by API key permissions
 // Uses restrictedApiKey fixture which is limited to ["openai-fast", "flux"]
 fixtureTest(

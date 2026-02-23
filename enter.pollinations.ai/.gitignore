@@ -16,8 +16,5 @@ scripts/flagged-users*.csv
 scripts/flagged-users*.md
 abuse-report*.csv
 
-# Scoring data dumps (large, generated)
-scripts/scoring-data*.json
-scripts/scoring-results*.json
-scripts/scoring-snapshot.ndjson
-scripts/gemini-progress.ndjson
+# Scoring/eval results (large, generated)
+scripts/results/

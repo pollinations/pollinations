@@ -44,16 +44,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-02-22** – **🔗 LangChain Support** Python developers can now integrate Pollinations models directly into agents and RAG pipelines with the new `langchain-pollinations` package.
+- **2026-02-22** – **📱 Pollinations on Android** A dedicated community-built Android client is now available. Generate images and chat natively on mobile.
+- **2026-02-22** – **🎨 Pollenboard** A self-hostable, all-in-one frontend for those who want to run their own interface on top of our APIs.
+- **2026-02-22** – **🚀 Showcase Expansion** Added 30+ new community apps, including D&D tools, IoT pixel art displays, and YouTube summarizers. The [Showcase](https://hello.pollinations.ai) is getting crowded.
 - **2026-02-20** – **🛠️ GENEXUS AI** Added to the developer tools showcase. Another backend integration for the ecosystem.
 - **2026-02-19** – **📦 Package Migration** The SDK and MCP packages have moved to the `@pollinations_ai` scope on NPM. We dropped the React dependencies, so they're lighter and framework-agnostic now.
 - **2026-02-19** – **🎥 Video Duration** The `seedance` video model now accepts a `duration` parameter. Control your clip length via the [API](https://gen.pollinations.ai).
 - **2026-02-18** – **📅 Build Diary** The [Community page](https://hello.pollinations.ai) now features an interactive timeline of the project's history. Navigate daily changes and digests with keyboard controls.
 - **2026-02-18** – **🐛 Readable Errors** The [API](https://gen.pollinations.ai) now extracts actual human-readable messages from upstream JSON errors. No more raw dumps when providers fail.
 - **2026-02-18** – **🌱 Seed Tier Logic** GitHub activity qualification now uses a rolling 90-day window instead of resetting yearly. Your status is safe in January.
-- **2026-02-17** – **📊 SlidePainter** Generate illustrated slide decks and export to PDF with this new community app.
-- **2026-02-17** – **👾 Pixel Art & Markdown** A cozy new retro theme is available, plus app descriptions are now auto-formatted via the [Text API](https://gen.pollinations.ai).
-- **2026-02-17** – **🎨 UI Theme Cycling** Click the [pollinations.ai](https://hello.pollinations.ai) logo to instantly cycle through visual themes.
-- **2026-02-16** – **🌸 Badges in Bloom** Navigate the ecosystem with our new organic badge system (Fresh, Pollen, Buzz) to find the best [community apps](https://hello.pollinations.ai).
 ---
 
 ## 🌱 Introduction

@@ -69,7 +69,7 @@ export function UserMenu() {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-surface-base border-r-4 border-b-4 border-border-brand rounded-button p-4 z-50 shadow-shadow-brand-lg">
+                <div className="absolute right-0 top-full mt-2 w-64 bg-[rgb(var(--surface-base))] backdrop-blur-md border-r-4 border-b-4 border-border-brand rounded-button p-4 z-50 shadow-shadow-brand-lg">
                     {/* Profile */}
                     {profile && (
                         <div className="mb-3">

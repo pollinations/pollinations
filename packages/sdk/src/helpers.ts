@@ -4,7 +4,7 @@
  *
  * @example
  * ```ts
- * import { generateImage, generateText } from '@pollinations/sdk';
+ * import { generateImage, generateText } from '@pollinations_ai/sdk';
  *
  * // Generate an image and save it
  * const image = await generateImage('A cute cat');
@@ -19,24 +19,24 @@
  */
 
 import { Pollinations } from "./client.js";
-import type {
-    ImageGenerateOptions,
-    VideoGenerateOptions,
-    TextGenerateOptions,
-    ChatOptions,
-    AudioGenerateOptions,
-    Message,
-    ModelInfo,
-} from "./types.js";
 import {
-    wrapImageResponse,
-    wrapVideoResponse,
-    wrapChatResponse,
+    type ChatResponseExt,
     Conversation,
     type ImageResponseExt,
     type VideoResponseExt,
-    type ChatResponseExt,
+    wrapChatResponse,
+    wrapImageResponse,
+    wrapVideoResponse,
 } from "./extras.js";
+import type {
+    AudioGenerateOptions,
+    ChatOptions,
+    ImageGenerateOptions,
+    Message,
+    ModelInfo,
+    TextGenerateOptions,
+    VideoGenerateOptions,
+} from "./types.js";
 
 // Default client instance
 let defaultClient: Pollinations | null = null;
@@ -63,7 +63,7 @@ export function resetClient(): void {
  *
  * @example
  * ```ts
- * import { configure } from '@pollinations/sdk';
+ * import { configure } from '@pollinations_ai/sdk';
  * configure({ apiKey: 'your-api-key' });
  * ```
  */

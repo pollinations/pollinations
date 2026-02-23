@@ -5,13 +5,13 @@ Pre-configured [OpenCode](https://opencode.ai) + [oh-my-opencode](https://github
 ## Quick Install
 
 ```bash
-npx oh-my-pollicode
+npx @pollinations_ai/oh-my-pollicode
 ```
 
 Or clone and run:
 ```bash
 git clone https://github.com/pollinations/pollinations.git
-cd pollinations/apps/oh-my-pollicode
+cd pollinations/packages/oh-my-pollicode
 node install.js
 ```
 
@@ -70,7 +70,7 @@ Pollinations works without a key, but with one you get:
 - Priority access
 - Usage tracking
 
-Get your free key at: https://pollinations.ai/pricing
+Get your free key at: https://enter.pollinations.ai
 
 ## Cross-Platform Support
 

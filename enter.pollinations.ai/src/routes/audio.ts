@@ -38,7 +38,7 @@ const CreateSpeechRequestSchema = z
             .enum(ELEVENLABS_VOICES as [string, ...string[]])
             .default("alloy")
             .meta({
-                description: `The voice to use. Available voices: ${ELEVENLABS_VOICES.join(", ")}.`,
+                description: `The voice to use for TTS. Available voices: ${ELEVENLABS_VOICES.join(", ")}.`,
                 example: "rachel",
             }),
         response_format: z
@@ -54,7 +54,7 @@ const CreateSpeechRequestSchema = z
             example: 1.0,
         }),
         duration: z.number().min(3).max(300).optional().meta({
-            description: "Music duration in seconds, 3-300 (elevenmusic only)",
+            description: "Music duration in seconds, 3-300 (music models only)",
             example: 30,
         }),
         instrumental: z.boolean().optional().meta({
@@ -365,19 +365,160 @@ export async function generateMusic(opts: {
         });
     }
 
-    const contentType = response.headers.get("content-type") || "audio/mpeg";
+    return buildMusicResponse(response, "elevenmusic", log);
+}
 
-    // Buffer response to estimate duration from MP3 byte size
-    // MP3 at 128kbps ≈ 16000 bytes/second (±20% for VBR or different bitrates)
+export async function generateAceStepMusic(opts: {
+    prompt: string;
+    durationSeconds?: number;
+    serviceUrl: string;
+    backendToken?: string;
+    log: Logger;
+}): Promise<Response> {
+    const { prompt, durationSeconds, serviceUrl, backendToken, log } = opts;
+
+    if (!serviceUrl) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message:
+                "Music generation service is not configured (missing MUSIC_SERVICE_URL)",
+        });
+    }
+
+    log.info("ACE-Step request: chars={chars}, duration={duration}", {
+        chars: prompt.length,
+        duration: durationSeconds || "auto",
+    });
+
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    };
+    if (backendToken) {
+        headers["Authorization"] = `Bearer ${backendToken}`;
+    }
+
+    // Step 1: Submit task via /release_task
+    const taskBody: Record<string, unknown> = {
+        lyrics: prompt,
+        audio_duration: durationSeconds || 60,
+        batch_size: 1,
+        thinking: true,
+        audio_format: "mp3",
+    };
+
+    const submitResponse = await fetch(`${serviceUrl}/release_task`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(taskBody),
+    });
+
+    if (!submitResponse.ok) {
+        const errorText = await submitResponse.text();
+        log.warn("ACE-Step submit error {status}: {body}", {
+            status: submitResponse.status,
+            body: errorText,
+        });
+        throw new UpstreamError(submitResponse.status as ContentfulStatusCode, {
+            message: errorText || getDefaultErrorMessage(submitResponse.status),
+        });
+    }
+
+    const submitData = (await submitResponse.json()) as {
+        data?: { task_id?: string };
+    };
+    const taskId = submitData?.data?.task_id;
+    if (!taskId) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "ACE-Step did not return a task_id",
+        });
+    }
+
+    log.info("ACE-Step task submitted: {taskId}", { taskId });
+
+    // Step 2: Poll /query_result until done (status 1=success, 2=failed)
+    const maxPollTime = 300_000; // 5 minutes
+    const pollInterval = 2_000; // 2 seconds
+    const startTime = Date.now();
+
+    let audioPath: string | undefined;
+
+    while (Date.now() - startTime < maxPollTime) {
+        await new Promise((r) => setTimeout(r, pollInterval));
+
+        const pollResponse = await fetch(`${serviceUrl}/query_result`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ task_id_list: [taskId] }),
+        });
+
+        if (!pollResponse.ok) continue;
+
+        const pollData = (await pollResponse.json()) as {
+            data?: Array<{ task_id: string; status: number; result?: string }>;
+        };
+
+        const task = pollData?.data?.[0];
+        if (!task) continue;
+
+        if (task.status === 2) {
+            throw new UpstreamError(500 as ContentfulStatusCode, {
+                message: "ACE-Step generation failed",
+            });
+        }
+
+        if (task.status === 1 && task.result) {
+            // result is a JSON string containing an array of results
+            const results = JSON.parse(task.result) as Array<{
+                file?: string;
+                status?: number;
+            }>;
+            const firstResult = results?.[0];
+            if (firstResult?.file) {
+                audioPath = firstResult.file;
+                break;
+            }
+        }
+    }
+
+    if (!audioPath) {
+        throw new UpstreamError(504 as ContentfulStatusCode, {
+            message: "ACE-Step generation timed out",
+        });
+    }
+
+    // Step 3: Download audio from /v1/audio?path=...
+    const audioUrl = `${serviceUrl}${audioPath}`;
+    log.info("ACE-Step downloading audio: {url}", { url: audioUrl });
+
+    const audioResponse = await fetch(audioUrl, { headers });
+
+    if (!audioResponse.ok) {
+        const errorText = await audioResponse.text();
+        throw new UpstreamError(audioResponse.status as ContentfulStatusCode, {
+            message: errorText || "Failed to download generated audio",
+        });
+    }
+
+    return buildMusicResponse(audioResponse, "acestep", log);
+}
+
+/** Buffer upstream music response, estimate duration, and return with usage headers. */
+async function buildMusicResponse(
+    response: Response,
+    modelId: string,
+    log: Logger,
+): Promise<Response> {
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
     const audioBuffer = await response.arrayBuffer();
+    // MP3 at 128kbps ≈ 16000 bytes/second (±20% for VBR or different bitrates)
     const estimatedDuration = audioBuffer.byteLength / 16000;
 
     const usageHeaders = buildUsageHeaders(
-        "elevenmusic",
+        modelId,
         createCompletionAudioSecondsUsage(estimatedDuration),
     );
 
-    log.info("Music success: {bytes} bytes, ~{duration}s", {
+    log.info("{model} success: {bytes} bytes, ~{duration}s", {
+        model: modelId,
         bytes: audioBuffer.byteLength,
         duration: Math.round(estimatedDuration),
     });
@@ -445,16 +586,21 @@ export const audioRoutes = new Hono<Env>()
                 );
             }
 
-            const { input, voice, response_format } = c.req.valid(
-                "json" as never,
-            ) as CreateSpeechRequest;
-            const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
-                .ELEVENLABS_API_KEY;
+            const { input, voice, response_format, duration, instrumental } =
+                c.req.valid("json" as never) as CreateSpeechRequest;
+            const apiKey = c.env.ELEVENLABS_API_KEY;
+
+            if (c.var.model.resolved === "acestep") {
+                return generateAceStepMusic({
+                    prompt: input,
+                    durationSeconds: duration,
+                    serviceUrl: c.env.MUSIC_SERVICE_URL,
+                    backendToken: c.env.PLN_IMAGE_BACKEND_TOKEN,
+                    log,
+                });
+            }
 
             if (c.var.model.resolved === "elevenmusic") {
-                const { duration, instrumental } = c.req.valid(
-                    "json" as never,
-                ) as CreateSpeechRequest;
                 return generateMusic({
                     prompt: input,
                     durationSeconds: duration,

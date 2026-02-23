@@ -1,14 +1,37 @@
-# Vast.ai GPU Instances - Flux & Z-Image Deployment
+# Vast.ai GPU Instances - Deployment Guide
 
-Last updated: 2026-02-05
+Last updated: 2026-02-08
 
 ## Overview
 
-Vast.ai instances running RTX 5090 GPUs for image generation:
+Vast.ai instances running RTX 5090 GPUs:
+- **Sana Sprint**: Ultra-fast 1.6B parameter model, 2 inference steps, ~0.2s per 1024x1024 on RTX 5090
 - **Flux**: Uses nunchaku quantization (FP4 for Blackwell GPUs) to run Flux Schnell
 - **Z-Image**: Tongyi Z-Image-Turbo with SPAN 2x upscaler (generates at 512x512 + 2x neural upscale)
+- **ACE-Step 1.5**: Music generation model (turbo DiT + 0.6B LM), co-located on instance 31080854
+
+## Critical: Direct Port Access vs SSH Tunnels
+
+**Always use direct port access** (`-p` flag) when creating instances. SSH tunnels add ~400ms+ latency per round-trip, making a 0.2s generation take 1.8s.
+
+| Method | Health check latency | Full generation round-trip |
+|--------|---------------------|---------------------------|
+| **Direct port** | ~180ms | ~0.5-0.8s |
+| SSH tunnel | ~550ms | ~1.8-2.0s |
+
+To expose ports, use `--env '-p <port>:<port>'` when creating the instance. Vast.ai maps internal ports to random external ports. Find the mapping with `vastai show instances --raw`.
 
 ## Active Instances
+
+### Sana Sprint (Primary - Legacy image.pollinations.ai)
+
+| Instance ID | Public IP | SSH Host | SSH Port | GPUs | GPU Type | Location | Service | Cost | Port (int→ext) |
+|-------------|-----------|----------|----------|------|----------|----------|---------|------|----------------|
+| 31080854 | 108.55.118.247 | ssh6.vast.ai | 10854 | 1 | RTX 5090 | Pennsylvania, US | ACE-Step 1.5 Music | $0.33/hr | 10003→51100, 10004→51075 |
+
+Also running on **comfystream** (AWS L40S, `3.239.212.66:10002`) — not a Vast.ai instance.
+
+### Flux & Z-Image (Legacy - via enter gateway)
 
 | Instance ID | Public IP | SSH Host | SSH Port | GPUs | GPU Type | Location | Services |
 |-------------|-----------|----------|----------|------|----------|----------|----------|
@@ -18,6 +41,12 @@ Vast.ai instances running RTX 5090 GPUs for image generation:
 | 30994805 | 108.255.76.60 | ssh7.vast.ai | 34804 | 1 | RTX 5090 | North Carolina, US | Z-Image |
 
 ### Port Mappings
+
+**Instance 31080854 (Pennsylvania - ACE-Step 1.5 Music)**
+| Internal Port | External Port | Service |
+|---------------|---------------|--------|
+| 10003 | 51100 | (unused — was Sana Sprint) |
+| 10004 | 51075 | ACE-Step 1.5 Music Gen |
 
 **Instance 30937024 (Taiwan)**
 | Internal Port | External Port | Service |
@@ -51,6 +80,9 @@ Vast.ai instances running RTX 5090 GPUs for image generation:
 Vast.ai uses **proxy SSH** through `sshN.vast.ai` hosts. The SSH host and port can change if an instance is recreated.
 
 ```bash
+# Instance 31080854 (Pennsylvania - ACE-Step 1.5 Music)
+ssh -o StrictHostKeyChecking=no -i ~/.ssh/pollinations_services_2026 -p 10854 root@ssh6.vast.ai
+
 # Instance 30937024 (Taiwan)
 ssh -o StrictHostKeyChecking=no -i ~/.ssh/pollinations_services_2026 -p 17024 root@ssh3.vast.ai
 
@@ -84,18 +116,31 @@ for i in json.load(sys.stdin):
 
 ### 1. Create Instance via CLI
 
-**Important**: Use `--ssh --direct` flags for proper SSH access:
+**Important**: Use `--ssh --direct` and `--env '-p <port>:<port>'` for direct port access:
 
 ```bash
-# Search for available RTX 5090 instances with good reliability
-vastai search offers 'gpu_name=RTX_5090 num_gpus=1 reliability>0.95' --order 'dph' --limit 10
+# Search for available RTX 5090 instances with good reliability and upload speed
+vastai search offers 'gpu_name=RTX_5090 num_gpus=1 reliability>0.95 inet_up>200' --order 'dph' --limit 10
 
-# Create instance with direct SSH access
+# Create instance with direct SSH + port access
 vastai create instance <OFFER_ID> \
   --image "vastai/base-image:cuda-13.0.2-cudnn-devel-ubuntu24.04-py312" \
   --disk 50 \
   --ssh --direct \
-  --onstart-cmd "apt update && apt install -y git"
+  --env '-p 10003:10003' \
+  --onstart-cmd "apt update && apt install -y git screen"
+```
+
+**Note**: The `-p 10003:10003` exposes port 10003 inside the container. Vast.ai maps it to a random external port. Find the mapping after creation:
+```bash
+vastai show instances --raw | python3 -c "
+import sys, json
+for i in json.load(sys.stdin):
+    ports = i.get('ports', {})
+    for k, v in ports.items():
+        if '22' not in k:
+            print(f'Instance {i[\"id\"]}: {k} -> external {v[0][\"HostPort\"]}')
+"
 ```
 
 **Critical: Attach SSH Key After Creation**
@@ -112,14 +157,14 @@ vastai show ssh-keys
 
 Without this step, SSH will fail with `Permission denied (publickey)`.
 
-### 2. Configure Port Mappings (Optional)
+### 2. Configure Port Mappings
 
-For multi-service instances, configure port mappings via template:
-- Ports 8765-8768 exposed (for Flux servers)
-- Port 22 for SSH
-- Port 8080 for Jupyter (optional)
+Ports are configured at instance creation time via `--env '-p <port>:<port>'`. For multi-service instances:
+```bash
+--env '-p 8765:8765 -p 8766:8766 -p 8767:8767 -p 8768:8768'
+```
 
-Use the Vast.ai CLI or web UI to apply the template before starting the instance.
+Vast.ai has a limit of 64 open ports per instance.
 
 ### 3. Initial Setup (Run on Instance)
 
@@ -264,10 +309,11 @@ curl http://<PUBLIC_IP>:<MAPPED_FLUX_PORT>/docs
 
 ## Heartbeat Registration
 
-Servers send heartbeats to the EC2 image service:
-- **URL**: `http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register`
-- **Payload**: `{"url": "http://PUBLIC_IP:PUBLIC_PORT", "type": "flux"}`
+Servers send heartbeats to the image dispatcher:
+- **URL**: `https://image.pollinations.ai/register` (default in server.py)
+- **Payload**: `{"url": "http://PUBLIC_IP:PUBLIC_PORT", "type": "sana"}`
 - **Interval**: Every 30 seconds
+- **View registered backends**: `curl https://image.pollinations.ai/register`
 
 ## Service Management
 
@@ -451,7 +497,21 @@ screen -dmS zimage-gpu3 bash -c 'cd /workspace/zimage && source venv/bin/activat
 - Check that `x-backend-token` header matches `PLN_IMAGE_BACKEND_TOKEN`
 - Verify the token in `enter.pollinations.ai/.testingtokens`
 
-## Capacity Summary (2026-02-05)
+## Capacity Summary (2026-02-08)
+
+### ACE-Step 1.5 Music Generation
+
+| Instance | GPU | Service | VRAM | Port | Location | Speed |
+|----------|-----|---------|------|------|----------|-------|
+| 31080854 | 0 | ACE-Step 1.5 | ~21 GB (DiT + LM + VAE) | 51075 | Pennsylvania | ~8s/15s audio |
+
+### Sana Sprint (serves legacy image.pollinations.ai)
+
+| Instance | GPU | Service | VRAM | Port | Location | Speed |
+|----------|-----|---------|------|------|----------|-------|
+| comfystream | 0 | Sana Sprint | ~13 GB | 10002 | AWS US-East (L40S) | ~0.27s/img |
+
+### Flux & Z-Image (serves via enter gateway gen.pollinations.ai)
 
 | Instance | GPU | Service | VRAM | Port | Location |
 |----------|-----|---------|------|------|----------|
@@ -466,15 +526,143 @@ screen -dmS zimage-gpu3 bash -c 'cd /workspace/zimage && source venv/bin/activat
 | 30939919 | 0 | Flux | ~21 GB | 63218 | N. Carolina |
 | 30939919 | 1 | Flux | ~21 GB | 63511 | N. Carolina |
 | 30994805 | 0 | Z-Image | ~25 GB | 53559 | N. Carolina |
-| **Total** | **11** | **7 Flux + 4 Z-Image** | | |
+| **Total** | **12** | **1 ACE-Step + 1 Sana + 7 Flux + 4 Z-Image** | | |
 
 ## Notes
 
 - RTX 5090 uses Blackwell architecture (sm_120, CUDA 13.0)
+- **Sana Sprint**: Simplest setup — just PyTorch nightly + diffusers. No custom builds needed. ~0.2s per 1024x1024
 - **Flux**: Must use FP4 quantization (not INT4) for Blackwell GPUs; nunchaku must be built from source
 - **Z-Image**: Simpler setup, just needs PyTorch nightly cu128 with sm_120 support
 - PyTorch nightly with CUDA 12.8 (`cu128`) required until stable release supports sm_120
 - Use `python -c "import torch; print(torch.cuda.get_arch_list())"` to verify sm_120 is in the list
+- **Always use direct port access** — never SSH tunnels for production (see comparison table above)
+
+---
+
+## ACE-Step 1.5 Music Generation (Instance 31080854)
+
+ACE-Step 1.5 is an open-source music generation model with DiT architecture + language model for style inference. It generates full songs from lyrics with automatic BPM/key/style detection via "thinking" mode.
+
+### Instance Details
+
+| Key | Value |
+|-----|-------|
+| Instance | 31080854 (Pennsylvania) |
+| Screen session | `acestep` |
+| Internal port | 10004 → external 51075 |
+| Shared venv | `/workspace/twinflow/venv` |
+| Repo (editable install) | `/workspace/acestep` (cloned from ACE-Step/ACE-Step-1.5) |
+| Startup script | `/workspace/acestep/start.sh` |
+| Model checkpoints | `/workspace/acestep/checkpoints/` |
+
+### API (native ACE-Step async API)
+
+- `GET /health` — `{"data": {"status": "ok"}, "code": 200}`
+- `POST /release_task` — submit generation job → returns `task_id`
+- `POST /query_result` — poll job status → `status: 0` (running), `1` (done), `2` (failed)
+- `GET /v1/audio?path=...` — download generated audio file
+- Auth: `Authorization: Bearer <ACESTEP_API_KEY>` header
+
+### Performance
+
+| Metric | Value |
+|--------|-------|
+| 15s audio generation | ~8s |
+| VRAM usage | ~21 GB (all models on GPU) |
+| Output format | 48kHz stereo MP3 |
+| DiT model | acestep-v15-turbo (8 inference steps) |
+| LM model | acestep-5Hz-lm-0.6B |
+| Repo | https://github.com/ACE-Step/ACE-Step-1.5 |
+
+### RTX 5090 / Nightly PyTorch Compatibility Fixes
+
+1. **Python version**: pyproject.toml requires `==3.11.*` but instance has Python 3.12. Patched to `>=3.11,<3.13`.
+2. **transformers version**: Must use `>=4.51.0,<4.58.0` (v5.x causes meta tensor errors during model init).
+3. **torch.multinomial bug**: Blackwell (sm_120) triggers `Offset increment outside graph capture` in `torch.multinomial`. Patched `_sample_tokens` in `llm_inference.py` to use CPU fallback: `torch.multinomial(probs.cpu(), ...).to(device)`.
+4. **nano-vllm**: CUDA graph capture fails on Blackwell. Falls back to PyTorch backend (functional, slightly slower LM inference).
+
+### Setup from Scratch
+
+```bash
+ssh -i ~/.ssh/pollinations_services_2026 -p 10854 root@ssh6.vast.ai
+
+# Uses shared twinflow venv (saves ~7GB disk — PyTorch + nvidia libs already installed)
+source /workspace/twinflow/venv/bin/activate
+
+# Clone ACE-Step 1.5
+git clone --depth 1 https://github.com/ACE-Step/ACE-Step-1.5.git /workspace/acestep
+
+# Patch Python version requirement
+cd /workspace/acestep
+sed -i 's/requires-python = "==3.11.\*"/requires-python = ">=3.11,<3.13"/' pyproject.toml
+
+# Install ACE-Step (editable, no-deps to avoid pulling conflicting torch)
+pip install --no-cache-dir --no-deps -e .
+pip install --no-cache-dir --no-deps -e acestep/third_parts/nano-vllm/
+
+# Install remaining deps (torch/transformers/diffusers already in twinflow venv)
+pip install --no-cache-dir \
+  torchaudio soundfile loguru numba "vector-quantize-pytorch>=1.27.15" \
+  torchao toml diskcache "peft>=0.18.0" "gradio==6.2.0" xxhash
+
+# Downgrade transformers to ACE-Step compatible version
+pip install --no-cache-dir "transformers>=4.51.0,<4.58.0"
+
+# Patch torch.multinomial for Blackwell
+python3 -c "
+content = open('acestep/llm_inference.py').read()
+old = '            return torch.multinomial(probs, num_samples=1).squeeze(1)'
+new = '''            # Workaround: torch.multinomial has CUDA graph issues on Blackwell (sm_120)
+            # Fall back to CPU sampling then move back to device
+            device = probs.device
+            return torch.multinomial(probs.cpu(), num_samples=1).squeeze(1).to(device)'''
+open('acestep/llm_inference.py', 'w').write(content.replace(old, new, 1))
+"
+
+# Create startup script
+cat > start.sh << 'SCRIPT'
+#!/bin/bash
+source /workspace/twinflow/venv/bin/activate
+cd /workspace/acestep
+export ACESTEP_API_KEY=<PLN_IMAGE_BACKEND_TOKEN>
+export ACESTEP_API_HOST=0.0.0.0
+export ACESTEP_API_PORT=10004
+export ACESTEP_LM_MODEL_PATH=acestep-5Hz-lm-0.6B
+export ACESTEP_OFFLOAD_TO_CPU=false
+export ACESTEP_LM_BACKEND=pytorch
+export CUDA_VISIBLE_DEVICES=0
+exec acestep-api --host 0.0.0.0 --port 10004
+SCRIPT
+chmod +x start.sh
+
+# Start (models auto-download from HuggingFace on first run)
+screen -dmS acestep bash -c "/workspace/acestep/start.sh 2>&1 | tee /tmp/acestep.log"
+
+# Verify (after ~60s for model download + init)
+curl http://localhost:10004/health
+curl http://108.55.118.247:51075/health  # external
+```
+
+### Management
+
+```bash
+# Attach to screen
+screen -r acestep
+
+# View logs
+tail -f /tmp/acestep.log
+
+# Restart
+screen -S acestep -X quit
+screen -dmS acestep bash -c "/workspace/acestep/start.sh 2>&1 | tee /tmp/acestep.log"
+
+# Test generation
+curl -X POST http://localhost:10004/release_task \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $ACESTEP_API_KEY" \
+  -d '{"prompt": "upbeat pop", "lyrics": "[verse]\nHello sunshine", "audio_duration": 15, "batch_size": 1, "thinking": true, "audio_format": "mp3"}'
+```
 
 ---
 
@@ -534,6 +722,96 @@ image = pipe(
 ### Recommendation
 
 TwinFlow-Z-Image-Turbo offers **~25% faster** generation than standard Z-Image-Turbo at equivalent quality. Consider deploying alongside or replacing current Z-Image setup for improved throughput.
+
+---
+
+## Sana Sprint Deployment (Quick Setup)
+
+Sana Sprint is the fastest model to deploy — no custom builds, no CUDA toolkit install.
+
+```bash
+# 1. Create instance with direct port access
+vastai create instance <OFFER_ID> \
+  --image "vastai/base-image:cuda-13.0.2-cudnn-devel-ubuntu24.04-py312" \
+  --disk 50 --ssh --direct \
+  --env '-p 10003:10003' \
+  --onstart-cmd "apt update && apt install -y git screen"
+
+# 2. Attach SSH key
+vastai attach ssh <INSTANCE_ID> "$(cat ~/.ssh/pollinations_services_2026.pub)"
+
+# 3. Find external port mapping
+vastai show instances --raw | python3 -c "
+import sys, json
+for i in json.load(sys.stdin):
+    if i['id'] == <INSTANCE_ID>:
+        for k, v in i.get('ports', {}).items():
+            print(f'{k} -> external {v[0][\"HostPort\"]}')
+"
+
+# 4. SSH in and install
+ssh -o StrictHostKeyChecking=no -i ~/.ssh/pollinations_services_2026 -p <SSH_PORT> root@<SSH_HOST>
+mkdir -p /workspace/sana && python3 -m venv /workspace/sana/venv
+source /workspace/sana/venv/bin/activate
+pip install --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/cu128
+pip install fastapi uvicorn pydantic aiohttp pillow diffusers transformers accelerate safetensors
+
+# 5. Copy server.py from local machine
+scp -P <SSH_PORT> -i ~/.ssh/pollinations_services_2026 \
+  image.pollinations.ai/sana/server.py root@<SSH_HOST>:/workspace/sana/
+
+# 6. Create run.sh with auto-restart
+cat > /workspace/sana/run.sh << 'EOF'
+#!/bin/bash
+cd /workspace/sana
+source venv/bin/activate
+export CUDA_VISIBLE_DEVICES=0
+export PORT=10003
+export PUBLIC_IP=<INSTANCE_PUBLIC_IP>
+export PUBLIC_PORT=<MAPPED_EXTERNAL_PORT>
+export SERVICE_TYPE=sana
+
+while true; do
+    echo "[$(date)] Starting Sana server..."
+    python server.py 2>&1 | tee -a /tmp/sana.log
+    echo "[$(date)] Server exited, restarting in 10s..."
+    sleep 10
+done
+EOF
+chmod +x /workspace/sana/run.sh
+
+# 7. Auto-start on container restart
+echo '
+if ! pgrep -f "python server.py" > /dev/null; then
+    screen -dmS sana bash /workspace/sana/run.sh
+fi' >> /root/.bashrc
+
+# 8. Start now
+screen -dmS sana bash /workspace/sana/run.sh
+
+# 9. Verify (after ~30s for model download + load)
+curl http://localhost:10003/health
+curl http://<PUBLIC_IP>:<EXTERNAL_PORT>/health  # from outside
+```
+
+### Sana Sprint Performance (RTX 5090)
+
+| Metric | Value |
+|--------|-------|
+| GPU generation time | ~0.2s (1024x1024) |
+| Image encode time | ~0.004s |
+| Total round-trip (direct port) | ~0.5-0.8s |
+| Total round-trip (SSH tunnel) | ~1.8-2.0s |
+| VRAM usage | ~13 GB |
+| Model | Efficient-Large-Model/Sana_Sprint_1.6B_1024px_diffusers |
+| Inference steps | 2 (SCM constraint) |
+
+### Log Format
+
+The server logs detailed timing breakdown per request:
+```
+Generation 1024x1024: total=0.214s (lock_wait=0.000s gpu=0.210s encode=0.004s) img=240KB
+```
 
 ---
 
@@ -609,3 +887,38 @@ curl http://localhost:10002/health
 ### Server Code
 
 Located at `image_gen_twinflow/server.py` in this repository.
+
+---
+
+## ACE-Step 1.5 Music (Instance 31080854)
+
+### Current Setup
+
+- **Instance**: 31080854 (RTX 5090, Pennsylvania)
+- **Server**: Running in screen session `acestep`
+- **Port**: 10004 → external 51075 (direct port access)
+- **External URL**: `http://108.55.118.247:51075`
+- **Model**: ACE-Step 1.5 Turbo (DiT + 0.6B LM)
+- **VRAM**: ~21 GB (all models on GPU)
+- **Performance**: ~8s for 15s of audio, 48kHz stereo MP3
+
+### Management Commands
+
+```bash
+# SSH to instance
+ssh -i ~/.ssh/pollinations_services_2026 -p 10854 root@ssh6.vast.ai
+
+# Attach to screen session
+screen -r acestep
+
+# Check logs
+tail -f /tmp/acestep.log
+
+# Restart
+screen -S acestep -X quit
+screen -dmS acestep bash -c "/workspace/acestep/start.sh 2>&1 | tee /tmp/acestep.log"
+
+# Verify health (direct port access)
+curl http://108.55.118.247:51075/health
+curl http://localhost:10004/health  # from inside instance
+```

@@ -1018,12 +1018,13 @@ API_RESTRICTED_ACTIONS = {
     "github_project": ADMIN_ACTIONS["github_project"],
 }
 
-# Tools entirely excluded from API (Discord-only subscription tools)
+# Tools entirely excluded from API (Discord-only tools)
 API_EXCLUDED_TOOLS = {
     "subscribe_issue",
     "unsubscribe_issue",
     "unsubscribe_all",
     "list_subscriptions",
+    "data_visualization",
 }
 
 

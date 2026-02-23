@@ -7,7 +7,9 @@
     "oh-my-pollicode": "./install.js"
   },
   "scripts": {
-    "start": "node install.js"
+    "start": "node install.js",
+    "test": "node install.test.js"
+
   },
   "keywords": [
     "pollinations",

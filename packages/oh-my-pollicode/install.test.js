@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-/**
- * Test Suite for Pollinations OpenCode Installer
- *
- * Tests configuration generation, directory setup, and error handling
- * Run: npm test or node install.test.js
- */
 
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
@@ -25,6 +19,31 @@ const EXPECTED_OPENCODE_CONFIG = {
             "options": {
                 "baseURL": "https://gen.pollinations.ai/v1/chat/completions",
             },
+            "models": {
+                "claude-large": {
+                    "name": "Claude Opus 4.5 - Most Intelligent (Sisyphus)",
+                },
+                "claude": {
+                    "name": "Claude Sonnet 4.5 - Balanced (Librarian)",
+                },
+                "claude-fast": { "name": "Claude Haiku 4.5 - Fast" },
+                "openai-large": {
+                    "name": "GPT-5.2 - Strategic Reasoning (Oracle)",
+                },
+                "openai": { "name": "GPT-5 Mini - Balanced" },
+                "openai-fast": { "name": "GPT-5 Nano - Ultra Fast" },
+                "gemini-large": { "name": "Gemini 3 Pro - 1M Context" },
+                "gemini": { "name": "Gemini 3 Flash - UI/UX Expert" },
+                "gemini-fast": {
+                    "name": "Gemini 2.5 Flash Lite - Exploration",
+                },
+                "deepseek": { "name": "DeepSeek V3.2 - Reasoning" },
+                "qwen-coder": { "name": "Qwen3 Coder 30B - Code" },
+                "perplexity-fast": { "name": "Perplexity Sonar - Web Search" },
+                "perplexity-reasoning": {
+                    "name": "Perplexity Reasoning - Research",
+                },
+            },
         },
     },
 };
@@ -40,6 +59,18 @@ const EXPECTED_OH_MY_OPENCODE_CONFIG = {
         },
         "librarian": {
             "model": "pollinations/claude",
+        },
+        "explore": {
+            "model": "pollinations/gemini-fast",
+        },
+        "frontend-ui-ux-engineer": {
+            "model": "pollinations/gemini",
+        },
+        "document-writer": {
+            "model": "pollinations/gemini-fast",
+        },
+        "multimodal-looker": {
+            "model": "pollinations/gemini",
         },
     },
 };
@@ -92,21 +123,20 @@ test('Write Configs - File System Operations', () => {
         const configPath = join(testDir, 'opencode.json');
         const ohMyPath = join(testDir, 'oh-my-opencode.json');
 
-        // Write files
-        import('node:fs').then(fs => {
-            fs.writeFileSync(configPath, opencodeConfig);
-            fs.writeFileSync(ohMyPath, ohMyConfig);
+        // Write files synchronously using already imported fs functions
+        const fs = { writeFileSync, readFileSync, existsSync };
+        fs.writeFileSync(configPath, opencodeConfig);
+        fs.writeFileSync(ohMyPath, ohMyConfig);
 
-            // Verify files exist and have correct content
-            assert.ok(existsSync(configPath), 'opencode.json not created');
-            assert.ok(existsSync(ohMyPath), 'oh-my-opencode.json not created');
+        // Verify files exist and have correct content
+        assert.ok(fs.existsSync(configPath), 'opencode.json not created');
+        assert.ok(fs.existsSync(ohMyPath), 'oh-my-opencode.json not created');
 
-            const readOpencode = JSON.parse(readFileSync(configPath, 'utf8'));
-            const readOhMy = JSON.parse(readFileSync(ohMyPath, 'utf8'));
+        const readOpencode = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        const readOhMy = JSON.parse(fs.readFileSync(ohMyPath, 'utf8'));
 
-            assert.deepEqual(readOpencode.model, EXPECTED_OPENCODE_CONFIG.model);
-            assert.ok(readOhMy.agents.Sisyphus);
-        });
+        assert.deepEqual(readOpencode.model, EXPECTED_OPENCODE_CONFIG.model);
+        assert.ok(readOhMy.agents.Sisyphus);
     } finally {
         rmSync(testDir, { recursive: true, force: true });
     }

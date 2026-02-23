@@ -1,3 +1,7 @@
+- **2026-02-22** – **🔗 LangChain Support** Python developers can now integrate Pollinations models directly into agents and RAG pipelines with the new `langchain-pollinations` package.
+- **2026-02-22** – **📱 Pollinations on Android** A dedicated community-built Android client is now available. Generate images and chat natively on mobile.
+- **2026-02-22** – **🎨 Pollenboard** A self-hostable, all-in-one frontend for those who want to run their own interface on top of our APIs.
+- **2026-02-22** – **🚀 Showcase Expansion** Added 30+ new community apps, including D&D tools, IoT pixel art displays, and YouTube summarizers. The [Showcase](https://hello.pollinations.ai) is getting crowded.
 - **2026-02-20** – **🛠️ GENEXUS AI** Added to the developer tools showcase. Another backend integration for the ecosystem.
 - **2026-02-19** – **📦 Package Migration** The SDK and MCP packages have moved to the `@pollinations_ai` scope on NPM. We dropped the React dependencies, so they're lighter and framework-agnostic now.
 - **2026-02-19** – **🎥 Video Duration** The `seedance` video model now accepts a `duration` parameter. Control your clip length via the [API](https://gen.pollinations.ai).

@@ -6,10 +6,11 @@ import {
     createBedrockNativeConfig,
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
-    // createNomNomConfig,
+    createNomNomConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
+    createPollyConfig,
     createScalewayModelConfig,
 } from "./providerConfigs.js";
 
@@ -261,12 +262,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // Community Models - NomNom (web search/scrape/crawl)
+    // Community Models
     // ============================================================================
-    // "nomnom": () =>
-    //     createNomNomConfig({
-    //         model: "nomnom",
-    //     }),
+    "nomnom": () =>
+        createNomNomConfig({
+            model: "nomnom",
+        }),
+    "polly": () =>
+        createPollyConfig({
+            model: "polly",
+        }),
 
     // ============================================================================
     // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)

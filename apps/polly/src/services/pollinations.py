@@ -368,10 +368,12 @@ class PollinationsClient:
                 # Extract _image side-channel before serialization to AI
                 if isinstance(result, dict) and "_image" in result:
                     image_data_url = result.pop("_image")
-                    all_content_blocks.append({
-                        "type": "image_url",
-                        "image_url": {"url": image_data_url},
-                    })
+                    all_content_blocks.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": image_data_url},
+                        }
+                    )
 
                 # Strip API prefix from tool name for consistency
                 tool_name = tool_call["function"]["name"]
@@ -702,9 +704,9 @@ Format notifications beautifully for Discord with:
 Output ONLY the formatted message, nothing else."""
 
         user_prompt = f"""Format this GitHub issue update notification:
-        Issue: #{issue['number']} - {issue['title']}
-        Current State: {issue['state']}
-        Labels: {', '.join(issue.get('labels', [])) or 'none'}
+        Issue: #{issue["number"]} - {issue["title"]}
+        Current State: {issue["state"]}
+        Labels: {", ".join(issue.get("labels", [])) or "none"}
         URL: {issue_url}
         Changes detected:
         {changes_text}
@@ -757,7 +759,7 @@ Output ONLY the formatted message, nothing else."""
 
         changes_str = "\n".join(parts) if parts else "Update detected"
 
-        return f"**[#{issue['number']}: {issue['title']}](<{issue_url}>)**\n" f"{changes_str}"
+        return f"**[#{issue['number']}: {issue['title']}](<{issue_url}>)**\n{changes_str}"
 
 
 # Singleton instance

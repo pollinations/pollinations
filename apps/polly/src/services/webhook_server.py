@@ -341,65 +341,65 @@ class GitHubWebhookServer:
 
         if ctx_type == "issue_comment":
             return f"""[GitHub Issue Comment]
-Repository: {context['repo']}
-Issue #{context['issue_number']}: {context['issue_title']} ({context['issue_state']})
-Is PR: {context['is_pr']}
+Repository: {context["repo"]}
+Issue #{context["issue_number"]}: {context["issue_title"]} ({context["issue_state"]})
+Is PR: {context["is_pr"]}
 
 Issue description:
-{context.get('issue_body', 'No description')}
+{context.get("issue_body", "No description")}
 
-Comment from @{context['commenter']}:
-{context['comment_body']}
+Comment from @{context["commenter"]}:
+{context["comment_body"]}
 
 Respond to their request. You can use tools to help. Keep response concise for GitHub.{admin_note}"""
 
         elif ctx_type == "issue_body":
             return f"""[GitHub Issue Mention]
-Repository: {context['repo']}
-Issue #{context['issue_number']}: {context['issue_title']}
-Author: @{context['author']}
+Repository: {context["repo"]}
+Issue #{context["issue_number"]}: {context["issue_title"]}
+Author: @{context["author"]}
 
 Issue body:
-{context['issue_body']}
+{context["issue_body"]}
 
 The author mentioned you in this issue. Respond helpfully. You can use tools.{admin_note}"""
 
         elif ctx_type == "pr_body":
             return f"""[GitHub PR Mention]
-Repository: {context['repo']}
-PR #{context['pr_number']}: {context['pr_title']}
-Author: @{context['author']}
-Branch: {context['head_branch']} → {context['base_branch']}
+Repository: {context["repo"]}
+PR #{context["pr_number"]}: {context["pr_title"]}
+Author: @{context["author"]}
+Branch: {context["head_branch"]} → {context["base_branch"]}
 
 PR description:
-{context['pr_body']}
+{context["pr_body"]}
 
 The author mentioned you in this PR. Respond helpfully. You can use tools like github_pr to review.{admin_note}"""
 
         elif ctx_type == "pr_review_comment":
             return f"""[GitHub PR Review Comment]
-Repository: {context['repo']}
-PR #{context['pr_number']}: {context['pr_title']}
-File: {context['file_path']} (line {context.get('line', '?')})
+Repository: {context["repo"]}
+PR #{context["pr_number"]}: {context["pr_title"]}
+File: {context["file_path"]} (line {context.get("line", "?")})
 
 Code context:
 ```
-{context.get('diff_hunk', 'No diff available')}
+{context.get("diff_hunk", "No diff available")}
 ```
 
-Comment from @{context['commenter']}:
-{context['comment_body']}
+Comment from @{context["commenter"]}:
+{context["comment_body"]}
 
 Respond to their code question/request. Be concise.{admin_note}"""
 
         elif ctx_type == "pr_review":
             return f"""[GitHub PR Review]
-Repository: {context['repo']}
-PR #{context['pr_number']}: {context['pr_title']}
-Review by @{context['reviewer']} ({context['review_state']})
+Repository: {context["repo"]}
+PR #{context["pr_number"]}: {context["pr_title"]}
+Review by @{context["reviewer"]} ({context["review_state"]})
 
 Review comment:
-{context['review_body']}
+{context["review_body"]}
 
 Respond to the reviewer's feedback.{admin_note}"""
 

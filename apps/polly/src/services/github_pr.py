@@ -1500,13 +1500,13 @@ Keep your review concise (200-500 words). Be direct and actionable."""
 
     def _get_review_user_prompt(self, pr: dict, diff: str) -> str:
         """Create the user prompt with PR context."""
-        return f"""**PR #{pr['number']}:** {pr['title']}
+        return f"""**PR #{pr["number"]}:** {pr["title"]}
 
-**Author:** {pr['author']}
-**Changes:** +{pr['additions']} -{pr['deletions']} across {pr['changed_files']} files
+**Author:** {pr["author"]}
+**Changes:** +{pr["additions"]} -{pr["deletions"]} across {pr["changed_files"]} files
 
 **Description:**
-{pr.get('body', 'No description provided')}
+{pr.get("body", "No description provided")}
 
 **Code Diff:**
 {diff}

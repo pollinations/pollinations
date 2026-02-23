@@ -209,7 +209,7 @@ def decode_base64_images(content_blocks: list[dict], max_images: int = 10) -> li
 
 def suppress_url_embeds(text: str) -> str:
     """Wrap all URLs in angle brackets to suppress Discord embed previews.
-    
+
     Handles:
     - Bare URLs: https://example.com -> <https://example.com>
     - Markdown links: [text](url) -> [text](<url>)
@@ -217,20 +217,12 @@ def suppress_url_embeds(text: str) -> str:
     """
     # Fix markdown links: [text](url) -> [text](<url>)
     # Don't double-wrap if already has angle brackets
-    text = re.sub(
-        r'\[([^\]]+)\]\((https?://[^<\)]+)(?<!>)\)',
-        r'[\1](<\2>)',
-        text
-    )
-    
+    text = re.sub(r"\[([^\]]+)\]\((https?://[^<\)]+)(?<!>)\)", r"[\1](<\2>)", text)
+
     # Wrap bare URLs (not already in angle brackets, not in markdown links)
     # Match URLs that aren't preceded by ]( or <
-    text = re.sub(
-        r'(?<![<\(\]])\b(https?://[^\s<>\)]+)(?![>\)])',
-        r'<\1>',
-        text
-    )
-    
+    text = re.sub(r"(?<![<\(\]])\b(https?://[^\s<>\)]+)(?![>\)])", r"<\1>", text)
+
     return text
 
 
@@ -477,13 +469,11 @@ class PollyBot(commands.Bot):
 
         # Register code_search handler if embeddings enabled
         if config.local_embeddings_enabled:
-
             pollinations_client.register_tool_handler("code_search", _code_search_handler)
             logger.info("Registered code_search tool handler (embeddings enabled)")
 
         # Register doc_search handler if doc embeddings enabled
         if config.doc_embeddings_enabled:
-
             pollinations_client.register_tool_handler("doc_search", _doc_search_handler)
             logger.info("Registered doc_search tool handler (doc embeddings enabled)")
 
@@ -791,6 +781,9 @@ async def on_message(message: discord.Message):
             f"Thread msg: '{message.content[:50]}' | @mentioned={is_mentioned} | reply_to_bot={is_reply_to_bot}"
         )
 
+        # Start typing immediately so user sees we're processing
+        await message.channel.trigger_typing()
+
         session = session_manager.get_session(message.channel.id)
 
         # Auto-created thread from inline reply (no session) — respond inline
@@ -833,6 +826,9 @@ async def on_message(message: discord.Message):
 
         await handle_thread_message(message, session)
         return
+
+    # Start typing immediately so user sees we're processing
+    await message.channel.trigger_typing()
 
     # Extract message text
     text = message.content
@@ -1092,8 +1088,8 @@ async def handle_inline_polly_mention(message: discord.Message):
             # Decode any base64 images
             image_files = decode_base64_images(content_blocks, max_images=10)
             if image_files:
-                # Strip file paths from response
-                response_text = re.sub(r"\[([^\]]*)\]\(file:///[^)]+\)\n?", "", response_text)
+                # Strip all image markdown — images are already attached as files
+                response_text = re.sub(r"!\[[^\]]*\]\([^)]+\)\n?", "", response_text)
                 response_text = re.sub(r"file:///[^\s\)]+", "", response_text)
                 response_text = response_text.strip()
 
@@ -1230,8 +1226,8 @@ async def process_message(
         image_files = decode_base64_images(content_blocks, max_images=10)
         if image_files:
             logger.info(f"Decoded {len(image_files)} image(s) from content_blocks")
-            # Strip useless file:/// local paths from response (images are sent as attachments)
-            response_text = re.sub(r"\[([^\]]*)\]\(file:///[^)]+\)\n?", "", response_text)
+            # Strip all image markdown from text — images are already attached as files
+            response_text = re.sub(r"!\[[^\]]*\]\([^)]+\)\n?", "", response_text)
             response_text = re.sub(r"file:///[^\s\)]+", "", response_text)
             response_text = response_text.strip()
 

@@ -9,7 +9,6 @@ import aiohttp
 
 from ..config import config
 from ..constants import POLLINATIONS_API_BASE
-from .pollinations import _auth_override
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +48,7 @@ async def data_visualization(data: str, **kwargs) -> dict:
             },
             headers={
                 "Content-Type": "application/json",
-                "Authorization": _auth_override.get() or f"Bearer {config.pollinations_token}",
+                "Authorization": f"Bearer {config.pollinations_token}",
             },
         ) as resp:
             if resp.status != 200:

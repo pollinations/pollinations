@@ -1,14 +1,14 @@
 """Visualization via Gemini's native code_execution.
 
 System prompt + data as user msg → Gemini with code_execution → image returned.
+Uses pollinations_client's shared session for connection pooling.
 """
 
 import logging
 
-import aiohttp
-
 from ..config import config
 from ..constants import POLLINATIONS_API_BASE
+from .pollinations import pollinations_client
 
 logger = logging.getLogger(__name__)
 
@@ -21,21 +21,11 @@ SYSTEM_PROMPT = (
     "Always execute your code and produce a PNG image."
 )
 
-# Shared session for connection pooling across visualization calls
-_session: aiohttp.ClientSession | None = None
-
-
-def _get_session() -> aiohttp.ClientSession:
-    global _session
-    if _session is None or _session.closed:
-        _session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=90))
-    return _session
-
 
 async def data_visualization(data: str, **kwargs) -> dict:
     """Send data to Gemini with code_execution to produce a visualization."""
     try:
-        session = _get_session()
+        session = await pollinations_client.get_session()
         async with session.post(
             f"{POLLINATIONS_API_BASE}/v1/chat/completions",
             json={

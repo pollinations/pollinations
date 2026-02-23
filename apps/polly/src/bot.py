@@ -6,10 +6,12 @@ import io
 import logging
 import re
 
+import aiohttp
 import discord
 from discord.ext import commands, tasks
 
 from .config import config
+from .constants import POLLINATIONS_API_BASE
 from .context import ConversationSession, session_manager
 from .services.github import TOOL_HANDLERS, github_manager
 from .services.github_auth import github_app_auth, init_github_app
@@ -530,6 +532,13 @@ class PollyBot(commands.Bot):
                 host="127.0.0.1",
                 port=config.api_port,
                 log_level="warning",
+                loop="none",  # Use bot's existing event loop
+                http="httptools",  # C-based HTTP parser (2-4x faster)
+                ws="none",  # No WebSocket needed
+                access_log=False,
+                server_header=False,
+                date_header=False,
+                limit_concurrency=50,
             )
             self._api_server = uvicorn.Server(uvi_config)
             task = asyncio.create_task(self._api_server.serve())
@@ -541,6 +550,18 @@ class PollyBot(commands.Bot):
                 )
             )
             logger.info(f"Polly API started on port {config.api_port}")
+
+        # Pre-warm aiohttp connection pool (eliminates TLS cold-start on first request)
+        try:
+            session = await pollinations_client.get_session()
+            async with session.get(
+                f"{POLLINATIONS_API_BASE}/text/models",
+                timeout=aiohttp.ClientTimeout(total=5),
+            ):
+                pass
+            logger.info("Pre-warmed connection to gen.pollinations.ai")
+        except Exception:
+            pass  # Non-critical
 
         logger.info("Bot setup complete")
 
@@ -782,7 +803,7 @@ async def on_message(message: discord.Message):
         )
 
         # Start typing immediately so user sees we're processing
-        await message.channel.trigger_typing()
+        await message.channel._state.http.send_typing(message.channel.id)  # No trigger_typing() in discord.py 2.6
 
         session = session_manager.get_session(message.channel.id)
 
@@ -826,9 +847,6 @@ async def on_message(message: discord.Message):
 
         await handle_thread_message(message, session)
         return
-
-    # Start typing immediately so user sees we're processing
-    await message.channel.trigger_typing()
 
     # Extract message text
     text = message.content

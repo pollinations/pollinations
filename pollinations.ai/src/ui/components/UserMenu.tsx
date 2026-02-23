@@ -49,7 +49,7 @@ export function UserMenu() {
     const tierEmoji = TIER_EMOJI[profile?.tier || ""] || "🌱";
     const displayName = profile?.githubUsername
         ? `@${profile.githubUsername}`
-        : profile?.name || "User";
+        : profile?.name || copy.defaultUsername;
 
     return (
         <div ref={menuRef} className="relative">
@@ -69,7 +69,7 @@ export function UserMenu() {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-surface-base border-r-4 border-b-4 border-border-brand rounded-button p-4 z-50 shadow-shadow-brand-lg">
+                <div className="absolute right-0 top-full mt-2 w-64 bg-[rgb(var(--surface-base))] backdrop-blur-md border-r-4 border-b-4 border-border-brand rounded-button p-4 z-50 shadow-shadow-brand-lg">
                     {/* Profile */}
                     {profile && (
                         <div className="mb-3">
@@ -108,6 +108,19 @@ export function UserMenu() {
                             {apiKey.slice(0, 4)}••••••••
                         </span>
                     </div>
+
+                    {/* Enter Dashboard */}
+                    <Button
+                        as="a"
+                        href="https://enter.pollinations.ai"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="primary"
+                        size="sm"
+                        className="w-full mb-2"
+                    >
+                        {copy.enterLink}
+                    </Button>
 
                     {/* Logout */}
                     <Button

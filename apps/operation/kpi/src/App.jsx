@@ -45,28 +45,34 @@ export default function App() {
             setError(null);
 
             try {
-                // Fetch all data sources in parallel
+                // Fetch in two batches to avoid TinyBird query timeouts
+                // Batch 1: non-TinyBird + lighter TinyBird queries
                 const [
                     github,
                     d1Registrations,
-                    tinybirdWAU,
-                    tinybirdUsage,
-                    tinybirdRetention,
-                    tinybirdHealth,
                     polarRevenue,
-                    tinybirdSegments,
+                    tinybirdHealth,
                     tinybirdChurn,
-                    tinybirdActivations,
                 ] = await Promise.all([
                     getGitHubStats(),
                     getWeeklyRegistrations(12),
+                    getWeeklyRevenue(12),
+                    getWeeklyHealthStats(12),
+                    getWeeklyChurn(12),
+                ]);
+
+                // Batch 2: heavier TinyBird queries (WAU, usage, segments, activations, retention)
+                const [
+                    tinybirdWAU,
+                    tinybirdUsage,
+                    tinybirdRetention,
+                    tinybirdSegments,
+                    tinybirdActivations,
+                ] = await Promise.all([
                     getWeeklyActiveUsers(12),
                     getWeeklyUsageStats(12),
                     getWeeklyRetention(8),
-                    getWeeklyHealthStats(12),
-                    getWeeklyRevenue(12),
                     getWeeklyUserSegments(12),
-                    getWeeklyChurn(12),
                     getWeeklyActivations(12),
                 ]);
 
@@ -168,12 +174,12 @@ export default function App() {
                         };
                         weekMap.set(row.week, {
                             ...existing,
-                            developerUsers: row.developer_users,
-                            developerPollen: row.developer_pollen,
-                            enduserUsers: row.enduser_users,
-                            enduserPollen: row.enduser_pollen,
-                            enduserUserPct: row.enduser_user_pct,
-                            enduserPollenPct: row.enduser_pollen_pct,
+                            byopUsers: row.byop_users,
+                            byopPollen: row.byop_pollen,
+                            otherUsers: row.other_users,
+                            otherPollen: row.other_pollen,
+                            byopUserPct: row.byop_user_pct,
+                            byopPollenPct: row.byop_pollen_pct,
                         });
                     }
                 }

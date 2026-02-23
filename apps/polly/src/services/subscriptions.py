@@ -1,24 +1,10 @@
-"""Subscription system for GitHub issue notifications.
-
-Allows users to subscribe to issues and get notified via DM (or fallback to channel)
-when there are updates (new comments, state changes, label changes, etc).
-
-Smart polling to avoid GitHub API limits:
-- Batches all subscribed issues into one GraphQL query
-- Only polls when there are active subscriptions
-- Tracks last seen state to detect changes
-
-Uses aiosqlite for non-blocking database operations.
-"""
-
 import asyncio
 import json
 import logging
-import aiosqlite
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
+import aiosqlite
 import discord
 
 from ..config import config
@@ -34,7 +20,7 @@ class SubscriptionManager:
 
     def __init__(self):
         self._db_path = DB_PATH
-        self._db: Optional[aiosqlite.Connection] = None
+        self._db: aiosqlite.Connection | None = None
         self._initialized = False
 
     async def initialize(self):
@@ -93,8 +79,8 @@ class SubscriptionManager:
         user_id: int,
         issue_number: int,
         channel_id: int,
-        guild_id: Optional[int] = None,
-        initial_state: Optional[dict] = None
+        guild_id: int | None = None,
+        initial_state: dict | None = None,
     ) -> bool:
         """
         Subscribe a user to an issue.
@@ -107,11 +93,14 @@ class SubscriptionManager:
             comment_count = initial_state.get("comments_count", 0) if initial_state else 0
             labels = json.dumps(initial_state.get("labels", [])) if initial_state else "[]"
 
-            await self._db.execute("""
+            await self._db.execute(
+                """
                 INSERT OR REPLACE INTO subscriptions
                 (user_id, issue_number, channel_id, guild_id, last_state, last_comment_count, last_labels)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (user_id, issue_number, channel_id, guild_id, state, comment_count, labels))
+            """,
+                (user_id, issue_number, channel_id, guild_id, state, comment_count, labels),
+            )
             await self._db.commit()
             return True
         except Exception as e:
@@ -126,9 +115,12 @@ class SubscriptionManager:
         """
         await self._ensure_initialized()
         try:
-            cursor = await self._db.execute("""
+            cursor = await self._db.execute(
+                """
                 DELETE FROM subscriptions WHERE user_id = ? AND issue_number = ?
-            """, (user_id, issue_number))
+            """,
+                (user_id, issue_number),
+            )
             await self._db.commit()
             return cursor.rowcount > 0
         except Exception as e:
@@ -143,9 +135,12 @@ class SubscriptionManager:
         """
         await self._ensure_initialized()
         try:
-            cursor = await self._db.execute("""
+            cursor = await self._db.execute(
+                """
                 DELETE FROM subscriptions WHERE user_id = ?
-            """, (user_id,))
+            """,
+                (user_id,),
+            )
             await self._db.commit()
             return cursor.rowcount
         except Exception as e:
@@ -157,11 +152,14 @@ class SubscriptionManager:
         await self._ensure_initialized()
         try:
             self._db.row_factory = aiosqlite.Row
-            cursor = await self._db.execute("""
+            cursor = await self._db.execute(
+                """
                 SELECT issue_number, channel_id, guild_id, created_at, last_state
                 FROM subscriptions WHERE user_id = ?
                 ORDER BY created_at DESC
-            """, (user_id,))
+            """,
+                (user_id,),
+            )
             rows = await cursor.fetchall()
             return [dict(row) for row in rows]
         except Exception as e:
@@ -186,31 +184,31 @@ class SubscriptionManager:
         await self._ensure_initialized()
         try:
             self._db.row_factory = aiosqlite.Row
-            cursor = await self._db.execute("""
+            cursor = await self._db.execute(
+                """
                 SELECT user_id, channel_id, guild_id, last_state, last_comment_count, last_labels
                 FROM subscriptions WHERE issue_number = ?
-            """, (issue_number,))
+            """,
+                (issue_number,),
+            )
             rows = await cursor.fetchall()
             return [dict(row) for row in rows]
         except Exception as e:
             logger.error(f"Failed to get issue subscriptions: {e}")
             return []
 
-    async def update_issue_state(
-        self,
-        issue_number: int,
-        state: str,
-        comment_count: int,
-        labels: list[str]
-    ):
+    async def update_issue_state(self, issue_number: int, state: str, comment_count: int, labels: list[str]):
         """Update the tracked state for all subscriptions of an issue."""
         await self._ensure_initialized()
         try:
-            await self._db.execute("""
+            await self._db.execute(
+                """
                 UPDATE subscriptions
                 SET last_state = ?, last_comment_count = ?, last_labels = ?, last_notified_at = ?
                 WHERE issue_number = ?
-            """, (state, comment_count, json.dumps(labels), datetime.utcnow().isoformat(), issue_number))
+            """,
+                (state, comment_count, json.dumps(labels), datetime.utcnow().isoformat(), issue_number),
+            )
             await self._db.commit()
         except Exception as e:
             logger.error(f"Failed to update issue state: {e}")
@@ -230,9 +228,12 @@ class SubscriptionManager:
         """Check if a user is subscribed to an issue."""
         await self._ensure_initialized()
         try:
-            cursor = await self._db.execute("""
+            cursor = await self._db.execute(
+                """
                 SELECT 1 FROM subscriptions WHERE user_id = ? AND issue_number = ?
-            """, (user_id, issue_number))
+            """,
+                (user_id, issue_number),
+            )
             row = await cursor.fetchone()
             return row is not None
         except Exception as e:
@@ -247,7 +248,7 @@ class IssueNotifier:
         self.bot = bot
         self.subscriptions = subscription_manager
         self._running = False
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task | None = None
 
     async def start(self):
         """Start the background polling task."""
@@ -295,7 +296,7 @@ class IssueNotifier:
 
                 # Skip if error returned (could be non-existent issue)
                 if isinstance(issues_dict, dict) and "error" in issues_dict:
-                    error_msg = issues_dict['error']
+                    error_msg = issues_dict["error"]
                     logger.warning(f"Failed to fetch issues: {error_msg}")
 
                     # If specific issue doesn't exist, try to identify and remove it
@@ -308,14 +309,14 @@ class IssueNotifier:
                                 # Get all subscribers and unsubscribe them
                                 subs = await self.subscriptions.get_subscriptions_for_issue(issue_num)
                                 for sub in subs:
-                                    await self.subscriptions.unsubscribe(sub['user_id'], issue_num)
+                                    await self.subscriptions.unsubscribe(sub["user_id"], issue_num)
                                 logger.info(f"Removed {len(subs)} subscriptions for non-existent issue #{issue_num}")
 
                     await asyncio.sleep(60)
                     continue
 
                 # Check each issue for changes
-                for issue_number, issue in issues_dict.items():
+                for _issue_number, issue in issues_dict.items():
                     await self._check_issue_for_changes(issue)
 
                 # Poll every 2 minutes (30 req/hour per subscribed issue set)
@@ -356,8 +357,7 @@ class IssueNotifier:
         new_comments_data = []
         if needs_comments:
             full_issue = await github_graphql.get_issue_full(
-                issue_number=issue_number,
-                comments_count=min(max_new_comments + 1, 5)  # Fetch recent comments
+                issue_number=issue_number, comments_count=min(max_new_comments + 1, 5)  # Fetch recent comments
             )
             if full_issue and "comments" in full_issue:
                 new_comments_data = full_issue["comments"]
@@ -383,17 +383,19 @@ class IssueNotifier:
                 for comment in recent_comments:
                     author = comment.get("author", "someone")
                     body = comment.get("body", "")
-                    changes.append({
-                        "type": "comment",
-                        "data": {"author": author, "body": body}
-                    })
+                    changes.append({"type": "comment", "data": {"author": author, "body": body}})
 
                 # Fallback if we couldn't get comment details
                 if not recent_comments:
-                    changes.append({
-                        "type": "comment",
-                        "data": {"author": "unknown", "body": f"({new_count} new comment{'s' if new_count > 1 else ''})"}
-                    })
+                    changes.append(
+                        {
+                            "type": "comment",
+                            "data": {
+                                "author": "unknown",
+                                "body": f"({new_count} new comment{'s' if new_count > 1 else ''})",
+                            },
+                        }
+                    )
 
             # Check for label changes
             last_labels = json.loads(sub.get("last_labels", "[]"))
@@ -412,25 +414,17 @@ class IssueNotifier:
                     channel_id=sub["channel_id"],
                     guild_id=sub.get("guild_id"),
                     issue=issue,
-                    changes=changes
+                    changes=changes,
                 )
 
         # Update stored state for all subscribers
         if subscriptions:
             await self.subscriptions.update_issue_state(
-                issue_number=issue_number,
-                state=current_state,
-                comment_count=current_comments,
-                labels=current_labels
+                issue_number=issue_number, state=current_state, comment_count=current_comments, labels=current_labels
             )
 
     async def _send_notification(
-        self,
-        user_id: int,
-        channel_id: int,
-        guild_id: Optional[int],
-        issue: dict,
-        changes: list[dict]
+        self, user_id: int, channel_id: int, guild_id: int | None, issue: dict, changes: list[dict]
     ):
         """Send notification to user (DM first, fallback to channel)."""
         from .pollinations import pollinations_client
@@ -439,11 +433,7 @@ class IssueNotifier:
         issue_url = issue.get("url", f"https://github.com/{config.github_repo}/issues/{issue_number}")
 
         # Use AI to format a beautiful notification
-        message = await pollinations_client.format_notification(
-            issue=issue,
-            changes=changes,
-            issue_url=issue_url
-        )
+        message = await pollinations_client.format_notification(issue=issue, changes=changes, issue_url=issue_url)
 
         # Try DM first
         try:
@@ -481,7 +471,7 @@ class IssueNotifier:
 
 # Singleton instances
 subscription_manager = SubscriptionManager()
-issue_notifier: Optional[IssueNotifier] = None
+issue_notifier: IssueNotifier | None = None
 
 
 def init_notifier(bot: discord.Client):

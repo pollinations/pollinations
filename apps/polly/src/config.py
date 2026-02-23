@@ -2,12 +2,11 @@
 
 import json
 import logging
+import os
 import sys
 from pathlib import Path
-from typing import List
 
 from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
@@ -25,7 +24,7 @@ def load_config_json() -> dict:
         return {}
 
     try:
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             return json.load(f)
     except Exception as e:
         logger.error(f"Failed to load config.json: {e}")
@@ -50,7 +49,7 @@ class Config:
         # DISCORD CONFIG
         # =================================================================
         discord_cfg = cfg.get("discord", {})
-        self.admin_role_ids: List[int] = discord_cfg.get("admin_role_ids", [])
+        self.admin_role_ids: list[int] = discord_cfg.get("admin_role_ids", [])
 
         # Secret from .env
         self.discord_token = os.getenv("DISCORD_TOKEN")
@@ -60,8 +59,8 @@ class Config:
         # =================================================================
         github_cfg = cfg.get("github", {})
         self.github_bot_username = github_cfg.get("bot_username", "pollinations-ci")
-        self.github_admin_users: List[str] = [u.lower() for u in github_cfg.get("admin_users", [])]
-        self.whitelisted_repos: List[str] = [r.lower() for r in github_cfg.get("whitelisted_repos", [])]
+        self.github_admin_users: list[str] = [u.lower() for u in github_cfg.get("admin_users", [])]
+        self.whitelisted_repos: list[str] = [r.lower() for r in github_cfg.get("whitelisted_repos", [])]
         self.github_admin_only_mentions: bool = github_cfg.get("admin_only_mentions", False)
 
         # Secrets from .env
@@ -86,7 +85,6 @@ class Config:
         # =================================================================
         ai_cfg = cfg.get("ai", {})
         self.pollinations_model = ai_cfg.get("model", "gemini-large")
-        self.fallback_model = ai_cfg.get("fallback_model", "openai-large")
 
         # Secret from .env
         self.pollinations_token = os.getenv("POLLINATIONS_TOKEN", "")
@@ -95,17 +93,17 @@ class Config:
         # FEATURES CONFIG
         # =================================================================
         features_cfg = cfg.get("features", {})
-        self.sandbox_enabled = features_cfg.get("sandbox_enabled", False)
         self.local_embeddings_enabled = features_cfg.get("local_embeddings_enabled", False)
         self.embeddings_repo = features_cfg.get("embeddings_repo", "pollinations/pollinations")
 
         # Doc embeddings (separate from code embeddings)
         self.doc_embeddings_enabled = features_cfg.get("doc_embeddings_enabled", True)
-        self.doc_sites = features_cfg.get("doc_sites", [
-            "https://enter.pollinations.ai",
-            "https://kpi.myceli.ai",
-            "https://gsoc.pollinations.ai"
-        ])
+        self.doc_sites = features_cfg.get(
+            "doc_sites",
+            [
+                "https://enter.pollinations.ai/api/docs/open-api/generate-schema",
+            ],
+        )
 
     def _load_private_key(self) -> str:
         """Load GitHub App private key from env var or file path."""
@@ -138,11 +136,7 @@ class Config:
     @property
     def use_github_app(self) -> bool:
         """Check if GitHub App credentials are configured."""
-        return bool(
-            self.github_app_id and
-            self.github_installation_id and
-            self.github_private_key
-        )
+        return bool(self.github_app_id and self.github_installation_id and self.github_private_key)
 
     @property
     def has_project_access(self) -> bool:

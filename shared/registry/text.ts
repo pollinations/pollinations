@@ -476,18 +476,19 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "glm": {
-        aliases: ["glm-4.7", "glm-4p7"],
-        modelId: "accounts/fireworks/models/glm-4p7",
+        aliases: ["glm-5", "glm-4.7", "glm-4p7"],
+        modelId: "accounts/fireworks/models/glm-5",
         provider: "fireworks",
         cost: [
             {
-                date: new Date("2026-01-05").getTime(),
+                date: new Date("2026-02-13").getTime(),
                 promptTextTokens: perMillion(0.6),
                 promptCachedTokens: perMillion(0.3),
                 completionTextTokens: perMillion(2.2),
             },
         ],
-        description: "Z.ai GLM-4.7 - Coding, Reasoning & Agentic Workflows",
+        description:
+            "Z.ai GLM-5 - 744B MoE, Long Context Reasoning & Agentic Workflows",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -515,42 +516,59 @@ export const TEXT_SERVICES = {
         contextWindow: 200000,
         isSpecialized: false,
     },
-    "nomnom": {
-        aliases: ["gemini-scrape", "web-research"],
-        modelId: "nomnom",
-        provider: "community",
+    // "nomnom": {
+    //     aliases: ["gemini-scrape", "web-research"],
+    //     modelId: "nomnom",
+    //     provider: "community",
+    //     cost: [
+    //         {
+    //             date: new Date("2026-01-17").getTime(),
+    //             promptTextTokens: perMillion(0.0), // Free - uses Pollinations under the hood
+    //             completionTextTokens: perMillion(0.0),
+    //         },
+    //     ],
+    //     description:
+    //         "NomNom by @Itachi-1824 - Web Research with Search, Scrape & Crawl (Alpha)",
+    //     inputModalities: ["text"],
+    //     outputModalities: ["text"],
+    //     tools: true,
+    //     search: true,
+    //     isSpecialized: false,
+    //     alpha: true,
+    // },
+    "qwen-safety": {
+        aliases: ["qwen3guard-gen-8b"],
+        modelId: "Qwen3Guard-Gen-8B",
+        provider: "ovhcloud",
         cost: [
             {
-                date: new Date("2026-01-17").getTime(),
-                promptTextTokens: perMillion(0.0), // Free - uses Pollinations under the hood
-                completionTextTokens: perMillion(0.0),
-            },
-        ],
-        description:
-            "NomNom by @Itachi-1824 - Web Research with Search, Scrape & Crawl (Alpha)",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        search: true,
-        isSpecialized: false,
-        alpha: true,
-    },
-    "qwen-character": {
-        aliases: [],
-        modelId: "qwen-character",
-        provider: "airforce",
-        cost: [
-            {
-                date: new Date("2026-02-09").getTime(),
-                promptTextTokens: perMillion(0.01), // $0.01/M via api.airforce
+                date: new Date("2026-02-15").getTime(),
+                promptTextTokens: perMillion(0.01),
                 completionTextTokens: perMillion(0.01),
             },
         ],
-        description:
-            "Qwen Character (alpha) - roleplay & character chat, powered by api.airforce",
+        description: "Qwen3Guard 8B - Content Safety & Moderation (OVH)",
         inputModalities: ["text"],
         outputModalities: ["text"],
         isSpecialized: true,
-        alpha: true,
     },
+    // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)
+    // "qwen-character": {
+    //     aliases: [],
+    //     modelId: "qwen-character",
+    //     provider: "airforce",
+    //     cost: [
+    //         {
+    //             date: new Date("2026-02-09").getTime(),
+    //             promptTextTokens: perMillion(0.01), // $0.01/M via api.airforce
+    //             completionTextTokens: perMillion(0.01),
+    //         },
+    //     ],
+    //     description:
+    //         "Qwen Character (api.airforce) - roleplay & character chat",
+    //     inputModalities: ["text"],
+    //     outputModalities: ["text"],
+    //     isSpecialized: true,
+    //     alpha: true,
+    // },
 } as const satisfies Record<string, ServiceDefinition<string>>;

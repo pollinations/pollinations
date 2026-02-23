@@ -10,7 +10,7 @@ test("Image models should calculate costs proportionally to token count", () => 
         "flux",
         "nanobanana",
         "kontext",
-        "turbo",
+        "zimage",
         "seedream",
     ];
 
@@ -53,7 +53,7 @@ test("Cost should be non-negative for all models", () => {
         "flux",
         "nanobanana",
         "kontext",
-        "turbo",
+        "zimage",
         "seedream",
     ];
     const usage: Usage = {

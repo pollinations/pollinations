@@ -2367,8 +2367,11 @@ Generate an image or video from a text prompt.
 
 **Video Models:** `veo`, `seedance`
 
-- `veo`: Text-to-video only (4-8 seconds)
-- `seedance`: Text-to-video and image-to-video (2-10 seconds)
+- `veo`: Text-to-video only (4-8 seconds). Supports `duration` parameter (default: 4 seconds).
+- `seedance`: Text-to-video and image-to-video (2-10 seconds). Supports `duration` parameter (default: 2 seconds).
+
+
+
 
 **Authentication:**
 
@@ -3509,13 +3512,13 @@ This endpoint is OpenAI TTS API compatible. Set `model` to `elevenmusic` (or ali
 - **Path:** `/v1/audio/transcriptions`
 - **Tags:** gen.pollinations.ai
 
-Transcribe audio to text using Whisper.
+Transcribe audio to text using Whisper or ElevenLabs Scribe.
 
 This endpoint is OpenAI Whisper API compatible.
 
 **Supported formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm
 
-**Models:** `whisper-large-v3` (default), `whisper-1`
+**Models:** `whisper-large-v3` (default), `whisper-1`, `scribe`
 
 #### Request Body
 
@@ -3531,7 +3534,7 @@ This endpoint is OpenAI Whisper API compatible.
 
 - **`model`**
 
-  `string`, default: `"whisper-large-v3"` — The model to use. Options: \`whisper-large-v3\`, \`whisper-1\`.
+  `string`, default: `"whisper-large-v3"` — The model to use. Options: \`whisper-large-v3\`, \`whisper-1\`, \`scribe\`.
 
 - **`prompt`**
 
@@ -4094,3 +4097,36 @@ This endpoint is OpenAI Whisper API compatible.
   "speed": 1
 }
 ```
+## ❗ Common Error Responses
+
+### 401 — Invalid API Key
+Occurs when the API key is missing or incorrect.
+
+```json
+{
+  "error": "Invalid API key",
+  "status": 401
+}
+
+
+#### 403 — Model Not Allowed
+Occurs when the API key does not have permission to access the requested model.
+
+```json
+{
+  "error": "Model not allowed for this key",
+  "status": 403
+}
+
+
+
+{
+  "error": "Rate limit exceeded",
+  "status": 429
+}
+
+
+{
+  "error": "Bad request",
+  "status": 400
+}

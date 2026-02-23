@@ -1,194 +1,395 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import ReactMarkdown from "react-markdown";
+import { useSearchParams } from "react-router-dom";
+import remarkGfm from "remark-gfm";
 import { COPY_CONSTANTS } from "../../copy/constants";
-import { APPS_PAGE, CATEGORIES } from "../../copy/content/apps";
+import {
+    ALL_FILTERS,
+    APPS_PAGE,
+    BADGE_FILTERS,
+    badges,
+    GENRE_FILTERS,
+} from "../../copy/content/apps";
 import { LINKS } from "../../copy/content/socialLinks";
 import { type App, useApps } from "../../hooks/useApps";
+import { useAuth } from "../../hooks/useAuth";
 import { usePageCopy } from "../../hooks/usePageCopy";
+import { usePrettify } from "../../hooks/usePrettify";
 import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { GithubIcon } from "../assets/SocialIcons";
+import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
-import { SubCard } from "../components/ui/sub-card";
 import { Body, Title } from "../components/ui/typography";
 
-// Helper to extract GitHub username from author field
-function getGitHubUsername(author: string) {
-    if (!author) return null;
-    // Remove @ symbol if present
-    return author.replace(/^@/, "");
+function getGitHubUsername(s: string) {
+    return s ? s.replace(/^@/, "") : null;
 }
 
-// Helper to extract repo name from GitHub URL
-function getRepoName(repoUrl: string) {
-    if (!repoUrl) return null;
-    const match = repoUrl.match(/github\.com\/([^/]+\/[^/]+)/);
-    return match ? match[1] : null;
+function getRepoName(url: string) {
+    const m = url?.match(/github\.com\/([^/]+\/[^/]+)/);
+    return m ? m[1] : null;
 }
 
-interface AppCardProps {
-    app: App;
-}
+// --- App Card ---
 
-// App Card Component
-function AppCard({ app }: AppCardProps) {
+function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
     const githubUsername = getGitHubUsername(app.github);
-    // Extract repo from URL if it's a GitHub URL
-    const repoName = app.url?.includes("github.com")
-        ? getRepoName(app.url)
+    const repoName = app.repo?.includes("github.com")
+        ? getRepoName(app.repo)
         : null;
 
+    const cardBorder = badges.buzz(app)
+        ? "border border-badge-buzz shadow-[0_0_8px] shadow-badge-buzz/30"
+        : badges.pollen(app)
+          ? "border border-badge-pollen shadow-[0_0_8px] shadow-badge-pollen/30"
+          : "border border-border-subtle";
+
     return (
-        <SubCard className="flex flex-col h-full bg-transparent">
-            <div className="flex-1">
-                {/* App name as button */}
-                <Button
-                    as="a"
-                    href={app.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    variant="primary"
-                    size="sm"
-                    className="self-start mb-3 w-full relative pr-10 shadow-none hover:shadow-none text-left justify-start bg-input-background hover:bg-input-background"
-                >
-                    <span className="font-headline text-base font-black uppercase text-left block text-text-body-main">
-                        {app.name}
-                    </span>
-                    <ExternalLinkIcon className="w-4 h-4 absolute top-3 right-3 text-text-body-main" />
-                </Button>
+        <div
+            className={`flex flex-col h-full rounded-sub-card overflow-visible ${cardBorder}`}
+        >
+            <a
+                href={app.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between px-4 py-3 bg-input-background rounded-t-sub-card hover:brightness-110 transition-all"
+            >
+                <span className="font-headline text-sm font-black uppercase text-text-body-main">
+                    {app.emoji && `${app.emoji} `}
+                    {app.name}
+                </span>
+                <ExternalLinkIcon className="w-4 h-4 text-text-body-main opacity-60 flex-shrink-0" />
+            </a>
 
-                {app.description && (
-                    <Body className="text-sm text-text-body-secondary line-clamp-6 mb-4">
-                        {app.description}
-                    </Body>
-                )}
-            </div>
-            <div className="flex flex-wrap gap-2 mt-auto">
-                {/* Author Badge */}
-                {githubUsername && (
-                    <a
-                        href={`https://github.com/${githubUsername}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main transition-all max-w-[200px]"
-                        title={`View ${app.github} on GitHub`}
-                    >
-                        <GithubIcon className="w-3 h-3 text-text-body-main opacity-60 flex-shrink-0" />
-                        <span className="truncate text-text-body-main">
-                            {app.github}
-                        </span>
-                    </a>
-                )}
-                {!githubUsername && app.github && (
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background border border-border-faint max-w-[200px]">
-                        <span className="truncate text-text-body-main">
-                            {app.github}
-                        </span>
-                    </div>
-                )}
+            <div className="flex flex-col flex-1 px-4 py-3">
+                <div className="flex-1">
+                    {app.description && (
+                        <div className="text-sm text-text-body-secondary mb-3 font-body leading-relaxed">
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                    p: ({ node, ...props }) => (
+                                        <p
+                                            {...props}
+                                            className="mb-1 last:mb-0"
+                                        />
+                                    ),
+                                    ul: ({ node, ...props }) => (
+                                        <ul
+                                            {...props}
+                                            className="mt-1 space-y-0.5 list-disc list-inside"
+                                        />
+                                    ),
+                                    li: ({ node, ...props }) => (
+                                        <li
+                                            {...props}
+                                            className="text-text-body-secondary"
+                                        />
+                                    ),
+                                    strong: ({ node, ...props }) => (
+                                        <strong
+                                            {...props}
+                                            className="text-text-body-main font-black"
+                                        />
+                                    ),
+                                    em: ({ node, ...props }) => (
+                                        <em
+                                            {...props}
+                                            className="text-text-brand not-italic font-medium"
+                                        />
+                                    ),
+                                    code: ({ node, ...props }) => (
+                                        <code
+                                            {...props}
+                                            className="bg-input-background text-text-highlight px-1.5 py-0.5 rounded text-xs font-mono"
+                                        />
+                                    ),
+                                    a: ({ node, ...props }) => (
+                                        <a
+                                            {...props}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-text-highlight hover:underline"
+                                        />
+                                    ),
+                                    del: ({ node, ...props }) => (
+                                        <del
+                                            {...props}
+                                            className="text-text-body-secondary/50"
+                                        />
+                                    ),
+                                }}
+                            >
+                                {app.description}
+                            </ReactMarkdown>
+                        </div>
+                    )}
 
-                {/* Repo Badge */}
-                {repoName && (
-                    <a
-                        href={app.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main transition-all max-w-[200px]"
-                        title={`View ${repoName} on GitHub`}
-                    >
-                        <GithubIcon className="w-3 h-3 text-text-body-main opacity-60 flex-shrink-0" />
-                        <span className="truncate flex-1 min-w-0 text-text-body-main">
-                            {repoName}
-                        </span>
-                        {(app.stars || 0) > 0 && (
-                            <span className="text-text-body-secondary flex-shrink-0">
-                                ⭐ {app.stars}
+                    {(badges.pollen(app) ||
+                        badges.buzz(app) ||
+                        badges.new(app)) && (
+                        <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                            {badges.pollen(app) && (
+                                <span className="relative group/byop">
+                                    <Badge variant="pollen">
+                                        {copy.pollenBadge}
+                                    </Badge>
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-surface-card text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/byop:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
+                                        {copy.pollenTooltip}
+                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-surface-card" />
+                                    </div>
+                                </span>
+                            )}
+                            {badges.buzz(app) && (
+                                <span className="relative group/buzz">
+                                    <Badge variant="buzz">
+                                        {copy.buzzBadge}
+                                    </Badge>
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-surface-card text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/buzz:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
+                                        {copy.buzzTooltip}
+                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-surface-card" />
+                                    </div>
+                                </span>
+                            )}
+                            {badges.new(app) && (
+                                <span className="relative group/new">
+                                    <Badge variant="fresh">
+                                        {copy.newBadge}
+                                    </Badge>
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-surface-card text-text-body-main text-xs rounded-tag shadow-lg border border-border-main opacity-0 group-hover/new:opacity-100 transition-opacity pointer-events-none w-max max-w-[280px] text-center z-50">
+                                        {copy.newTooltip}
+                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-surface-card" />
+                                    </div>
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-auto">
+                    {!repoName && githubUsername && (
+                        <a
+                            href={`https://github.com/${githubUsername}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main rounded-tag transition-all max-w-[200px]"
+                            title={`View ${app.github} on GitHub`}
+                        >
+                            <span className="text-text-body-secondary">
+                                {copy.authorPrefix}
                             </span>
-                        )}
-                    </a>
-                )}
+                            <span className="truncate text-text-body-main">
+                                {app.github}
+                            </span>
+                            <GithubIcon className="w-3 h-3 text-text-body-main opacity-60 flex-shrink-0" />
+                        </a>
+                    )}
+                    {!repoName && !githubUsername && app.github && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background border border-border-faint rounded-tag max-w-[200px]">
+                            <span className="text-text-body-secondary">
+                                {copy.authorPrefix}
+                            </span>
+                            <span className="truncate text-text-body-main">
+                                {app.github}
+                            </span>
+                        </div>
+                    )}
+                    {repoName && (
+                        <a
+                            href={app.repo}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex flex-col gap-1 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main rounded-tag transition-all max-w-[200px]"
+                            title={`View ${repoName} on GitHub`}
+                        >
+                            <span className="inline-flex items-center gap-1.5 w-full">
+                                <span className="truncate flex-1 min-w-0 text-text-body-main">
+                                    {repoName}
+                                </span>
+                                <GithubIcon className="w-3 h-3 text-text-body-main opacity-60 flex-shrink-0" />
+                            </span>
+                            {(app.stars || 0) > 0 && (
+                                <span className="text-text-body-secondary">
+                                    ⭐ {app.stars}
+                                </span>
+                            )}
+                        </a>
+                    )}
+                </div>
             </div>
-        </SubCard>
+        </div>
     );
 }
 
+// --- Sort: buzz → pollen → stars → newest ---
+
+const sortApps = (a: App, b: App) => {
+    const t = +badges.buzz(b) - +badges.buzz(a);
+    if (t) return t;
+    if (a.byop !== b.byop) return a.byop ? -1 : 1;
+    const s = (b.stars || 0) - (a.stars || 0);
+    if (s) return s;
+    return (b.approvedDate || "").localeCompare(a.approvedDate || "");
+};
+
+// --- Page ---
+
 export default function AppsPage() {
-    const [selectedCategory, setSelectedCategory] = useState("creative");
+    const [searchParams, setSearchParams] = useSearchParams();
+    const filter = searchParams.get("filter") || "new";
+    const setFilter = (f: string) => setSearchParams({ filter: f });
+    const { apiKey } = useAuth();
 
-    // Fetch apps from GitHub
     const { apps: allApps } = useApps(COPY_CONSTANTS.appsFilePath);
-
-    // Get translated copy
     const { copy: pageCopy, isTranslating } = usePageCopy(APPS_PAGE);
-
-    // Translate category labels
-    const { translated: translatedCategories } = useTranslate(
-        CATEGORIES,
+    const { translated: translatedGenre } = useTranslate(
+        GENRE_FILTERS,
+        "label",
+    );
+    const { translated: translatedBadge } = useTranslate(
+        BADGE_FILTERS,
         "label",
     );
 
-    // Filter apps by category
     const filteredApps = useMemo(() => {
-        return allApps.filter((app: App) => app.category === selectedCategory);
-    }, [allApps, selectedCategory]);
+        const f = ALL_FILTERS.find((x) => x.id === filter);
+        if (!f) return [];
+        return allApps.filter(f.match).sort(sortApps);
+    }, [allApps, filter]);
 
-    // Translate app descriptions
-    const { translated: displayApps } = useTranslate(
+    const { prettified } = usePrettify(
         filteredApps,
         "description",
+        apiKey,
+        "name",
     );
+
+    const { translated: displayApps } = useTranslate(prettified, "description");
 
     return (
         <PageContainer>
             <PageCard isTranslating={isTranslating}>
                 <Title>{pageCopy.title}</Title>
                 <Body spacing="comfortable">{pageCopy.subtitle}</Body>
-                <div className="flex items-center gap-4 p-4 mb-10 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
-                    <div className="flex-1">
-                        <p className="font-headline text-sm font-black text-text-body-main mb-1">
-                            {pageCopy.submitCtaTitle}
-                        </p>
-                        <p className="font-body text-xs text-text-body-secondary">
-                            {pageCopy.submitCtaDescription}
-                        </p>
+
+                {/* CTAs */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                    <div className="flex items-center gap-4 p-4 bg-surface-card rounded-sub-card border-l-4 border-border-brand">
+                        <div className="flex-1">
+                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                                {pageCopy.submitCtaTitle}
+                            </p>
+                            <p className="font-body text-xs text-text-body-secondary">
+                                {pageCopy.submitCtaDescription}
+                            </p>
+                        </div>
+                        <Button
+                            as="a"
+                            href={LINKS.githubSubmitApp}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="primary"
+                            size="default"
+                        >
+                            {pageCopy.submitCtaButton}
+                            <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
+                        </Button>
                     </div>
-                    <Button
-                        as="a"
-                        href={LINKS.githubSubmitApp}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="primary"
-                        size="default"
-                    >
-                        {pageCopy.submitCtaButton}
-                        <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
-                    </Button>
+                    <div className="flex items-center gap-4 p-4 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
+                        <div className="flex-1">
+                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                                {pageCopy.pollenCtaTitle}
+                            </p>
+                            <p className="font-body text-xs text-text-body-secondary">
+                                {pageCopy.pollenCtaDescription}
+                            </p>
+                        </div>
+                        <Button
+                            as="a"
+                            href={LINKS.byopDocs}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="primary"
+                            size="default"
+                        >
+                            {pageCopy.pollenCtaButton}
+                            <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
+                        </Button>
+                    </div>
                 </div>
 
-                {/* Category Filters */}
+                {/* Filters */}
                 <div className="flex flex-wrap gap-2 mb-8">
-                    {translatedCategories.map((cat) => (
+                    {translatedGenre.map((f) => (
                         <Button
-                            key={cat.id}
+                            key={f.id}
                             variant="toggle"
-                            data-active={selectedCategory === cat.id}
-                            onClick={() => setSelectedCategory(cat.id)}
+                            data-active={filter === f.id}
+                            onClick={() => setFilter(f.id)}
                             className="px-4 py-2 text-sm"
                         >
-                            {cat.label}
+                            {f.label}
+                        </Button>
+                    ))}
+                    {translatedBadge.map((f) => (
+                        <Button
+                            key={f.id}
+                            variant="toggle-glow"
+                            data-active={filter === f.id}
+                            onClick={() => setFilter(f.id)}
+                            className="px-4 py-2 text-sm"
+                            style={{ "--glow": f.glow } as React.CSSProperties}
+                        >
+                            {f.label}
                         </Button>
                     ))}
                 </div>
 
+                {/* Legend */}
+                <div className="flex flex-col items-end gap-0.5 mb-4 text-xs text-text-body-secondary">
+                    <span>
+                        <span className="text-text-body-main font-bold">
+                            {pageCopy.pollenBadge}
+                        </span>{" "}
+                        = {pageCopy.pollenLegendDesc}
+                        {" · "}
+                        <a
+                            href={LINKS.byopDocs}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-text-highlight hover:underline"
+                        >
+                            {pageCopy.pollenDocsLink}
+                        </a>
+                    </span>
+                    <span>
+                        <span className="text-text-body-main font-bold">
+                            {pageCopy.buzzBadge}
+                        </span>{" "}
+                        = {pageCopy.buzzLegendDesc}
+                    </span>
+                    <span>
+                        <span className="text-text-body-main font-bold">
+                            {pageCopy.newBadge}
+                        </span>{" "}
+                        = {pageCopy.newLegendDesc}
+                    </span>
+                </div>
+
                 {/* App Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                    {displayApps.map((app, index) => (
-                        <AppCard key={`${app.name}-${index}`} app={app} />
+                    {displayApps.map((app, i) => (
+                        <AppCard
+                            key={`${app.name}-${i}`}
+                            app={app}
+                            copy={pageCopy}
+                        />
                     ))}
                 </div>
 
-                {/* No Results */}
                 {displayApps.length === 0 && (
                     <div className="text-center py-12">
                         <Body className="text-text-body-main">

@@ -23,6 +23,10 @@ const badgeVariants = cva(
                     "bg-button-focus-ring/20 text-text-highlight border border-border-highlight shadow-shadow-highlight-sm",
                 brand: "bg-button-primary-bg/20 text-text-brand border border-border-brand shadow-shadow-brand-sm",
                 muted: "bg-surface-card text-text-body-secondary border border-border-subtle",
+                // Per-badge accent colors (theme-responsive)
+                fresh: "bg-badge-fresh/15 text-badge-fresh border border-badge-fresh/50 shadow-[0_0_6px] shadow-badge-fresh/30",
+                pollen: "bg-badge-pollen/15 text-badge-pollen border border-badge-pollen/50 shadow-[0_0_6px] shadow-badge-pollen/30",
+                buzz: "bg-badge-buzz/15 text-badge-buzz border border-badge-buzz/50 shadow-[0_0_6px] shadow-badge-buzz/30",
             },
         },
         defaultVariants: {

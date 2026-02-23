@@ -90,6 +90,13 @@ class Config:
         self.pollinations_token = os.getenv("POLLINATIONS_TOKEN", "")
 
         # =================================================================
+        # API CONFIG
+        # =================================================================
+        api_cfg = cfg.get("api", {})
+        self.api_enabled = api_cfg.get("enabled", False)  # OFF by default — opt-in
+        self.api_port = api_cfg.get("port", 55288)
+
+        # =================================================================
         # FEATURES CONFIG
         # =================================================================
         features_cfg = cfg.get("features", {})
@@ -187,6 +194,8 @@ class Config:
 
         if self.has_project_access:
             logger.info("ProjectV2 access: enabled")
+
+        logger.info(f"API: {'enabled on port ' + str(self.api_port) if self.api_enabled else 'disabled'}")
 
         return True
 

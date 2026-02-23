@@ -70,7 +70,7 @@ Pollinations works without a key, but with one you get:
 - Priority access
 - Usage tracking
 
-Get your free key at: https://pollinations.ai/pricing
+Get your free key at: https://enter.pollinations.ai
 
 ## Cross-Platform Support
 

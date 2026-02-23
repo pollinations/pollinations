@@ -1,13 +1,4 @@
 #!/usr/bin/env node
-/**
- * Pollinations OpenCode Installer
- *
- * Cross-platform installer for OpenCode + oh-my-opencode pre-configured
- * with Pollinations AI models for optimal multi-agent workflows.
- *
- * Usage: npx @pollinations/opencode-installer
- *    or: node install.js
- */
 
 import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -23,7 +14,6 @@ const rl = createInterface({
 const ask = (question) =>
     new Promise((resolve) => rl.question(question, resolve));
 
-// Config directory based on OS
 function getConfigDir() {
     const home = homedir();
     if (platform() === "win32") {
@@ -34,11 +24,10 @@ function getConfigDir() {
     return join(home, ".config", "opencode");
 }
 
-// OpenCode provider + models config
 const OPENCODE_CONFIG = {
     "$schema": "https://opencode.ai/config.json",
     "plugin": ["oh-my-opencode"],
-    "model": "pollinations/claude-large", // Opus for main agent (Sisyphus)
+    "model": "pollinations/claude-large",
     "small_model": "pollinations/gemini-fast",
     "provider": {
         "pollinations": {
@@ -48,7 +37,6 @@ const OPENCODE_CONFIG = {
                 "baseURL": "https://gen.pollinations.ai/v1",
             },
             "models": {
-                // Claude family
                 "claude-large": {
                     "name": "Claude Opus 4.5 - Most Intelligent (Sisyphus)",
                 },
@@ -56,19 +44,16 @@ const OPENCODE_CONFIG = {
                     "name": "Claude Sonnet 4.5 - Balanced (Librarian)",
                 },
                 "claude-fast": { "name": "Claude Haiku 4.5 - Fast" },
-                // OpenAI family
                 "openai-large": {
                     "name": "GPT-5.2 - Strategic Reasoning (Oracle)",
                 },
                 "openai": { "name": "GPT-5 Mini - Balanced" },
                 "openai-fast": { "name": "GPT-5 Nano - Ultra Fast" },
-                // Gemini family
                 "gemini-large": { "name": "Gemini 3 Pro - 1M Context" },
                 "gemini": { "name": "Gemini 3 Flash - UI/UX Expert" },
                 "gemini-fast": {
                     "name": "Gemini 2.5 Flash Lite - Exploration",
                 },
-                // Specialists
                 "deepseek": { "name": "DeepSeek V3.2 - Reasoning" },
                 "qwen-coder": { "name": "Qwen3 Coder 30B - Code" },
                 "perplexity-fast": { "name": "Perplexity Sonar - Web Search" },
@@ -80,38 +65,30 @@ const OPENCODE_CONFIG = {
     },
 };
 
-// oh-my-opencode agent mappings (following their recommended setup)
 const OH_MY_OPENCODE_CONFIG = {
     "$schema":
         "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json",
     "agents": {
-        // Main orchestrator - needs the most powerful model
         "Sisyphus": {
-            "model": "pollinations/claude-large", // Opus 4.5 - like their default
+            "model": "pollinations/claude-large",
         },
-        // Strategic reasoning and architecture
         "oracle": {
-            "model": "pollinations/openai-large", // GPT-5.2 for logical analysis
+            "model": "pollinations/openai-large",
         },
-        // Documentation and codebase research
         "librarian": {
-            "model": "pollinations/claude", // Sonnet for deep understanding
+            "model": "pollinations/claude",
         },
-        // Fast codebase exploration
         "explore": {
-            "model": "pollinations/gemini-fast", // Ultra fast for grep/search
+            "model": "pollinations/gemini-fast",
         },
-        // UI/UX development
         "frontend-ui-ux-engineer": {
-            "model": "pollinations/gemini", // Gemini excels at creative UI
+            "model": "pollinations/gemini",
         },
-        // Technical writing
         "document-writer": {
-            "model": "pollinations/gemini-fast", // Fast prose generation
+            "model": "pollinations/gemini-fast",
         },
-        // Visual content analysis
         "multimodal-looker": {
-            "model": "pollinations/gemini", // Gemini for vision tasks
+            "model": "pollinations/gemini",
         },
     },
 };
@@ -149,12 +126,10 @@ async function installOpenCode() {
     log("Installing OpenCode CLI...");
 
     if (platform() === "win32") {
-        // Windows: use PowerShell
         runCommand(
             'powershell -Command "irm https://opencode.ai/install.ps1 | iex"',
         );
     } else {
-        // macOS/Linux: use curl
         runCommand("curl -fsSL https://opencode.ai/install | bash");
     }
 }
@@ -162,7 +137,6 @@ async function installOpenCode() {
 async function installOhMyOpenCode() {
     log("Installing oh-my-opencode plugin...");
 
-    // Use npx for cross-platform compatibility
     runCommand(
         "npx oh-my-opencode install --no-tui --claude=no --chatgpt=no --gemini=no",
     );
@@ -171,23 +145,19 @@ async function installOhMyOpenCode() {
 async function writeConfigs(apiKey) {
     const configDir = getConfigDir();
 
-    // Ensure config directory exists
     if (!existsSync(configDir)) {
         mkdirSync(configDir, { recursive: true });
     }
 
-    // Add API key if provided
     const opencodeConfig = { ...OPENCODE_CONFIG };
     if (apiKey) {
         opencodeConfig.provider.pollinations.options.apiKey = apiKey;
     }
 
-    // Write opencode.json
     const opencodeConfigPath = join(configDir, "opencode.json");
     writeFileSync(opencodeConfigPath, JSON.stringify(opencodeConfig, null, 2));
     success(`Written: ${opencodeConfigPath}`);
 
-    // Write oh-my-opencode.json
     const ohMyConfigPath = join(configDir, "oh-my-opencode.json");
     writeFileSync(
         ohMyConfigPath,
@@ -210,7 +180,6 @@ async function main() {
 ╚═══════════════════════════════════════════════════════════╝\x1b[0m
 `);
 
-    // Step 1: Check/Install OpenCode
     log("Checking for OpenCode...");
     const hasOpenCode = await checkOpenCode();
 
@@ -228,32 +197,26 @@ async function main() {
         success("OpenCode is installed");
     }
 
-    // Step 2: Install oh-my-opencode
     log("Setting up oh-my-opencode plugin...");
     await installOhMyOpenCode();
 
-    // Step 3: Ask for API key (required)
     console.log(`
 \x1b[33mA Pollinations API key is required.
-Get your free API key at: https://pollinations.ai/pricing\x1b[0m
+Get your free API key at: https://enter.pollinations.ai\x1b[0m
 `);
 
     let apiKey = await ask("Enter Pollinations API key: ");
     apiKey = apiKey.trim();
 
     if (!apiKey) {
-        error(
-            "API key is required. Get one at https://pollinations.ai/pricing",
-        );
+        error("API key is required. Get one at https://enter.pollinations.ai");
         rl.close();
         process.exit(1);
     }
 
-    // Step 4: Write configs
     log("Writing configuration files...");
     await writeConfigs(apiKey);
 
-    // Done!
     console.log(`
 \x1b[32m╔═══════════════════════════════════════════════════════════╗
 ║                    🎉 Installation Complete! 🎉             ║

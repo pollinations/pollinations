@@ -110,5 +110,6 @@ jobs:
             2. If the issue is a question, discussion, or doesn't need code changes: just comment on the issue with a helpful response using `gh issue comment ${{ github.event.issue.number }}`.
 
             Use your judgment — not every issue needs a PR.
+          allowed_bots: "pollinations-ai"
           additional_permissions: |
             actions: read

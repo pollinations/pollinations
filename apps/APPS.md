@@ -4,6 +4,7 @@
 
 | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| 🎬 | AI Clip Master | https://ai-clip-master-4f3tdvgjr3zcg3hmj8phy7.streamlit.app/ | AI-powered modular video processing tool for content creators. | pt-BR | Creative | @rodrigololr | 124109443 | https://github.com/rodrigololr/AI-Clip-Master |  | a.rodrigolima_ |  | 2026-02-04 | https://github.com/pollinations/pollinations/issues/7911 | 2026-02-23 |  |  |
 | 💬 | Cortex Chat | https://cortexchat.vercel.app/ | AI chat platform powered by Pollinations for creative, efficient assistance. | en | Chat | @GamerC0der | 159653318 |  |  | gamerc0der |  | 2026-02-10 | https://github.com/pollinations/pollinations/issues/8134 | 2026-02-23 |  |  |
 | 🖼️ | Gen Layers | http://genlayers.com/ | AI tool to generate high-CTR YouTube thumbnails from titles and visuals | en | Creative | @Mustafiz82 | 138353847 |  |  | mustafiz82 | | 2026-01-14 | https://github.com/pollinations/pollinations/issues/7247 | 2026-02-22 |  |  |
 | 🖼️ | ImageGenAI Pro | https://imgimg-two.vercel.app/ | Generate images in any aspect ratio with ImageGenAI Pro. | en | Creative | @prabhatkashyap902 | 19501588 |  |  |  | | 2026-02-22 | https://github.com/pollinations/pollinations/issues/8485 | 2026-02-22 |  |  |

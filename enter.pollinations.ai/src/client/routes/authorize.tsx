@@ -146,6 +146,7 @@ function AuthorizeComponent() {
                 metadata: {
                     keyType: "secret",
                     createdVia: "redirect-auth",
+                    redirectUrl: redirect_url,
                 },
             });
 

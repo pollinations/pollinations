@@ -17,6 +17,8 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [Emoji Name](Web_URL) | Description | [@GitHub_Username](https://github.com/GitHub_Username) |
+| [----- -----](-----) | ----- | [@-----](https://github.com/-----) |
 | [🪄 3.5e DD Magic Item Generator](https://github.com/aremont/FRTOOLS) | Desktop Python/PyQt6 tool to generate Dungeons & Dragons 3.5e magic items. | [@aremont](https://github.com/aremont) |
 | [📱 M Assistant](https://routinehub.co/shortcut/18709/) | AI companion for Apple devices with conversational AI, image generation, and task automation. | [@morriszdweck](https://github.com/morriszdweck) |
 | [⚖️ AutoTutela](https://angelromero.co/autotutela) | AI legal assistant that drafts Acciones de Tutela for Colombian citizens. | [@soyangelromero](https://github.com/soyangelromero) |
@@ -25,8 +27,6 @@
 | [💬 Cortex Chat](https://cortexchat.vercel.app/) | AI chat platform powered by Pollinations for creative, efficient assistance. | [@GamerC0der](https://github.com/GamerC0der) |
 | [🖼️ Gen Layers](http://genlayers.com/) | AI tool to generate high-CTR YouTube thumbnails from titles and visuals | [@Mustafiz82](https://github.com/Mustafiz82) |
 | [🖼️ ImageGenAI Pro](https://imgimg-two.vercel.app/) | Generate images in any aspect ratio with ImageGenAI Pro. | [@prabhatkashyap902](https://github.com/prabhatkashyap902) |
-| [💅 nails-generator](https://nails-generator.netlify.app/) | Generate AI nail art designs with nails-generator, producing style, color, and pattern variations for manicure mockups. | [@rodriguetg](https://github.com/rodriguetg) |
-| [💼 FeedHire](https://feedhire.me/) | AI job aggregator that filters postings from Telegram, Reddit and other sources | [@rafipatel](https://github.com/rafipatel) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

@@ -1,0 +1,39 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/prompt/test?model=seedream-pro",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-headers": "Content-Type",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "Content-Length",
+      "cache-control": "public, max-age=31536000, immutable",
+      "connection": "keep-alive",
+      "content-disposition": "inline; filename=\"test.jpg\"",
+      "content-type": "image/jpeg",
+      "date": "Tue, 27 Jan 2026 17:37:09 GMT",
+      "keep-alive": "timeout=5",
+      "transfer-encoding": "chunked",
+      "x-model-used": "seedream-pro",
+      "x-usage-completion-image-tokens": "1"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "\u00ff\u00d8\u00ff\u00e0\u0000\u0010JFIF\u0000\u0001\u0002\u0000\u0000\u0001\u0000\u0001\u0000\u0000\u00ff\u00fe\u0000\u0010Lavc62.11.100\u0000\u00ff\u00db\u0000C\u0000\b>>I>IUUUUUUd]dhhhddddhhhppp\u0083\u0083\u0083ppphhpp||\u0083\u0083\u008f\u0093\u008f\u0087\u0087\u0083\u0087\u0093\u0093\u009b\u009b\u009b\u00ba\u00ba\u00b2\u00b2\u00d9\u00d9\u00e0\u00ff\u00ff\u00ff\u00ff\u00c4\u0000K\u0000\u0001\u0001\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\b\u0001\u0001\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0001\u0010\u0001\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0011\u0001\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u00ff\u00c0\u0000\u0011\b\u0000\b\u0000\b\u0003\u0001\"\u0000\u0002\u0011\u0000\u0003\u0011\u0000\u00ff\u00da\u0000\f\u0003\u0001\u0000\u0002\u0011\u0003\u0011\u0000?\u0000\u009f\u00c0\u0001\u00ff\u00d9",
+          "delay": 1
+        }
+      ]
+    }
+  }
+}

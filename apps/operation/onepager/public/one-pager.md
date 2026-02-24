@@ -56,8 +56,11 @@ The primary engine is **in-app Pollen purchases** across a growing network of de
 
 Developers can **earn Pollen daily** to build their ideas:
 
-* **Spore** — entry-level, free Pollen to explore
-* **Seed** — verified developer, more daily Pollen
+All registered users get **free weekly Pollen** to explore.
+
+Creator tiers — earned by building and contributing:
+
+* **Seed** — verified developer, daily Pollen grants
 * **Flower** — working app, higher grants
 * **Nectar** — app with traction, highest grants
 

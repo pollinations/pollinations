@@ -113,7 +113,7 @@ Get detailed balance breakdown for the current user (tier, pack, crypto).
 - **Path:** `/tiers/view`
 - **Tags:** Auth
 
-Get the current user's tier status and daily pollen information.
+Get the current user's tier status and pollen grant information.
 
 #### Responses
 
@@ -125,9 +125,13 @@ Get the current user's tier status and daily pollen information.
 
   `object`
 
-  - **`dailyPollen` (required)**
+  - **`pollen` (required)**
 
-    `number`
+    `number` — Pollen grant amount for this tier
+
+  - **`cadence` (required)**
+
+    `string`, possible values: `"daily", "weekly"` — How often the grant refreshes
 
   - **`displayName` (required)**
 
@@ -135,21 +139,22 @@ Get the current user's tier status and daily pollen information.
 
   - **`tier` (required)**
 
-    `string`, possible values: `"microbe", "spore", "seed", "flower", "nectar", "router", "none"`
+    `string`, possible values: `"seed", "flower", "nectar", "router", "none"` — Creator tier level (registered users without a creator tier return `"none"`)
 
 - **`target` (required)**
 
-  `string`, possible values: `"microbe", "spore", "seed", "flower", "nectar", "router"`
+  `string`, possible values: `"seed", "flower", "nectar", "router"` — Next tier in progression
 
 **Example:**
 
 ```json
 {
-  "target": "microbe",
+  "target": "seed",
   "active": {
-    "tier": "microbe",
-    "displayName": "",
-    "dailyPollen": 1
+    "tier": "seed",
+    "displayName": "Seed",
+    "pollen": 3,
+    "cadence": "daily"
   }
 }
 ```
@@ -314,11 +319,11 @@ Get user profile info (name, email, GitHub username, tier, createdAt, nextResetA
 
 - **`nextResetAt` (required)**
 
-  `object` — Next daily pollen reset timestamp (ISO 8601)
+  `object` — Next pollen reset timestamp (ISO 8601)
 
 - **`tier` (required)**
 
-  `string`, possible values: `"anonymous", "microbe", "spore", "seed", "flower", "nectar", "router"` — User's current tier level
+  `string`, possible values: `"anonymous", "seed", "flower", "nectar", "router"` — User's current tier level
 
 **Example:**
 

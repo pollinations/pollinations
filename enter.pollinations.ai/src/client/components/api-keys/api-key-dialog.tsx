@@ -106,7 +106,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         <Dialog.Root open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>
             <Dialog.Trigger>
                 <Button as="div" color="blue" weight="light">
-                    Create new key
+                    🔑 Create new key
                 </Button>
             </Dialog.Trigger>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />

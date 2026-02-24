@@ -1,7 +1,7 @@
-import { SELF } from "cloudflare:test";
-import { test } from "./fixtures.ts";
-import { expect } from "vitest";
+import { env, SELF } from "cloudflare:test";
 import { getLogger } from "@logtape/logtape";
+import { expect } from "vitest";
+import { test } from "./fixtures.ts";
 
 const endpoint = "http://localhost:3000/api/generate/v1/chat/completions";
 const log = getLogger(["test", "rate-limit"]);
@@ -255,5 +255,52 @@ test(
 
         expect(response3.status).toBe(200);
         log.info("✓ Request allowed after refill");
+    },
+);
+
+test(
+    "Upstream provider 429 is returned as 502 to the client",
+    { timeout: 30000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird");
+
+        const textServiceHost = new URL(env.TEXT_SERVICE_URL).host;
+        const originalFetch = globalThis.fetch;
+
+        globalThis.fetch = async (input: any, init?: any) => {
+            const url = input instanceof Request ? input.url : String(input);
+            if (new URL(url).host === textServiceHost) {
+                return new Response(
+                    JSON.stringify({
+                        error: {
+                            message: "Rate limit exceeded",
+                            type: "rate_limit_error",
+                        },
+                    }),
+                    {
+                        status: 429,
+                        headers: { "content-type": "application/json" },
+                    },
+                );
+            }
+            return originalFetch(input, init);
+        };
+
+        try {
+            const response = await sendTestOpenAIRequest({
+                apiKey,
+                clientIp: "192.0.200.1",
+                model: "openai",
+                message: "Hello",
+            });
+
+            expect(response.status).toBe(502);
+            const body: any = await response.json();
+            expect(body.error.code).toBe("BAD_GATEWAY");
+
+            log.info("✓ Upstream 429 remapped to 502 Bad Gateway");
+        } finally {
+            globalThis.fetch = originalFetch;
+        }
     },
 );

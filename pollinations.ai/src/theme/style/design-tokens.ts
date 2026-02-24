@@ -40,7 +40,12 @@ export const TOKENS: DesignToken[] = [
     },
     {
         id: "text.highlight",
-        description: "Highlighted text",
+        description: "Highlighted text (secondary accent)",
+        type: "color",
+    },
+    {
+        id: "text.accent",
+        description: "Accent text (tertiary accent)",
         type: "color",
     },
 
@@ -155,7 +160,12 @@ export const TOKENS: DesignToken[] = [
     },
     {
         id: "border.highlight",
-        description: "Highlighted border",
+        description: "Highlighted border (secondary accent)",
+        type: "color",
+    },
+    {
+        id: "border.accent",
+        description: "Accent border (tertiary accent)",
         type: "color",
     },
     {
@@ -279,6 +289,11 @@ export const TOKENS: DesignToken[] = [
     {
         id: "radius.subcard",
         description: "Sub-card border radius",
+        type: "radius",
+    },
+    {
+        id: "radius.tag",
+        description: "Tag/chip border radius",
         type: "radius",
     },
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 7274,
+  "title": "Add inkverse to Creative",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7274",
+  "merged_at": "2026-02-24T17:54:08Z",
+  "labels": [
+    "TIER-APP-COMPLETE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh ink in the garden",
+    "blurb": "Inkverse has joined the showcase! Now you can turn text prompts into unique tattoo designs with this new creative tool.",
+    "summary": "Added Inkverse, a generative AI tattoo designer, to the community apps showcase.",
+    "impact": "Users can now discover and use Inkverse to generate custom tattoo concepts directly from the apps list.",
+    "keywords": [
+      "community",
+      "showcase",
+      "creative",
+      "tattoo",
+      "generative art"
+    ],
+    "visual_concept": "A cozy tattoo parlor setting. The project is about tattoos, so the metaphor is applying art to a surface. Polly the bee is the artist, and the Robot is the canvas (getting a decal/paint design).",
+    "image_prompt": "Cozy pixel art scene of the bee mascot painting a floral tattoo design on the chunky robot's metal casing. The robot sits in a comfortable chair, screen glowing lime green (#ecf874). Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Cute bee and robot with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-24T17:54:55.241859+00:00"
+}

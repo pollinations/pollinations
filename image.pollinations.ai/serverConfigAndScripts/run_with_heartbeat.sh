@@ -2,7 +2,8 @@
 
 # Default values
 HEARTBEAT_INTERVAL=30
-POLLINATIONS_URL="https://image.pollinations.ai/register"
+# Use direct EC2 endpoint to bypass Cloudflare (some io.net IPs are blocked)
+POLLINATIONS_URL="${REGISTER_URL:-http://ec2-3-80-56-235.compute-1.amazonaws.com:16384/register}"
 
 # Function to get public IP
 get_public_ip() {

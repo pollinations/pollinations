@@ -22,20 +22,26 @@ App submissions are now **fully automated** via the `app-review-submission.yml` 
 **Table format in APPS.md:**
 
 ```markdown
-| Emoji | Name     | Web_URL | Description                   | Language | Category | GitHub  | GitHub_ID | Repo                   | Stars | Discord | Other | Submitted  |
-| ----- | -------- | ------- | ----------------------------- | -------- | -------- | ------- | --------- | ---------------------- | ----- | ------- | ----- | ---------- |
-| 🎨    | App Name | url     | Brief description (~80 chars) |          | creative | @github | 12345678  | https://github.com/... | ⭐123 |         |       | 2025-01-01 |
+| Emoji | Name     | Web_URL | Description                   | Language | Category | GitHub  | GitHub_ID | Repo                   | Stars | Discord | Other | Submitted_Date | Issue_URL | Approved_Date |
+| ----- | -------- | ------- | ----------------------------- | -------- | -------- | ------- | --------- | ---------------------- | ----- | ------- | ----- | -------------- | --------- | ------------- |
+| 🎨    | App Name | url     | Brief description (~80 chars) |          | creative | @github | 12345678  | https://github.com/... | ⭐123 |         |       | 2025-01-01     | #1234     | 2025-01-02    |
 ```
+
+- **Submitted_Date**: Issue creation date (when user submitted)
+- **Issue_URL**: Link to original GitHub issue
+- **Approved_Date**: PR merge date (when app was approved)
 
 **Categories:**
 
-- Vibes ✨ (`Vibes`): No-code / describe-to-code playgrounds and builders
-- Creative 🎨 (`Creative`): Turn prompts into images, video, music, design, slides
-- Games 🎲 (`Games`): AI-powered play, interactive fiction, puzzle & agent worlds
-- Dev_Tools 🛠️ (`Dev_Tools`): SDKs, integration libs, extensions, dashboards, MCP servers
-- Chat 💬 (`Chat`): Standalone chat UIs / multi-model playgrounds
-- Social_Bots 🤖 (`Social_Bots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
-- Learn 📚 (`Learn`): Tutorials, guides, style books & educational demos
+- 🖼️ Image (`image`): Image gen, editing, design, avatars, stickers
+- 🎬 Video & Audio (`video_audio`): Video gen, animation, music, TTS
+- ✍️ Write (`writing`): Content creation, storytelling, copy, slides
+- 💬 Chat (`chat`): Assistants, companions, AI studio, multi-modal chat
+- 🎮 Play (`games`): AI games, interactive fiction, Roblox worlds
+- 📚 Learn (`learn`): Education, tutoring, language learning
+- 🤖 Bots (`bots`): Discord, Telegram, WhatsApp bots
+- 🛠️ Build (`build`): Dev tools, SDKs, integrations, vibe coding
+- 💼 Business (`business`): Productivity, finance, marketing, health, food
 
 ## Non-English Apps
 
@@ -57,14 +63,18 @@ Key directories and their purposes:
 
 ```
 pollinations/
-├── image.pollinations.ai/     # Image generation backend service
-├── text.pollinations.ai/      # Text generation backend service
-├── pollinations.ai/           # Main React frontend application
-├── packages/                  # Publishable npm packages
-│   ├── sdk/                   # @pollinations/sdk - Client library with React hooks
-│   └── mcp/                   # @pollinations/model-context-protocol - MCP server
-├── enter.pollinations.ai/     # Centralized auth gateway (ACTIVE)
-└── operations/                # Documentation and operations
+├── enter.pollinations.ai/     # Auth gateway + billing (Cloudflare Worker)
+├── gen.pollinations.ai/       # Edge router → enter gateway
+├── image.pollinations.ai/     # Image generation backend (EC2 + Vast.ai)
+├── text.pollinations.ai/      # Text generation backend (EC2)
+├── pollinations.ai/           # Main React frontend
+├── packages/
+│   ├── sdk/                   # @pollinations_ai/sdk - Client library with React hooks
+│   └── mcp/                   # @pollinations_ai/model-context-protocol - MCP server
+├── shared/                    # Shared utilities (auth, registry, IP queue)
+│   └── registry/              # Model registries (image.ts, text.ts, audio.ts, video.ts)
+├── apps/                      # Community apps + APPS.md showcase
+└── social/                    # Social media automation (Discord, Reddit, GitHub)
 ```
 
 ## API Gateway
@@ -77,6 +87,42 @@ All API requests go through `gen.pollinations.ai`, which routes to the `enter.po
 - **Billing**: Pollen credits ($1 ≈ 1 Pollen)
 - **Get API keys**: [enter.pollinations.ai](https://enter.pollinations.ai)
 - **Full API docs**: [APIDOCS.md](./APIDOCS.md)
+
+**Services behind enter gateway:**
+- **Text**: OpenAI-compatible API via Portkey (multi-provider: OpenAI, Google, Anthropic, DeepSeek, etc.)
+- **Image**: Flux, Turbo, and other models on EC2/Vast.ai/io.net GPU instances
+- **Video**: Wan (via Airforce/Alibaba), Veo, LTX on GPU instances
+- **Audio**: ElevenLabs TTS/STT, text-to-music
+- **Tier system**: microbe → spore → seed → flower → nectar → router (see `enter.pollinations.ai/src/tier-config.ts`)
+
+### Local Development
+
+**Service Ports:**
+- **enter.pollinations.ai**: `http://localhost:3000` (API under `/api/*`)
+- **text.pollinations.ai**: `http://localhost:16385`
+- **image.pollinations.ai**: `http://localhost:16384`
+
+**Local API Testing:**
+```bash
+# Enter gateway (local)
+curl "http://localhost:3000/api/generate/image/test?model=flux" -H "Authorization: Bearer $TOKEN"
+curl "http://localhost:3000/api/generate/v1/chat/completions" -H "Authorization: Bearer $TOKEN" ...
+```
+
+**Testing Enter with Local Services:**
+To test enter.pollinations.ai with local text/image services, edit `enter.pollinations.ai/wrangler.toml`:
+```toml
+# Default (remote EC2):
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+
+# For local testing (env.local):
+IMAGE_SERVICE_URL = "http://localhost:16384"
+TEXT_SERVICE_URL = "http://localhost:16385"
+```
+Use `npm run dev` in each service directory to start them.
+
+**Note:** EC2 hostnames in wrangler.toml may change. Check the actual values in `enter.pollinations.ai/wrangler.toml`.
 
 ## Model Context Protocol (MCP)
 
@@ -110,6 +156,12 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 ```
 
+### Audio (Text-to-Speech)
+
+```bash
+curl 'https://gen.pollinations.ai/audio/{text}?voice=nova&key=YOUR_API_KEY' -o speech.mp3
+```
+
 ### Model Discovery
 
 - **Image models**: `https://gen.pollinations.ai/image/models`
@@ -120,6 +172,66 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 - **[Full API Documentation](./APIDOCS.md)**
 - **[Enter Services Deployment](.claude/skills/enter-services/SKILL.md)** - Deploy and manage services on AWS EC2
 
+## ⚠️ YAGNI - You Aren't Gonna Need It
+
+**THIS IS CRITICAL. Follow YAGNI religiously:**
+
+- **Don't keep code for "potential futures"** - Only implement what's needed NOW
+- **Remove unused functions** - Even if they "might be useful someday"
+- **No speculative abstractions** - If we need it later, we'll add it then
+- **No "just in case" helpers** - Don't create test utilities or wrappers preemptively
+- **Keep the codebase minimal** - Less code = fewer bugs = easier maintenance
+- **No fallbacks for backward compatibility** - Clean breaks are better than complexity bloat. When changing tokens, headers, or APIs, update all consumers at once rather than supporting both old and new patterns
+- **When user says "keep it simple" — they mean it** - Don't add layers, wrappers, or abstractions. One function, one price, one config. The simplest thing that works.
+
+## Code Style
+
+**Prefer functional, elegant, and minimal solutions:**
+
+- Don't implement things we're not using anymore
+- Check assumptions on the web and codebase regularly
+- When continuing work from a previous session, read all relevant code first
+- Check related PRs including comments, description, and history
+- If in the middle of a feature/fix, identify clear next steps before proceeding
+
+**Before implementing:**
+- **Verify assumptions on the web** - APIs, libraries, and patterns change frequently
+- **Read related files into context** - Get the full picture before making changes
+- **Check existing implementations** - Don't reinvent what already exists in the codebase
+- **Check which branch you're on** - Run `git branch --show-current` before starting work
+- **Check related PRs and issues** - Use GitHub MCP tools to find context before implementing
+- **Look for existing utility functions** in `shared/` before writing new ones (auth, queue, registry)
+
+## Tinybird Deployment Safety
+
+**CRITICAL — These rules apply whenever deploying to Tinybird:**
+
+- **Always validate first**: `tb --cloud deploy --check --wait` before any deploy
+- **Never use `--allow-destructive-operations`** without explicit user permission
+- **Never use `tb push`** — it's deprecated; use `tb --cloud deploy --wait`
+- **Always use `--cloud`** — without it, CLI tries Tinybird Local (Docker)
+- **Run from `enter.pollinations.ai/observability`** — not from repo root
+- **Pipes are shared** — multiple apps/dashboards may consume the same pipe. Verify all consumers before modifying any pipe
+- **Timeout mitigation**: Use `uniq()` over `uniqExact()`, avoid CTE+JOIN, prefer single-pass queries. For large time ranges, use `start_date` parameter pattern for week-by-week querying
+- Full deploy procedure: see `.claude/skills/tinybird-deploy/SKILL.md`
+
+## Common Mistakes to Avoid
+
+**IMPORTANT - Agents often make these mistakes (learned from session history):**
+
+- **Don't use `cd` in bash commands** - Use the `cwd` parameter instead
+- **Don't run `pytest`** - Use `npm run test` or `npx vitest run`
+- **Don't create .md documentation files** unless explicitly asked
+- **Always use absolute paths** for file operations
+- **Don't edit files manually during a Claude Code session** - this busts the cache
+- **Don't run `/compact`** unless absolutely necessary - it busts cache
+- **Don't let searches run wild** - Use targeted file paths, not broad searches
+- **Don't modify test files to make tests pass** - Fix the actual code instead
+- **Run `npm run decrypt-vars`** before running tests in enter.pollinations.ai
+- **Check `.testingtokens`** file for test API keys: `enter.pollinations.ai/.testingtokens`
+- **Confirm which branch you're on** before making changes — branch mix-ups are a recurring problem
+- **Don't reimplement existing logic** — search for existing functions before writing new ones (e.g. SSE parsing, retry wrappers, auth extraction)
+
 ## Development Guidelines
 
 1. Code Style:
@@ -128,6 +240,7 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
    - Use ES modules (import/export) - all .js files are treated as ES modules
    - Follow existing code formatting patterns
    - Add descriptive comments for complex logic
+   - **Run biome check** after making changes: `npx biome check --write <file>`
 
 2. Testing:
 
@@ -135,6 +248,33 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
    - Follow existing test patterns in /test directories
    - **Test with real production code, not mocks** - Tests should validate actual behavior
    - Avoid creating mock infrastructure - use direct function imports instead
+
+   **Test Commands by Service:**
+   - **enter.pollinations.ai**: `cd enter.pollinations.ai && npm run test` (vitest + Cloudflare Workers pool)
+   - **image.pollinations.ai**: `cd image.pollinations.ai && npm run test` (vitest)
+   - **text.pollinations.ai**: No test runner configured yet
+
+   **⚡ Run tests individually** - Full suite takes time. Use:
+   ```bash
+   npx vitest run --testNamePattern="specific test name"
+   npx vitest run test/specific-file.test.ts
+   ```
+
+   **Snapshot System:** enter.pollinations.ai uses VCR-style snapshots for API responses:
+   - Snapshots stored in test fixtures, replayed during tests
+   - Set `TEST_VCR_MODE=record` to record new snapshots
+   - Default mode is `replay-or-record`
+
+   **Testing Tokens:** `enter.pollinations.ai/.testingtokens` contains:
+   - `ENTER_API_TOKEN_LOCAL` / `ENTER_API_TOKEN_REMOTE` - API keys
+   - `ENTER_TOKEN`, `GITHUB_TOKEN`, `POLAR_ACCESS_TOKEN`
+
+   **Testing Best Practices:**
+   - Read existing tests entirely to understand patterns before adding new ones
+   - Prefer adding to existing test files over creating new ones
+   - Test core functionality - minimal, short, and sweet
+   - Don't create new testing patterns - follow existing conventions
+   - Make requests to `gen.pollinations.ai` for production API testing
 
 3. Documentation:
 
@@ -144,15 +284,7 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
    - **Avoid creating markdown documentation files while working** unless explicitly requested
    - If temporary files are needed for testing/debugging, create them in a `temp/` folder clearly labeled as temporary
 
-4. YAGNI Principle (You Aren't Gonna Need It):
-
-   - **Don't keep code for "potential futures"** - Only implement what's needed now
-   - Remove unused functions, even if they "might be useful someday"
-   - If we need something later, we'll add it when we actually need it
-   - Example: Don't create test utilities or helper functions "just in case"
-   - Keep the codebase minimal and focused on current requirements
-
-5. Architecture Considerations:
+4. Architecture Considerations:
 
    - Frontend changes should be in pollinations.ai/
    - Image generation in image.pollinations.ai/
@@ -169,9 +301,10 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 
 1. Adding New Models:
 
-   - Update models list in respective service
-   - Add model configuration
-   - Update API documentation
+   - **Text models**: Add config in `text.pollinations.ai/configs/modelConfigs.ts`, add entry in `availableModels.ts`
+   - **Image models**: Add handler in `image.pollinations.ai/src/`, register in `shared/registry/image.ts`
+   - Provider configs (Portkey, Bedrock, OpenAI-compatible) go in `text.pollinations.ai/configs/providerConfigs.js`
+   - Update API documentation and model registry
 
 2. Frontend Updates:
 
@@ -194,21 +327,89 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
    - For new features, document both simplified endpoints and OpenAI-compatible endpoints
    - Include minimal, clear code examples that demonstrate basic usage
 
+## Workflow Orchestration
+
+### 1. Plan Mode Default
+- Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
+- If something goes sideways, STOP and re-plan immediately – don't keep pushing
+- Use plan mode for verification steps, not just building
+- Write detailed specs upfront to reduce ambiguity
+
+### 2. Subagent Strategy
+- Use subagents liberally to keep main context window clean
+- Offload research, exploration, and parallel analysis to subagents
+- For complex problems, throw more compute at it via subagents
+- One task per subagent for focused execution
+
+### 3. Self-Improvement Loop
+- After ANY correction from the user: propose an update to this `AGENTS.md` with the learned pattern
+- Write rules for yourself that prevent the same mistake
+- Ruthlessly iterate on these lessons until mistake rate drops
+- Review AGENTS.md at session start for relevant project
+
+### 4. Verification Before Done
+- Never mark a task complete without proving it works
+- Diff behavior between main and your changes when relevant
+- Ask yourself: "Would a staff engineer approve this?"
+- Run tests, check logs, demonstrate correctness
+
+### 5. Demand Elegance (Balanced)
+- For non-trivial changes: pause and ask "is there a more elegant way?"
+- If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
+- Skip this for simple, obvious fixes – don't over-engineer
+- Challenge your own work before presenting it
+
+### 6. Autonomous Bug Fixing
+- When given a bug report: just fix it. Don't ask for hand-holding
+- Point at logs, errors, failing tests – then resolve them
+- Zero context switching required from the user
+- Go fix failing CI tests without being told how
+
+## Task Management
+
+1. **Plan First**: Outline steps before implementing (use todo tools or plan mode)
+2. **Verify Plan**: Check in before starting implementation
+3. **Track Progress**: Mark items complete as you go
+4. **Explain Changes**: High-level summary at each step
+5. **Capture Lessons**: When corrected, update this AGENTS.md with the pattern to prevent recurrence
+
+## Core Principles
+
+- **Simplicity First**: Make every change as simple as possible. Impact minimal code.
+- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
+- **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
+
 # Git Workflow
 
 - If the user asks to send to git or something similar do all these steps:
 - Git status, diff, create branch, commit all, push and write a PR description
+- **Verify branch before committing**: Run `git branch --show-current` and confirm with user if unsure — branch mix-ups have caused wasted work multiple times
+- **Avoid force pushes**: Prefer follow-up commits over `git push --force` or `--force-with-lease`. Force pushes rewrite history and can cause issues for others working on the same branch.
+- **Run biome check before committing**: `npx biome check --write <file>` to fix formatting/linting issues
+- **If PR was already merged**: Open a new branch/PR for follow-up changes, don't try to push to merged branches
 
 ## Communication Style
 
-**All PRs, comments, issues: bullet points, <200 words, no fluff**
+**BE CONCISE. All PRs, comments, issues: bullet points, <200 words, NO FLUFF.**
 
 **PR Format:**
-
 - Use "- Adds X", "- Fix Y" format
-- 3-5 bullets for most PRs
+- 3-5 bullets max
 - Simple titles: "fix:", "feat:", "Add"
-- Reference: `repo:pollinations/pollinations author:eulervoid`
+- No long paragraphs, no marketing language
+
+**Issue Comments:**
+- Bullet points only
+- State facts, not opinions
+- Link to relevant code/files
+- No "I think" or "maybe" - be direct
+
+**Code Reviews:**
+- Focus on parts that need improving, not what's already good
+- Be concise and information-dense
+- Link to specific lines/files
+- Don't praise code that's fine
+- Don't repeat obvious things
 
 ## GitHub Labels
 

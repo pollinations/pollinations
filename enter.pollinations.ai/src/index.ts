@@ -1,64 +1,57 @@
+import type { Context } from "hono";
 import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
 import { cors } from "hono/cors";
-import { createAuth } from "./auth.ts";
-import { handleError } from "./error.ts";
-import { polarRoutes } from "./routes/polar.ts";
-import { proxyRoutes } from "./routes/proxy.ts";
-import { tiersRoutes } from "./routes/tiers.ts";
-import { usageRoutes } from "./routes/usage.ts";
-import { createDocsRoutes } from "./routes/docs.ts";
-import { apiKeysRoutes } from "./routes/api-keys.ts";
-import { webhooksRoutes } from "./routes/webhooks.ts";
-import { adminRoutes } from "./routes/admin.ts";
-import { modelStatsRoutes } from "./routes/model-stats.ts";
+import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
-import { logger } from "./middleware/logger.ts";
+import { createAuth } from "./auth.ts";
 import type { Env } from "./env.ts";
+import { handleError } from "./error.ts";
+import { logger } from "./middleware/logger.ts";
+import { accountRoutes } from "./routes/account.ts";
+import { adminRoutes } from "./routes/admin.ts";
+import { apiKeysRoutes } from "./routes/api-keys.ts";
+import { audioRoutes } from "./routes/audio.ts";
+import { customerRoutes } from "./routes/customer.ts";
+import { createDocsRoutes } from "./routes/docs.ts";
+import { modelStatsRoutes } from "./routes/model-stats.ts";
+import { nowpaymentsRoutes } from "./routes/nowpayments.ts";
+import { proxyRoutes } from "./routes/proxy.ts";
+import { stripeRoutes } from "./routes/stripe.ts";
+import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
+import { tiersRoutes } from "./routes/tiers.ts";
+import { webhooksRoutes } from "./routes/webhooks.ts";
+import { webhooksCryptoRoutes } from "./routes/webhooks-crypto.ts";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
-    return await createAuth(c.env).handler(c.req.raw);
+    return await createAuth(c.env, c.executionCtx).handler(c.req.raw);
 });
 
 export const api = new Hono<Env>()
     .route("/auth", authRoutes)
-    .route("/polar", polarRoutes)
+    .route("/customer", customerRoutes)
+    .route("/stripe", stripeRoutes)
+    .route("/nowpayments", nowpaymentsRoutes)
     .route("/tiers", tiersRoutes)
     .route("/api-keys", apiKeysRoutes)
-    .route("/usage", usageRoutes)
+    .route("/account", accountRoutes)
     .route("/webhooks", webhooksRoutes)
+    .route("/webhooks", webhooksCryptoRoutes)
+    .route("/webhooks", stripeWebhooksRoutes)
     .route("/admin", adminRoutes)
     .route("/model-stats", modelStatsRoutes)
-    .route("/generate", proxyRoutes);
+    .route("/generate", proxyRoutes)
+    .route("/generate/v1/audio", audioRoutes);
 
 export type ApiRoutes = typeof api;
 
 const docsRoutes = createDocsRoutes(api);
 
 const app = new Hono<Env>()
-    // Permissive CORS for public API endpoints (require API keys)
-    .use(
-        "/api/generate/*",
-        cors({
-            origin: "*",
-            allowMethods: ["GET", "POST", "OPTIONS"],
-            allowHeaders: ["Content-Type", "Authorization"],
-            exposeHeaders: ["Content-Length"],
-            maxAge: 600,
-        }),
-    )
-    // Restrictive CORS for auth/dashboard endpoints (use credentials)
+    // Permissive CORS for all API endpoints (all require API keys for auth)
     .use(
         "*",
         cors({
-            origin: (origin) => {
-                // Allow localhost on any port for development
-                if (origin.startsWith("http://localhost:")) return origin;
-                // Production origins
-                if (origin.endsWith(".pollinations.ai")) return origin;
-                return null;
-            },
-            credentials: true,
+            origin: "*",
             allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             allowHeaders: ["Content-Type", "Authorization"],
             exposeHeaders: ["Content-Length", "Content-Disposition"],
@@ -70,7 +63,7 @@ const app = new Hono<Env>()
     .route("/api", api)
     .route("/api/docs", docsRoutes);
 
-app.notFound(async (c) => {
+app.notFound(async (c: Context<Env>) => {
     return await handleError(new HTTPException(404), c);
 });
 

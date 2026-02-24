@@ -30,13 +30,17 @@ MODEL = "openai"
 
 # Load skill as system prompt
 SKILL_PATH = ".claude/skills/app-review/SKILL.md"
+DESCRIPTION_PROMPT_PATH = ".github/scripts/app-description-prompt.txt"
 
 def load_skill():
     """Load the skill file as system prompt."""
     with open(SKILL_PATH, "r") as f:
         return f.read()
 
-import shlex
+def load_description_prompt():
+    """Load the shared description rewriting prompt."""
+    with open(DESCRIPTION_PROMPT_PATH, "r") as f:
+        return f.read().strip()
 
 def sanitize_string(s, max_length=100):
     if not s or not isinstance(s, str):
@@ -117,8 +121,6 @@ def call_llm(system_prompt, user_message):
 
 def parse_issue(body):
     """Parse issue body to extract app details."""
-    import re
-
     def extract(pattern, default=""):
         match = re.search(pattern, body, re.IGNORECASE | re.MULTILINE)
         return match.group(1).strip() if match else default
@@ -199,16 +201,16 @@ Write a concise, helpful comment (2-3 sentences max) explaining the issue and wh
         gh_api(f"/repos/pollinations/pollinations/issues/{ISSUE_NUMBER}/comments", "POST", {"body": comment})
 
         # Update label
-        run_cmd(f'gh issue edit {ISSUE_NUMBER} --remove-label "TIER-APP" --add-label "{label}"')
+        run_cmd(["gh", "issue", "edit", ISSUE_NUMBER, "--remove-label", "TIER-APP", "--add-label", label])
 
         if label == "TIER-APP-REJECTED":
-            run_cmd(f'gh issue close {ISSUE_NUMBER}')
+            run_cmd(["gh", "issue", "close", ISSUE_NUMBER])
 
         print(f"   ❌ Handled validation failure: {label}")
         return
 
     # Validation passed - fetch and parse issue
-    issue_data, _ = run_cmd(f'gh issue view {ISSUE_NUMBER} --json body,author,title')
+    issue_data, _ = run_cmd(["gh", "issue", "view", ISSUE_NUMBER, "--json", "body,author,title"])
     issue = json.loads(issue_data)
     parsed = parse_issue(issue.get("body", ""))
 
@@ -230,8 +232,7 @@ Discord: {parsed['discord']}
 Respond with ONLY a JSON object (no markdown, no explanation):
 {{
     "emoji": "single emoji that represents this app",
-    "category": "one of: Creative, Chat, Games, Dev_Tools, Vibes, Social_Bots, Learn",
-    "description": "concise 80 char max description",
+    "category": "one of: image, video_audio, writing, chat, games, learn, bots, build, business",
     "language": "ISO code like en, zh-CN, es, ja"
 }}"""
 
@@ -240,8 +241,6 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 
     # Parse LLM response
     try:
-        # Try to extract JSON from response
-        import re
         json_match = re.search(r'\{[^{}]+\}', llm_response, re.DOTALL)
         if json_match:
             llm_data = json.loads(json_match.group())
@@ -251,18 +250,33 @@ Respond with ONLY a JSON object (no markdown, no explanation):
         print(f"   ⚠️ Could not parse LLM response, using defaults")
         llm_data = {
             "emoji": "🚀",
-            "category": parsed['category'] or "Dev_Tools",
-            "description": parsed['description'][:80] if parsed['description'] else parsed['name'],
+            "category": parsed['category'] or "build",
             "language": "en"
         }
 
     emoji = llm_data.get("emoji", "🚀")
-    category = llm_data.get("category", "Dev_Tools")
-    description = llm_data.get("description", parsed['name'])[:80]
+    category = llm_data.get("category", "build")
     language = llm_data.get("language", "en")
 
     print(f"   Emoji: {emoji}")
     print(f"   Category: {category}")
+
+    # AI-rewrite the description using the shared prompt
+    raw_description = parsed['description'] or parsed['name']
+    print("🤖 Rewriting description with shared prompt...")
+    try:
+        desc_prompt = load_description_prompt()
+        description = call_llm(desc_prompt, f'App: "{parsed["name"]}" — Original: "{raw_description}"')
+        description = description.strip().strip('"')
+        # Validate
+        if not description or len(description) > 200 or len(description) < 10 or "|" in description or "\n" in description:
+            print(f"   ⚠️ AI description invalid (len={len(description)}), falling back to sanitized")
+            description = sanitize_string(raw_description, 200)
+    except Exception as e:
+        print(f"   ⚠️ Description rewrite failed: {e}, using sanitized")
+        description = sanitize_string(raw_description, 200)
+
+    print(f"   Description: {description}")
 
     # Get stars from validation result
     stars = validation.get("stars", 0)
@@ -272,8 +286,8 @@ Respond with ONLY a JSON object (no markdown, no explanation):
     slug = parsed['name'].lower().replace(" ", "-").replace("_", "-")[:20]
     branch = f"auto/app-{ISSUE_NUMBER}-{slug}"
 
-    run_cmd("git fetch origin main")
-    run_cmd(f"git checkout -b {branch} origin/main")
+    run_cmd(["git", "fetch", "origin", "main"])
+    run_cmd(["git", "checkout", "-b", branch, "origin/main"])
 
     # Build the row
     today = datetime.now().strftime("%Y-%m-%d")
@@ -296,26 +310,39 @@ Respond with ONLY a JSON object (no markdown, no explanation):
     else:
         web_url = app_url
 
-    # Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted |
-    new_row = f"| {emoji} | {parsed['name']} | {web_url} | {description} | {language} | {category} | @{ISSUE_AUTHOR} | {github_user_id} | {repo_url} | {stars_str} | {discord} | | {today} |"
+    # Get issue creation date for Submitted_Date
+    issue_created_at = ""
+    try:
+        issue_details = gh_api(f"/repos/pollinations/pollinations/issues/{ISSUE_NUMBER}")
+        created_at = issue_details.get("created_at", "")
+        if created_at:
+            issue_created_at = created_at[:10]  # YYYY-MM-DD
+    except Exception as e:
+        print(f"   Warning: Could not fetch issue creation date: {e}")
+        issue_created_at = today  # Fallback to today
+
+    issue_url = f"https://github.com/pollinations/pollinations/issues/{ISSUE_NUMBER}"
+
+    # Format: | Emoji | Name | Web_URL | Description | Language | Category | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h |
+    new_row = f"| {emoji} | {parsed['name']} | {web_url} | {description} | {language} | {category} | @{ISSUE_AUTHOR} | {github_user_id} | {repo_url} | {stars_str} | {discord} | | {issue_created_at} | {issue_url} | {today} |  |  |"
 
     # Add row using the prepend script
     os.environ["NEW_ROW"] = new_row
-    run_cmd("node .github/scripts/app-prepend-row.js")
-    run_cmd("node .github/scripts/app-update-readme.js")
+    run_cmd(["node", ".github/scripts/app-prepend-row.js"])
+    run_cmd(["node", ".github/scripts/app-update-greenhouse.js"])
 
     # Configure git
-    run_cmd(f'git config user.name "{BOT_NAME}"')
-    run_cmd(f'git config user.email "{BOT_EMAIL}"')
+    run_cmd(["git", "config", "user.name", BOT_NAME])
+    run_cmd(["git", "config", "user.email", BOT_EMAIL])
 
     # Commit with issue author as co-author
     commit_msg = f"""Add {parsed['name']} to {category}
 
 Co-authored-by: {ISSUE_AUTHOR} <{ISSUE_AUTHOR}@users.noreply.github.com>"""
 
-    run_cmd("git add -A")
-    run_cmd(f'git commit -m "{commit_msg}"')
-    run_cmd(f"git push origin {branch} --force-with-lease")
+    run_cmd(["git", "add", "-A"])
+    run_cmd(["git", "commit", "-m", commit_msg])
+    run_cmd(["git", "push", "origin", branch, "--force-with-lease"])
 
     # Check for existing PR
     existing_pr = validation.get("existing_pr")
@@ -324,10 +351,10 @@ Co-authored-by: {ISSUE_AUTHOR} <{ISSUE_AUTHOR}@users.noreply.github.com>"""
     else:
         # Create PR
         pr_body = f"- Adds [{parsed['name']}]({parsed['url']}) to {category}\n- {description}\n\nFixes #{ISSUE_NUMBER}"
-        run_cmd(f'gh pr create --title "Add {parsed["name"]} to {category}" --body "{pr_body}" --label "TIER-APP-REVIEW-PR"')
+        run_cmd(["gh", "pr", "create", "--title", f"Add {parsed['name']} to {category}", "--body", pr_body, "--label", "TIER-APP-REVIEW-PR"])
 
     # Update issue label (remove both TIER-APP and TIER-APP-INCOMPLETE if present)
-    run_cmd(f'gh issue edit {ISSUE_NUMBER} --remove-label "TIER-APP" --remove-label "TIER-APP-INCOMPLETE" --add-label "TIER-APP-REVIEW"')
+    run_cmd(["gh", "issue", "edit", ISSUE_NUMBER, "--remove-label", "TIER-APP", "--remove-label", "TIER-APP-INCOMPLETE", "--add-label", "TIER-APP-REVIEW"])
 
     print(f"   ✅ Done!")
 

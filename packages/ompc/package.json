@@ -1,14 +1,14 @@
 {
-  "name": "@pollinations_ai/oh-my-pollicode",
-  "version": "2.0.0",
+  "name": "@pollinations_ai/ompc",
+  "version": "2.0.1",
   "description": "Pre-configured OpenCode + oh-my-opencode with Pollinations AI models",
   "type": "module",
   "bin": {
-    "oh-my-pollicode": "./install.js"
+    "ompc": "./orchestrator.js"
   },
   "scripts": {
-    "start": "node install.js",
-    "test": "node install.test.js"
+    "start": "node orchestrator.js",
+    "test": "node orchestrator.test.js"
 
   },
   "keywords": [
@@ -34,7 +34,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/pollinations/pollinations.git",
-    "directory": "apps/opencode-pollinations"
+    "directory": "packages/ompc"
   },
   "homepage": "https://pollinations.ai",
   "publishConfig": {

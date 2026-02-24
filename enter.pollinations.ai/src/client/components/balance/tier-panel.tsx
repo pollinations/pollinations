@@ -1,92 +1,119 @@
 import type { FC } from "react";
-import { getTierEmoji, type TierStatus } from "@/tier-config.ts";
+import { getTierColor, getTierEmoji, type TierStatus } from "@/tier-config.ts";
 import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
 import { TierExplanation } from "./tier-explanation";
 
-const TIER_BADGE_COLOR: Record<
-    TierStatus,
-    "gray" | "green" | "pink" | "amber" | "blue" | "yellow"
-> = {
-    none: "gray",
-    microbe: "gray",
-    seed: "green",
-    flower: "pink",
-    nectar: "amber",
-    router: "blue",
-    spore: "yellow",
-};
+const APPEAL_URL =
+    "https://github.com/pollinations/pollinations/issues/new?template=tier-appeal.yml";
+
+// Map tier color to Badge component color (Badge doesn't support "red", use "blue" for router)
+function getBadgeColor(
+    tier: TierStatus,
+): "gray" | "green" | "pink" | "amber" | "blue" {
+    const tierColor = tier === "none" ? "gray" : getTierColor(tier);
+    // Badge component doesn't have "red" variant, map router's "red" to "blue"
+    if (tierColor === "red") return "blue";
+    // All other tier colors (gray, blue, green, pink, amber) are valid Badge colors
+    return tierColor as "gray" | "green" | "pink" | "amber" | "blue";
+}
+
+// Map tier color to Panel component color (Panel doesn't support "red", use "blue" for router)
+function getPanelColor(
+    tier: TierStatus,
+): "blue" | "amber" | "green" | "pink" | "gray" {
+    const tierColor = tier === "none" ? "gray" : getTierColor(tier);
+    // Panel component doesn't have "red" variant, map router's "red" to "blue"
+    if (tierColor === "red") return "blue";
+    // All other tier colors (gray, blue, green, pink, amber) are valid Panel colors
+    return tierColor as "blue" | "amber" | "green" | "pink" | "gray";
+}
 
 const BetaNoticeText: FC = () => (
-    <p className="text-sm font-medium text-gray-900 mt-3 pt-3 border-t border-gray-200">
-        ✨ <strong>We're in beta!</strong> We're learning what works best for
-        our community and may adjust pollen values and tier rules as we go.
-        Thanks for being part of the journey!
+    <p className="text-sm font-medium text-gray-900 mt-3">
+        🧪 <strong>We're in beta!</strong> Pollen values and tier rules may
+        evolve as we learn what works best.
     </p>
 );
 
-const NoTierScreen: FC<{ has_polar_error?: boolean }> = ({
-    has_polar_error,
-}) => (
-    <Panel color="amber">
+// ─── Microbe: Account Under Review ──────────────────────────
+
+const MicrobeLimitedPanel: FC = () => (
+    <Panel color="gray">
         <div className="flex flex-col gap-3">
-            {has_polar_error ? (
-                <Card color="red" bg="bg-red-50">
-                    <p className="text-sm text-red-700 leading-relaxed">
-                        ❌ <strong>Unable to Fetch Subscription Status:</strong>{" "}
-                        We couldn't connect to the subscription service. Please
-                        refresh the page or try again later.
-                    </p>
-                </Card>
-            ) : (
-                <Card color="yellow" bg="bg-yellow-50">
-                    <p className="text-sm text-yellow-900 leading-relaxed">
-                        ⏳ <strong>Setting Up Your Subscription:</strong> Your
-                        subscription is being activated. Please refresh the page
-                        in 1-2 minutes.
-                    </p>
-                </Card>
-            )}
-            <Card color="amber">
-                <TierExplanation />
-                <BetaNoticeText />
-            </Card>
+            <p className="text-sm text-gray-600 leading-relaxed">
+                We're verifying that your account belongs to a real person. This
+                usually takes a few days.
+            </p>
+            <p className="text-sm">
+                📧 Questions about your tier?{" "}
+                <a
+                    href={APPEAL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-900 underline hover:text-gray-700 font-medium"
+                >
+                    Contact us &rarr;
+                </a>
+            </p>
+            <BetaNoticeText />
         </div>
     </Panel>
 );
 
+// ─── Tier screen (spore + creator tiers) ─────────────────────
+
 const TierScreen: FC<{
     tier: TierStatus;
     active_tier_name: string;
-    daily_pollen: number;
-}> = ({ tier, active_tier_name, daily_pollen }) => {
+    pollen: number;
+    cadence: "daily" | "weekly";
+}> = ({ tier, active_tier_name, pollen, cadence }) => {
     const tierEmoji = getTierEmoji(tier);
+    const panelColor = getPanelColor(tier);
+    const cardColor = panelColor;
+    const isWeekly = cadence === "weekly";
 
     return (
-        <Panel color="amber">
+        <Panel color={panelColor}>
             <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-3xl font-bold text-gray-900">
                         {tierEmoji} {active_tier_name}
                     </span>
                     <Badge
-                        color={TIER_BADGE_COLOR[tier]}
+                        color={getBadgeColor(tier)}
                         size="lg"
                         className="font-semibold"
                     >
-                        {daily_pollen} pollen/day
+                        {pollen} pollen/{isWeekly ? "week" : "day"}
                     </Badge>
                 </div>
 
                 <p className="text-sm text-gray-500">
-                    Refills daily at 00:00 UTC. Unused pollen does not carry
-                    over.
+                    {isWeekly
+                        ? "Refreshes every Monday at 00:00 UTC. Unused pollen does not carry over."
+                        : "Refills daily at 00:00 UTC. Unused pollen does not carry over."}
                 </p>
-                <Card color="amber">
+
+                <p className="text-sm">
+                    📧 Questions about your tier?{" "}
+                    <a
+                        href={APPEAL_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-900 underline hover:text-gray-700 font-medium"
+                    >
+                        Contact us &rarr;
+                    </a>
+                </p>
+
+                <Card color={cardColor}>
                     <TierExplanation currentTier={tier} />
-                    <BetaNoticeText />
                 </Card>
+
+                <BetaNoticeText />
             </div>
         </Panel>
     );
@@ -96,23 +123,24 @@ type TierPanelProps = {
     active: {
         tier: TierStatus;
         displayName: string;
-        dailyPollen?: number;
+        pollen?: number;
+        cadence?: "daily" | "weekly";
     };
 };
 
 export const TierPanel: FC<TierPanelProps> = ({ active }) => {
-    if (active.tier === "none") {
-        return <NoTierScreen has_polar_error={false} />;
-    }
+    const { tier, pollen, cadence } = active;
 
-    const displayName = active.displayName || "Unknown Tier";
-    const displayPollen = active.dailyPollen ?? 0;
+    if (tier === "microbe") {
+        return <MicrobeLimitedPanel />;
+    }
 
     return (
         <TierScreen
-            tier={active.tier}
-            active_tier_name={displayName}
-            daily_pollen={displayPollen}
+            tier={tier}
+            active_tier_name={active.displayName}
+            pollen={pollen ?? 0}
+            cadence={cadence ?? "daily"}
         />
     );
 };

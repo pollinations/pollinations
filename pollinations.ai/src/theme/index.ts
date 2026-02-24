@@ -2,7 +2,6 @@
 
 export * from "../copy/content/apps";
 export * from "../copy/content/community";
-export * from "../copy/content/docs";
 export * from "../copy/content/hello";
 export * from "../copy/content/play";
 export * from "./buildPrompts";

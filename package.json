@@ -9,13 +9,15 @@
     "dev": "concurrently --kill-others-on-fail --prefix '[{name}]' --names 'enter,text,image' -c 'auto' 'npm run dev --prefix enter.pollinations.ai' 'npm run dev --prefix text.pollinations.ai' 'npm run dev --prefix image.pollinations.ai'",
     "dev:enter": "npm run dev --prefix enter.pollinations.ai",
     "dev:text": "npm run dev --prefix text.pollinations.ai",
-    "dev:image": "npm run dev --prefix image.pollinations.ai"
+    "dev:image": "npm run dev --prefix image.pollinations.ai",
+    "format:changed": "git diff --diff-filter=d --name-only origin/main | grep -E '\\.(js|ts|jsx|tsx|json|jsonc)$' | grep -v -E '(node_modules|reddit|dist|build|\\.next|\\.cache|out)/' | xargs npx biome check --write"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.10",
     "concurrently": "^9.2.1"
   },
   "dependencies": {
-    "lefthook": "^2.0.4"
+    "lefthook": "^2.0.4",
+    "wrangler": "^4.59.1"
   }
 }

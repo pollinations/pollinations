@@ -1,0 +1,1046 @@
+{
+  "annotations": {
+    "list": [{
+      "builtIn": 1,
+      "datasource": {
+        "type": "grafana",
+        "uid": "-- Grafana --"
+      },
+      "enable": true,
+      "hide": true,
+      "iconColor": "rgba(0, 211, 255, 1)",
+      "name": "Annotations & Alerts",
+      "type": "dashboard"
+    }]
+  },
+  "description": "Daily costs split into 4 categories: paid inference, paid GPU, free inference, free GPU — all from Tinybird, plus Stripe revenue",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "panels": [],
+      "title": "Summary",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Average daily paid inference cost (google, aws, alibaba, azure, bytedance).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 300 },
+              { "color": "red", "value": 800 }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 3, "x": 3, "y": 1 },
+      "id": 2,
+
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+        "format": 1,
+        "range": true,
+        "rawSql": "SELECT\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as api_daily_spend\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('google', 'aws', 'alibaba', 'azure', 'bytedance')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+        "refId": "A"
+      }],
+      "title": "Paid Inference $/day",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Average daily paid GPU cost (io.net).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 100 },
+              { "color": "red", "value": 200 }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 3, "x": 6, "y": 1 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+        "format": 1,
+        "range": true,
+        "rawSql": "SELECT\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as gpu_daily_spend\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'io.net'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+        "refId": "A"
+      }],
+      "title": "Paid GPU $/day",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Mixed --"
+      },
+      "description": "Average daily free inference cost (cloud credits, excludes GPU models). Includes OVH legacy from text_events.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "light-blue", "value": null },
+              { "color": "light-purple", "value": 200 }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 3, "x": 9, "y": 1 },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as free_inference_daily\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND (\n    (model_provider_used IN ('fireworks', 'airforce', 'elevenlabs', 'perplexity', 'azure-2', 'scaleway', 'community'))\n    OR (model_provider_used = 'modal' AND model_used NOT IN ('klein', 'klein-large', 'ltx-2') AND model_used NOT LIKE 'flux_klein%')\n    OR (model_provider_used = 'ovhcloud' AND model_used IN ('Qwen3-Coder-30B-A3B-Instruct', 'Mistral-Small-3.2-24B-Instruct-2506', 'whisper'))\n  )\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+          "refId": "A",
+          "hide": true
+        },
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D458" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  round(SUM(cost) / GREATEST(1, uniqExact(toDate(timestamp))), 2) as legacy_daily\nFROM text_events\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND provider = 'ovh'\n  AND response_status = 'success'",
+          "refId": "B",
+          "hide": true
+        },
+        {
+          "datasource": { "type": "__expr__", "uid": "__expr__" },
+          "expression": "$A + $B",
+          "refId": "C",
+          "type": "math"
+        }
+      ],
+      "title": "Free Inference $/day",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Average daily free GPU cost (modal GPU + OVH GPU models).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "light-blue", "value": null },
+              { "color": "light-purple", "value": 100 }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 3, "x": 12, "y": 1 },
+      "id": 15,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+        "format": 1,
+        "range": true,
+        "rawSql": "SELECT\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as free_gpu_daily\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND (\n    (model_provider_used = 'modal' AND (model_used IN ('klein', 'klein-large', 'ltx-2') OR model_used LIKE 'flux_klein%'))\n    OR (model_provider_used = 'ovhcloud' AND model_used NOT IN ('Qwen3-Coder-30B-A3B-Instruct', 'Mistral-Small-3.2-24B-Instruct-2506', 'whisper'))\n  )\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+        "refId": "A"
+      }],
+      "title": "Free GPU $/day",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Fixed daily infrastructure costs (Cloudflare gateway, AWS AI services, Scaleway legacy). Editable via dashboard variables.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "orange", "value": null }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 3, "x": 0, "y": 1 },
+      "id": 19,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+        "format": 1,
+        "range": true,
+        "rawSql": "SELECT ($infra_cloudflare_daily + $infra_aws_daily + $infra_scaleway_daily) as infra_daily",
+        "refId": "A"
+      }],
+      "title": "Paid Infra $/day",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "description": "Average daily Stripe revenue.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#73BF69", "value": null },
+              { "color": "green", "value": 100 },
+              { "color": "super-light-green", "value": 500 }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 3, "x": 15, "y": 1 },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D457" },
+        "format": 1,
+        "range": true,
+        "rawSql": "SELECT\n  round(SUM(amount_cents) / 100.0 / GREATEST(1, uniqExact(toDate(timestamp))), 2) as revenue_per_day\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND payment_status = 'paid'\n  AND livemode = 1",
+        "refId": "A"
+      }],
+      "title": "Revenue $/day",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Mixed --"
+      },
+      "description": "Average daily balance (revenue - paid spend).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": -200 },
+              { "color": "green", "value": 0 }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 1 },
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D457" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  round(SUM(amount_cents) / 100.0 / GREATEST(1, uniqExact(toDate(timestamp))), 2) as revenue\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND payment_status = 'paid'\n  AND livemode = 1",
+          "refId": "A",
+          "hide": true
+        },
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as spend\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('google', 'aws', 'alibaba', 'azure', 'bytedance', 'io.net')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+          "refId": "B",
+          "hide": true
+        },
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT ($infra_cloudflare_daily + $infra_aws_daily + $infra_scaleway_daily) as infra",
+          "refId": "D",
+          "hide": true
+        },
+        {
+          "datasource": { "type": "__expr__", "uid": "__expr__" },
+          "expression": "$A - $B - $D",
+          "refId": "C",
+          "type": "math"
+        }
+      ],
+      "title": "Balance $/day",
+      "type": "stat"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
+      "id": 200,
+      "panels": [],
+      "title": "Paid",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Daily paid inference cost by provider/model (google, aws, alibaba, azure, bytedance).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Cost ($)",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "min": 0,
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 12, "w": 12, "x": 0, "y": 7 },
+      "id": 4,
+      "options": {
+        "legend": { "calcs": ["sum", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true, "sortBy": "Total", "sortDesc": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used IN ('google', 'aws', 'alibaba', 'azure', 'bytedance')\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time, series\nORDER BY time, series",
+        "refId": "A"
+      }],
+      "title": "Paid Inference",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Daily paid GPU cost by provider/model (io.net).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Cost ($)",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "min": 0,
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 12, "w": 12, "x": 12, "y": 7 },
+      "id": 16,
+      "options": {
+        "legend": { "calcs": ["sum", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true, "sortBy": "Total", "sortDesc": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'io.net'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time, series\nORDER BY time, series",
+        "refId": "A"
+      }],
+      "title": "Paid GPU",
+      "type": "timeseries"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 19 },
+      "id": 300,
+      "panels": [],
+      "title": "Free",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Mixed --"
+      },
+      "description": "Daily free inference cost by provider/model (cloud credits). GPU models excluded. Includes OVH legacy from text_events.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Pollen ($)",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 60,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "min": 0,
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 12, "w": 12, "x": 0, "y": 20 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["sum", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true, "sortBy": "Total", "sortDesc": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND (\n    (model_provider_used IN ('fireworks', 'airforce', 'elevenlabs', 'perplexity', 'azure-2', 'scaleway', 'community'))\n    OR (model_provider_used = 'modal' AND model_used NOT IN ('klein', 'klein-large', 'ltx-2') AND model_used NOT LIKE 'flux_klein%')\n    OR (model_provider_used = 'ovhcloud' AND model_used IN ('Qwen3-Coder-30B-A3B-Instruct', 'Mistral-Small-3.2-24B-Instruct-2506', 'whisper'))\n  )\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time, series\nORDER BY time, series",
+        "refId": "A"
+      }, {
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D458" },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT\n  toStartOfInterval(timestamp, INTERVAL 1 DAY) as time,\n  'ovh / gpt-oss-20b (legacy)' as series,\n  SUM(cost) as cost\nFROM text_events\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND provider = 'ovh'\n  AND response_status = 'success'\nGROUP BY time\nORDER BY time",
+        "refId": "B"
+      }],
+      "title": "Free Inference",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Daily free GPU cost by provider/model. Modal GPU models (klein, ltx-2) + OVH GPU models.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Pollen ($)",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 60,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "min": 0,
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 12, "w": 12, "x": 12, "y": 20 },
+      "id": 17,
+      "options": {
+        "legend": { "calcs": ["sum", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true, "sortBy": "Total", "sortDesc": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT\n  toStartOfInterval(start_time, INTERVAL 1 DAY) as time,\n  concat(model_provider_used, ' / ', model_used) as series,\n  SUM(total_price) as cost\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND (\n    (model_provider_used = 'modal' AND (model_used IN ('klein', 'klein-large', 'ltx-2') OR model_used LIKE 'flux_klein%'))\n    OR (model_provider_used = 'ovhcloud' AND model_used NOT IN ('Qwen3-Coder-30B-A3B-Instruct', 'Mistral-Small-3.2-24B-Instruct-2506', 'whisper'))\n  )\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY time, series\nORDER BY time, series",
+        "refId": "A"
+      }],
+      "title": "Free GPU",
+      "type": "timeseries"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 400,
+      "panels": [],
+      "title": "Credits & Provider Totals",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Mixed --"
+      },
+      "description": "Estimated days of credits remaining per provider. OVHcloud includes legacy text_events burn rate.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "green", "value": 60 }
+            ]
+          },
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": [
+          { "matcher": { "id": "byFrameRefID", "options": "A" }, "properties": [{ "id": "displayName", "value": "fireworks" }] },
+          { "matcher": { "id": "byFrameRefID", "options": "G" }, "properties": [{ "id": "displayName", "value": "elevenlabs" }] },
+          { "matcher": { "id": "byFrameRefID", "options": "H" }, "properties": [{ "id": "displayName", "value": "perplexity" }] },
+          { "matcher": { "id": "byFrameRefID", "options": "I" }, "properties": [{ "id": "displayName", "value": "modal" }] },
+          { "matcher": { "id": "byFrameRefID", "options": "J" }, "properties": [{ "id": "displayName", "value": "azure-2" }] },
+          { "matcher": { "id": "byFrameRefID", "options": "K" }, "properties": [{ "id": "displayName", "value": "scaleway" }] },
+          { "matcher": { "id": "byFrameRefID", "options": "F" }, "properties": [{ "id": "displayName", "value": "ovhcloud" }] }
+        ]
+      },
+      "gridPos": { "h": 12, "w": 8, "x": 0, "y": 33 },
+      "id": 13,
+      "options": {
+        "displayMode": "basic",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showUnfilled": false,
+        "sizing": "auto",
+        "namePlacement": "auto",
+        "valueMode": "text"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT round($credits_fireworks / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'fireworks'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT round($credits_elevenlabs / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'elevenlabs'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+          "refId": "G"
+        },
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT round($credits_perplexity / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'perplexity'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+          "refId": "H"
+        },
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT round($credits_modal / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'modal'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+          "refId": "I"
+        },
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT round($credits_azure_2 / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'azure-2'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+          "refId": "J"
+        },
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT round($credits_scaleway / GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))), 0) as val\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'scaleway'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+          "refId": "K"
+        },
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT toFloat64($credits_ovhcloud) as val",
+          "refId": "B",
+          "hide": true
+        },
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  GREATEST(0.01, SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time)))) as val\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND model_provider_used = 'ovhcloud'\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300",
+          "refId": "C",
+          "hide": true
+        },
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D458" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  GREATEST(0.01, SUM(cost) / GREATEST(1, uniqExact(toDate(timestamp)))) as val\nFROM text_events\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND provider = 'ovh'\n  AND response_status = 'success'",
+          "refId": "D",
+          "hide": true
+        },
+        {
+          "datasource": { "type": "__expr__", "uid": "__expr__" },
+          "expression": "$C + $D",
+          "refId": "E",
+          "type": "math",
+          "hide": true
+        },
+        {
+          "datasource": { "type": "__expr__", "uid": "__expr__" },
+          "expression": "$B / $E",
+          "refId": "F",
+          "type": "math"
+        }
+      ],
+      "title": "Days of Credits Remaining",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Mixed --"
+      },
+      "description": "Total cost per provider over the selected time period. Includes legacy text_events providers.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 2000 }
+            ]
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Total_Cost" },
+            "properties": [{ "id": "unit", "value": "currencyUSD" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Daily_Avg" },
+            "properties": [{ "id": "unit", "value": "currencyUSD" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 12, "w": 8, "x": 8, "y": 33 },
+      "id": 18,
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "Total_Cost" }],
+        "footer": {
+          "show": true,
+          "reducer": ["sum"],
+          "fields": ["Total_Cost", "Daily_Avg"]
+        }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  model_provider_used as Provider,\n  round(SUM(total_price), 2) as Total_Cost,\n  round(SUM(total_price) / GREATEST(1, uniqExact(toDate(start_time))), 2) as Daily_Avg\nFROM generation_event\nWHERE start_time >= $__fromTime AND start_time < $__toTime\n  AND is_billed_usage = true\n  AND response_status >= 200 AND response_status < 300\nGROUP BY model_provider_used\nORDER BY Total_Cost DESC",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D458" },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  CONCAT(provider, ' (legacy)') as Provider,\n  round(SUM(cost), 2) as Total_Cost,\n  round(SUM(cost) / GREATEST(1, uniqExact(toDate(timestamp))), 2) as Daily_Avg\nFROM text_events\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND response_status = 'success'\nGROUP BY provider\nORDER BY Total_Cost DESC",
+          "refId": "B"
+        }
+      ],
+      "transformations": [
+        { "id": "merge", "options": {} }
+      ],
+      "title": "Total Costs per Provider",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Fixed daily infrastructure costs. Editable via dashboard variables.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "orange", "value": null }
+            ]
+          },
+          "unit": "currencyUSD",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 12, "w": 8, "x": 16, "y": 33 },
+      "id": 20,
+      "options": {
+        "displayMode": "basic",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showUnfilled": false,
+        "sizing": "auto",
+        "namePlacement": "auto",
+        "valueMode": "text"
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D456" },
+        "format": 1,
+        "range": true,
+        "rawSql": "SELECT\n  toFloat64($infra_cloudflare_daily) as `Cloudflare Gateway`,\n  toFloat64($infra_aws_daily) as `AWS AI Services`,\n  toFloat64($infra_scaleway_daily) as `Scaleway Legacy`",
+        "refId": "A"
+      }],
+      "title": "Infrastructure $/day",
+      "type": "bargauge"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 45 },
+      "id": 500,
+      "panels": [],
+      "title": "Revenue — Stripe",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "description": "Daily revenue from Stripe checkout payments (livemode only).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Revenue ($)",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "min": 0,
+          "unit": "currencyUSD"
+        },
+        "overrides": [{
+          "matcher": { "id": "byName", "options": "revenue" },
+          "properties": [{ "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }]
+        }]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 46 },
+      "id": 10,
+      "options": {
+        "legend": { "calcs": ["sum", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [{
+        "datasource": { "type": "grafana-clickhouse-datasource", "uid": "PAD1A0A25CD30D457" },
+        "format": 0,
+        "range": true,
+        "rawSql": "SELECT\n  toStartOfInterval(timestamp, INTERVAL 1 DAY) as time,\n  round(SUM(amount_cents) / 100.0, 2) as revenue\nFROM stripe_event\nWHERE timestamp >= $__fromTime AND timestamp < $__toTime\n  AND payment_status = 'paid'\n  AND livemode = 1\nGROUP BY time\nORDER BY time",
+        "refId": "A"
+      }],
+      "title": "Daily Stripe Revenue",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 40,
+  "tags": ["economics", "spending", "providers"],
+  "templating": {
+    "list": [
+      {
+        "type": "constant",
+        "name": "credits_fireworks",
+        "label": "Fireworks Credits ($)",
+        "query": "8490",
+        "current": { "text": "8490", "value": "8490" },
+        "hide": 2,
+        "options": [{ "text": "8490", "value": "8490", "selected": true }]
+      },
+      {
+        "type": "constant",
+        "name": "credits_elevenlabs",
+        "label": "ElevenLabs Credits ($)",
+        "query": "3920",
+        "current": { "text": "3920", "value": "3920" },
+        "hide": 2,
+        "options": [{ "text": "3920", "value": "3920", "selected": true }]
+      },
+      {
+        "type": "constant",
+        "name": "credits_ovhcloud",
+        "label": "OVHcloud Credits (EUR)",
+        "query": "7657",
+        "current": { "text": "7657", "value": "7657" },
+        "hide": 2,
+        "options": [{ "text": "7657", "value": "7657", "selected": true }]
+      },
+      {
+        "type": "constant",
+        "name": "credits_perplexity",
+        "label": "Perplexity Credits ($)",
+        "query": "9000",
+        "current": { "text": "9000", "value": "9000" },
+        "hide": 2,
+        "options": [{ "text": "9000", "value": "9000", "selected": true }]
+      },
+      {
+        "type": "constant",
+        "name": "credits_modal",
+        "label": "Modal Credits ($)",
+        "query": "3019",
+        "current": { "text": "3019", "value": "3019" },
+        "hide": 2,
+        "options": [{ "text": "3019", "value": "3019", "selected": true }]
+      },
+      {
+        "type": "constant",
+        "name": "credits_azure_2",
+        "label": "Azure-2 Credits ($)",
+        "query": "32000",
+        "current": { "text": "32000", "value": "32000" },
+        "hide": 2,
+        "options": [{ "text": "32000", "value": "32000", "selected": true }]
+      },
+      {
+        "type": "constant",
+        "name": "credits_scaleway",
+        "label": "Scaleway Credits ($)",
+        "query": "0",
+        "current": { "text": "0", "value": "0" },
+        "hide": 2,
+        "options": [{ "text": "0", "value": "0", "selected": true }]
+      },
+      {
+        "type": "constant",
+        "name": "infra_cloudflare_daily",
+        "label": "Cloudflare Gateway ($/day)",
+        "query": "60",
+        "current": { "text": "60", "value": "60" },
+        "hide": 2,
+        "options": [{ "text": "60", "value": "60", "selected": true }]
+      },
+      {
+        "type": "constant",
+        "name": "infra_aws_daily",
+        "label": "AWS AI Services ($/day)",
+        "query": "140",
+        "current": { "text": "140", "value": "140" },
+        "hide": 2,
+        "options": [{ "text": "140", "value": "140", "selected": true }]
+      },
+      {
+        "type": "constant",
+        "name": "infra_scaleway_daily",
+        "label": "Scaleway Legacy ($/day)",
+        "query": "15",
+        "current": { "text": "15", "value": "15" },
+        "hide": 2,
+        "options": [{ "text": "15", "value": "15", "selected": true }]
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30d/d",
+    "to": "now/d"
+  },
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "Daily Spending",
+  "uid": "daily-spending",
+  "version": 1,
+  "weekStart": ""
+}

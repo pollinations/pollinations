@@ -69,7 +69,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude-fast",
-        config: portkeyConfig["us.anthropic.claude-haiku-4-5-20251001-v1:0"],
+        config: portkeyConfig["claude-haiku-4-5"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -123,7 +123,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "chickytutor",
-        config: portkeyConfig["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
+        config: portkeyConfig["claude-3-5-haiku"],
         transform: createMessageTransform(chickyTutorPrompt),
     },
     {

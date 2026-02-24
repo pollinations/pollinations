@@ -4,15 +4,16 @@ The pollinations.ai tier system rewards contributors with increasing API credits
 
 ## Tier Hierarchy
 
-| Tier | Pollen/Day | How to Get |
-|------|------------|------------|
-| **Microbe** | 0.1 | Entry tier (auto-upgrades once verified) |
-| **Spore** | 1 | Verified account |
-| **Seed** | 3 | Automatic via GitHub activity |
-| **Flower** | 10 | Contributor |
-| **Nectar** | 20 | Coming soon |
+| Tier | Pollen | Cadence | Notes |
+|------|--------|---------|-------|
+| Microbe* | 0 | — | Internal: Account under review |
+| Spore* | 1.5 | Weekly (Mon) | Internal: Verified account |
+| **Seed** | 3 | Daily | Automatic via GitHub activity |
+| **Flower** | 10 | Daily | Contributor (app submission) |
+| **Nectar** | 20 | Daily | Coming soon |
 
-> **Note:** Tier balance refills daily at midnight UTC via Cloudflare cron trigger. No rollover.
+> **Note:** *Microbe/Spore are internal-only. Public UI shows "Account under review" / "Weekly pollen (1.5/week)".
+> Refills at midnight UTC via Cloudflare cron. No rollover.
 
 ---
 
@@ -330,13 +331,15 @@ flowchart TD
 
 | Category | Description |
 |----------|-------------|
-| Vibes | No-code / describe-to-code playgrounds |
-| Creative | Images, video, music, design, slides |
-| Games | AI-powered play, interactive fiction |
-| Dev_Tools | SDKs, extensions, dashboards, MCP servers |
-| Chat | Chat UIs / multi-model playgrounds |
-| Social_Bots | Discord / Telegram / WhatsApp bots |
-| Learn | Tutorials, guides, educational demos |
+| Image (`image`) | Image gen, editing, design, avatars, stickers |
+| Video & Audio (`video_audio`) | Video gen, animation, music, TTS |
+| Write (`writing`) | Content creation, storytelling, copy, slides |
+| Chat (`chat`) | Assistants, companions, AI studio, multi-modal chat |
+| Play (`games`) | AI games, roleplay, interactive fiction |
+| Learn (`learn`) | Education, tutoring, language learning |
+| Bots (`bots`) | Discord, Telegram, WhatsApp bots |
+| Build (`build`) | Dev tools, SDKs, integrations, vibe coding |
+| Business (`business`) | Productivity, finance, marketing, health, food |
 
 ---
 

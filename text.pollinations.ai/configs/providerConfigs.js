@@ -155,3 +155,14 @@ export function createPollyConfig(additionalConfig = {}) {
         ...additionalConfig,
     };
 }
+
+/**
+ * Creates an Anthropic model configuration for direct Claude API access
+ */
+export function createAnthropicConfig(additionalConfig = {}) {
+    return {
+        provider: "anthropic",
+        authKey: process.env.ANTHROPIC_API_KEY,
+        ...additionalConfig,
+    };
+}

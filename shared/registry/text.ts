@@ -247,13 +247,14 @@ export const TEXT_SERVICES = {
     },
     "chickytutor": {
         aliases: [],
-        modelId: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        provider: "aws",
+        modelId: "claude-3-haiku-20240307",
+        provider: "anthropic",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.8),
-                completionTextTokens: perMillion(4.0),
+                promptTextTokens: perMillion(0.25),
+                promptCachedTokens: perMillion(0.03),
+                completionTextTokens: perMillion(1.25),
             },
         ],
         description: "ChickyTutor AI Language Tutor - (chickytutor.com)",
@@ -282,12 +283,13 @@ export const TEXT_SERVICES = {
     },
     "claude-fast": {
         aliases: ["claude-haiku-4.5", "claude-haiku"],
-        modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
-        provider: "aws",
+        modelId: "claude-haiku-4-5-20251001",
+        provider: "anthropic",
         cost: [
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(1.0),
+                promptCachedTokens: perMillion(0.1),
                 completionTextTokens: perMillion(5.0),
             },
         ],
@@ -300,12 +302,13 @@ export const TEXT_SERVICES = {
     "claude": {
         aliases: ["claude-sonnet-4.6", "claude-sonnet"],
         modelId: "claude-sonnet-4-6",
-        provider: "aws-bedrock",
+        provider: "anthropic",
         paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(3.0),
+                promptCachedTokens: perMillion(0.3),
                 completionTextTokens: perMillion(15.0),
             },
         ],
@@ -317,13 +320,14 @@ export const TEXT_SERVICES = {
     },
     "claude-large": {
         aliases: ["claude-opus-4.6", "claude-opus"],
-        modelId: "claude-opus-4-6-20260205",
-        provider: "google",
+        modelId: "claude-opus-4-6",
+        provider: "anthropic",
         paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(5.0),
+                promptCachedTokens: perMillion(0.5),
                 completionTextTokens: perMillion(25.0),
             },
         ],
@@ -336,13 +340,14 @@ export const TEXT_SERVICES = {
     "claude-legacy": {
         aliases: ["claude-opus-4.5", "claude-large-legacy"],
         modelId: "claude-opus-4-5-20251101",
-        provider: "google",
+        provider: "anthropic",
         paidOnly: true,
         hidden: true,
         cost: [
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(5.0),
+                promptCachedTokens: perMillion(0.5),
                 completionTextTokens: perMillion(25.0),
             },
         ],

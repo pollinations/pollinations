@@ -33,13 +33,15 @@ App submissions are now **fully automated** via the `app-review-submission.yml` 
 
 **Categories:**
 
-- Vibes ✨ (`Vibes`): No-code / describe-to-code playgrounds and builders
-- Creative 🎨 (`Creative`): Turn prompts into images, video, music, design, slides
-- Games 🎲 (`Games`): AI-powered play, interactive fiction, puzzle & agent worlds
-- Dev_Tools 🛠️ (`Dev_Tools`): SDKs, integration libs, extensions, dashboards, MCP servers
-- Chat 💬 (`Chat`): Standalone chat UIs / multi-model playgrounds
-- Social_Bots 🤖 (`Social_Bots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
-- Learn 📚 (`Learn`): Tutorials, guides, style books & educational demos
+- 🖼️ Image (`image`): Image gen, editing, design, avatars, stickers
+- 🎬 Video & Audio (`video_audio`): Video gen, animation, music, TTS
+- ✍️ Write (`writing`): Content creation, storytelling, copy, slides
+- 💬 Chat (`chat`): Assistants, companions, AI studio, multi-modal chat
+- 🎮 Play (`games`): AI games, interactive fiction, Roblox worlds
+- 📚 Learn (`learn`): Education, tutoring, language learning
+- 🤖 Bots (`bots`): Discord, Telegram, WhatsApp bots
+- 🛠️ Build (`build`): Dev tools, SDKs, integrations, vibe coding
+- 💼 Business (`business`): Productivity, finance, marketing, health, food
 
 ## Non-English Apps
 

@@ -481,12 +481,17 @@ function RouteComponent() {
                                     }
                                     className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                                 >
-                                    {tierNames.map((tier) => (
-                                        <option key={tier} value={tier}>
-                                            {getTierEmoji(tier)} {tier}{" "}
-                                            ({getTierPollen(tier)} pollen)
-                                        </option>
-                                    ))}
+                                    {tierNames
+                                        .filter(
+                                            (tier) =>
+                                                tier !== "microbe" && tier !== "spore",
+                                        )
+                                        .map((tier) => (
+                                            <option key={tier} value={tier}>
+                                                {getTierEmoji(tier)} {tier}{" "}
+                                                ({getTierPollen(tier)} pollen)
+                                            </option>
+                                        ))}
                                 </select>
                             </div>
                         </div>

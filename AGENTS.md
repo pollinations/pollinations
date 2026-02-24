@@ -33,21 +33,15 @@ App submissions are now **fully automated** via the `app-review-submission.yml` 
 
 **Categories:**
 
-- 🖼️ Image Gen (`image_gen`): Prompt-to-image tools and model playgrounds
-- 🎨 AI Studio (`ai_studio`): Chat + images + audio + video in one app
-- 🛠️ Dev Tools (`dev_tools`): CLIs, IDE plugins, dashboards, and utilities
-- 📦 Integrations (`integrations`): SDKs, libraries, MCP servers, and plugins
-- 💬 Chat (`chat`): Text chat UIs and AI assistants
-- 🪄 Design (`design`): Stickers, avatars, wallpapers, and themed visuals
-- ✍️ Content (`content`): Writing, social media, thumbnails, and slides
-- 📚 Education (`education`): Tutoring, language learning, and study tools
-- 🎮 Gaming (`gaming`): AI games, interactive fiction, and Roblox worlds
-- 🤖 Bots (`bots`): Discord, Telegram, and WhatsApp bots
-- 📖 Storytelling (`storytelling`): Illustrated stories, kids books, and narrative AI
-- 🎬 Audio & Video (`audio_video`): Video generators, music tools, and TTS
-- ✨ Vibe Coding (`vibe_coding`): Describe it → build it, no code needed
-- 💼 Business (`business`): E-commerce, finance, legal, and productivity
-- 🌿 Lifestyle (`lifestyle`): Health, fitness, companions, and wellbeing
+- 🖼️ Image (`image`): Image gen, editing, design, avatars, stickers
+- 🎬 Video & Audio (`video_audio`): Video gen, animation, music, TTS
+- ✍️ Writing (`writing`): Content creation, storytelling, copy, slides
+- 💬 Chat (`chat`): Assistants, companions, AI studio, multi-modal chat
+- 🎮 Games (`games`): AI games, interactive fiction, Roblox worlds
+- 📚 Learn (`learn`): Education, tutoring, language learning
+- 🤖 Bots (`bots`): Discord, Telegram, WhatsApp bots
+- 🛠️ Build (`build`): Dev tools, SDKs, integrations, vibe coding
+- 💼 Business (`business`): Productivity, finance, marketing, health, food
 
 ## Non-English Apps
 

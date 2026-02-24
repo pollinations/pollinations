@@ -23,21 +23,15 @@ const OUTPUT_FILE = path.resolve(
 );
 
 const CATEGORY_META = {
-    image_gen: { emoji: "\u{1f5bc}\ufe0f", label: "Image Gen" },
-    ai_studio: { emoji: "\u{1f3a8}", label: "AI Studio" },
-    dev_tools: { emoji: "\u{1f6e0}\ufe0f", label: "Dev Tools" },
-    integrations: { emoji: "\u{1f4e6}", label: "Integrations" },
+    image: { emoji: "\u{1f5bc}\ufe0f", label: "Image" },
+    video_audio: { emoji: "\u{1f3ac}", label: "Video & Audio" },
+    writing: { emoji: "\u270d\ufe0f", label: "Writing" },
     chat: { emoji: "\u{1f4ac}", label: "Chat" },
-    design: { emoji: "\u{1fa84}", label: "Design" },
-    content: { emoji: "\u270d\ufe0f", label: "Content" },
-    education: { emoji: "\u{1f4da}", label: "Education" },
-    gaming: { emoji: "\u{1f3ae}", label: "Gaming" },
+    games: { emoji: "\u{1f3ae}", label: "Games" },
+    learn: { emoji: "\u{1f4da}", label: "Learn" },
     bots: { emoji: "\u{1f916}", label: "Bots" },
-    storytelling: { emoji: "\u{1f4d6}", label: "Storytelling" },
-    audio_video: { emoji: "\u{1f3ac}", label: "Audio & Video" },
-    vibe_coding: { emoji: "\u2728", label: "Vibe Coding" },
+    build: { emoji: "\u{1f6e0}\ufe0f", label: "Build" },
     business: { emoji: "\u{1f4bc}", label: "Business" },
-    lifestyle: { emoji: "\u{1f33f}", label: "Lifestyle" },
 };
 
 const CH_DATASOURCE = {

@@ -22,21 +22,15 @@ const THIRTY_DAYS_MS = 30 * 86400000;
 const TOP_N = 10;
 
 const CATEGORIES = [
-    { id: "image_gen", label: "Image Gen", emoji: "🖼️" },
-    { id: "ai_studio", label: "AI Studio", emoji: "🎨" },
-    { id: "dev_tools", label: "Dev Tools", emoji: "🛠️" },
-    { id: "integrations", label: "Integrations", emoji: "📦" },
+    { id: "image", label: "Image", emoji: "🖼️" },
+    { id: "video_audio", label: "Video & Audio", emoji: "🎬" },
+    { id: "writing", label: "Writing", emoji: "✍️" },
     { id: "chat", label: "Chat", emoji: "💬" },
-    { id: "design", label: "Design", emoji: "🪄" },
-    { id: "content", label: "Content", emoji: "✍️" },
-    { id: "education", label: "Education", emoji: "📚" },
-    { id: "gaming", label: "Gaming", emoji: "🎮" },
+    { id: "games", label: "Games", emoji: "🎮" },
+    { id: "learn", label: "Learn", emoji: "📚" },
     { id: "bots", label: "Bots", emoji: "🤖" },
-    { id: "storytelling", label: "Storytelling", emoji: "📖" },
-    { id: "audio_video", label: "Audio & Video", emoji: "🎬" },
-    { id: "vibe_coding", label: "Vibe Coding", emoji: "✨" },
+    { id: "build", label: "Build", emoji: "🛠️" },
     { id: "business", label: "Business", emoji: "💼" },
-    { id: "lifestyle", label: "Lifestyle", emoji: "🌿" },
 ];
 
 // ── Parse ───────────────────────────────────────────────────────────────────

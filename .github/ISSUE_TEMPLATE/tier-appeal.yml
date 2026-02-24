@@ -1,5 +1,5 @@
 name: Tier Question
-description: Questions about your pollen tier or grants
+description: Questions about your tier
 title: "Tier: "
 labels: ["TIER", ".QUESTION"]
 body:
@@ -14,13 +14,11 @@ body:
         - Seed (3 pollen/day)
         - Flower (10 pollen/day)
         - Nectar (20 pollen/day)
-        - Router (500 pollen/day)
-        - Not sure
 
   - type: textarea
     id: description
     attributes:
-      label: .QUESTION
+      label: Question
       placeholder: "e.g., Why is my account under review? How do I unlock Seed tier?"
     validations:
       required: true

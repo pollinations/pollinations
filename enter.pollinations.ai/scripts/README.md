@@ -9,13 +9,15 @@ npx tsx scripts/tier-update-user.ts update-tier --github-username "john" --tier 
 npx tsx scripts/tier-update-user.ts check-user --github-username "john"
 ```
 
-## Polar Setup
+## Polar Pack Products (Fallback)
 
-Create products, meters, benefits:
+Manage Polar pack products (used as payment fallback if Stripe is down):
 
 ```bash
 npx tsx scripts/manage-polar.ts --help
 ```
+
+> **Note:** Tier management is handled via D1 database directly. Polar is only used for pack purchase webhooks.
 
 ## Service Setup
 

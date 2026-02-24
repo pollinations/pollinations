@@ -2,6 +2,7 @@ import type { FC } from "react";
 import {
     getNextTier,
     getTierEmoji,
+    TIER_COLORS,
     TIER_PROGRESSION,
     TIER_THRESHOLDS,
     TIERS,
@@ -31,13 +32,23 @@ const TIER_RING_COLORS: Record<
     nectar: { fill: "#f5a623", bg: "#fef3c7", border: "#fcd34d" },
 };
 
+// Text colors for tier highlights (600 shade)
+const TIER_TEXT_COLORS: Record<string, string> = {
+    gray: "#4b5563",
+    blue: "#2563eb",
+    green: "#16a34a",
+    pink: "#db2777",
+    amber: "#d97706",
+    red: "#dc2626",
+};
+
 const RING_RADIUS = 52;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS; // ~326.73
 
 // ─── Microbe: Account Under Review ──────────────────────────
 
 const MicrobeLimitedPanel: FC = () => (
-    <Panel color="amber">
+    <Panel color={TIER_COLORS.microbe as "gray"}>
         <div className="flex flex-col gap-3">
             <div className="text-sm text-gray-600 leading-relaxed">
                 <p>
@@ -124,13 +135,13 @@ const SporeCreatorNudge: FC = () => (
 );
 
 const SporeTierPanel: FC = () => (
-    <Panel color="amber">
+    <Panel color={TIER_COLORS.spore as "blue"}>
         <div className="flex flex-col gap-3">
             <SporeGrantInfo />
-            <Card color="amber">
+            <Card color={TIER_COLORS.spore as "blue"}>
                 <SporeCreatorNudge />
             </Card>
-            <div className="bg-amber-100 rounded-lg px-3 py-2 text-xs text-amber-700">
+            <div className="bg-blue-100 rounded-lg px-3 py-2 text-xs text-blue-700">
                 🧪 <strong>We're in Beta!</strong> Scores and grants may evolve.
             </div>
         </div>
@@ -148,6 +159,7 @@ const CreatorRingGauge: FC<{
     const tierKey = tier as TierName;
 
     const colors = TIER_RING_COLORS[tierKey] || TIER_RING_COLORS.microbe;
+    const tierColor = TIER_COLORS[tierKey] || "gray";
     const centerEmoji = getTierEmoji(tier);
     const tierLabel = TIERS[tierKey].displayName;
     const grantLabel = `${pollen} pollen / day`;
@@ -267,7 +279,9 @@ const CreatorRingGauge: FC<{
                 {(nextHighlight || nextRest) && (
                     <p className="text-sm text-gray-500 mt-2 leading-relaxed">
                         {nextHighlight && (
-                            <strong className="text-amber-600">
+                            <strong
+                                style={{ color: TIER_TEXT_COLORS[tierColor] }}
+                            >
                                 {nextHighlight}
                             </strong>
                         )}
@@ -344,8 +358,30 @@ export const TierPanel: FC<TierPanelProps> = ({ active, pointsOverride }) => {
     }
 
     // Creator tiers: seed, flower, nectar
+    type PanelColor =
+        | "blue"
+        | "teal"
+        | "violet"
+        | "purple"
+        | "amber"
+        | "green"
+        | "pink"
+        | "gray";
+    type CardColor =
+        | "amber"
+        | "blue"
+        | "green"
+        | "violet"
+        | "purple"
+        | "teal"
+        | "red"
+        | "yellow"
+        | "gray"
+        | "pink";
+    const tierColor = (TIER_COLORS[tier as TierName] || "amber") as PanelColor &
+        CardColor;
     return (
-        <Panel color="amber">
+        <Panel color={tierColor}>
             <div className="flex flex-col gap-3">
                 <CreatorRingGauge
                     tier={tier}
@@ -353,10 +389,19 @@ export const TierPanel: FC<TierPanelProps> = ({ active, pointsOverride }) => {
                     pollen={pollen}
                 />
                 <div className="flex flex-col gap-3">
-                    <Card color="amber">
-                        <LevelUpCards />
+                    <Card color={tierColor}>
+                        <LevelUpCards
+                            color={
+                                tierColor as
+                                    | "amber"
+                                    | "green"
+                                    | "pink"
+                                    | "blue"
+                                    | "gray"
+                            }
+                        />
                     </Card>
-                    <Card color="amber">
+                    <Card color={tierColor}>
                         <BYOPCallout />
                     </Card>
                 </div>

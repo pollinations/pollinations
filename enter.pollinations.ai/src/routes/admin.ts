@@ -261,14 +261,12 @@ export const adminRoutes = new Hono<Env>()
         const refillTimestamp = Date.now();
         const timestamp = new Date(refillTimestamp).toISOString();
 
-        // Daily refill: all tiers EXCEPT spore
-        // NOTE: This SQL explicitly lists all non-spore tiers. If a new tier is added to
-        // tier-config.ts, this CASE statement must be updated manually to include it.
+        // Daily refill: only tiers with pollen > 0 and daily cadence
+        // NOTE: If a new tier is added to tier-config.ts, this CASE must be updated.
         const dailyResult = await db.run(sql`
             UPDATE user
             SET
                 tier_balance = CASE tier
-                    WHEN 'microbe' THEN ${TIER_POLLEN.microbe}
                     WHEN 'seed' THEN ${TIER_POLLEN.seed}
                     WHEN 'flower' THEN ${TIER_POLLEN.flower}
                     WHEN 'nectar' THEN ${TIER_POLLEN.nectar}
@@ -276,7 +274,7 @@ export const adminRoutes = new Hono<Env>()
                     ELSE 0
                 END,
                 last_tier_grant = ${refillTimestamp}
-            WHERE tier IS NOT NULL AND tier != 'spore'
+            WHERE tier IN ('seed', 'flower', 'nectar', 'router')
         `);
 
         const dailyRefillCount = dailyResult.meta.changes ?? 0;
@@ -302,10 +300,17 @@ export const adminRoutes = new Hono<Env>()
         // Calculate tier breakdown for response
         const tierBreakdown = calculateTierBreakdown(usersToRefill);
 
-        // Send per-user events to Tinybird (exclude spore on non-Monday)
-        const usersForEvents = isMonday
-            ? usersToRefill
-            : usersToRefill.filter((u) => u.tier !== "spore");
+        // Send Tinybird events only for tiers that actually got refilled
+        const refilledTiers = new Set([
+            "seed",
+            "flower",
+            "nectar",
+            "router",
+            ...(isMonday ? ["spore"] : []),
+        ]);
+        const usersForEvents = usersToRefill.filter(
+            (u) => u.tier && refilledTiers.has(u.tier),
+        );
         c.executionCtx.waitUntil(
             sendBulkTierRefillEvents(
                 usersForEvents,

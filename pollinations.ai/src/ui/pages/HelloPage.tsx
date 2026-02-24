@@ -166,7 +166,7 @@ function HelloPage() {
                             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
                                 {[
                                     {
-                                        emoji: "🐝",
+                                        emoji: "🍄",
                                         name: pageCopy.tierWeeklyTitle,
                                         pollen: pageCopy.tierWeeklyPollen,
                                         desc: pageCopy.tierWeeklyDescription,
@@ -202,7 +202,7 @@ function HelloPage() {
                                         </p>
                                         <p className="text-xs text-text-body-secondary mt-1">
                                             {tier.pollen} pollen/
-                                            {tier.name === "Weekly"
+                                            {tier.name === "Spore"
                                                 ? "week"
                                                 : "day"}
                                         </p>

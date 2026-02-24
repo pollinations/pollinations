@@ -35,7 +35,7 @@ export const HELLO_PAGE = {
     tiersSubtitle: "Grow Through Our Tier System",
     tiersBetaNote:
         "⚠️ We're in beta — tiers, rewards, and values may change as we fine-tune the ecosystem.",
-    tierWeeklyTitle: "Weekly",
+    tierWeeklyTitle: "Spore",
     tierWeeklyDescription: "Verified user",
     tierWeeklyPollen: "1.5",
     tierSeedTitle: "Seed",

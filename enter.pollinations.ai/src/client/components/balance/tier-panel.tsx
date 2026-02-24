@@ -11,7 +11,7 @@ const APPEAL_URL =
 // Map tier color to Badge component color (Badge doesn't support "red", use "blue" for router)
 function getBadgeColor(
     tier: TierStatus,
-): "gray" | "green" | "pink" | "amber" | "blue" | "yellow" {
+): "gray" | "green" | "pink" | "amber" | "blue" {
     const tierColor = tier === "none" ? "gray" : getTierColor(tier);
     // Badge component doesn't have "red" variant, map router's "red" to "blue"
     if (tierColor === "red") return "blue";
@@ -22,7 +22,7 @@ function getBadgeColor(
 // Map tier color to Panel component color (Panel doesn't support "red", use "blue" for router)
 function getPanelColor(
     tier: TierStatus,
-): "blue" | "teal" | "violet" | "purple" | "amber" | "green" | "pink" | "gray" {
+): "blue" | "amber" | "green" | "pink" | "gray" {
     const tierColor = tier === "none" ? "gray" : getTierColor(tier);
     // Panel component doesn't have "red" variant, map router's "red" to "blue"
     if (tierColor === "red") return "blue";

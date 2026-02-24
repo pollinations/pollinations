@@ -25,10 +25,30 @@ export function validateAndNormalizeMessages(messages) {
             content: msg.content || "",
         };
 
+
+        if (msg.tool_calls) {
+            if (msg.content != null) {
+                normalizedMsg.content = msg.content;
+            } else {
+                normalizedMsg.content = null;
+            }
+
+        } else if (msg.role === "tool") {
+            normalizedMsg.content = msg.content ?? null;
+        } else {
+            normalizedMsg.content = msg.content || "";
+        }
+
         // Preserve properties needed for function calling
         if (msg.tool_call_id) normalizedMsg.tool_call_id = msg.tool_call_id;
         if (msg.name) normalizedMsg.name = msg.name;
         if (msg.tool_calls) normalizedMsg.tool_calls = msg.tool_calls;
+
+        // preserve other known OpenAI compatible properties
+        if (msg.function_call) normalizedMsg.function_call = msg.function_call;
+        if (msg.cache_control) normalizedMsg.cache_control = msg.cache_control;
+        if (msg.reasoning_content) normalizedMsg.reasoning_content = msg.reasoning_content;
+        if (msg.audio) normalizedMsg.audio = msg.audio;
 
         return normalizedMsg;
     });
@@ -190,14 +210,6 @@ export function normalizeOptions(options = {}, defaults = {}) {
         );
     }
 
-    if (normalized.repetition_penalty !== undefined) {
-        // Ensure repetition_penalty is within valid range (typically 1.0 to 2.0, but allow wider)
-        normalized.repetition_penalty = Math.max(
-            0,
-            Math.min(2, normalized.repetition_penalty),
-        );
-    }
-
     // // Handle maxTokens parameter
     // if (normalized.maxTokens === undefined) {
     //   // If not provided, use default value
@@ -261,7 +273,7 @@ export function formatToOpenAIResponse(response, modelName) {
     } else if (response.tool_calls) {
         // If the response has tool_calls, include them in the message
         message.tool_calls = response.tool_calls;
-        message.content = response.content || "";
+        message.content = response.content ?? null;
     } else {
         // For other object responses, stringify them
         message.content = JSON.stringify(response);

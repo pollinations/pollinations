@@ -1,6 +1,7 @@
 DESCRIPTION >
     Weekly service availability metrics.
     Only counts 5xx server errors as downtime (user errors like 4xx don't affect availability).
+    Supports start_date param for single-week queries to avoid Tinybird timeouts.
 
 TOKEN model_usage READ
 
@@ -15,7 +16,13 @@ SQL >
         round(quantileIf(0.50)(response_time, response_status >= 200 AND response_status < 300), 0) AS latency_p50_ms,
         round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) AS latency_p95_ms
     FROM generation_event
-    WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
+    WHERE
+        {% if defined(start_date) %}
+        start_time >= toDate({{ String(start_date) }})
+        AND start_time < toDate({{ String(start_date) }}) + INTERVAL 7 DAY
+        {% else %}
+        start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
+        {% end %}
     AND environment = 'production'
     GROUP BY week
     ORDER BY week ASC

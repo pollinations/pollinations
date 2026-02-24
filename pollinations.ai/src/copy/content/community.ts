@@ -112,24 +112,29 @@ export const COMMUNITY_PAGE = {
             description: "High-performance AI infrastructure",
         },
         {
-            name: "NavyAI",
-            url: "https://api.navy/",
-            description: "AI API provider for OpenAI o3 and Gemini models",
-        },
-        {
             name: "Nebius",
             url: "https://nebius.com/",
             description:
                 "AI-optimized cloud infrastructure with NVIDIA GPU clusters",
         },
+        {
+            name: "api.airforce",
+            url: "https://api.airforce/",
+            description:
+                "AI API gateway — alpha models (imagen-4, grok-video, qwen-character)",
+        },
     ],
+
+    // Build Diary section
+    buildDiaryTitle: "Build Diary",
+    buildDiarySubtitle: "A visual log of what we ship every day.",
 
     // Top Contributors section
     topContributorsTitle: "Most Active Contributors",
     topContributorsDescription:
-        "Meet the most active contributors to the pollinations.ai",
+        "These folks are actively building and improving the platform. Want to join them? We'd love your contributions — check out our",
     githubRepositoryLink: "GitHub repository",
-    overThePastYear: "over the past year.",
+    overThePastYear: "and jump in!",
     commitsLabel: "commits",
     commitLabel: "commit",
 };

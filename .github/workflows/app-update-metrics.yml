@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - name: Generate Pollinations AI Token
@@ -34,6 +35,11 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
         run: node .github/scripts/app-update-metrics.js --verbose
+
+      - name: Run health checks
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: node .github/scripts/app-check-links.js --health-update --verbose
 
       - name: Regenerate greenhouse
         run: node .github/scripts/app-update-greenhouse.js

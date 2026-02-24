@@ -13,7 +13,12 @@ if [ -z "$GPU0_PUBLIC_PORT" ] || [ -z "$GPU1_PUBLIC_PORT" ]; then
 fi
 
 PUBLIC_IP="${PUBLIC_IP:-52.205.25.210}"
-PLN_ENTER_TOKEN="${PLN_ENTER_TOKEN:-cZOpvvV4xpbOe1IOYrN0R2a3zxHEAcLntneihfU3f2Y3Pfy5}"
+# PLN_IMAGE_BACKEND_TOKEN must be provided as environment variable - no default for security
+if [ -z "$PLN_IMAGE_BACKEND_TOKEN" ]; then
+    echo "ERROR: PLN_IMAGE_BACKEND_TOKEN must be set"
+    echo "Usage: PLN_IMAGE_BACKEND_TOKEN=xxx GPU0_PUBLIC_PORT=24602 GPU1_PUBLIC_PORT=25962 bash setup-ionet.sh"
+    exit 1
+fi
 BRANCH="${BRANCH:-main}"
 SPAN_MODEL_ID="1PCYo-4R6MgM-cXAsTuMO-tH4tEcO8A8P"
 
@@ -72,6 +77,11 @@ if [ ! -f "$SPAN_MODEL" ] || [ $(stat -c%s "$SPAN_MODEL" 2>/dev/null || echo 0) 
 fi
 
 # 6. Create systemd services
+
+# Create .env file for token (EnvironmentFile pattern)
+echo "PLN_IMAGE_BACKEND_TOKEN=$PLN_IMAGE_BACKEND_TOKEN" > $HOME/.env
+chmod 600 $HOME/.env
+log "Created $HOME/.env with backend token"
 log "Creating systemd services..."
 
 sudo tee /etc/systemd/system/zimage-gpu0.service > /dev/null << EOF
@@ -88,7 +98,7 @@ Environment="PORT=10000"
 Environment="PUBLIC_IP=$PUBLIC_IP"
 Environment="PUBLIC_PORT=$GPU0_PUBLIC_PORT"
 Environment="SERVICE_TYPE=zimage"
-Environment="PLN_ENTER_TOKEN=$PLN_ENTER_TOKEN"
+EnvironmentFile=-$HOME/.env
 ExecStart=$WORKDIR/venv/bin/python server.py
 Restart=always
 RestartSec=10
@@ -111,7 +121,7 @@ Environment="PORT=10001"
 Environment="PUBLIC_IP=$PUBLIC_IP"
 Environment="PUBLIC_PORT=$GPU1_PUBLIC_PORT"
 Environment="SERVICE_TYPE=zimage"
-Environment="PLN_ENTER_TOKEN=$PLN_ENTER_TOKEN"
+EnvironmentFile=-$HOME/.env
 ExecStart=$WORKDIR/venv/bin/python server.py
 Restart=always
 RestartSec=10

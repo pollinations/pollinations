@@ -44,11 +44,11 @@ const MicrobeLimitedPanel: FC = () => (
         <div className="flex flex-col gap-3">
             <div className="text-sm text-gray-600 leading-relaxed">
                 <p>
-                    Your account is being reviewed by a human. This usually
-                    takes a few days.
+                    We're verifying that your account belongs to a real person.
+                    This usually takes a few days.
                 </p>
                 <p>
-                    Once approved, you'll receive free weekly Pollen to start
+                    Once verified, you'll receive free weekly Pollen to start
                     using the API.
                 </p>
             </div>

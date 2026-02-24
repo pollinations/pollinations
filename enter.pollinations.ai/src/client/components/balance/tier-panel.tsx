@@ -1,5 +1,9 @@
 import type { FC } from "react";
-import { getTierEmoji, type TierStatus } from "@/tier-config.ts";
+import {
+    getTierColor,
+    getTierEmoji,
+    type TierStatus,
+} from "@/tier-config.ts";
 import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
@@ -173,9 +177,10 @@ const TierScreen: FC<{
     daily_pollen: number;
 }> = ({ tier, active_tier_name, daily_pollen }) => {
     const tierEmoji = getTierEmoji(tier);
+    const tierColor = tier !== "none" ? getTierColor(tier as any) : getTierColor("spore");
 
     return (
-        <Panel color="amber">
+        <Panel color={tierColor as any}>
             <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-3xl font-bold text-gray-900">
@@ -194,7 +199,7 @@ const TierScreen: FC<{
                     Refills daily at 00:00 UTC. Unused pollen does not carry
                     over.
                 </p>
-                <Card color="amber">
+                <Card color={tierColor as any}>
                     <TierExplanation currentTier={tier} />
                     <BetaNoticeText />
                 </Card>

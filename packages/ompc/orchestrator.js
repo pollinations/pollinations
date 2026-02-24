@@ -37,6 +37,9 @@ const OPENCODE_CONFIG = {
                 "baseURL": "https://gen.pollinations.ai/v1",
             },
             "models": {
+                "claude-large": {
+                    "name": "Claude Opus 4.5 - Most Intelligent (Sisyphus)",
+                },
                 "claude": {
                     "name": "Claude Sonnet 4.5 - Balanced (Librarian)",
                 },
@@ -66,6 +69,9 @@ const OH_MY_OPENCODE_CONFIG = {
     "$schema":
         "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json",
     "agents": {
+        "Sisyphus": {
+            "model": "pollinations/claude-large",
+        },
         "oracle": {
             "model": "pollinations/openai-large",
         },

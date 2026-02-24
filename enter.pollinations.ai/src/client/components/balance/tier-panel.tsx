@@ -1,9 +1,5 @@
 import type { FC } from "react";
-import {
-    getTierColor,
-    getTierEmoji,
-    type TierStatus,
-} from "@/tier-config.ts";
+import { getTierColor, getTierEmoji, type TierStatus } from "@/tier-config.ts";
 import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";

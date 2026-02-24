@@ -22,7 +22,6 @@ export const TIER_EMOJIS = Object.fromEntries(
     Object.entries(TIERS).map(([tier, config]) => [tier, config.emoji]),
 ) as Record<TierName, string>;
 
-
 export function isValidTier(tier: string): tier is TierName {
     return tier in TIERS;
 }

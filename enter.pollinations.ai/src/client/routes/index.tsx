@@ -455,9 +455,9 @@ function RouteComponent() {
                             {...{
                                 ...tierData,
                                 active: {
-                                    tier: "microbe" as const,
-                                    displayName: "Microbe",
-                                    pollen: 0,
+                                    tier: "spore" as const,
+                                    displayName: "Spore",
+                                    pollen: 1.5,
                                     cadence: "weekly" as const,
                                 },
                             }}

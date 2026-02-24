@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAirforceModelConfig,
+    createAnthropicConfig,
     createAzureModelConfig,
     createBedrockNativeConfig,
     createFireworksModelConfig,
@@ -128,20 +129,27 @@ export const portkeyConfig: PortkeyConfigMap = {
     }),
 
     // ============================================================================
-    // Claude Models - Bedrock only (no fallback needed since Claude is paid tier)
+    // Claude Models - Direct Anthropic API (primary)
     // ============================================================================
     "claude-sonnet-4-6": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-sonnet-4-6",
+        createAnthropicConfig({
+            model: "claude-sonnet-4-6",
         }),
     "claude-opus-4-6": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-6-v1",
+        createAnthropicConfig({
+            model: "claude-opus-4-6",
         }),
-    // Opus 4.5 - Bedrock only (no fallback needed since Claude is paid tier)
     "claude-opus-4-5": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        createAnthropicConfig({
+            model: "claude-opus-4-5-20251101",
+        }),
+    "claude-haiku-4-5": () =>
+        createAnthropicConfig({
+            model: "claude-haiku-4-5-20251001",
+        }),
+    "claude-3-5-haiku": () =>
+        createAnthropicConfig({
+            model: "claude-3-haiku-20240307",
         }),
     "amazon.nova-micro-v1:0": () =>
         createBedrockNativeConfig({

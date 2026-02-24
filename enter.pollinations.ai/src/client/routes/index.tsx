@@ -1,5 +1,11 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import {
+    getTierEmoji,
+    getTierPollen,
+    type TierName,
+    tierNames,
+} from "../../tier-config.ts";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
@@ -16,12 +22,6 @@ import { NewsBanner } from "../components/layout/news-banner.tsx";
 import { User } from "../components/layout/user.tsx";
 import { Pricing } from "../components/pricing";
 import { UsageGraph } from "../components/usage-analytics";
-import {
-    getTierEmoji,
-    getTierPollen,
-    tierNames,
-    type TierName,
-} from "../../tier-config.ts";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -474,7 +474,8 @@ function RouteComponent() {
                                     value={tierOverride || tierData.active.tier}
                                     onChange={(e) =>
                                         setTierOverride(
-                                            e.target.value === tierData.active.tier
+                                            e.target.value ===
+                                                tierData.active.tier
                                                 ? null
                                                 : (e.target.value as TierName),
                                         )
@@ -483,8 +484,8 @@ function RouteComponent() {
                                 >
                                     {tierNames.map((tier) => (
                                         <option key={tier} value={tier}>
-                                            {getTierEmoji(tier)} {tier}{" "}
-                                            ({getTierPollen(tier)} pollen)
+                                            {getTierEmoji(tier)} {tier} (
+                                            {getTierPollen(tier)} pollen)
                                         </option>
                                     ))}
                                 </select>
@@ -497,7 +498,9 @@ function RouteComponent() {
                                       active: {
                                           tier: tierOverride,
                                           displayName:
-                                              tierOverride.charAt(0).toUpperCase() +
+                                              tierOverride
+                                                  .charAt(0)
+                                                  .toUpperCase() +
                                               tierOverride.slice(1),
                                           pollen: getTierPollen(tierOverride),
                                           cadence:

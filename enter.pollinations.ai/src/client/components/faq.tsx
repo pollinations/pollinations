@@ -87,11 +87,20 @@ export const FAQ: FC = () => {
                     (item) => generateSlug(item.question) === hash,
                 );
                 if (index !== -1) {
+                    // Expand the FAQ item
                     setOpenIndices((prev) => {
                         const next = new Set(prev);
                         next.add(index);
                         return next;
                     });
+
+                    // Scroll to the element after a brief delay to ensure it's rendered
+                    setTimeout(() => {
+                        const element = document.getElementById(hash);
+                        if (element) {
+                            element.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }
+                    }, 100);
                 }
             }
         };
@@ -129,7 +138,7 @@ export const FAQ: FC = () => {
                             <div
                                 key={item.question}
                                 id={questionId}
-                                className="pb-4 last:pb-0 scroll-mt-4"
+                                className="pb-4 last:pb-0 scroll-mt-20"
                             >
                                 <button
                                     type="button"

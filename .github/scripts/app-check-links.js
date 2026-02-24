@@ -17,12 +17,13 @@
 const fs = require("node:fs");
 const https = require("node:https");
 const http = require("node:http");
-const { execSync } = require("node:child_process");
+const { execSync, execFileSync } = require("node:child_process");
 
 const APPS_FILE = "apps/APPS.md";
 const REPORT_FILE = "apps/BROKEN_APPS.md";
 const DEFAULT_TIMEOUT = 10000;
 const HEALTH_THRESHOLD = 7;
+const CONCURRENCY = 20;
 
 // URLs that return false-positive errors (anti-bot protection)
 const SKIP_URL_HOSTS = ["npmjs.com", "pypi.org"];
@@ -145,6 +146,7 @@ function checkUrl(url) {
                 },
             },
             (res) => {
+                res.resume(); // drain body to free socket
                 resolve({
                     status: res.statusCode,
                     ok: res.statusCode >= 200 && res.statusCode < 400,
@@ -387,6 +389,52 @@ function formatError(result) {
 }
 
 /**
+ * Check a single app and return its health result
+ */
+async function checkAppHealth(app) {
+    const urlToCheck = app.url?.startsWith("http")
+        ? app.url
+        : app.repo?.startsWith("http")
+          ? app.repo
+          : null;
+
+    let result;
+    if (!urlToCheck) {
+        result = { status: "skip", reason: "No URL" };
+    } else {
+        result = await checkUrl(urlToCheck);
+    }
+
+    const classification = classifyResult(urlToCheck, result);
+    const newHealth =
+        classification === "skip" || classification === "healthy"
+            ? 0
+            : app.currentHealth + 1;
+
+    return { app, urlToCheck, result, classification, newHealth };
+}
+
+/**
+ * Run async tasks with a concurrency limit
+ */
+async function runWithConcurrency(tasks, limit) {
+    const results = new Array(tasks.length);
+    let nextIdx = 0;
+
+    async function worker() {
+        while (nextIdx < tasks.length) {
+            const idx = nextIdx++;
+            results[idx] = await tasks[idx]();
+        }
+    }
+
+    await Promise.all(
+        Array.from({ length: Math.min(limit, tasks.length) }, () => worker()),
+    );
+    return results;
+}
+
+/**
  * Health update mode: track daily failures and open removal PR at threshold
  */
 async function healthUpdate() {
@@ -399,62 +447,47 @@ async function healthUpdate() {
         process.exit(1);
     }
 
-    // +1 because lines.split("|") without slice has leading empty string
+    // Write path uses unsliced split("|") which has a leading empty string,
+    // so column indices are offset by +1 compared to the sliced parse path.
     const writeColIdx = healthColIdx + 1;
 
-    console.log(`Checking ${apps.length} apps...\n`);
+    console.log(
+        `Checking ${apps.length} apps (concurrency: ${CONCURRENCY})...\n`,
+    );
+
+    let completed = 0;
+    const tasks = apps.map((app) => async () => {
+        const result = await checkAppHealth(app);
+        completed++;
+        if (verbose) {
+            const icon =
+                result.classification === "healthy"
+                    ? "✅"
+                    : result.classification === "skip"
+                      ? "⏭️"
+                      : "❌";
+            console.log(
+                `[${completed}/${apps.length}] ${app.name} (health: ${app.currentHealth})`,
+            );
+            console.log(
+                `  ${icon} ${result.urlToCheck || "no URL"} → ${result.classification}${result.newHealth > 0 ? ` (${result.newHealth} days)` : ""}`,
+            );
+        } else {
+            process.stdout.write(
+                `\rProgress: ${completed}/${apps.length} (${Math.round((completed / apps.length) * 100)}%)`,
+            );
+        }
+        return result;
+    });
+
+    const results = await runWithConcurrency(tasks, CONCURRENCY);
+
+    if (!verbose) console.log("\n");
 
     const changes = [];
     const thresholdApps = [];
 
-    for (let i = 0; i < apps.length; i++) {
-        const app = apps[i];
-
-        if (verbose) {
-            console.log(
-                `[${i + 1}/${apps.length}] ${app.name} (health: ${app.currentHealth})`,
-            );
-        } else {
-            process.stdout.write(
-                `\rProgress: ${i + 1}/${apps.length} (${Math.round(((i + 1) / apps.length) * 100)}%)`,
-            );
-        }
-
-        // Determine which URL to check
-        const urlToCheck = app.url?.startsWith("http")
-            ? app.url
-            : app.repo?.startsWith("http")
-              ? app.repo
-              : null;
-
-        let result;
-        if (!urlToCheck) {
-            result = { status: "skip", reason: "No URL" };
-        } else {
-            result = await checkUrl(urlToCheck);
-        }
-
-        const classification = classifyResult(urlToCheck, result);
-        let newHealth;
-
-        if (classification === "skip" || classification === "healthy") {
-            newHealth = 0;
-        } else {
-            newHealth = app.currentHealth + 1;
-        }
-
-        if (verbose) {
-            const icon =
-                classification === "healthy"
-                    ? "✅"
-                    : classification === "skip"
-                      ? "⏭️"
-                      : "❌";
-            console.log(
-                `  ${icon} ${urlToCheck || "no URL"} → ${classification}${newHealth > 0 ? ` (${newHealth} days)` : ""}`,
-            );
-        }
-
+    for (const { app, urlToCheck, result, newHealth } of results) {
         // Update the Health column in the line
         if (newHealth !== app.currentHealth) {
             const cols = lines[app.lineIndex].split("|");
@@ -467,7 +500,6 @@ async function healthUpdate() {
             });
         }
 
-        // Collect apps that just hit or are past threshold
         if (newHealth >= HEALTH_THRESHOLD) {
             thresholdApps.push({
                 ...app,
@@ -476,11 +508,7 @@ async function healthUpdate() {
                 error: formatError(result),
             });
         }
-
-        await new Promise((r) => setTimeout(r, 100));
     }
-
-    if (!verbose) console.log("\n");
 
     // Write updated health counters back to APPS.md
     if (changes.length > 0) {
@@ -488,18 +516,29 @@ async function healthUpdate() {
         console.log(
             `${colors.green}Updated ${changes.length} health counters${colors.reset}`,
         );
+
+        // Commit counters on the current branch BEFORE branching for removal PR.
+        // Without this, `git checkout -b` would carry uncommitted changes to the
+        // PR branch, and switching back would lose the counter updates entirely.
+        try {
+            execSync(`git add "${APPS_FILE}"`, { stdio: "ignore" });
+            execSync('git commit -m "chore: update app health counters"', {
+                stdio: "ignore",
+            });
+            console.log(
+                `${colors.green}Committed health counters${colors.reset}`,
+            );
+        } catch {
+            // Not in a git repo or no changes to commit — OK when running locally
+        }
     } else {
         console.log("No health changes.");
     }
 
     // Summary
-    const failing = apps.filter((a, _idx) => {
-        const cols = lines[a.lineIndex].split("|");
-        const h = parseInt(cols[writeColIdx], 10) || 0;
-        return h > 0;
-    });
+    const failingCount = results.filter((r) => r.newHealth > 0).length;
     console.log(`\n${colors.bold}📊 Health Summary${colors.reset}`);
-    console.log(`  Currently failing: ${failing.length} apps`);
+    console.log(`  Currently failing: ${failingCount} apps`);
     console.log(
         `  At threshold (>=${HEALTH_THRESHOLD}): ${thresholdApps.length} apps`,
     );
@@ -514,14 +553,19 @@ async function healthUpdate() {
                 `  ${colors.red}● ${app.name}${colors.reset} — ${app.error} (${app.newHealth} days)`,
             );
         }
-        await openRemovalPR(thresholdApps, lines, writeColIdx);
+        await openRemovalPR(thresholdApps);
     }
 }
 
 /**
- * Open a PR removing apps that hit the health threshold
+ * Open a PR removing apps that hit the health threshold.
+ *
+ * IMPORTANT: This must be called AFTER the workflow has committed the updated
+ * health counters to the current branch. The function re-reads APPS.md from
+ * disk (which now has committed counters), removes threshold rows, and creates
+ * a new branch+PR from that state.
  */
-async function openRemovalPR(thresholdApps, lines, _writeColIdx) {
+async function openRemovalPR(thresholdApps) {
     // Check if gh CLI is available and authenticated
     try {
         execSync("gh auth status", { stdio: "ignore" });
@@ -554,9 +598,15 @@ async function openRemovalPR(thresholdApps, lines, _writeColIdx) {
         // gh pr list failed, continue anyway
     }
 
-    // Remove threshold app rows from APPS.md
+    // Re-read APPS.md from disk (has updated counters written by healthUpdate)
+    const freshContent = fs.readFileSync(APPS_FILE, "utf8");
+    const freshLines = freshContent.split("\n");
+
+    // Remove threshold app rows
     const lineIndicesToRemove = new Set(thresholdApps.map((a) => a.lineIndex));
-    const newLines = lines.filter((_, idx) => !lineIndicesToRemove.has(idx));
+    const newLines = freshLines.filter(
+        (_, idx) => !lineIndicesToRemove.has(idx),
+    );
 
     // Build PR body
     let body = `## Stale App Removal — ${today}\n\n`;
@@ -568,19 +618,30 @@ async function openRemovalPR(thresholdApps, lines, _writeColIdx) {
     }
     body += `\n**Review each app before merging.** Close this PR to keep all apps.\n`;
 
+    const title = `chore: remove ${thresholdApps.length} stale apps (${today})`;
+    const commitMsg = title;
+
     // Create branch, write changes, commit, push, open PR
     try {
         execSync(`git checkout -b "${branch}"`, { stdio: "ignore" });
         fs.writeFileSync(APPS_FILE, newLines.join("\n"));
         execSync(`git add "${APPS_FILE}"`, { stdio: "ignore" });
-        execSync(
-            `git commit -m "chore: remove ${thresholdApps.length} stale apps (${today})"`,
-            { stdio: "ignore" },
-        );
+        execSync(`git commit -m "${commitMsg}"`, { stdio: "ignore" });
         execSync(`git push -u origin "${branch}"`, { stdio: "ignore" });
 
-        const prUrl = execSync(
-            `gh pr create --title "chore: remove ${thresholdApps.length} stale apps (${today})" --body "${body.replace(/"/g, '\\"')}" --label "app-health"`,
+        // Use execFileSync to avoid shell injection from app names/URLs in body
+        const prUrl = execFileSync(
+            "gh",
+            [
+                "pr",
+                "create",
+                "--title",
+                title,
+                "--body",
+                body,
+                "--label",
+                "app-health",
+            ],
             { encoding: "utf8" },
         ).trim();
 

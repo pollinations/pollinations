@@ -30,11 +30,21 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Configure git
+        run: |
+          git config user.name "pollinations-ai[bot]"
+          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
+
       - name: Update app metrics
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
         run: node .github/scripts/app-update-metrics.js --verbose
+
+      - name: Commit metrics changes
+        run: |
+          git add apps/APPS.md
+          git diff --quiet --cached || git commit -m "chore: update app metrics"
 
       - name: Run health checks
         env:
@@ -44,20 +54,10 @@ jobs:
       - name: Regenerate greenhouse
         run: node .github/scripts/app-update-greenhouse.js
 
-      - name: Check for changes
-        id: changes
+      - name: Commit greenhouse changes
         run: |
-          if git diff --quiet apps/APPS.md apps/GREENHOUSE.md; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-          else
-            echo "changed=true" >> $GITHUB_OUTPUT
-          fi
+          git add apps/GREENHOUSE.md
+          git diff --quiet --cached || git commit -m "chore: update greenhouse"
 
-      - name: Commit and push changes
-        if: steps.changes.outputs.changed == 'true'
-        run: |
-          git config user.name "pollinations-ai[bot]"
-          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
-          git add apps/APPS.md apps/GREENHOUSE.md
-          git commit -m "chore: update app metrics and greenhouse"
-          git push
+      - name: Push changes
+        run: git push

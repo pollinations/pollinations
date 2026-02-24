@@ -2,14 +2,16 @@ import dotenv from "dotenv";
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAirforceModelConfig,
+    createAnthropicConfig,
     createAzureModelConfig,
     createBedrockNativeConfig,
     createFireworksModelConfig,
     createMyceliGrok4FastConfig,
-    // createNomNomConfig,
+    createNomNomConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
+    createPollyConfig,
     createScalewayModelConfig,
 } from "./providerConfigs.js";
 
@@ -93,6 +95,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockNativeConfig({
             model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         }),
+    "us.anthropic.claude-sonnet-4-6": () =>
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-sonnet-4-6",
+        }),
     "global.anthropic.claude-opus-4-5-20251101-v1:0": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
@@ -113,30 +119,37 @@ export const portkeyConfig: PortkeyConfigMap = {
         "vertex-model-id": "anthropic.claude-opus-4-5@20251101",
         "strict-open-ai-compliance": "true",
     }),
-    "claude-sonnet-4-5-vertex": () => ({
+    "claude-sonnet-4-6-vertex": () => ({
         provider: "vertex-ai",
         authKey: googleCloudAuth.getAccessToken,
         "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
         "vertex-region": "europe-west1",
-        "vertex-model-id": "anthropic.claude-sonnet-4-5@20250929",
+        "vertex-model-id": "anthropic.claude-sonnet-4-6",
         "strict-open-ai-compliance": "true",
     }),
 
     // ============================================================================
-    // Claude Models - Bedrock only (no fallback needed since Claude is paid tier)
+    // Claude Models - Direct Anthropic API (primary)
     // ============================================================================
-    "claude-sonnet-4-5": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "claude-sonnet-4-6": () =>
+        createAnthropicConfig({
+            model: "claude-sonnet-4-6",
         }),
     "claude-opus-4-6": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-6-v1",
+        createAnthropicConfig({
+            model: "claude-opus-4-6",
         }),
-    // Opus 4.5 - Bedrock only (no fallback needed since Claude is paid tier)
     "claude-opus-4-5": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        createAnthropicConfig({
+            model: "claude-opus-4-5-20251101",
+        }),
+    "claude-haiku-4-5": () =>
+        createAnthropicConfig({
+            model: "claude-haiku-4-5-20251001",
+        }),
+    "claude-3-5-haiku": () =>
+        createAnthropicConfig({
+            model: "claude-3-haiku-20240307",
         }),
     "amazon.nova-micro-v1:0": () =>
         createBedrockNativeConfig({
@@ -261,12 +274,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // Community Models - NomNom (web search/scrape/crawl)
+    // Community Models
     // ============================================================================
-    // "nomnom": () =>
-    //     createNomNomConfig({
-    //         model: "nomnom",
-    //     }),
+    "nomnom": () =>
+        createNomNomConfig({
+            model: "nomnom",
+        }),
+    "polly": () =>
+        createPollyConfig({
+            model: "polly",
+        }),
 
     // ============================================================================
     // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)

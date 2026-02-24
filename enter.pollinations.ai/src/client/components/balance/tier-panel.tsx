@@ -1,5 +1,10 @@
 import type { FC } from "react";
-import { getTierColor, getTierEmoji, type TierStatus } from "@/tier-config.ts";
+import {
+    getTierColor,
+    getTierEmoji,
+    TIER_POLLEN,
+    type TierStatus,
+} from "@/tier-config.ts";
 import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
@@ -16,7 +21,9 @@ function getBadgeColor(
 ): "gray" | "green" | "pink" | "amber" | "blue" | "yellow" {
     const tierColor = tier === "none" ? "gray" : getTierColor(tier);
     // Badge component doesn't have "red" variant, map router's "red" to "blue"
-    return tierColor === "red" ? "blue" : (tierColor as any);
+    if (tierColor === "red") return "blue";
+    // All other tier colors (gray, blue, green, pink, amber) are valid Badge colors
+    return tierColor as "gray" | "green" | "pink" | "amber" | "blue";
 }
 
 // Map tier color to Panel component color (Panel doesn't support "red", use "blue" for router)
@@ -25,7 +32,9 @@ function getPanelColor(
 ): "blue" | "teal" | "violet" | "purple" | "amber" | "green" | "pink" | "gray" {
     const tierColor = tier === "none" ? "gray" : getTierColor(tier);
     // Panel component doesn't have "red" variant, map router's "red" to "blue"
-    return tierColor === "red" ? "blue" : (tierColor as any);
+    if (tierColor === "red") return "blue";
+    // All other tier colors (gray, blue, green, pink, amber) are valid Panel colors
+    return tierColor as "blue" | "amber" | "green" | "pink" | "gray";
 }
 
 const BetaNoticeText: FC = () => (
@@ -71,7 +80,7 @@ const MicrobeLimitedPanel: FC = () => (
 const SporeGrantInfo: FC = () => (
     <div className="flex flex-col gap-3">
         <p className="text-3xl font-bold text-gray-900">
-            🐝 Free Weekly: 1.5 pollen
+            🐝 Free Weekly: {TIER_POLLEN.spore} pollen
         </p>
         <p className="text-sm text-gray-500">
             Refreshes every Monday at 00:00 UTC. Use it across any{" "}
@@ -157,7 +166,7 @@ const TierScreen: FC<{
 }> = ({ tier, active_tier_name, daily_pollen }) => {
     const tierEmoji = getTierEmoji(tier);
     const panelColor = getPanelColor(tier);
-    const cardColor = getPanelColor(tier);
+    const cardColor = panelColor;
 
     return (
         <Panel color={panelColor}>

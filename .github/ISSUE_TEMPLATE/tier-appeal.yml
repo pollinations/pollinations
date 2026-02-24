@@ -1,6 +1,6 @@
 name: Tier Question
 description: Questions about your tier
-title: "Tier: "
+title: "Tier:"
 labels: ["TIER", ".QUESTION"]
 body:
   - type: dropdown

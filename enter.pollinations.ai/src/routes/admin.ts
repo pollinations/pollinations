@@ -50,7 +50,7 @@ function calculateTierBreakdown(
             if (!acc[tier]) {
                 acc[tier] = {
                     count: 0,
-                    pollenAmount: TIER_POLLEN[tier] ?? TIER_POLLEN.spore,
+                    pollenAmount: TIER_POLLEN[tier] ?? 0,
                 };
             }
             acc[tier].count++;
@@ -262,6 +262,8 @@ export const adminRoutes = new Hono<Env>()
         const timestamp = new Date(refillTimestamp).toISOString();
 
         // Daily refill: all tiers EXCEPT spore
+        // NOTE: This SQL explicitly lists all non-spore tiers. If a new tier is added to
+        // tier-config.ts, this CASE statement must be updated manually to include it.
         const dailyResult = await db.run(sql`
             UPDATE user
             SET

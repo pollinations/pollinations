@@ -5,6 +5,7 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 import {
+    getTierCadence,
     getTierPollen,
     type TierName,
     type TierStatus,
@@ -20,7 +21,8 @@ const TierStatusSchema = z.object({
     active: z.object({
         tier: z.literal([...tierNames, "none"]),
         displayName: z.string(),
-        dailyPollen: z.number(),
+        pollen: z.number(),
+        cadence: z.enum(["daily", "weekly"]),
     }),
 });
 
@@ -60,7 +62,8 @@ export const tiersRoutes = new Hono<Env>()
                 .limit(1);
 
             const userTier = (users[0]?.tier || "spore") as TierName;
-            const dailyPollen = getTierPollen(userTier);
+            const pollen = getTierPollen(userTier);
+            const cadence = getTierCadence(userTier);
 
             log.debug(`User tier from D1: ${userTier}, email: ${user.email}`);
 
@@ -69,7 +72,8 @@ export const tiersRoutes = new Hono<Env>()
                 active: {
                     tier: userTier as TierStatus,
                     displayName: capitalize(userTier),
-                    dailyPollen,
+                    pollen,
+                    cadence,
                 },
             };
 

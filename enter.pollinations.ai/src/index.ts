@@ -53,7 +53,11 @@ const app = new Hono<Env>()
         cors({
             origin: "*",
             allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            allowHeaders: ["Content-Type", "Authorization", "X-Turnstile-Token"],
+            allowHeaders: [
+                "Content-Type",
+                "Authorization",
+                "X-Turnstile-Token",
+            ],
             exposeHeaders: ["Content-Length", "Content-Disposition"],
             maxAge: 600,
         }),

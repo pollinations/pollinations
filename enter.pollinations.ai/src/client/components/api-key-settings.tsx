@@ -1,8 +1,8 @@
-import type { FC } from "react";
-import { useState, useEffect, useCallback } from "react";
 import { Dialog } from "@ark-ui/react/dialog";
-import { Button } from "./button.tsx";
+import type { FC } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ModelPermissions } from "./api-keys/model-permissions.tsx";
+import { Button } from "./button.tsx";
 import {
     TurnstileSettings,
     type TurnstileSettingsData,
@@ -79,12 +79,6 @@ export const EditApiKeyDialog: FC<{
     const [error, setError] = useState<string | null>(null);
 
     const fetchTurnstileSettings = useCallback(async () => {
-        console.log(
-            "[EDIT FETCH] Fetching turnstile for key:",
-            keyId,
-            "isPublishable:",
-            isPublishable,
-        );
         if (!isPublishable) {
             setIsLoading(false);
             return;
@@ -93,16 +87,14 @@ export const EditApiKeyDialog: FC<{
             const response = await fetch(`/api/api-keys/${keyId}/turnstile`, {
                 credentials: "include",
             });
-            console.log("[EDIT FETCH] Response status:", response.status);
             if (response.ok) {
                 const data = (await response.json()) as {
                     turnstile: TurnstileSettingsData;
                 };
-                console.log("[EDIT FETCH] Received turnstile data:", data);
                 setSettings((prev) => ({ ...prev, turnstile: data.turnstile }));
             }
-        } catch (err) {
-            console.error(err);
+        } catch {
+            // Fetch failed — keep default turnstile settings
         } finally {
             setIsLoading(false);
         }
@@ -121,28 +113,17 @@ export const EditApiKeyDialog: FC<{
         setIsSaving(true);
         setError(null);
         try {
-            console.log("[EDIT SAVE] Saving settings for key:", keyId);
-            // Save model permissions
             const permResponse = await fetch(`/api/api-keys/${keyId}/update`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
                 body: JSON.stringify({ allowedModels: settings.allowedModels }),
             });
-            console.log(
-                "[EDIT SAVE] Permissions response:",
-                permResponse.status,
-            );
             if (!permResponse.ok) {
                 throw new Error("Failed to save model permissions");
             }
 
-            // Save turnstile settings (only for publishable keys)
             if (isPublishable) {
-                console.log(
-                    "[EDIT SAVE] Saving turnstile settings:",
-                    settings.turnstile,
-                );
                 const turnstileResponse = await fetch(
                     `/api/api-keys/${keyId}/turnstile`,
                     {
@@ -151,11 +132,6 @@ export const EditApiKeyDialog: FC<{
                         credentials: "include",
                         body: JSON.stringify(settings.turnstile),
                     },
-                );
-                console.log(
-                    "[EDIT SAVE] Turnstile response:",
-                    turnstileResponse.status,
-                    await turnstileResponse.clone().text(),
                 );
                 if (!turnstileResponse.ok) {
                     throw new Error("Failed to save turnstile settings");
@@ -166,7 +142,6 @@ export const EditApiKeyDialog: FC<{
             setIsOpen(false);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to save");
-            console.error(err);
         } finally {
             setIsSaving(false);
         }

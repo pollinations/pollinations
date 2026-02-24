@@ -1,6 +1,5 @@
 import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { type AuthVariables, auth } from "@/middleware/auth.ts";
 import { type BalanceVariables, balance } from "@/middleware/balance.ts";

@@ -1,5 +1,5 @@
 import { Dialog } from "@ark-ui/react/dialog";
-import { type FC, useState, useEffect, useCallback } from "react";
+import { type FC, useCallback, useEffect, useState } from "react";
 import { cn } from "@/util.ts";
 import { Button } from "./button.tsx";
 
@@ -166,9 +166,8 @@ export const TurnstileSettingsDialog: FC<{
                 };
                 setSettings(data.turnstile);
             }
-        } catch (err) {
+        } catch {
             setError("Failed to load settings");
-            console.error(err);
         } finally {
             setIsLoading(false);
         }
@@ -197,9 +196,8 @@ export const TurnstileSettingsDialog: FC<{
                 onSave();
                 setIsOpen(false);
             }
-        } catch (err) {
+        } catch {
             setError("Failed to save");
-            console.error(err);
         } finally {
             setIsSaving(false);
         }

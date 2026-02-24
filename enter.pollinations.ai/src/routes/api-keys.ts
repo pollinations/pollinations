@@ -68,6 +68,58 @@ function parseMetadata(metadata: string): Record<string, unknown> | null {
 }
 
 /**
+ * Parse metadata from DB row, handling invalid JSON gracefully.
+ */
+function parseExistingMetadata(
+    raw: string | null | undefined,
+): Record<string, unknown> {
+    if (!raw) return {};
+    try {
+        return JSON.parse(String(raw));
+    } catch {
+        return {};
+    }
+}
+
+/**
+ * Verify the authenticated user owns the API key, returning the key row.
+ * Throws 404 if not found or not owned by the user.
+ */
+async function requireOwnedKey(
+    db: ReturnType<typeof drizzle>,
+    keyId: string,
+    userId: string,
+) {
+    const key = await db.query.apikey.findFirst({
+        where: and(
+            eq(schema.apikey.id, keyId),
+            eq(schema.apikey.userId, userId),
+        ),
+    });
+    if (!key) {
+        throw new HTTPException(404, { message: "API key not found" });
+    }
+    return key;
+}
+
+/**
+ * Update metadata on an API key row, merging with existing metadata.
+ */
+async function updateKeyMetadata(
+    db: ReturnType<typeof drizzle>,
+    keyId: string,
+    metadataPatch: Record<string, unknown>,
+    existingRaw: string | null | undefined,
+): Promise<Record<string, unknown>> {
+    const merged = { ...parseExistingMetadata(existingRaw), ...metadataPatch };
+    await db
+        .update(schema.apikey)
+        .set({ metadata: JSON.stringify(merged), updatedAt: new Date() })
+        .where(eq(schema.apikey.id, keyId));
+    return merged;
+}
+
+/**
  * Schema for updating an API key.
  * Uses better-auth's server API which supports server-only fields like permissions.
  *
@@ -187,18 +239,8 @@ export const apiKeysRoutes = new Hono<Env>()
                 expiresAt,
             } = c.req.valid("json");
 
-            // Verify ownership before updating
             const db = drizzle(c.env.DB, { schema });
-            const existingKey = await db.query.apikey.findFirst({
-                where: and(
-                    eq(schema.apikey.id, id),
-                    eq(schema.apikey.userId, user.id),
-                ),
-            });
-
-            if (!existingKey) {
-                throw new HTTPException(404, { message: "API key not found" });
-            }
+            const existingKey = await requireOwnedKey(db, id, user.id);
 
             const existingPermissions = existingKey.permissions
                 ? JSON.parse(existingKey.permissions as string)
@@ -275,48 +317,15 @@ export const apiKeysRoutes = new Hono<Env>()
             const metadataUpdate = c.req.valid("json");
 
             const db = drizzle(c.env.DB, { schema });
-
-            // Verify ownership
-            const existingKey = await db.query.apikey.findFirst({
-                where: and(
-                    eq(schema.apikey.id, id),
-                    eq(schema.apikey.userId, user.id),
-                ),
-            });
-
-            if (!existingKey) {
-                throw new HTTPException(404, { message: "API key not found" });
-            }
-
-            // Parse existing metadata
-            let existingMetadata: Record<string, unknown> = {};
-            if (existingKey.metadata) {
-                try {
-                    existingMetadata = JSON.parse(String(existingKey.metadata));
-                } catch {
-                    existingMetadata = {};
-                }
-            }
-
-            // Merge new metadata with existing
-            const newMetadata = {
-                ...existingMetadata,
-                ...metadataUpdate,
-            };
-
-            // Update directly via DB
-            await db
-                .update(schema.apikey)
-                .set({
-                    metadata: JSON.stringify(newMetadata),
-                    updatedAt: new Date(),
-                })
-                .where(eq(schema.apikey.id, id));
-
-            return c.json({
+            const existingKey = await requireOwnedKey(db, id, user.id);
+            const metadata = await updateKeyMetadata(
+                db,
                 id,
-                metadata: newMetadata,
-            });
+                metadataUpdate,
+                existingKey.metadata,
+            );
+
+            return c.json({ id, metadata });
         },
     )
     /**
@@ -338,45 +347,15 @@ export const apiKeysRoutes = new Hono<Env>()
             const turnstileSettings = c.req.valid("json");
 
             const db = drizzle(c.env.DB, { schema });
-
-            // Verify ownership
-            const existingKey = await db.query.apikey.findFirst({
-                where: and(
-                    eq(schema.apikey.id, id),
-                    eq(schema.apikey.userId, user.id),
-                ),
-            });
-
-            if (!existingKey) {
-                throw new HTTPException(404, { message: "API key not found" });
-            }
-
-            let existingMetadata: Record<string, unknown> = {};
-            if (existingKey.metadata) {
-                try {
-                    existingMetadata = JSON.parse(String(existingKey.metadata));
-                } catch {
-                    existingMetadata = {};
-                }
-            }
-
-            const newMetadata = {
-                ...existingMetadata,
-                turnstile: turnstileSettings,
-            };
-
-            await db
-                .update(schema.apikey)
-                .set({
-                    metadata: JSON.stringify(newMetadata),
-                    updatedAt: new Date(),
-                })
-                .where(eq(schema.apikey.id, id));
-
-            return c.json({
+            const existingKey = await requireOwnedKey(db, id, user.id);
+            await updateKeyMetadata(
+                db,
                 id,
-                turnstile: turnstileSettings,
-            });
+                { turnstile: turnstileSettings },
+                existingKey.metadata,
+            );
+
+            return c.json({ id, turnstile: turnstileSettings });
         },
     )
     /**
@@ -395,36 +374,14 @@ export const apiKeysRoutes = new Hono<Env>()
             const { id } = c.req.param();
 
             const db = drizzle(c.env.DB, { schema });
+            const existingKey = await requireOwnedKey(db, id, user.id);
+            const metadata = parseExistingMetadata(existingKey.metadata);
 
-            const existingKey = await db.query.apikey.findFirst({
-                where: and(
-                    eq(schema.apikey.id, id),
-                    eq(schema.apikey.userId, user.id),
-                ),
-            });
+            const defaultTurnstile = { enabled: false, hostnames: [] };
+            const turnstile =
+                (metadata.turnstile as typeof defaultTurnstile) ||
+                defaultTurnstile;
 
-            if (!existingKey) {
-                throw new HTTPException(404, { message: "API key not found" });
-            }
-
-            let metadata: Record<string, unknown> = {};
-            if (existingKey.metadata) {
-                try {
-                    metadata = JSON.parse(String(existingKey.metadata));
-                } catch {
-                    metadata = {};
-                }
-            }
-
-            return c.json({
-                id,
-                turnstile: (metadata.turnstile as {
-                    enabled: boolean;
-                    hostnames: string[];
-                }) || {
-                    enabled: false,
-                    hostnames: [],
-                },
-            });
+            return c.json({ id, turnstile });
         },
     );

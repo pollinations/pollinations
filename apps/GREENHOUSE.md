@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **543** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **545** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 

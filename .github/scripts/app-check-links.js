@@ -14,10 +14,10 @@
  *   --health-update   Track daily health: increment failure counters, open removal PR at threshold
  */
 
-const fs = require("fs");
-const https = require("https");
-const http = require("http");
-const { execSync } = require("child_process");
+const fs = require("node:fs");
+const https = require("node:https");
+const http = require("node:http");
+const { execSync } = require("node:child_process");
 
 const APPS_FILE = "apps/APPS.md";
 const REPORT_FILE = "apps/BROKEN_APPS.md";
@@ -43,11 +43,11 @@ const colors = {
 // Parse command line arguments
 const args = process.argv.slice(2);
 const verbose = args.includes("--verbose");
-const shouldUpdate = args.includes("--update");
+const _shouldUpdate = args.includes("--update");
 const shouldReport = args.includes("--report");
 const timeoutArg = args.find((a) => a.startsWith("--timeout="));
 const timeout = timeoutArg
-    ? parseInt(timeoutArg.split("=")[1])
+    ? parseInt(timeoutArg.split("=")[1], 10)
     : DEFAULT_TIMEOUT;
 const categoryArg = args.find((a) => a.startsWith("--category="));
 const filterCategory = categoryArg
@@ -94,7 +94,7 @@ function parseAppsMarkdown() {
         const name = cols[1];
         const url = cols[2];
         const currentHealth =
-            healthColIdx >= 0 ? parseInt(cols[healthColIdx]) || 0 : 0;
+            healthColIdx >= 0 ? parseInt(cols[healthColIdx], 10) || 0 : 0;
 
         apps.push({
             lineIndex: headerIdx + 2 + i,
@@ -175,7 +175,7 @@ function checkUrl(url) {
 async function main() {
     console.log(`${colors.bold}🔗 Apps Link Checker${colors.reset}\n`);
 
-    const { apps, lines } = parseAppsMarkdown();
+    const { apps } = parseAppsMarkdown();
 
     // Filter by category if specified
     const appsToCheck = filterCategory
@@ -421,12 +421,11 @@ async function healthUpdate() {
         }
 
         // Determine which URL to check
-        const urlToCheck =
-            app.url && app.url.startsWith("http")
-                ? app.url
-                : app.repo && app.repo.startsWith("http")
-                  ? app.repo
-                  : null;
+        const urlToCheck = app.url?.startsWith("http")
+            ? app.url
+            : app.repo?.startsWith("http")
+              ? app.repo
+              : null;
 
         let result;
         if (!urlToCheck) {
@@ -494,9 +493,9 @@ async function healthUpdate() {
     }
 
     // Summary
-    const failing = apps.filter((a, idx) => {
+    const failing = apps.filter((a, _idx) => {
         const cols = lines[a.lineIndex].split("|");
-        const h = parseInt(cols[writeColIdx]) || 0;
+        const h = parseInt(cols[writeColIdx], 10) || 0;
         return h > 0;
     });
     console.log(`\n${colors.bold}📊 Health Summary${colors.reset}`);
@@ -522,7 +521,7 @@ async function healthUpdate() {
 /**
  * Open a PR removing apps that hit the health threshold
  */
-async function openRemovalPR(thresholdApps, lines, writeColIdx) {
+async function openRemovalPR(thresholdApps, lines, _writeColIdx) {
     // Check if gh CLI is available and authenticated
     try {
         execSync("gh auth status", { stdio: "ignore" });

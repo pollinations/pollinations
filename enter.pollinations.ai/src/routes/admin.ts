@@ -79,7 +79,7 @@ async function sendBulkTierRefillEvents(
     const events = users
         .map((user) => {
             const tierName = user.tier as TierName;
-            const pollenAmount = TIER_POLLEN[tierName] ?? TIER_POLLEN.spore;
+            const pollenAmount = TIER_POLLEN[tierName] ?? 0;
             return JSON.stringify({
                 event_type: "tier_refill",
                 environment,
@@ -257,6 +257,10 @@ export const adminRoutes = new Hono<Env>()
         const now = new Date();
         const isMonday = now.getUTCDay() === 1;
 
+        // Capture timestamp once for consistent last_tier_grant across all users
+        const refillTimestamp = Date.now();
+        const timestamp = new Date(refillTimestamp).toISOString();
+
         // Daily refill: all tiers EXCEPT spore
         const dailyResult = await db.run(sql`
             UPDATE user
@@ -269,7 +273,7 @@ export const adminRoutes = new Hono<Env>()
                     WHEN 'router' THEN ${TIER_POLLEN.router}
                     ELSE 0
                 END,
-                last_tier_grant = ${Date.now()}
+                last_tier_grant = ${refillTimestamp}
             WHERE tier IS NOT NULL AND tier != 'spore'
         `);
 
@@ -282,15 +286,13 @@ export const adminRoutes = new Hono<Env>()
                 UPDATE user
                 SET
                     tier_balance = ${TIER_POLLEN.spore},
-                    last_tier_grant = ${Date.now()}
+                    last_tier_grant = ${refillTimestamp}
                 WHERE tier = 'spore'
             `);
             sporeRefillCount = sporeResult.meta.changes ?? 0;
         }
 
         const refillCount = dailyRefillCount + sporeRefillCount;
-        const refillTimestamp = Date.now();
-        const timestamp = new Date(refillTimestamp).toISOString();
 
         // Store bulk refill timestamp in KV for idempotency
         await setLastBulkRefillTime(kv, refillTimestamp);

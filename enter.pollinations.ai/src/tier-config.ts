@@ -1,10 +1,10 @@
 export const TIERS = {
-    microbe: { pollen: 0, emoji: "🦠", color: "gray" },
-    spore: { pollen: 1.5, emoji: "🍄", color: "blue" },
-    seed: { pollen: 3, emoji: "🌱", color: "green" },
-    flower: { pollen: 10, emoji: "🌸", color: "pink" },
-    nectar: { pollen: 20, emoji: "🍯", color: "amber" },
-    router: { pollen: 500, emoji: "🐝", color: "red" },
+    microbe: { pollen: 0, emoji: "🦠", color: "gray", cadence: "weekly" },
+    spore: { pollen: 1.5, emoji: "🍄", color: "blue", cadence: "weekly" },
+    seed: { pollen: 3, emoji: "🌱", color: "green", cadence: "daily" },
+    flower: { pollen: 10, emoji: "🌸", color: "pink", cadence: "daily" },
+    nectar: { pollen: 20, emoji: "🍯", color: "amber", cadence: "daily" },
+    router: { pollen: 500, emoji: "🐝", color: "red", cadence: "daily" },
 } as const;
 
 export type TierName = keyof typeof TIERS;
@@ -21,6 +21,10 @@ export const TIER_POLLEN = Object.fromEntries(
 export const TIER_EMOJIS = Object.fromEntries(
     Object.entries(TIERS).map(([tier, config]) => [tier, config.emoji]),
 ) as Record<TierName, string>;
+
+export const TIER_CADENCE = Object.fromEntries(
+    Object.entries(TIERS).map(([tier, config]) => [tier, config.cadence]),
+) as Record<TierName, "daily" | "weekly">;
 
 export function isValidTier(tier: string): tier is TierName {
     return tier in TIERS;
@@ -48,4 +52,10 @@ export function getTierColor(tier: TierName): string;
 export function getTierColor(tier: string): string;
 export function getTierColor(tier: string): string {
     return isValidTier(tier) ? TIERS[tier].color : TIERS[DEFAULT_TIER].color;
+}
+
+export function getTierCadence(tier: TierName): "daily" | "weekly";
+export function getTierCadence(tier: string): "daily" | "weekly";
+export function getTierCadence(tier: string): "daily" | "weekly" {
+    return isValidTier(tier) ? TIERS[tier].cadence : TIERS[DEFAULT_TIER].cadence;
 }

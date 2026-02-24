@@ -10,18 +10,23 @@ const APPEAL_URL =
 const APPS_URL = "https://pollinations.ai/apps";
 const APIDOCS_URL = "/api/docs#api/description/quick-start";
 
-const TIER_BADGE_COLOR: Record<
-    TierStatus,
-    "gray" | "green" | "pink" | "amber" | "blue" | "yellow"
-> = {
-    none: "gray",
-    microbe: "gray",
-    seed: "green",
-    flower: "pink",
-    nectar: "amber",
-    router: "blue",
-    spore: "blue",
-};
+// Map tier color to Badge component color (Badge doesn't support "red", use "blue" for router)
+function getBadgeColor(
+    tier: TierStatus,
+): "gray" | "green" | "pink" | "amber" | "blue" | "yellow" {
+    const tierColor = tier === "none" ? "gray" : getTierColor(tier);
+    // Badge component doesn't have "red" variant, map router's "red" to "blue"
+    return tierColor === "red" ? "blue" : (tierColor as any);
+}
+
+// Map tier color to Panel component color (Panel doesn't support "red", use "blue" for router)
+function getPanelColor(
+    tier: TierStatus,
+): "blue" | "teal" | "violet" | "purple" | "amber" | "green" | "pink" | "gray" {
+    const tierColor = tier === "none" ? "gray" : getTierColor(tier);
+    // Panel component doesn't have "red" variant, map router's "red" to "blue"
+    return tierColor === "red" ? "blue" : (tierColor as any);
+}
 
 const BetaNoticeText: FC = () => (
     <p className="text-sm font-medium text-gray-900 mt-3">
@@ -151,18 +156,18 @@ const TierScreen: FC<{
     daily_pollen: number;
 }> = ({ tier, active_tier_name, daily_pollen }) => {
     const tierEmoji = getTierEmoji(tier);
-    const tierColor =
-        tier !== "none" ? getTierColor(tier as any) : getTierColor("spore");
+    const panelColor = getPanelColor(tier);
+    const cardColor = getPanelColor(tier);
 
     return (
-        <Panel color={tierColor as any}>
+        <Panel color={panelColor}>
             <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-3xl font-bold text-gray-900">
                         {tierEmoji} {active_tier_name}
                     </span>
                     <Badge
-                        color={TIER_BADGE_COLOR[tier]}
+                        color={getBadgeColor(tier)}
                         size="lg"
                         className="font-semibold"
                     >
@@ -187,7 +192,7 @@ const TierScreen: FC<{
                     </a>
                 </p>
 
-                <Card color={tierColor as any}>
+                <Card color={cardColor}>
                     <TierExplanation currentTier={tier} />
                 </Card>
 
@@ -200,7 +205,7 @@ const TierScreen: FC<{
 type TierPanelProps = {
     active: {
         tier: TierStatus;
-        displayName: string | null;
+        displayName: string;
         pollen?: number;
         cadence?: "daily" | "weekly";
     };
@@ -218,7 +223,7 @@ export const TierPanel: FC<TierPanelProps> = ({ active }) => {
     }
 
     // For creator tiers (seed, flower, nectar, router), use existing TierScreen
-    const displayName = active.displayName || "Unknown Tier";
+    const displayName = active.displayName;
     const displayPollen = pollen ?? 0;
 
     return (

@@ -5,6 +5,7 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 import {
+    getTierCadence,
     getTierPollen,
     type TierName,
     type TierStatus,
@@ -62,10 +63,7 @@ export const tiersRoutes = new Hono<Env>()
 
             const userTier = (users[0]?.tier || "spore") as TierName;
             const pollen = getTierPollen(userTier);
-            const cadence =
-                userTier === "spore" || userTier === "microbe"
-                    ? "weekly"
-                    : "daily";
+            const cadence = getTierCadence(userTier);
 
             log.debug(`User tier from D1: ${userTier}, email: ${user.email}`);
 

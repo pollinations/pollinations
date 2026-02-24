@@ -42,16 +42,10 @@ const BetaNoticeText: FC = () => (
 const MicrobeLimitedPanel: FC = () => (
     <Panel color="gray">
         <div className="flex flex-col gap-3">
-            <div className="text-sm text-gray-600 leading-relaxed">
-                <p>
-                    We're verifying that your account belongs to a real person.
-                    This usually takes a few days.
-                </p>
-                <p>
-                    Once verified, you'll receive free weekly Pollen to start
-                    using the API.
-                </p>
-            </div>
+            <p className="text-sm text-gray-600 leading-relaxed">
+                We're verifying that your account belongs to a real person.
+                This usually takes a few days.
+            </p>
             <p className="text-sm">
                 📧 Questions about your tier?{" "}
                 <a

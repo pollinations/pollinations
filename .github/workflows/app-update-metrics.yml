@@ -41,12 +41,8 @@ jobs:
           TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
         run: node .github/scripts/app-update-metrics.js --verbose
 
-      - name: Commit metrics changes
-        run: |
-          git add apps/APPS.md
-          git diff --quiet --cached || git commit -m "chore: update app metrics"
-
       - name: Run health checks
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
         run: node .github/scripts/app-check-links.js --health-update --verbose
@@ -54,10 +50,18 @@ jobs:
       - name: Regenerate greenhouse
         run: node .github/scripts/app-update-greenhouse.js
 
-      - name: Commit greenhouse changes
+      - name: Check for changes
+        id: changes
         run: |
-          git add apps/GREENHOUSE.md
-          git diff --quiet --cached || git commit -m "chore: update greenhouse"
+          if git diff --quiet apps/APPS.md apps/GREENHOUSE.md; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Push changes
-        run: git push
+      - name: Commit and push changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git add apps/APPS.md apps/GREENHOUSE.md
+          git commit -m "chore: update app metrics, health, and greenhouse"
+          git push

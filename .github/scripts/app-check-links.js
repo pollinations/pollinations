@@ -17,7 +17,7 @@
 const fs = require("node:fs");
 const https = require("node:https");
 const http = require("node:http");
-const { execSync, execFileSync } = require("node:child_process");
+const { execFileSync } = require("node:child_process");
 
 const APPS_FILE = "apps/APPS.md";
 const REPORT_FILE = "apps/BROKEN_APPS.md";
@@ -510,27 +510,12 @@ async function healthUpdate() {
         }
     }
 
-    // Write updated health counters back to APPS.md
+    // Write updated health counters back to APPS.md (the workflow commits this)
     if (changes.length > 0) {
         fs.writeFileSync(APPS_FILE, lines.join("\n"));
         console.log(
             `${colors.green}Updated ${changes.length} health counters${colors.reset}`,
         );
-
-        // Commit counters on the current branch BEFORE branching for removal PR.
-        // Without this, `git checkout -b` would carry uncommitted changes to the
-        // PR branch, and switching back would lose the counter updates entirely.
-        try {
-            execSync(`git add "${APPS_FILE}"`, { stdio: "ignore" });
-            execSync('git commit -m "chore: update app health counters"', {
-                stdio: "ignore",
-            });
-            console.log(
-                `${colors.green}Committed health counters${colors.reset}`,
-            );
-        } catch {
-            // Not in a git repo or no changes to commit — OK when running locally
-        }
     } else {
         console.log("No health changes.");
     }
@@ -558,17 +543,27 @@ async function healthUpdate() {
 }
 
 /**
+ * Helper: run gh api command and return parsed JSON
+ */
+function ghApi(endpoint, method, fields) {
+    const args = ["api", endpoint, "--method", method];
+    for (const [key, value] of Object.entries(fields || {})) {
+        args.push("-f", `${key}=${value}`);
+    }
+    return JSON.parse(execFileSync("gh", args, { encoding: "utf8" }));
+}
+
+/**
  * Open a PR removing apps that hit the health threshold.
  *
- * IMPORTANT: This must be called AFTER the workflow has committed the updated
- * health counters to the current branch. The function re-reads APPS.md from
- * disk (which now has committed counters), removes threshold rows, and creates
- * a new branch+PR from that state.
+ * Uses the GitHub API exclusively — no local git checkout or branch switching.
+ * This avoids corrupting the working tree during CI, where other workflow steps
+ * depend on staying on the default branch.
  */
 async function openRemovalPR(thresholdApps) {
     // Check if gh CLI is available and authenticated
     try {
-        execSync("gh auth status", { stdio: "ignore" });
+        execFileSync("gh", ["auth", "status"], { stdio: "ignore" });
     } catch {
         console.log(
             `\n${colors.yellow}⚠️  gh CLI not authenticated — skipping PR creation${colors.reset}`,
@@ -584,8 +579,18 @@ async function openRemovalPR(thresholdApps) {
 
     // Check if a PR already exists for today
     try {
-        const existing = execSync(
-            `gh pr list --head "${branch}" --json number --jq length`,
+        const existing = execFileSync(
+            "gh",
+            [
+                "pr",
+                "list",
+                "--head",
+                branch,
+                "--json",
+                "number",
+                "--jq",
+                "length",
+            ],
             { encoding: "utf8" },
         ).trim();
         if (existing !== "0") {
@@ -619,44 +624,73 @@ async function openRemovalPR(thresholdApps) {
     body += `\n**Review each app before merging.** Close this PR to keep all apps.\n`;
 
     const title = `chore: remove ${thresholdApps.length} stale apps (${today})`;
-    const commitMsg = title;
 
-    // Create branch, write changes, commit, push, open PR
+    // Get repo info from gh
+    const repoJson = JSON.parse(
+        execFileSync("gh", ["repo", "view", "--json", "owner,name"], {
+            encoding: "utf8",
+        }),
+    );
+    const owner = repoJson.owner.login;
+    const repo = repoJson.name;
+
     try {
-        execSync(`git checkout -b "${branch}"`, { stdio: "ignore" });
-        fs.writeFileSync(APPS_FILE, newLines.join("\n"));
-        execSync(`git add "${APPS_FILE}"`, { stdio: "ignore" });
-        execSync(`git commit -m "${commitMsg}"`, { stdio: "ignore" });
-        execSync(`git push -u origin "${branch}"`, { stdio: "ignore" });
+        // 1. Get the SHA of the default branch HEAD
+        const refData = ghApi(
+            `repos/${owner}/${repo}/git/ref/heads/main`,
+            "GET",
+        );
+        const baseSha = refData.object.sha;
 
-        // Use execFileSync to avoid shell injection from app names/URLs in body
-        const prUrl = execFileSync(
-            "gh",
-            [
-                "pr",
-                "create",
-                "--title",
-                title,
-                "--body",
-                body,
-                "--label",
-                "app-health",
-            ],
-            { encoding: "utf8" },
-        ).trim();
+        // 2. Create the branch ref via API
+        ghApi(`repos/${owner}/${repo}/git/refs`, "POST", {
+            ref: `refs/heads/${branch}`,
+            sha: baseSha,
+        });
+
+        // 3. Update APPS.md on the new branch via the Contents API
+        //    First get the current file SHA (needed for update)
+        const fileData = ghApi(
+            `repos/${owner}/${repo}/contents/${APPS_FILE}?ref=${branch}`,
+            "GET",
+        );
+
+        // Update file content (Contents API accepts base64)
+        const newContent = Buffer.from(newLines.join("\n")).toString("base64");
+        const updateArgs = [
+            "api",
+            `repos/${owner}/${repo}/contents/${APPS_FILE}`,
+            "--method",
+            "PUT",
+            "-f",
+            `message=${title}`,
+            "-f",
+            `content=${newContent}`,
+            "-f",
+            `sha=${fileData.sha}`,
+            "-f",
+            `branch=${branch}`,
+        ];
+        execFileSync("gh", updateArgs, { encoding: "utf8" });
+
+        // 4. Create the PR
+        const prArgs = [
+            "pr",
+            "create",
+            "--head",
+            branch,
+            "--title",
+            title,
+            "--body",
+            body,
+        ];
+        const prUrl = execFileSync("gh", prArgs, { encoding: "utf8" }).trim();
 
         console.log(`\n${colors.green}✅ PR created: ${prUrl}${colors.reset}`);
-
-        // Switch back to previous branch
-        execSync("git checkout -", { stdio: "ignore" });
     } catch (err) {
         console.error(
             `${colors.red}Error creating PR: ${err.message}${colors.reset}`,
         );
-        // Try to switch back
-        try {
-            execSync("git checkout -", { stdio: "ignore" });
-        } catch {}
     }
 }
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 7272,
+  "title": "Add DreamTag to Chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/7272",
+  "merged_at": "2026-02-24T17:38:01Z",
+  "labels": [
+    "TIER-APP-REVIEW-PR"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Subconscious streaming",
+    "blurb": "DreamTag has joined the chat. Finally, an AI that can explain why you showed up to work without pants in your dream last night.",
+    "summary": "Integrated DreamTag, an AI-powered dream analysis application, into the Chat ecosystem.",
+    "impact": "Users can now receive detailed, personalized interpretations of their dreams directly through the platform.",
+    "keywords": [
+      "community",
+      "chat",
+      "dream-analysis",
+      "ai-interpretation",
+      "app-showcase"
+    ],
+    "visual_concept": "Polly the Bee sleeping on a cloud with a dream bubble showing surreal imagery. Represents the DreamTag app's function of analyzing dreams.",
+    "image_prompt": "Cozy pixel art scene of Polly the Bee sleeping peacefully on a fluffy cloud, wearing a tiny nightcap. Above her, a large pixel thought bubble displays a surreal dreamscape with floating flowers. Soft lime green (#ecf874) and lavender gradient background. Ethereal lighting, dreamy vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-24T17:38:46.892929+00:00"
+}

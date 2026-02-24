@@ -1,25 +1,27 @@
-import type { TokenUsage, UsageType } from "./registry.js";
+import type { Usage, UsageType } from "./registry.ts";
 
 /**
- * Mapping from TokenUsage field names to HTTP header names
+ * Mapping from Usage field names to HTTP header names
  */
 export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     promptTextTokens: "x-usage-prompt-text-tokens",
     promptCachedTokens: "x-usage-prompt-cached-tokens",
     promptAudioTokens: "x-usage-prompt-audio-tokens",
+    promptAudioSeconds: "x-usage-prompt-audio-seconds",
     promptImageTokens: "x-usage-prompt-image-tokens",
     completionTextTokens: "x-usage-completion-text-tokens",
     completionReasoningTokens: "x-usage-completion-reasoning-tokens",
     completionAudioTokens: "x-usage-completion-audio-tokens",
+    completionAudioSeconds: "x-usage-completion-audio-seconds",
     completionImageTokens: "x-usage-completion-image-tokens",
     completionVideoSeconds: "x-usage-completion-video-seconds",
     completionVideoTokens: "x-usage-completion-video-tokens",
 };
 
 /**
- * Convert OpenAI usage format to TokenUsage format
+ * Convert OpenAI usage format to Usage format
  */
-export function openaiUsageToTokenUsage(openaiUsage: {
+export function openaiUsageToUsage(openaiUsage: {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
@@ -33,7 +35,7 @@ export function openaiUsageToTokenUsage(openaiUsage: {
         accepted_prediction_tokens?: number;
         rejected_prediction_tokens?: number;
     } | null;
-}): TokenUsage {
+}): Usage {
     const promptDetailTokens =
         (openaiUsage.prompt_tokens_details?.cached_tokens || 0) +
         (openaiUsage.prompt_tokens_details?.audio_tokens || 0);
@@ -48,7 +50,6 @@ export function openaiUsageToTokenUsage(openaiUsage: {
 
     // biome-ignore format: custom formatting
     return {
-        unit: "TOKENS",
         promptTextTokens: 
             openaiUsage.prompt_tokens - promptDetailTokens,
         promptCachedTokens:
@@ -65,51 +66,50 @@ export function openaiUsageToTokenUsage(openaiUsage: {
 }
 
 /**
- * Build usage tracking headers from TokenUsage object
- * Returns headers with x-usage-* prefix for all non-zero token types
+ * Build usage tracking headers from Usage object
+ * Returns headers with x-usage-* prefix for all non-zero usage types
  */
 export function buildUsageHeaders(
     modelUsed: string,
-    usage: TokenUsage,
+    usage: Usage,
 ): Record<string, string> {
     const headers: Record<string, string> = {
         "x-model-used": modelUsed,
     };
 
-    let totalTokens = 0;
-
-    // Iterate over all usage types
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {
         const value = usage[usageType as UsageType];
         if (value && value > 0) {
             headers[headerName] = String(value);
-            totalTokens += value;
         }
-    }
-
-    if (totalTokens > 0) {
-        headers["x-usage-total-tokens"] = String(totalTokens);
     }
 
     return headers;
 }
 
 /**
- * Parse usage headers back to TokenUsage object
+ * Parse usage headers back to Usage object
  */
 export function parseUsageHeaders(
     headers: Headers | Record<string, string>,
-): TokenUsage {
-    const usage: TokenUsage = { unit: "TOKENS" };
+): Usage {
+    const usage: Usage = {};
 
     const getHeader = (name: string) =>
         headers instanceof Headers ? headers.get(name) : headers[name];
 
-    // Iterate in reverse to parse headers back to usage
+    const FLOAT_USAGE_TYPES: Set<string> = new Set([
+        "promptAudioSeconds",
+        "completionAudioSeconds",
+        "completionVideoSeconds",
+    ]);
+
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {
         const value = getHeader(headerName);
         if (value) {
-            usage[usageType as UsageType] = parseInt(value, 10);
+            usage[usageType as UsageType] = FLOAT_USAGE_TYPES.has(usageType)
+                ? parseFloat(value)
+                : parseInt(value, 10);
         }
     }
 
@@ -119,11 +119,8 @@ export function parseUsageHeaders(
 /**
  * Helper for image services: create TokenUsage with only image tokens
  */
-export function createImageTokenUsage(
-    completionImageTokens: number,
-): TokenUsage {
+export function createImageTokenUsage(completionImageTokens: number): Usage {
     return {
-        unit: "TOKENS",
         completionImageTokens,
     };
 }
@@ -131,11 +128,8 @@ export function createImageTokenUsage(
 /**
  * Helper for video services: create TokenUsage with video seconds (Veo)
  */
-export function createVideoSecondsUsage(
-    completionVideoSeconds: number,
-): TokenUsage {
+export function createVideoSecondsUsage(completionVideoSeconds: number): Usage {
     return {
-        unit: "TOKENS",
         completionVideoSeconds,
     };
 }
@@ -143,11 +137,40 @@ export function createVideoSecondsUsage(
 /**
  * Helper for video services: create TokenUsage with video tokens (Seedance)
  */
-export function createVideoTokenUsage(
-    completionVideoTokens: number,
-): TokenUsage {
+export function createVideoTokenUsage(completionVideoTokens: number): Usage {
     return {
-        unit: "TOKENS",
         completionVideoTokens,
+    };
+}
+
+/**
+ * Helper for audio/TTS services: create TokenUsage with audio tokens (characters)
+ * ElevenLabs bills by character count, so we use completionAudioTokens
+ */
+export function createAudioTokenUsage(completionAudioTokens: number): Usage {
+    return {
+        completionAudioTokens,
+    };
+}
+
+/**
+ * Helper for audio transcription (Whisper): create Usage with audio seconds
+ * Used for duration-based billing (e.g., OVH Whisper at $0.0000445/sec)
+ */
+export function createAudioSecondsUsage(promptAudioSeconds: number): Usage {
+    return {
+        promptAudioSeconds,
+    };
+}
+
+/**
+ * Helper for music generation: create Usage with completion audio seconds
+ * Used for duration-based billing (e.g., ElevenLabs Music at $0.005/sec)
+ */
+export function createCompletionAudioSecondsUsage(
+    completionAudioSeconds: number,
+): Usage {
+    return {
+        completionAudioSeconds,
     };
 }

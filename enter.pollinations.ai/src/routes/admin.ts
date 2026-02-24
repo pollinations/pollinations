@@ -253,13 +253,16 @@ export const adminRoutes = new Hono<Env>()
             .from(userTable)
             .where(sql`tier IS NOT NULL`);
 
-        // Bulk update all tier balances
-        const result = await db.run(sql`
+        // Check if today is Monday (for weekly spore refill)
+        const now = new Date();
+        const isMonday = now.getUTCDay() === 1;
+
+        // Daily refill: all tiers EXCEPT spore
+        const dailyResult = await db.run(sql`
             UPDATE user
             SET
                 tier_balance = CASE tier
                     WHEN 'microbe' THEN ${TIER_POLLEN.microbe}
-                    WHEN 'spore' THEN ${TIER_POLLEN.spore}
                     WHEN 'seed' THEN ${TIER_POLLEN.seed}
                     WHEN 'flower' THEN ${TIER_POLLEN.flower}
                     WHEN 'nectar' THEN ${TIER_POLLEN.nectar}
@@ -267,10 +270,25 @@ export const adminRoutes = new Hono<Env>()
                     ELSE ${TIER_POLLEN.spore}
                 END,
                 last_tier_grant = ${Date.now()}
-            WHERE tier IS NOT NULL
+            WHERE tier IS NOT NULL AND tier != 'spore'
         `);
 
-        const refillCount = result.meta.changes ?? 0;
+        const dailyRefillCount = dailyResult.meta.changes ?? 0;
+
+        // Weekly refill: spore tier (Monday only)
+        let sporeRefillCount = 0;
+        if (isMonday) {
+            const sporeResult = await db.run(sql`
+                UPDATE user
+                SET
+                    tier_balance = ${TIER_POLLEN.spore},
+                    last_tier_grant = ${Date.now()}
+                WHERE tier = 'spore'
+            `);
+            sporeRefillCount = sporeResult.meta.changes ?? 0;
+        }
+
+        const refillCount = dailyRefillCount + sporeRefillCount;
         const refillTimestamp = Date.now();
         const timestamp = new Date(refillTimestamp).toISOString();
 
@@ -292,16 +310,25 @@ export const adminRoutes = new Hono<Env>()
             ),
         );
 
-        log.info("TIER_REFILL_COMPLETE: usersUpdated={usersUpdated}", {
-            eventType: "tier_refill_complete",
-            usersUpdated: refillCount,
-            tierBreakdown,
-        });
+        log.info(
+            "TIER_REFILL_COMPLETE: usersUpdated={usersUpdated} (daily={daily}, spore={spore}, isMonday={isMonday})",
+            {
+                eventType: "tier_refill_complete",
+                usersUpdated: refillCount,
+                dailyRefillCount,
+                sporeRefillCount,
+                isMonday,
+                tierBreakdown,
+            },
+        );
 
         return c.json({
             success: true,
             skipped: false,
             usersRefilled: refillCount,
+            dailyRefillCount,
+            sporeRefillCount,
+            isMonday,
             tierBreakdown,
             timestamp,
         });

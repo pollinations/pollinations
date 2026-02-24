@@ -5,6 +5,12 @@ import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
 import { TierExplanation } from "./tier-explanation";
 
+const APPEAL_URL =
+    "https://github.com/pollinations/pollinations/issues/new?template=tier-appeal.yml";
+const APPS_URL = "https://pollinations.ai/apps";
+const APIDOCS_URL =
+    "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md";
+
 const TIER_BADGE_COLOR: Record<
     TierStatus,
     "gray" | "green" | "pink" | "amber" | "blue" | "yellow"
@@ -25,6 +31,111 @@ const BetaNoticeText: FC = () => (
         Thanks for being part of the journey!
     </p>
 );
+
+// ─── Microbe: Account Under Review ──────────────────────────
+
+const MicrobeLimitedPanel: FC = () => (
+    <Panel color="gray">
+        <div className="flex flex-col gap-3">
+            <div className="text-sm text-gray-600 leading-relaxed">
+                <p>
+                    Your tier is determined dynamically based on your activity
+                    and account history.
+                </p>
+                <p>
+                    It can change at any time, initial review can take up to a
+                    week.
+                </p>
+            </div>
+            <p className="text-sm">
+                💬 Questions?{" "}
+                <a
+                    href={APPEAL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-900 underline hover:text-gray-700 font-medium"
+                >
+                    Contact support &rarr;
+                </a>
+            </p>
+        </div>
+    </Panel>
+);
+
+// ─── Spore: Free weekly grant (no tier branding) ────────────
+
+const SporeGrantInfo: FC = () => (
+    <div className="flex flex-col gap-1">
+        <p className="text-2xl font-semibold text-gray-900">
+            🐝 Free Weekly : 1.5 pollen
+        </p>
+        <p className="text-xs text-gray-400">
+            Refreshes every Monday at 00:00 UTC. Use it across any{" "}
+            <a
+                href={APPS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline hover:text-blue-800"
+            >
+                app on the platform
+            </a>
+            .
+        </p>
+    </div>
+);
+
+const SporeCreatorNudge: FC = () => (
+    <div>
+        <p className="text-sm font-bold text-gray-900 mb-3">
+            🛠 Want to build your own app?
+        </p>
+        <div className="flex text-xs gap-3">
+            <div className="flex-1 text-sm text-gray-600 leading-relaxed">
+                <p>
+                    Creators get daily Pollen grants &mdash; up to 20/day
+                    &mdash; plus tools to monetize and grow. Start building and
+                    your score will unlock creator tiers automatically.
+                </p>
+                <div className="mt-3 space-y-1">
+                    <div>
+                        <a
+                            href={APIDOCS_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline hover:text-blue-800 font-medium"
+                        >
+                            Start creating &rarr;
+                        </a>
+                    </div>
+                    <div>
+                        <a
+                            href="#what-are-tiers"
+                            className="text-blue-600 underline hover:text-blue-800 font-medium"
+                        >
+                            How do tiers work? &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+const SporeTierPanel: FC = () => (
+    <Panel color="blue">
+        <div className="flex flex-col gap-3">
+            <SporeGrantInfo />
+            <Card color="blue">
+                <SporeCreatorNudge />
+            </Card>
+            <div className="bg-blue-100 rounded-lg px-3 py-2 text-xs text-blue-700">
+                🧪 <strong>We're in Beta!</strong> Scores and grants may evolve.
+            </div>
+        </div>
+    </Panel>
+);
+
+// ─── Creator tiers & fallback ────────────────────────────────
 
 const NoTierScreen: FC<{ has_polar_error?: boolean }> = ({
     has_polar_error,
@@ -95,22 +206,30 @@ const TierScreen: FC<{
 type TierPanelProps = {
     active: {
         tier: TierStatus;
-        displayName: string;
-        dailyPollen?: number;
+        displayName: string | null;
+        pollen?: number;
+        cadence?: "daily" | "weekly";
     };
 };
 
 export const TierPanel: FC<TierPanelProps> = ({ active }) => {
-    if (active.tier === "none") {
-        return <NoTierScreen has_polar_error={false} />;
+    const { tier, pollen } = active;
+
+    if (tier === "microbe") {
+        return <MicrobeLimitedPanel />;
     }
 
+    if (tier === "spore" || tier === "none") {
+        return <SporeTierPanel />;
+    }
+
+    // For creator tiers (seed, flower, nectar, router), use existing TierScreen
     const displayName = active.displayName || "Unknown Tier";
-    const displayPollen = active.dailyPollen ?? 0;
+    const displayPollen = pollen ?? 0;
 
     return (
         <TierScreen
-            tier={active.tier}
+            tier={tier}
             active_tier_name={displayName}
             daily_pollen={displayPollen}
         />

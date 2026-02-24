@@ -1,0 +1,35 @@
+{
+  "pr_number": 8527,
+  "title": "feat: 15-category economics dashboard",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/8527",
+  "merged_at": "2026-02-24T16:46:29Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The garden gets organized",
+    "blurb": "We've sorted over 500 apps into 15 fresh categories. From Vibe Coding to AI Studios, it's now much easier to see what's growing in the ecosystem.",
+    "summary": "Recategorized 542 ecosystem apps into 15 specific domains and added a new economics dashboard to track category performance.",
+    "impact": "Users will find apps more easily with granular categories like 'Vibe Coding' and 'AI Studio', while we get better visibility into ecosystem health.",
+    "keywords": [
+      "ecosystem",
+      "categories",
+      "dashboard",
+      "apps",
+      "organization",
+      "transparency"
+    ],
+    "visual_concept": "Polly the Bee and the Robot organizing a chaotic pile of glowing seeds into 15 neat, labeled garden planters. The Robot is holding a clipboard with a chart, representing the new economics dashboard. The scene represents the transition from a general list to structured categories.",
+    "image_prompt": "Cozy pixel art scene of Polly the Bee and the Robot sorting glowing seeds into 15 neat wooden garden planters. The Robot holds a clipboard showing a lime green (#ecf874) chart. Soft pastel gradient background. Warm lighting, organized garden shed vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": null,
+    "prompt": null
+  },
+  "generated_at": "2026-02-24T16:47:58.602619+00:00"
+}

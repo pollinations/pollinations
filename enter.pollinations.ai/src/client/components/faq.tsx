@@ -104,7 +104,7 @@ export const FAQ: FC = () => {
                                 block: "start",
                             });
                         }
-                    }, 100);
+                    }, 500);
                 }
             }
         };

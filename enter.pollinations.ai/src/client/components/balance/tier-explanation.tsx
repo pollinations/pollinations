@@ -7,14 +7,10 @@ import {
 } from "@/tier-config.ts";
 import { Tooltip } from "../pricing/Tooltip.tsx";
 
-// Map color names to Tailwind classes (matches feat/hide-tiers-microbe structure)
 const COLOR_TO_CLASSES: Record<string, { bg: string; ring: string }> = {
-    gray: { bg: "bg-gray-100/60", ring: "ring-gray-400" },
-    blue: { bg: "bg-blue-100/60", ring: "ring-blue-400" },
     green: { bg: "bg-green-100/60", ring: "ring-green-400" },
     pink: { bg: "bg-pink-100/60", ring: "ring-pink-400" },
     amber: { bg: "bg-amber-100/60", ring: "ring-amber-400" },
-    red: { bg: "bg-red-100/60", ring: "ring-red-400" },
 };
 
 const SeedTooltipContent = () => (

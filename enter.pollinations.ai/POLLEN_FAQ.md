@@ -9,7 +9,7 @@ Pollen is our prepaid credit system. **$1 ≈ 1 Pollen** *(pricing may evolve)*.
 There are three ways to add Pollen to your balance:
 
 1.  **Buy It:** Purchase Pollen packs directly with a credit card. This Pollen goes into your wallet and *never expires*. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
-2.  **Get Daily Pollen:** During and after beta, registered developers receive daily Pollen grants to support experimentation based on their tier *(microbe, spore, seed, flower, or nectar)*.
+2.  **Get Free Pollen Grants:** Once your account is verified, you receive 1.5 Pollen per week (refreshes every Monday at 00:00 UTC). **Creators** — developers actively building apps on Pollinations — earn daily grants instead (seed: 3/day, flower: 10/day, nectar: 20/day), unlocked automatically based on activity.
 3.  **Earn It:** Complete one-time community rewards, like helping solve a technical issue or contributing to the project.
 
 ## 💳 What payment methods do you accept?
@@ -28,16 +28,18 @@ Not currently. You need to register and use an API key to access our models. *Al
 
 ## 🎉 What do I get when I register?
 
-Registration gives you access to the Pollinations API and the **Spore tier**, which includes *daily Pollen* to get you started. Once registered, you can **create API keys** to start making requests.
+Registration gives you access to the Pollinations API and the ability to **create API keys**. New accounts are briefly reviewed — once verified, you receive **1.5 Pollen per week** (refreshes every Monday at 00:00 UTC). You can always purchase Pollen immediately.
 
 - **🌐 Publishable Key (pk\_):** Designed for client-side apps *(bound to your domain)*. Rate limits: 1 pollen per IP per hour. Access to all models, which consume Pollen based on usage.
 - **🔒 Secret Key (sk\_):** For server-side apps only. *No rate limits.* Access to all models, which consume Pollen based on usage.
 
-## 🌱 How do daily Pollen grants work?
+## 🌱 How do Pollen grants work?
 
-You receive a daily Pollen grant based on your tier. Daily Pollen is spent *before* your purchased Pollen. Unused Pollen expires each day.
+Once verified, you receive **1.5 Pollen per week** (refreshes Monday at 00:00 UTC). **Creators** receive daily grants based on their tier (seed: 3/day, flower: 10/day, nectar: 20/day).
 
-💚 **Thanks to our supporters**, all tiers receive free daily Pollen during beta.
+Grant Pollen is spent *before* your purchased Pollen. Unused grant Pollen does not carry over (daily grants expire each day, weekly grants expire each Monday).
+
+💚 **Thanks to our supporters**, all users receive free Pollen grants during beta.
 
 ## 🎨 What can I create with Pollen?
 
@@ -47,12 +49,12 @@ Think of Pollen like buying in bulk — *the more efficient the model, the more 
 
 ## ⚡ How is my pollen spent?
 
-Your daily tier pollen is always used *first*, then your purchased pollen:
+Your grant pollen is always used *first*, then your purchased pollen:
 
-1. **Daily grants** — Used first for most models
-2. **Purchased pollen** — Used after daily is depleted
+1. **Free grants** (weekly or daily) — Used first for most models
+2. **Purchased pollen** — Used after grants are depleted
 
-**Exception:** Some premium models are marked with a 💎 **Paid Only** badge. These require purchased pollen and *cannot* use daily tier grants. This ensures sustainable access to high-cost models while keeping daily pollen available for experimentation.
+**Exception:** Some premium models are marked with a 💎 **Paid Only** badge. These require purchased pollen and *cannot* use grant pollen. This ensures sustainable access to high-cost models while keeping free grants available for experimentation.
 
 ## 👛 How does my Pollen wallet work?
 

@@ -24,9 +24,9 @@ from pydantic import BaseModel
 # Modal app configuration - uses myceli-ai workspace
 app = modal.App("flux-klein")
 
-# Expected Enter token for authentication (set via Modal secret)
-# Create secret: modal secret create enter-token ENTER_TOKEN=your_token_here
-ENTER_TOKEN_HEADER = "x-enter-token"
+# Expected Backend token for authentication (set via Modal secret)
+# Create secret: modal secret create backend-token PLN_IMAGE_BACKEND_TOKEN=your_token_here
+ENTER_TOKEN_HEADER = "x-backend-token"
 
 # CUDA base image with Python
 cuda_version = "12.4.0"
@@ -115,7 +115,7 @@ GPU_OPTIONS = {
         "/root/.inductor-cache": modal.Volume.from_name("inductor-cache", create_if_missing=True),
     },
     secrets=[
-        modal.Secret.from_name("enter-token", required_keys=["ENTER_TOKEN"]),
+        modal.Secret.from_name("backend-token", required_keys=["PLN_IMAGE_BACKEND_TOKEN"]),
         modal.Secret.from_name("huggingface-secret", required_keys=["HF_TOKEN"]),
     ],
 )
@@ -208,19 +208,19 @@ class FluxKlein:
         return byte_stream.getvalue()
     
     def _verify_token(self, token: str | None) -> None:
-        """Verify the Enter token, raise HTTPException if invalid."""
+        """Verify the Backend token, raise HTTPException if invalid."""
         import os
-        expected_token = os.environ.get("ENTER_TOKEN")
+        expected_token = os.environ.get("PLN_IMAGE_BACKEND_TOKEN")
         if not expected_token:
-            raise HTTPException(status_code=500, detail="ENTER_TOKEN not configured")
+            raise HTTPException(status_code=500, detail="PLN_IMAGE_BACKEND_TOKEN not configured")
         
         if not token:
-            print("❌ No Enter token provided")
-            raise HTTPException(status_code=401, detail="Missing x-enter-token header")
+            print("❌ No Backend token provided")
+            raise HTTPException(status_code=401, detail="Missing x-backend-token header")
         
         if token != expected_token:
-            print("❌ Invalid Enter token")
-            raise HTTPException(status_code=401, detail="Invalid x-enter-token")
+            print("❌ Invalid Backend token")
+            raise HTTPException(status_code=401, detail="Invalid x-backend-token")
 
     @modal.fastapi_endpoint(method="GET")
     def generate_web(
@@ -231,13 +231,13 @@ class FluxKlein:
         guidance_scale: float = 4.0,
         num_inference_steps: int = 4,
         seed: int | None = None,
-        x_enter_token: str | None = Header(default=None),
+        x_backend_token: str | None = Header(default=None),
     ):
-        """Web endpoint for text-to-image generation (GET). Requires x-enter-token header."""
+        """Web endpoint for text-to-image generation (GET). Requires x-backend-token header."""
         from fastapi.responses import Response
 
-        # Verify Enter token
-        self._verify_token(x_enter_token)
+        # Verify Backend token
+        self._verify_token(x_backend_token)
 
         image_bytes = self.generate.local(
             prompt=prompt,
@@ -253,27 +253,30 @@ class FluxKlein:
     @modal.fastapi_endpoint(method="POST")
     def edit_web(
         self,
-        req: EditRequest,
-        x_enter_token: str | None = Header(default=None),
+        images: list[str],
+        prompt: str,
+        width: int = 1024,
+        height: int = 1024,
+        guidance_scale: float = 4.0,
+        num_inference_steps: int = 4,
+        seed: int | None = None,
+        x_backend_token: str | None = Header(default=None),
     ):
-        """Web endpoint for image editing (POST). Requires x-enter-token header.
-
-        Pass images as list of base64-encoded strings (up to 10).
-        Reference images in the prompt by index ("image 1", "image 2") or description.
+        """Web endpoint for image editing (POST).
+        
+        Query params: prompt, width, height, guidance_scale, num_inference_steps, seed
+        Body: JSON array of base64-encoded images (up to 10)
         """
         from fastapi.responses import Response
         import base64
 
-        # Verify Enter token
-        self._verify_token(x_enter_token)
+        self._verify_token(x_backend_token)
 
-        # Decode base64 images if provided
         ref_image_bytes_list = None
-        if req.images and len(req.images) > 0:
+        if images and len(images) > 0:
             ref_image_bytes_list = []
-            for i, img_b64 in enumerate(req.images[:10]):  # Max 10 images
+            for i, img_b64 in enumerate(images[:10]):
                 try:
-                    # Handle data URL format (data:image/png;base64,...) or raw base64
                     if img_b64.startswith("data:"):
                         img_b64 = img_b64.split(",", 1)[1]
                     img_bytes = base64.b64decode(img_b64)
@@ -283,12 +286,12 @@ class FluxKlein:
                     print(f"⚠️ Failed to decode image {i+1}: {e}")
 
         image_bytes = self.generate.local(
-            prompt=req.prompt,
-            width=req.width,
-            height=req.height,
-            guidance_scale=req.guidance_scale,
-            num_inference_steps=req.num_inference_steps,
-            seed=req.seed,
+            prompt=prompt,
+            width=width,
+            height=height,
+            guidance_scale=guidance_scale,
+            num_inference_steps=num_inference_steps,
+            seed=seed,
             image_bytes_list=ref_image_bytes_list,
         )
 

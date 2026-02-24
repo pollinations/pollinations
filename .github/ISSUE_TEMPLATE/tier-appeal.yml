@@ -1,0 +1,24 @@
+name: Tier Question
+description: Questions about your tier
+title: "Tier:"
+labels: ["TIER", ".QUESTION"]
+body:
+  - type: dropdown
+    id: current_tier
+    attributes:
+      label: Current Tier
+      description: What does your dashboard show?
+      options:
+        - Account under review
+        - Weekly pollen (1.5/week)
+        - Seed (3 pollen/day)
+        - Flower (10 pollen/day)
+        - Nectar (20 pollen/day)
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Question
+      placeholder: "e.g., Why is my account under review? How do I unlock Seed tier?"
+    validations:
+      required: true

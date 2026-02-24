@@ -50,7 +50,7 @@ function calculateTierBreakdown(
             if (!acc[tier]) {
                 acc[tier] = {
                     count: 0,
-                    pollenAmount: TIER_POLLEN[tier] ?? TIER_POLLEN.spore,
+                    pollenAmount: TIER_POLLEN[tier] ?? 0,
                 };
             }
             acc[tier].count++;
@@ -79,7 +79,7 @@ async function sendBulkTierRefillEvents(
     const events = users
         .map((user) => {
             const tierName = user.tier as TierName;
-            const pollenAmount = TIER_POLLEN[tierName] ?? TIER_POLLEN.spore;
+            const pollenAmount = TIER_POLLEN[tierName] ?? 0;
             return JSON.stringify({
                 event_type: "tier_refill",
                 environment,
@@ -253,26 +253,46 @@ export const adminRoutes = new Hono<Env>()
             .from(userTable)
             .where(sql`tier IS NOT NULL`);
 
-        // Bulk update all tier balances
-        const result = await db.run(sql`
+        // Check if today is Monday (for weekly spore refill)
+        const now = new Date();
+        const isMonday = now.getUTCDay() === 1;
+
+        // Capture timestamp once for consistent last_tier_grant across all users
+        const refillTimestamp = Date.now();
+        const timestamp = new Date(refillTimestamp).toISOString();
+
+        // Daily refill: only tiers with pollen > 0 and daily cadence
+        // NOTE: If a new tier is added to tier-config.ts, this CASE must be updated.
+        const dailyResult = await db.run(sql`
             UPDATE user
             SET
                 tier_balance = CASE tier
-                    WHEN 'microbe' THEN ${TIER_POLLEN.microbe}
-                    WHEN 'spore' THEN ${TIER_POLLEN.spore}
                     WHEN 'seed' THEN ${TIER_POLLEN.seed}
                     WHEN 'flower' THEN ${TIER_POLLEN.flower}
                     WHEN 'nectar' THEN ${TIER_POLLEN.nectar}
                     WHEN 'router' THEN ${TIER_POLLEN.router}
-                    ELSE ${TIER_POLLEN.spore}
+                    ELSE 0
                 END,
-                last_tier_grant = ${Date.now()}
-            WHERE tier IS NOT NULL
+                last_tier_grant = ${refillTimestamp}
+            WHERE tier IN ('seed', 'flower', 'nectar', 'router')
         `);
 
-        const refillCount = result.meta.changes ?? 0;
-        const refillTimestamp = Date.now();
-        const timestamp = new Date(refillTimestamp).toISOString();
+        const dailyRefillCount = dailyResult.meta.changes ?? 0;
+
+        // Weekly refill: spore tier (Monday only)
+        let sporeRefillCount = 0;
+        if (isMonday) {
+            const sporeResult = await db.run(sql`
+                UPDATE user
+                SET
+                    tier_balance = ${TIER_POLLEN.spore},
+                    last_tier_grant = ${refillTimestamp}
+                WHERE tier = 'spore'
+            `);
+            sporeRefillCount = sporeResult.meta.changes ?? 0;
+        }
+
+        const refillCount = dailyRefillCount + sporeRefillCount;
 
         // Store bulk refill timestamp in KV for idempotency
         await setLastBulkRefillTime(kv, refillTimestamp);
@@ -280,10 +300,20 @@ export const adminRoutes = new Hono<Env>()
         // Calculate tier breakdown for response
         const tierBreakdown = calculateTierBreakdown(usersToRefill);
 
-        // Send per-user events to Tinybird
+        // Send Tinybird events only for tiers that actually got refilled
+        const refilledTiers = new Set([
+            "seed",
+            "flower",
+            "nectar",
+            "router",
+            ...(isMonday ? ["spore"] : []),
+        ]);
+        const usersForEvents = usersToRefill.filter(
+            (u) => u.tier && refilledTiers.has(u.tier),
+        );
         c.executionCtx.waitUntil(
             sendBulkTierRefillEvents(
-                usersToRefill,
+                usersForEvents,
                 timestamp,
                 c.env.ENVIRONMENT || "unknown",
                 c.env.TINYBIRD_TIER_INGEST_URL,
@@ -292,16 +322,25 @@ export const adminRoutes = new Hono<Env>()
             ),
         );
 
-        log.info("TIER_REFILL_COMPLETE: usersUpdated={usersUpdated}", {
-            eventType: "tier_refill_complete",
-            usersUpdated: refillCount,
-            tierBreakdown,
-        });
+        log.info(
+            "TIER_REFILL_COMPLETE: usersUpdated={usersUpdated} (daily={daily}, spore={spore}, isMonday={isMonday})",
+            {
+                eventType: "tier_refill_complete",
+                usersUpdated: refillCount,
+                dailyRefillCount,
+                sporeRefillCount,
+                isMonday,
+                tierBreakdown,
+            },
+        );
 
         return c.json({
             success: true,
             skipped: false,
             usersRefilled: refillCount,
+            dailyRefillCount,
+            sporeRefillCount,
+            isMonday,
             tierBreakdown,
             timestamp,
         });

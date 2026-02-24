@@ -450,9 +450,7 @@ function RouteComponent() {
                 </div>
                 {tierData && (
                     <div className="flex flex-col gap-2">
-                        <div className="flex flex-col sm:flex-row justify-between gap-3">
-                            <h2 className="font-bold flex-1">Tier</h2>
-                        </div>
+                        <h2 className="font-bold">Tier</h2>
                         <TierPanel {...tierData} />
                     </div>
                 )}

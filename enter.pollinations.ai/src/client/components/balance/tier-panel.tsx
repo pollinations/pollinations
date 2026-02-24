@@ -12,8 +12,7 @@ import { TierExplanation } from "./tier-explanation";
 const APPEAL_URL =
     "https://github.com/pollinations/pollinations/issues/new?template=tier-appeal.yml";
 const APPS_URL = "https://pollinations.ai/apps";
-const APIDOCS_URL =
-    "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md";
+const APIDOCS_URL = "/api/docs#api/description/quick-start";
 
 const TIER_BADGE_COLOR: Record<
     TierStatus,
@@ -29,10 +28,8 @@ const TIER_BADGE_COLOR: Record<
 };
 
 const BetaNoticeText: FC = () => (
-    <p className="text-sm font-medium text-gray-900 mt-3 pt-3 border-t border-gray-200">
-        ✨ <strong>We're in beta!</strong> We're learning what works best for
-        our community and may adjust pollen values and tier rules as we go.
-        Thanks for being part of the journey!
+    <p className="text-sm font-medium text-gray-900 mt-3">
+        🧪 <strong>We're in beta!</strong> Pollen values and tier rules may evolve as we learn what works best.
     </p>
 );
 
@@ -52,16 +49,17 @@ const MicrobeLimitedPanel: FC = () => (
                 </p>
             </div>
             <p className="text-sm">
-                💬 Questions?{" "}
+                📧 Questions about your tier?{" "}
                 <a
                     href={APPEAL_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-900 underline hover:text-gray-700 font-medium"
                 >
-                    Contact support &rarr;
+                    Contact us &rarr;
                 </a>
             </p>
+            <BetaNoticeText />
         </div>
     </Panel>
 );
@@ -69,11 +67,11 @@ const MicrobeLimitedPanel: FC = () => (
 // ─── Spore: Free weekly grant (no tier branding) ────────────
 
 const SporeGrantInfo: FC = () => (
-    <div className="flex flex-col gap-1">
-        <p className="text-2xl font-semibold text-gray-900">
+    <div className="flex flex-col gap-3">
+        <p className="text-3xl font-bold text-gray-900">
             🐝 Free Weekly : 1.5 pollen
         </p>
-        <p className="text-xs text-gray-400">
+        <p className="text-sm text-gray-500">
             Refreshes every Monday at 00:00 UTC. Use it across any{" "}
             <a
                 href={APPS_URL}
@@ -129,12 +127,21 @@ const SporeTierPanel: FC = () => (
     <Panel color="blue">
         <div className="flex flex-col gap-3">
             <SporeGrantInfo />
+            <p className="text-sm">
+                📧 Questions about your tier?{" "}
+                <a
+                    href={APPEAL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-900 underline hover:text-gray-700 font-medium"
+                >
+                    Contact us &rarr;
+                </a>
+            </p>
             <Card color="blue">
                 <SporeCreatorNudge />
             </Card>
-            <div className="bg-blue-100 rounded-lg px-3 py-2 text-xs text-blue-700">
-                🧪 <strong>We're in Beta!</strong> Scores and grants may evolve.
-            </div>
+            <BetaNoticeText />
         </div>
     </Panel>
 );
@@ -199,10 +206,24 @@ const TierScreen: FC<{
                     Refills daily at 00:00 UTC. Unused pollen does not carry
                     over.
                 </p>
+
+                <p className="text-sm">
+                    📧 Questions about your tier?{" "}
+                    <a
+                        href={APPEAL_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-900 underline hover:text-gray-700 font-medium"
+                    >
+                        Contact us &rarr;
+                    </a>
+                </p>
+
                 <Card color={tierColor as any}>
                     <TierExplanation currentTier={tier} />
-                    <BetaNoticeText />
                 </Card>
+
+                <BetaNoticeText />
             </div>
         </Panel>
     );

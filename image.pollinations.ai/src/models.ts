@@ -1,5 +1,5 @@
 // Import registry for model names and tier validation
-import { type ImageServiceId } from "../../shared/registry/image.ts";
+import type { ImageServiceId } from "../../shared/registry/image.ts";
 
 /**
  * Image/Video-specific configuration for each model
@@ -28,13 +28,6 @@ export const IMAGE_CONFIG = {
         type: "kontext",
         enhance: true,
         defaultSideLength: 1024,
-    },
-
-    // Assuming 'turbo' is of type 'sd'
-    turbo: {
-        type: "pollinations",
-        enhance: true,
-        defaultSideLength: 768,
     },
 
     // ByteDance ARK Seedream 4.0 - better quality (default)
@@ -111,6 +104,16 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
+    // Alibaba Wan 2.6 - Video generation with audio (DashScope only, airforce disabled)
+    wan: {
+        type: "alibaba-dashscope-video",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 15,
+        defaultResolution: "720p",
+    },
+
     // Z-Image - Fast 6B parameter image generation with SPAN 2x upscaling (IO.net)
     zimage: {
         type: "zimage",
@@ -124,21 +127,54 @@ export const IMAGE_CONFIG = {
         enhance: false,
         defaultSideLength: 1024,
     },
+
+    // Klein - Fast 4B parameter model on Modal (text-to-image + image editing)
+    klein: {
+        type: "modal-klein",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Klein Large - Higher quality 9B parameter model on Modal (text-to-image + image editing)
+    "klein-large": {
+        type: "modal-klein-large",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)
+    // "imagen-4": {
+    //     type: "airforce",
+    //     enhance: false,
+    //     defaultSideLength: 1024,
+    // },
+
+    // TEMPORARILY DISABLED - api.airforce outage (2026-02-20)
+    // "grok-video": {
+    //     type: "airforce-video",
+    //     enhance: false,
+    //     isVideo: true,
+    //     defaultDuration: 5,
+    //     maxDuration: 10,
+    //     defaultResolution: "720p",
+    // },
+
+    // LTX-2 - Fast video generation with audio on Modal
+    "ltx-2": {
+        type: "modal-ltx2",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5, // 121 frames at 24 FPS
+        maxDuration: 10, // 241 frames
+        defaultResolution: "720p",
+    },
 } as const satisfies ImageModelsConfig;
 
 /**
  * Legacy MODELS export for backward compatibility
- * Combines registry data with local config (enhance, defaultSideLength)
  * @deprecated Use IMAGE_SERVICES from registry, IMAGE_CONFIG for implementation details
  */
-export const MODELS = Object.fromEntries(
-    Object.entries(IMAGE_CONFIG).map(([name, config]) => [
-        name,
-        {
-            ...config,
-        },
-    ]),
-) as Record<ImageServiceId, ImageModelConfig>;
+export const MODELS = IMAGE_CONFIG as Record<ImageServiceId, ImageModelConfig>;
 
 /**
  * Scale up dimensions to meet minimum pixel requirements while preserving aspect ratio

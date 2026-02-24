@@ -4,37 +4,35 @@ import http from "node:http";
 import { parse } from "node:url";
 import debug from "debug";
 import urldecode from "urldecode";
-import { HttpError } from "./httpError.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
-import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
+import { logIp } from "../../shared/ipLogger.js";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
-import { getModelCounts } from "./modelCounter.js";
-import { IMAGE_CONFIG } from "./models.js";
+// IMAGE_CONFIG imported but used elsewhere
+// import { IMAGE_CONFIG } from "./models.js";
 import {
     type AuthResult,
     createAndReturnImageCached,
     type ImageGenerationResult,
 } from "./createAndReturnImages.js";
-import {
-    createAndReturnVideo,
-    isVideoModel,
-    type VideoGenerationResult,
-} from "./createAndReturnVideos.js";
+import { createAndReturnVideo, isVideoModel } from "./createAndReturnVideos.js";
 import { registerFeedListener, sendToFeedListeners } from "./feedListeners.js";
+import { HttpError } from "./httpError.js";
+import { getModelCounts } from "./modelCounter.js";
 import { MODELS } from "./models.js";
 import {
     normalizeAndTranslatePrompt,
     type TimingStep,
 } from "./normalizeAndTranslatePrompt.js";
-import { ImageParamsSchema, type ImageParams } from "./params.js";
+import { type ImageParams, ImageParamsSchema } from "./params.js";
 import { createProgressTracker, type ProgressManager } from "./progressBar.js";
 import { sleep } from "./util.ts";
+import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 
-// Queue configuration for image service
-const QUEUE_CONFIG = {
-    interval: 30000, // 30 seconds between requests per IP (no auth)
-    cap: 1, // Max 1 concurrent request per IP
-};
+// Queue configuration for image service (reserved for future use)
+// const QUEUE_CONFIG = {
+//     interval: 30000, // 30 seconds between requests per IP (no auth)
+//     cap: 1, // Max 1 concurrent request per IP
+// };
 
 const logError = debug("pollinations:error");
 const logApi = debug("pollinations:api");
@@ -51,8 +49,8 @@ const hourlyUsage = new Map<string, HourlyUsage>();
 const HOURLY_LIMIT = 10;
 const HOUR_MS = 60 * 60 * 1000;
 
-// Check and update hourly usage for an IP
-const checkHourlyLimit = (
+// Check and update hourly usage for an IP (reserved for future use)
+const _checkHourlyLimit = (
     ip: string,
 ): { allowed: boolean; remaining: number; resetIn: number } => {
     const now = Date.now();
@@ -148,10 +146,6 @@ const imageGen = async ({
     requestId,
     authResult,
 }: ImageGenParams): Promise<ImageGenerationResult> => {
-    const ip = getIp(req);
-
-    const startTime = Date.now();
-
     try {
         timingInfo.push({ step: "Start processing", timestamp: Date.now() });
 
@@ -315,8 +309,8 @@ const checkCacheAndGenerate = async (
     const progress = createProgressTracker().startRequest(requestId);
     progress.updateBar(requestId, 0, "Starting", "Request received");
 
-    let timingInfo = [];
-    let safeParams;
+    let timingInfo: TimingStep[] = [];
+    let safeParams: ImageParams | undefined;
 
     try {
         // Validate parameters with proper error handling
@@ -545,6 +539,11 @@ const server = http.createServer((req, res) => {
     const parsedUrl = parse(req.url, true);
     const pathname = parsedUrl.pathname;
 
+    // IP logging for security investigation
+    const ip = getIp(req);
+    const model = (parsedUrl.query?.model as string) || "unknown";
+    logIp(ip, "image", `path=${pathname} model=${model}`);
+
     // Handle deprecated /models endpoint BEFORE auth check
     if (pathname === "/models") {
         res.writeHead(410, {
@@ -565,6 +564,19 @@ const server = http.createServer((req, res) => {
                 documentation: "https://enter.pollinations.ai/api/docs",
             }),
         );
+        return;
+    }
+
+    // Handle /register endpoint BEFORE auth check (heartbeat from GPU servers)
+    if (pathname === "/register") {
+        res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Cache-Control":
+                "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+        });
+        handleRegisterEndpoint(req, res);
         return;
     }
 
@@ -641,18 +653,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    if (pathname === "/register") {
-        res.writeHead(200, {
-            "Content-Type": "application/json",
-            "Cache-Control":
-                "no-store, no-cache, must-revalidate, proxy-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-        });
-        handleRegisterEndpoint(req, res);
-        return;
-    }
-
     checkCacheAndGenerate(req, res);
 });
 
@@ -694,12 +694,3 @@ function relativeTiming(timingInfo: TimingStep[]) {
         timestamp: info.timestamp - timingInfo[0].timestamp,
     }));
 }
-
-/**
- * @function
- * @param {string} prompt - The original prompt.
- * @returns {string} - The sanitized file name.
- */
-const sanitizeFileName = (prompt) => {
-    return prompt.replace(/[^a-z0-9]/gi, "_").toLowerCase();
-};

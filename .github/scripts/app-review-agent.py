@@ -255,7 +255,7 @@ Respond with ONLY a JSON object (no markdown, no explanation):
         }
 
     emoji = llm_data.get("emoji", "🚀")
-    category = llm_data.get("category", "Dev_Tools")
+    category = llm_data.get("category", "build")
     language = llm_data.get("language", "en")
 
     print(f"   Emoji: {emoji}")

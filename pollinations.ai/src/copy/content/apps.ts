@@ -58,7 +58,7 @@ export const GENRE_FILTERS = [
     },
     {
         id: "writing",
-        label: "✍️ Writing",
+        label: "✍️ Write",
         tooltip: "Content creation, storytelling, copy, slides",
         match: (app: App) => app.category === "writing",
     },
@@ -70,7 +70,7 @@ export const GENRE_FILTERS = [
     },
     {
         id: "games",
-        label: "🎮 Games",
+        label: "🎮 Play",
         tooltip: "AI games, interactive fiction, Roblox worlds",
         match: (app: App) => app.category === "games",
     },

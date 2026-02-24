@@ -24,9 +24,9 @@ const TOP_N = 10;
 const CATEGORIES = [
     { id: "image", label: "Image", emoji: "🖼️" },
     { id: "video_audio", label: "Video & Audio", emoji: "🎬" },
-    { id: "writing", label: "Writing", emoji: "✍️" },
+    { id: "writing", label: "Write", emoji: "✍️" },
     { id: "chat", label: "Chat", emoji: "💬" },
-    { id: "games", label: "Games", emoji: "🎮" },
+    { id: "games", label: "Play", emoji: "🎮" },
     { id: "learn", label: "Learn", emoji: "📚" },
     { id: "bots", label: "Bots", emoji: "🤖" },
     { id: "build", label: "Build", emoji: "🛠️" },

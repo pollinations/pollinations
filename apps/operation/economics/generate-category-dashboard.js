@@ -25,9 +25,9 @@ const OUTPUT_FILE = path.resolve(
 const CATEGORY_META = {
     image: { emoji: "\u{1f5bc}\ufe0f", label: "Image" },
     video_audio: { emoji: "\u{1f3ac}", label: "Video & Audio" },
-    writing: { emoji: "\u270d\ufe0f", label: "Writing" },
+    writing: { emoji: "\u270d\ufe0f", label: "Write" },
     chat: { emoji: "\u{1f4ac}", label: "Chat" },
-    games: { emoji: "\u{1f3ae}", label: "Games" },
+    games: { emoji: "\u{1f3ae}", label: "Play" },
     learn: { emoji: "\u{1f4da}", label: "Learn" },
     bots: { emoji: "\u{1f916}", label: "Bots" },
     build: { emoji: "\u{1f6e0}\ufe0f", label: "Build" },

@@ -35,9 +35,9 @@ App submissions are now **fully automated** via the `app-review-submission.yml` 
 
 - 🖼️ Image (`image`): Image gen, editing, design, avatars, stickers
 - 🎬 Video & Audio (`video_audio`): Video gen, animation, music, TTS
-- ✍️ Writing (`writing`): Content creation, storytelling, copy, slides
+- ✍️ Write (`writing`): Content creation, storytelling, copy, slides
 - 💬 Chat (`chat`): Assistants, companions, AI studio, multi-modal chat
-- 🎮 Games (`games`): AI games, interactive fiction, Roblox worlds
+- 🎮 Play (`games`): AI games, interactive fiction, Roblox worlds
 - 📚 Learn (`learn`): Education, tutoring, language learning
 - 🤖 Bots (`bots`): Discord, Telegram, WhatsApp bots
 - 🛠️ Build (`build`): Dev tools, SDKs, integrations, vibe coding
